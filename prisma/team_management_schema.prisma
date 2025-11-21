@@ -1,0 +1,325 @@
+// Prisma Schema for Team Management System
+// Story 1.5: Showroom Team Management
+// Multi-tenant team management with Indonesian automotive dealership roles
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/team-prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model definitions for team management
+
+model TeamMember {
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  userId       String   @map("user_id")
+  employeeId   String?  @map("employee_id") @unique
+  position     String
+  department   String?
+  hireDate     DateTime?  @map("hire_date")
+  phoneNumber  String?  @map("phone_number")
+  extension    String?
+  deskLocation String?  @map("desk_location")
+  isActive     Boolean  @default(true) @map("is_active")
+  isOnLeave    Boolean  @default(false) @map("is_on_leave")
+  employmentType String @default("full-time") @map("employment_type")
+  reportsTo    String?  @map("reports_to")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdBy    String?  @map("created_by")
+
+  // Relations
+  tenant                Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manager               TeamMember?           @relation("TeamHierarchy", fields: [reportsTo], references: [id])
+  subordinates          TeamMember[]          @relation("TeamHierarchy")
+  roles                 TeamMemberRole[]
+  createdMember         User?                 @relation("TeamMemberCreator", fields: [createdBy], references: [id])
+  invitationsSent       TeamInvitation[]
+  acceptedInvitation    TeamInvitation?        @relation("AcceptedInvitation")
+  performanceMetrics    TeamPerformanceMetric[]
+  activityLogsPerformed TeamActivityLog[]     @relation("ActivityPerformer")
+  activityLogsEntity    TeamActivityLog[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([tenantId, isActive])
+  @@index([tenantId, department])
+  @@index([tenantId, employeeId])
+  @@unique([tenantId, userId])
+  @@map("team_members")
+}
+
+model DealershipRole {
+  id             String  @id @default(cuid())
+  tenantId       String  @map("tenant_id")
+  name           String
+  displayName    String  @map("display_name")
+  description    String?
+  roleLevel      Int     @map("role_level")
+  indonesianTitle String? @map("indonesian_title")
+  department     String?
+  isCustom       Boolean @default(false) @map("is_custom")
+  isActive       Boolean @default(true) @map("is_active")
+  isSystemRole   Boolean @default(false) @map("is_system_role")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roleAssignments  TeamMemberRole[]
+  rolePermissions  RolePermission[]
+  invitations      TeamInvitation[]
+
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+  @@index([tenantId, roleLevel])
+  @@unique([tenantId, name])
+  @@map("dealership_roles")
+}
+
+model TeamMemberRole {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  teamMemberId  String   @map("team_member_id")
+  roleId        String   @map("role_id")
+  assignedAt    DateTime @default(now()) @map("assigned_at")
+  assignedBy    String   @map("assigned_by")
+  isPrimary     Boolean  @default(false) @map("is_primary")
+  effectiveFrom DateTime @default(now()) @map("effective_from")
+  effectiveUntil DateTime? @map("effective_until")
+
+  // Relations
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teamMember TeamMember     @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  role       DealershipRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assigner   User           @relation("RoleAssigner", fields: [assignedBy], references: [id])
+
+  @@index([teamMemberId])
+  @@index([roleId])
+  @@index([teamMemberId, effectiveFrom, effectiveUntil])
+  @@unique([teamMemberId, roleId, effectiveFrom, effectiveUntil])
+  @@map("team_member_roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  category    String
+  isSystem    Boolean  @default(true) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@index([category])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id          String   @id @default(cuid())
+  roleId      String   @map("role_id")
+  permissionId String  @map("permission_id")
+  grantedAt   DateTime @default(now()) @map("granted_at")
+  grantedBy   String   @map("granted_by")
+
+  // Relations
+  role       DealershipRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission     @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  granter    User            @relation("PermissionGranter", fields: [grantedBy], references: [id])
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model TeamInvitation {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  email           String
+  firstName       String   @map("first_name")
+  lastName        String   @map("last_name")
+  position        String?
+  department      String?
+  roleId          String?  @map("role_id")
+  invitationToken String   @unique @map("invitation_token")
+  tokenExpiresAt  DateTime @map("token_expires_at")
+  invitedBy       String   @map("invited_by")
+  acceptedAt      DateTime? @map("accepted_at")
+  acceptedBy      String?  @map("accepted_by")
+  status          String   @default("pending")
+  rejectionReason String?  @map("rejection_reason")
+  resendCount     Int      @default(0) @map("resend_count")
+  lastSentAt      DateTime @default(now()) @map("last_sent_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inviter        User            @relation("InvitationCreator", fields: [invitedBy], references: [id])
+  role           DealershipRole? @relation(fields: [roleId], references: [id])
+  acceptedMember TeamMember?     @relation("AcceptedInvitation")
+
+  @@index([tenantId])
+  @@index([email])
+  @@index([status])
+  @@index([invitationToken])
+  @@index([tokenExpiresAt])
+  @@map("team_invitations")
+}
+
+model TeamActivityLog {
+  id             String    @id @default(cuid())
+  tenantId       String    @map("tenant_id")
+  action         String
+  entityType     String    @map("entity_type")
+  entityId       String    @map("entity_id")
+  performedBy    String?   @map("performed_by")
+  performedAt    DateTime  @default(now()) @map("performed_at")
+  oldValues      Json?     @map("old_values")
+  newValues      Json?     @map("new_values")
+  changesSummary String?   @map("changes_summary")
+  ipAddress      String?   @map("ip_address")
+  userAgent      String?   @map("user_agent")
+  sessionId      String?   @map("session_id")
+  batchId        String?   @map("batch_id")
+  correlationId  String?   @map("correlation_id")
+  sourceSystem   String    @default("autolumiku") @map("source_system")
+
+  // Relations
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  performer   User?       @relation("ActivityPerformer", fields: [performedBy], references: [id])
+  entity      TeamMember? @relation("ActivityEntity", fields: [entityId], references: [id])
+
+  @@index([tenantId])
+  @@index([entityType, entityId])
+  @@index([performedBy])
+  @@index([performedAt])
+  @@index([action])
+  @@map("team_activity_logs")
+}
+
+model TeamPerformanceMetric {
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  teamMemberId String   @map("team_member_id")
+  metricType   String   @map("metric_type")
+  metricValue  Decimal  @map("metric_value")
+  metricUnit   String?  @map("metric_unit")
+  periodStart  DateTime @map("period_start")
+  periodEnd    DateTime @map("period_end")
+  periodType   String   @map("period_type")
+  additionalData Json?   @map("additional_data")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teamMember TeamMember  @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@index([teamMemberId])
+  @@index([periodStart, periodEnd])
+  @@index([metricType])
+  @@unique([tenantId, teamMemberId, metricType, periodStart, periodEnd])
+  @@map("team_performance_metrics")
+}
+
+// Base models (assuming these exist in the main schema)
+model Tenant {
+  id            String          @id @default(cuid())
+  name          String
+  subdomain     String          @unique
+  databaseName  String          @unique @map("database_name")
+  status        String          @default("setup_required")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  // Team management relations
+  teamMembers          TeamMember[]
+  dealershipRoles      DealershipRole[]
+  teamInvitations      TeamInvitation[]
+  teamActivityLogs     TeamActivityLog[]
+  teamPerformanceMetrics TeamPerformanceMetric[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Team management relations
+  teamMembers          TeamMember[]
+  createdTeamMembers   TeamMember[]   @relation("TeamMemberCreator")
+  roleAssignments      TeamMemberRole[] @relation("RoleAssigner")
+  acceptedInvitations  TeamInvitation[] @relation("AcceptedInvitation")
+  performedActivities TeamActivityLog[]
+  grantedPermissions  RolePermission[] @relation("PermissionGranter")
+  createdInvitations   TeamInvitation[] @relation("InvitationCreator")
+
+  @@map("users")
+}
+
+// Enums for type safety
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERN
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum PermissionCategory {
+  TEAM
+  INVENTORY
+  CUSTOMERS
+  BILLING
+  ANALYTICS
+  SETTINGS
+  SYSTEM
+}
+
+enum ActivityAction {
+  CREATE
+  UPDATE
+  DELETE
+  INVITE
+  ACCEPT
+  REJECT
+  ACTIVATE
+  DEACTIVATE
+  ASSIGN_ROLE
+  REMOVE_ROLE
+}
+
+enum EntityType {
+  TEAM_MEMBER
+  ROLE
+  INVITATION
+  PERMISSION
+  ROLE_ASSIGNMENT
+}
+
+enum PeriodType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}

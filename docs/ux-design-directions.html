@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>autolumiku - Design Directions: Vehicle Upload Flow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #1f2937;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 1.1rem;
+        }
+
+        .directions-nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .direction-btn {
+            padding: 10px 20px;
+            background: #4b5563;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .direction-btn:hover {
+            background: #374151;
+            transform: translateY(-1px);
+        }
+
+        .direction-btn.active {
+            background: #ef4444;
+        }
+
+        .directions-container {
+            position: relative;
+        }
+
+        .direction-screen {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            min-height: 700px;
+            display: none;
+        }
+
+        .direction-screen.active {
+            display: block;
+        }
+
+        .screen-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .screen-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .screen-subtitle {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .screen-content {
+            padding: 20px;
+        }
+
+        .upload-area {
+            border: 3px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #4b5563;
+            background: #f9fafb;
+        }
+
+        .upload-area.dragging {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1f2937;
+        }
+
+        .upload-subtext {
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background: #4b5563;
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #374151;
+            transform: translateY(-1px);
+        }
+
+        .btn-accent {
+            background: #ef4444;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-accent:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #4b5563;
+            padding: 12px 24px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            border-color: #4b5563;
+            background: #f9fafb;
+        }
+
+        .ai-processing {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .ai-processing.active {
+            display: block;
+        }
+
+        .processing-icon {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .processing-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .processing-status {
+            color: #6b7280;
+        }
+
+        .result-preview {
+            display: none;
+        }
+
+        .result-preview.active {
+            display: block;
+        }
+
+        .preview-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1f2937;
+        }
+
+        .preview-thumbnails {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .thumbnail {
+            border-radius: 8px;
+            background: #f3f4f6;
+            aspect-ratio: 4/3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4b5563;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .ai-suggestion {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ai-suggestion-title {
+            font-weight: 600;
+            color: #059669;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+        }
+
+        .ai-suggestion-text {
+            color: #047857;
+            font-size: 0.95rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e5e7eb;
+            z-index: 0;
+        }
+
+        .progress-step {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-step.active {
+            border-color: #4b5563;
+            background: #4b5563;
+            color: white;
+        }
+
+        .progress-step.completed {
+            border-color: #059669;
+            background: #059669;
+            color: white;
+        }
+
+        .step-label {
+            position: absolute;
+            top: -30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Direction-specific styles */
+        .direction-1 .upload-area {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        }
+
+        .direction-2 .upload-area {
+            background: #ffffff;
+            border: 2px solid #e5e7eb;
+        }
+
+        .direction-2 .screen-header {
+            background: #ffffff;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .direction-3 .upload-area {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .direction-4 .upload-area {
+            background: #f0f9ff;
+            border-color: #dbeafe;
+        }
+
+        .responsive-note {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .responsive-note h3 {
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+
+        .responsive-note p {
+            color: #78350f;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>autolumiku - Vehicle Upload Flow Design Directions</h1>
+            <p>4 different approaches to the simplified 2-section upload experience</p>
+        </div>
+
+        <div class="directions-nav">
+            <button class="direction-btn active" onclick="showDirection(1)">Direction 1: Spacious & Conversational</button>
+            <button class="direction-btn" onclick="showDirection(2)">Direction 2: Clean & Traditional</button>
+            <button class="direction-btn" onclick="showDirection(3)">Direction 3: Bold & Action-Oriented</button>
+            <button class="direction-btn" onclick="showDirection(4)">Direction 4: Modern & Tech-Forward</button>
+        </div>
+
+        <div class="directions-container">
+            <!-- Direction 1: Spacious & Conversational -->
+            <div class="direction-screen direction-1 active" id="direction-1">
+                <div class="screen-header">
+                    <div class="screen-title">Direction 1: Spacious & Conversational</div>
+                    <div class="screen-subtitle">Ample space, friendly interface, WhatsApp-like experience</div>
+                </div>
+
+                <div class="screen-content">
+                    <div class="progress-steps">
+                        <div class="progress-step active">
+                            <span class="step-label">Upload</span>
+                            1
+                        </div>
+                        <div class="progress-step">
+                            <span class="step-label">AI Process</span>
+                            2
+                        </div>
+                        <div class="progress-step">
+                            <span class="step-label">Publish</span>
+                            3
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                        <div>
+                            <div class="preview-title">📸 Upload Foto Mobil</div>
+                            <div class="upload-area">
+                                <div class="upload-icon">📸</div>
+                                <div class="upload-text">Upload Photos Mobil Anda</div>
+                                <div class="upload-subtext">Drag & drop foto mobil atau klik untuk memilih</div>
+                                <button class="btn-primary">Pilih 5-20 Foto</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="preview-title">✍️ Deskripsi Mobil</div>
+                            <textarea class="form-input form-textarea" placeholder="Contoh: Honda Freed 2018 AT Bensin KM 15.000 Rp 189.000.000 power sleeding door tangan pertama" style="min-height: 120px; font-size: 1.1rem;"></textarea>
+                            <div style="margin-top: 12px; font-size: 1rem; color: #6b7280; text-align: center;">
+                                💡 AI akan otomatis mengenali dan mengisi detail mobil dari deskripsi Anda
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-processing">
+                        <div class="processing-icon">🤖</div>
+                        <div class="processing-text">AI Sedang Menganalisis...</div>
+                        <div class="processing-status">Mengenali Honda Freed 2018 • Mengisi form otomatis</div>
+                    </div>
+
+                    <div class="result-preview">
+                        <div class="ai-suggestion">
+                            <div class="ai-suggestion-title">🤖 AI Telah Mengenali Mobil:</div>
+                            <div class="ai-suggestion-text" style="margin-bottom: 20px; font-size: 1rem;">
+                                <strong>Honda Freed 2018</strong><br>
+                                <strong>Transmisi:</strong> Automatic (AT)<br>
+                                <strong>Bahan Bakar:</strong> Bensin<br>
+                                <strong>Kilometer:</strong> 15.000 KM<br>
+                                <strong>Harga:</strong> Rp 189.000.000<br>
+                                <strong>Kondisi:</strong> Power Sliding Door, Tangan Pertama
+                            </div>
+
+                            <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                                <div style="font-weight: 600; margin-bottom: 12px; color: #1f2937;">📝 Form Auto-Lengkap:</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.95rem;">
+                                    <div><strong>Merek:</strong> Honda</div>
+                                    <div><strong>Model:</strong> Freed</div>
+                                    <div><strong>Tahun:</strong> 2018</div>
+                                    <div><strong>Transmisi:</strong> AT</div>
+                                    <div><strong>Bahan Bakar:</strong> Bensin</div>
+                                    <div><strong>Kilometer:</strong> 15,000 KM</div>
+                                    <div><strong>Harga:</strong> Rp 189.000.000</div>
+                                    <div><strong>Kondisi:</strong> Sangat Baik</div>
+                                </div>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button class="btn-secondary">Edit Deskripsi</button>
+                                <button class="btn-accent">Publish ke Catalog</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Direction 2: Clean & Traditional -->
+            <div class="direction-screen direction-2" id="direction-2">
+                <div class="screen-header">
+                    <div class="screen-title">Direction 2: Clean & Traditional</div>
+                    <div class="screen-subtitle">Form-based, familiar patterns, email-like structure</div>
+                </div>
+
+                <div class="screen-content">
+                    <div class="form-group">
+                        <label class="form-label">📸 Upload Foto Mobil</label>
+                        <div class="upload-area" style="padding: 30px;">
+                            <div class="upload-icon">📸</div>
+                            <div class="upload-text">Tambah Foto Mobil</div>
+                            <div class="upload-subtext">Minimum 5 foto, maksimal 20 foto</div>
+                            <button class="btn-primary">Browse Files</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">✍️ Deskripsi Mobil</label>
+                        <textarea class="form-input form-textarea" rows="4" placeholder="Contoh: Honda Freed 2018 AT Bensin KM 15.000 Rp 189.000.000 power sleeding door tangan pertama"></textarea>
+                        <div style="margin-top: 8px; color: #6b7280; font-size: 0.9rem;">
+                            💡 AI akan membantu mengenali detail mobil dari deskripsi Anda
+                        </div>
+                    </div>
+
+                    <div class="ai-suggestion">
+                        <div class="ai-suggestion-title">🤖 AI Enhancement Available</div>
+                        <div class="ai-suggestion-text">Setelah Anda menulis deskripsi, AI akan otomatis melengkapi form fields dan spesifikasi</div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn-secondary">Save Draft</button>
+                        <button class="btn-accent">Create Listing</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Direction 3: Bold & Action-Oriented -->
+            <div class="direction-screen direction-3" id="direction-3">
+                <div class="screen-header">
+                    <div class="screen-title">Direction 3: Bold & Action-Oriented</div>
+                    <div class="screen-subtitle">Large targets, bold actions, immediate results</div>
+                </div>
+
+                <div class="screen-content">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                        <div>
+                            <div class="preview-title">🚗 UPLOAD FOTO MOBIL</div>
+                            <div class="upload-area">
+                                <div class="upload-icon">📸</div>
+                                <div class="upload-text" style="font-size: 1.3rem;">UPLOAD FOTO MOBIL</div>
+                                <div class="upload-subtext">5-20 foto • Format JPG/PNG • Max 10MB</div>
+                                <button class="btn-primary" style="font-size: 1.2rem; padding: 16px 32px;">PILIH FOTO SEKARANG</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="preview-title">📝 DESKRIPSI MOBIL</div>
+                            <textarea class="form-input form-textarea" placeholder="Honda Freed 2018 AT Bensin KM 15.000 Rp 189.000.000 power sleeding door tangan pertama" style="min-height: 150px; font-size: 1.1rem;"></textarea>
+                            <div style="margin-top: 12px; background: #fef2f2; border: 2px solid #fecaca; border-radius: 8px; padding: 12px; text-align: center;">
+                                <div style="font-weight: 600; color: #991b1b; margin-bottom: 4px;">⚡ AI INSTANT RECOGNITION</div>
+                                <div style="color: #b91c1c; font-size: 0.9rem;">Ketik deskripsi dan AI akan mengisi form otomatis!</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-processing">
+                        <div class="processing-icon">⚡</div>
+                        <div class="processing-text" style="font-size: 1.4rem;">AI FAST PROCESSING COMPLETE!</div>
+                        <div class="processing-status">🎉 Honda Freed 2018 identified • Form auto-completed • Ready to publish</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Direction 4: Modern & Tech-Forward -->
+            <div class="direction-screen direction-4" id="direction-4">
+                <div class="screen-header">
+                    <div class="screen-title">Direction 4: Modern & Tech-Forward</div>
+                    <div class="screen-subtitle">Sleek interface, progressive disclosure, AI-first</div>
+                </div>
+
+                <div class="screen-content">
+                    <div style="background: #f0f9ff; border: 1px solid #dbeafe; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                            <div style="font-size: 2rem;">🤖</div>
+                            <div>
+                                <div style="font-weight: 600; color: #1e40af;">AI Vehicle Recognition Ready</div>
+                                <div style="color: #3b82f6; font-size: 0.9rem;">"Tulis deskripsi natural dan AI akan mengenali semua detail"</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                        <div>
+                            <div class="preview-title">📸 Smart Photo Upload</div>
+                            <div class="upload-area">
+                                <div class="upload-icon">📸</div>
+                                <div class="upload-text">Smart Upload</div>
+                                <div class="upload-subtext">AI recognition untuk otomatis pengenalan</div>
+                                <button class="btn-primary" style="background: #1e40af;">Upload dengan AI</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="preview-title">✍️ Natural Description</div>
+                            <textarea class="form-input form-textarea" placeholder="Honda Freed 2018 AT Bensin KM 15.000 Rp 189.000.000 power sleeding door tangan pertama" style="min-height: 150px; font-size: 1rem;"></textarea>
+                            <div style="margin-top: 16px; background: #f0f9ff; border-radius: 8px; padding: 16px;">
+                                <div style="font-size: 1rem; color: #1e40af; font-weight: 600; margin-bottom: 8px;">🧠 AI Intelligence Active</div>
+                                <div style="color: #3b82f6; font-size: 0.9rem;">Processing natural language • Extracting specifications • Auto-completing form • Optimizing for search</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="responsive-note">
+            <h3>📱 Senior User Friendly Design</h3>
+            <p>✅ Large touch targets (44px+) • ✅ High contrast (7:1+) • ✅ Generous spacing • ✅ Clear visual hierarchy • ✅ Premium Gray theme • ✅ 2-section simplicity • ✅ Natural language processing</p>
+        </div>
+    </div>
+
+    <script>
+        function showDirection(directionNum) {
+            // Hide all directions
+            const screens = document.querySelectorAll('.direction-screen');
+            screens.forEach(screen => screen.classList.remove('active'));
+
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.direction-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected direction
+            document.getElementById(`direction-${directionNum}`).classList.add('active');
+
+            // Add active class to selected button
+            buttons[directionNum - 1].classList.add('active');
+        }
+
+        // Add interactivity for all directions
+        document.querySelectorAll('.upload-area').forEach(area => {
+            area.addEventListener('click', function() {
+                // Hide upload and show AI processing
+                const directionScreen = this.closest('.direction-screen');
+                this.style.display = 'none';
+
+                // Show textarea if Direction 3
+                if (directionScreen.classList.contains('direction-3') || directionScreen.classList.contains('direction-4')) {
+                    const textareas = directionScreen.querySelectorAll('.form-textarea');
+                    textareas.forEach(textarea => {
+                        textarea.style.display = 'block';
+                        textarea.focus();
+                    });
+                }
+
+                // Show processing
+                const processing = directionScreen.querySelector('.ai-processing');
+                if (processing) {
+                    processing.classList.add('active');
+                }
+
+                // Show results after simulation
+                setTimeout(() => {
+                    if (processing) {
+                        processing.classList.remove('active');
+                    }
+
+                    // Show result preview with AI recognition
+                    const resultPreview = directionScreen.querySelector('.result-preview');
+                    if (resultPreview) {
+                        resultPreview.classList.add('active');
+                    }
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>

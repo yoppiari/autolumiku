@@ -1,0 +1,88 @@
+# BMad Method Workflow Status
+# Generated: 2025-11-21T00:00:00.000Z
+# Project: autolumiku
+# Track: BMad Method (Greenfield)
+
+generated: "2025-11-21T00:00:00.000Z"
+project: "autolumiku"
+project_type: "greenfield"
+selected_track: "bmad-method"
+field_type: "greenfield"
+workflow_path: ".bmad/bmm/workflows/workflow-status/paths/method-greenfield.yaml"
+workflow_status: |
+  phases:
+    - phase: 0
+      name: "Discovery (Optional)"
+      workflows:
+        - id: "product-brief"
+          agent: "analyst"
+          status: "docs/product-brief-autolumiku-2025-11-19.md"
+          command: "product-brief"
+          output: "docs/product-brief.md"
+
+    - phase: 1
+      name: "Planning"
+      workflows:
+        - id: "prd"
+          agent: "pm"
+          status: "docs/prd.md"
+          command: "prd"
+          output: "docs/prd.md"
+
+        - id: "validate-prd"
+          agent: "pm"
+          status: "optional"
+          command: "validate-prd"
+          output: "validation/prd-validation.md"
+
+        - id: "create-design"
+          agent: "ux-designer"
+          status: "docs/ux-design-specification.md"
+          command: "create-design"
+          output: "docs/ux-design/"
+
+    - phase: 2
+      name: "Solutioning"
+      workflows:
+        - id: "create-architecture"
+          agent: "architect"
+          status: "docs/architecture.md"
+          command: "create-architecture"
+          output: "docs/architecture.md"
+
+        - id: "create-epics-and-stories"
+          agent: "pm"
+          status: "docs/epics.md"
+          command: "create-epics-and-stories"
+          output: "docs/epics.md"
+
+        - id: "test-design"
+          agent: "tea"
+          status: "docs/test-design-system.md"
+          command: "test-design"
+          output: "docs/test-design.md"
+
+        - id: "validate-architecture"
+          agent: "architect"
+          status: "optional"
+          command: "validate-architecture"
+          output: "validation/architecture-validation.md"
+
+        - id: "implementation-readiness"
+          agent: "architect"
+          status: "docs/implementation-readiness-report-2025-11-20.md"
+          command: "implementation-readiness"
+          output: "validation/implementation-readiness.md"
+
+    - phase: 3
+      name: "Implementation"
+      workflows:
+        - id: "sprint-planning"
+          agent: "sm"
+          status: "docs/sprint-artifacts/sprint-status.yaml"
+          command: "sprint-planning"
+          output: "docs/sprint-artifacts/sprint-status.yaml"
+
+# All workflows completed!
+# Project implementation: COMPLETE
+# All 8 epics and 62 stories: DONE

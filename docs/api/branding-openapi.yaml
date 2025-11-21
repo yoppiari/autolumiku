@@ -1,0 +1,667 @@
+openapi: 3.0.3
+info:
+  title: autolumiku Branding API
+  description: API for managing tenant branding configurations
+  version: 1.0.0
+  contact:
+    name: autolumiku Support
+    email: support@autolumiku.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.autolumiku.com/v1
+    description: Production server
+  - url: https://staging-api.autolumiku.com/v1
+    description: Staging server
+  - url: http://localhost:3000/api
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /branding:
+    get:
+      tags:
+        - Branding
+      summary: Get tenant branding configuration
+      description: Retrieve the complete branding configuration for the authenticated tenant
+      operationId: getBranding
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant ID for multi-tenant context
+      responses:
+        '200':
+          description: Branding configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandingResponse'
+              example:
+                success: true
+                data:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  tenantId: "tenant-123"
+                  primaryColor: "#2563eb"
+                  secondaryColor: "#64748b"
+                  companyName: "Mobil Sejahtera Jakarta"
+                  website: "https://mobilsejahtera-jakarta.com"
+                  email: "info@mobilsejahtera-jakarta.com"
+                  phone: "+62812345678"
+                  logoUrl: "https://s3.amazonaws.com/branding/tenant-123/logo.png"
+                  createdAt: "2025-11-20T10:00:00Z"
+                  updatedAt: "2025-11-20T15:30:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Branding
+      summary: Create tenant branding configuration
+      description: Create a new branding configuration for the tenant
+      operationId: createBranding
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant ID for multi-tenant context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBrandingRequest'
+      responses:
+        '201':
+          description: Branding configuration created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandingResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Branding
+      summary: Update tenant branding configuration
+      description: Update the existing branding configuration for the tenant
+      operationId: updateBranding
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant ID for multi-tenant context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBrandingRequest'
+      responses:
+        '200':
+          description: Branding configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandingResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /branding/logo:
+    post:
+      tags:
+        - Branding
+      summary: Upload tenant logo
+      description: Upload and process a logo image for the tenant branding
+      operationId: uploadLogo
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant ID for multi-tenant context
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - logo
+              properties:
+                logo:
+                  type: string
+                  format: binary
+                  description: Logo image file (PNG, JPG, SVG - max 5MB)
+                generateFavicon:
+                  type: boolean
+                  default: false
+                  description: Automatically generate favicon from logo
+            encoding:
+              logo:
+                contentType: image/png, image/jpeg, image/svg+xml
+      responses:
+        '200':
+          description: Logo uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /branding/preview:
+    get:
+      tags:
+        - Branding
+      summary: Generate branding preview
+      description: Generate HTML preview showing how the branding looks in different contexts
+      operationId: generatePreview
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant ID for multi-tenant context
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [dashboard, catalog, both]
+            default: both
+          description: Type of preview to generate
+      responses:
+        '200':
+          description: Preview generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /branding/theme:
+    get:
+      tags:
+        - Branding
+      summary: Get CSS theme
+      description: Generate CSS variables and styles based on branding configuration
+      operationId: getTheme
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant ID for multi-tenant context
+      responses:
+        '200':
+          description: CSS theme generated successfully
+          content:
+            text/css:
+              schema:
+                type: string
+                example: |
+                  :root {
+                    --brand-primary: #2563eb;
+                    --brand-secondary: #64748b;
+                    --brand-accent: #3b82f6;
+                    --brand-background: #ffffff;
+                    --brand-text: #1f2937;
+                  }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    BrandingResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/TenantBranding'
+        message:
+          type: string
+          example: "Branding configuration retrieved successfully"
+
+    TenantBranding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        tenantId:
+          type: string
+          example: "tenant-123"
+        primaryColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#2563eb"
+        secondaryColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#64748b"
+        accentColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#3b82f6"
+        backgroundColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#ffffff"
+        textColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#1f2937"
+        companyName:
+          type: string
+          example: "Mobil Sejahtera Jakarta"
+        companyDescription:
+          type: string
+          example: "Penjualan mobil berkualitas dengan harga terbaik di Jakarta"
+        website:
+          type: string
+          format: uri
+          example: "https://mobilsejahtera-jakarta.com"
+        email:
+          type: string
+          format: email
+          example: "info@mobilsejahtera-jakarta.com"
+        phone:
+          type: string
+          pattern: "^\\+628[0-9]{8,12}$"
+          example: "+62812345678"
+        address:
+          type: string
+          example: "Jl. Sudirman No. 123, Jakarta Pusat"
+        logoUrl:
+          type: string
+          format: uri
+          example: "https://s3.amazonaws.com/branding/tenant-123/logo.png"
+        faviconUrl:
+          type: string
+          format: uri
+          example: "https://s3.amazonaws.com/branding/tenant-123/favicon.ico"
+        socialLinks:
+          type: object
+          properties:
+            facebook:
+              type: string
+              format: uri
+            instagram:
+              type: string
+              format: uri
+            twitter:
+              type: string
+              format: uri
+            linkedin:
+              type: string
+              format: uri
+        customCss:
+          type: string
+        settings:
+          type: object
+          properties:
+            showLogo:
+              type: boolean
+            customFonts:
+              type: boolean
+            darkMode:
+              type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-11-20T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-11-20T15:30:00Z"
+
+    CreateBrandingRequest:
+      type: object
+      required:
+        - primaryColor
+        - companyName
+      properties:
+        primaryColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#2563eb"
+        secondaryColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#64748b"
+        accentColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#3b82f6"
+        backgroundColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#ffffff"
+        textColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#1f2937"
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Mobil Sejahtera Jakarta"
+        companyDescription:
+          type: string
+          maxLength: 1000
+          example: "Penjualan mobil berkualitas dengan harga terbaik"
+        website:
+          type: string
+          format: uri
+          example: "https://mobilsejahtera-jakarta.com"
+        email:
+          type: string
+          format: email
+          example: "info@mobilsejahtera-jakarta.com"
+        phone:
+          type: string
+          pattern: "^\\+628[0-9]{8,12}$"
+          example: "+62812345678"
+        address:
+          type: string
+          maxLength: 500
+          example: "Jl. Sudirman No. 123, Jakarta Pusat"
+        socialLinks:
+          $ref: '#/components/schemas/SocialLinks'
+        customCss:
+          type: string
+          maxLength: 10000
+        settings:
+          $ref: '#/components/schemas/BrandingSettings'
+
+    UpdateBrandingRequest:
+      type: object
+      properties:
+        primaryColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#2563eb"
+        secondaryColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#64748b"
+        accentColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#3b82f6"
+        backgroundColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#ffffff"
+        textColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#1f2937"
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Mobil Sejahtera Jakarta"
+        companyDescription:
+          type: string
+          maxLength: 1000
+          example: "Penjualan mobil berkualitas dengan harga terbaik"
+        website:
+          type: string
+          format: uri
+          example: "https://mobilsejahtera-jakarta.com"
+        email:
+          type: string
+          format: email
+          example: "info@mobilsejahtera-jakarta.com"
+        phone:
+          type: string
+          pattern: "^\\+628[0-9]{8,12}$"
+          example: "+62812345678"
+        address:
+          type: string
+          maxLength: 500
+          example: "Jl. Sudirman No. 123, Jakarta Pusat"
+        socialLinks:
+          $ref: '#/components/schemas/SocialLinks'
+        customCss:
+          type: string
+          maxLength: 10000
+        settings:
+          $ref: '#/components/schemas/BrandingSettings'
+
+    SocialLinks:
+      type: object
+      properties:
+        facebook:
+          type: string
+          format: uri
+          example: "https://facebook.com/mobilsejahtera"
+        instagram:
+          type: string
+          format: uri
+          example: "https://instagram.com/mobilsejahtera"
+        twitter:
+          type: string
+          format: uri
+          example: "https://twitter.com/mobilsejahtera"
+        linkedin:
+          type: string
+          format: uri
+          example: "https://linkedin.com/company/mobilsejahtera"
+
+    BrandingSettings:
+      type: object
+      properties:
+        showLogo:
+          type: boolean
+          default: true
+        customFonts:
+          type: boolean
+          default: false
+        darkMode:
+          type: boolean
+          default: false
+        animations:
+          type: boolean
+          default: true
+
+    LogoUploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            logoUrl:
+              type: string
+              format: uri
+              example: "https://s3.amazonaws.com/branding/tenant-123/logo.png"
+            presignedUrl:
+              type: string
+              format: uri
+              example: "https://s3.amazonaws.com/branding/tenant-123/logo.png?signature=..."
+            faviconUrl:
+              type: string
+              format: uri
+              example: "https://s3.amazonaws.com/branding/tenant-123/favicon.ico"
+            metadata:
+              $ref: '#/components/schemas/FileMetadata'
+        message:
+          type: string
+          example: "Logo uploaded successfully"
+
+    FileMetadata:
+      type: object
+      properties:
+        originalName:
+          type: string
+          example: "company-logo.png"
+        uploadedAt:
+          type: string
+          format: date-time
+          example: "2025-11-20T15:30:00Z"
+        checksum:
+          type: string
+          example: "sha256:abc123..."
+        width:
+          type: integer
+          example: 200
+        height:
+          type: integer
+          example: 100
+        size:
+          type: integer
+          example: 25600
+        optimized:
+          type: boolean
+          example: true
+
+    PreviewResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            previewHtml:
+              type: string
+              example: "<html>...</html>"
+            previewUrl:
+              type: string
+              format: uri
+              example: "https://preview.autolumiku.com/tenant-123/preview"
+            type:
+              type: string
+              example: "both"
+        message:
+          type: string
+          example: "Preview generated successfully"
+
+    Error:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Validation failed"
+        message:
+          type: string
+          example: "Primary color is required and must be a valid hex color"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Bad request - validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+tags:
+  - name: Branding
+    description: Tenant branding management operations

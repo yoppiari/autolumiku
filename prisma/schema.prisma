@@ -1,0 +1,1396 @@
+// Prisma Schema for AutoLumiku Multi-Tenant Platform
+// Database: PostgreSQL
+// ORM: Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// TENANT & USER MANAGEMENT
+// ============================================================================
+
+model Tenant {
+  id                String   @id @default(uuid())
+  name              String
+  slug              String   @unique
+  domain            String?  @unique
+  status            String   @default("active") // active, suspended, canceled
+  subscriptionId    String?  @unique
+
+  // Branding
+  logoUrl           String?
+  primaryColor      String   @default("#1a56db")
+  secondaryColor    String   @default("#7c3aed")
+  theme             String   @default("light") // light, dark, auto
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String
+
+  // Relations
+  users             User[]
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
+  teamMembers       TeamMember[]
+  sessions          Session[]
+  invoices          Invoice[]
+  payments          Payment[]
+  auditLogs         AuditLog[]
+  securityEvents    SecurityEvent[]
+  vehicles          Vehicle[]
+
+  @@index([slug])
+  @@index([status])
+  @@map("tenants")
+}
+
+model User {
+  id                        String    @id @default(uuid())
+  email                     String    @unique
+  passwordHash              String
+  firstName                 String
+  lastName                  String
+  phone                     String?
+
+  tenantId                  String
+  role                      String    @default("user")
+
+  // Email Verification
+  emailVerified             Boolean   @default(false)
+  emailVerificationToken    String?   @unique
+  emailVerificationExpiry   DateTime?
+
+  // Password Reset
+  passwordResetToken        String?   @unique
+  passwordResetExpiry       DateTime?
+
+  // Security
+  failedLoginAttempts       Int       @default(0)
+  lockedUntil               DateTime?
+  lastLoginAt               DateTime?
+
+  // Metadata
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  // Relations
+  tenant                    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions                  Session[]
+  auditLogs                 AuditLog[]
+  securityEvents            SecurityEvent[]
+  teamMemberships           TeamMember[]
+
+  @@index([email])
+  @@index([tenantId])
+  @@index([emailVerificationToken])
+  @@index([passwordResetToken])
+  @@map("users")
+}
+
+model Session {
+  id                String   @id @default(uuid())
+  userId            String
+  tenantId          String
+
+  // Session Data
+  accessToken       String   @unique
+  refreshToken      String   @unique
+  expiresAt         DateTime
+
+  // Device Info
+  deviceName        String?
+  deviceType        String?  // desktop, mobile, tablet
+  browser           String?
+  os                String?
+  ipAddress         String?
+
+  // Location
+  country           String?
+  city              String?
+
+  // Status
+  isActive          Boolean  @default(true)
+  lastActivity      DateTime @default(now())
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([accessToken])
+  @@index([refreshToken])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model TeamMember {
+  id                String   @id @default(uuid())
+  tenantId          String
+  userId            String?
+
+  // Member Info
+  email             String
+  name              String?
+  role              String   // showroom_owner, showroom_staff, sales_person
+  status            String   @default("invited") // invited, active, suspended
+
+  // Invitation
+  invitationToken   String?  @unique
+  invitedAt         DateTime @default(now())
+  acceptedAt        DateTime?
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([email])
+  @@index([invitationToken])
+  @@map("team_members")
+}
+
+// ============================================================================
+// SUBSCRIPTION & BILLING
+// ============================================================================
+
+model Subscription {
+  id                    String   @id @default(uuid())
+  tenantId              String   @unique
+
+  // Plan Details
+  plan                  String   // basic, professional, enterprise
+  status                String   @default("trialing") // trialing, active, past_due, canceled, expired
+
+  // Billing Period
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  trialEnd              DateTime?
+
+  // Cancellation
+  canceledAt            DateTime?
+  cancelAt              DateTime?
+
+  // Pricing
+  pricePerMonth         Int      // in IDR cents (Rp 299000 = 29900000)
+  currency              String   @default("IDR")
+  paymentMethod         String?
+
+  // Metadata
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  tenant                Tenant?
+  invoices              Invoice[]
+
+  @@index([status])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id                String   @id @default(uuid())
+  invoiceNumber     String   @unique
+  tenantId          String
+  subscriptionId    String?
+
+  // Invoice Details
+  status            String   @default("open") // draft, open, paid, void, overdue
+  amount            Int      // Total amount in IDR cents
+  subtotal          Int
+  taxAmount         Int      // PPN 11%
+  currency          String   @default("IDR")
+
+  // Dates
+  dueDate           DateTime
+  paidAt            DateTime?
+
+  // Period
+  periodStart       DateTime
+  periodEnd         DateTime
+
+  // Tax Information
+  ppnRate           Float    @default(11.0)
+  ppnAmount         Int
+  npwp              String?
+  companyName       String
+  companyAddress    String
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  payments          Payment[]
+  lineItems         InvoiceLineItem[]
+
+  @@index([tenantId])
+  @@index([invoiceNumber])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id                String   @id @default(uuid())
+  invoiceId         String
+
+  description       String
+  quantity          Int
+  unitPrice         Int      // in IDR cents
+  amount            Int      // in IDR cents
+
+  createdAt         DateTime @default(now())
+
+  // Relations
+  invoice           Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_line_items")
+}
+
+model Payment {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  subscriptionId        String?
+  invoiceId             String
+
+  // Payment Details
+  amount                Int      // in IDR cents
+  currency              String   @default("IDR")
+  paymentMethod         String   // bank_transfer_bca, ewallet_gopay, etc
+  status                String   @default("pending") // pending, paid, failed, refunded, expired
+
+  // Payment Info
+  paidAt                DateTime?
+  failureReason         String?
+
+  // Gateway Info
+  gatewayTransactionId  String?  @unique
+  gatewayProvider       String?  // midtrans, xendit
+  gatewayResponse       Json?
+
+  // Metadata
+  metadata              Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice               Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@index([status])
+  @@index([gatewayTransactionId])
+  @@map("payments")
+}
+
+// ============================================================================
+// GLOBAL SETTINGS
+// ============================================================================
+
+model GlobalSetting {
+  id                String   @id @default(uuid())
+  key               String   @unique
+  value             Json
+
+  // Classification
+  category          String   // platform, indonesian_regional, security, billing, etc
+  scope             String   @default("global") // global, tenant, user
+
+  // Metadata
+  description       String?
+  dataType          String   // string, number, boolean, json, array
+  isSecret          Boolean  @default(false)
+  defaultValue      Json?
+
+  // Tenant/User specific (if scope is tenant or user)
+  tenantId          String?
+  userId            String?
+
+  // Audit
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String
+  updatedBy         String
+
+  // Relations
+  changeHistory     SettingChange[]
+
+  @@index([key])
+  @@index([category])
+  @@index([scope])
+  @@index([tenantId])
+  @@map("global_settings")
+}
+
+model SettingChange {
+  id                String   @id @default(uuid())
+  settingId         String
+  settingKey        String
+
+  oldValue          Json?
+  newValue          Json
+
+  changedBy         String
+  changedAt         DateTime @default(now())
+  reason            String?
+  tenantId          String?
+
+  // Relations
+  setting           GlobalSetting @relation(fields: [settingId], references: [id], onDelete: Cascade)
+
+  @@index([settingId])
+  @@index([settingKey])
+  @@index([changedAt])
+  @@map("setting_changes")
+}
+
+// ============================================================================
+// SECURITY & AUDIT
+// ============================================================================
+
+model SecurityEvent {
+  id                String   @id @default(uuid())
+  eventType         String   // UNAUTHORIZED_ACCESS, PERMISSION_DENIED, etc
+  severity          String   // LOW, MEDIUM, HIGH, CRITICAL
+
+  userId            String?
+  tenantId          String
+
+  // Event Details
+  resourceType      String?
+  resourceId        String?
+  attemptedAction   String?
+  deniedPermission  String?
+
+  // Context
+  ipAddress         String?
+  userAgent         String?
+  details           Json?
+
+  // Metadata
+  createdAt         DateTime @default(now())
+
+  // Relations
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alerts            SecurityAlert[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("security_events")
+}
+
+model SecurityAlert {
+  id                String   @id @default(uuid())
+  eventId           String
+  eventType         String
+  severity          String
+
+  tenantId          String
+  userId            String?
+
+  message           String
+  detectedAt        DateTime @default(now())
+
+  // Notification
+  notifiedTo        String[] // Array of user IDs or email addresses
+
+  // Resolution
+  resolved          Boolean  @default(false)
+  resolvedAt        DateTime?
+  resolvedBy        String?
+  resolutionNotes   String?
+
+  // Relations
+  event             SecurityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([severity])
+  @@index([resolved])
+  @@map("security_alerts")
+}
+
+model AuditLog {
+  id                String   @id @default(uuid())
+  tenantId          String
+  userId            String?
+
+  // Action Details
+  action            String   // CREATE, UPDATE, DELETE, LOGIN, etc
+  resourceType      String   // user, tenant, subscription, etc
+  resourceId        String?
+
+  // Changes
+  oldValue          Json?
+  newValue          Json?
+
+  // Context
+  ipAddress         String?
+  userAgent         String?
+  metadata          Json?
+
+  // Timestamp
+  createdAt         DateTime @default(now())
+
+  // Relations
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// RBAC (Role-Based Access Control)
+// ============================================================================
+
+model Role {
+  id                String   @id @default(uuid())
+  name              String   @unique
+  displayName       String
+  displayNameId     String   // Indonesian display name
+  description       String?
+
+  // Role Type
+  isSystem          Boolean  @default(false) // System roles cannot be deleted
+  tenantId          String?  // null = global role, uuid = tenant-specific
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  permissions       RolePermission[]
+
+  @@index([name])
+  @@index([tenantId])
+  @@map("roles")
+}
+
+model Permission {
+  id                String   @id @default(uuid())
+  name              String   @unique
+  resource          String   // user, tenant, subscription, vehicle, etc
+  action            String   // create, read, update, delete, manage
+  description       String?
+
+  // Grouping
+  category          String   // security, audit, billing, inventory, etc
+
+  // Metadata
+  createdAt         DateTime @default(now())
+
+  // Relations
+  roles             RolePermission[]
+
+  @@unique([resource, action])
+  @@index([name])
+  @@index([resource])
+  @@index([category])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id                String   @id @default(uuid())
+  roleId            String
+  permissionId      String
+
+  createdAt         DateTime @default(now())
+
+  // Relations
+  role              Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission        Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+// ============================================================================
+// PLATFORM HEALTH MONITORING
+// ============================================================================
+
+model HealthCheck {
+  id                String   @id @default(uuid())
+
+  // Check Details
+  checkType         String   // database, redis, api, disk, memory
+  status            String   // healthy, degraded, unhealthy
+  responseTime      Int      // in milliseconds
+
+  // Metrics
+  details           Json?
+  errorMessage      String?
+
+  // Timestamp
+  checkedAt         DateTime @default(now())
+
+  @@index([checkType])
+  @@index([status])
+  @@index([checkedAt])
+  @@map("health_checks")
+}
+
+model PlatformMetric {
+  id                String   @id @default(uuid())
+
+  // Metric Details
+  metricName        String
+  metricValue       Float
+  unit              String?
+
+  // Tags
+  tags              Json?
+
+  // Timestamp
+  recordedAt        DateTime @default(now())
+
+  @@index([metricName])
+  @@index([recordedAt])
+  @@map("platform_metrics")
+}
+
+// ============================================================================
+// VEHICLE INVENTORY (Epic 2: AI-Powered Vehicle Upload)
+// ============================================================================
+
+model Vehicle {
+  id                String   @id @default(uuid())
+  tenantId          String
+
+  // Basic Information (AI-identified)
+  make              String
+  model             String
+  year              Int
+  variant           String?
+
+  // AI-Generated Content
+  descriptionId     String?  @db.Text // Indonesian description
+  descriptionEn     String?  @db.Text // English description
+  features          Json?    // Array of features extracted by AI
+  specifications    Json?    // Technical specs object
+
+  // AI Identification Metadata
+  aiConfidence      Float?   // 0-100 confidence score
+  aiReasoning       String?  @db.Text // AI's reasoning for identification
+  manuallyEdited    Boolean  @default(false) // User edited AI content
+
+  // Pricing
+  price             Int      // In IDR cents (Rp 250jt = 25000000000)
+  aiSuggestedPrice  Int?     // AI recommendation in IDR cents
+  priceConfidence   Float?   // 0-100 confidence score for pricing
+  priceAnalysis     Json?    // Market analysis data
+
+  // Vehicle Details
+  mileage           Int?     // Kilometers
+  transmissionType  String?  // manual, automatic, cvt
+  fuelType          String?  // bensin, diesel, hybrid, electric
+  color             String?
+  licensePlate      String?
+  engineCapacity    String?  // e.g., "1500cc"
+  condition         String?  // excellent, good, fair, poor
+
+  // Status
+  status            VehicleStatus @default(DRAFT)
+  publishedAt       DateTime?
+
+  // Organization
+  tags              String[] // custom tags like "Promo", "Best Seller"
+  categories        String[] // "Mobil Keluarga", "SUV", "MPV"
+  isFeatured        Boolean  @default(false)
+  displayOrder      Int      @default(0)
+
+  // Metadata
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  createdBy         String
+  updatedBy         String?
+
+  // Relations
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  photos            VehiclePhoto[]
+  history           VehicleHistory[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([make, model, year])
+  @@index([price])
+  @@index([publishedAt])
+  @@index([isFeatured])
+  @@map("vehicles")
+}
+
+// Vehicle Version History (Epic 4: Story 4.3)
+model VehicleHistory {
+  id                String   @id @default(uuid())
+  vehicleId         String
+  tenantId          String
+
+  // Version Information
+  version           Int      // Sequential version number
+  action            String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, PRICE_CHANGE
+
+  // Snapshot of vehicle data at this version
+  snapshot          Json     // Complete vehicle data snapshot
+
+  // Change Details
+  changedFields     String[] // Fields that were modified
+  previousValues    Json?    // Previous values of changed fields
+  newValues         Json?    // New values of changed fields
+
+  // User who made the change
+  changedBy         String
+  changedByName     String?  // Cache user name for display
+
+  // Change reason/notes
+  changeReason      String?  @db.Text
+
+  // Metadata
+  createdAt         DateTime @default(now())
+
+  // Relations
+  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([changedBy])
+  @@index([action])
+  @@map("vehicle_history")
+}
+
+model VehiclePhoto {
+  id                String   @id @default(uuid())
+  vehicleId         String
+  tenantId          String
+
+  // Storage (Cloudflare R2 / S3)
+  storageKey        String   // R2/S3 key: vehicles/{uuid}/{filename}
+  originalUrl       String   // Full resolution URL
+  thumbnailUrl      String   // 300x200 for list view
+  mediumUrl         String   // 800x600 for gallery
+  largeUrl          String   // 1920x1080 for detail view
+
+  // File Metadata
+  filename          String
+  fileSize          Int      // bytes
+  mimeType          String   // image/jpeg, image/png, image/webp
+  width             Int
+  height            Int
+
+  // Organization
+  displayOrder      Int      @default(0)
+  isMainPhoto       Boolean  @default(false)
+  isFeatured        Boolean  @default(false) // Highlight in gallery
+  caption           String?
+
+  // Quality Validation (Story 2.2)
+  qualityScore      Float?   // 0-100
+  validationStatus  PhotoValidationStatus @default(PENDING)
+  validationMessage String?
+  validationDetails Json?   // Detailed quality analysis
+
+  // CDN & Optimization (Story 2.8)
+  cdnUrl            String?  // CDN-optimized URL
+  blurHash          String?  // Placeholder while loading
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  uploadedBy        String
+
+  // Relations
+  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([tenantId])
+  @@index([displayOrder])
+  @@index([isMainPhoto])
+  @@map("vehicle_photos")
+}
+
+// ============================================================================
+// NATURAL LANGUAGE COMMAND CENTER (Epic 3)
+// ============================================================================
+
+model CommandHistory {
+  id                String   @id @default(uuid())
+  tenantId          String
+  userId            String
+
+  // Command Details
+  originalCommand   String   @db.Text
+  intent            String   // CommandIntent enum as string
+  confidence        Float    // 0-1 confidence score
+  entities          String   @db.Text // JSON serialized CommandEntity[]
+
+  // Execution
+  success           Boolean
+  executionTimeMs   Int?
+  errorMessage      String?  @db.Text
+
+  // Context
+  context           String?  @db.Text // JSON serialized context object
+
+  // Metadata
+  timestamp         DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([intent])
+  @@index([timestamp])
+  @@index([success])
+  @@map("command_history")
+}
+
+model UserCommandPreference {
+  id                String   @id @default(uuid())
+  userId            String
+  tenantId          String
+  intent            String   // CommandIntent as string
+
+  // Usage Statistics
+  frequency         Int      @default(1)
+  lastUsed          DateTime @default(now())
+
+  // Pattern Analysis
+  timeOfDayPattern  String?  @db.Text // JSON: { "8": 5, "9": 3, "14": 2 }
+  contextPattern    String?  @db.Text // JSON: contextual usage patterns
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, tenantId, intent], name: "userId_tenantId_intent")
+  @@index([userId])
+  @@index([tenantId])
+  @@index([intent])
+  @@index([frequency])
+  @@index([lastUsed])
+  @@map("user_command_preferences")
+}
+
+// ============================================================================
+// INVENTORY MANAGEMENT (Epic 4)
+// ============================================================================
+
+// Saved Search Filters (Epic 4: Story 4.7)
+model SavedSearch {
+  id                String   @id @default(uuid())
+  tenantId          String
+  userId            String
+
+  // Search Configuration
+  name              String
+  filters           Json     // SearchFilters object
+  isDefault         Boolean  @default(false)
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([isDefault])
+  @@map("saved_searches")
+}
+
+// ============================================================================
+// CUSTOMER-FACING CATALOG (Epic 5)
+// ============================================================================
+
+// Tenant Branding Configuration (Epic 5: Story 5.2, 5.9)
+model TenantBranding {
+  id                String   @id @default(uuid())
+  tenantId          String   @unique
+
+  // Business Information
+  businessName      String
+  tagline           String?
+  description       String?  @db.Text
+
+  // Contact Information
+  email             String?
+  phone             String?
+  whatsappNumber    String?
+  address           String?  @db.Text
+  city              String?
+  province          String?
+  postalCode        String?
+
+  // Location
+  latitude          Float?
+  longitude         Float?
+  mapUrl            String?  // Google Maps embed URL
+
+  // Branding Assets
+  logoUrl           String?
+  faviconUrl        String?
+  coverImageUrl     String?
+
+  // Color Theme
+  primaryColor      String   @default("#2563eb")  // Blue
+  secondaryColor    String   @default("#7c3aed")  // Purple
+  accentColor       String   @default("#f59e0b")  // Amber
+
+  // Typography
+  fontFamily        String   @default("Inter")
+
+  // Social Media
+  facebookUrl       String?
+  instagramUrl      String?
+  tiktokUrl         String?
+  youtubeUrl        String?
+
+  // SEO
+  metaTitle         String?
+  metaDescription   String?  @db.Text
+  metaKeywords      String[]
+
+  // Custom Domain
+  customDomain      String?  @unique
+  subdomain         String   @unique  // e.g., showroom.autolumiku.com
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([customDomain])
+  @@index([subdomain])
+  @@map("tenant_branding")
+}
+
+// Website Theme Configuration (Epic 5: Story 5.7, 5.8)
+model WebsiteTheme {
+  id                String   @id @default(uuid())
+  tenantId          String
+
+  // Theme Identification
+  name              String   // "Modern", "Classic", "Minimalist"
+  slug              String   // "modern", "classic", "minimalist"
+  isActive          Boolean  @default(false)
+  isDefault         Boolean  @default(false)
+
+  // Layout Configuration
+  layoutType        String   @default("grid") // grid, list, masonry
+  featuredLayout    String   @default("hero") // hero, carousel, grid
+
+  // Homepage Sections (ordered array of section IDs)
+  homepageSections  String[] // ["hero", "featured", "latest", "categories"]
+
+  // Navigation
+  menuItems         Json     // Custom menu structure
+  showCategories    Boolean  @default(true)
+  showSearch        Boolean  @default(true)
+
+  // Catalog Display
+  vehiclesPerPage   Int      @default(12)
+  showGridView      Boolean  @default(true)
+  showListView      Boolean  @default(true)
+  defaultView       String   @default("grid")
+
+  // Vehicle Card Settings
+  showPrice         Boolean  @default(true)
+  showMileage       Boolean  @default(true)
+  showYear          Boolean  @default(true)
+  showFeatures      Boolean  @default(true)
+
+  // Advanced Settings
+  enableAnimations  Boolean  @default(true)
+  enableLazyLoading Boolean  @default(true)
+  enableInfiniteScroll Boolean @default(false)
+
+  // Custom CSS
+  customCss         String?  @db.Text
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("website_themes")
+}
+
+// Customer Inquiry / Lead (Epic 5: Story 5.5)
+model Lead {
+  id                String   @id @default(uuid())
+  tenantId          String
+  vehicleId         String?  // Optional: specific vehicle interest
+
+  // Customer Information
+  name              String
+  email             String?
+  phone             String
+  whatsappNumber    String?
+
+  // Inquiry Details
+  message           String   @db.Text
+  source            String   @default("website") // website, whatsapp, phone
+  status            LeadStatus @default(NEW)
+  priority          LeadPriority @default(MEDIUM)
+
+  // Classification
+  interestedIn      String?  // Make/model they're interested in
+  budgetRange       String?  // e.g., "100-200 juta"
+  timeframe         String?  // "Minggu ini", "Bulan ini", "Surveying"
+
+  // Follow-up
+  followUpDate      DateTime?
+  notes             String?  @db.Text
+  assignedTo        String?  // User ID
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  activities        LeadActivity[]
+  tasks             LeadTask[]
+  scores            LeadScore[]
+  preference        CustomerPreference?
+
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+// ============================================================================
+// Lead Capture & Engagement (Epic 6)
+// ============================================================================
+
+model LeadActivity {
+  id                String   @id @default(uuid())
+  leadId            String
+  tenantId          String
+
+  // Activity Details
+  type              LeadActivityType
+  channel           CommunicationChannel
+  direction         String   // "inbound" or "outbound"
+
+  // Content
+  subject           String?
+  message           String?  @db.Text
+  metadata          Json?    // Additional context (attachments, links, etc)
+
+  // User
+  performedBy       String?  // User ID if staff initiated
+  performedByName   String?
+
+  // Timestamp
+  createdAt         DateTime @default(now())
+
+  // Relations
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([tenantId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("lead_activities")
+}
+
+model LeadTask {
+  id                String   @id @default(uuid())
+  leadId            String
+  tenantId          String
+
+  // Task Details
+  title             String
+  description       String?  @db.Text
+  type              TaskType @default(FOLLOW_UP)
+  priority          LeadPriority @default(MEDIUM)
+
+  // Assignment
+  assignedTo        String   // User ID
+  assignedToName    String?
+
+  // Scheduling
+  dueDate           DateTime
+  reminderDate      DateTime?
+
+  // Status
+  status            TaskStatus @default(PENDING)
+  completedAt       DateTime?
+  completedBy       String?
+
+  // Metadata
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([tenantId])
+  @@index([assignedTo])
+  @@index([dueDate])
+  @@index([status])
+  @@map("lead_tasks")
+}
+
+model LeadScore {
+  id                String   @id @default(uuid())
+  leadId            String
+  tenantId          String
+
+  // Score Components
+  totalScore        Int      // 0-100
+  budgetScore       Int      // 0-25
+  urgencyScore      Int      // 0-25
+  matchScore        Int      // 0-25
+  engagementScore   Int      // 0-25
+
+  // Score Details
+  factors           Json     // Detailed breakdown of scoring factors
+
+  // Calculated Tier
+  tier              LeadTier // HOT, WARM, COLD
+
+  // Metadata
+  calculatedAt      DateTime @default(now())
+
+  // Relations
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([tenantId])
+  @@index([totalScore])
+  @@index([tier])
+  @@index([calculatedAt])
+  @@map("lead_scores")
+}
+
+model CustomerPreference {
+  id                String   @id @default(uuid())
+  leadId            String   @unique
+  tenantId          String
+
+  // Communication Preferences
+  preferredChannel  CommunicationChannel @default(WHATSAPP)
+  alternateChannels CommunicationChannel[]
+
+  // Timing Preferences
+  preferredContactTimes String[] // ["morning", "afternoon", "evening"]
+  timezone          String?
+
+  // Frequency
+  maxContactsPerWeek Int     @default(3)
+
+  // Status
+  isPaused          Boolean  @default(false)
+  pausedUntil       DateTime?
+  pauseReason       String?
+
+  // Language
+  preferredLanguage String   @default("id") // "id" or "en"
+
+  // Do Not Contact
+  doNotContact      Boolean  @default(false)
+  doNotContactReason String?
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([leadId])
+  @@index([isPaused])
+  @@index([doNotContact])
+  @@map("customer_preferences")
+}
+
+// ============================================================================
+// Epic 6 Enums
+// ============================================================================
+
+enum LeadActivityType {
+  INQUIRY          // Initial inquiry received
+  EMAIL            // Email sent/received
+  PHONE_CALL       // Phone call made/received
+  WHATSAPP         // WhatsApp message
+  SMS              // SMS sent/received
+  MEETING          // In-person meeting
+  TEST_DRIVE       // Test drive scheduled/completed
+  NOTE             // Internal note added
+  STATUS_CHANGE    // Lead status changed
+  ASSIGNMENT       // Lead assigned/reassigned
+}
+
+enum CommunicationChannel {
+  WHATSAPP
+  EMAIL
+  PHONE
+  SMS
+  IN_PERSON
+  WEBSITE
+}
+
+enum TaskType {
+  FOLLOW_UP        // General follow-up
+  CALL_BACK        // Return customer call
+  SEND_INFO        // Send additional information
+  SCHEDULE_MEETING // Schedule meeting/test drive
+  PRICE_QUOTE      // Send price quotation
+  NEGOTIATION      // Price negotiation
+  PAPERWORK        // Complete paperwork
+  OTHER            // Other task
+}
+
+enum TaskStatus {
+  PENDING          // Not yet started
+  IN_PROGRESS      // Currently working on
+  COMPLETED        // Task completed
+  CANCELLED        // Task cancelled
+  OVERDUE          // Past due date
+}
+
+enum LeadTier {
+  HOT              // 75-100 score
+  WARM             // 50-74 score
+  COLD             // 0-49 score
+}
+
+// ============================================================================
+// Analytics & Tracking (Epic 7)
+// ============================================================================
+
+model PageView {
+  id                String   @id @default(uuid())
+  tenantId          String
+
+  // Page Info
+  path              String
+  vehicleId         String?  // If viewing vehicle detail
+  referrer          String?
+  userAgent         String?
+
+  // Session
+  sessionId         String
+  visitorId         String?  // For returning visitors
+
+  // Engagement
+  duration          Int?     // Seconds on page
+  bounced           Boolean  @default(false)
+
+  // Conversion
+  leadGenerated     Boolean  @default(false)
+  inquirySubmitted  Boolean  @default(false)
+
+  // Metadata
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("page_views")
+}
+
+model MarketingCampaign {
+  id                String   @id @default(uuid())
+  tenantId          String
+
+  // Campaign Details
+  name              String
+  channel           MarketingChannel
+  type              CampaignType @default(PROMOTION)
+
+  // Budget
+  budget            Int      // In cents
+  spent             Int      @default(0) // In cents
+
+  // Schedule
+  startDate         DateTime
+  endDate           DateTime?
+
+  // Performance
+  impressions       Int      @default(0)
+  clicks            Int      @default(0)
+  leads             Int      @default(0)
+  conversions       Int      @default(0)
+  revenue           Int      @default(0) // In cents
+
+  // Status
+  status            CampaignStatus @default(ACTIVE)
+
+  // Metadata
+  description       String?  @db.Text
+  targetAudience    String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([channel])
+  @@index([status])
+  @@index([startDate])
+  @@map("marketing_campaigns")
+}
+
+model CustomerFeedback {
+  id                String   @id @default(uuid())
+  tenantId          String
+  leadId            String?  // Optional: related lead
+
+  // Feedback
+  rating            Int      // 1-5 stars
+  category          FeedbackCategory
+  comment           String?  @db.Text
+
+  // Customer Info (optional anonymous)
+  customerName      String?
+  customerEmail     String?
+  customerPhone     String?
+
+  // Context
+  vehicleId         String?  // If related to specific vehicle
+  source            String   @default("website") // website, whatsapp, phone
+
+  // Status
+  status            FeedbackStatus @default(NEW)
+  respondedAt       DateTime?
+  respondedBy       String?
+  response          String?  @db.Text
+
+  // Sentiment Analysis
+  sentiment         String?  // "positive", "neutral", "negative"
+  sentimentScore    Float?   // -1 to 1
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([leadId])
+  @@index([vehicleId])
+  @@index([rating])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+  @@map("customer_feedback")
+}
+
+// ============================================================================
+// Epic 7 Enums
+// ============================================================================
+
+enum MarketingChannel {
+  FACEBOOK
+  INSTAGRAM
+  GOOGLE_ADS
+  WHATSAPP
+  EMAIL
+  SMS
+  TIKTOK
+  YOUTUBE
+  REFERRAL
+  DIRECT
+  OTHER
+}
+
+enum CampaignType {
+  PROMOTION        // Special offer/discount
+  BRAND_AWARENESS  // Build brand recognition
+  LEAD_GENERATION  // Generate inquiries
+  REMARKETING      // Re-engage past visitors
+  SEASONAL         // Holiday/seasonal campaign
+  PRODUCT_LAUNCH   // New inventory
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum FeedbackCategory {
+  VEHICLE_QUALITY  // Vehicle condition/quality
+  PRICING          // Price competitiveness
+  SERVICE          // Customer service
+  PROCESS          // Buying process
+  WEBSITE          // Online experience
+  COMMUNICATION    // Staff communication
+  FACILITY         // Showroom facilities
+  GENERAL          // General feedback
+}
+
+enum FeedbackStatus {
+  NEW              // Just received
+  REVIEWED         // Reviewed by staff
+  RESPONDED        // Response sent
+  RESOLVED         // Issue resolved
+  CLOSED           // Closed
+}
+
+enum VehicleStatus {
+  DRAFT           // Being created
+  AVAILABLE       // Available for sale
+  BOOKED          // Reserved by customer
+  SOLD            // Marked as sold
+  DELETED         // Soft deleted
+}
+
+enum LeadStatus {
+  NEW             // Just received
+  CONTACTED       // First contact made
+  QUALIFIED       // Lead is qualified/interested
+  NEGOTIATING     // In negotiation
+  WON             // Converted to sale
+  LOST            // Lost the lead
+}
+
+enum LeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum PhotoValidationStatus {
+  PENDING     // Not yet validated
+  VALID       // Passed quality checks
+  LOW_QUALITY // Quality issues detected
+  REJECTED    // Failed validation
+}

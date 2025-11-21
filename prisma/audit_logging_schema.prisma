@@ -1,0 +1,400 @@
+// Prisma Schema for Audit Logging and Compliance
+// Story 1.10: Audit Logging for Compliance
+// Comprehensive audit logging with Indonesian compliance requirements
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/audit-prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Main audit log model with comprehensive tracking
+model AuditLog {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  userId          String?   @map("user_id")
+  sessionId       String?   @map("session_id")
+  action          String    // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entityType      String    @map("entity_type") // Vehicle, User, Tenant, etc.
+  entityId        String    @map("entity_id")
+  entityName      String?   @map("entity_name") // Human-readable entity identifier
+  description     String    // Human-readable description in Bahasa Indonesia
+  oldValues       Json?     @map("old_values") // Before values for UPDATE actions
+  newValues       Json?     @map("new_values") // After values for CREATE/UPDATE actions
+  changesSummary  String?   @map("changes_summary") // Summary of changes
+  severity        String    @default("INFO") // INFO, WARNING, CRITICAL
+  category        String    // AUTHENTICATION, AUTHORIZATION, DATA_CHANGE, SECURITY, etc.
+  ipAddress       String?   @map("ip_address")
+  userAgent       String?   @map("user_agent")
+  location        String?   // Approximate location from IP
+  deviceInfo      Json?     @map("device_info") // Device information
+  requestId       String?   @map("request_id") // For tracing related actions
+  batchId         String?   @map("batch_id") // For bulk operations
+  correlationId   String?   @map("correlation_id") // For tracking workflows
+  sourceSystem    String    @default("autolumiku") @map("source_system")
+  apiEndpoint     String?   @map("api_endpoint") // API endpoint that triggered the action
+  httpMethod      String?   @map("http_method") // GET, POST, PUT, DELETE
+  statusCode      Int?      @map("status_code") // HTTP status code
+  errorMessage    String?   @map("error_message") // Error details if failed
+  executionTime   Int?      @map("execution_time") // Execution time in milliseconds
+  metadata        Json?     // Additional metadata
+  tags            String[]  @default([]) // Tags for categorization
+  isCompliance    Boolean   @default(false) @map("is_compliance") // Flag for compliance-related actions
+  complianceType  String?   @map("compliance_type") // PDPA, Tax, Financial Audit, etc.
+  retentionPolicy String    @default("standard") @map("retention_policy") // standard, compliance, permanent
+  createdAt       DateTime  @default(now()) @map("created_at")
+  expiresAt       DateTime? @map("expires_at") // Auto-deletion date based on retention policy
+
+  // Relations
+  tenant        Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user          User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session       UserSession?       @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  dataChanges   AuditDataChange[]
+  securityEvents AuditSecurityEvent[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([category])
+  @@index([severity])
+  @@index([createdAt])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, userId, createdAt])
+  @@index([tenantId, action, createdAt])
+  @@index([isCompliance, complianceType])
+  @@index([expiresAt])
+  @@map("audit_logs")
+}
+
+// Detailed data changes tracking for compliance
+model AuditDataChange {
+  id         String   @id @default(cuid())
+  auditLogId String   @map("audit_log_id")
+  fieldName  String   @map("field_name")
+  fieldPath  String?  @map("field_path") // JSON path for nested fields
+  oldValue   String?  @map("old_value")
+  newValue   String?  @map("new_value")
+  valueType  String   @map("value_type") // string, number, boolean, object, array
+  changeType String   @map("change_type") // CREATED, MODIFIED, DELETED
+  isSensitive Boolean @default(false) @map("is_sensitive")
+  isEncrypted Boolean @default(false) @map("is_encrypted")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  auditLog AuditLog @relation(fields: [auditLogId], references: [id], onDelete: Cascade)
+
+  @@index([auditLogId])
+  @@index([fieldName])
+  @@map("audit_data_changes")
+}
+
+// Security events for real-time monitoring
+model AuditSecurityEvent {
+  id              String    @id @default(cuid())
+  auditLogId      String?   @map("audit_log_id")
+  tenantId        String    @map("tenant_id")
+  userId          String?   @map("user_id")
+  eventType       String    @map("event_type") // FAILED_LOGIN, UNAUTHORIZED_ACCESS, SUSPICIOUS_ACTIVITY, etc.
+  eventSeverity   String    @map("event_severity") // LOW, MEDIUM, HIGH, CRITICAL
+  eventDescription String   @map("event_description")
+  threatLevel     String    @default("NONE") @map("threat_level") // NONE, LOW, MEDIUM, HIGH
+  isResolved      Boolean   @default(false) @map("is_resolved")
+  resolvedAt      DateTime? @map("resolved_at")
+  resolvedBy      String?   @map("resolved_by")
+  resolutionNotes String?   @map("resolution_notes")
+  alertSent       Boolean   @default(false) @map("alert_sent")
+  alertSentAt     DateTime? @map("alert_sent_at")
+  ipAddress       String?   @map("ip_address")
+  location        String?
+  deviceInfo      Json?     @map("device_info")
+  metadata        Json?
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  auditLog AuditLog? @relation(fields: [auditLogId], references: [id], onDelete: SetNull)
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  resolver User?     @relation("SecurityEventResolver", fields: [resolvedBy], references: [id])
+  alerts   SecurityAlert[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([eventType])
+  @@index([eventSeverity])
+  @@index([threatLevel])
+  @@index([isResolved])
+  @@index([createdAt])
+  @@index([tenantId, createdAt])
+  @@map("audit_security_events")
+}
+
+// Security alerts for administrators
+model SecurityAlert {
+  id                String              @id @default(cuid())
+  securityEventId   String              @map("security_event_id")
+  tenantId          String              @map("tenant_id")
+  alertType         String              @map("alert_type") // EMAIL, SMS, PUSH, IN_APP
+  recipientUserId   String              @map("recipient_user_id")
+  recipientEmail    String?             @map("recipient_email")
+  recipientPhone    String?             @map("recipient_phone")
+  subject           String
+  message           String
+  priority          String              @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  status            String              @default("pending") // pending, sent, failed, acknowledged
+  sentAt            DateTime?           @map("sent_at")
+  acknowledgedAt    DateTime?           @map("acknowledged_at")
+  failureReason     String?             @map("failure_reason")
+  retryCount        Int                 @default(0) @map("retry_count")
+  metadata          Json?
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  // Relations
+  securityEvent AuditSecurityEvent @relation(fields: [securityEventId], references: [id], onDelete: Cascade)
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recipient     User               @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  @@index([securityEventId])
+  @@index([tenantId])
+  @@index([recipientUserId])
+  @@index([status])
+  @@index([sentAt])
+  @@map("security_alerts")
+}
+
+// Indonesian compliance reports
+model ComplianceReport {
+  id                String    @id @default(cuid())
+  tenantId          String    @map("tenant_id")
+  reportType        String    @map("report_type") // TAX_AUDIT, FINANCIAL_AUDIT, PDPA_COMPLIANCE, DATA_ACCESS
+  reportPeriod      String    @map("report_period") // 2024-Q1, 2024-01, etc.
+  periodStart       DateTime  @map("period_start")
+  periodEnd         DateTime  @map("period_end")
+  generatedBy       String    @map("generated_by")
+  reportStatus      String    @default("draft") @map("report_status") // draft, finalized, submitted
+  reportFormat      String    @default("PDF") @map("report_format") // PDF, EXCEL, CSV
+  reportFileUrl     String?   @map("report_file_url")
+  reportFilePath    String?   @map("report_file_path")
+  totalRecords      Int       @default(0) @map("total_records")
+  complianceScore   Decimal?  @map("compliance_score")
+  findings          Json?     // Compliance findings and issues
+  recommendations   String?   // Recommendations for improvement
+  submittedAt       DateTime? @map("submitted_at")
+  submittedTo       String?   @map("submitted_to") // Authority name
+  approvedBy        String?   @map("approved_by")
+  approvedAt        DateTime? @map("approved_at")
+  notes             String?
+  metadata          Json?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  generator User   @relation("ComplianceReportGenerator", fields: [generatedBy], references: [id])
+  approver  User?  @relation("ComplianceReportApprover", fields: [approvedBy], references: [id])
+
+  @@index([tenantId])
+  @@index([reportType])
+  @@index([periodStart, periodEnd])
+  @@index([reportStatus])
+  @@index([createdAt])
+  @@map("compliance_reports")
+}
+
+// Audit log access tracking (who viewed audit logs)
+model AuditLogAccess {
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  userId       String   @map("user_id")
+  accessType   String   @map("access_type") // VIEW, EXPORT, SEARCH
+  filters      Json?    // Applied filters
+  resultCount  Int?     @map("result_count")
+  exportFormat String?  @map("export_format") // CSV, PDF, EXCEL
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  accessReason String?  @map("access_reason") // Reason for accessing audit logs
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([accessType])
+  @@index([createdAt])
+  @@map("audit_log_access")
+}
+
+// Base models (assuming these exist in the main schema)
+model Tenant {
+  id           String   @id @default(cuid())
+  name         String
+  subdomain    String   @unique
+  databaseName String   @unique @map("database_name")
+  status       String   @default("setup_required")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Audit logging relations
+  auditLogs          AuditLog[]
+  securityEvents     AuditSecurityEvent[]
+  securityAlerts     SecurityAlert[]
+  complianceReports  ComplianceReport[]
+  auditLogAccesses   AuditLogAccess[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Audit logging relations
+  auditLogs                    AuditLog[]
+  securityEvents               AuditSecurityEvent[]
+  resolvedSecurityEvents       AuditSecurityEvent[] @relation("SecurityEventResolver")
+  securityAlerts               SecurityAlert[]
+  generatedComplianceReports   ComplianceReport[]   @relation("ComplianceReportGenerator")
+  approvedComplianceReports    ComplianceReport[]   @relation("ComplianceReportApprover")
+  auditLogAccesses             AuditLogAccess[]
+  sessions                     UserSession[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  tenantId    String    @map("tenant_id")
+  sessionToken String   @unique @map("session_token")
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  expiresAt   DateTime  @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditLogs AuditLog[]
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+// Enums for type safety
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  FAILED_LOGIN
+  PASSWORD_RESET
+  PERMISSION_CHANGE
+  ROLE_ASSIGNMENT
+  ROLE_REMOVAL
+  EXPORT
+  IMPORT
+  BULK_UPDATE
+  BULK_DELETE
+  CONFIGURATION_CHANGE
+  SECURITY_EVENT
+}
+
+enum AuditCategory {
+  AUTHENTICATION
+  AUTHORIZATION
+  DATA_CHANGE
+  SECURITY
+  CONFIGURATION
+  USER_MANAGEMENT
+  TENANT_MANAGEMENT
+  VEHICLE_MANAGEMENT
+  CUSTOMER_MANAGEMENT
+  FINANCIAL
+  COMPLIANCE
+  SYSTEM
+}
+
+enum AuditSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum SecurityEventType {
+  FAILED_LOGIN
+  MULTIPLE_FAILED_LOGINS
+  UNAUTHORIZED_ACCESS
+  SUSPICIOUS_ACTIVITY
+  DATA_BREACH_ATTEMPT
+  PRIVILEGE_ESCALATION
+  ACCOUNT_LOCKOUT
+  PASSWORD_RESET_ABUSE
+  SESSION_HIJACKING
+  BRUTE_FORCE_ATTACK
+}
+
+enum SecuritySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ThreatLevel {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ComplianceReportType {
+  TAX_AUDIT
+  FINANCIAL_AUDIT
+  PDPA_COMPLIANCE
+  DATA_ACCESS_REQUEST
+  RIGHT_TO_DELETION
+  DATA_BREACH_REPORT
+  REGULATORY_SUBMISSION
+}
+
+enum ReportStatus {
+  DRAFT
+  FINALIZED
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum AlertType {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+  WEBHOOK
+}
+
+enum AlertStatus {
+  PENDING
+  SENT
+  FAILED
+  ACKNOWLEDGED
+  EXPIRED
+}

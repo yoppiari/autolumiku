@@ -1,0 +1,195 @@
+<story-context id="1-1-platform-admin-tenant-creation" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Platform Admin Tenant Creation</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-20T21:30:00.000Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>1-1-platform-admin-tenant-creation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>root platform administrator</asA>
+    <iWant>to create and manage showroom tenant accounts</iWant>
+    <soThat>new showrooms can join the autolumiku platform with complete data isolation</soThat>
+    <tasks>
+- [ ] **Setup Database Infrastructure** (AC: #2)
+  - [ ] Create PostgreSQL connection pool management system
+  - [ ] Implement database provisioning utilities
+  - [ ] Create tenant database schema template
+  - [ ] Setup database migration scripts
+- [ ] **Implement Tenant Management Service** (AC: #1, #2, #3)
+  - [ ] Create tenant service core functionality
+  - [ ] Implement tenant creation workflow
+  - [ ] Add tenant metadata storage and retrieval
+  - [ ] Create tenant status management system
+- [ ] **Build Platform Admin Dashboard** (AC: #1, #3)
+  - [ ] Create admin authentication middleware
+  - [ ] Build tenant list view component
+  - [ ] Implement tenant creation form
+  - [ ] Add tenant status monitoring dashboard
+- [ ] **Develop API Endpoints** (AC: #1, #2, #3)
+  - [ ] Create tenant CRUD API endpoints
+  - [ ] Implement admin authentication API
+  - [ ] Add tenant provisioning API endpoints
+  - [ ] Create tenant status query endpoints
+- [ ] **Implement User Management Integration** (AC: #4)
+  - [ ] Create tenant admin user creation workflow
+  - [ ] Integrate with user authentication service
+  - [ ] Implement welcome email notification system
+  - [ ] Add user-to-tenant assignment functionality
+- [ ] **Setup Subdomain Routing** (AC: #6)
+  - [ ] Create tenant resolution middleware
+  - [ ] Implement subdomain validation system
+  - [ ] Configure routing for tenant-specific requests
+  - [ ] Add subdomain collision detection
+- [ ] **Implement Data Isolation Layer** (AC: #5)
+  - [ ] Create tenant-specific database connection management
+  - [ ] Implement data access validation middleware
+  - [ ] Add cross-tenant access prevention
+  - [ ] Create tenant context propagation system
+- [ ] **Create Testing Infrastructure** (All ACs)
+  - [ ] Write unit tests for tenant service
+  - [ ] Create integration tests for API endpoints
+  - [ ] Implement database isolation tests
+  - [ ] Add end-to-end tests for tenant creation workflow
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **Tenant Creation Interface**
+   - Given I am logged in as a root platform administrator
+   - When I access the tenant management dashboard
+   - Then I can create new tenant accounts with unique subdomains
+
+2. **Database Provisioning**
+   - Given I submit tenant creation form with valid details (name, subdomain, admin user info)
+   - When the system processes the request
+   - Then A new isolated PostgreSQL database is created with proper schema
+
+3. **Tenant Metadata Management**
+   - Given a tenant is created successfully
+   - When I view the tenant list
+   - Then I see tenant status, creation date, and configuration progress
+
+4. **Admin User Creation**
+   - Given tenant database is provisioned
+   - When tenant setup completes
+   - Then A tenant administrator account is created and welcome email is sent
+
+5. **Data Isolation Verification**
+   - Given multiple tenants exist
+   - When I access tenant-specific data
+   - Then Data is completely isolated between tenants with no cross-access
+
+6. **Subdomain Configuration**
+   - Given a tenant is created with custom subdomain
+   - When DNS propagates
+   - Then The subdomain routes to the correct tenant instance
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Multi-Tenant Database Strategy</section>
+        <snippet>Database-per-tenant pattern with PostgreSQL 15 for complete data isolation. Central platform database stores tenant metadata and user authentication. Connection pool management for efficient resource utilization.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>Database Architecture</section>
+        <snippet>Multi-tenant architecture with database-per-tenant isolation pattern. Each tenant gets isolated PostgreSQL database with shared connection pool. Central metadata database manages tenant configuration.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>Multi-Tenant Platform Requirements</section>
+        <snippet>Platform must support multiple automotive showrooms as isolated tenants. Complete data isolation required between tenants. Administrative oversight for tenant management.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic 1: Multi-Tenant Foundation</section>
+        <snippet>Epic 1 establishes core multi-tenant platform with secure user access and tenant management capabilities. This epic enables showroom owners to join the platform and manage their teams.</snippet>
+      </doc>
+      <doc>
+        <path>docs/ux-design-specification.md</path>
+        <title>UX Design Specification</title>
+        <section>Admin Interface Design</section>
+        <snippet>Accessibility-first design for senior users (45+ years). shadcn/ui design system with Premium Gray theme. Bahasa Indonesia localization throughout admin interfaces.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <!-- No existing code found - this is the first implementation story -->
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="next" version="^14.0.0" reason="React framework for admin dashboard"/>
+        <package name="@next/env" version="^14.0.0" reason="Environment variable management"/>
+        <package name="typescript" version="^5.0.0" reason="Type safety for development"/>
+        <package name="react" version="^18.0.0" reason="UI library"/>
+        <package name="react-dom" version="^18.0.0" reason="DOM rendering"/>
+        <package name="pg" version="^8.11.0" reason="PostgreSQL database driver"/>
+        <package name="jsonwebtoken" version="^9.0.0" reason="JWT authentication tokens"/>
+        <package name="bcryptjs" version="^2.4.3" reason="Password hashing"/>
+        <package name="helmet" version="^7.1.0" reason="Security headers"/>
+        <package name="winston" version="^3.11.0" reason="Structured logging"/>
+        <package name="jest" version="^29.7.0" reason="Testing framework"/>
+        <package name="supertest" version="^6.3.0" reason="API testing"/>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Database-per-tenant pattern with PostgreSQL 15 for complete data isolation</constraint>
+    <constraint type="architecture">Central platform database for tenant metadata and user authentication</constraint>
+    <constraint type="performance">Tenant provisioning completion within 2 minutes</constraint>
+    <constraint type="performance">Admin dashboard response time &lt; 500ms</constraint>
+    <constraint type="security">JWT-based authentication with 15-minute access token expiration</constraint>
+    <constraint type="security">Password hashing using bcrypt with minimum 12 rounds</constraint>
+    <constraint type="security">Complete data isolation at database level with tenant-specific connections</constraint>
+    <constraint type="testing">90% unit test coverage target for all business logic</constraint>
+    <constraint type="testing">Integration tests for complete tenant creation workflow</constraint>
+    <constraint type="framework">Next.js 14 with App Router for admin dashboard</constraint>
+    <constraint type="framework">TypeScript strict mode for type safety</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Tenant Management API" kind="REST">
+      <signature>POST /api/admin/tenants - Create new tenant</signature>
+      <path>src/app/api/admin/tenants/route.ts</path>
+    </interface>
+    <interface name="Tenant Service" kind="class">
+      <signature>class TenantService { createTenant(data: CreateTenantRequest): Promise&lt;Tenant&gt; }</signature>
+      <path>src/services/tenant-service/index.ts</path>
+    </interface>
+    <interface name="Database Provisioning" kind="function">
+      <signature>function provisionTenantDatabase(tenantId: string): Promise&lt;DatabaseConfig&gt;</signature>
+      <path>src/services/tenant-service/provisioning.ts</path>
+    </interface>
+    <interface name="Admin Authentication" kind="middleware">
+      <signature>function adminAuth(req: Request, res: Response, next: NextFunction): void</signature>
+      <path>src/lib/middleware/admin-auth.ts</path>
+    </interface>
+    <interface name="Tenant Resolution" kind="middleware">
+      <signature>function resolveTenant(req: Request, res: Response, next: NextFunction): void</signature>
+      <path>src/lib/middleware/tenant-resolution.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Unit testing with Jest framework for 90% coverage. Integration tests for API endpoints and database operations. Security tests for data isolation and authentication. End-to-end tests for complete tenant creation workflow.</standards>
+    <locations>tests/unit/services/tenant-service/, tests/integration/api/, tests/security/tenant-isolation/, tests/e2e/tenant-creation/</locations>
+    <ideas>
+      <test id="1">Test tenant creation with valid data creates isolated database</test>
+      <test id="2">Test admin authentication with JWT tokens</test>
+      <test id="3">Test subdomain validation prevents conflicts</test>
+      <test id="4">Test data isolation prevents cross-tenant access</test>
+      <test id="5">Test tenant provisioning completes within 2 minutes</test>
+      <test id="6">Test admin dashboard displays tenant list correctly</test>
+    </ideas>
+  </tests>
+</story-context>
