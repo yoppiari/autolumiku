@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { extractAdminUser } from '@/lib/middleware/admin-auth';
+
 
 interface AdminLayoutProps {
   children: React.ReactNode;

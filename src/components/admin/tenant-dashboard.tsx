@@ -67,10 +67,10 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
     setIsRefreshing(true);
     try {
       await onRefresh();
-      setSystemHealth(prev => ({
+      setSystemHealth(prev => prev ? ({
         ...prev,
         lastCheck: new Date(),
-      }));
+      }) : null);
     } catch (error) {
       console.error('Failed to refresh dashboard:', error);
     } finally {

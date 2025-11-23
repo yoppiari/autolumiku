@@ -104,7 +104,7 @@ async function main() {
       mileage: 15000,
       price: 220000000, // Rp 220 juta
       condition: 'excellent',
-      status: VehicleStatus.PUBLISHED,
+      status: VehicleStatus.AVAILABLE,
       isFeatured: true,
       descriptionId: 'Toyota Avanza 2023 dalam kondisi prima, kilometer rendah, perawatan rutin di dealer resmi. Cocok untuk keluarga.',
       descriptionEn: '2023 Toyota Avanza in excellent condition, low mileage, regularly serviced at official dealer. Perfect for families.',
@@ -126,7 +126,7 @@ async function main() {
       mileage: 28000,
       price: 485000000, // Rp 485 juta
       condition: 'excellent',
-      status: VehicleStatus.PUBLISHED,
+      status: VehicleStatus.AVAILABLE,
       isFeatured: true,
       descriptionId: 'Honda CR-V Turbo 2022, SUV premium dengan fitur lengkap. Sunroof, leather seat, parking sensor. Seperti baru!',
       descriptionEn: '2022 Honda CR-V Turbo, premium SUV with complete features. Sunroof, leather seats, parking sensors. Like new!',
@@ -148,7 +148,7 @@ async function main() {
       mileage: 12000,
       price: 235000000, // Rp 235 juta
       condition: 'excellent',
-      status: VehicleStatus.PUBLISHED,
+      status: VehicleStatus.AVAILABLE,
       isFeatured: true,
       descriptionId: 'Mitsubishi Xpander Sport 2023, masih garansi pabrik. KM sangat rendah, kondisi perfect seperti baru.',
       descriptionEn: '2023 Mitsubishi Xpander Sport, still under factory warranty. Very low mileage, perfect condition like new.',
@@ -170,7 +170,7 @@ async function main() {
       mileage: 20000,
       price: 215000000, // Rp 215 juta
       condition: 'excellent',
-      status: VehicleStatus.PUBLISHED,
+      status: VehicleStatus.AVAILABLE,
       isFeatured: false,
       descriptionId: 'Suzuki Ertiga GX AT 2022, mobil keluarga irit dan nyaman. Service record lengkap, pajak hidup.',
       descriptionEn: '2022 Suzuki Ertiga GX AT, economical and comfortable family car. Complete service records, active tax.',
@@ -192,7 +192,7 @@ async function main() {
       mileage: 35000,
       price: 525000000, // Rp 525 juta
       condition: 'excellent',
-      status: VehicleStatus.PUBLISHED,
+      status: VehicleStatus.AVAILABLE,
       isFeatured: true,
       descriptionId: 'Toyota Fortuner VRZ Diesel 2021, SUV tangguh dan mewah. Full spec, pajak baru, siap touring.',
       descriptionEn: '2021 Toyota Fortuner VRZ Diesel, rugged and luxurious SUV. Full spec, fresh tax, ready for adventure.',
