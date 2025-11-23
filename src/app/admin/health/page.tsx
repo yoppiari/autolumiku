@@ -1,16 +1,12 @@
 /**
- * Platform Health Dashboard
- * Main dashboard for monitoring platform health and performance metrics
+ * Tenant Analytics Dashboard
+ * Analytics dashboard for tracking tenant data including vehicle collections, views, inquiries, and sales
  */
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   PieChart,
@@ -24,181 +20,94 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-// Mock types (would import from actual types)
-interface HealthStatus {
-  status: 'healthy' | 'warning' | 'critical' | 'unknown';
-  timestamp: Date;
-  checks: HealthCheck[];
-  summary: {
-    total: number;
-    passing: number;
-    warning: number;
-    failing: number;
-    score: number;
-  };
+// Analytics types
+interface TenantAnalytics {
+  mostCollected: VehicleStat[];
+  mostViewed: VehicleStat[];
+  mostAsked: VehicleStat[];
+  mostSold: VehicleStat[];
+  tenantSummary: TenantSummary[];
+  timeSeriesData: TimeSeriesData[];
 }
 
-interface HealthCheck {
-  name: string;
-  status: 'pass' | 'warn' | 'fail';
-  duration: number;
-  message?: string;
-  lastChecked: Date;
+interface VehicleStat {
+  vehicleId: string;
+  make: string;
+  model: string;
+  year: number;
+  count: number;
+  tenantName?: string;
+  percentage?: number;
 }
 
-interface MetricsSummary {
-  system: {
-    cpu: { current: number; average: number; max: number };
-    memory: { current: number; average: number; max: number };
-    disk: { current: number; average: number; max: number };
-  };
-  application: {
-    requests: { total: number; errors: number; avgResponseTime: number };
-    uptime: number;
-  };
-  tenants: {
-    active: number;
-    totalUsers: number;
-    activeUsers: number;
-  };
-  database: {
-    connections: { active: number; total: number };
-    queryPerformance: { avgDuration: number; slowQueries: number };
-  };
+interface TenantSummary {
+  tenantId: string;
+  tenantName: string;
+  totalVehicles: number;
+  soldVehicles: number;
+  totalViews: number;
+  totalInquiries: number;
+  conversionRate: number;
 }
 
-const HealthDashboard: React.FC = () => {
-  const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
-  const [metricsSummary, setMetricsSummary] = useState<MetricsSummary | null>(null);
+interface TimeSeriesData {
+  date: string;
+  views: number;
+  inquiries: number;
+  sales: number;
+  newVehicles: number;
+}
+
+const AnalyticsDashboard: React.FC = () => {
+  const [analytics, setAnalytics] = useState<TenantAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedTimeRange, setSelectedTimeRange] = useState('1h');
+  const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(30);
+  const [refreshInterval, setRefreshInterval] = useState(60);
 
-  // Mock data for development
+  // Load analytics data from API
   useEffect(() => {
-    const loadDashboardData = async () => {
+    const loadAnalyticsData = async () => {
       setIsLoading(true);
       try {
-        // In a real implementation, these would be API calls
-        // const healthResponse = await fetch('/api/admin/health/status');
-        // const metricsResponse = await fetch('/api/admin/metrics/summary');
+        // Fetch analytics data from API
+        const analyticsResponse = await fetch(`/api/admin/analytics?timeRange=${selectedTimeRange}`);
+        
+        if (!analyticsResponse.ok) {
+          throw new Error('Failed to fetch analytics data');
+        }
 
-        // Mock health status
-        const mockHealthStatus: HealthStatus = {
-          status: 'healthy',
-          timestamp: new Date(),
-          checks: [
-            { name: 'database', status: 'pass', duration: 45, lastChecked: new Date() },
-            { name: 'redis', status: 'pass', duration: 12, lastChecked: new Date() },
-            { name: 'external_apis', status: 'pass', duration: 156, lastChecked: new Date() },
-            { name: 'disk_space', status: 'warn', duration: 8, message: 'Disk usage at 75%', lastChecked: new Date() },
-            { name: 'memory_usage', status: 'pass', duration: 5, lastChecked: new Date() }
-          ],
-          summary: {
-            total: 5,
-            passing: 4,
-            warning: 1,
-            failing: 0,
-            score: 90
-          }
+        const analyticsData = await analyticsResponse.json();
+
+        // Transform API data to match our interface
+        const transformedAnalytics: TenantAnalytics = {
+          mostCollected: analyticsData.mostCollected || [],
+          mostViewed: analyticsData.mostViewed || [],
+          mostAsked: analyticsData.mostAsked || [],
+          mostSold: analyticsData.mostSold || [],
+          tenantSummary: analyticsData.tenantSummary || [],
+          timeSeriesData: analyticsData.timeSeriesData || []
         };
 
-        // Mock metrics summary
-        const mockMetricsSummary: MetricsSummary = {
-          system: {
-            cpu: { current: 35, average: 42, max: 68 },
-            memory: { current: 58, average: 61, max: 73 },
-            disk: { current: 75, average: 74, max: 76 }
-          },
-          application: {
-            requests: { total: 15420, errors: 23, avgResponseTime: 145 },
-            uptime: 86400 * 7 // 7 days
-          },
-          tenants: {
-            active: 12,
-            totalUsers: 485,
-            activeUsers: 127
-          },
-          database: {
-            connections: { active: 18, total: 25 },
-            queryPerformance: { avgDuration: 42, slowQueries: 3 }
-          }
-        };
-
-        setHealthStatus(mockHealthStatus);
-        setMetricsSummary(mockMetricsSummary);
+        setAnalytics(transformedAnalytics);
 
       } catch (error) {
-        console.error('Failed to load dashboard data:', error);
+        console.error('Failed to load analytics data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadDashboardData();
+    loadAnalyticsData();
 
     // Set up auto-refresh
     if (autoRefresh) {
-      const interval = setInterval(loadDashboardData, refreshInterval * 1000);
+      const interval = setInterval(loadAnalyticsData, refreshInterval * 1000);
       return () => clearInterval(interval);
     }
   }, [autoRefresh, refreshInterval, selectedTimeRange]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'healthy':
-      case 'pass':
-        return 'text-green-600 bg-green-50';
-      case 'warning':
-      case 'warn':
-        return 'text-yellow-600 bg-yellow-50';
-      case 'critical':
-      case 'fail':
-        return 'text-red-600 bg-red-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'healthy':
-      case 'pass':
-        return '✓';
-      case 'warning':
-      case 'warn':
-        return '⚠';
-      case 'critical':
-      case 'fail':
-        return '✗';
-      default:
-        return '?';
-    }
-  };
-
-  const formatUptime = (seconds: number) => {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${days}d ${hours}h ${minutes}m`;
-  };
-
-  const mockTimeSeriesData = [
-    { time: '00:00', cpu: 25, memory: 45, disk: 72 },
-    { time: '04:00', cpu: 18, memory: 42, disk: 73 },
-    { time: '08:00', cpu: 52, memory: 68, disk: 74 },
-    { time: '12:00', cpu: 68, memory: 71, disk: 75 },
-    { time: '16:00', cpu: 45, memory: 58, disk: 75 },
-    { time: '20:00', cpu: 35, memory: 52, disk: 76 },
-    { time: '23:59', cpu: 28, memory: 48, disk: 76 }
-  ];
-
-  const mockTenantData = [
-    { name: 'Active', value: 12, color: '#10b981' },
-    { name: 'Inactive', value: 3, color: '#6b7280' },
-    { name: 'Suspended', value: 1, color: '#ef4444' }
-  ];
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
   if (isLoading) {
     return (
@@ -208,13 +117,21 @@ const HealthDashboard: React.FC = () => {
     );
   }
 
+  if (!analytics) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Failed to load analytics data</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Platform Health</h1>
-          <p className="text-gray-600 mt-1">Monitor system performance and platform status</p>
+          <h1 className="text-3xl font-bold text-gray-900">Tenant Analytics</h1>
+          <p className="text-gray-600 mt-1">Comprehensive analytics for tenant vehicle data and performance</p>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -224,11 +141,10 @@ const HealthDashboard: React.FC = () => {
             onChange={(e) => setSelectedTimeRange(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="1h">Last Hour</option>
-            <option value="6h">Last 6 Hours</option>
             <option value="24h">Last 24 Hours</option>
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
+            <option value="90d">Last 90 Days</option>
           </select>
 
           {/* Auto Refresh Toggle */}
@@ -252,10 +168,10 @@ const HealthDashboard: React.FC = () => {
               onChange={(e) => setRefreshInterval(Number(e.target.value))}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value={15}>15s</option>
               <option value={30}>30s</option>
               <option value={60}>1m</option>
               <option value={300}>5m</option>
+              <option value={600}>10m</option>
             </select>
           )}
 
@@ -269,260 +185,173 @@ const HealthDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Overall Health Status */}
-      {healthStatus && (
-        <div className={`p-6 rounded-xl border-2 ${
-          healthStatus.status === 'healthy' ? 'bg-green-50 border-green-200' :
-          healthStatus.status === 'warning' ? 'bg-yellow-50 border-yellow-200' :
-          healthStatus.status === 'critical' ? 'bg-red-50 border-red-200' :
-          'bg-gray-50 border-gray-200'
-        }`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Platform Status</h2>
-              <div className="flex items-center space-x-4">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(healthStatus.status)}`}>
-                  {getStatusIcon(healthStatus.status)} {healthStatus.status.toUpperCase()}
-                </span>
-                <span className="text-gray-600">
-                  Health Score: {healthStatus.summary.score}/100
-                </span>
-                <span className="text-gray-600">
-                  Last checked: {healthStatus.timestamp.toLocaleTimeString()}
-                </span>
-              </div>
-            </div>
-
-            <div className="text-right">
-              <div className="text-3xl font-bold text-gray-900">
-                {healthStatus.summary.passing}/{healthStatus.summary.total}
-              </div>
-              <div className="text-sm text-gray-600">Services Healthy</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Key Metrics Cards */}
-      {metricsSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* System Health Card */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600">CPU Usage</span>
-                  <span className="text-sm font-medium">{metricsSummary.system.cpu.current}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${
-                      metricsSummary.system.cpu.current > 80 ? 'bg-red-500' :
-                      metricsSummary.system.cpu.current > 60 ? 'bg-yellow-500' :
-                      'bg-green-500'
-                    }`}
-                    style={{ width: `${metricsSummary.system.cpu.current}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600">Memory Usage</span>
-                  <span className="text-sm font-medium">{metricsSummary.system.memory.current}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${
-                      metricsSummary.system.memory.current > 80 ? 'bg-red-500' :
-                      metricsSummary.system.memory.current > 60 ? 'bg-yellow-500' :
-                      'bg-green-500'
-                    }`}
-                    style={{ width: `${metricsSummary.system.memory.current}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600">Disk Usage</span>
-                  <span className="text-sm font-medium">{metricsSummary.system.disk.current}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${
-                      metricsSummary.system.disk.current > 85 ? 'bg-red-500' :
-                      metricsSummary.system.disk.current > 70 ? 'bg-yellow-500' :
-                      'bg-green-500'
-                    }`}
-                    style={{ width: `${metricsSummary.system.disk.current}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Application Metrics Card */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Application</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Uptime</span>
-                <span className="text-sm font-medium">{formatUptime(metricsSummary.application.uptime)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Total Requests</span>
-                <span className="text-sm font-medium">{metricsSummary.application.requests.total.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Error Rate</span>
-                <span className={`text-sm font-medium ${
-                  (metricsSummary.application.requests.errors / metricsSummary.application.requests.total) > 0.01 ? 'text-red-600' : 'text-green-600'
-                }`}>
-                  {((metricsSummary.application.requests.errors / metricsSummary.application.requests.total) * 100).toFixed(2)}%
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Avg Response</span>
-                <span className="text-sm font-medium">{metricsSummary.application.requests.avgResponseTime}ms</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Tenant Metrics Card */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Tenants</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Active Tenants</span>
-                <span className="text-sm font-medium">{metricsSummary.tenants.active}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Total Users</span>
-                <span className="text-sm font-medium">{metricsSummary.tenants.totalUsers}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Active Users</span>
-                <span className="text-sm font-medium">{metricsSummary.tenants.activeUsers}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">User Activity</span>
-                <span className="text-sm font-medium">
-                  {((metricsSummary.tenants.activeUsers / metricsSummary.tenants.totalUsers) * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Database Metrics Card */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Database</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Active Connections</span>
-                <span className="text-sm font-medium">
-                  {metricsSummary.database.connections.active}/{metricsSummary.database.connections.total}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Query Performance</span>
-                <span className="text-sm font-medium">{metricsSummary.database.queryPerformance.avgDuration}ms</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Slow Queries</span>
-                <span className={`text-sm font-medium ${metricsSummary.database.queryPerformance.slowQueries > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                  {metricsSummary.database.queryPerformance.slowQueries}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Connection Pool</span>
-                <span className="text-sm font-medium">
-                  {((metricsSummary.database.connections.active / metricsSummary.database.connections.total) * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* System Performance Chart */}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">System Performance</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Vehicles</h3>
+          <div className="text-3xl font-bold text-blue-600">
+            {analytics.tenantSummary.reduce((sum, tenant) => sum + tenant.totalVehicles, 0).toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">Across {analytics.tenantSummary.length} tenants</div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Views</h3>
+          <div className="text-3xl font-bold text-green-600">
+            {analytics.tenantSummary.reduce((sum, tenant) => sum + tenant.totalViews, 0).toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">Last 7 days</div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Inquiries</h3>
+          <div className="text-3xl font-bold text-yellow-600">
+            {analytics.tenantSummary.reduce((sum, tenant) => sum + tenant.totalInquiries, 0).toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">From AI conversations</div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Vehicles Sold</h3>
+          <div className="text-3xl font-bold text-purple-600">
+            {analytics.tenantSummary.reduce((sum, tenant) => sum + tenant.soldVehicles, 0).toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">Status changed to sold</div>
+        </div>
+      </div>
+
+      {/* Charts Row 1 - Most Collected & Most Viewed */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Most Collected Vehicles */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Collected Vehicles</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={mockTimeSeriesData}>
+            <BarChart data={analytics.mostCollected}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" />
+              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
               <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="cpu" stroke="#3b82f6" name="CPU %" />
-              <Line type="monotone" dataKey="memory" stroke="#10b981" name="Memory %" />
-              <Line type="monotone" dataKey="disk" stroke="#f59e0b" name="Disk %" />
-            </LineChart>
+              <Tooltip 
+                formatter={(value, name) => [`${value} vehicles`, 'Count']}
+                labelFormatter={(label) => `Vehicle: ${label}`}
+              />
+              <Bar dataKey="count" fill="#3b82f6" />
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Tenant Status Chart */}
+        {/* Most Viewed Vehicles */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Tenant Status</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Viewed Vehicles</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={mockTenantData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, value }) => `${name}: ${value}`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {mockTenantData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
+            <BarChart data={analytics.mostViewed}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name) => [`${value.toLocaleString()} views`, 'Views']}
+                labelFormatter={(label) => `Vehicle: ${label}`}
+              />
+              <Bar dataKey="count" fill="#10b981" />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Health Check Details */}
-      {healthStatus && (
+      {/* Charts Row 2 - Most Asked & Most Sold */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Most Asked Vehicles */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Health Check Details</h3>
-          <div className="space-y-3">
-            {healthStatus.checks.map((check) => (
-              <div key={check.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${getStatusColor(check.status)}`}>
-                    {getStatusIcon(check.status)}
-                  </span>
-                  <div>
-                    <div className="font-medium text-gray-900 capitalize">{check.name.replace('_', ' ')}</div>
-                    <div className="text-sm text-gray-600">
-                      {check.message || `Response time: ${check.duration}ms`}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(check.status)}`}>
-                    {check.status.toUpperCase()}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {check.lastChecked.toLocaleTimeString()}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Asked Vehicles (AI Conversations)</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={analytics.mostAsked}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name) => [`${value} inquiries`, 'Inquiries']}
+                labelFormatter={(label) => `Vehicle: ${label}`}
+              />
+              <Bar dataKey="count" fill="#f59e0b" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-      )}
+
+        {/* Most Sold Vehicles */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Sold Vehicles</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={analytics.mostSold}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name) => [`${value} sold`, 'Sold']}
+                labelFormatter={(label) => `Vehicle: ${label}`}
+              />
+              <Bar dataKey="count" fill="#ef4444" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Time Series Chart */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Trends (Last 7 Days)</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={analytics.timeSeriesData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="views" fill="#3b82f6" name="Views" />
+            <Bar dataKey="inquiries" fill="#f59e0b" name="Inquiries" />
+            <Bar dataKey="sales" fill="#ef4444" name="Sales" />
+            <Bar dataKey="newVehicles" fill="#10b981" name="New Vehicles" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Tenant Summary Table */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Tenant Performance Summary</h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Vehicles</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sold</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Views</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inquiries</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversion Rate</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {analytics.tenantSummary.map((tenant) => (
+                <tr key={tenant.tenantId} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tenant.tenantName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalVehicles}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.soldVehicles}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalViews.toLocaleString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalInquiries}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      tenant.conversionRate >= 18 ? 'bg-green-100 text-green-800' :
+                      tenant.conversionRate >= 15 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {tenant.conversionRate}%
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default HealthDashboard;
+export default AnalyticsDashboard;

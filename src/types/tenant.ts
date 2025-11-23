@@ -3,15 +3,19 @@ export type TenantStatus = 'setup_required' | 'active' | 'suspended' | 'deactiva
 export interface CreateTenantRequest {
   name: string;
   subdomain: string;
+  customDomain?: string; // Optional custom domain
   adminEmail: string;
   adminFirstName: string;
   adminLastName: string;
+  adminPassword?: string; // Optional - if not provided, auto-generate
+  autoGeneratePassword?: boolean; // Flag to auto-generate password
 }
 
 export interface Tenant {
   id: string;
   name: string;
   subdomain: string;
+  customDomain?: string; // Custom domain (optional)
   dbName: string;
   status: TenantStatus;
   adminUserId: string;

@@ -157,7 +157,7 @@ export class AuthService {
       console.error('Registration error:', error);
       return {
         success: false,
-        message: 'Registration failed. Please try again.',
+        message: error instanceof Error ? error.message : 'Registration failed. Please try again.',
       };
     }
   }

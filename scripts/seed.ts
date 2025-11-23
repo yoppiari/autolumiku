@@ -1,77 +1,97 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, VehicleStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seed...');
+  console.log('🌱 Starting database seed...\n');
 
-  // Create Test Tenant First
+  // ============================================================================
+  // 1. Create Demo Tenant: "showroomjakarta"
+  // ============================================================================
+  console.log('📦 Creating demo tenant...');
+
   const tenant = await prisma.tenant.upsert({
-    where: { slug: 'demo' },
+    where: { slug: 'showroomjakarta' },
     update: {},
     create: {
-      name: 'Demo Showroom',
-      slug: 'demo',
-      domain: 'demo.autolumiku.com',
+      name: 'Showroom Jakarta Premium',
+      slug: 'showroomjakarta',
+      domain: 'showroomjakarta.autolumiku.com',
       status: 'active',
+      logoUrl: 'https://via.placeholder.com/200x60/1e40af/ffffff?text=ShowroomJKT',
+      primaryColor: '#1e40af',
+      secondaryColor: '#3b82f6',
+      theme: 'light',
       createdBy: 'system',
     },
   });
-  console.log('✓ Tenant created:', tenant.name);
+  console.log(`✅ Tenant created: ${tenant.name} (ID: ${tenant.id})`);
 
-  // Create Platform Admin (uses the demo tenant for now)
+  // ============================================================================
+  // 2. Create Demo Users
+  // ============================================================================
+  console.log('\n👤 Creating demo users...');
+
+  // Admin User
   const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@autolumiku.com' },
+    where: { email: 'admin@showroomjakarta.com' },
     update: {},
     create: {
-      email: 'admin@autolumiku.com',
+      email: 'admin@showroomjakarta.com',
       passwordHash: adminPassword,
-      firstName: 'Platform',
-      lastName: 'Admin',
+      firstName: 'Admin',
+      lastName: 'Showroom',
+      phone: '+62-812-3456-7890',
       role: 'admin',
       tenantId: tenant.id,
       emailVerified: true,
     },
   });
-  console.log('✓ Platform Admin created:', admin.email);
+  console.log(`✅ Admin user: ${admin.email} / admin123`);
 
-  // Create Showroom Owner
-  const ownerPassword = await bcrypt.hash('owner123', 10);
-  const owner = await prisma.user.upsert({
-    where: { email: 'owner@demo.autolumiku.com' },
+  // Manager User
+  const managerPassword = await bcrypt.hash('manager123', 10);
+  const manager = await prisma.user.upsert({
+    where: { email: 'manager@showroomjakarta.com' },
     update: {},
     create: {
-      email: 'owner@demo.autolumiku.com',
-      passwordHash: ownerPassword,
-      firstName: 'John',
-      lastName: 'Doe',
-      role: 'owner',
+      email: 'manager@showroomjakarta.com',
+      passwordHash: managerPassword,
+      firstName: 'Budi',
+      lastName: 'Santoso',
+      phone: '+62-813-4567-8901',
+      role: 'manager',
       tenantId: tenant.id,
       emailVerified: true,
     },
   });
-  console.log('✓ Showroom Owner created:', owner.email);
+  console.log(`✅ Manager user: ${manager.email} / manager123`);
 
-  // Create Sales Staff
-  const staffPassword = await bcrypt.hash('staff123', 10);
-  const staff = await prisma.user.upsert({
-    where: { email: 'staff@demo.autolumiku.com' },
+  // Sales User
+  const salesPassword = await bcrypt.hash('sales123', 10);
+  const sales = await prisma.user.upsert({
+    where: { email: 'sales@showroomjakarta.com' },
     update: {},
     create: {
-      email: 'staff@demo.autolumiku.com',
-      passwordHash: staffPassword,
-      firstName: 'Jane',
-      lastName: 'Smith',
+      email: 'sales@showroomjakarta.com',
+      passwordHash: salesPassword,
+      firstName: 'Siti',
+      lastName: 'Rahayu',
+      phone: '+62-814-5678-9012',
       role: 'staff',
       tenantId: tenant.id,
       emailVerified: true,
     },
   });
-  console.log('✓ Sales Staff created:', staff.email);
+  console.log(`✅ Sales user: ${sales.email} / sales123`);
 
-  // Create Sample Vehicles
+  // ============================================================================
+  // 3. Create Demo Vehicles
+  // ============================================================================
+  console.log('\n🚗 Creating demo vehicles...');
+
   const vehicles = [
     {
       make: 'Toyota',
@@ -80,55 +100,108 @@ async function main() {
       variant: '1.5 G CVT',
       transmissionType: 'CVT',
       fuelType: 'BENSIN',
-      color: 'Putih',
+      color: 'Putih Mutiara',
       mileage: 15000,
       price: 220000000, // Rp 220 juta
       condition: 'excellent',
-      status: 'AVAILABLE',
-      descriptionId: 'Toyota Avanza 2023 dalam kondisi prima, kilometer rendah, perawatan rutin di dealer resmi.',
-      descriptionEn: '2023 Toyota Avanza in excellent condition, low mileage, regularly serviced at official dealer.',
+      status: VehicleStatus.PUBLISHED,
+      isFeatured: true,
+      descriptionId: 'Toyota Avanza 2023 dalam kondisi prima, kilometer rendah, perawatan rutin di dealer resmi. Cocok untuk keluarga.',
+      descriptionEn: '2023 Toyota Avanza in excellent condition, low mileage, regularly serviced at official dealer. Perfect for families.',
       features: {
         id: ['AC Double Blower', 'Power Steering', 'Central Lock', 'Electric Mirror', 'Fog Lamp'],
         en: ['Dual AC', 'Power Steering', 'Central Lock', 'Electric Mirror', 'Fog Lamp'],
       },
+      tags: ['Best Seller', 'Family Car'],
+      categories: ['MPV', 'Mobil Keluarga'],
     },
     {
       make: 'Honda',
-      model: 'Brio',
+      model: 'CR-V',
       year: 2022,
-      variant: 'RS CVT',
-      transmissionType: 'CVT',
+      variant: '1.5 Turbo Prestige',
+      transmissionType: 'AUTOMATIC',
       fuelType: 'BENSIN',
-      color: 'Merah',
-      mileage: 25000,
-      price: 185000000, // Rp 185 juta
-      condition: 'good',
-      status: 'AVAILABLE',
-      descriptionId: 'Honda Brio RS 2022, mobil city car yang cocok untuk perkotaan, irit BBM.',
-      descriptionEn: '2022 Honda Brio RS, perfect city car for urban driving, fuel efficient.',
+      color: 'Putih',
+      mileage: 28000,
+      price: 485000000, // Rp 485 juta
+      condition: 'excellent',
+      status: VehicleStatus.PUBLISHED,
+      isFeatured: true,
+      descriptionId: 'Honda CR-V Turbo 2022, SUV premium dengan fitur lengkap. Sunroof, leather seat, parking sensor. Seperti baru!',
+      descriptionEn: '2022 Honda CR-V Turbo, premium SUV with complete features. Sunroof, leather seats, parking sensors. Like new!',
       features: {
-        id: ['Keyless Entry', 'Push Start Button', 'Touchscreen Audio', 'Rear Camera'],
-        en: ['Keyless Entry', 'Push Start Button', 'Touchscreen Audio', 'Rear Camera'],
+        id: ['Sunroof', 'Leather Seats', 'Parking Sensor', 'Reverse Camera', 'Cruise Control', 'Keyless Entry'],
+        en: ['Sunroof', 'Leather Seats', 'Parking Sensor', 'Reverse Camera', 'Cruise Control', 'Keyless Entry'],
       },
+      tags: ['Premium', 'SUV'],
+      categories: ['SUV', 'Premium'],
+    },
+    {
+      make: 'Mitsubishi',
+      model: 'Xpander',
+      year: 2023,
+      variant: 'Sport MT',
+      transmissionType: 'MANUAL',
+      fuelType: 'BENSIN',
+      color: 'Merah Solid',
+      mileage: 12000,
+      price: 235000000, // Rp 235 juta
+      condition: 'excellent',
+      status: VehicleStatus.PUBLISHED,
+      isFeatured: true,
+      descriptionId: 'Mitsubishi Xpander Sport 2023, masih garansi pabrik. KM sangat rendah, kondisi perfect seperti baru.',
+      descriptionEn: '2023 Mitsubishi Xpander Sport, still under factory warranty. Very low mileage, perfect condition like new.',
+      features: {
+        id: ['Reverse Camera', 'Touchscreen', 'Keyless Entry', 'ABS', 'Airbag'],
+        en: ['Reverse Camera', 'Touchscreen', 'Keyless Entry', 'ABS', 'Airbag'],
+      },
+      tags: ['New Arrival'],
+      categories: ['MPV', 'Mobil Keluarga'],
     },
     {
       make: 'Suzuki',
       model: 'Ertiga',
-      year: 2023,
+      year: 2022,
       variant: 'GX AT',
       transmissionType: 'AUTOMATIC',
       fuelType: 'BENSIN',
-      color: 'Silver',
-      mileage: 10000,
-      price: 240000000, // Rp 240 juta
+      color: 'Silver Metalik',
+      mileage: 20000,
+      price: 215000000, // Rp 215 juta
       condition: 'excellent',
-      status: 'AVAILABLE',
-      descriptionId: 'Suzuki Ertiga 2023 kondisi istimewa, cocok untuk keluarga, interior luas dan nyaman.',
-      descriptionEn: '2023 Suzuki Ertiga in excellent condition, perfect for families, spacious and comfortable interior.',
+      status: VehicleStatus.PUBLISHED,
+      isFeatured: false,
+      descriptionId: 'Suzuki Ertiga GX AT 2022, mobil keluarga irit dan nyaman. Service record lengkap, pajak hidup.',
+      descriptionEn: '2022 Suzuki Ertiga GX AT, economical and comfortable family car. Complete service records, active tax.',
       features: {
         id: ['7 Seater', 'Dual SRS Airbag', 'ABS', 'EBD', 'Alloy Wheels'],
         en: ['7 Seater', 'Dual SRS Airbag', 'ABS', 'EBD', 'Alloy Wheels'],
       },
+      tags: ['Family Car'],
+      categories: ['MPV', 'Mobil Keluarga'],
+    },
+    {
+      make: 'Toyota',
+      model: 'Fortuner',
+      year: 2021,
+      variant: '2.4 VRZ AT Diesel',
+      transmissionType: 'AUTOMATIC',
+      fuelType: 'DIESEL',
+      color: 'Hitam',
+      mileage: 35000,
+      price: 525000000, // Rp 525 juta
+      condition: 'excellent',
+      status: VehicleStatus.PUBLISHED,
+      isFeatured: true,
+      descriptionId: 'Toyota Fortuner VRZ Diesel 2021, SUV tangguh dan mewah. Full spec, pajak baru, siap touring.',
+      descriptionEn: '2021 Toyota Fortuner VRZ Diesel, rugged and luxurious SUV. Full spec, fresh tax, ready for adventure.',
+      features: {
+        id: ['Leather Seats', 'Cruise Control', 'Parking Sensor', 'Reverse Camera', 'Touchscreen', '4x4'],
+        en: ['Leather Seats', 'Cruise Control', 'Parking Sensor', 'Reverse Camera', 'Touchscreen', '4x4'],
+      },
+      tags: ['Premium', 'SUV', '4WD'],
+      categories: ['SUV', 'Premium', '4x4'],
     },
   ];
 
@@ -137,18 +210,36 @@ async function main() {
       data: {
         ...vehicleData,
         tenantId: tenant.id,
-        createdBy: staff.id,
+        createdBy: admin.id,
+        updatedBy: admin.id,
       },
     });
-    console.log(`✓ Vehicle created: ${vehicle.make} ${vehicle.model} ${vehicle.year}`);
+    console.log(`✅ Vehicle: ${vehicle.year} ${vehicle.make} ${vehicle.model} - Rp ${vehicle.price.toLocaleString('id-ID')}`);
   }
 
-  console.log('\n✅ Database seeded successfully!');
-  console.log('\n📝 Test Accounts:');
-  console.log('   Platform Admin: admin@autolumiku.com / admin123');
-  console.log('   Showroom Owner: owner@demo.autolumiku.com / owner123');
-  console.log('   Sales Staff: staff@demo.autolumiku.com / staff123');
-  console.log('\n🌐 Access: http://localhost:3002');
+  // ============================================================================
+  // Done!
+  // ============================================================================
+  console.log('\n✅ Database seeded successfully!\n');
+  console.log('================================================================');
+  console.log('📝 DEMO CREDENTIALS');
+  console.log('================================================================\n');
+  console.log('👤 Demo Users:');
+  console.log('   Admin:     admin@showroomjakarta.com / admin123');
+  console.log('   Manager:   manager@showroomjakarta.com / manager123');
+  console.log('   Sales:     sales@showroomjakarta.com / sales123\n');
+  console.log('🏢 Tenant Information:');
+  console.log('   Name:      Showroom Jakarta Premium');
+  console.log('   Slug:      showroomjakarta');
+  console.log('   Domain:    showroomjakarta.autolumiku.com\n');
+  console.log('🌐 Access URLs:');
+  console.log('   Admin Panel:       http://localhost:3000/admin');
+  console.log('   Public Catalog:    http://localhost:3000/catalog/showroomjakarta');
+  console.log('   Login:             http://localhost:3000/login\n');
+  console.log('🚗 Demo Data:');
+  console.log('   Vehicles:  5 vehicles created');
+  console.log('   Users:     3 users created');
+  console.log('================================================================\n');
 }
 
 main()

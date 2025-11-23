@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { Tenant, Subscription } from '@prisma/client';
 import { authService } from './auth-service';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 const DEFAULT_TRIAL_DAYS = parseInt(process.env.DEFAULT_TRIAL_DAYS || '14');
 
@@ -19,6 +20,7 @@ const DEFAULT_TRIAL_DAYS = parseInt(process.env.DEFAULT_TRIAL_DAYS || '14');
 export interface CreateTenantRequest {
   name: string;
   slug: string;
+  domain?: string | null; // Custom domain
   industry?: string;
   adminUser: {
     email: string;
@@ -38,6 +40,7 @@ export interface CreateTenantRequest {
 export interface UpdateTenantRequest {
   name?: string;
   slug?: string;
+  domain?: string | null; // Custom domain
   industry?: string;
   logoUrl?: string;
   settings?: any;
@@ -63,12 +66,13 @@ export class TenantService {
     success: boolean;
     tenant?: Tenant;
     adminUser?: any;
+    adminPassword?: string; // Return generated password for display
     message?: string;
   }> {
     try {
       // Check if slug is available
       const existingTenant = await prisma.tenant.findUnique({
-        where: { slug: data.subdomain },
+        where: { slug: data.slug },
       });
 
       if (existingTenant) {
@@ -85,16 +89,18 @@ export class TenantService {
           data: {
             name: data.name,
             slug: data.slug,
-            industry: data.industry || '',
-            isActive: true,
+            domain: data.domain, // Custom domain (optional)
+            createdBy: 'system', // Will be updated to actual admin user ID after creation
           },
         });
 
         // 2. Get or create tenant_admin role
+        // Use tenant-specific role name to avoid unique constraint issues
+        const roleName = `${tenant.slug}_admin`;
+
         let adminRole = await tx.role.findFirst({
           where: {
-            tenantId: tenant.id,
-            name: 'tenant_admin',
+            name: roleName,
           },
         });
 
@@ -102,26 +108,32 @@ export class TenantService {
           adminRole = await tx.role.create({
             data: {
               tenantId: tenant.id,
-              name: 'tenant_admin',
+              name: roleName,
+              displayName: 'Tenant Administrator',
+              displayNameId: 'Administrator Tenant',
               description: 'Tenant Administrator',
-              level: 90,
+              isSystem: true,
             },
           });
         }
 
         // 3. Create admin user
-        const adminUserResult = await authService.register({
-          email: data.adminUser.email,
-          password: data.adminUser.password,
-          firstName: data.adminUser.firstName,
-          lastName: data.adminUser.lastName,
-          tenantId: tenant.id,
-          roleId: adminRole.id,
-        });
+        // Store plain password to return (will be hashed for DB)
+        const plainPassword = data.adminUser.password;
+        const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
-        if (!adminUserResult.success) {
-          throw new Error('Failed to create admin user: ' + adminUserResult.message);
-        }
+        const adminUser = await tx.user.create({
+          data: {
+            email: data.adminUser.email,
+            passwordHash: hashedPassword,
+            firstName: data.adminUser.firstName,
+            lastName: data.adminUser.lastName,
+            tenantId: tenant.id,
+            role: adminRole.name,
+            emailVerified: true, // Auto-verify admin user
+            failedLoginAttempts: 0,
+          },
+        });
 
         // 4. Create subscription (trial by default)
         const trialEndDate = new Date();
@@ -130,19 +142,20 @@ export class TenantService {
         const subscription = await tx.subscription.create({
           data: {
             tenantId: tenant.id,
-            planId: data.subscription?.planId || 'trial',
+            plan: data.subscription?.planId || 'basic',
             status: 'trialing',
-            billingInterval: data.subscription?.billingInterval || 'monthly',
             currentPeriodStart: new Date(),
             currentPeriodEnd: trialEndDate,
             trialEnd: trialEndDate,
+            pricePerMonth: 0, // Free during trial
           },
         });
 
         return {
           tenant,
-          adminUser: adminUserResult.user,
+          adminUser,
           subscription,
+          plainPassword, // Return for display to platform admin
         };
       });
 
@@ -157,6 +170,7 @@ export class TenantService {
         success: true,
         tenant: result.tenant,
         adminUser: result.adminUser,
+        adminPassword: result.plainPassword, // Return password for display
         message: 'Tenant created successfully',
       };
     } catch (error) {
@@ -227,23 +241,14 @@ export class TenantService {
         where.isActive = false;
       }
 
+      // Simplified query without problematic includes for now
       const [tenants, total] = await Promise.all([
         prisma.tenant.findMany({
           where,
           skip,
           take: limit,
           include: {
-            subscriptions: {
-              where: {
-                status: {
-                  in: ['active', 'trialing'],
-                },
-              },
-              orderBy: {
-                startDate: 'desc',
-              },
-              take: 1,
-            },
+            subscription: true,
             _count: {
               select: {
                 users: true,
@@ -259,19 +264,14 @@ export class TenantService {
       ]);
 
       return {
-        tenants,
+        tenants: tenants as any,
         total,
         page,
         limit,
       };
     } catch (error) {
       console.error('Get all tenants failed:', error);
-      return {
-        tenants: [],
-        total: 0,
-        page: 1,
-        limit: 20,
-      };
+      throw error; // Throw error instead of silently returning empty array
     }
   }
 
@@ -284,7 +284,7 @@ export class TenantService {
   ): Promise<{ success: boolean; tenant?: Tenant; message?: string }> {
     try {
       // Check slug availability if changing
-      if (data.subdomain) {
+      if (data.slug) {
         const existing = await prisma.tenant.findFirst({
           where: {
             slug: data.slug,

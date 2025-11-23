@@ -34,12 +34,17 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
     deactivated: 0,
   });
 
-  const [systemHealth, setSystemHealth] = useState<SystemHealth>({
-    overall: 'healthy',
-    database: 'healthy',
-    lastCheck: new Date(),
-    uptime: '99.9%',
-  });
+  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
+
+  useEffect(() => {
+    // Initialize system health on client side only to avoid hydration mismatch
+    setSystemHealth({
+      overall: 'healthy',
+      database: 'healthy',
+      lastCheck: new Date(),
+      uptime: '99.9%',
+    });
+  }, []);
 
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -183,43 +188,47 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
       {/* System Health */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Kesehatan Sistem</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">Status Keseluruhan</span>
-              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${healthColor[systemHealth.overall]}`}>
-                {systemHealth.overall.toUpperCase()}
-              </span>
+        {systemHealth ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Status Keseluruhan</span>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${healthColor[systemHealth.overall]}`}>
+                  {systemHealth.overall.toUpperCase()}
+                </span>
+              </div>
+              <div className="text-sm text-gray-500">
+                Uptime: {systemHealth.uptime}
+              </div>
             </div>
-            <div className="text-sm text-gray-500">
-              Uptime: {systemHealth.uptime}
-            </div>
-          </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">Database</span>
-              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${healthColor[systemHealth.database]}`}>
-                {systemHealth.database.toUpperCase()}
-              </span>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Database</span>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${healthColor[systemHealth.database]}`}>
+                  {systemHealth.database.toUpperCase()}
+                </span>
+              </div>
+              <div className="text-sm text-gray-500">
+                Last check: {format(systemHealth.lastCheck, 'HH:mm:ss', { locale: id })}
+              </div>
             </div>
-            <div className="text-sm text-gray-500">
-              Last check: {format(systemHealth.lastCheck, 'HH:mm:ss', { locale: id })}
-            </div>
-          </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">API Response</span>
-              <span className="px-2 py-1 text-xs font-semibold rounded-full text-green-600 bg-green-50">
-                HEALTHY
-              </span>
-            </div>
-            <div className="text-sm text-gray-500">
-              Response time: 245ms avg
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">API Response</span>
+                <span className="px-2 py-1 text-xs font-semibold rounded-full text-green-600 bg-green-50">
+                  HEALTHY
+                </span>
+              </div>
+              <div className="text-sm text-gray-500">
+                Response time: 245ms avg
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="text-center py-4 text-gray-500">Loading system health...</div>
+        )}
       </div>
 
       {/* Recent Activity */}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { extractAdminUser } from '@/lib/middleware/admin-auth';
 
@@ -10,7 +10,7 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const router = useRouter();
+  const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -28,14 +28,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const handleLogout = () => {
     // Mock logout - in production, clear tokens and redirect
-    router.push('/admin/login');
+    window.location.href = '/admin/login';
   };
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: '🏠' },
     { name: 'Tenants', href: '/admin/tenants', icon: '🏢' },
-    { name: 'Users', href: '/admin/users', icon: '👥' },
-    { name: 'Analytics', href: '/admin/analytics', icon: '📊' },
+    { name: 'Analytics', href: '/admin/health', icon: '📊' },
+    { name: 'Audit Logs', href: '/admin/audit', icon: '📋' },
     { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
   ];
 
@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 href={item.href}
                 className={`
                   flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                  ${router.pathname === item.href
+                  ${pathname === item.href
                     ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }
@@ -136,7 +136,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               {/* Page title */}
               <div className="ml-4 lg:ml-0">
                 <h1 className="text-xl font-semibold text-gray-900">
-                  {navigation.find(item => item.href === router.pathname)?.name || 'Admin'}
+                  {navigation.find(item => item.href === pathname)?.name || 'Admin'}
                 </h1>
               </div>
             </div>

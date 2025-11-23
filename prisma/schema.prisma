@@ -25,6 +25,7 @@ model Tenant {
 
   // Branding
   logoUrl           String?
+  faviconUrl        String?
   primaryColor      String   @default("#1a56db")
   secondaryColor    String   @default("#7c3aed")
   theme             String   @default("light") // light, dark, auto
@@ -643,6 +644,8 @@ model Vehicle {
   tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   photos            VehiclePhoto[]
   history           VehicleHistory[]
+  views             VehicleView[]
+  aiConversations   AIConversation[]
 
   @@index([tenantId])
   @@index([status])
@@ -1483,4 +1486,72 @@ model ApiKeyUsage {
 
   @@index([apiKeyId, timestamp])
   @@map("api_key_usage")
+}
+
+// ============================================================================
+// VEHICLE VIEW TRACKING (For Analytics)
+// ============================================================================
+
+model VehicleView {
+  id                String   @id @default(uuid())
+  vehicleId         String
+  tenantId          String
+
+  // View Details
+  sessionId         String?  // For session tracking
+  visitorId         String?  // For returning visitors
+  ipAddress         String?
+  userAgent         String?
+  referrer          String?
+
+  // Engagement
+  duration          Int?     // Seconds on page
+  bounced           Boolean  @default(false)
+
+  // Metadata
+  viewedAt          DateTime @default(now())
+
+  // Relations
+  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([tenantId])
+  @@index([viewedAt])
+  @@index([sessionId])
+  @@map("vehicle_views")
+}
+
+// ============================================================================
+// AI CONVERSATION TRACKING (For Analytics)
+// ============================================================================
+
+model AIConversation {
+  id                String   @id @default(uuid())
+  tenantId          String
+  vehicleId         String?  // Optional: if about specific vehicle
+
+  // Conversation Details
+  sessionId         String
+  message           String   @db.Text
+  response          String   @db.Text
+  intent            String?  // e.g., "vehicle_inquiry", "price_question"
+  confidence        Float?   // 0-1 confidence score
+  entities          Json?    // Extracted entities
+
+  // Context
+  context           Json?    // Conversation context
+  metadata          Json?    // Additional metadata
+
+  // Metadata
+  createdAt         DateTime @default(now())
+
+  // Relations
+  vehicle           Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([sessionId])
+  @@index([intent])
+  @@index([createdAt])
+  @@map("ai_conversations")
 }

@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { createLogger } from 'winston';
+import winston from 'winston';
 
-const logger = createLogger({
+const logger = winston.createLogger({
   level: 'info',
-  format: {
-    combine: [
-      require('winston').format.timestamp(),
-      require('winston').format.errors({ stack: true }),
-      require('winston').format.json(),
-    ],
-  },
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  ),
   transports: [
-    new require('winston').transports.Console({
-      format: require('winston').format.combine(
-        require('winston').format.colorize(),
-        require('winston').format.simple()
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
       )
     })
   ]

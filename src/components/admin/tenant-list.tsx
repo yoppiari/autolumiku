@@ -193,6 +193,9 @@ export default function TenantList({
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Custom Domain
+                </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('status')}
@@ -238,6 +241,18 @@ export default function TenantList({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{tenant.subdomain}</div>
                     <div className="text-sm text-gray-500">.autolumiku.com</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {tenant.customDomain ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="text-sm text-gray-900">{tenant.customDomain}</div>
+                        <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">
+                          Custom
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400 italic">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[tenant.status]}`}>

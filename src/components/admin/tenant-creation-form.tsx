@@ -12,9 +12,11 @@ interface TenantCreationFormProps {
 interface FormErrors {
   name?: string;
   subdomain?: string;
+  customDomain?: string;
   adminEmail?: string;
   adminFirstName?: string;
   adminLastName?: string;
+  adminPassword?: string;
   general?: string;
 }
 
@@ -22,13 +24,42 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
   const [formData, setFormData] = useState<CreateTenantRequest>({
     name: '',
     subdomain: '',
+    customDomain: '',
     adminEmail: '',
     adminFirstName: '',
     adminLastName: '',
+    adminPassword: '',
+    autoGeneratePassword: true,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const generateRandomPassword = (): string => {
+    const length = 12;
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
+  };
+
+  const handleAutoGenerateToggle = (checked: boolean) => {
+    if (checked) {
+      setFormData(prev => ({
+        ...prev,
+        autoGeneratePassword: true,
+        adminPassword: '',
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        autoGeneratePassword: false,
+      }));
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -51,6 +82,14 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
       newErrors.subdomain = 'Subdomain maksimal 50 karakter';
     }
 
+    // Custom domain validation (optional)
+    if (formData.customDomain && formData.customDomain.trim()) {
+      const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
+      if (!domainRegex.test(formData.customDomain.trim())) {
+        newErrors.customDomain = 'Format domain tidak valid (contoh: showroom.com atau www.showroom.com)';
+      }
+    }
+
     // Email validation
     if (!formData.adminEmail.trim()) {
       newErrors.adminEmail = 'Email admin wajib diisi';
@@ -70,6 +109,17 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
       newErrors.adminLastName = 'Nama belakang admin wajib diisi';
     } else if (formData.adminLastName.length > 50) {
       newErrors.adminLastName = 'Nama belakang maksimal 50 karakter';
+    }
+
+    // Password validation (only if not auto-generate)
+    if (!formData.autoGeneratePassword) {
+      if (!formData.adminPassword || formData.adminPassword.trim() === '') {
+        newErrors.adminPassword = 'Password wajib diisi jika tidak auto-generate';
+      } else if (formData.adminPassword.length < 8) {
+        newErrors.adminPassword = 'Password minimal 8 karakter';
+      } else if (formData.adminPassword.length > 50) {
+        newErrors.adminPassword = 'Password maksimal 50 karakter';
+      }
     }
 
     setErrors(newErrors);
@@ -200,6 +250,36 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
                 Generate dari nama tenant
               </button>
             </div>
+
+            {/* Custom Domain */}
+            <div>
+              <label htmlFor="customDomain" className="block text-sm font-medium text-gray-700 mb-1">
+                Custom Domain <span className="text-gray-500">(Opsional)</span>
+              </label>
+              <input
+                type="text"
+                id="customDomain"
+                value={formData.customDomain}
+                onChange={(e) => handleInputChange('customDomain', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.customDomain ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="showroom.com atau www.showroom.com"
+                disabled={isSubmitting}
+              />
+              {errors.customDomain && (
+                <p className="mt-1 text-sm text-red-600">{errors.customDomain}</p>
+              )}
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-800 font-medium mb-1">ℹ️ Petunjuk Setup Custom Domain:</p>
+                <ol className="text-xs text-blue-700 space-y-1 ml-4 list-decimal">
+                  <li>Buat CNAME record di DNS provider Anda yang mengarah ke: <code className="bg-blue-100 px-1 py-0.5 rounded">proxy.autolumiku.com</code></li>
+                  <li>Contoh: <code className="bg-blue-100 px-1 py-0.5 rounded">www.showroom.com</code> → <code className="bg-blue-100 px-1 py-0.5 rounded">proxy.autolumiku.com</code></li>
+                  <li>Tunggu propagasi DNS (biasanya 5-15 menit)</li>
+                  <li>SSL certificate akan otomatis di-provision setelah domain terverifikasi</li>
+                </ol>
+              </div>
+            </div>
           </div>
 
           {/* Admin Information */}
@@ -271,6 +351,74 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
                   <p className="mt-1 text-sm text-red-600">{errors.adminLastName}</p>
                 )}
               </div>
+            </div>
+
+            {/* Admin Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Password Administrator
+              </label>
+
+              {/* Auto-generate toggle */}
+              <div className="flex items-center mb-3">
+                <input
+                  type="checkbox"
+                  id="autoGeneratePassword"
+                  checked={formData.autoGeneratePassword}
+                  onChange={(e) => handleAutoGenerateToggle(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  disabled={isSubmitting}
+                />
+                <label htmlFor="autoGeneratePassword" className="ml-2 text-sm text-gray-700">
+                  Auto-generate password yang aman (Rekomendasi)
+                </label>
+              </div>
+
+              {!formData.autoGeneratePassword && (
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="adminPassword"
+                    value={formData.adminPassword}
+                    onChange={(e) => handleInputChange('adminPassword', e.target.value)}
+                    className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.adminPassword ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Masukkan password (min. 8 karakter)"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    )}
+                  </button>
+                  {errors.adminPassword && (
+                    <p className="mt-1 text-sm text-red-600">{errors.adminPassword}</p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    Password harus minimal 8 karakter
+                  </p>
+                </div>
+              )}
+
+              {formData.autoGeneratePassword && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm text-green-800">
+                    ✓ Password akan di-generate otomatis dan dikirim via email ke administrator
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
