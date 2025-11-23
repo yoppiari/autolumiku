@@ -44,6 +44,9 @@ model Tenant {
   auditLogs         AuditLog[]
   securityEvents    SecurityEvent[]
   vehicles          Vehicle[]
+  competitorVehicles CompetitorVehicle[]
+  competitorPriceHistory CompetitorPriceHistory[]
+  apiKeys           ApiKey[]
 
   @@index([slug])
   @@index([status])
@@ -1393,4 +1396,91 @@ enum PhotoValidationStatus {
   VALID       // Passed quality checks
   LOW_QUALITY // Quality issues detected
   REJECTED    // Failed validation
+}
+
+// ============================================================================
+// COMPETITOR ANALYSIS (Epic 7: Story 7.7)
+// ============================================================================
+
+model CompetitorVehicle {
+  id               String   @id @default(uuid())
+  tenantId         String
+  competitorName   String   // Competitor showroom name
+  location         String   // Competitor location
+  vehicleMake      String
+  vehicleModel     String
+  year             Int
+  price            Float
+  mileage          Int?
+  condition        String?  // excellent, good, fair
+  sourceUrl        String?  // Where data came from
+  lastUpdated      DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  priceHistory     CompetitorPriceHistory[]
+
+  @@index([tenantId])
+  @@index([competitorName])
+  @@index([vehicleMake, vehicleModel])
+  @@map("competitor_vehicles")
+}
+
+model CompetitorPriceHistory {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  competitorVehicleId   String
+  oldPrice              Float
+  newPrice              Float
+  changedAt             DateTime @default(now())
+
+  // Relations
+  tenant                Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  competitorVehicle     CompetitorVehicle @relation(fields: [competitorVehicleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([competitorVehicleId])
+  @@index([changedAt])
+  @@map("competitor_price_history")
+}
+
+// ============================================================================
+// API KEY MANAGEMENT (Cross-Cutting Security: Story SC.5)
+// ============================================================================
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String   // Descriptive name (e.g., "Website Integration")
+  keyPrefix   String   // First 15 chars for identification (e.g., "sk_live_abc123...")
+  keyHash     String   // Bcrypt hashed full key
+  permissions String[] // Array of permissions (e.g., ["vehicles:read", "leads:write"])
+  rateLimit   Int      @default(100) // Requests per minute
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  usage       ApiKeyUsage[]
+
+  @@index([tenantId])
+  @@index([keyPrefix])
+  @@index([isActive])
+  @@map("api_keys")
+}
+
+model ApiKeyUsage {
+  id        String   @id @default(uuid())
+  apiKeyId  String
+  timestamp DateTime @default(now())
+
+  // Relations
+  apiKey    ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, timestamp])
+  @@map("api_key_usage")
 }
