@@ -1,6 +1,6 @@
 /**
  * Command Center - Main Interface
- * Epic 3: Story 3.1 & 3.2 - Natural Language Control Center
+ * Epic 3: Story 3.1 - Natural Language Control Center
  *
  * Zero-tech-barrier interface for controlling the platform
  */
@@ -11,12 +11,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { CommandInput } from './CommandInput';
 import { CommandHistory } from './CommandHistory';
 import { CommandResult } from './CommandResult';
-import { VoiceInput } from './VoiceInput';
 import { CommandSuggestions } from './CommandSuggestions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Mic, Keyboard, History, HelpCircle } from 'lucide-react';
+import { History, HelpCircle } from 'lucide-react';
 
 // ============================================================================
 // Types
@@ -41,7 +39,6 @@ interface CommandCenterProps {
 
 export function CommandCenter({ tenantId, userId }: CommandCenterProps) {
   // State
-  const [activeTab, setActiveTab] = useState<'text' | 'voice'>('text');
   const [commandHistory, setCommandHistory] = useState<CommandHistoryItem[]>([]);
   const [currentResult, setCurrentResult] = useState<any | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -225,38 +222,16 @@ export function CommandCenter({ tenantId, userId }: CommandCenterProps) {
             <CardHeader>
               <CardTitle>Perintah</CardTitle>
               <CardDescription>
-                Ketik atau ucapkan perintah Anda
+                Ketik perintah Anda dalam Bahasa Indonesia
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="text" className="flex items-center gap-2">
-                    <Keyboard className="w-4 h-4" />
-                    <span>Ketik</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="voice" className="flex items-center gap-2">
-                    <Mic className="w-4 h-4" />
-                    <span>Suara</span>
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="text" className="mt-4">
-                  <CommandInput
-                    onSubmit={executeCommand}
-                    isProcessing={isProcessing}
-                    tenantId={tenantId}
-                    userId={userId}
-                  />
-                </TabsContent>
-
-                <TabsContent value="voice" className="mt-4">
-                  <VoiceInput
-                    onTranscript={executeCommand}
-                    isProcessing={isProcessing}
-                  />
-                </TabsContent>
-              </Tabs>
+              <CommandInput
+                onSubmit={executeCommand}
+                isProcessing={isProcessing}
+                tenantId={tenantId}
+                userId={userId}
+              />
 
               {/* Quick Actions */}
               <div className="mt-4 flex flex-wrap gap-2">
