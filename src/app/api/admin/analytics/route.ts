@@ -7,11 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    // Simple mock authentication check
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // TODO: Add proper authentication in production
+    // For development, allow all requests
 
     const searchParams = request.nextUrl.searchParams;
     const timeRange = searchParams.get('timeRange') || '7d';
