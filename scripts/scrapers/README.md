@@ -30,30 +30,47 @@ No additional dependencies needed. Uses Node.js built-in `fetch` API.
 
 ## Usage
 
-### 1. Run Mobil123 Scraper
+### 1. Run Mobil123 Scraper (Basic - Currently Blocked)
 
 ```bash
-npx tsx scripts/scrapers/test-mobil123-scraper.ts
+npm run scraper:mobil123
 ```
 
-**Output:**
-- Fetches vehicle listings from Mobil123
-- Saves results to `output/mobil123-results.json`
-- Prints summary statistics
+**Status:** ❌ Blocked by anti-bot protection (403 Forbidden)
 
-### 2. Run OLX Scraper
+### 2. Run OLX Scraper (Basic - Currently Blocked)
 
 ```bash
-npx tsx scripts/scrapers/test-olx-scraper.ts
+npm run scraper:olx
 ```
 
-**Output:**
-- Fetches vehicle listings from OLX Indonesia
-- Attempts both HTML and API endpoints
-- Saves results to `output/olx-results.json`
-- Prints summary statistics
+**Status:** ❌ Blocked by anti-bot protection (Socket closed)
 
-### 3. Analyze & Compare Results
+### 3. Run OLX Puppeteer Scraper (WORKING ✅)
+
+```bash
+npm run scraper:olx-puppeteer
+```
+
+**Status:** ✅ **WORKING** - Successfully bypasses anti-bot protection
+
+**Output:**
+- Uses real browser automation (Puppeteer)
+- Bypasses Cloudflare/anti-bot protection
+- Scrapes 20 vehicles in ~10 seconds
+- Extracts: make, model, price, URL
+- Saves results to `output/olx-puppeteer-results.json`
+
+**Example Results:**
+```
+Total vehicles: 20
+Unique makes: 8
+Makes: Toyota, Mitsubishi, BMW, Suzuki, Hyundai, Mercedes, Honda
+Average price: Rp 384 juta
+Price range: Rp 88 - 1,720 juta
+```
+
+### 4. Analyze & Compare Results
 
 ```bash
 npx tsx scripts/scrapers/analyze-results.ts
