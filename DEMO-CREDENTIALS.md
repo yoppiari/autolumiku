@@ -1,6 +1,6 @@
 # AutoLumiku Demo Credentials
 
-**Last Updated:** 2025-11-23
+**Last Updated:** 2025-11-24
 
 ## 📋 Quick Access
 
@@ -13,12 +13,53 @@
 
 ## 👤 Demo User Accounts
 
-### 1. Admin User (Full Access)
+### 🔐 Super Admin (Platform Management)
+**Login URL:** `/admin/login`
 ```
-Email:    admin@showroomjakarta.com
+Email:    admin@autolumiku.com
 Password: admin123
-Role:     Admin
+Role:     super_admin
+Tenant:   null (Platform-wide)
 ```
+
+**Permissions:**
+- ✅ Platform administration
+- ✅ Tenant management (create, edit, delete tenants)
+- ✅ System settings & configuration
+- ✅ Global analytics & monitoring
+- ✅ User management across all tenants
+
+**Use Cases:**
+- Manage all showrooms/tenants
+- Platform configuration
+- Global reporting
+- System maintenance
+
+---
+
+### 1. Admin User (Full Access)
+**Login URL:** `/login`
+```
+Email:    user@showroom.com
+Password: user123
+Role:     admin
+Tenant:   tenant-1
+```
+
+**Permissions:**
+- ✅ Full showroom access
+- ✅ Tenant management
+- ✅ User management (within tenant)
+- ✅ Vehicle management (create, edit, delete)
+- ✅ Lead management
+- ✅ Analytics & reports
+- ✅ Settings & configuration
+
+**Use Cases:**
+- Test admin dashboard
+- Manage showroom settings
+- View all analytics
+- Create/edit/delete any data
 
 **Permissions:**
 - ✅ Full system access
@@ -37,12 +78,38 @@ Role:     Admin
 
 ---
 
-### 2. Manager User (Management Access)
+### 2. Staff User (Showroom Staff)
+**Login URL:** `/login`
+```
+Email:    staff@showroom.com
+Password: staff123
+Role:     staff
+Tenant:   tenant-1
+```
+
+**Permissions:**
+- ✅ View vehicle catalog
+- ✅ Manage assigned vehicles
+- ✅ View and respond to leads
+- ✅ View personal analytics
+- ❌ Cannot manage users
+- ❌ Cannot access tenant settings
+
+**Use Cases:**
+- Test staff workflow
+- Manage vehicle listings
+- Handle customer inquiries
+- Track personal performance
+
+---
+
+### 3. Manager User (Management Access)
 ```
 Email:    manager@showroomjakarta.com
 Password: manager123
 Role:     Manager
 ```
+**⚠️ Not implemented yet** - Available in future version
 
 **Permissions:**
 - ✅ View all vehicles
@@ -61,12 +128,13 @@ Role:     Manager
 
 ---
 
-### 3. Sales User (Staff Access)
+### 4. Sales User (Staff Access)
 ```
 Email:    sales@showroomjakarta.com
 Password: sales123
 Role:     Staff (Sales)
 ```
+**⚠️ Not implemented yet** - Available in future version
 
 **Permissions:**
 - ✅ View vehicle catalog
@@ -89,11 +157,17 @@ Role:     Staff (Sales)
 
 ### Development (localhost)
 
-#### Admin Panel
+#### Super Admin Panel
 ```
-http://localhost:3000/admin
+http://localhost:3000/admin/login
 ```
-Login with any of the accounts above to access admin dashboard.
+Login with `admin@autolumiku.com` for platform administration.
+
+#### Showroom Dashboard
+```
+http://localhost:3000/dashboard
+```
+Login with showroom admin accounts (`user@showroom.com`) for showroom management.
 
 #### Public Vehicle Catalog
 ```
@@ -101,11 +175,11 @@ http://localhost:3000/catalog/showroomjakarta
 ```
 Public-facing showroom catalog (no login required).
 
-#### Login Page
+#### Standard Login Page
 ```
 http://localhost:3000/login
 ```
-Standard login for all users.
+Login for showroom users (admin, staff, manager).
 
 #### API Endpoints (if needed)
 ```
@@ -182,33 +256,36 @@ npm run db:seed
 
 ## 🧪 Testing Scenarios
 
-### Scenario 1: Admin Workflow
-1. Login as `admin@showroomjakarta.com`
-2. Navigate to `/admin/dashboard`
-3. Create a new vehicle
-4. View analytics dashboard
-5. Manage users
+### Scenario 1: Super Admin Workflow
+1. Go to `/admin/login`
+2. Login as `admin@autolumiku.com`
+3. Navigate to `/admin` (platform admin)
+4. Manage tenants
+5. View global analytics
+6. Configure system settings
 
-### Scenario 2: Sales Workflow
-1. Login as `sales@showroomjakarta.com`
-2. Navigate to `/admin/vehicles`
-3. Add new vehicle listing
-4. View assigned leads
-5. Update lead status
+### Scenario 2: Showroom Admin Workflow
+1. Go to `/login`
+2. Login as `user@showroom.com`
+3. Navigate to `/dashboard` (showroom management)
+4. Manage vehicles and inventory
+5. Handle customer leads
+6. Manage showroom staff
 
-### Scenario 3: Public Catalog
+### Scenario 3: Staff Workflow
+1. Go to `/login`
+2. Login as `staff@showroom.com`
+3. Navigate to `/dashboard`
+4. Manage vehicle listings
+5. Handle customer leads
+6. View personal analytics
+
+### Scenario 4: Public Catalog
 1. Open `http://localhost:3000/catalog/showroomjakarta` (no login)
 2. Browse vehicle listings
 3. Filter by price/brand/year
 4. View vehicle details
 5. Submit inquiry (creates lead)
-
-### Scenario 4: Manager Workflow
-1. Login as `manager@showroomjakarta.com`
-2. View team performance
-3. Assign leads to sales staff
-4. Approve pending vehicles
-5. Generate reports
 
 ---
 
@@ -249,16 +326,19 @@ JWT_REFRESH_SECRET=<another_generated_secret>
 
 ## 🎯 Next Steps After Testing
 
-1. ✅ Test all user roles (Admin, Manager, Sales)
-2. ✅ Test public catalog UI
-3. ✅ Test vehicle CRUD operations
-4. ✅ Test lead management
-5. ✅ Test analytics dashboard
-6. ⚠️  Run Prisma migrations (if schema changed)
-7. ⚠️  Add environment variables
-8. ⚠️  Configure cloud storage (for photos)
-9. ⚠️  Setup email service (SMTP)
-10. ⚠️  Deploy to production
+1. ✅ Test super admin login (`/admin/login`)
+2. ✅ Test showroom admin login (`/login`)
+3. ✅ Test staff login (`/login`)
+4. ✅ Test role-based redirects
+5. ✅ Test public catalog UI
+6. ⚠️  Test vehicle CRUD operations
+7. ⚠️  Test lead management
+8. ⚠️  Test analytics dashboard
+9. ⚠️  Run Prisma migrations (if schema changed)
+10. ⚠️  Add environment variables
+11. ⚠️  Configure cloud storage (for photos)
+12. ⚠️  Setup email service (SMTP)
+13. ⚠️  Deploy to production
 
 ---
 

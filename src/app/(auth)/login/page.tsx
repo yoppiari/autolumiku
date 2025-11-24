@@ -26,6 +26,8 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    console.log('Submitting login form:', formData); // Debug log
 
     try {
       const response = await fetch('/api/v1/auth/login', {
@@ -34,24 +36,28 @@ export default function LoginPage() {
         body: JSON.stringify(formData),
       });
 
+      console.log('Login response status:', response.status);
       const result = await response.json();
+      console.log('Login response data:', result);
 
       if (!result.success) {
-        setError(result.message || 'Login failed');
+        setError(result.error || result.message || 'Login failed');
         setLoading(false);
         return;
       }
 
-      // Store tokens
-      if (result.data?.tokens) {
-        localStorage.setItem('accessToken', result.data.tokens.accessToken);
-        localStorage.setItem('refreshToken', result.data.tokens.refreshToken);
+      // Store token and user data
+      if (result.data?.token) {
+        localStorage.setItem('authToken', result.data.token);
         localStorage.setItem('user', JSON.stringify(result.data.user));
+        console.log('Showroom token stored, user role:', result.data.user.role);
+        console.log('Redirecting to dashboard...');
       }
 
-      // Redirect to dashboard
+      // Showroom users go to /dashboard
       router.push('/dashboard');
     } catch (err) {
+      console.error('Login error:', err);
       setError('An error occurred. Please try again.');
       setLoading(false);
     }
@@ -139,10 +145,16 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">Don't have an account? </span>
-            <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
-              Sign up
-            </Link>
+            <span className="text-gray-600">Don&#x27;t have an account? </span>
+            <a className="text-blue-600 hover:text-blue-700 font-medium" href="/signup">Sign up</a>
+          </div>
+          <div className="mt-4 text-center">
+            <a
+              href="/admin/login"
+              className="text-sm text-gray-600 hover:text-gray-700"
+            >
+              Super Admin Login →
+            </a>
           </div>
 
           <div className="mt-6 relative">

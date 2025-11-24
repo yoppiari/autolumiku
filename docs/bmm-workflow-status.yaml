@@ -1,11 +1,11 @@
 # BMad Method Workflow Status
 # Generated: 2025-11-21T00:00:00.000Z
-# Last Audit: 2025-11-23T13:30:00.000Z
+# Last Audit: 2025-11-24T12:20:00.000Z
 # Project: autolumiku
 # Track: BMad Method (Greenfield)
 
 generated: "2025-11-21T00:00:00.000Z"
-last_audit: "2025-11-23T13:30:00.000Z"
+last_audit: "2025-11-24T12:20:00.000Z"
 audit_status: "VERIFIED"
 project: "autolumiku"
 project_type: "greenfield"
@@ -118,14 +118,14 @@ workflow_status: |
 implementation_summary:
   total_epics: 8
   completed_epics: 8
-  total_stories: 62
-  completed_stories: 62
-  removed_stories: 2
+  total_stories: 61
+  completed_stories: 61
+  removed_stories: 3
   new_requirements: 1
   completed_requirements: 1
   completion_percentage: 100
   status: "PRODUCTION-READY"
-  notes: "100% of applicable stories for Indonesia market + analytics dashboard completed"
+  notes: "100% of applicable stories for Indonesia market + analytics dashboard completed. Epic 6 simplified to 5 WhatsApp-focused stories."
 
 # CODE AUDIT RESULTS (2025-11-23)
 code_audit:
@@ -192,16 +192,17 @@ code_audit:
 
     epic_6_lead_management:
       status: "VERIFIED"
-      stories_found: 6
-      stories_expected: 6
+      stories_found: 5
+      stories_expected: 5
       coverage: "100%"
       key_files:
-        - "src/services/lead/lead-scoring.service.ts"
         - "src/services/lead/whatsapp-integration.service.ts"
-        - "src/services/lead/lead-activity.service.ts"
-        - "src/services/lead/lead-task.service.ts"
-        - "src/services/lead/communication.service.ts"
-        - "src/services/catalog/lead.service.ts"
+        - "src/services/lead/simple-lead-tracker.service.ts"
+        - "src/services/lead/whatsapp-templates.service.ts"
+        - "src/services/lead/basic-lead-dashboard.service.ts"
+        - "src/components/catalog/WhatsAppButton.tsx"
+        - "src/app/admin/leads/page.tsx"
+      notes: "Simplified from 6 to 5 stories focusing on WhatsApp integration only"
 
     epic_7_analytics:
       status: "COMPLETE"
@@ -312,8 +313,8 @@ code_audit:
         - "src/types/user.ts"
 
   overall_assessment:
-   total_stories_verified: 62
-   total_stories_planned: 62
+   total_stories_verified: 61
+   total_stories_planned: 61
    completed_requirements: 2
    implementation_rate: "100% (all requirements complete)"
    code_quality: "HIGH"
@@ -498,7 +499,7 @@ final_status:
 # PROJECT COMPLETION SUMMARY
 completion_details:
   original_stories_planned: 62
-  stories_removed: 2
+  stories_removed: 3
   applicable_stories: 61
   stories_implemented: 61
   new_requirements: 2
@@ -521,13 +522,37 @@ completion_details:
   removed_stories_detail:
     - story_3_2_voice_input: "Not needed - User preference"
     - story_sc_6_gdpr: "Not applicable - Indonesia market only"
-
+    - epic_6_complex_crm_stories: "Simplified to WhatsApp-only approach - removed 1 complex CRM story"
   implementation_breakdown:
-    epic_1_multi_tenant: "12/12 (100%)"
-    epic_2_ai_upload: "8/8 (100%)"
-    epic_3_natural_language: "5/5 (100%) - Voice removed"
-    epic_4_inventory: "7/7 (100%)"
-    epic_5_catalog: "9/9 (100%)"
-    epic_6_leads: "6/6 (100%)"
-    epic_7_analytics: "8/8 (100%)"
-    security_data: "5/5 (100%) - GDPR removed"
+     epic_1_multi_tenant: "12/12 (100%)"
+     epic_2_ai_upload: "8/8 (100%)"
+     epic_3_natural_language: "5/5 (100%) - Voice removed"
+     epic_4_inventory: "7/7 (100%)"
+     epic_5_catalog: "9/9 (100%)"
+     epic_6_leads: "5/5 (100%) - Simplified WhatsApp focus"
+     epic_7_analytics: "8/8 (100%)"
+     security_data: "5/5 (100%) - GDPR removed"
+
+        - id: "routing-separation-refactor"
+          agent: "developer"
+          status: "COMPLETED"
+          command: "refactor-routing"
+          output: "src/app/dashboard/"
+          requirement_date: "2025-11-24"
+          completion_date: "2025-11-24"
+          priority: "HIGH"
+          description: "Separated super admin and showroom admin routing structures"
+          changes:
+            - "Created /dashboard for showroom admin (login via /login)"
+            - "Kept /admin for super admin only (login via /admin/login)"
+            - "Added role-based protection in both layouts"
+            - "Updated DEMO-CREDENTIALS.md with new routing"
+          routing_rules:
+            super_admin:
+              login: "/admin/login"
+              dashboard: "/admin"
+              features: ["tenants", "users", "health", "audit", "settings"]
+            showroom_admin:
+              login: "/login"
+              dashboard: "/dashboard"
+              features: ["vehicles", "leads", "users", "settings"]

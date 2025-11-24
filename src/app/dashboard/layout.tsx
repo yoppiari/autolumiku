@@ -4,84 +4,52 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
-
-interface AdminLayoutProps {
+interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  // Read user from localStorage and check if super_admin
+  // Read user from localStorage
   React.useEffect(() => {
-    // Skip auth check for login page
-    if (pathname === '/admin/login') {
-      return;
-    }
-
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
 
-        // Check if user is super_admin
-        if (userData.role !== 'super_admin') {
-          // Not a super admin, redirect to showroom dashboard
-          window.location.href = '/dashboard';
+        // Check if user has tenantId (showroom user)
+        if (!userData.tenantId) {
+          // Not a showroom user, redirect to admin login
+          window.location.href = '/admin/login';
           return;
         }
 
         setUser(userData);
       } catch (e) {
         console.error('Error parsing user data:', e);
-        // Redirect to admin login if user data is invalid
-        window.location.href = '/admin/login';
+        window.location.href = '/login';
       }
     } else {
-      // No user data, redirect to admin login
-      window.location.href = '/admin/login';
-    }
-  }, [pathname]);
-
-  // Skip layout for login page
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
-
-  const handleLogout = () => {
-    // Clear auth token and redirect
-    const storedUser = localStorage.getItem('user');
-    let userRole = null;
-
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        userRole = userData.role;
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-      }
-    }
-
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-
-    // Redirect based on role
-    if (userRole === 'super_admin') {
-      window.location.href = '/admin/login';
-    } else {
+      // No user data, redirect to login
       window.location.href = '/login';
     }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: '🏠' },
-    { name: 'Tenants', href: '/admin/tenants', icon: '🏢' },
-    { name: 'Users', href: '/admin/users', icon: '👥' },
-    { name: 'Analytics', href: '/admin/health', icon: '📊' },
-    { name: 'Audit Logs', href: '/admin/audit', icon: '📋' },
-    { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
+    { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
+    { name: 'Kendaraan', href: '/dashboard/vehicles', icon: '🚗' },
+    { name: 'Leads', href: '/dashboard/leads', icon: '📞' },
+    { name: 'Tim', href: '/dashboard/users', icon: '👥' },
+    { name: 'Pengaturan', href: '/dashboard/settings', icon: '⚙️' },
   ];
 
   return (
@@ -98,7 +66,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 admin-sidebar transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
@@ -110,7 +78,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
               <div className="ml-3">
                 <div className="text-lg font-bold text-gray-900">autolumiku</div>
-                <div className="text-xs text-gray-500">Admin Panel</div>
+                <div className="text-xs text-gray-500">Showroom Dashboard</div>
               </div>
             </div>
           </div>
@@ -131,23 +99,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                   <span className="mr-3 text-lg">{item.icon}</span>
                   {item.name}
-                </Link>
+              </Link>
             ))}
           </nav>
 
           {/* User menu */}
           <div className="border-t border-gray-200 p-4">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-gray-600 text-sm">
-                  {user?.firstName?.[0] || 'A'}
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">
+                  {user?.firstName?.[0] || 'U'}
                 </span>
               </div>
               <div className="ml-3">
                 <div className="text-sm font-medium text-gray-900">
                   {user?.firstName} {user?.lastName}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-500 capitalize">
                   {user?.role?.replace('_', ' ')}
                 </div>
               </div>
@@ -165,7 +133,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="admin-header h-16 px-4 sm:px-6 lg:px-8">
+        <header className="bg-white border-b border-gray-200 h-16 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-full">
             <div className="flex items-center">
               {/* Mobile menu button */}
@@ -181,7 +149,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               {/* Page title */}
               <div className="ml-4 lg:ml-0">
                 <h1 className="text-xl font-semibold text-gray-900">
-                  {navigation.find(item => item.href === pathname)?.name || 'Admin'}
+                  {navigation.find(item => item.href === pathname)?.name || 'Dashboard'}
                 </h1>
               </div>
             </div>
@@ -195,19 +163,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </svg>
               </button>
 
-              {/* Help */}
-              <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549 1.651 1.938 2.975 3.578 3.889a8.008 8.008 0 01-3.578 3.889c-1.64-.914-3.029-2.238-3.578-3.889a8.008 8.008 0 013.578-3.889c1.64.914 3.029 2.238 3.578 3.889M8 2.5a8.002 8.002 0 01-7.428 0" />
-                </svg>
-              </button>
-
               {/* User avatar */}
               <div className="relative">
                 <button className="flex items-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 text-sm">
-                      {user?.firstName?.[0] || 'A'}
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.firstName?.[0] || 'U'}
                     </span>
                   </div>
                 </button>
@@ -217,7 +178,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="admin-content p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

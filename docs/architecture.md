@@ -1366,3 +1366,101 @@ This architecture provides a solid foundation for building autolumiku as a scala
 1. Epic breakdown from architecture decisions
 2. Implementation readiness validation
 3. Sprint planning for development execution
+## Authentication & Routing Architecture
+
+### **CRITICAL ROUTING RULES - DO NOT MODIFY**
+
+The platform uses **strict role-based routing separation** between Super Admin (platform management) and Showroom Admin (tenant management). These routes are **immutable** and must never be changed:
+
+#### Super Admin Routes (Platform Management)
+- **Login URL:** `/admin/login` (FIXED - Never change)
+- **Dashboard:** `/admin` (FIXED - Never change)
+- **Role Required:** `super_admin`
+- **Features:**
+  - `/admin` - Platform overview & tenant monitoring
+  - `/admin/tenants` - Multi-tenant management
+  - `/admin/users` - Cross-tenant user management
+  - `/admin/health` - Platform health & analytics
+  - `/admin/audit` - System-wide audit logs
+  - `/admin/settings` - Platform configuration
+
+**Protection Logic:**
+```typescript
+// src/app/admin/layout.tsx
+if (userData.role !== 'super_admin') {
+  window.location.href = '/dashboard'; // Redirect non-superadmin
+}
+```
+
+#### Showroom Admin Routes (Tenant Management)
+- **Login URL:** `/login` (FIXED - Never change)
+- **Dashboard:** `/dashboard` (FIXED - Never change)
+- **Role Required:** `admin`, `tenant_admin`, `staff` (must have `tenantId`)
+- **Features:**
+  - `/dashboard` - Showroom overview & statistics
+  - `/dashboard/vehicles` - Vehicle inventory management
+  - `/dashboard/leads` - Customer leads & WhatsApp integration
+  - `/dashboard/users` - Showroom staff management
+  - `/dashboard/settings` - Showroom configuration
+
+**Protection Logic:**
+```typescript
+// src/app/dashboard/layout.tsx
+if (!userData.tenantId) {
+  window.location.href = '/admin/login'; // Not a showroom user
+}
+```
+
+### Authentication Flow
+
+```
+┌─────────────────┐          ┌──────────────────┐
+│  Super Admin    │          │  Showroom Admin  │
+│  Login          │          │  Login           │
+│  /admin/login   │          │  /login          │
+└────────┬────────┘          └────────┬─────────┘
+         │                            │
+         ├── Validate credentials     ├── Validate credentials
+         │   via /api/v1/auth/admin  │   via /api/v1/auth/login
+         │   /login                   │
+         │                            │
+         ├── Check role               ├── Check tenantId
+         │   Must be: super_admin     │   Must exist
+         │                            │
+         ▼                            ▼
+┌─────────────────┐          ┌──────────────────┐
+│  /admin         │          │  /dashboard      │
+│  Platform Mgmt  │          │  Showroom Mgmt   │
+└─────────────────┘          └──────────────────┘
+```
+
+### Logout Behavior
+
+**Role-based redirect:**
+```typescript
+// Super admin logout
+if (userRole === 'super_admin') {
+  window.location.href = '/admin/login';
+}
+
+// Showroom admin logout
+else {
+  window.location.href = '/login';
+}
+```
+
+### Why These Routes Are Fixed
+
+1. **Security:** Prevents privilege escalation attacks
+2. **Multi-tenancy:** Clear separation of platform vs tenant operations
+3. **User Experience:** Different user types have different mental models
+4. **Audit Compliance:** Route-based access logs for compliance
+5. **Documentation:** Consistent URLs in all documentation and training materials
+
+**⚠️ WARNING:** Changing these routes will break:
+- Authentication flows
+- Role-based access control
+- User documentation
+- Integration tests
+- Production deployments
+

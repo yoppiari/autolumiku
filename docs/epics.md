@@ -1099,151 +1099,127 @@ So that **customers can easily find and contact my showroom**.
 
 **Checkpoint 5: Customer-Facing Catalog Generation Complete** ✅
 
-## Epic 6: Lead Capture & Engagement
+## Epic 6: WhatsApp Lead Management
 
-**Epic Goal:** Enable showroom staff to capture, manage, and nurture customer leads effectively through automated inquiry processing, integrated communication channels, and comprehensive lead tracking across the entire customer journey from initial interest to purchase decision.
+**Epic Goal:** Simplify lead capture and management through WhatsApp integration, enabling customers to easily connect with showrooms from catalog pages and providing basic lead tracking for showroom staff.
 
-### Story 6.1: Automated Customer Inquiry Processing
+### Story 6.1: WhatsApp Button Integration in Catalog
 
-As a **showroom salesperson**,
-I want **the system to automatically process and categorize customer inquiries from multiple channels**,
-So that **I can respond to leads quickly and efficiently with appropriate prioritization**.
-
-**Acceptance Criteria:**
-
-**Given** Customers submit inquiries through website forms or WhatsApp
-**When** The system receives a new inquiry
-**Then** It automatically extracts key information: name, contact, vehicle interest, budget, and urgency
-
-**Given** Multiple inquiries arrive simultaneously
-**When** The system processes them
-**Then** It categorizes leads by urgency (Hot/Warm/Cold) and assigns appropriate follow-up priority
-
-**Given** I need to review incoming leads
-**When** I access the lead dashboard
-**Then** I see all inquiries with extracted information, lead scores, and suggested response templates
-
-**Coverage:** FR37, FR38
-
----
-
-### Story 6.2: WhatsApp Integration for Instant Lead Response
-
-As a **showroom staff member**,
-I want **to respond to customer inquiries directly through WhatsApp integration**,
-So that **I can engage leads using their preferred communication channel for faster conversion**.
+As a **car buyer browsing vehicle listings**,
+I want **to click a WhatsApp button on vehicle pages to instantly connect with the showroom**,
+So that **I can inquire about vehicles I'm interested in using my preferred communication app**.
 
 **Acceptance Criteria:**
 
-**Given** A customer inquires through WhatsApp
-**When** The message is received
-**Then** It appears in my unified lead dashboard with the customer's contact details
+**Given** I am viewing a vehicle on the catalog website
+**When** I click the WhatsApp button
+**Then** WhatsApp opens with a pre-filled message including the vehicle details and showroom contact
 
-**Given** I need to respond to a WhatsApp inquiry
-**When** I compose a response
-**Then** I can send it directly through the system without switching applications
+**Given** I browse multiple vehicles
+**When** I click WhatsApp on different vehicles
+**Then** Each button connects me with the correct showroom for that vehicle
 
-**Given** Customers ask about vehicle availability
-**When** I respond through WhatsApp
-**Then** I can include current inventory status, photos, and pricing information directly in the message
+**Given** I use a mobile device
+**When** I click the WhatsApp button
+**Then** The WhatsApp app opens automatically with the showroom number and vehicle information
 
-**Coverage:** FR39
-
----
-
-### Story 6.3: Lead Scoring and Prioritization System
-
-As a **showroom manager**,
-I want **an automated lead scoring system that prioritizes high-value opportunities**,
-So that **my team can focus on leads with the highest conversion potential**.
-
-**Acceptance Criteria:**
-
-**Given** Customer inquiries arrive from various channels
-**When** The system analyzes each lead
-**Then** It assigns scores based on budget, urgency, vehicle match, and engagement level
-
-**Given** I need to review lead priorities
-**When** I view the lead dashboard
-**Then** Leads are sorted by score with clear priority indicators and follow-up recommendations
-
-**Given** A lead's behavior changes (e.g., website visits, multiple inquiries)
-**When** The system detects engagement
-**Then** The lead score updates automatically with priority notifications
-
-**Coverage:** FR40
+**Coverage:** FR31 (WhatsApp integration)
 
 ---
 
-### Story 6.4: Customer Lead History and Conversation Tracking
-
-As a **showroom salesperson**,
-I want **complete visibility into customer interaction history across all channels**,
-So that **I can provide personalized follow-up based on previous conversations and preferences**.
-
-**Acceptance Criteria:**
-
-**Given** A returning customer inquires again
-**When** I access their profile
-**Then** I see all previous interactions: inquiries, test drives, vehicle preferences, and conversations
-
-**Given** Multiple staff members interact with the same customer
-**When** I update customer information
-**Then** All team members see the latest notes and interaction history in real-time
-
-**Given** I need to prepare for follow-up
-**When** I review customer history
-**Then** I see their expressed preferences, previous vehicles viewed, and communication preferences
-
-**Coverage:** FR41
-
----
-
-### Story 6.5: Automated Follow-up Reminders and Task Management
-
-As a **showroom salesperson**,
-I want **automated reminders for lead follow-up tasks and customer communication**,
-So that **I never miss important opportunities and maintain consistent customer engagement**.
-
-**Acceptance Criteria:**
-
-**Given** I set a follow-up reminder for a customer
-**When** The time arrives
-**Then** I receive notifications with customer details and recommended next actions
-
-**Given** Multiple leads need follow-up at different times
-**When** I view my task dashboard
-**Then** I see prioritized follow-up tasks with overdue indicators and suggested communication templates
-
-**Given** I complete a follow-up action
-**When** I log the interaction
-**Then** The system schedules the next follow-up based on customer response and lead stage
-
-**Coverage:** FR42
-
----
-
-### Story 6.6: Customer Communication Preferences Management
+### Story 6.2: WhatsApp Number Management in Admin
 
 As a **showroom administrator**,
-I want **to track and respect customer communication preferences across channels**,
-So that **I can provide personalized service that matches how customers want to be contacted**.
+I want **to configure and manage WhatsApp numbers for lead generation**,
+So that **customer inquiries are routed to the correct sales team members**.
 
 **Acceptance Criteria:**
 
-**Given** Customers specify preferred communication channels
-**When** I set up their preferences
-**Then** The system routes all communications through their chosen channels (WhatsApp, email, phone, SMS)
+**Given** I need to set up WhatsApp for my showroom
+**When** I access lead management settings
+**Then** I can configure primary and backup WhatsApp numbers for customer inquiries
 
-**Given** A customer requests to pause communications
-**When** I update their preference status
-**Then** All automated follow-ups and promotions are paused until the specified date
+**Given** I have multiple sales team members
+**When** I configure WhatsApp routing
+**Then** I can assign different WhatsApp numbers or rotate inquiries among team members
 
-**Given** I need to review customer preferences
-**When** I access customer profiles
-**Then** I see their preferred contact times, communication channels, and frequency settings
+**Given** I need to update WhatsApp settings
+**When** I modify the configuration
+**Then** Changes apply immediately to all new customer WhatsApp connections from the catalog
 
-**Coverage:** FR43
+**Coverage:** FR39 (WhatsApp integration management)
+
+---
+
+### Story 6.3: Simple Lead Tracking from WhatsApp Clicks
+
+As a **showroom salesperson**,
+I want **to see basic lead information when customers click WhatsApp buttons**,
+So that **I can track which vehicles generate the most interest and follow up effectively**.
+
+**Acceptance Criteria:**
+
+**Given** A customer clicks a WhatsApp button on a vehicle page
+**When** The connection is made
+**Then** A basic lead record is created with vehicle details, timestamp, and contact method
+
+**Given** I need to review recent leads
+**When** I access the simple lead dashboard
+**Then** I see a list of WhatsApp clicks with vehicle information and contact timestamps
+
+**Given** I want to track popular vehicles
+**When** I view lead statistics
+**Then** I see which vehicles receive the most WhatsApp inquiries and basic engagement metrics
+
+**Coverage:** FR40 (Basic lead tracking)
+
+---
+
+### Story 6.4: WhatsApp Message Templates
+
+As a **showroom salesperson**,
+I want **pre-written WhatsApp message templates for common customer inquiries**,
+So that **I can respond quickly and consistently to customer questions**.
+
+**Acceptance Criteria:**
+
+**Given** A customer inquires about vehicle availability
+**When** I use the template system
+**Then** I can select from pre-written templates for availability, pricing, and test drive requests
+
+**Given** I need to customize responses
+**When** I use a template
+**Then** I can edit the message before sending to personalize it for the specific customer
+
+**Given** I want to create new templates
+**When** I access template management
+**Then** I can create, edit, and save custom message templates for my showroom's common responses
+
+**Coverage:** FR42 (Communication templates)
+
+---
+
+### Story 6.5: Basic Lead Dashboard
+
+As a **showroom manager**,
+I want **a simple dashboard to view WhatsApp leads and basic engagement metrics**,
+So that **I can track lead generation performance and team response effectiveness**.
+
+**Acceptance Criteria:**
+
+**Given** I need to review lead performance
+**When** I access the lead dashboard
+**Then** I see total WhatsApp leads, conversion rates, and response time metrics
+
+**Given** I want to track vehicle interest
+**When** I view vehicle analytics
+**Then** I see which vehicles generate the most WhatsApp inquiries and customer engagement
+
+**Given** I need to monitor team performance
+**When** I review lead statistics
+**Then** I see basic metrics on lead response times, follow-up rates, and conversion tracking
+
+**Coverage:** FR44 (Basic lead analytics)
 
 ---
 
@@ -1600,16 +1576,16 @@ So that **my business operates legally and maintains customer trust**.
 ## Summary
 
 **Total Epics:** 7 Main Epics + 1 Cross-Cutting
-**Total Stories:** 51 user stories
+**Total Stories:** 50 user stories
 **Functional Requirements Coverage:** All 68 requirements addressed
 
 **Epic Distribution:**
-- Epic 1: Multi-Tenant Foundation (7 stories)
-- Epic 2: AI-Powered Vehicle Processing (6 stories)
-- Epic 3: Natural Language Control Center (6 stories)
-- Epic 4: Real-Time Inventory Management (6 stories)
+- Epic 1: Multi-Tenant Foundation (12 stories)
+- Epic 2: AI-Powered Vehicle Processing (8 stories)
+- Epic 3: Natural Language Control Center (5 stories)
+- Epic 4: Real-Time Inventory Management (7 stories)
 - Epic 5: Customer-Facing Catalog Generation (9 stories)
-- Epic 6: Lead Capture & Engagement (6 stories)
+- Epic 6: WhatsApp Lead Management (5 stories)
 - Epic 7: Analytics & Business Intelligence (8 stories)
 - Cross-Cutting: Security & Data (6 stories)
 
