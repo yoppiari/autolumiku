@@ -13,7 +13,11 @@
     "test:unit": "jest --testPathPattern=unit",
     "test:integration": "jest --testPathPattern=integration",
     "db:migrate": "node -r esbuild-register scripts/migrate.ts",
-    "db:seed": "node -r esbuild-register scripts/seed.ts"
+    "db:seed": "node -r esbuild-register scripts/seed.ts",
+    "scraper:mobil123": "npx tsx scripts/scrapers/test-mobil123-scraper.ts",
+    "scraper:olx": "npx tsx scripts/scrapers/test-olx-scraper.ts",
+    "scraper:analyze": "npx tsx scripts/scrapers/analyze-results.ts",
+    "scraper:test": "npx tsx scripts/scrapers/run-all-tests.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.936.0",
