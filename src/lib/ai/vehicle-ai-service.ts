@@ -1,0 +1,289 @@
+/**
+ * Vehicle AI Service
+ *
+ * Handles AI-powered vehicle identification, description generation,
+ * and pricing analysis using z.ai GLM models
+ */
+
+import { createZAIClient, ZAIClient } from './zai-client';
+
+export interface VehicleInput {
+  userDescription: string; // e.g., "Avanza 2020 AT, KM 20.000, Hitam, Rp 130jt"
+  photos?: string[]; // Base64 encoded photos (optional)
+}
+
+export interface VehicleAIResult {
+  // Basic Information
+  make: string;
+  model: string;
+  year: number;
+  variant?: string;
+  transmissionType?: string; // manual, automatic, cvt
+  fuelType?: string; // bensin, diesel, hybrid, electric
+  color?: string;
+  mileage?: number;
+
+  // Pricing
+  price: number; // User input price in IDR cents
+  aiSuggestedPrice: number; // AI suggested price in IDR cents
+  priceConfidence: number; // 0-100
+  priceAnalysis: {
+    marketRange: {
+      min: number; // IDR cents
+      max: number; // IDR cents
+    };
+    factors: string[];
+    recommendation: string;
+  };
+
+  // AI-Generated Content
+  descriptionId: string;
+  descriptionEn: string;
+  features: string[];
+  specifications: {
+    engineCapacity?: string;
+    seatingCapacity?: number;
+    driveType?: string;
+  };
+
+  // AI Metadata
+  aiConfidence: number; // 0-100
+  aiReasoning: string;
+}
+
+const VEHICLE_IDENTIFICATION_PROMPT = `Anda adalah AI assistant untuk sistem inventory showroom mobil di Indonesia.
+
+Tugas Anda:
+1. Parse informasi kendaraan dari input user yang minimal
+2. Generate data lengkap untuk listing kendaraan
+3. Buat deskripsi menarik dalam Bahasa Indonesia dan English
+4. Extract fitur-fitur kendaraan berdasarkan pengetahuan umum tentang model tersebut
+5. Validasi harga berdasarkan market price Indonesia dan berikan analisis
+
+IMPORTANT:
+- Gunakan pengetahuan umum tentang model kendaraan untuk melengkapi data
+- Harga harus dalam format IDR cents (Rp 130jt = 13000000000 cents)
+- Transmission type: "manual", "automatic", atau "cvt"
+- Confidence score: 0-100
+- PRICE ANALYSIS sangat penting: bandingkan harga user dengan market price, berikan recommendation
+
+Response format (JSON):
+{
+  "make": "Toyota",
+  "model": "Avanza",
+  "year": 2020,
+  "variant": "1.3 G AT",
+  "transmissionType": "automatic",
+  "fuelType": "bensin",
+  "color": "Hitam",
+  "mileage": 20000,
+  "price": 13000000000,
+  "descriptionId": "Deskripsi menarik dalam Bahasa Indonesia (minimal 100 kata)...",
+  "descriptionEn": "Attractive description in English (minimum 100 words)...",
+  "features": ["Fitur 1", "Fitur 2", ...],
+  "specifications": {
+    "engineCapacity": "1329cc",
+    "seatingCapacity": 7,
+    "driveType": "FWD"
+  },
+  "aiConfidence": 85,
+  "aiReasoning": "Reasoning tentang identifikasi dan pricing...",
+  "aiSuggestedPrice": 23500000000,
+  "priceConfidence": 95,
+  "priceAnalysis": {
+    "marketRange": { "min": 23000000000, "max": 24500000000 },
+    "factors": ["Tahun 2020", "KM rendah", "Kondisi baik"],
+    "recommendation": "Harga sesuai market / Harga terlalu rendah / Harga terlalu tinggi dengan penjelasan detail"
+  }
+}`;
+
+export class VehicleAIService {
+  private client: ZAIClient;
+
+  constructor(client?: ZAIClient) {
+    this.client = client || createZAIClient();
+  }
+
+  /**
+   * Identify vehicle from user description
+   * Uses GLM-4.6 for text-only identification
+   */
+  async identifyFromText(input: VehicleInput): Promise<VehicleAIResult> {
+    try {
+      const response = await this.client.generateText({
+        systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
+        userPrompt: `Parse kendaraan ini dan generate data lengkap: ${input.userDescription}`,
+        temperature: 0.7,
+        maxTokens: 4000,
+      });
+
+      // Parse JSON response
+      const result = this.client.parseJSON<VehicleAIResult>(response.content);
+
+      // Validate required fields
+      this.validateResult(result);
+
+      return result;
+    } catch (error) {
+      console.error('Vehicle AI identification error:', error);
+      throw new Error(
+        `Failed to identify vehicle: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Identify vehicle from photos
+   * Uses GLM-4.5V for vision-based identification
+   */
+  async identifyFromPhotos(input: VehicleInput): Promise<VehicleAIResult> {
+    if (!input.photos || input.photos.length === 0) {
+      throw new Error('No photos provided for vision-based identification');
+    }
+
+    try {
+      const userPrompt = input.userDescription
+        ? `Parse kendaraan ini dari foto dan info berikut: ${input.userDescription}`
+        : 'Identifikasi kendaraan dari foto-foto ini dan generate data lengkap';
+
+      const response = await this.client.generateVision({
+        systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
+        userPrompt,
+        images: input.photos.slice(0, 5), // Use first 5 photos max
+        temperature: 0.7,
+        maxTokens: 4000,
+      });
+
+      // Parse JSON response
+      const result = this.client.parseJSON<VehicleAIResult>(response.content);
+
+      // Validate required fields
+      this.validateResult(result);
+
+      return result;
+    } catch (error) {
+      console.error('Vehicle AI photo identification error:', error);
+      throw new Error(
+        `Failed to identify vehicle from photos: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Validate AI result has required fields
+   */
+  private validateResult(result: VehicleAIResult): void {
+    const requiredFields: (keyof VehicleAIResult)[] = [
+      'make',
+      'model',
+      'year',
+      'price',
+      'descriptionId',
+      'descriptionEn',
+    ];
+
+    for (const field of requiredFields) {
+      if (!result[field]) {
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+
+    // Validate price format (should be in cents, > 1000000)
+    if (result.price < 1000000) {
+      throw new Error('Price seems to be in wrong format (should be in IDR cents)');
+    }
+
+    // Validate year is reasonable
+    const currentYear = new Date().getFullYear();
+    if (result.year < 1980 || result.year > currentYear + 1) {
+      throw new Error(`Invalid year: ${result.year}`);
+    }
+  }
+
+  /**
+   * Re-generate description with custom tone/style
+   */
+  async regenerateDescription(
+    vehicle: VehicleAIResult,
+    tone: 'professional' | 'casual' | 'luxury'
+  ): Promise<{ descriptionId: string; descriptionEn: string }> {
+    const tonePrompts = {
+      professional: 'profesional dan formal',
+      casual: 'santai dan friendly',
+      luxury: 'mewah dan eksklusif',
+    };
+
+    const prompt = `Generate ulang deskripsi untuk kendaraan ini dengan tone ${tonePrompts[tone]}:
+
+Make: ${vehicle.make}
+Model: ${vehicle.model}
+Year: ${vehicle.year}
+Variant: ${vehicle.variant}
+Mileage: ${vehicle.mileage} KM
+Color: ${vehicle.color}
+Features: ${vehicle.features.join(', ')}
+
+Response format (JSON):
+{
+  "descriptionId": "Deskripsi dalam Bahasa Indonesia...",
+  "descriptionEn": "Description in English..."
+}`;
+
+    const response = await this.client.generateText({
+      systemPrompt: 'Anda adalah copywriter profesional untuk showroom mobil.',
+      userPrompt: prompt,
+      temperature: 0.8,
+      maxTokens: 1500,
+    });
+
+    return this.client.parseJSON<{ descriptionId: string; descriptionEn: string }>(
+      response.content
+    );
+  }
+
+  /**
+   * Get price recommendation only
+   */
+  async analyzePricing(params: {
+    make: string;
+    model: string;
+    year: number;
+    mileage?: number;
+    condition?: string;
+    userPrice: number; // IDR cents
+  }): Promise<VehicleAIResult['priceAnalysis'] & { aiSuggestedPrice: number; priceConfidence: number }> {
+    const prompt = `Analisis harga untuk kendaraan berikut berdasarkan market Indonesia:
+
+Make: ${params.make}
+Model: ${params.model}
+Year: ${params.year}
+Mileage: ${params.mileage || 'Unknown'} KM
+Condition: ${params.condition || 'Unknown'}
+User Price: Rp ${(params.userPrice / 100000000).toFixed(0)} juta
+
+Berikan analisis market price dan recommendation.
+
+Response format (JSON):
+{
+  "aiSuggestedPrice": 23500000000,
+  "priceConfidence": 95,
+  "priceAnalysis": {
+    "marketRange": { "min": 23000000000, "max": 24500000000 },
+    "factors": ["Factor 1", "Factor 2"],
+    "recommendation": "Detailed recommendation..."
+  }
+}`;
+
+    const response = await this.client.generateText({
+      systemPrompt: 'Anda adalah pricing analyst untuk used car market di Indonesia.',
+      userPrompt: prompt,
+      temperature: 0.5,
+      maxTokens: 1500,
+    });
+
+    return this.client.parseJSON(response.content);
+  }
+}
+
+// Export singleton instance
+export const vehicleAIService = new VehicleAIService();
