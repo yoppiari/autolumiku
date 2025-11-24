@@ -146,9 +146,66 @@ class PuppeteerCarsomeScraper {
       console.log('✅ Page loaded, waiting for data...\n');
 
       // Wait for page to be fully rendered
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-      // Debug: Take screenshot and check page content
+      // Check for and dismiss location popup if present
+      try {
+        console.log('🔍 Checking for location popup...');
+
+        // Wait a bit for popup to fully render
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Try multiple strategies to dismiss the popup
+        const dismissed = await page.evaluate(() => {
+          // Strategy 1: Click the "Semua Kota" or "Lihat XX Mobil" button
+          const buttons = Array.from(document.querySelectorAll('button'));
+
+          // Look for "Lihat" button (View cars button)
+          const viewButton = buttons.find(btn => {
+            const text = btn.textContent || '';
+            return text.includes('Lihat') && text.includes('Mobil');
+          });
+
+          if (viewButton) {
+            (viewButton as HTMLElement).click();
+            return 'view-button';
+          }
+
+          // Strategy 2: Click X close button
+          const closeButton = buttons.find(btn => {
+            const text = btn.textContent || '';
+            return text.includes('×') || text.trim() === '×';
+          });
+
+          if (closeButton) {
+            (closeButton as HTMLElement).click();
+            return 'close-button';
+          }
+
+          // Strategy 3: Click outside the modal
+          const modal = document.querySelector('[role="dialog"]');
+          if (modal) {
+            const backdrop = modal.parentElement;
+            if (backdrop) {
+              (backdrop as HTMLElement).click();
+              return 'backdrop';
+            }
+          }
+
+          return null;
+        });
+
+        if (dismissed) {
+          console.log(`✅ Dismissed location popup using: ${dismissed}`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } else {
+          console.log('⚠️  Location popup not found or already dismissed');
+        }
+      } catch (error) {
+        console.log('⚠️  Could not dismiss popup:', error);
+      }
+
+      // Debug: Take screenshot after popup handling
       await page.screenshot({ path: '/tmp/carsome-debug.png' });
       console.log('📸 Screenshot saved to /tmp/carsome-debug.png for debugging\n');
 
@@ -214,9 +271,13 @@ class PuppeteerCarsomeScraper {
         links.forEach(link => {
           const href = link.getAttribute('href');
           if (href && !href.endsWith('/beli-mobil-bekas') && !href.includes('/beli-mobil-bekas?') && !href.includes('#')) {
-            if (!uniqueUrls.has(href)) {
-              uniqueUrls.add(href);
-              uniqueLinks.push(link);
+            // Only include if it has a proper vehicle path structure
+            const pathParts = href.split('/').filter(p => p);
+            if (pathParts.length >= 4) { // Must have at least /beli-mobil-bekas/make/model/variant
+              if (!uniqueUrls.has(href)) {
+                uniqueUrls.add(href);
+                uniqueLinks.push(link);
+              }
             }
           }
         });
@@ -224,74 +285,97 @@ class PuppeteerCarsomeScraper {
         console.log(`Found ${uniqueLinks.length} unique vehicle links`);
 
         for (let i = 0; i < Math.min(uniqueLinks.length, limitNum); i++) {
-          // Try multiple parent selectors
-          let card = uniqueLinks[i].closest('div[class*="card"]');
-          if (!card) card = uniqueLinks[i].closest('article');
-          if (!card) card = uniqueLinks[i].closest('li');
-          if (!card) card = uniqueLinks[i].closest('div');
+          try {
+            const link = uniqueLinks[i];
+            const url = link.getAttribute('href') || '';
+            const fullUrl = url.startsWith('http') ? url : `https://www.carsome.id${url}`;
 
-          const url = uniqueLinks[i].getAttribute('href') || '';
-          const fullUrl = url.startsWith('http') ? url : `https://www.carsome.id${url}`;
+            // Find the parent card - go up until we find a substantial container
+            let card: Element | null = link;
+            for (let j = 0; j < 10; j++) {
+              card = card.parentElement;
+              if (!card) break;
 
-          // Extract text from card or link itself
-          const cardText = card ? card.textContent || '' : uniqueLinks[i].textContent || '';
+              // Check if this container has price info (indicates it's the full card)
+              const text = card.textContent || '';
+              if (text.includes('Rp') && text.includes('km')) {
+                break;
+              }
+            }
 
-          // Extract make and model from URL
-          // Format: /beli-mobil-bekas/toyota/avanza/2022-toyota-avanza-15-veloz-q/xxxxx
-          const urlParts = url.split('/').filter(p => p);
-          let makeFromUrl = '';
-          let modelFromUrl = '';
+            if (!card) continue;
 
-          // Find index of "beli-mobil-bekas"
-          const baseIdx = urlParts.indexOf('beli-mobil-bekas');
-          if (baseIdx >= 0 && urlParts.length > baseIdx + 2) {
-            makeFromUrl = urlParts[baseIdx + 1] || '';
-            modelFromUrl = urlParts[baseIdx + 2] || '';
-          }
+            const cardText = card.textContent || '';
 
-          // Find price - look for "Rp" followed by numbers
-          const priceMatch = cardText.match(/Rp\s*([\d.,]+)/);
-          let priceDisplay = '';
-          if (priceMatch) {
-            priceDisplay = priceMatch[0].replace(/\s+/g, ' ');
-          }
+            // Extract make and model from URL
+            // Format: /beli-mobil-bekas/toyota/avanza/2022-toyota-avanza-15-veloz-q/xxxxx
+            const urlParts = url.split('/').filter(p => p);
+            const baseIdx = urlParts.indexOf('beli-mobil-bekas');
 
-          // Find year - 4 digit number (20xx or 19xx)
-          const yearMatch = cardText.match(/\b(20\d{2}|19\d{2})\b/);
-          const year = yearMatch ? parseInt(yearMatch[0], 10) : 0;
+            if (baseIdx < 0 || urlParts.length <= baseIdx + 2) continue;
 
-          // Find mileage - look for "km" pattern (e.g., "74.108 km")
-          const mileageMatch = cardText.match(/([\d.,]+)\s*km/i);
-          let mileage = 0;
-          if (mileageMatch) {
-            const mileageStr = mileageMatch[1].replace(/[.,]/g, '');
-            mileage = parseInt(mileageStr, 10);
-          }
+            const makeFromUrl = urlParts[baseIdx + 1] || '';
+            const modelFromUrl = urlParts[baseIdx + 2] || '';
 
-          // Find transmission
-          let transmission = undefined;
-          const cardLower = cardText.toLowerCase();
-          if (cardLower.includes('automatic') || cardLower.includes('matic')) {
-            transmission = 'Automatic';
-          } else if (cardLower.includes('manual')) {
-            transmission = 'Manual';
-          }
+            if (!makeFromUrl || !modelFromUrl) continue;
 
-          // Find location - look for Indonesian cities
-          const locationMatch = cardText.match(/(Jakarta\s+\w+|Jakarta|Surabaya|Bandung|Semarang|Medan|Bekasi|Tangerang\s+\w+|Tangerang|Depok|Bogor|Yogyakarta|Bali|Denpasar)/i);
-          const location = locationMatch ? locationMatch[0].trim() : '';
+            // Extract variant from URL (4th part after beli-mobil-bekas)
+            // Example: 2022-toyota-avanza-15-veloz-q
+            let variant = undefined;
+            if (urlParts.length > baseIdx + 3) {
+              const variantSlug = urlParts[baseIdx + 3];
+              // Parse variant from slug: "2022-toyota-avanza-15-veloz-q" -> "1.5 VELOZ Q"
+              const variantParts = variantSlug.split('-').slice(3); // Skip year-make-model
+              if (variantParts.length > 0) {
+                variant = variantParts.join(' ').toUpperCase();
+              }
+            }
 
-          if (makeFromUrl && modelFromUrl && priceDisplay) {
+            // Find price - look for "Rp" followed by numbers with dots
+            const priceMatch = cardText.match(/Rp\s*([\d.]+)/);
+            if (!priceMatch) continue; // Skip if no price
+
+            const priceDisplay = priceMatch[0].replace(/\s+/g, ' ').trim();
+
+            // Find year - 4 digit number (20xx or 19xx)
+            const yearMatch = cardText.match(/\b(20\d{2}|19\d{2})\b/);
+            const year = yearMatch ? parseInt(yearMatch[0], 10) : 0;
+
+            // Find mileage - look for "km" pattern (e.g., "74.108 km")
+            const mileageMatch = cardText.match(/([\d.]+)\s*km/i);
+            let mileage = 0;
+            if (mileageMatch) {
+              const mileageStr = mileageMatch[1].replace(/\./g, '');
+              mileage = parseInt(mileageStr, 10);
+            }
+
+            // Find transmission
+            let transmission = undefined;
+            const cardLower = cardText.toLowerCase();
+            if (cardLower.includes('automatic')) {
+              transmission = 'Automatic';
+            } else if (cardLower.includes('manual')) {
+              transmission = 'Manual';
+            }
+
+            // Find location - look for Indonesian cities
+            const locationMatch = cardText.match(/(Jakarta\s+\w+|Jakarta|Surabaya|Bandung|Semarang|Medan|Bekasi|Tangerang\s+\w+|Tangerang|Depok|Bogor|Yogyakarta|Bali|Denpasar)/i);
+            const location = locationMatch ? locationMatch[0].trim() : '';
+
             results.push({
               make: makeFromUrl.charAt(0).toUpperCase() + makeFromUrl.slice(1),
               model: modelFromUrl.charAt(0).toUpperCase() + modelFromUrl.slice(1).replace(/-/g, ' '),
               year,
               priceDisplay,
+              variant,
               mileage: mileage > 0 ? mileage : undefined,
               transmission,
               location: location || undefined,
               url: fullUrl,
             });
+          } catch (err) {
+            console.log('Error extracting vehicle:', err);
+            continue;
           }
         }
 
@@ -307,12 +391,28 @@ class PuppeteerCarsomeScraper {
           processedCount++;
           console.log(`[${processedCount}/${vehicles.length}] Visiting: ${raw.make} ${raw.model} ${raw.year}`);
 
-          await page.goto(raw.url, {
-            waitUntil: 'networkidle2',
+          // Visit features page instead of main detail page
+          // Convert URL from /beli-mobil-bekas/* to /en/buy-car/* + /features
+          let featuresUrl = raw.url
+            .replace('/beli-mobil-bekas/', '/en/buy-car/')
+            .replace('carsome.id/beli-mobil-bekas/', 'carsome.id/en/buy-car/');
+
+          // Add /features suffix if not already present
+          if (!featuresUrl.endsWith('/features')) {
+            featuresUrl += '/features';
+          }
+
+          console.log(`   → Features URL: ${featuresUrl}`);
+
+          await page.goto(featuresUrl, {
+            waitUntil: 'domcontentloaded',
             timeout: 15000
           });
 
-          // Extract detailed data from page
+          // Wait for content to load
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+          // Extract detailed data from features page
           const detailData = await page.evaluate(() => {
             const data: any = {};
 
@@ -326,12 +426,8 @@ class PuppeteerCarsomeScraper {
             // Extract specs from page
             const allText = document.body.textContent || '';
 
-            // Find variant (after model, before other specs)
-            // Example: "2021 Toyota Avanza 1.5 Veloz Q"
-            data.variant = undefined;
-
             // Find fuel type
-            if (allText.toLowerCase().includes('bensin') || allText.toLowerCase().includes('gasoline')) {
+            if (allText.toLowerCase().includes('bensin') || allText.toLowerCase().includes('gasoline') || allText.toLowerCase().includes('petrol')) {
               data.fuelType = 'Bensin';
             } else if (allText.toLowerCase().includes('diesel') || allText.toLowerCase().includes('solar')) {
               data.fuelType = 'Diesel';
@@ -341,8 +437,8 @@ class PuppeteerCarsomeScraper {
               data.fuelType = 'Electric';
             }
 
-            // Find color
-            const colorPatterns = ['hitam', 'putih', 'silver', 'abu', 'merah', 'biru', 'kuning', 'hijau', 'coklat', 'black', 'white', 'gray', 'grey', 'red', 'blue'];
+            // Find color - look for "Exterior Color" or "Color" section
+            const colorPatterns = ['hitam', 'putih', 'silver', 'abu', 'merah', 'biru', 'kuning', 'hijau', 'coklat', 'black', 'white', 'gray', 'grey', 'red', 'blue', 'yellow', 'green', 'brown'];
             for (const color of colorPatterns) {
               if (allText.toLowerCase().includes(color)) {
                 data.color = color.charAt(0).toUpperCase() + color.slice(1);
@@ -356,20 +452,55 @@ class PuppeteerCarsomeScraper {
               data.description = metaDesc.getAttribute('content');
             }
 
-            // Look for features section
+            // Extract features from the features page
+            // CARSOME features page has structured feature lists
             const featuresList: string[] = [];
+
+            // Strategy 1: Look for list items or feature cards
+            const featureElements = document.querySelectorAll('[class*="feature"], [class*="spec"], li');
+            featureElements.forEach(el => {
+              const text = el.textContent?.trim() || '';
+              // Filter out noise and keep meaningful features
+              if (text.length > 3 && text.length < 100 && !text.includes('CARSOME') && !text.includes('View')) {
+                // Check if it looks like a feature
+                const lowerText = text.toLowerCase();
+                if (
+                  lowerText.includes('seat') || lowerText.includes('jok') ||
+                  lowerText.includes('camera') || lowerText.includes('kamera') ||
+                  lowerText.includes('sensor') || lowerText.includes('airbag') ||
+                  lowerText.includes('abs') || lowerText.includes('brake') ||
+                  lowerText.includes('control') || lowerText.includes('keyless') ||
+                  lowerText.includes('sunroof') || lowerText.includes('roof') ||
+                  lowerText.includes('audio') || lowerText.includes('screen') ||
+                  lowerText.includes('bluetooth') || lowerText.includes('usb') ||
+                  lowerText.includes('led') || lowerText.includes('lamp') ||
+                  lowerText.includes('parking') || lowerText.includes('cruise') ||
+                  lowerText.includes('leather') || lowerText.includes('kulit') ||
+                  lowerText.includes('automatic') || lowerText.includes('power')
+                ) {
+                  const cleanText = text
+                    .replace(/\n/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                  if (!featuresList.includes(cleanText)) {
+                    featuresList.push(cleanText);
+                  }
+                }
+              }
+            });
+
+            // Strategy 2: Look for all text and extract known features
             const featureKeywords = [
-              'sunroof', 'leather', 'kulit', 'abs', 'airbag', 'camera', 'kamera',
-              'sensor', 'keyless', 'push start', 'cruise control', 'led',
-              'warranty', 'garansi', 'inspected', 'certified'
+              'ABS', 'Airbag', 'Parking Camera', 'Rear Camera', 'Parking Sensor',
+              'Keyless Entry', 'Push Start', 'Cruise Control', 'Sunroof',
+              'Leather Seat', 'Power Window', 'Power Steering', 'Central Lock',
+              'Audio System', 'Touchscreen', 'Bluetooth', 'USB Port',
+              'LED Headlight', 'Fog Lamp', 'Alloy Wheel', 'Electric Mirror'
             ];
 
             for (const keyword of featureKeywords) {
-              if (allText.toLowerCase().includes(keyword)) {
-                const featureName = keyword.charAt(0).toUpperCase() + keyword.slice(1);
-                if (!featuresList.includes(featureName)) {
-                  featuresList.push(featureName);
-                }
+              if (allText.includes(keyword) && !featuresList.includes(keyword)) {
+                featuresList.push(keyword);
               }
             }
 

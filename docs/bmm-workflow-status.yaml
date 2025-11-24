@@ -556,3 +556,51 @@ completion_details:
               login: "/login"
               dashboard: "/dashboard"
               features: ["vehicles", "leads", "users", "settings"]
+
+        - id: "vehicle-data-scraper-enhancement"
+          agent: "developer"
+          status: "COMPLETED"
+          command: "enhance-scraper"
+          output: "scripts/scrapers/"
+          requirement_date: "2025-11-24"
+          completion_date: "2025-11-24"
+          priority: "HIGH"
+          description: "Enhanced vehicle scraper for AI-focused data collection"
+          database_changes:
+            - "Removed mileage and color fields (not needed for AI feed)"
+            - "Added bodyType field (SUV/MPV/Sedan/Hatchback/Pickup)"
+            - "Added features field (comma-separated feature list)"
+            - "Added description field (rich text for AI context)"
+          scraper_improvements:
+            olx_enhancements:
+              - "Extract bodyType from model names (60+ model database)"
+              - "Enhanced feature detection (22 patterns with Indonesian keywords)"
+              - "Visit detail pages for full descriptions"
+              - "Better variant extraction from URL patterns"
+              - "Improved data quality for AI content generation"
+            multi_source_support:
+              - "Support for OLX, CARSOME, and ALL sources"
+              - "CARSOME scraper added (experimental - has anti-bot protection)"
+              - "Parallel scraping when ALL selected"
+              - "Automatic source tagging per vehicle"
+            ui_improvements:
+              - "Detail modal for reviewing scraped data"
+              - "Data quality indicator (High/Medium/Low)"
+              - "Feature count display"
+              - "Bulk approve functionality"
+              - "Better table layout with specs summary"
+              - "Source selection dropdown in dashboard"
+          files_modified:
+            - "prisma/schema.prisma"
+            - "scripts/scrapers/puppeteer-olx-scraper.ts"
+            - "scripts/scrapers/puppeteer-carsome-scraper.ts (NEW)"
+            - "src/lib/services/scraper-service.ts"
+            - "src/app/admin/data-management/scraper/page.tsx"
+            - "src/app/admin/data-management/scraper/results/[jobId]/page.tsx"
+          commit: "d3a88f1"
+          benefits:
+            - "Richer data for AI content generation"
+            - "Better feature extraction (bodyType, features, description)"
+            - "Multi-source scraping capability"
+            - "Improved data quality indicators"
+            - "Better admin review workflow"
