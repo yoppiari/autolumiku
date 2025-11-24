@@ -11,6 +11,11 @@ interface Result {
   year: number;
   priceDisplay: string;
   location: string | null;
+  variant: string | null;
+  mileage: number | null;
+  transmission: string | null;
+  fuelType: string | null;
+  color: string | null;
   status: string;
   confidence: number;
   url: string;
@@ -186,60 +191,97 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
 
       {/* Results Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredResults.map((result) => (
-              <tr key={result.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <div className="font-medium">{result.make} {result.model}</div>
-                  {result.confidence > 0 && (
-                    <div className="text-xs text-gray-500">Dup confidence: {result.confidence}%</div>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-sm">{result.year || 'N/A'}</td>
-                <td className="px-4 py-3 text-sm font-medium text-green-600">{result.priceDisplay}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">{result.location || '-'}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    result.status === 'approved' ? 'bg-green-100 text-green-800' :
-                    result.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {result.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm space-x-2">
-                  {result.status === 'pending' && (
-                    <button
-                      onClick={() => approveResult(result.id)}
-                      className="text-green-600 hover:text-green-800 font-medium"
-                    >
-                      ✓ Approve
-                    </button>
-                  )}
-                  <a
-                    href={result.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    View →
-                  </a>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Specs</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredResults.map((result) => (
+                <tr key={result.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div className="font-medium">{result.make} {result.model}</div>
+                    {result.variant && (
+                      <div className="text-xs text-gray-500">{result.variant}</div>
+                    )}
+                    {result.confidence > 0 && (
+                      <div className="text-xs text-orange-500">Dup: {result.confidence}%</div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm">{result.year || 'N/A'}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-green-600">{result.priceDisplay}</td>
+                  <td className="px-4 py-3 text-xs">
+                    <div className="space-y-1">
+                      {result.transmission && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">⚙️</span>
+                          <span>{result.transmission}</span>
+                        </div>
+                      )}
+                      {result.fuelType && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">⛽</span>
+                          <span>{result.fuelType}</span>
+                        </div>
+                      )}
+                      {result.mileage && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">📏</span>
+                          <span>{result.mileage.toLocaleString()} km</span>
+                        </div>
+                      )}
+                      {result.color && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">🎨</span>
+                          <span>{result.color}</span>
+                        </div>
+                      )}
+                      {!result.transmission && !result.fuelType && !result.mileage && !result.color && (
+                        <span className="text-gray-400">No specs</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{result.location || '-'}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      result.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      result.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {result.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm space-x-2">
+                    {result.status === 'pending' && (
+                      <button
+                        onClick={() => approveResult(result.id)}
+                        className="text-green-600 hover:text-green-800 font-medium"
+                      >
+                        ✓ Approve
+                      </button>
+                    )}
+                    <a
+                      href={result.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      View →
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {filteredResults.length === 0 && (

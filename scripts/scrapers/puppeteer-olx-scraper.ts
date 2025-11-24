@@ -99,6 +99,104 @@ class PuppeteerOLXScraper {
   }
 
   /**
+   * Extract transmission from title/URL
+   */
+  private extractTransmission(text: string): string | undefined {
+    const lower = text.toLowerCase();
+    // Check for AT/Automatic - must have space or dash around it
+    if (lower.match(/[\s-]at[\s-]/) || lower.includes('-at-') || lower.includes(' at ') ||
+        lower.includes('automatic') || lower.includes('matic')) {
+      return 'Automatic';
+    }
+    // Check for MT/Manual
+    if (lower.match(/[\s-]mt[\s-]/) || lower.includes('-mt-') || lower.includes(' mt ') ||
+        lower.includes('manual')) {
+      return 'Manual';
+    }
+    if (lower.includes('cvt')) {
+      return 'CVT';
+    }
+    return undefined;
+  }
+
+  /**
+   * Extract fuel type from title/URL
+   */
+  private extractFuelType(text: string): string | undefined {
+    const lower = text.toLowerCase();
+    if (lower.includes('bensin') || lower.includes('gasoline')) {
+      return 'Bensin';
+    }
+    if (lower.includes('diesel') || lower.includes('solar')) {
+      return 'Diesel';
+    }
+    if (lower.includes('hybrid')) {
+      return 'Hybrid';
+    }
+    if (lower.includes('electric') || lower.includes('listrik')) {
+      return 'Electric';
+    }
+    return undefined;
+  }
+
+  /**
+   * Extract mileage from title
+   */
+  private extractMileage(text: string): number | undefined {
+    const lower = text.toLowerCase();
+
+    // Pattern: "50rb km", "50 rb", "50ribu"
+    const rbMatch = lower.match(/(\d+)\s*(rb|ribu)/);
+    if (rbMatch) {
+      return parseInt(rbMatch[1], 10) * 1000;
+    }
+
+    // Pattern: "50.000 km", "50000km"
+    const kmMatch = lower.match(/(\d+[\.,]?\d*)\s*km/);
+    if (kmMatch) {
+      const km = parseInt(kmMatch[1].replace(/[.,]/g, ''), 10);
+      if (km < 500) { // Probably in thousands
+        return km * 1000;
+      }
+      return km;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Extract variant from title (words after model, before year)
+   */
+  private extractVariant(title: string, make: string, model: string): string | undefined {
+    // Find position after make and model
+    const makeIndex = title.toLowerCase().indexOf(make.toLowerCase());
+    if (makeIndex === -1) return undefined;
+
+    const afterMake = title.substring(makeIndex + make.length).trim();
+    const modelIndex = afterMake.toLowerCase().indexOf(model.toLowerCase());
+    if (modelIndex === -1) return undefined;
+
+    const afterModel = afterMake.substring(modelIndex + model.length).trim();
+
+    // Extract words before year (variant usually here)
+    const yearMatch = afterModel.match(/\b(19|20)\d{2}\b/);
+    if (yearMatch) {
+      const variant = afterModel.substring(0, yearMatch.index).trim();
+      // Clean up common words
+      const cleaned = variant
+        .replace(/^[-\s]+/, '')
+        .replace(/\b(tipe|type|tahun)\b/gi, '')
+        .trim();
+
+      if (cleaned && cleaned.length > 0 && cleaned.length < 30) {
+        return cleaned;
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
    * Initialize browser
    */
   private async initBrowser(): Promise<void> {
@@ -118,9 +216,95 @@ class PuppeteerOLXScraper {
   }
 
   /**
-   * Scrape OLX listings
+   * Extract detail specs from detail page
    */
-  async scrape(limit: number = 20): Promise<ScrapedVehicle[]> {
+  private async extractDetailSpecs(page: Page): Promise<Partial<ScrapedVehicle>> {
+    try {
+      // Wait for specs section to load
+      await page.waitForSelector('[data-aut-id="itemParams"]', { timeout: 5000 }).catch(() => {});
+
+      const specs = await page.evaluate(() => {
+        const result: any = {};
+
+        // Extract specs from params section
+        const paramsSection = document.querySelector('[data-aut-id="itemParams"]');
+        if (paramsSection) {
+          const params = paramsSection.querySelectorAll('li');
+
+          params.forEach((param) => {
+            const label = param.querySelector('[class*="label"]')?.textContent?.trim().toLowerCase() || '';
+            const value = param.querySelector('[class*="value"]')?.textContent?.trim() || '';
+
+            if (!value) return;
+
+            // Match Indonesian spec labels
+            if (label.includes('tahun') || label.includes('year')) {
+              const yearMatch = value.match(/\d{4}/);
+              if (yearMatch) result.year = parseInt(yearMatch[0], 10);
+            } else if (label.includes('km') || label.includes('mileage') || label.includes('jarak')) {
+              // Parse mileage: "50.000 km" or "50 rb km"
+              if (value.toLowerCase().includes('rb') || value.toLowerCase().includes('ribu')) {
+                const thousands = parseFloat(value.replace(/[^0-9.]/g, ''));
+                result.mileage = isNaN(thousands) ? 0 : thousands * 1000;
+              } else {
+                const km = parseInt(value.replace(/[^0-9]/g, ''), 10);
+                result.mileage = isNaN(km) ? 0 : km;
+              }
+            } else if (label.includes('transmisi') || label.includes('transmission')) {
+              result.transmission = value;
+            } else if (label.includes('bahan bakar') || label.includes('fuel') || label.includes('bensin') || label.includes('diesel')) {
+              result.fuelType = value;
+            } else if (label.includes('warna') || label.includes('color')) {
+              result.color = value;
+            } else if (label.includes('tipe') || label.includes('variant') || label.includes('model')) {
+              result.variant = value;
+            }
+          });
+        }
+
+        // Try alternative selector for specs (OLX sometimes changes structure)
+        if (Object.keys(result).length === 0) {
+          const specsList = document.querySelectorAll('[class*="spec"]');
+          specsList.forEach((spec) => {
+            const text = spec.textContent?.toLowerCase() || '';
+
+            if (text.includes('km') && !result.mileage) {
+              const kmMatch = text.match(/(\d+[\.,]?\d*)\s*(rb|ribu|km)/i);
+              if (kmMatch) {
+                if (kmMatch[2].toLowerCase().includes('rb') || kmMatch[2].toLowerCase().includes('ribu')) {
+                  result.mileage = parseFloat(kmMatch[1].replace(/[.,]/g, '')) * 1000;
+                } else {
+                  result.mileage = parseInt(kmMatch[1].replace(/[.,]/g, ''), 10);
+                }
+              }
+            }
+
+            if ((text.includes('manual') || text.includes('automatic') || text.includes('matic')) && !result.transmission) {
+              if (text.includes('automatic') || text.includes('matic')) {
+                result.transmission = 'Automatic';
+              } else if (text.includes('manual')) {
+                result.transmission = 'Manual';
+              }
+            }
+          });
+        }
+
+        return result;
+      });
+
+      return specs;
+    } catch (error) {
+      console.log('⚠️  Could not extract detail specs:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Scrape OLX listings with optional detail page extraction
+   * @param limit Number of vehicles to scrape
+   * @param visitDetailPages If true, visits each detail page for full specs (slower but more complete)
+   */
+  async scrape(limit: number = 20, visitDetailPages: boolean = false): Promise<ScrapedVehicle[]> {
     try {
       await this.initBrowser();
 
@@ -235,9 +419,13 @@ class PuppeteerOLXScraper {
       console.log(`✅ Found ${vehicles.length} raw listings\n`);
 
       // Process and parse the data
+      let processedCount = 0;
       for (const raw of vehicles) {
         const { make, model } = this.extractMakeModel(raw.title);
         const year = this.extractYear(raw.title, raw.url);
+
+        // Extract specs from title (fast, no page visit needed)
+        const titleWithUrl = `${raw.title} ${raw.url}`;
 
         const vehicle: ScrapedVehicle = {
           source: 'OLX (Puppeteer)',
@@ -248,13 +436,43 @@ class PuppeteerOLXScraper {
           priceDisplay: raw.priceDisplay,
           location: raw.location,
           url: raw.url,
+          // Extract from title/URL (LITE mode - no detail page visits)
+          variant: this.extractVariant(raw.title, make, model),
+          transmission: this.extractTransmission(titleWithUrl),
+          fuelType: this.extractFuelType(titleWithUrl),
+          mileage: this.extractMileage(raw.title),
           scrapedAt: new Date().toISOString(),
         };
+
+        // Optional: Visit detail page to enhance data (disabled by default for speed)
+        if (visitDetailPages && raw.url) {
+          try {
+            processedCount++;
+            console.log(`[${processedCount}/${vehicles.length}] Visiting detail page: ${make} ${model}`);
+
+            await page.goto(raw.url, {
+              waitUntil: 'networkidle2',
+              timeout: 15000
+            });
+
+            // Extract detail specs
+            const detailSpecs = await this.extractDetailSpecs(page);
+
+            // Merge with vehicle data (detail page specs override if available)
+            Object.assign(vehicle, detailSpecs);
+
+            // Small delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+          } catch (error) {
+            console.log(`⚠️  Failed to get details for ${make} ${model}:`, error);
+          }
+        }
 
         this.results.push(vehicle);
       }
 
-      console.log(`✅ Parsed ${this.results.length} vehicles successfully\n`);
+      console.log(`\n✅ Parsed ${this.results.length} vehicles successfully\n`);
 
       await this.browser!.close();
 
@@ -335,8 +553,8 @@ async function main() {
   const scraper = new PuppeteerOLXScraper();
 
   try {
-    // Scrape 50 vehicles
-    await scraper.scrape(50);
+    // Scrape 5 vehicles for quick test
+    await scraper.scrape(5);
 
     // Print summary
     scraper.printSummary();

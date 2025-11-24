@@ -1687,6 +1687,13 @@ model ScraperResult {
   location        String?
   url             String
 
+  // Additional specs (for AI feed)
+  variant         String?   // e.g., "1.5 G MT", "RS CVT"
+  mileage         Int?      // kilometers
+  transmission    String?   // "Manual", "Automatic"
+  fuelType        String?   // "Bensin", "Diesel", "Hybrid"
+  color           String?   // "Putih", "Hitam", etc.
+
   // Status
   status          String   // 'pending', 'approved', 'rejected', 'duplicate'
   reviewedAt      DateTime?
