@@ -27,6 +27,7 @@ export default function ScraperDashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSource, setSelectedSource] = useState<'OLX' | 'CARSOME' | 'ALL'>('ALL');
 
   useEffect(() => {
     loadData();
@@ -60,20 +61,23 @@ export default function ScraperDashboard() {
   };
 
   const runScraper = async () => {
-    if (!confirm('Run OLX scraper? This will take 2-3 minutes.')) return;
+    const sourceLabel = selectedSource === 'ALL' ? 'OLX + CARSOME' : selectedSource;
+    const estimatedTime = selectedSource === 'ALL' ? '4-5' : '2-3';
+
+    if (!confirm(`Run ${sourceLabel} scraper? This will take ${estimatedTime} minutes.`)) return;
 
     setIsRunning(true);
     try {
       const res = await fetch('/api/admin/scraper/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'OLX', targetCount: 50 }),
+        body: JSON.stringify({ source: selectedSource, targetCount: 50 }),
       });
 
       const data = await res.json();
 
       if (data.success) {
-        alert('Scraper started! Job ID: ' + data.job.id);
+        alert(`Scraper started! Job ID: ${data.job.id}\nSource: ${sourceLabel}`);
         loadData();
       }
     } catch (error) {
@@ -106,13 +110,29 @@ export default function ScraperDashboard() {
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Vehicle Data Scraper</h1>
-        <button
-          onClick={runScraper}
-          disabled={isRunning}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          {isRunning ? 'Running...' : '▶ Run Scraper'}
-        </button>
+        <div className="flex gap-4 items-center">
+          {/* Source Selector */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Source:</label>
+            <select
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value as 'OLX' | 'CARSOME' | 'ALL')}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={isRunning}
+            >
+              <option value="ALL">🌐 All Sources (OLX + CARSOME)</option>
+              <option value="OLX">🟠 OLX Only</option>
+              <option value="CARSOME">🔵 CARSOME Only</option>
+            </select>
+          </div>
+          <button
+            onClick={runScraper}
+            disabled={isRunning}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
+          >
+            {isRunning ? '⏳ Running...' : '▶ Start New Job'}
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}

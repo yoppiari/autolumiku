@@ -1687,12 +1687,13 @@ model ScraperResult {
   location        String?
   url             String
 
-  // Additional specs (for AI feed)
+  // Additional specs (for AI content generation)
   variant         String?   // e.g., "1.5 G MT", "RS CVT"
-  mileage         Int?      // kilometers
-  transmission    String?   // "Manual", "Automatic"
-  fuelType        String?   // "Bensin", "Diesel", "Hybrid"
-  color           String?   // "Putih", "Hitam", etc.
+  transmission    String?   // "Manual", "Automatic", "CVT"
+  fuelType        String?   // "Bensin", "Diesel", "Hybrid", "Electric"
+  bodyType        String?   // "SUV", "MPV", "Sedan", "Hatchback", "Pickup"
+  features        String?   // Comma-separated features (e.g., "Sunroof, Leather Seats, ABS")
+  description     String?   // Short description from listing
 
   // Status
   status          String   // 'pending', 'approved', 'rejected', 'duplicate'

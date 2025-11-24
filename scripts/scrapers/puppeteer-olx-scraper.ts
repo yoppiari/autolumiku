@@ -17,10 +17,11 @@ interface ScrapedVehicle {
   price: number; // IDR cents
   priceDisplay: string;
   variant?: string;
-  mileage?: number;
   transmission?: string;
   fuelType?: string;
-  color?: string;
+  bodyType?: string;
+  features?: string;
+  description?: string;
   location?: string;
   url?: string;
   scrapedAt: string;
@@ -143,37 +144,164 @@ class PuppeteerOLXScraper {
   }
 
   /**
-   * Extract mileage from title and URL
+   * Extract body type from make and model
+   * Returns: SUV, MPV, Sedan, Hatchback, Pickup, Wagon, Coupe, Convertible
    */
-  private extractMileage(text: string): number | undefined {
-    const lower = text.toLowerCase();
+  private extractBodyType(make: string, model: string): string | undefined {
+    const modelLower = model.toLowerCase();
+    const makeLower = make.toLowerCase();
 
-    // Pattern 1: "km24rb", "km-24rb", "km34rb" (common in OLX URLs)
-    const kmRbMatch = lower.match(/km[-\s]?(\d+)rb/);
-    if (kmRbMatch) {
-      return parseInt(kmRbMatch[1], 10) * 1000;
+    // SUV patterns
+    const suvModels = [
+      'fortuner', 'pajero', 'crv', 'cr-v', 'hrv', 'hr-v', 'brv', 'br-v',
+      'xpander cross', 'terios', 'rush', 'outlander', 'cx', 'rocky',
+      'raize', 'tiguan', 'x-trail', 'rav4', 'tucson', 'sportage',
+      'vitara', 'sx4', 'jimny', 'escudo', 'ertiga cross', 'wrangler',
+      'cherokee', 'compass', 'renegade', 'evoque', 'defender'
+    ];
+
+    // MPV patterns
+    const mpvModels = [
+      'avanza', 'xenia', 'innova', 'ertiga', 'mobilio', 'freed',
+      'expander', 'xpander', 'livina', 'grand livina', 'serena',
+      'alphard', 'vellfire', 'sienta', 'calya', 'sigra', 'kijang',
+      'cortez', 'confero', 'formo', 'luxio', 'apv', 'grand max',
+      'mvp', 'air ev', 'carnival', 'staria', 'h-1', 'odyssey'
+    ];
+
+    // Sedan patterns
+    const sedanModels = [
+      'camry', 'corolla', 'altis', 'vios', 'accord', 'civic', 'city',
+      'mazda 3', 'mazda 6', 'mazda2', 'teana', 'almera', 'lancer',
+      'galant', 'baleno', 'ciaz', 'ertiga', 'mercy', 'c-class',
+      'e-class', 's-class', 'bmw 3', 'bmw 5', 'bmw 7', 'a4', 'a6',
+      'passat', 'jetta', 'camaro', 'mustang', 'soluto', '5', '6', '7'
+    ];
+
+    // Hatchback patterns
+    const hatchbackModels = [
+      'yaris', 'agya', 'ayla', 'brio', 'jazz', 'ignis', 'swift',
+      'karimun', 'wagon r', 'celerio', 'march', 'fiesta', 'focus',
+      'i20', 'rio', 'picanto', 'polo', 'golf', 'mazda 2', 'mini cooper',
+      'mirage'
+    ];
+
+    // Pickup/Truck patterns
+    const pickupModels = [
+      'hilux', 'ranger', 'triton', 'navara', 'd-max', 'strada',
+      'bt-50', 'colorado', 'amarok', 'toro', 't60', 'poer'
+    ];
+
+    // Check SUV
+    for (const pattern of suvModels) {
+      if (modelLower.includes(pattern)) return 'SUV';
     }
 
-    // Pattern 2: "km-5000", "km5000" (exact km in URL)
-    const kmExactMatch = lower.match(/km[-\s]?(\d{4,6})(?!\d)/);
-    if (kmExactMatch) {
-      return parseInt(kmExactMatch[1], 10);
+    // Check MPV
+    for (const pattern of mpvModels) {
+      if (modelLower.includes(pattern)) return 'MPV';
     }
 
-    // Pattern 3: "50rb km", "50 rb", "50ribu" (in title)
-    const rbMatch = lower.match(/(\d+)\s*(rb|ribu)/);
-    if (rbMatch) {
-      return parseInt(rbMatch[1], 10) * 1000;
+    // Check Sedan
+    for (const pattern of sedanModels) {
+      if (modelLower.includes(pattern)) return 'Sedan';
     }
 
-    // Pattern 4: "50.000 km", "50000km" (formatted in title)
-    const kmFormattedMatch = lower.match(/(\d+[\.,]?\d*)\s*km/);
-    if (kmFormattedMatch) {
-      const km = parseInt(kmFormattedMatch[1].replace(/[.,]/g, ''), 10);
-      if (km < 500) { // Probably in thousands
-        return km * 1000;
+    // Check Hatchback
+    for (const pattern of hatchbackModels) {
+      if (modelLower.includes(pattern)) return 'Hatchback';
+    }
+
+    // Check Pickup
+    for (const pattern of pickupModels) {
+      if (modelLower.includes(pattern)) return 'Pickup';
+    }
+
+    // If unable to determine, return undefined
+    return undefined;
+  }
+
+  /**
+   * Extract features from title
+   * Common features: Sunroof, Leather Seats, ABS, Airbag, Parking Sensor, etc.
+   */
+  private extractFeatures(title: string): string | undefined {
+    const titleLower = title.toLowerCase();
+    const features: string[] = [];
+
+    // Common features mapping (Indonesian + English)
+    const featurePatterns: { [key: string]: string[] } = {
+      'Sunroof': ['sunroof', 'sun roof', 'panoramic', 'atap terbuka'],
+      'Leather Seats': ['leather', 'kulit', 'jok kulit', 'seat leather'],
+      'Electric Seats': ['electric seat', 'power seat', 'jok elektrik'],
+      'Cruise Control': ['cruise control', 'cruise'],
+      'Parking Sensor': ['parking sensor', 'sensor parkir', 'pdc', 'parkir sensor'],
+      'Parking Camera': ['camera', 'kamera', 'rear camera', 'backup camera', 'kamera mundur'],
+      'Keyless Entry': ['keyless', 'smart key', 'push start', 'start stop', 'start-stop', 'push button'],
+      'Airbags': ['airbag', 'srs', 'air bag'],
+      'ABS': ['abs', 'anti lock'],
+      'Traction Control': ['traction control', 'tcs', 'vsc', 'esp', 'stability'],
+      'Alloy Wheels': ['alloy', 'velg racing', 'velg sport', 'racing wheels'],
+      'Fog Lamp': ['fog lamp', 'lampu kabut', 'foglamp'],
+      'LED Lights': ['led', 'led lamp', 'lampu led'],
+      'Audio System': ['audio', 'speaker', 'sound system', 'sound'],
+      'Navigation': ['navigation', 'gps', 'navi'],
+      'Bluetooth': ['bluetooth'],
+      'USB': ['usb'],
+      'Climate Control': ['climate', 'dual zone', 'ac digital', 'auto ac'],
+      'Turbo': ['turbo', 'turbocharged'],
+      'Warranty': ['warranty', 'garansi'],
+      'Service Record': ['service record', 'book service', 'buku service'],
+      'Low KM': ['low km', 'km rendah', 'km sedikit'],
+    };
+
+    // Check for each feature
+    for (const [feature, patterns] of Object.entries(featurePatterns)) {
+      for (const pattern of patterns) {
+        if (titleLower.includes(pattern)) {
+          features.push(feature);
+          break; // Only add once per feature
+        }
       }
-      return km;
+    }
+
+    // Return comma-separated features or undefined if none
+    return features.length > 0 ? features.join(', ') : undefined;
+  }
+
+  /**
+   * Extract description from title (cleaned up version for AI)
+   * Keep useful information like condition, special features, seller notes
+   */
+  private extractDescription(title: string, make: string, model: string, year: number): string | undefined {
+    let desc = title;
+
+    // Remove URL-style hyphens and clean up
+    desc = desc.replace(/-/g, ' ');
+
+    // Remove make and model (but keep variant info)
+    desc = desc.replace(new RegExp(`\\b${make}\\b`, 'gi'), '').trim();
+    desc = desc.replace(new RegExp(`\\b${model}\\b`, 'gi'), '').trim();
+
+    // Remove year
+    if (year > 0) {
+      desc = desc.replace(new RegExp(`\\b${year}\\b`, 'g'), '').trim();
+    }
+
+    // Remove minimal noise words (only very common ones)
+    const minimalNoiseWords = ['dp', 'tdp', 'iid'];
+    for (const word of minimalNoiseWords) {
+      desc = desc.replace(new RegExp(`\\b${word}\\b`, 'gi'), '').trim();
+    }
+
+    // Clean up extra spaces
+    desc = desc.replace(/\s+/g, ' ').trim();
+    desc = desc.replace(/^[-,\s]+|[-,\s]+$/g, '');
+
+    // Keep it if there's meaningful content (variant, condition, features, etc)
+    // Examples: "1.5 Veloz Q", "Low KM", "Tangan Pertama", "Full Original"
+    if (desc && desc.length > 5) {
+      return desc;
     }
 
     return undefined;
@@ -287,25 +415,34 @@ class PuppeteerOLXScraper {
             if (label.includes('tahun') || label.includes('year')) {
               const yearMatch = value.match(/\d{4}/);
               if (yearMatch) result.year = parseInt(yearMatch[0], 10);
-            } else if (label.includes('km') || label.includes('mileage') || label.includes('jarak')) {
-              // Parse mileage: "50.000 km" or "50 rb km"
-              if (value.toLowerCase().includes('rb') || value.toLowerCase().includes('ribu')) {
-                const thousands = parseFloat(value.replace(/[^0-9.]/g, ''));
-                result.mileage = isNaN(thousands) ? 0 : thousands * 1000;
-              } else {
-                const km = parseInt(value.replace(/[^0-9]/g, ''), 10);
-                result.mileage = isNaN(km) ? 0 : km;
-              }
             } else if (label.includes('transmisi') || label.includes('transmission')) {
               result.transmission = value;
             } else if (label.includes('bahan bakar') || label.includes('fuel') || label.includes('bensin') || label.includes('diesel')) {
               result.fuelType = value;
-            } else if (label.includes('warna') || label.includes('color')) {
-              result.color = value;
             } else if (label.includes('tipe') || label.includes('variant') || label.includes('model')) {
               result.variant = value;
             }
           });
+        }
+
+        // Extract full description from listing
+        const descElement = document.querySelector('[data-aut-id="itemDescriptionContent"]');
+        if (descElement) {
+          const fullDesc = descElement.textContent?.trim() || '';
+          if (fullDesc && fullDesc.length > 10) {
+            result.description = fullDesc;
+          }
+        }
+
+        // Fallback to meta description
+        if (!result.description) {
+          const metaDesc = document.querySelector('meta[name="description"]');
+          if (metaDesc) {
+            const content = metaDesc.getAttribute('content');
+            if (content && content.length > 10) {
+              result.description = content;
+            }
+          }
         }
 
         // Try alternative selector for specs (OLX sometimes changes structure)
@@ -313,17 +450,6 @@ class PuppeteerOLXScraper {
           const specsList = document.querySelectorAll('[class*="spec"]');
           specsList.forEach((spec) => {
             const text = spec.textContent?.toLowerCase() || '';
-
-            if (text.includes('km') && !result.mileage) {
-              const kmMatch = text.match(/(\d+[\.,]?\d*)\s*(rb|ribu|km)/i);
-              if (kmMatch) {
-                if (kmMatch[2].toLowerCase().includes('rb') || kmMatch[2].toLowerCase().includes('ribu')) {
-                  result.mileage = parseFloat(kmMatch[1].replace(/[.,]/g, '')) * 1000;
-                } else {
-                  result.mileage = parseInt(kmMatch[1].replace(/[.,]/g, ''), 10);
-                }
-              }
-            }
 
             if ((text.includes('manual') || text.includes('automatic') || text.includes('matic')) && !result.transmission) {
               if (text.includes('automatic') || text.includes('matic')) {
@@ -486,7 +612,9 @@ class PuppeteerOLXScraper {
           variant: this.extractVariant(raw.title, raw.url, make, model),
           transmission: this.extractTransmission(titleWithUrl),
           fuelType: this.extractFuelType(titleWithUrl),
-          mileage: this.extractMileage(titleWithUrl), // Pass URL too for better extraction
+          bodyType: this.extractBodyType(make, model),
+          features: this.extractFeatures(raw.title),
+          description: this.extractDescription(raw.title, make, model, year),
           scrapedAt: new Date().toISOString(),
         };
 
@@ -506,6 +634,11 @@ class PuppeteerOLXScraper {
 
             // Merge with vehicle data (detail page specs override if available)
             Object.assign(vehicle, detailSpecs);
+
+            // Extract features from description if available
+            if (detailSpecs.description && !vehicle.features) {
+              vehicle.features = this.extractFeatures(detailSpecs.description);
+            }
 
             // Small delay to avoid rate limiting
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -599,8 +732,8 @@ async function main() {
   const scraper = new PuppeteerOLXScraper();
 
   try {
-    // Scrape 5 vehicles for quick test
-    await scraper.scrape(5);
+    // Scrape 5 vehicles with detail pages (slower but richer data)
+    await scraper.scrape(5, true);  // visitDetailPages = true
 
     // Print summary
     scraper.printSummary();

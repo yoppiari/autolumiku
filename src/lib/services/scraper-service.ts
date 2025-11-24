@@ -9,11 +9,12 @@
 
 import { PrismaClient, ScraperJob, ScraperResult } from '@prisma/client';
 import { PuppeteerOLXScraper } from '../../../scripts/scrapers/puppeteer-olx-scraper';
+import { PuppeteerCarsomeScraper } from '../../../scripts/scrapers/puppeteer-carsome-scraper';
 
 const prisma = new PrismaClient();
 
 export interface ScraperJobOptions {
-  source: 'OLX' | 'Mobil123';
+  source: 'OLX' | 'CARSOME' | 'ALL';
   targetCount?: number;
   executedBy: string;
 }
@@ -59,14 +60,36 @@ export class ScraperService {
     const startTime = Date.now();
 
     try {
-      // Only OLX supported for now
-      if (options.source !== 'OLX') {
-        throw new Error(`Source ${options.source} not yet supported`);
-      }
+      let vehicles: any[] = [];
 
-      // Run Puppeteer scraper
-      const scraper = new PuppeteerOLXScraper();
-      const vehicles = await scraper.scrape(options.targetCount || 50);
+      // Run scraper based on source
+      if (options.source === 'ALL') {
+        // Run both scrapers
+        console.log('Running ALL scrapers...');
+
+        const olxScraper = new PuppeteerOLXScraper();
+        const carsomeScraper = new PuppeteerCarsomeScraper();
+
+        const [olxVehicles, carsomeVehicles] = await Promise.all([
+          olxScraper.scrape(Math.floor((options.targetCount || 50) / 2), true),
+          carsomeScraper.scrape(Math.floor((options.targetCount || 50) / 2)),
+        ]);
+
+        vehicles = [...olxVehicles, ...carsomeVehicles];
+
+      } else if (options.source === 'OLX') {
+        // Run OLX scraper with detail page visits
+        const scraper = new PuppeteerOLXScraper();
+        vehicles = await scraper.scrape(options.targetCount || 50, true);
+
+      } else if (options.source === 'CARSOME') {
+        // Run CARSOME scraper
+        const scraper = new PuppeteerCarsomeScraper();
+        vehicles = await scraper.scrape(options.targetCount || 50);
+
+      } else {
+        throw new Error(`Source ${options.source} not supported`);
+      }
 
       // Store results in database
       let newCount = 0;
@@ -82,7 +105,7 @@ export class ScraperService {
           await prisma.scraperResult.create({
             data: {
               jobId,
-              source: options.source,
+              source: vehicle.source || options.source, // Use vehicle.source (OLX/CARSOME) from scraper
               make: vehicle.make,
               model: vehicle.model,
               year: vehicle.year,
@@ -91,10 +114,11 @@ export class ScraperService {
               location: vehicle.location || null,
               url: vehicle.url || '',
               variant: vehicle.variant || null,
-              mileage: vehicle.mileage || null,
               transmission: vehicle.transmission || null,
               fuelType: vehicle.fuelType || null,
-              color: vehicle.color || null,
+              bodyType: vehicle.bodyType || null,
+              features: vehicle.features || null,
+              description: vehicle.description || null,
               status: duplicateMatch.isDuplicate ? 'duplicate' : 'pending',
               matchedVehicleId: duplicateMatch.matchedVehicleId,
               confidence: duplicateMatch.confidence,

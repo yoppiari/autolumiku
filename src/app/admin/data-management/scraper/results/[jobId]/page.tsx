@@ -12,10 +12,11 @@ interface Result {
   priceDisplay: string;
   location: string | null;
   variant: string | null;
-  mileage: number | null;
   transmission: string | null;
   fuelType: string | null;
-  color: string | null;
+  bodyType: string | null;
+  features: string | null;
+  description: string | null;
   status: string;
   confidence: number;
   url: string;
@@ -31,6 +32,8 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedResult, setSelectedResult] = useState<Result | null>(null);
 
   useEffect(() => {
     loadResults();
@@ -148,6 +151,16 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
     } catch (error) {
       alert('Import failed');
     }
+  };
+
+  const openDetailModal = (result: Result) => {
+    setSelectedResult(result);
+    setDetailModalOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setDetailModalOpen(false);
+    setSelectedResult(null);
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
@@ -274,7 +287,7 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Specs</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Quality</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
@@ -295,46 +308,63 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
                   <td className="px-4 py-3">
                     <div className="font-medium">{result.make} {result.model}</div>
                     {result.variant && (
-                      <div className="text-xs text-gray-500">{result.variant}</div>
+                      <div className="text-xs text-gray-500 truncate max-w-xs">{result.variant}</div>
+                    )}
+                    {result.bodyType && (
+                      <div className="text-xs text-blue-600">🚗 {result.bodyType}</div>
                     )}
                     {result.confidence > 0 && (
-                      <div className="text-xs text-orange-500">Dup: {result.confidence}%</div>
+                      <div className="text-xs text-orange-500">⚠️ Dup: {result.confidence}%</div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm">{result.year || 'N/A'}</td>
                   <td className="px-4 py-3 text-sm font-medium text-green-600">{result.priceDisplay}</td>
                   <td className="px-4 py-3 text-xs">
                     <div className="space-y-1">
-                      {result.transmission && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-gray-500">⚙️</span>
-                          <span>{result.transmission}</span>
+                      {result.transmission && result.fuelType ? (
+                        <div className="text-gray-700">
+                          ⚙️ {result.transmission} • ⛽ {result.fuelType}
                         </div>
-                      )}
-                      {result.fuelType && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-gray-500">⛽</span>
-                          <span>{result.fuelType}</span>
-                        </div>
-                      )}
-                      {result.mileage && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-gray-500">📏</span>
-                          <span>{result.mileage.toLocaleString()} km</span>
-                        </div>
-                      )}
-                      {result.color && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-gray-500">🎨</span>
-                          <span>{result.color}</span>
-                        </div>
-                      )}
-                      {!result.transmission && !result.fuelType && !result.mileage && !result.color && (
-                        <span className="text-gray-400">No specs</span>
+                      ) : (
+                        <div className="text-gray-400">No transmission/fuel data</div>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{result.location || '-'}</td>
+                  <td className="px-4 py-3 text-xs">
+                    <div className="space-y-1">
+                      {/* Count fields */}
+                      {(() => {
+                        const fields = [
+                          result.variant,
+                          result.bodyType,
+                          result.transmission,
+                          result.fuelType,
+                          result.features,
+                          result.description,
+                        ].filter(Boolean);
+                        const featureCount = result.features ? result.features.split(',').length : 0;
+                        const totalFields = fields.length;
+                        const quality = totalFields >= 5 ? 'High' : totalFields >= 3 ? 'Medium' : 'Low';
+                        const qualityColor = quality === 'High' ? 'text-green-600' : quality === 'Medium' ? 'text-yellow-600' : 'text-red-600';
+
+                        return (
+                          <div>
+                            <div className={`font-medium ${qualityColor}`}>
+                              {quality} Quality
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {totalFields}/6 fields
+                            </div>
+                            {featureCount > 0 && (
+                              <div className="text-xs text-blue-600">
+                                ✨ {featureCount} features
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       result.status === 'approved' ? 'bg-green-100 text-green-800' :
@@ -344,23 +374,31 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
                       {result.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm space-x-2">
-                    {result.status === 'pending' && (
+                  <td className="px-4 py-3 text-sm">
+                    <div className="flex flex-col gap-2">
                       <button
-                        onClick={() => approveResult(result.id)}
-                        className="text-green-600 hover:text-green-800 font-medium"
+                        onClick={() => openDetailModal(result)}
+                        className="text-purple-600 hover:text-purple-800 font-medium text-left"
                       >
-                        ✓ Approve
+                        📋 Details
                       </button>
-                    )}
-                    <a
-                      href={result.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      View →
-                    </a>
+                      {result.status === 'pending' && (
+                        <button
+                          onClick={() => approveResult(result.id)}
+                          className="text-green-600 hover:text-green-800 font-medium text-left"
+                        >
+                          ✓ Approve
+                        </button>
+                      )}
+                      <a
+                        href={result.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        🔗 OLX
+                      </a>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -372,6 +410,175 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
       {filteredResults.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           No results found
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {detailModalOpen && selectedResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold">
+                {selectedResult.make} {selectedResult.model} {selectedResult.year}
+              </h2>
+              <button
+                onClick={closeDetailModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {/* Status Badge */}
+              <div className="mb-6">
+                <span className={`px-3 py-1 text-sm rounded-full ${
+                  selectedResult.status === 'approved' ? 'bg-green-100 text-green-800' :
+                  selectedResult.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {selectedResult.status.toUpperCase()}
+                </span>
+                {selectedResult.confidence > 0 && (
+                  <span className="ml-2 px-3 py-1 text-sm rounded-full bg-orange-100 text-orange-800">
+                    Duplicate Confidence: {selectedResult.confidence}%
+                  </span>
+                )}
+              </div>
+
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-sm text-gray-500 mb-1">Price</div>
+                  <div className="text-xl font-bold text-green-600">{selectedResult.priceDisplay}</div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-sm text-gray-500 mb-1">Year</div>
+                  <div className="text-xl font-bold">{selectedResult.year || 'N/A'}</div>
+                </div>
+              </div>
+
+              {/* Specifications */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3 border-b pb-2">Specifications</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedResult.variant && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-500 text-xl">🏷️</span>
+                      <div>
+                        <div className="text-sm text-gray-500">Variant</div>
+                        <div className="font-medium">{selectedResult.variant}</div>
+                      </div>
+                    </div>
+                  )}
+                  {selectedResult.bodyType && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-500 text-xl">🚗</span>
+                      <div>
+                        <div className="text-sm text-gray-500">Body Type</div>
+                        <div className="font-medium">{selectedResult.bodyType}</div>
+                      </div>
+                    </div>
+                  )}
+                  {selectedResult.transmission && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-500 text-xl">⚙️</span>
+                      <div>
+                        <div className="text-sm text-gray-500">Transmission</div>
+                        <div className="font-medium">{selectedResult.transmission}</div>
+                      </div>
+                    </div>
+                  )}
+                  {selectedResult.fuelType && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-500 text-xl">⛽</span>
+                      <div>
+                        <div className="text-sm text-gray-500">Fuel Type</div>
+                        <div className="font-medium">{selectedResult.fuelType}</div>
+                      </div>
+                    </div>
+                  )}
+                  {selectedResult.location && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-500 text-xl">📍</span>
+                      <div>
+                        <div className="text-sm text-gray-500">Location</div>
+                        <div className="font-medium">{selectedResult.location}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Features */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3 border-b pb-2">Features</h3>
+                {selectedResult.features ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedResult.features.split(',').map((feature, idx) => (
+                      <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                        ✨ {feature.trim()}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-500 italic">
+                    No features detected from listing title. This vehicle may have limited feature information for AI content generation.
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3 border-b pb-2">Description</h3>
+                {selectedResult.description ? (
+                  <p className="text-gray-700 leading-relaxed">{selectedResult.description}</p>
+                ) : (
+                  <div className="text-gray-500 italic">
+                    No description available. Title contains limited descriptive information.
+                  </div>
+                )}
+              </div>
+
+              {/* Source Link */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3 border-b pb-2">Source</h3>
+                <a
+                  href={selectedResult.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 break-all"
+                >
+                  {selectedResult.url}
+                </a>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t">
+                {selectedResult.status === 'pending' && (
+                  <button
+                    onClick={() => {
+                      approveResult(selectedResult.id);
+                      closeDetailModal();
+                    }}
+                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  >
+                    ✓ Approve This Vehicle
+                  </button>
+                )}
+                <a
+                  href={selectedResult.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-center"
+                >
+                  View on OLX →
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
