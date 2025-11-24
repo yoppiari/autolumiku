@@ -1,0 +1,226 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+interface Result {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  priceDisplay: string;
+  location: string | null;
+  status: string;
+  confidence: number;
+  url: string;
+}
+
+export default function ResultsPage({ params }: { params: { jobId: string } }) {
+  const router = useRouter();
+  const [results, setResults] = useState<Result[]>([]);
+  const [filteredResults, setFilteredResults] = useState<Result[]>([]);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadResults();
+  }, [params.jobId]);
+
+  useEffect(() => {
+    filterResults();
+  }, [results, search, filter]);
+
+  const loadResults = async () => {
+    try {
+      const res = await fetch(`/api/admin/scraper/results/${params.jobId}`);
+      const data = await res.json();
+      setResults(data.results);
+    } catch (error) {
+      console.error('Failed to load results:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterResults = () => {
+    let filtered = results;
+
+    if (filter !== 'all') {
+      filtered = filtered.filter(r => r.status === filter);
+    }
+
+    if (search) {
+      const query = search.toLowerCase();
+      filtered = filtered.filter(r =>
+        r.make.toLowerCase().includes(query) ||
+        r.model.toLowerCase().includes(query) ||
+        r.year.toString().includes(query)
+      );
+    }
+
+    setFilteredResults(filtered);
+  };
+
+  const approveResult = async (resultId: string) => {
+    try {
+      await fetch(`/api/admin/scraper/approve/${resultId}`, { method: 'POST' });
+      loadResults();
+    } catch (error) {
+      alert('Failed to approve');
+    }
+  };
+
+  const importAll = async () => {
+    if (!confirm('Import all approved results to production?')) return;
+
+    try {
+      const res = await fetch(`/api/admin/scraper/import/${params.jobId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      const data = await res.json();
+      alert(`Imported: ${data.imported}, Updated: ${data.updated}, Skipped: ${data.skipped}`);
+      router.push('/admin/data-management/scraper');
+    } catch (error) {
+      alert('Import failed');
+    }
+  };
+
+  if (loading) return <div className="p-8">Loading...</div>;
+
+  const stats = {
+    pending: results.filter(r => r.status === 'pending').length,
+    approved: results.filter(r => r.status === 'approved').length,
+    duplicate: results.filter(r => r.status === 'duplicate').length,
+  };
+
+  return (
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="mb-6">
+        <Link href="/admin/data-management/scraper" className="text-blue-600 hover:text-blue-800">
+          ← Back to Dashboard
+        </Link>
+      </div>
+
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Scraper Results</h1>
+        <button
+          onClick={importAll}
+          disabled={stats.approved === 0}
+          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+        >
+          Import Approved ({stats.approved})
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="p-4 bg-white rounded-lg shadow">
+          <div className="text-2xl font-bold">{results.length}</div>
+          <div className="text-sm text-gray-600">Total</div>
+        </div>
+        <div className="p-4 bg-yellow-50 rounded-lg shadow">
+          <div className="text-2xl font-bold text-yellow-700">{stats.pending}</div>
+          <div className="text-sm text-yellow-600">Pending</div>
+        </div>
+        <div className="p-4 bg-green-50 rounded-lg shadow">
+          <div className="text-2xl font-bold text-green-700">{stats.approved}</div>
+          <div className="text-sm text-green-600">Approved</div>
+        </div>
+        <div className="p-4 bg-gray-50 rounded-lg shadow">
+          <div className="text-2xl font-bold text-gray-700">{stats.duplicate}</div>
+          <div className="text-sm text-gray-600">Duplicates</div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Search make, model, year..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 px-4 py-2 border rounded-lg"
+        />
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="px-4 py-2 border rounded-lg"
+        >
+          <option value="all">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="duplicate">Duplicate</option>
+        </select>
+      </div>
+
+      {/* Results Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filteredResults.map((result) => (
+              <tr key={result.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3">
+                  <div className="font-medium">{result.make} {result.model}</div>
+                  {result.confidence > 0 && (
+                    <div className="text-xs text-gray-500">Dup confidence: {result.confidence}%</div>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-sm">{result.year || 'N/A'}</td>
+                <td className="px-4 py-3 text-sm font-medium text-green-600">{result.priceDisplay}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{result.location || '-'}</td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    result.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    result.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {result.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm space-x-2">
+                  {result.status === 'pending' && (
+                    <button
+                      onClick={() => approveResult(result.id)}
+                      className="text-green-600 hover:text-green-800 font-medium"
+                    >
+                      ✓ Approve
+                    </button>
+                  )}
+                  <a
+                    href={result.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    View →
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {filteredResults.length === 0 && (
+        <div className="text-center py-12 text-gray-500">
+          No results found
+        </div>
+      )}
+    </div>
+  );
+}
