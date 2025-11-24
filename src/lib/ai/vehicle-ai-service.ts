@@ -7,6 +7,7 @@
 
 import { createZAIClient, ZAIClient } from './zai-client';
 import { popularVehicleService } from '../services/popular-vehicle-service';
+import { prisma } from '../prisma';
 
 export interface VehicleInput {
   userDescription: string; // e.g., "Avanza 2020 AT, KM 20.000, Hitam, Rp 130jt"
@@ -106,35 +107,116 @@ export class VehicleAIService {
   }
 
   /**
+   * Query scraped vehicle data for reference
+   * Searches ScraperResult table for similar vehicles
+   */
+  private async queryScrapedData(userDescription: string): Promise<any[]> {
+    try {
+      // Extract make/model/year from description (simple keyword matching)
+      const descLower = userDescription.toLowerCase();
+
+      // Common makes to search for
+      const makes = ['toyota', 'honda', 'daihatsu', 'mitsubishi', 'suzuki', 'nissan', 'mazda', 'isuzu', 'bmw', 'mercedes'];
+      const foundMake = makes.find(make => descLower.includes(make));
+
+      if (!foundMake) return [];
+
+      // Query approved scraped results
+      const scrapedVehicles = await prisma.scraperResult.findMany({
+        where: {
+          make: {
+            contains: foundMake,
+            mode: 'insensitive',
+          },
+          status: 'approved', // Only use approved data
+        },
+        select: {
+          make: true,
+          model: true,
+          year: true,
+          variant: true,
+          price: true,
+          priceDisplay: true,
+          transmission: true,
+          fuelType: true,
+          bodyType: true,
+          features: true,
+          description: true,
+          mileage: true,
+          source: true,
+        },
+        orderBy: {
+          scrapedAt: 'desc',
+        },
+        take: 5, // Get top 5 most recent
+      });
+
+      return scrapedVehicles;
+    } catch (error) {
+      console.error('Error querying scraped data:', error);
+      return [];
+    }
+  }
+
+  /**
    * Identify vehicle from user description
    * Uses GLM-4.6 for text-only identification
-   * Enhanced with Popular Vehicle Database lookup
+   * Enhanced with Popular Vehicle Database lookup AND Scraped Data
    */
   async identifyFromText(input: VehicleInput): Promise<VehicleAIResult> {
     try {
       // Step 1: Search popular vehicle database for quick match
       const searchResults = await popularVehicleService.searchVehicles(input.userDescription, 3);
 
+      // Step 2: Query scraped data for real market examples
+      const scrapedData = await this.queryScrapedData(input.userDescription);
+
       let prompt = `Parse kendaraan ini dan generate data lengkap: ${input.userDescription}`;
       let temperature = 0.7;
 
-      // Step 2: If found in database, enhance prompt with reference data
+      // Step 3: Build enhanced prompt with reference data
+      let referenceData = '';
+
+      // Add popular vehicle database reference
       if (searchResults.length > 0) {
         const topMatch = searchResults[0];
-        prompt = `Parse kendaraan ini dan generate data lengkap: ${input.userDescription}
-
-REFERENCE DATA (use to validate and enhance your response):
+        referenceData += `\n\nPOPULAR VEHICLE DATABASE:
 Make: ${topMatch.make}
 Model: ${topMatch.model}
 Category: ${topMatch.category}
 Available variants: ${JSON.stringify(topMatch.variants)}
-Market price range: ${JSON.stringify(topMatch.usedCarPrices)}
+Market price range: ${JSON.stringify(topMatch.usedCarPrices)}`;
+      }
 
-Use this reference to:
+      // Add scraped data reference (REAL market data from OLX and CARSOME)
+      if (scrapedData.length > 0) {
+        referenceData += `\n\nREAL MARKET DATA (from OLX and CARSOME):`;
+
+        scrapedData.slice(0, 3).forEach((vehicle, idx) => {
+          referenceData += `\n\nExample ${idx + 1} (Source: ${vehicle.source}):
+- ${vehicle.make} ${vehicle.model} ${vehicle.year}${vehicle.variant ? ` ${vehicle.variant}` : ''}
+- Price: ${vehicle.priceDisplay || 'N/A'}
+- Transmission: ${vehicle.transmission || 'N/A'}
+- Fuel Type: ${vehicle.fuelType || 'N/A'}
+- Body Type: ${vehicle.bodyType || 'N/A'}
+- Mileage: ${vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : 'N/A'}
+- Features: ${vehicle.features || 'N/A'}
+${vehicle.description ? `- Description: ${vehicle.description.substring(0, 200)}...` : ''}`;
+        });
+      }
+
+      // If we have reference data, enhance the prompt
+      if (referenceData) {
+        prompt = `Parse kendaraan ini dan generate data lengkap: ${input.userDescription}
+${referenceData}
+
+IMPORTANT - Use this reference data to:
 1. Confirm make/model identification
 2. Validate variant against available options
-3. Compare user's price with market data
-4. Provide accurate specs based on known data`;
+3. Compare user's price with REAL market data above
+4. Extract features similar to market examples
+5. Generate descriptions inspired by market descriptions
+6. Provide accurate pricing analysis based on actual listings`;
 
         temperature = 0.5; // Lower temperature for more consistent results with reference data
       }
