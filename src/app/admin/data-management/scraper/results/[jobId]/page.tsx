@@ -23,6 +23,7 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadResults();
@@ -35,10 +36,18 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
   const loadResults = async () => {
     try {
       const res = await fetch(`/api/admin/scraper/results/${params.jobId}`);
+
+      if (!res.ok) {
+        throw new Error('Job not found or failed to load results');
+      }
+
       const data = await res.json();
-      setResults(data.results);
+      setResults(data.results || []);
+      setError(null);
     } catch (error) {
       console.error('Failed to load results:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load results');
+      setResults([]);
     } finally {
       setLoading(false);
     }
@@ -91,6 +100,23 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto">
+        <div className="mb-6">
+          <Link href="/admin/data-management/scraper" className="text-blue-600 hover:text-blue-800">
+            ← Back to Dashboard
+          </Link>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Results</h2>
+          <p className="text-red-700">{error}</p>
+          <p className="text-gray-600 mt-4">The job may not exist or has been deleted.</p>
+        </div>
+      </div>
+    );
+  }
 
   const stats = {
     pending: results.filter(r => r.status === 'pending').length,

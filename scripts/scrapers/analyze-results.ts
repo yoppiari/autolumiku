@@ -400,4 +400,5 @@ if (require.main === module) {
   main();
 }
 
-export { ResultsAnalyzer, DataQualityScore };
+export { ResultsAnalyzer };
+export type { DataQualityScore };

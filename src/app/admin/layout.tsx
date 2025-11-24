@@ -13,6 +13,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   // Read user from localStorage and check if super_admin
   React.useEffect(() => {
@@ -80,9 +81,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Tenants', href: '/admin/tenants', icon: '🏢' },
     { name: 'Users', href: '/admin/users', icon: '👥' },
     { name: 'Analytics', href: '/admin/health', icon: '📊' },
+    { name: 'Data Management', href: '/admin/data-management', icon: '🗄️', submenu: [
+      { name: 'Vehicle Scraper', href: '/admin/data-management/scraper', icon: '🤖' },
+    ]},
     { name: 'Audit Logs', href: '/admin/audit', icon: '📋' },
     { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
   ];
+
+  const toggleMenu = (menuName: string) => {
+    setExpandedMenus(prev =>
+      prev.includes(menuName)
+        ? prev.filter(m => m !== menuName)
+        : [...prev, menuName]
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -118,20 +130,74 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`
-                  flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                  ${pathname === item.href
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }
-                `}
-              >
-                  <span className="mr-3 text-lg">{item.icon}</span>
-                  {item.name}
-                </Link>
+              <div key={item.name}>
+                {item.submenu ? (
+                  // Parent menu with submenu
+                  <div>
+                    <button
+                      onClick={() => toggleMenu(item.name)}
+                      className={`
+                        w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors
+                        ${pathname.startsWith(item.href)
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center">
+                        <span className="mr-3 text-lg">{item.icon}</span>
+                        {item.name}
+                      </div>
+                      <svg
+                        className={`w-4 h-4 transition-transform ${
+                          expandedMenus.includes(item.name) ? 'rotate-180' : ''
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {/* Submenu items */}
+                    {expandedMenus.includes(item.name) && (
+                      <div className="ml-6 mt-1 space-y-1">
+                        {item.submenu.map((subitem: any) => (
+                          <Link
+                            key={subitem.name}
+                            href={subitem.href}
+                            className={`
+                              flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                              ${pathname === subitem.href
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                              }
+                            `}
+                          >
+                            <span className="mr-3 text-lg">{subitem.icon}</span>
+                            {subitem.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Regular menu item
+                  <Link
+                    href={item.href}
+                    className={`
+                      flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                      ${pathname === item.href
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      }
+                    `}
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    {item.name}
+                  </Link>
+                )}
+              </div>
             ))}
           </nav>
 

@@ -26,6 +26,7 @@ export default function ScraperDashboard() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -38,13 +39,21 @@ export default function ScraperDashboard() {
         fetch('/api/admin/scraper/jobs?pageSize=10'),
       ]);
 
+      if (!statsRes.ok || !jobsRes.ok) {
+        throw new Error('Failed to load data. Database tables may not exist yet.');
+      }
+
       const statsData = await statsRes.json();
       const jobsData = await jobsRes.json();
 
-      setStats(statsData.stats);
-      setJobs(jobsData.jobs);
+      setStats(statsData.stats || null);
+      setJobs(jobsData.jobs || []);
+      setError(null);
     } catch (error) {
       console.error('Failed to load data:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load data');
+      setStats(null);
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -75,6 +84,23 @@ export default function ScraperDashboard() {
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Database Setup Required</h2>
+          <p className="text-red-700 mb-4">{error}</p>
+          <div className="bg-white rounded p-4 border border-red-200">
+            <p className="font-medium text-gray-900 mb-2">Please run the following command:</p>
+            <code className="block bg-gray-100 p-3 rounded text-sm">
+              npx prisma migrate dev --name add_scraper_tables
+            </code>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto">

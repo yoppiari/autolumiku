@@ -20,9 +20,15 @@ export async function GET(
       make,
     });
 
+    // Convert BigInt to string for JSON serialization
+    const serializedResults = results.map(result => ({
+      ...result,
+      price: result.price.toString(),
+    }));
+
     return NextResponse.json({
       success: true,
-      results,
+      results: serializedResults,
       count: results.length,
     });
   } catch (error) {
