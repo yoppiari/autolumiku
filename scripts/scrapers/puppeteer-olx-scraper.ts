@@ -55,7 +55,10 @@ class PuppeteerOLXScraper {
     const makes = [
       'Toyota', 'Honda', 'Daihatsu', 'Mitsubishi', 'Suzuki',
       'Nissan', 'Mazda', 'Isuzu', 'Wuling', 'Hyundai',
-      'Kia', 'BMW', 'Mercedes', 'Audi', 'Volkswagen'
+      'Kia', 'BMW', 'Mercedes-Benz', 'Mercedes', 'Audi', 'Volkswagen',
+      'Mini', 'Land Rover', 'Range Rover', 'Lexus', 'Subaru',
+      'Porsche', 'Jaguar', 'Volvo', 'Peugeot', 'Renault',
+      'Chevrolet', 'Ford', 'Jeep', 'Chery', 'MG', 'DFSK'
     ];
 
     const titleLower = title.toLowerCase();
@@ -140,21 +143,33 @@ class PuppeteerOLXScraper {
   }
 
   /**
-   * Extract mileage from title
+   * Extract mileage from title and URL
    */
   private extractMileage(text: string): number | undefined {
     const lower = text.toLowerCase();
 
-    // Pattern: "50rb km", "50 rb", "50ribu"
+    // Pattern 1: "km24rb", "km-24rb", "km34rb" (common in OLX URLs)
+    const kmRbMatch = lower.match(/km[-\s]?(\d+)rb/);
+    if (kmRbMatch) {
+      return parseInt(kmRbMatch[1], 10) * 1000;
+    }
+
+    // Pattern 2: "km-5000", "km5000" (exact km in URL)
+    const kmExactMatch = lower.match(/km[-\s]?(\d{4,6})(?!\d)/);
+    if (kmExactMatch) {
+      return parseInt(kmExactMatch[1], 10);
+    }
+
+    // Pattern 3: "50rb km", "50 rb", "50ribu" (in title)
     const rbMatch = lower.match(/(\d+)\s*(rb|ribu)/);
     if (rbMatch) {
       return parseInt(rbMatch[1], 10) * 1000;
     }
 
-    // Pattern: "50.000 km", "50000km"
-    const kmMatch = lower.match(/(\d+[\.,]?\d*)\s*km/);
-    if (kmMatch) {
-      const km = parseInt(kmMatch[1].replace(/[.,]/g, ''), 10);
+    // Pattern 4: "50.000 km", "50000km" (formatted in title)
+    const kmFormattedMatch = lower.match(/(\d+[\.,]?\d*)\s*km/);
+    if (kmFormattedMatch) {
+      const km = parseInt(kmFormattedMatch[1].replace(/[.,]/g, ''), 10);
       if (km < 500) { // Probably in thousands
         return km * 1000;
       }
@@ -165,31 +180,62 @@ class PuppeteerOLXScraper {
   }
 
   /**
-   * Extract variant from title (words after model, before year)
+   * Extract variant from title and URL (words after model, before year)
    */
-  private extractVariant(title: string, make: string, model: string): string | undefined {
-    // Find position after make and model
+  private extractVariant(title: string, url: string, make: string, model: string): string | undefined {
+    // Try from title first
     const makeIndex = title.toLowerCase().indexOf(make.toLowerCase());
-    if (makeIndex === -1) return undefined;
+    if (makeIndex !== -1) {
+      const afterMake = title.substring(makeIndex + make.length).trim();
+      const modelIndex = afterMake.toLowerCase().indexOf(model.toLowerCase());
+      if (modelIndex !== -1) {
+        const afterModel = afterMake.substring(modelIndex + model.length).trim();
 
-    const afterMake = title.substring(makeIndex + make.length).trim();
-    const modelIndex = afterMake.toLowerCase().indexOf(model.toLowerCase());
-    if (modelIndex === -1) return undefined;
+        // Extract words before year (variant usually here)
+        const yearMatch = afterModel.match(/\b(19|20)\d{2}\b/);
+        if (yearMatch) {
+          const variant = afterModel.substring(0, yearMatch.index).trim();
+          // Clean up common words
+          const cleaned = variant
+            .replace(/^[-\s]+/, '')
+            .replace(/\b(tipe|type|tahun|low|dp|km)\b/gi, '')
+            .trim();
 
-    const afterModel = afterMake.substring(modelIndex + model.length).trim();
+          if (cleaned && cleaned.length > 0 && cleaned.length < 40) {
+            return cleaned;
+          }
+        }
+      }
+    }
 
-    // Extract words before year (variant usually here)
-    const yearMatch = afterModel.match(/\b(19|20)\d{2}\b/);
-    if (yearMatch) {
-      const variant = afterModel.substring(0, yearMatch.index).trim();
-      // Clean up common words
-      const cleaned = variant
-        .replace(/^[-\s]+/, '')
-        .replace(/\b(tipe|type|tahun)\b/gi, '')
-        .trim();
+    // Try extracting from URL slug (between model and fuel/transmission)
+    // Example: "suzuki-ertiga-15-gx-bensin-mt-2022"
+    // Example: "wuling-cortez-15-lt-lux-bensin-at-2019"
+    const urlLower = url.toLowerCase();
+    const modelInUrl = model.toLowerCase().replace(/\s+/g, '-');
+    const modelIdx = urlLower.indexOf(modelInUrl);
 
-      if (cleaned && cleaned.length > 0 && cleaned.length < 30) {
-        return cleaned;
+    if (modelIdx !== -1) {
+      const afterModelUrl = urlLower.substring(modelIdx + modelInUrl.length);
+
+      // Match everything between model and (bensin|diesel|at|mt|year)
+      // Pattern: -15-gx- or -15-lt-lux- or -20-
+      const variantMatch = afterModelUrl.match(/^-([^-]+(?:-[^-]+)*)(?=-(?:bensin|diesel|at|mt|gasoline|solar|\d{4}|iid))/);
+
+      if (variantMatch && variantMatch[1]) {
+        let urlVariant = variantMatch[1]
+          .replace(/[-_]/g, ' ')
+          .replace(/\b(low|dp|km|iid|pajak|panjang|rendah|tdp|bensin|diesel|gasoline|solar|putih|hitam|abu|merah|biru|silver|grey)\b/gi, '')
+          .replace(/\s+(at|mt|cvt)(\s+\d{4})?.*/gi, '') // Remove transmission and everything after
+          .trim()
+          .toUpperCase();
+
+        // Clean up extra spaces
+        urlVariant = urlVariant.replace(/\s+/g, ' ').trim();
+
+        if (urlVariant && urlVariant.length > 0 && urlVariant.length < 40) {
+          return urlVariant;
+        }
       }
     }
 
@@ -437,10 +483,10 @@ class PuppeteerOLXScraper {
           location: raw.location,
           url: raw.url,
           // Extract from title/URL (LITE mode - no detail page visits)
-          variant: this.extractVariant(raw.title, make, model),
+          variant: this.extractVariant(raw.title, raw.url, make, model),
           transmission: this.extractTransmission(titleWithUrl),
           fuelType: this.extractFuelType(titleWithUrl),
-          mileage: this.extractMileage(raw.title),
+          mileage: this.extractMileage(titleWithUrl), // Pass URL too for better extraction
           scrapedAt: new Date().toISOString(),
         };
 
