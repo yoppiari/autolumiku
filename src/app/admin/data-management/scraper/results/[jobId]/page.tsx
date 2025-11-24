@@ -29,6 +29,8 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   useEffect(() => {
     loadResults();
@@ -86,6 +88,50 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
     }
   };
 
+  const toggleSelection = (resultId: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(resultId)) {
+      newSelected.delete(resultId);
+    } else {
+      newSelected.add(resultId);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    const pendingResults = filteredResults.filter(r => r.status === 'pending');
+    if (selectedIds.size === pendingResults.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pendingResults.map(r => r.id)));
+    }
+  };
+
+  const bulkApprove = async () => {
+    if (selectedIds.size === 0) {
+      alert('No items selected');
+      return;
+    }
+
+    if (!confirm(`Approve ${selectedIds.size} items?`)) return;
+
+    setBulkActionLoading(true);
+    try {
+      const promises = Array.from(selectedIds).map(id =>
+        fetch(`/api/admin/scraper/approve/${id}`, { method: 'POST' })
+      );
+
+      await Promise.all(promises);
+      setSelectedIds(new Set());
+      loadResults();
+      alert(`Successfully approved ${selectedIds.size} items`);
+    } catch (error) {
+      alert('Some items failed to approve');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   const importAll = async () => {
     if (!confirm('Import all approved results to production?')) return;
 
@@ -139,13 +185,24 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Scraper Results</h1>
-        <button
-          onClick={importAll}
-          disabled={stats.approved === 0}
-          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-        >
-          Import Approved ({stats.approved})
-        </button>
+        <div className="flex gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={bulkApprove}
+              disabled={bulkActionLoading}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {bulkActionLoading ? 'Approving...' : `✓ Approve Selected (${selectedIds.size})`}
+            </button>
+          )}
+          <button
+            onClick={importAll}
+            disabled={stats.approved === 0}
+            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+          >
+            Import Approved ({stats.approved})
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -168,7 +225,7 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters and Bulk Actions */}
       <div className="flex gap-4 mb-6">
         <input
           type="text"
@@ -187,6 +244,14 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
           <option value="approved">Approved</option>
           <option value="duplicate">Duplicate</option>
         </select>
+        {filter === 'pending' && filteredResults.length > 0 && (
+          <button
+            onClick={toggleSelectAll}
+            className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          >
+            {selectedIds.size === filteredResults.length ? '☑ Deselect All' : '☐ Select All'}
+          </button>
+        )}
       </div>
 
       {/* Results Table */}
@@ -195,6 +260,16 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-4 py-3 w-12">
+                  {filter === 'pending' && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size > 0 && selectedIds.size === filteredResults.filter(r => r.status === 'pending').length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300"
+                    />
+                  )}
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
@@ -206,7 +281,17 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredResults.map((result) => (
-                <tr key={result.id} className="hover:bg-gray-50">
+                <tr key={result.id} className={`hover:bg-gray-50 ${selectedIds.has(result.id) ? 'bg-blue-50' : ''}`}>
+                  <td className="px-4 py-3">
+                    {result.status === 'pending' && (
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(result.id)}
+                        onChange={() => toggleSelection(result.id)}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{result.make} {result.model}</div>
                     {result.variant && (
