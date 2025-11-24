@@ -176,12 +176,24 @@ export default function LeadsDashboard() {
       ];
 
       // Calculate stats
-      const leadStats = mockLeads.reduce((acc, lead) => {
+      type LeadStatsType = {
+        total: number;
+        new: number;
+        contacted: number;
+        interested: number;
+        converted: number;
+        conversionRate: number;
+        [key: string]: number;
+      };
+
+      const leadStats = mockLeads.reduce((acc: LeadStatsType, lead) => {
         acc.total++;
-        acc[lead.status]++;
-        
+        if (acc[lead.status] !== undefined) {
+          acc[lead.status]++;
+        }
+
         return acc;
-      }, { total: 0, new: 0, contacted: 0, interested: 0, converted: 0, conversionRate: 0 });
+      }, { total: 0, new: 0, contacted: 0, interested: 0, converted: 0, conversionRate: 0 } as LeadStatsType);
 
       // Calculate conversion rate
       if (leadStats.total > 0) {

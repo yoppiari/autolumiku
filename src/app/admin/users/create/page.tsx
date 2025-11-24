@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -44,7 +44,7 @@ export default function CreateUserPage() {
   });
 
   // Mock tenants data
-  useState(() => {
+  useEffect(() => {
     const mockTenants: Tenant[] = [
       { id: 'tenant-1', name: 'Showroom Jakarta', slug: 'showroomjakarta' },
       { id: 'tenant-2', name: 'Dealer Mobil', slug: 'dealermobil' },

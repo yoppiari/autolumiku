@@ -551,6 +551,41 @@ So that **I can view high-quality vehicle photos without long loading times**.
 
 ---
 
+### Story 2.9: Popular Vehicle Reference Database
+
+As a **showroom staff member**,
+I want **AI to leverage a database of popular Indonesian vehicles for faster and more accurate identification**,
+So that **I can get instant suggestions, accurate specs, and market price validation for common vehicles**.
+
+**Acceptance Criteria:**
+
+**Given** I start typing a vehicle name during upload
+**When** The system searches the popular vehicle database
+**Then** I see instant auto-complete suggestions for make, model, and common variants
+
+**Given** I upload photos of a popular vehicle (e.g., Avanza, Xpander)
+**When** AI identifies the vehicle
+**Then** AI uses reference database for faster identification and validates specs against known data
+
+**Given** I enter a price for a vehicle
+**When** The system checks against market data in the database
+**Then** I receive validation feedback if price is significantly above or below market range
+
+**Given** I need to create blog content or vehicle comparisons
+**When** I access vehicle data
+**Then** The system provides comprehensive specs, market insights, and comparison data from the reference database
+
+**Coverage:** FR17, FR18, FR19 (Enhanced)
+
+**Technical Notes:**
+- Database includes 30+ most popular vehicles in Indonesia (updated annually)
+- Each entry contains: variants, typical specs, price ranges by year, common keywords
+- AI uses database for quick validation before deep analysis
+- Supports auto-suggestions, price validation, and content generation
+- Reduces AI processing time by 60-70% for popular vehicles
+
+---
+
 **Checkpoint 2: AI-Powered Vehicle Upload Complete** ✅
 
 ## Epic 3: Natural Language Control Center

@@ -1394,6 +1394,88 @@ enum LeadPriority {
   URGENT
 }
 
+// ============================================================================
+// POPULAR VEHICLE REFERENCE DATABASE (Epic 2: Story 2.9)
+// ============================================================================
+
+model PopularVehicle {
+  id                String   @id @default(uuid())
+
+  // Basic Information
+  make              String   // Toyota, Honda, Mitsubishi, etc
+  model             String   // Avanza, Xpander, CR-V, etc
+  category          String   // MPV, SUV, Sedan, Hatchback, Pickup
+  bodyType          String   // 5-seater, 7-seater, etc
+
+  // Variants & Years
+  variants          Json     // ["1.3 E MT", "1.3 G MT", "1.5 G AT"]
+  productionYears   Json     // { start: 2019, end: 2024, current: true }
+
+  // Technical Specifications
+  engineOptions     String[] // ["1.3L", "1.5L"]
+  engineCapacity    Json     // { "1.3L": "1329cc", "1.5L": "1496cc" }
+  transmissionTypes String[] // ["Manual 5-speed", "CVT", "Automatic 4-speed"]
+  fuelTypes         String[] // ["Bensin"]
+  fuelConsumption   Json?    // { city: "13 km/L", highway: "16 km/L" }
+  seatingCapacity   Int[]    // [7] for MPV
+  driveType         String[] // ["FWD", "RWD", "4WD"]
+
+  // Dimensions & Weight
+  dimensions        Json?    // { length: 4395, width: 1730, height: 1665 } in mm
+  groundClearance   Int?     // in mm
+  curbWeight        Json?    // { min: 1070, max: 1150 } in kg
+
+  // Market Data & Pricing
+  newCarPrice       Json?    // { "2024": { min: 233300000, max: 282600000 } }
+  usedCarPrices     Json     // { "2023": {min: 200000000, max: 240000000}, "2022": {...} }
+  depreciation      Json?    // { yearlyRate: 0.15, resaleValue3Years: 0.65 }
+
+  // Popularity Metrics
+  popularityScore   Int      @default(50) // 1-100 based on market share
+  marketShare       Float?   // 0.0-1.0
+  salesVolume       Json?    // { "2023": 15000, "2024": 18000 }
+  commonInRegions   String[] // ["Jakarta", "Surabaya", "Bandung"]
+  targetMarket      String[] // ["Family", "First-time buyer", "Urban"]
+
+  // Features & Equipment
+  standardFeatures  Json     // { safety: [], comfort: [], technology: [] }
+  commonOptions     String[] // ["Sunroof", "Leather seats", "Navigation"]
+
+  // AI Helper Data
+  commonKeywords    String[] // ["avanza", "avy", "grand avanza", "veloz"]
+  commonMisspellings String[] // ["avansa", "afanza"]
+  searchAliases     String[] // Alternative names
+
+  // Competition & Comparison
+  directCompetitors String[] // ["Mitsubishi Xpander", "Suzuki Ertiga"]
+  competitiveAdvantages String[] // ["Best resale value", "Lowest maintenance"]
+
+  // Content Generation Support
+  prosAndCons       Json?    // { pros: [], cons: [] }
+  expertReview      String?  // Short expert opinion
+  commonIssues      Json?    // { "2020": ["AC compressor"], "2021": [] }
+  maintenanceCost   Json?    // { yearly: 5000000, per10k: 500000 }
+
+  // SEO & Marketing
+  seoKeywords       String[] // For blog content generation
+  metaDescription   String?
+  popularComparisons String[] // ["Avanza vs Xpander", "Avanza vs Ertiga"]
+
+  // Metadata
+  isActive          Boolean  @default(true)
+  dataSource        String?  // "Manual", "OLX API", "OtoDriver"
+  lastVerified      DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([make, model])
+  @@index([make, model])
+  @@index([category])
+  @@index([popularityScore])
+  @@index([isActive])
+  @@map("popular_vehicles")
+}
+
 enum PhotoValidationStatus {
   PENDING     // Not yet validated
   VALID       // Passed quality checks

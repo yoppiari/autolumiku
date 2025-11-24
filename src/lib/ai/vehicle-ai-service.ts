@@ -6,6 +6,7 @@
  */
 
 import { createZAIClient, ZAIClient } from './zai-client';
+import { popularVehicleService } from '../services/popular-vehicle-service';
 
 export interface VehicleInput {
   userDescription: string; // e.g., "Avanza 2020 AT, KM 20.000, Hitam, Rp 130jt"
@@ -107,13 +108,41 @@ export class VehicleAIService {
   /**
    * Identify vehicle from user description
    * Uses GLM-4.6 for text-only identification
+   * Enhanced with Popular Vehicle Database lookup
    */
   async identifyFromText(input: VehicleInput): Promise<VehicleAIResult> {
     try {
+      // Step 1: Search popular vehicle database for quick match
+      const searchResults = await popularVehicleService.searchVehicles(input.userDescription, 3);
+
+      let prompt = `Parse kendaraan ini dan generate data lengkap: ${input.userDescription}`;
+      let temperature = 0.7;
+
+      // Step 2: If found in database, enhance prompt with reference data
+      if (searchResults.length > 0) {
+        const topMatch = searchResults[0];
+        prompt = `Parse kendaraan ini dan generate data lengkap: ${input.userDescription}
+
+REFERENCE DATA (use to validate and enhance your response):
+Make: ${topMatch.make}
+Model: ${topMatch.model}
+Category: ${topMatch.category}
+Available variants: ${JSON.stringify(topMatch.variants)}
+Market price range: ${JSON.stringify(topMatch.usedCarPrices)}
+
+Use this reference to:
+1. Confirm make/model identification
+2. Validate variant against available options
+3. Compare user's price with market data
+4. Provide accurate specs based on known data`;
+
+        temperature = 0.5; // Lower temperature for more consistent results with reference data
+      }
+
       const response = await this.client.generateText({
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
-        userPrompt: `Parse kendaraan ini dan generate data lengkap: ${input.userDescription}`,
-        temperature: 0.7,
+        userPrompt: prompt,
+        temperature,
         maxTokens: 4000,
       });
 
@@ -122,6 +151,30 @@ export class VehicleAIService {
 
       // Validate required fields
       this.validateResult(result);
+
+      // Step 3: Enhance with price validation if we have reference data
+      if (searchResults.length > 0 && result.year) {
+        const priceValidation = await popularVehicleService.validatePrice(
+          result.make,
+          result.model,
+          result.year,
+          result.price
+        );
+
+        // Update price analysis with validation data
+        result.priceAnalysis = {
+          ...result.priceAnalysis,
+          marketRange: {
+            min: priceValidation.marketMin,
+            max: priceValidation.marketMax,
+          },
+          factors: [
+            ...result.priceAnalysis.factors,
+            priceValidation.message,
+          ],
+          recommendation: priceValidation.recommendation,
+        };
+      }
 
       return result;
     } catch (error) {
