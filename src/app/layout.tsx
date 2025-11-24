@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'autolumiku Admin Platform',
   description: 'Platform administrasi multi-tenant untuk showroom otomotif',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

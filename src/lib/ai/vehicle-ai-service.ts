@@ -65,9 +65,11 @@ Tugas Anda:
 IMPORTANT:
 - Gunakan pengetahuan umum tentang model kendaraan untuk melengkapi data
 - Harga harus dalam format IDR cents (Rp 130jt = 13000000000 cents)
+- JIKA USER TIDAK MENTION HARGA: estimate harga market yang wajar dan set aiSuggestedPrice = price
 - Transmission type: "manual", "automatic", atau "cvt"
 - Confidence score: 0-100
 - PRICE ANALYSIS sangat penting: bandingkan harga user dengan market price, berikan recommendation
+- ALWAYS provide price field (required) - estimate if not provided by user
 
 Response format (JSON):
 {
