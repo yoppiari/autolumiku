@@ -1,0 +1,227 @@
+{
+  "source": "OLX (Puppeteer)",
+  "scrapedAt": "2025-11-24T12:58:26.703Z",
+  "totalVehicles": 20,
+  "vehicles": [
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 0,
+      "price": 9300000000,
+      "priceDisplay": "Rp 93.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/low-dp-toyota-corolla-altis-18-g-bensin-at-2008-3ga-iid-940932850",
+      "scrapedAt": "2025-11-24T12:58:26.329Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Mitsubishi",
+      "model": "Xpander",
+      "year": 0,
+      "price": 19400000000,
+      "priceDisplay": "Rp 194.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/low-dp-mitsubishi-xpander-15-ultimate-bensin-at-2019-bil-iid-940823005",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Toyota",
+      "model": "Avanza",
+      "year": 0,
+      "price": 11800000000,
+      "priceDisplay": "Rp 118.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/low-dp-toyota-avanza-13-g-bensin-at-2015-uyj-iid-940933086",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Unknown",
+      "model": "Unknown",
+      "year": 0,
+      "price": 10800000000,
+      "priceDisplay": "Rp 108.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/low-dp-renault-duster-15-rxl-solar-mt-2013-noj-iid-940965535",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "BMW",
+      "model": "X1",
+      "year": 0,
+      "price": 39900000000,
+      "priceDisplay": "Rp 399.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/bmw-x1-sdrive18i-xline-f48-lci-iid-940181973",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Unknown",
+      "model": "Unknown",
+      "year": 0,
+      "price": 54500000000,
+      "priceDisplay": "Rp 545.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/garansi-5th-baic-bj40-bj-40-plus-20-turbo-4x4-awd-20242025-iid-939952995",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "BMW",
+      "model": "M3",
+      "year": 0,
+      "price": 172000000000,
+      "priceDisplay": "Rp 1.720.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/bmw-m3-m3c-competition-2023-2024-km-5rb-antik-iid-940874110",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Toyota",
+      "model": "Kijang",
+      "year": 0,
+      "price": 35400000000,
+      "priceDisplay": "Rp 354.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/cuma-25jt-toyota-kijang-innova-reborn-24-v-diesel-at-2022-iid-940535638",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Suzuki",
+      "model": "Jimny",
+      "year": 0,
+      "price": 42500000000,
+      "priceDisplay": "Rp 425.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/suzuki-jimny-all-grip-4x4-15-at-automatic-1500-cc-bensin-tahun-2023-iid-941001503",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Hyundai",
+      "model": "Ioniq 5",
+      "year": 2023,
+      "price": 47500000000,
+      "priceDisplay": "Rp 475.000.000",
+      "location": "Cilandak, Jakarta Selatan",
+      "url": "https://www.olx.co.id/item/hyundai-ioniq-5-ev-signature-long-range-2023-iid-940170533",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Mercedes",
+      "model": "-Benz",
+      "year": 0,
+      "price": 36800000000,
+      "priceDisplay": "Rp 368.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/cash-mercedes-benz-glc250-4matic-2017-iid-941001301",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Honda",
+      "model": "HR-V",
+      "year": 0,
+      "price": 29900000000,
+      "priceDisplay": "Rp 299.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/cash-honda-hrv-se-sensing-2022-iid-941001217",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Honda",
+      "model": "BR-V",
+      "year": 0,
+      "price": 23500000000,
+      "priceDisplay": "Rp 235.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/di-jual-new-honda-br-v-15-dg3-prestige-bensin-at-2022-iid-941001189",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Toyota",
+      "model": "Kijang",
+      "year": 0,
+      "price": 21500000000,
+      "priceDisplay": "Rp 215.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/toyota-innova-reborn-2017-gat-original-iid-941001152",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Unknown",
+      "model": "Unknown",
+      "year": 2021,
+      "price": 17000000000,
+      "priceDisplay": "Rp 170.000.000",
+      "location": "Cilandak, Jakarta Selatan",
+      "url": "https://www.olx.co.id/item/rocky-2021-murah-bgt-12-x-cvt-matic-iid-940609598",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Hyundai",
+      "model": "Santa Fe",
+      "year": 0,
+      "price": 69900000000,
+      "priceDisplay": "Rp 699.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/cash-hyundai-santa-fe-caligraphy-hybrid-2024-iid-941001146",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Mercedes",
+      "model": "-Benz",
+      "year": 0,
+      "price": 49900000000,
+      "priceDisplay": "Rp 499.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/cash-mercedes-benz-cla200-amg-mbux-2019-iid-941001098",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 0,
+      "price": 8800000000,
+      "priceDisplay": "Rp 88.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/toyota-corolla-altis-20-v-tahun-2011-matic-hitam-iid-941000962",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Honda",
+      "model": "City",
+      "year": 0,
+      "price": 19600000000,
+      "priceDisplay": "Rp 196.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/city-rs-hb-at-2021-full-original-iid-940083260",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    },
+    {
+      "source": "OLX (Puppeteer)",
+      "make": "Toyota",
+      "model": "Fortuner",
+      "year": 0,
+      "price": 48400000000,
+      "priceDisplay": "Rp 484.000.000",
+      "location": "",
+      "url": "https://www.olx.co.id/item/toyota-fortuner-gr-28-at-sport-kicksensor-terawat-iid-940766651",
+      "scrapedAt": "2025-11-24T12:58:26.330Z"
+    }
+  ]
+}
