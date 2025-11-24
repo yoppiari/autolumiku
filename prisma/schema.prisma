@@ -1637,3 +1637,80 @@ model AIConversation {
   @@index([createdAt])
   @@map("ai_conversations")
 }
+
+// ============================================================================
+// VEHICLE DATA SCRAPER (Story 2.10)
+// ============================================================================
+
+model ScraperJob {
+  id              String   @id @default(uuid())
+  status          String   // 'running', 'completed', 'failed', 'cancelled'
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+
+  // Configuration
+  source          String   // 'OLX', 'Mobil123'
+  targetCount     Int      @default(50)
+
+  // Results
+  vehiclesFound   Int      @default(0)
+  vehiclesNew     Int      @default(0)
+  vehiclesUpdated Int      @default(0)
+  duplicates      Int      @default(0)
+  errors          Json?    // Array of error messages
+
+  // Metadata
+  executedBy      String   // Admin user ID
+  duration        Int?     // Seconds
+
+  // Relations
+  results         ScraperResult[]
+
+  @@index([status])
+  @@index([startedAt])
+  @@index([executedBy])
+  @@map("scraper_jobs")
+}
+
+model ScraperResult {
+  id              String   @id @default(uuid())
+  jobId           String
+  job             ScraperJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  // Scraped data
+  source          String   // 'OLX'
+  make            String
+  model           String
+  year            Int
+  price           BigInt   // IDR cents
+  priceDisplay    String
+  location        String?
+  url             String
+
+  // Status
+  status          String   // 'pending', 'approved', 'rejected', 'duplicate'
+  reviewedAt      DateTime?
+  reviewedBy      String?
+
+  // Duplicate detection
+  matchedVehicleId String? // PopularVehicle.id if duplicate found
+  confidence      Int      @default(0) // 0-100
+
+  createdAt       DateTime @default(now())
+
+  @@index([jobId])
+  @@index([status])
+  @@index([make, model, year])
+  @@map("scraper_results")
+}
+
+model ScraperConfig {
+  id              String   @id @default(uuid())
+  key             String   @unique
+  value           Json
+  description     String?
+  updatedAt       DateTime @updatedAt
+  updatedBy       String
+
+  @@map("scraper_config")
+}
