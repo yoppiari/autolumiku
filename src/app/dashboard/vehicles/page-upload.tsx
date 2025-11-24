@@ -175,15 +175,12 @@ export default function VehiclesPage() {
     setStep('generating');
 
     try {
-      // Prepare photos for API (max 5 for AI analysis)
-      const photosForAI = photos.slice(0, 5).map((p) => p.base64).filter(Boolean);
-
+      // Text-based AI identification only (vision removed)
       const response = await fetch('/api/v1/vehicles/ai-identify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userDescription,
-          photos: photosForAI.length > 0 ? photosForAI : undefined,
         }),
       });
 

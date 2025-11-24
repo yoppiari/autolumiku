@@ -10,7 +10,7 @@ import { vehicleAIService } from '@/lib/ai/vehicle-ai-service';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userDescription, photos } = body;
+    const { userDescription } = body;
 
     if (!userDescription || typeof userDescription !== 'string') {
       return NextResponse.json(
@@ -19,20 +19,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine which identification method to use
-    let result;
-    if (photos && Array.isArray(photos) && photos.length > 0) {
-      // Use vision-based identification if photos provided
-      result = await vehicleAIService.identifyFromPhotos({
-        userDescription,
-        photos,
-      });
-    } else {
-      // Use text-based identification
-      result = await vehicleAIService.identifyFromText({
-        userDescription,
-      });
-    }
+    // Use text-based identification only
+    const result = await vehicleAIService.identifyFromText({
+      userDescription,
+    });
 
     return NextResponse.json({
       success: true,

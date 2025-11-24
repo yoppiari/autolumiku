@@ -269,42 +269,7 @@ IMPORTANT - Use this reference data to:
     }
   }
 
-  /**
-   * Identify vehicle from photos
-   * Uses GLM-4.5V for vision-based identification
-   */
-  async identifyFromPhotos(input: VehicleInput): Promise<VehicleAIResult> {
-    if (!input.photos || input.photos.length === 0) {
-      throw new Error('No photos provided for vision-based identification');
-    }
-
-    try {
-      const userPrompt = input.userDescription
-        ? `Parse kendaraan ini dari foto dan info berikut: ${input.userDescription}`
-        : 'Identifikasi kendaraan dari foto-foto ini dan generate data lengkap';
-
-      const response = await this.client.generateVision({
-        systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
-        userPrompt,
-        images: input.photos.slice(0, 5), // Use first 5 photos max
-        temperature: 0.7,
-        maxTokens: 4000,
-      });
-
-      // Parse JSON response
-      const result = this.client.parseJSON<VehicleAIResult>(response.content);
-
-      // Validate required fields
-      this.validateResult(result);
-
-      return result;
-    } catch (error) {
-      console.error('Vehicle AI photo identification error:', error);
-      throw new Error(
-        `Failed to identify vehicle from photos: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
-  }
+  // Vision-based identification removed - text-only identification is used
 
   /**
    * Validate AI result has required fields
