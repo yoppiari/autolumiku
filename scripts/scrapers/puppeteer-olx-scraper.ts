@@ -74,11 +74,28 @@ class PuppeteerOLXScraper {
   }
 
   /**
-   * Extract year from title
+   * Extract year from title and URL
    */
-  private extractYear(title: string): number {
-    const yearMatch = title.match(/\b(19|20)\d{2}\b/);
-    return yearMatch ? parseInt(yearMatch[0], 10) : 0;
+  private extractYear(title: string, url: string): number {
+    // Try URL first (more reliable as it's often in URL slug)
+    const urlYearMatch = url.match(/-(19|20)\d{2}-/);
+    if (urlYearMatch) {
+      return parseInt(urlYearMatch[0].replace(/-/g, ''), 10);
+    }
+
+    // Fallback to title
+    const titleYearMatch = title.match(/\b(19|20)\d{2}\b/);
+    if (titleYearMatch) {
+      return parseInt(titleYearMatch[0], 10);
+    }
+
+    // Try to find year pattern in title (e.g., "Tahun 2020")
+    const tahunMatch = title.match(/tahun\s+(19|20)\d{2}/i);
+    if (tahunMatch) {
+      return parseInt(tahunMatch[1], 10);
+    }
+
+    return 0;
   }
 
   /**
@@ -131,6 +148,31 @@ class PuppeteerOLXScraper {
       // Wait for listings to load
       await page.waitForSelector('[data-aut-id="itemBox"]', { timeout: 10000 });
 
+      // Scroll to load more items (for 50+ vehicles)
+      if (limit > 20) {
+        console.log('📜 Scrolling to load more listings...');
+        await page.evaluate(async () => {
+          await new Promise<void>((resolve) => {
+            let totalHeight = 0;
+            const distance = 500;
+            const timer = setInterval(() => {
+              const scrollHeight = document.body.scrollHeight;
+              window.scrollBy(0, distance);
+              totalHeight += distance;
+
+              if (totalHeight >= scrollHeight || totalHeight >= 5000) {
+                clearInterval(timer);
+                resolve();
+              }
+            }, 200);
+          });
+        });
+
+        // Wait for new items to load
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('✅ Scrolling complete\n');
+      }
+
       // Extract listings data
       console.log('📦 Extracting vehicle data...\n');
 
@@ -151,10 +193,27 @@ class PuppeteerOLXScraper {
 
           // Extract location - try multiple selectors
           let location = '';
-          const locationEl1 = listing.querySelector('[data-aut-id="item-location"]');
-          const locationEl2 = listing.querySelector('span[data-aut-id="item-location"]');
-          const locationEl3 = listing.querySelector('.rui-3Xdvs');
-          location = locationEl1?.textContent?.trim() || locationEl2?.textContent?.trim() || locationEl3?.textContent?.trim() || '';
+          // Try to find location in the metadata section
+          const metaSection = listing.querySelector('[data-aut-id="itemDetails"]');
+          if (metaSection) {
+            // Location is usually in span elements within the details
+            const spans = metaSection.querySelectorAll('span');
+            for (const span of spans) {
+              const text = span.textContent?.trim() || '';
+              // Location patterns: contains city names or "Kab.", "Kota"
+              if (text && (text.includes('Kab.') || text.includes('Kota') || text.includes(',') ||
+                  /Jakarta|Surabaya|Bandung|Medan|Semarang|Bekasi|Tangerang|Depok|Bogor|Yogyakarta/i.test(text))) {
+                location = text;
+                break;
+              }
+            }
+          }
+
+          // Fallback: try data-aut-id
+          if (!location) {
+            const locationEl = listing.querySelector('[data-aut-id="item-location"]');
+            location = locationEl?.textContent?.trim() || '';
+          }
 
           // Extract URL
           const linkEl = listing.querySelector('a[href]');
@@ -178,7 +237,7 @@ class PuppeteerOLXScraper {
       // Process and parse the data
       for (const raw of vehicles) {
         const { make, model } = this.extractMakeModel(raw.title);
-        const year = this.extractYear(raw.title);
+        const year = this.extractYear(raw.title, raw.url);
 
         const vehicle: ScrapedVehicle = {
           source: 'OLX (Puppeteer)',
@@ -276,8 +335,8 @@ async function main() {
   const scraper = new PuppeteerOLXScraper();
 
   try {
-    // Scrape 20 vehicles
-    await scraper.scrape(20);
+    // Scrape 50 vehicles
+    await scraper.scrape(50);
 
     // Print summary
     scraper.printSummary();

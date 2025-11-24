@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OLX Scraper Results - 40 Vehicles</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .meta {
+            color: #666;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-card.green {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .stat-card.orange {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .stat-card.blue {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .filters {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-input {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .vehicles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .vehicle-card {
+            border: 2px solid #eee;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .vehicle-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        .vehicle-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .vehicle-year {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .vehicle-year.unknown {
+            background: #999;
+        }
+        .vehicle-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #11998e;
+            margin: 15px 0;
+        }
+        .vehicle-info {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .vehicle-location {
+            color: #999;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        .vehicle-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .vehicle-link:hover {
+            background: #764ba2;
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 OLX Scraper Results</h1>
+        <div class="meta">
+            <p><strong>Source:</strong> OLX Indonesia (Puppeteer)</p>
+            <p><strong>Scraped:</strong> <span id="scrapedDate">-</span></p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalVehicles">0</div>
+                <div class="stat-label">Total Kendaraan</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value" id="uniqueMakes">0</div>
+                <div class="stat-label">Brand Unik</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-value" id="avgPrice">Rp 0</div>
+                <div class="stat-label">Harga Rata-rata</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-value" id="priceRange">-</div>
+                <div class="stat-label">Range Harga</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <input type="text" class="filter-input" id="searchInput" placeholder="🔍 Cari brand, model, atau tahun...">
+        </div>
+
+        <div class="vehicles-grid" id="vehiclesGrid">
+            <div class="loading">Loading data...</div>
+        </div>
+    </div>
+
+    <script>
+        let allVehicles = [];
+
+        // Load JSON data
+        fetch('./olx-puppeteer-results.json')
+            .then(response => response.json())
+            .then(data => {
+                allVehicles = data.vehicles;
+                displayStats(data);
+                displayVehicles(allVehicles);
+            })
+            .catch(error => {
+                document.getElementById('vehiclesGrid').innerHTML =
+                    '<div class="loading">❌ Error loading data: ' + error.message + '</div>';
+            });
+
+        function displayStats(data) {
+            // Total vehicles
+            document.getElementById('totalVehicles').textContent = data.totalVehicles;
+
+            // Scraped date
+            const date = new Date(data.scrapedAt);
+            document.getElementById('scrapedDate').textContent = date.toLocaleString('id-ID');
+
+            // Unique makes
+            const makes = new Set(data.vehicles.map(v => v.make));
+            document.getElementById('uniqueMakes').textContent = makes.size;
+
+            // Average price
+            const validPrices = data.vehicles.filter(v => v.price > 0).map(v => v.price);
+            const avgPrice = validPrices.reduce((a, b) => a + b, 0) / validPrices.length;
+            document.getElementById('avgPrice').textContent =
+                'Rp ' + Math.round(avgPrice / 100000000) + ' jt';
+
+            // Price range
+            const minPrice = Math.min(...validPrices);
+            const maxPrice = Math.max(...validPrices);
+            document.getElementById('priceRange').textContent =
+                `Rp ${Math.round(minPrice / 100000000)}-${Math.round(maxPrice / 100000000)} jt`;
+        }
+
+        function displayVehicles(vehicles) {
+            const grid = document.getElementById('vehiclesGrid');
+
+            if (vehicles.length === 0) {
+                grid.innerHTML = '<div class="loading">Tidak ada kendaraan ditemukan</div>';
+                return;
+            }
+
+            grid.innerHTML = vehicles.map(vehicle => `
+                <div class="vehicle-card">
+                    <div class="vehicle-title">
+                        ${vehicle.make} ${vehicle.model}
+                        <span class="vehicle-year ${vehicle.year === 0 ? 'unknown' : ''}">
+                            ${vehicle.year === 0 ? 'N/A' : vehicle.year}
+                        </span>
+                    </div>
+                    <div class="vehicle-price">${vehicle.priceDisplay}</div>
+                    <div class="vehicle-info">
+                        <strong>Brand:</strong> ${vehicle.make}<br>
+                        <strong>Model:</strong> ${vehicle.model}
+                    </div>
+                    ${vehicle.location ? `<div class="vehicle-location">📍 ${vehicle.location}</div>` : ''}
+                    <a href="${vehicle.url}" target="_blank" class="vehicle-link">
+                        Lihat di OLX →
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        // Search filter
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const search = e.target.value.toLowerCase();
+            const filtered = allVehicles.filter(v =>
+                v.make.toLowerCase().includes(search) ||
+                v.model.toLowerCase().includes(search) ||
+                v.year.toString().includes(search) ||
+                v.priceDisplay.includes(search)
+            );
+            displayVehicles(filtered);
+        });
+    </script>
+</body>
+</html>
