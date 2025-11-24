@@ -586,6 +586,69 @@ So that **I can get instant suggestions, accurate specs, and market price valida
 
 ---
 
+### Story 2.10: Super Admin Vehicle Data Scraper
+
+As a **platform super administrator**,
+I want **to run a vehicle data scraper to automatically populate and update the popular vehicle database from marketplace listings**,
+So that **the AI system always has fresh, accurate market data for vehicle identification and price validation**.
+
+**Acceptance Criteria:**
+
+**Given** I am logged in as super admin
+**When** I navigate to the data management section
+**Then** I see a "Vehicle Data Scraper" option with status indicators (last run, total vehicles, data freshness)
+
+**Given** I access the scraper dashboard
+**When** I click "Run Scraper"
+**Then** The system starts scraping OLX Indonesia listings and shows real-time progress (vehicles found, processing status)
+
+**Given** The scraper is running
+**When** It finds new vehicles or updated pricing
+**Then** System performs smart duplicate detection and only updates changed data to avoid overwriting manual edits
+
+**Given** Scraper completes successfully
+**When** I view the results
+**Then** I see summary statistics (new vehicles added, prices updated, duplicate detections) and can review scraped data before importing
+
+**Given** I want to manage data quality
+**When** I access the scraper configuration
+**Then** I can set rules for data validation, duplicate matching thresholds, and auto-import preferences
+
+**Given** Scraper encounters errors or anomalies
+**When** Processing completes with warnings
+**Then** System logs errors and presents them for manual review with suggested actions
+
+**Coverage:** FR17, FR18, FR59, FR60 (Data Management)
+
+**Technical Notes:**
+- Uses Puppeteer for browser automation to bypass anti-bot protection
+- Scrapes from OLX Indonesia (mobil-bekas category)
+- Extracts: make, model, year, price, location, URL
+- Smart duplicate detection using make+model+year matching
+- Rate-limited to 3 seconds between requests (respectful scraping)
+- Incremental updates: only processes new/changed listings
+- Runs on-demand only (no automatic scheduling for MVP)
+- Results saved to staging table for admin review before import
+- Data quality checks: price validation, year range (1980-2025), known makes
+- Supports up to 500 vehicles per scraping session
+- Execution time: ~2-3 minutes for 50 vehicles
+
+**UI Components:**
+- Scraper dashboard with stats cards
+- Real-time progress indicator
+- Results preview table with filter/search
+- Bulk import/reject actions
+- Error log viewer
+- Configuration panel for rules and thresholds
+
+**Integration Points:**
+- Integrates with Story 2.9 (Popular Vehicle Database)
+- Feeds data to vehicle identification AI
+- Supports price validation features
+- Provides market insights for analytics
+
+---
+
 **Checkpoint 2: AI-Powered Vehicle Upload Complete** ✅
 
 ## Epic 3: Natural Language Control Center
