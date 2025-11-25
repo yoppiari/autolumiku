@@ -52,6 +52,7 @@ export default function EditVehiclePage() {
   // Photo upload state
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const MAX_PHOTOS = 30;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -192,6 +193,45 @@ export default function EditVehiclePage() {
       URL.revokeObjectURL(photo.preview);
     }
     setPhotos(photos.filter((p) => p.id !== id));
+  };
+
+  // Reorder photos - drag and drop
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnter = (index: number) => {
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const newPhotos = [...photos];
+    const draggedPhoto = newPhotos[draggedIndex];
+
+    // Remove from old position
+    newPhotos.splice(draggedIndex, 1);
+    // Insert at new position
+    newPhotos.splice(index, 0, draggedPhoto);
+
+    setPhotos(newPhotos);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  // Set as main photo (move to first position)
+  const handleSetMainPhoto = (index: number) => {
+    if (index === 0) return;
+
+    const newPhotos = [...photos];
+    const selectedPhoto = newPhotos[index];
+
+    // Remove from current position
+    newPhotos.splice(index, 1);
+    // Insert at beginning
+    newPhotos.unshift(selectedPhoto);
+
+    setPhotos(newPhotos);
   };
 
   // Cleanup previews on unmount
@@ -379,29 +419,104 @@ export default function EditVehiclePage() {
 
             {/* New Photos Preview */}
             {photos.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                {photos.map((photo, index) => (
-                  <div key={photo.id} className="relative group">
-                    <img
-                      src={photo.preview}
-                      alt={`New photo ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg border-2 border-green-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePhoto(photo.id)}
-                      className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Hapus foto"
+              <div className="mt-4">
+                {/* Instructions */}
+                <div className="mb-3 p-2 bg-blue-50 rounded-md">
+                  <p className="text-xs text-blue-800">
+                    💡 <strong>Drag foto</strong> untuk mengatur urutan. Foto pertama akan jadi foto utama.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {photos.map((photo, index) => (
+                    <div
+                      key={photo.id}
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragEnter={() => handleDragEnter(index)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => e.preventDefault()}
+                      className={`relative group cursor-move transition-all ${
+                        draggedIndex === index ? 'opacity-50 scale-95' : ''
+                      }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                    <div className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
-                      Baru
+                      {/* Drag Handle */}
+                      <div className="absolute top-1 left-1 bg-gray-800 bg-opacity-75 text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M9 3h2v2H9V3zm4 0h2v2h-2V3zM9 7h2v2H9V7zm4 0h2v2h-2V7zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2z" />
+                        </svg>
+                        <span className="text-xs font-semibold">#{index + 1}</span>
+                      </div>
+
+                      <img
+                        src={photo.preview}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border-2 border-green-200"
+                      />
+
+                      {/* Main Photo Badge */}
+                      {index === 0 && (
+                        <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded font-semibold">
+                          ⭐ MAIN
+                        </div>
+                      )}
+
+                      {/* New Badge */}
+                      {index !== 0 && (
+                        <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded">
+                          Baru #{index + 1}
+                        </div>
+                      )}
+
+                      {/* Action Buttons (show on hover) */}
+                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Set as Main button */}
+                        {index !== 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetMainPhoto(index)}
+                            className="bg-green-600 text-white rounded-full p-1 hover:bg-green-700"
+                            title="Set as main photo"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                          </button>
+                        )}
+
+                        {/* Delete button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(photo.id)}
+                          className="bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                          title="Delete photo"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>
