@@ -45,11 +45,14 @@ export default function VehiclesPage() {
   const fetchVehicles = async () => {
     try {
       // TODO: Get tenantId from user session
-      const tenantId = localStorage.getItem('user')
-        ? JSON.parse(localStorage.getItem('user') || '{}').tenantId
+      const userStr = localStorage.getItem('user');
+      const tenantId = userStr
+        ? JSON.parse(userStr).tenantId
         : null;
 
       if (!tenantId) {
+        console.warn('⚠️ No tenantId found in localStorage. Please authenticate first.');
+        console.log('💡 For development, run: devAuth.login()');
         setLoading(false);
         return;
       }
@@ -308,9 +311,12 @@ export default function VehiclesPage() {
               {/* Content */}
               <div className="p-4 flex-1">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg text-gray-900">
-                    {vehicle.make} {vehicle.model}
-                  </h3>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">
+                      {vehicle.make} {vehicle.model}
+                    </h3>
+                    <p className="text-xs text-gray-400 font-mono">ID: {vehicle.id.slice(0, 8)}</p>
+                  </div>
                   <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(vehicle.status)}`}>
                     {getStatusLabel(vehicle.status)}
                   </span>
@@ -346,12 +352,18 @@ export default function VehiclesPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <button className="flex-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
+                  <Link
+                    href={`/dashboard/vehicles/${vehicle.id}/edit`}
+                    className="flex-1 px-3 py-1.5 text-sm text-center bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
+                  >
                     Edit
-                  </button>
-                  <button className="px-3 py-1.5 text-sm bg-gray-50 text-gray-700 rounded hover:bg-gray-100">
+                  </Link>
+                  <Link
+                    href={`/dashboard/vehicles/${vehicle.id}`}
+                    className="px-3 py-1.5 text-sm bg-gray-50 text-gray-700 rounded hover:bg-gray-100"
+                  >
                     View
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

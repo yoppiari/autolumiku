@@ -33,8 +33,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         window.location.href = '/login';
       }
     } else {
-      // No user data, redirect to login
-      window.location.href = '/login';
+      // Development mode: auto-inject mock user
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔧 [Dev Mode] Auto-injecting mock authentication...');
+        const mockUser = {
+          id: 'dev-user-123',
+          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // Showroom Jakarta Premium
+          name: 'Dev User',
+          email: 'dev@showroom.com',
+          role: 'admin',
+          _isMock: true
+        };
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        setUser(mockUser);
+        console.log('✅ [Dev Mode] Mock user authenticated:', mockUser);
+        console.log('💡 To switch tenant, run: localStorage.setItem("user", JSON.stringify({...JSON.parse(localStorage.getItem("user")), tenantId: "NEW_TENANT_ID"}))');
+      } else {
+        // No user data, redirect to login (production)
+        window.location.href = '/login';
+      }
     }
   }, []);
 
