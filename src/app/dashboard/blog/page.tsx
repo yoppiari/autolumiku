@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 type BlogStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'ARCHIVED';
 type BlogCategory =
@@ -55,6 +56,7 @@ const STATUS_COLORS: Record<BlogStatus, string> = {
 
 export default function BlogListPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -80,8 +82,14 @@ export default function BlogListPage() {
     setError(null);
 
     try {
+      if (!user?.tenantId) {
+        setError('User tenant information not found');
+        setIsLoading(false);
+        return;
+      }
+
       const params = new URLSearchParams({
-        tenantId: 'tenant-1', // TODO: Get from auth context
+        tenantId: user.tenantId, // ✅ From auth context
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
       });

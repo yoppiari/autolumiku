@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 type BlogCategory =
   | 'BUYING_GUIDE'
@@ -76,6 +77,7 @@ const CATEGORIES = [
 
 export default function BlogGeneratorPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [step, setStep] = useState<'form' | 'preview'>('form');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +102,12 @@ export default function BlogGeneratorPage() {
     setError(null);
 
     try {
+      if (!user?.tenantId) {
+        setError('User tenant information not found');
+        setIsGenerating(false);
+        return;
+      }
+
       const response = await fetch('/api/v1/blog/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,7 +116,7 @@ export default function BlogGeneratorPage() {
           topic,
           tone,
           targetLocation,
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // TODO: Get from auth context
+          tenantId: user.tenantId, // ✅ From auth context
         }),
       });
 
@@ -132,6 +140,11 @@ export default function BlogGeneratorPage() {
     if (!editedBlog) return;
 
     try {
+      if (!user?.tenantId || !user?.id) {
+        setError('User information not found');
+        return;
+      }
+
       // Remove relatedTopics from data (not in schema)
       const { relatedTopics, ...blogData } = editedBlog;
 
@@ -144,9 +157,9 @@ export default function BlogGeneratorPage() {
           tone,
           targetLocation,
           status,
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // TODO: Get from auth context
-          authorId: 'user-1', // TODO: Get from auth context
-          authorName: 'Admin',
+          tenantId: user.tenantId,      // ✅ From auth context
+          authorId: user.id,            // ✅ From auth context
+          authorName: user.fullName,    // ✅ From auth context
         }),
       });
 
