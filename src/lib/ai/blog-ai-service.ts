@@ -197,21 +197,13 @@ Generate artikel blog yang memenuhi kriteria berikut:
 TOPIK: {topic}
 
 OUTPUT FORMAT:
-You MUST respond with VALID JSON ONLY. No additional text before or after the JSON.
+Respond in this EXACT format to avoid JSON parsing errors:
 
-IMPORTANT JSON RULES:
-- Properly escape all double quotes inside strings using backslash: \\"
-- Escape all backslashes: \\\\
-- Escape newlines in strings: \\n
-- Do NOT use single quotes
-- Do NOT include comments in the JSON
-- Ensure all strings are properly closed with double quotes
-
+===METADATA===
 {{
   "title": "SEO-optimized title (maks 60 char, include keyword dan lokasi)",
   "slug": "url-friendly-slug-with-dashes",
   "metaDescription": "Compelling meta description 140-160 char dengan CTA",
-  "content": "Full HTML content dengan proper headers dan formatting. Remember to escape all quotes!",
   "excerpt": "Summary singkat 150-200 karakter untuk preview",
   "keywords": ["keyword1", "keyword2", "keyword3"],
   "localKeywords": ["{targetLocation}", "area1", "area2"],
@@ -220,7 +212,10 @@ IMPORTANT JSON RULES:
   "wordCount": 1250,
   "readabilityScore": 65,
   "relatedTopics": ["topic1", "topic2", "topic3"]
-}}`;
+}}
+===CONTENT===
+Full HTML content here (no escaping needed, just raw HTML)
+===END===`;
 
 export class BlogAIService {
   private client: ZAIClient;
@@ -253,36 +248,83 @@ export class BlogAIService {
 
         console.log('[BlogAI] Raw response length:', response.content.length);
 
-        // Try to extract JSON if wrapped in markdown or text
-        let jsonContent = response.content.trim();
+        let rawResponse = response.content.trim();
 
         // Log first 200 chars for debugging
-        console.log('[BlogAI] Response preview:', jsonContent.substring(0, 200));
+        console.log('[BlogAI] Response preview:', rawResponse.substring(0, 200));
 
-        // Remove markdown code blocks
-        if (jsonContent.includes('```')) {
-          const jsonMatch = jsonContent.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-          if (jsonMatch) {
-            jsonContent = jsonMatch[1];
-          }
-        }
-
-        // Try to find JSON object boundaries
-        const startIdx = jsonContent.indexOf('{');
-        const lastIdx = jsonContent.lastIndexOf('}');
-
-        if (startIdx !== -1 && lastIdx !== -1 && lastIdx > startIdx) {
-          jsonContent = jsonContent.substring(startIdx, lastIdx + 1);
-        }
-
-        // Parse JSON response
+        // Parse new format with separators
         let result: BlogGenerationResult;
-        try {
-          result = JSON.parse(jsonContent);
-        } catch (parseError) {
-          console.error('[BlogAI] JSON parse error:', parseError);
-          console.error('[BlogAI] Failed JSON content:', jsonContent.substring(0, 500));
-          throw new Error(`Invalid JSON response from AI: ${parseError instanceof Error ? parseError.message : 'Parse failed'}`);
+
+        if (rawResponse.includes('===METADATA===') && rawResponse.includes('===CONTENT===')) {
+          console.log('[BlogAI] Using separator-based format');
+
+          // Extract metadata JSON
+          const metadataMatch = rawResponse.match(/===METADATA===\s*\n?([\s\S]*?)\n?===CONTENT===/);
+          if (!metadataMatch) {
+            throw new Error('Could not find METADATA section');
+          }
+
+          let metadataJson = metadataMatch[1].trim();
+
+          // Remove markdown code blocks from metadata
+          if (metadataJson.includes('```')) {
+            const codeMatch = metadataJson.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+            if (codeMatch) {
+              metadataJson = codeMatch[1];
+            }
+          }
+
+          // Extract content HTML
+          const contentMatch = rawResponse.match(/===CONTENT===\s*\n?([\s\S]*?)\n?===END===/);
+          if (!contentMatch) {
+            throw new Error('Could not find CONTENT section');
+          }
+
+          const htmlContent = contentMatch[1].trim();
+
+          // Parse metadata JSON
+          try {
+            const metadata = JSON.parse(metadataJson);
+            result = {
+              ...metadata,
+              content: htmlContent,
+            };
+          } catch (parseError) {
+            console.error('[BlogAI] Metadata JSON parse error:', parseError);
+            console.error('[BlogAI] Failed metadata:', metadataJson.substring(0, 500));
+            throw new Error(`Invalid metadata JSON: ${parseError instanceof Error ? parseError.message : 'Parse failed'}`);
+          }
+
+        } else {
+          // Fallback to old JSON format
+          console.log('[BlogAI] Using legacy JSON format');
+
+          let jsonContent = rawResponse;
+
+          // Remove markdown code blocks
+          if (jsonContent.includes('```')) {
+            const jsonMatch = jsonContent.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+            if (jsonMatch) {
+              jsonContent = jsonMatch[1];
+            }
+          }
+
+          // Try to find JSON object boundaries
+          const startIdx = jsonContent.indexOf('{');
+          const lastIdx = jsonContent.lastIndexOf('}');
+
+          if (startIdx !== -1 && lastIdx !== -1 && lastIdx > startIdx) {
+            jsonContent = jsonContent.substring(startIdx, lastIdx + 1);
+          }
+
+          try {
+            result = JSON.parse(jsonContent);
+          } catch (parseError) {
+            console.error('[BlogAI] JSON parse error:', parseError);
+            console.error('[BlogAI] Failed JSON content:', jsonContent.substring(0, 500));
+            throw new Error(`Invalid JSON response from AI: ${parseError instanceof Error ? parseError.message : 'Parse failed'}`);
+          }
         }
 
         // Validate result
