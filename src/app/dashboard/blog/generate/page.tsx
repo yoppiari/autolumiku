@@ -108,7 +108,7 @@ export default function BlogGeneratorPage() {
           topic,
           tone,
           targetLocation,
-          tenantId: 'tenant-1', // TODO: Get from auth context
+          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // TODO: Get from auth context
         }),
       });
 
@@ -144,7 +144,7 @@ export default function BlogGeneratorPage() {
           tone,
           targetLocation,
           status,
-          tenantId: 'tenant-1', // TODO: Get from auth context
+          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // TODO: Get from auth context
           authorId: 'user-1', // TODO: Get from auth context
           authorName: 'Admin',
         }),

@@ -43,7 +43,7 @@ Tenant:   null (Platform-wide)
 Email:    user@showroom.com
 Password: user123
 Role:     admin
-Tenant:   tenant-1
+Tenant:   8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed (Showroom Jakarta Premium)
 ```
 
 **Permissions:**
@@ -84,7 +84,7 @@ Tenant:   tenant-1
 Email:    staff@showroom.com
 Password: staff123
 Role:     staff
-Tenant:   tenant-1
+Tenant:   8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed (Showroom Jakarta Premium)
 ```
 
 **Permissions:**
