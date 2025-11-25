@@ -132,11 +132,14 @@ export default function BlogGeneratorPage() {
     if (!editedBlog) return;
 
     try {
+      // Remove relatedTopics from data (not in schema)
+      const { relatedTopics, ...blogData } = editedBlog;
+
       const response = await fetch('/api/v1/blog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...editedBlog,
+          ...blogData,
           category,
           tone,
           targetLocation,
