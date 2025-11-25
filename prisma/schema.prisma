@@ -48,6 +48,7 @@ model Tenant {
   competitorVehicles CompetitorVehicle[]
   competitorPriceHistory CompetitorPriceHistory[]
   apiKeys           ApiKey[]
+  blogPosts         BlogPost[]
 
   @@index([slug])
   @@index([status])
@@ -1721,4 +1722,103 @@ model ScraperConfig {
   updatedBy       String
 
   @@map("scraper_config")
+}
+// ============================================================================
+// BLOG SYSTEM - AI-Powered Content Generation
+// ============================================================================
+
+enum BlogCategory {
+  BUYING_GUIDE      // Panduan membeli mobil bekas
+  COMPARISON        // Perbandingan model
+  MAINTENANCE_TIPS  // Tips perawatan
+  MARKET_NEWS       // Berita pasar mobil bekas
+  FEATURE_REVIEW    // Review fitur kendaraan
+  FINANCING         // Panduan kredit/pembiayaan
+  LOCAL_INSIGHTS    // Insight lokal (traffic, parkir, dll)
+}
+
+enum BlogTone {
+  FORMAL            // Profesional, edukatif
+  CASUAL            // Santai, ramah
+  FRIENDLY          // Hangat, personal
+}
+
+enum BlogStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+model BlogPost {
+  id                String   @id @default(uuid())
+  tenantId          String
+
+  // Content
+  title             String   // SEO-optimized title
+  slug              String   // URL-friendly slug
+  metaDescription   String   @db.Text
+  content           String   @db.Text // HTML content
+  excerpt           String?  @db.Text // Short summary
+
+  // SEO Fields
+  keywords          String[] // Target keywords
+  localKeywords     String[] // City/area-specific keywords
+  focusKeyword      String   // Primary keyword
+
+  // Categorization
+  category          BlogCategory
+  tags              String[]
+
+  // Local SEO
+  targetLocation    String?  // "Jakarta", "Bandung", etc.
+  locationMentions  String[] // ["Jakarta Selatan", "BSD", etc.]
+
+  // AI Generation Metadata
+  aiGenerated       Boolean  @default(true)
+  tone              BlogTone
+  aiPrompt          String?  @db.Text
+  aiModel           String?  // "glm-4-plus", etc.
+
+  // Related Content
+  relatedVehicles   String[] // Vehicle IDs
+  relatedPosts      String[] // Other blog post IDs
+
+  // SEO Score & Analysis
+  seoScore          Float?   // 0-100
+  readabilityScore  Float?   // Flesch reading ease
+  wordCount         Int?
+
+  // Publishing
+  status            BlogStatus @default(DRAFT)
+  publishedAt       DateTime?
+  scheduledAt       DateTime?
+
+  // Featured Image
+  featuredImage     String?  // URL to image
+  featuredImageAlt  String?  // Alt text for SEO
+
+  // Engagement Metrics
+  views             Int      @default(0)
+  shares            Int      @default(0)
+  avgTimeOnPage     Float?   // seconds
+
+  // Author
+  authorId          String
+  authorName        String   // Cache for display
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastReviewedAt    DateTime? // Human review timestamp
+
+  // Relations
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status, publishedAt])
+  @@index([category])
+  @@index([targetLocation])
+  @@index([focusKeyword])
+  @@map("blog_posts")
 }
