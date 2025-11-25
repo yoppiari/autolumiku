@@ -86,6 +86,36 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * Generate next displayId for vehicle
+ */
+async function generateDisplayId(): Promise<string> {
+  // Get the highest existing displayId
+  const lastVehicle = await prisma.vehicle.findFirst({
+    where: {
+      displayId: {
+        startsWith: 'VH-',
+      },
+    },
+    orderBy: {
+      displayId: 'desc',
+    },
+    select: {
+      displayId: true,
+    },
+  });
+
+  let nextNumber = 1;
+  if (lastVehicle && lastVehicle.displayId) {
+    const match = lastVehicle.displayId.match(/VH-(\d+)/);
+    if (match) {
+      nextNumber = parseInt(match[1], 10) + 1;
+    }
+  }
+
+  return `VH-${String(nextNumber).padStart(3, '0')}`;
+}
+
+/**
  * POST /api/v1/vehicles
  * Create new vehicle
  */
@@ -114,9 +144,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Generate display ID
+    const displayId = await generateDisplayId();
+
     // Create vehicle
     const vehicle = await prisma.vehicle.create({
       data: {
+        displayId,
         // Basic Information
         make: vehicleData.make,
         model: vehicleData.model,

@@ -8,6 +8,7 @@ type ViewMode = 'grid' | 'list';
 
 interface Vehicle {
   id: string;
+  displayId?: string;
   make: string;
   model: string;
   year: number;
@@ -329,8 +330,8 @@ export default function VehiclesPage() {
                       {vehicle.make} {vehicle.model}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-gray-400 font-mono bg-gray-100 px-2 py-0.5 rounded">
-                        ID: {vehicle.id.slice(0, 8)}...
+                      <p className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
+                        {vehicle.displayId || `ID: ${vehicle.id.slice(0, 8)}...`}
                       </p>
                       {vehicle.licensePlate && (
                         <p className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">

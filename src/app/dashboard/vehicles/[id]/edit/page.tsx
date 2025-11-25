@@ -8,6 +8,7 @@ type VehicleStatus = 'DRAFT' | 'AVAILABLE' | 'BOOKED' | 'SOLD' | 'DELETED';
 
 interface Vehicle {
   id: string;
+  displayId?: string;
   make: string;
   model: string;
   year: number;
@@ -23,7 +24,19 @@ interface Vehicle {
   engineCapacity?: string;
   condition?: string;
   status: VehicleStatus;
-  photos: any[];
+  photos: Array<{
+    id: string;
+    originalUrl: string;
+    thumbnailUrl: string;
+    displayOrder: number;
+  }>;
+}
+
+interface UploadedPhoto {
+  id: string;
+  file: File;
+  preview: string;
+  base64?: string;
 }
 
 export default function EditVehiclePage() {
@@ -35,6 +48,12 @@ export default function EditVehiclePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+
+  // Photo upload state
+  const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const MAX_PHOTOS = 30;
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
   // Form state
   const [formData, setFormData] = useState({
@@ -96,6 +115,92 @@ export default function EditVehiclePage() {
     }
   };
 
+  // Convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Handle photo selection
+  const handlePhotoSelect = async (files: FileList | null) => {
+    if (!files) return;
+
+    const newPhotos: UploadedPhoto[] = [];
+    const filesArray = Array.from(files);
+
+    // Validate total count
+    const existingPhotosCount = vehicle?.photos?.length || 0;
+    if (existingPhotosCount + photos.length + filesArray.length > MAX_PHOTOS) {
+      setError(`Maksimal ${MAX_PHOTOS} foto. Anda sudah punya ${existingPhotosCount + photos.length} foto.`);
+      return;
+    }
+
+    for (const file of filesArray) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError(`File ${file.name} bukan image`);
+        continue;
+      }
+
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        setError(`File ${file.name} terlalu besar (max 10MB)`);
+        continue;
+      }
+
+      // Create preview and base64
+      const preview = URL.createObjectURL(file);
+      const base64 = await fileToBase64(file);
+
+      newPhotos.push({
+        id: `${Date.now()}-${Math.random()}`,
+        file,
+        preview,
+        base64,
+      });
+    }
+
+    setPhotos([...photos, ...newPhotos]);
+    setError(null);
+  };
+
+  // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handlePhotoSelect(e.dataTransfer.files);
+  };
+
+  // Remove photo
+  const handleRemovePhoto = (id: string) => {
+    const photo = photos.find((p) => p.id === id);
+    if (photo) {
+      URL.revokeObjectURL(photo.preview);
+    }
+    setPhotos(photos.filter((p) => p.id !== id));
+  };
+
+  // Cleanup previews on unmount
+  useEffect(() => {
+    return () => {
+      photos.forEach((photo) => URL.revokeObjectURL(photo.preview));
+    };
+  }, [photos]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -120,6 +225,8 @@ export default function EditVehiclePage() {
       });
 
       if (response.ok) {
+        // TODO: Upload photos if any
+        // For now, just redirect
         router.push('/dashboard/vehicles');
       } else {
         const data = await response.json();
@@ -165,6 +272,9 @@ export default function EditVehiclePage() {
     );
   }
 
+  const existingPhotosCount = vehicle?.photos?.length || 0;
+  const totalPhotos = existingPhotosCount + photos.length;
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
@@ -173,9 +283,16 @@ export default function EditVehiclePage() {
           ← Kembali ke Daftar Kendaraan
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Edit Kendaraan</h1>
-        <p className="text-gray-600">
-          ID: <span className="font-mono text-sm">{vehicleId.slice(0, 8)}...</span>
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">
+            {vehicle?.displayId || `ID: ${vehicleId.slice(0, 8)}...`}
+          </span>
+          {vehicle?.licensePlate && (
+            <span className="text-sm text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded border border-blue-200">
+              🔒 {vehicle.licensePlate}
+            </span>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -185,6 +302,119 @@ export default function EditVehiclePage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Photos Section */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Foto Kendaraan</h2>
+
+          {/* Existing Photos */}
+          {existingPhotosCount > 0 && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">Foto Saat Ini ({existingPhotosCount})</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {vehicle?.photos.map((photo, index) => (
+                  <div key={photo.id} className="relative group">
+                    <img
+                      src={photo.thumbnailUrl || photo.originalUrl}
+                      alt={`Photo ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    {index === 0 && (
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                        Utama
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Upload New Photos */}
+          <div>
+            <p className="text-sm text-gray-600 mb-2">
+              Upload Foto Baru {totalPhotos > 0 && `(${photos.length} foto baru, total: ${totalPhotos}/${MAX_PHOTOS})`}
+            </p>
+
+            {/* Drop Zone */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                isDragging
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <svg
+                className="w-12 h-12 text-gray-400 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              <p className="text-gray-600 mb-2">
+                Drag & drop foto di sini, atau{' '}
+                <label className="text-blue-600 hover:underline cursor-pointer">
+                  pilih file
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => handlePhotoSelect(e.target.files)}
+                    className="hidden"
+                  />
+                </label>
+              </p>
+              <p className="text-sm text-gray-500">
+                Max {MAX_PHOTOS} foto • Max 10MB per foto
+              </p>
+            </div>
+
+            {/* New Photos Preview */}
+            {photos.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                {photos.map((photo, index) => (
+                  <div key={photo.id} className="relative group">
+                    <img
+                      src={photo.preview}
+                      alt={`New photo ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border-2 border-green-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(photo.id)}
+                      className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Hapus foto"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                    <div className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                      Baru
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {photos.length > 0 && (
+            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800">
+                ⚠️ <strong>Note:</strong> Foto baru belum tersimpan. Klik "Simpan Perubahan" untuk mengupload foto.
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Basic Information */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Dasar</h2>

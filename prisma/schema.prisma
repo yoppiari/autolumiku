@@ -592,6 +592,7 @@ model PlatformMetric {
 model Vehicle {
   id                String   @id @default(uuid())
   tenantId          String
+  displayId         String?  @unique // Human-readable ID like "VH-001", "VH-002"
 
   // Basic Information (AI-identified)
   make              String
