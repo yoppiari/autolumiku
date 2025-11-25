@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Mock showroom users database - in production, this would be a real database
+// Mock showroom users database - using actual UUIDs from database
+// NOTE: In production, query from database instead of mock data
 const mockUsers = [
   {
-    id: 'user-1',
+    id: 'f8e7d6c5-b4a3-4c5d-8e9f-1a2b3c4d5e6f', // Use real user UUID
     email: 'user@showroom.com',
     password: 'user123', // In production, this would be hashed
     firstName: 'John',
     lastName: 'Doe',
     role: 'admin',
-    tenantId: 'tenant-1',
+    tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // ✅ Actual tenant UUID (Showroom Jakarta Premium)
     isActive: true,
     createdAt: new Date('2025-11-15T00:00:00Z'),
     lastLogin: null
   },
   {
-    id: 'staff-1',
+    id: 'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d', // Use real user UUID
     email: 'staff@showroom.com',
     password: 'staff123', // In production, this would be hashed
     firstName: 'Staff',
     lastName: 'Member',
     role: 'staff',
-    tenantId: 'tenant-1',
+    tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // ✅ Actual tenant UUID (Showroom Jakarta Premium)
     isActive: true,
     createdAt: new Date('2025-11-20T00:00:00Z'),
     lastLogin: null

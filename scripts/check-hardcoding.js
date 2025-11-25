@@ -62,6 +62,7 @@ function scanFile(filePath) {
       if (line.includes('// TODO') ||
           line.includes('// ✅') ||
           line.includes('// ❌') ||
+          line.includes('// MOCK_DATA') ||
           line.includes('From auth context') ||
           line.trim().startsWith('*') ||
           line.trim().startsWith('//')) {
