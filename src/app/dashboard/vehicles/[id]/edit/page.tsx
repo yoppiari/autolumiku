@@ -265,8 +265,29 @@ export default function EditVehiclePage() {
       });
 
       if (response.ok) {
-        // TODO: Upload photos if any
-        // For now, just redirect
+        // Upload photos if any
+        if (photos.length > 0) {
+          const photoData = photos.map((photo) => ({
+            base64: photo.base64,
+          }));
+
+          const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ photos: photoData }),
+          });
+
+          if (!photoResponse.ok) {
+            const photoError = await photoResponse.json();
+            setError(`Data berhasil disimpan, tapi gagal upload foto: ${photoError.message}`);
+            setSaving(false);
+            return;
+          }
+        }
+
+        // Success! Redirect to list
         router.push('/dashboard/vehicles');
       } else {
         const data = await response.json();
