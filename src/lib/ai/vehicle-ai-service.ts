@@ -40,7 +40,6 @@ export interface VehicleAIResult {
 
   // AI-Generated Content
   descriptionId: string;
-  descriptionEn: string;
   features: string[];
   specifications: {
     engineCapacity?: string;
@@ -53,14 +52,25 @@ export interface VehicleAIResult {
   aiReasoning: string;
 }
 
-const VEHICLE_IDENTIFICATION_PROMPT = `Anda adalah AI assistant untuk sistem inventory showroom mobil di Indonesia.
+const VEHICLE_IDENTIFICATION_PROMPT = `Anda adalah AI assistant untuk sistem inventory showroom mobil bekas di Indonesia.
 
 Tugas Anda:
 1. Parse informasi kendaraan dari input user yang minimal
 2. Generate data lengkap untuk listing kendaraan
-3. Buat deskripsi menarik dalam Bahasa Indonesia dan English
+3. Buat deskripsi SEO-friendly dalam Bahasa Indonesia untuk mobil bekas
 4. Extract fitur-fitur kendaraan berdasarkan pengetahuan umum tentang model tersebut
 5. Validasi harga berdasarkan market price Indonesia dan berikan analisis
+
+KAIDAH SEO MOBIL BEKAS INDONESIA:
+- Gunakan kata kunci: "mobil bekas", "second", "dijual", nama merek & model, tahun, kota
+- Format: [Merek] [Model] [Tahun] Bekas - [Kondisi/Variant]
+- Paragraf 1: Pengenalan singkat (kondisi umum, tahun, KM, transmisi, warna)
+- Paragraf 2: Keunggulan & fitur utama (3-5 poin)
+- Paragraf 3: Kondisi mesin & eksterior/interior
+- Paragraf 4: Call-to-action (hubungi, test drive, harga nego)
+- Panjang: 150-250 kata
+- Tone: Profesional tapi ramah, meyakinkan pembeli
+- Hindari: Superlatif berlebihan, klaim tidak terverifikasi
 
 IMPORTANT:
 - Gunakan pengetahuan umum tentang model kendaraan untuk melengkapi data
@@ -70,6 +80,7 @@ IMPORTANT:
 - Confidence score: 0-100
 - PRICE ANALYSIS sangat penting: bandingkan harga user dengan market price, berikan recommendation
 - ALWAYS provide price field (required) - estimate if not provided by user
+- Description HANYA dalam Bahasa Indonesia (SEO-optimized)
 
 Response format (JSON):
 {
@@ -82,8 +93,7 @@ Response format (JSON):
   "color": "Hitam",
   "mileage": 20000,
   "price": 13000000000,
-  "descriptionId": "Deskripsi menarik dalam Bahasa Indonesia (minimal 100 kata)...",
-  "descriptionEn": "Attractive description in English (minimum 100 words)...",
+  "descriptionId": "Toyota Avanza 2020 Bekas - Kondisi Prima Siap Pakai\\n\\nDijual mobil bekas Toyota Avanza 1.3 G AT tahun 2020 dengan kilometer 20.000, transmisi automatic, dan warna hitam yang elegan. Mobil ini sangat terawat dan siap digunakan untuk kebutuhan keluarga Anda.\\n\\nKeunggulan unit ini meliputi: interior bersih dan rapi, AC dingin, audio touchscreen, dan semua fitur berfungsi dengan baik. Mesin kering dan halus, tidak ada rembesan oli. Kaki-kaki nyaman, ban tebal, dan velg mulus tanpa cacat.\\n\\nEksterior cat masih original dan mengkilap, bebas dari baret atau penyok. Interior bersih, jok masih kencang, dan tidak ada bau tidak sedap.\\n\\nHubungi kami sekarang untuk test drive atau nego harga. Unit terbatas, siapa cepat dia dapat!",
   "features": ["Fitur 1", "Fitur 2", ...],
   "specifications": {
     "engineCapacity": "1329cc",
@@ -281,7 +291,6 @@ IMPORTANT - Use this reference data to:
       'year',
       'price',
       'descriptionId',
-      'descriptionEn',
     ];
 
     for (const field of requiredFields) {
@@ -308,7 +317,7 @@ IMPORTANT - Use this reference data to:
   async regenerateDescription(
     vehicle: VehicleAIResult,
     tone: 'professional' | 'casual' | 'luxury'
-  ): Promise<{ descriptionId: string; descriptionEn: string }> {
+  ): Promise<{ descriptionId: string }> {
     const tonePrompts = {
       professional: 'profesional dan formal',
       casual: 'santai dan friendly',
@@ -325,20 +334,21 @@ Mileage: ${vehicle.mileage} KM
 Color: ${vehicle.color}
 Features: ${vehicle.features.join(', ')}
 
+PENTING: Gunakan kaidah SEO untuk mobil bekas di Indonesia seperti yang sudah dijelaskan sebelumnya.
+
 Response format (JSON):
 {
-  "descriptionId": "Deskripsi dalam Bahasa Indonesia...",
-  "descriptionEn": "Description in English..."
+  "descriptionId": "Deskripsi dalam Bahasa Indonesia dengan kaidah SEO..."
 }`;
 
     const response = await this.client.generateText({
-      systemPrompt: 'Anda adalah copywriter profesional untuk showroom mobil.',
+      systemPrompt: 'Anda adalah copywriter profesional untuk showroom mobil bekas.',
       userPrompt: prompt,
       temperature: 0.8,
       maxTokens: 1500,
     });
 
-    return this.client.parseJSON<{ descriptionId: string; descriptionEn: string }>(
+    return this.client.parseJSON<{ descriptionId: string }>(
       response.content
     );
   }

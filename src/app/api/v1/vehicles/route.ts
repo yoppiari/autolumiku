@@ -55,9 +55,16 @@ export async function GET(request: NextRequest) {
       prisma.vehicle.count({ where }),
     ]);
 
+    // Convert BigInt to number for JSON serialization
+    const vehiclesResponse = vehicles.map(vehicle => ({
+      ...vehicle,
+      price: Number(vehicle.price),
+      aiSuggestedPrice: vehicle.aiSuggestedPrice ? Number(vehicle.aiSuggestedPrice) : null,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: vehicles,
+      data: vehiclesResponse,
       pagination: {
         page,
         limit,
@@ -110,17 +117,53 @@ export async function POST(request: NextRequest) {
     // Create vehicle
     const vehicle = await prisma.vehicle.create({
       data: {
-        ...vehicleData,
+        // Basic Information
+        make: vehicleData.make,
+        model: vehicleData.model,
+        year: vehicleData.year,
+        variant: vehicleData.variant,
+
+        // AI-Generated Content
+        descriptionId: vehicleData.descriptionId,
+        features: vehicleData.features,
+        specifications: vehicleData.specifications,
+
+        // AI Metadata
+        aiConfidence: vehicleData.aiConfidence,
+        aiReasoning: vehicleData.aiReasoning,
+
+        // Pricing (convert to BigInt for database)
+        price: BigInt(vehicleData.price),
+        aiSuggestedPrice: vehicleData.aiSuggestedPrice ? BigInt(vehicleData.aiSuggestedPrice) : null,
+        priceConfidence: vehicleData.priceConfidence,
+        priceAnalysis: vehicleData.priceAnalysis,
+
+        // Vehicle Details
+        mileage: vehicleData.mileage,
+        transmissionType: vehicleData.transmissionType,
+        fuelType: vehicleData.fuelType,
+        color: vehicleData.color,
+
+        // Status
+        status: vehicleData.status || VehicleStatus.DRAFT,
+
+        // Metadata
         tenantId,
         createdBy: userId,
-        status: vehicleData.status || VehicleStatus.DRAFT,
       },
     });
+
+    // Convert BigInt to number for JSON serialization
+    const vehicleResponse = {
+      ...vehicle,
+      price: Number(vehicle.price),
+      aiSuggestedPrice: vehicle.aiSuggestedPrice ? Number(vehicle.aiSuggestedPrice) : null,
+    };
 
     return NextResponse.json(
       {
         success: true,
-        data: vehicle,
+        data: vehicleResponse,
       },
       { status: 201 }
     );

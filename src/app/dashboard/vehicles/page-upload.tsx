@@ -201,30 +201,67 @@ export default function VehiclesPage() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (status: 'DRAFT' | 'AVAILABLE') => {
     if (!aiResult || !user) return;
 
     try {
+      // Format data to match Vehicle schema
+      const vehicleData = {
+        // Basic Information
+        make: editedData.make,
+        model: editedData.model,
+        year: editedData.year,
+        variant: editedData.variant,
+
+        // AI-Generated Content
+        descriptionId: editedData.descriptionId,
+        features: editedData.features || [],
+        specifications: editedData.specifications || {},
+
+        // AI Metadata
+        aiConfidence: editedData.aiConfidence,
+        aiReasoning: editedData.aiReasoning,
+
+        // Pricing
+        price: editedData.price,
+        aiSuggestedPrice: editedData.aiSuggestedPrice,
+        priceConfidence: editedData.priceConfidence,
+        priceAnalysis: editedData.priceAnalysis || {},
+
+        // Vehicle Details
+        mileage: editedData.mileage,
+        transmissionType: editedData.transmissionType,
+        fuelType: editedData.fuelType,
+        color: editedData.color,
+
+        // Status
+        status,
+
+        // Metadata
+        tenantId: user.tenantId,
+        userId: user.id,
+      };
+
       const response = await fetch('/api/v1/vehicles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...editedData,
-          tenantId: user.tenantId,
-          userId: user.id,
-          status: 'DRAFT',
-        }),
+        body: JSON.stringify(vehicleData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save vehicle');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save vehicle');
       }
 
       // Redirect to vehicles list
-      alert('Kendaraan berhasil disimpan sebagai draft!');
+      const message = status === 'DRAFT'
+        ? 'Kendaraan berhasil disimpan sebagai draft!'
+        : 'Kendaraan berhasil dipublish dan tersedia untuk dijual!';
+      alert(message);
       router.push('/dashboard/vehicles');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menyimpan');
+      console.error('Save error:', err);
     }
   };
 
@@ -529,27 +566,22 @@ export default function VehiclesPage() {
           {/* Right Column - Descriptions */}
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Deskripsi Indonesia</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Deskripsi (SEO-Optimized)</h2>
+                <span className="text-xs text-gray-500">150-250 kata untuk SEO terbaik</span>
+              </div>
               <textarea
                 value={editedData.descriptionId || ''}
                 onChange={(e) =>
                   setEditedData({ ...editedData, descriptionId: e.target.value })
                 }
-                rows={8}
+                rows={10}
+                placeholder="Deskripsi akan di-generate otomatis oleh AI dengan kaidah SEO mobil bekas Indonesia..."
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Deskripsi English</h2>
-              <textarea
-                value={editedData.descriptionEn || ''}
-                onChange={(e) =>
-                  setEditedData({ ...editedData, descriptionEn: e.target.value })
-                }
-                rows={8}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
+              <p className="mt-2 text-xs text-gray-500">
+                💡 Tip: Pastikan deskripsi mengandung kata kunci: merek, model, tahun, "mobil bekas", "dijual", kondisi, dan lokasi
+              </p>
             </div>
 
             {/* AI Confidence */}
@@ -587,12 +619,20 @@ export default function VehiclesPage() {
           >
             Batal
           </button>
-          <button
-            onClick={handleSave}
-            className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Simpan sebagai Draft
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleSave('DRAFT')}
+              className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700"
+            >
+              Simpan sebagai Draft
+            </button>
+            <button
+              onClick={() => handleSave('AVAILABLE')}
+              className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Publish
+            </button>
+          </div>
         </div>
       </div>
     );
