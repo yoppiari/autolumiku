@@ -53,6 +53,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (storedUser && storedToken) {
           const userData: User = JSON.parse(storedUser);
+
+          // Validate tenant ID format (must be UUID or null)
+          if (userData.tenantId && !isValidUUID(userData.tenantId)) {
+            console.warn('Invalid tenant ID format in localStorage, clearing auth data');
+            localStorage.removeItem('user');
+            localStorage.removeItem('authToken');
+            setIsLoading(false);
+            return;
+          }
+
           setUser(userData);
 
           // Fetch tenant data if user has tenantId
@@ -62,6 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (tenantResponse.ok) {
                 const tenantData = await tenantResponse.json();
                 setTenant(tenantData.data);
+              } else if (tenantResponse.status === 404) {
+                // Tenant not found - clear invalid data
+                console.warn('Tenant not found, clearing auth data');
+                localStorage.removeItem('user');
+                localStorage.removeItem('authToken');
+                setUser(null);
               }
             } catch (error) {
               console.error('Failed to load tenant:', error);
@@ -153,6 +169,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+// Helper function to validate UUID
+function isValidUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
 }
 
 // Hook
