@@ -218,6 +218,94 @@ async function main() {
   }
 
   // ============================================================================
+  // 4. Create Tenant-1 (Requested by User)
+  // ============================================================================
+  console.log('\n📦 Creating tenant-1...');
+
+  const tenant1 = await prisma.tenant.upsert({
+    where: { slug: 'tenant-1' },
+    update: {},
+    create: {
+      name: 'Tenant 1 Demo',
+      slug: 'tenant-1',
+      domain: 'tenant-1.autolumiku.com',
+      status: 'active',
+      primaryColor: '#000000',
+      secondaryColor: '#ffffff',
+      theme: 'dark',
+      createdBy: 'system',
+    },
+  });
+  console.log(`✅ Tenant-1 created: ${tenant1.name}`);
+
+  // Tenant-1 Admin
+  const tenant1Admin = await prisma.user.upsert({
+    where: { email: 'admin@tenant-1.com' },
+    update: {},
+    create: {
+      email: 'admin@tenant-1.com',
+      passwordHash: adminPassword, // Reuse same hash
+      firstName: 'Admin',
+      lastName: 'Tenant1',
+      role: 'admin',
+      tenantId: tenant1.id,
+      emailVerified: true,
+    },
+  });
+  console.log(`✅ Tenant-1 Admin: admin@tenant-1.com / admin123`);
+
+  // ============================================================================
+  // 5. Create Blog Posts for Tenant-1
+  // ============================================================================
+  console.log('\n📝 Creating blog posts for tenant-1...');
+
+  const blogPosts = [
+    {
+      title: 'Tips Memilih Mobil Bekas Berkualitas',
+      slug: 'tips-memilih-mobil-bekas',
+      category: 'BUYING_GUIDE',
+      content: '<p>Ini adalah artikel panduan lengkap memilih mobil bekas...</p>',
+      excerpt: 'Panduan lengkap cara inspeksi mobil bekas agar tidak tertipu.',
+      status: 'PUBLISHED',
+      authorId: tenant1Admin.id,
+      authorName: 'Admin Tenant1',
+      publishedAt: new Date(),
+    },
+    {
+      title: '5 Mobil Keluarga Terbaik 2024',
+      slug: '5-mobil-keluarga-terbaik-2024',
+      category: 'COMPARISON',
+      content: '<p>Daftar mobil keluarga paling nyaman dan irit...</p>',
+      excerpt: 'Rekomendasi mobil MPV terbaik untuk keluarga Indonesia.',
+      status: 'DRAFT',
+      authorId: tenant1Admin.id,
+      authorName: 'Admin Tenant1',
+    }
+  ];
+
+  // Note: Using any because BlogCategory enum might need import, but string works for Prisma if matches
+  for (const post of blogPosts) {
+    await prisma.blogPost.upsert({
+      where: {
+        tenantId_slug: {
+          tenantId: tenant1.id,
+          slug: post.slug
+        }
+      },
+      update: {},
+      create: {
+        ...post,
+        tenantId: tenant1.id,
+        metaDescription: post.excerpt,
+        tone: 'CASUAL',
+        category: post.category as any,
+        status: post.status as any,
+      },
+    });
+  }
+  console.log(`✅ Created ${blogPosts.length} blog posts for tenant-1`);
+
+  // ============================================================================
   // Done!
   // ============================================================================
   console.log('\n✅ Database seeded successfully!\n');
@@ -227,18 +315,21 @@ async function main() {
   console.log('👤 Demo Users:');
   console.log('   Admin:     admin@showroomjakarta.com / admin123');
   console.log('   Manager:   manager@showroomjakarta.com / manager123');
-  console.log('   Sales:     sales@showroomjakarta.com / sales123\n');
+  console.log('   Sales:     sales@showroomjakarta.com / sales123');
+  console.log('   Tenant-1:  admin@tenant-1.com / admin123\n');
   console.log('🏢 Tenant Information:');
   console.log('   Name:      Showroom Jakarta Premium');
   console.log('   Slug:      showroomjakarta');
-  console.log('   Domain:    showroomjakarta.autolumiku.com\n');
+  console.log('   Domain:    showroomjakarta.autolumiku.com');
+  console.log('   Tenant-1:  tenant-1\n');
   console.log('🌐 Access URLs:');
   console.log('   Admin Panel:       http://localhost:3000/admin');
   console.log('   Public Catalog:    http://localhost:3000/catalog/showroomjakarta');
   console.log('   Login:             http://localhost:3000/login\n');
   console.log('🚗 Demo Data:');
   console.log('   Vehicles:  5 vehicles created');
-  console.log('   Users:     3 users created');
+  console.log('   Users:     4 users created');
+  console.log('   Blogs:     2 posts created for tenant-1');
   console.log('================================================================\n');
 }
 
