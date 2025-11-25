@@ -48,6 +48,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
     { name: 'Kendaraan', href: '/dashboard/vehicles', icon: '🚗' },
     { name: 'Leads', href: '/dashboard/leads', icon: '📞' },
+    { name: 'Blog', href: '/dashboard/blog', icon: '📝' },
     { name: 'Tim', href: '/dashboard/users', icon: '👥' },
     { name: 'Pengaturan', href: '/dashboard/settings', icon: '⚙️' },
   ];
@@ -85,22 +86,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`
-                  flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                  ${pathname === item.href
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }
-                `}
-              >
-                  <span className="mr-3 text-lg">{item.icon}</span>
-                  {item.name}
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`
+                    flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                    ${isActive
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }
+                  `}
+                >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    {item.name}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* User menu */}
@@ -149,7 +153,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {/* Page title */}
               <div className="ml-4 lg:ml-0">
                 <h1 className="text-xl font-semibold text-gray-900">
-                  {navigation.find(item => item.href === pathname)?.name || 'Dashboard'}
+                  {navigation.find(item => pathname === item.href || pathname?.startsWith(item.href + '/'))?.name || 'Dashboard'}
                 </h1>
               </div>
             </div>
