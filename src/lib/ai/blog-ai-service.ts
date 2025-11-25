@@ -196,20 +196,30 @@ Generate artikel blog yang memenuhi kriteria berikut:
 
 TOPIK: {topic}
 
-OUTPUT FORMAT (JSON):
+OUTPUT FORMAT:
+You MUST respond with VALID JSON ONLY. No additional text before or after the JSON.
+
+IMPORTANT JSON RULES:
+- Properly escape all double quotes inside strings using backslash: \\"
+- Escape all backslashes: \\\\
+- Escape newlines in strings: \\n
+- Do NOT use single quotes
+- Do NOT include comments in the JSON
+- Ensure all strings are properly closed with double quotes
+
 {{
   "title": "SEO-optimized title (maks 60 char, include keyword dan lokasi)",
   "slug": "url-friendly-slug-with-dashes",
   "metaDescription": "Compelling meta description 140-160 char dengan CTA",
-  "content": "Full HTML content dengan proper headers dan formatting",
+  "content": "Full HTML content dengan proper headers dan formatting. Remember to escape all quotes!",
   "excerpt": "Summary singkat 150-200 karakter untuk preview",
-  "keywords": ["keyword1", "keyword2", "keyword3", ...], // 5-10 relevant keywords
-  "localKeywords": ["{targetLocation}", "area1", "area2"], // 3-5 local keywords
+  "keywords": ["keyword1", "keyword2", "keyword3"],
+  "localKeywords": ["{targetLocation}", "area1", "area2"],
   "focusKeyword": "primary keyword from topic",
-  "seoScore": 85, // Your estimated SEO score 0-100
-  "wordCount": 1250, // Actual word count
-  "readabilityScore": 65, // Flesch reading ease score
-  "relatedTopics": ["topic1", "topic2", "topic3"] // for internal linking suggestions
+  "seoScore": 85,
+  "wordCount": 1250,
+  "readabilityScore": 65,
+  "relatedTopics": ["topic1", "topic2", "topic3"]
 }}`;
 
 export class BlogAIService {
@@ -223,36 +233,91 @@ export class BlogAIService {
    * Generate blog post using AI
    */
   async generateBlogPost(input: BlogGenerationInput): Promise<BlogGenerationResult> {
-    try {
-      // Build prompt with input data
-      const prompt = this.buildPrompt(input);
+    const maxRetries = 2;
+    let lastError: Error | null = null;
 
-      // Generate content with GLM-4-Plus
-      const response = await this.client.generateText({
-        systemPrompt: 'Anda adalah expert SEO content writer untuk automotive industry di Indonesia.',
-        userPrompt: prompt,
-        temperature: 0.7, // Balance between creativity and consistency
-        maxTokens: 4000,
-      });
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[BlogAI] Generation attempt ${attempt}/${maxRetries}`);
 
-      // Parse JSON response
-      const result = this.client.parseJSON<BlogGenerationResult>(response.content);
+        // Build prompt with input data
+        const prompt = this.buildPrompt(input);
 
-      // Validate result
-      this.validateResult(result);
+        // Generate content with GLM-4-Plus
+        const response = await this.client.generateText({
+          systemPrompt: 'You are an expert SEO content writer for automotive industry in Indonesia. You MUST respond with VALID JSON only. Properly escape all quotes and special characters in JSON strings.',
+          userPrompt: prompt,
+          temperature: 0.7, // Balance between creativity and consistency
+          maxTokens: 4000,
+        });
 
-      // Calculate actual metrics
-      result.wordCount = this.calculateWordCount(result.content);
-      result.readabilityScore = this.calculateReadability(result.content);
-      result.seoScore = this.calculateSEOScore(result);
+        console.log('[BlogAI] Raw response length:', response.content.length);
 
-      return result;
-    } catch (error) {
-      console.error('Blog AI generation error:', error);
-      throw new Error(
-        `Failed to generate blog post: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+        // Try to extract JSON if wrapped in markdown or text
+        let jsonContent = response.content.trim();
+
+        // Log first 200 chars for debugging
+        console.log('[BlogAI] Response preview:', jsonContent.substring(0, 200));
+
+        // Remove markdown code blocks
+        if (jsonContent.includes('```')) {
+          const jsonMatch = jsonContent.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+          if (jsonMatch) {
+            jsonContent = jsonMatch[1];
+          }
+        }
+
+        // Try to find JSON object boundaries
+        const startIdx = jsonContent.indexOf('{');
+        const lastIdx = jsonContent.lastIndexOf('}');
+
+        if (startIdx !== -1 && lastIdx !== -1 && lastIdx > startIdx) {
+          jsonContent = jsonContent.substring(startIdx, lastIdx + 1);
+        }
+
+        // Parse JSON response
+        let result: BlogGenerationResult;
+        try {
+          result = JSON.parse(jsonContent);
+        } catch (parseError) {
+          console.error('[BlogAI] JSON parse error:', parseError);
+          console.error('[BlogAI] Failed JSON content:', jsonContent.substring(0, 500));
+          throw new Error(`Invalid JSON response from AI: ${parseError instanceof Error ? parseError.message : 'Parse failed'}`);
+        }
+
+        // Validate result
+        this.validateResult(result);
+
+        // Calculate actual metrics
+        result.wordCount = this.calculateWordCount(result.content);
+        result.readabilityScore = this.calculateReadability(result.content);
+        result.seoScore = this.calculateSEOScore(result);
+
+        console.log('[BlogAI] Generation successful');
+        return result;
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        console.error(`[BlogAI] Attempt ${attempt} failed:`, lastError.message);
+
+        // Don't retry if it's a validation error
+        if (lastError.message.includes('Missing required field')) {
+          throw lastError;
+        }
+
+        // Retry for JSON parse errors
+        if (attempt < maxRetries) {
+          console.log(`[BlogAI] Retrying... (${attempt + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+          continue;
+        }
+      }
     }
+
+    // All retries failed
+    throw new Error(
+      `Failed to generate blog post after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`
+    );
   }
 
   /**
