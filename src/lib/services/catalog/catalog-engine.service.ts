@@ -1,0 +1,341 @@
+/**
+ * Catalog Engine Service
+ * Main service for public catalog functionality
+ */
+
+import { PrismaClient, VehicleStatus } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export interface CatalogVehicle {
+  id: string;
+  displayId: string | null;
+  make: string;
+  model: string;
+  year: number;
+  variant: string | null;
+  price: number;
+  mileage: number | null;
+  transmissionType: string | null;
+  fuelType: string | null;
+  color: string | null;
+  descriptionId: string | null;
+  status: VehicleStatus;
+  photos: {
+    id: string;
+    originalUrl: string;
+    thumbnailUrl: string;
+    displayOrder: number;
+  }[];
+  createdAt: Date;
+}
+
+export interface CatalogFilters {
+  search?: string;
+  make?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minYear?: number;
+  maxYear?: number;
+  transmissionType?: string;
+  fuelType?: string;
+  sortBy?: 'price-asc' | 'price-desc' | 'year-desc' | 'date-desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface CatalogResult {
+  vehicles: CatalogVehicle[];
+  total: number;
+  page: number;
+  totalPages: number;
+  filters: {
+    makes: string[];
+    years: number[];
+    transmissionTypes: string[];
+    fuelTypes: string[];
+    priceRange: { min: number; max: number };
+  };
+}
+
+export class CatalogEngineService {
+  /**
+   * Get vehicles for catalog with filters and pagination
+   */
+  static async getVehicles(
+    tenantId: string,
+    filters: CatalogFilters = {}
+  ): Promise<CatalogResult> {
+    const {
+      search,
+      make,
+      minPrice,
+      maxPrice,
+      minYear,
+      maxYear,
+      transmissionType,
+      fuelType,
+      sortBy = 'date-desc',
+      page = 1,
+      limit = 12,
+    } = filters;
+
+    // Build where clause
+    const where: any = {
+      tenantId,
+      status: 'AVAILABLE', // Only show available vehicles
+    };
+
+    // Search filter
+    if (search) {
+      where.OR = [
+        { make: { contains: search, mode: 'insensitive' } },
+        { model: { contains: search, mode: 'insensitive' } },
+        { variant: { contains: search, mode: 'insensitive' } },
+        { descriptionId: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Make filter
+    if (make) {
+      where.make = make;
+    }
+
+    // Price range filter
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.price = {};
+      if (minPrice !== undefined) {
+        where.price.gte = BigInt(minPrice * 100000000); // Convert juta to cents
+      }
+      if (maxPrice !== undefined) {
+        where.price.lte = BigInt(maxPrice * 100000000);
+      }
+    }
+
+    // Year range filter
+    if (minYear !== undefined || maxYear !== undefined) {
+      where.year = {};
+      if (minYear !== undefined) {
+        where.year.gte = minYear;
+      }
+      if (maxYear !== undefined) {
+        where.year.lte = maxYear;
+      }
+    }
+
+    // Transmission type filter
+    if (transmissionType) {
+      where.transmissionType = transmissionType;
+    }
+
+    // Fuel type filter
+    if (fuelType) {
+      where.fuelType = fuelType;
+    }
+
+    // Sorting
+    let orderBy: any = { createdAt: 'desc' }; // Default sort
+    switch (sortBy) {
+      case 'price-asc':
+        orderBy = { price: 'asc' };
+        break;
+      case 'price-desc':
+        orderBy = { price: 'desc' };
+        break;
+      case 'year-desc':
+        orderBy = { year: 'desc' };
+        break;
+      case 'date-desc':
+        orderBy = { createdAt: 'desc' };
+        break;
+    }
+
+    // Get total count
+    const total = await prisma.vehicle.count({ where });
+
+    // Get paginated vehicles
+    const skip = (page - 1) * limit;
+    const vehicles = await prisma.vehicle.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        displayId: true,
+        make: true,
+        model: true,
+        year: true,
+        variant: true,
+        price: true,
+        mileage: true,
+        transmissionType: true,
+        fuelType: true,
+        color: true,
+        descriptionId: true,
+        status: true,
+        createdAt: true,
+        photos: {
+          orderBy: { displayOrder: 'asc' },
+          select: {
+            id: true,
+            originalUrl: true,
+            thumbnailUrl: true,
+            displayOrder: true,
+          },
+        },
+      },
+    });
+
+    // Get filter options (for filter UI)
+    const allVehicles = await prisma.vehicle.findMany({
+      where: { tenantId, status: 'AVAILABLE' },
+      select: {
+        make: true,
+        year: true,
+        transmissionType: true,
+        fuelType: true,
+        price: true,
+      },
+    });
+
+    const makes = [...new Set(allVehicles.map((v) => v.make))].sort();
+    const years = [...new Set(allVehicles.map((v) => v.year))].sort(
+      (a, b) => b - a
+    );
+    const transmissionTypes = [
+      ...new Set(
+        allVehicles
+          .map((v) => v.transmissionType)
+          .filter((t): t is string => t !== null)
+      ),
+    ].sort();
+    const fuelTypes = [
+      ...new Set(
+        allVehicles.map((v) => v.fuelType).filter((f): f is string => f !== null)
+      ),
+    ].sort();
+
+    const prices = allVehicles.map((v) => Number(v.price) / 100000000);
+    const priceRange = {
+      min: Math.floor(Math.min(...prices)),
+      max: Math.ceil(Math.max(...prices)),
+    };
+
+    // Convert BigInt to number for JSON serialization
+    const serializedVehicles = vehicles.map((v) => ({
+      ...v,
+      price: Number(v.price),
+    }));
+
+    return {
+      vehicles: serializedVehicles,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      filters: {
+        makes,
+        years,
+        transmissionTypes,
+        fuelTypes,
+        priceRange,
+      },
+    };
+  }
+
+  /**
+   * Get single vehicle by ID for detail page
+   */
+  static async getVehicleById(
+    vehicleId: string,
+    tenantId: string
+  ): Promise<CatalogVehicle | null> {
+    const vehicle = await prisma.vehicle.findFirst({
+      where: {
+        id: vehicleId,
+        tenantId,
+        status: 'AVAILABLE',
+      },
+      select: {
+        id: true,
+        displayId: true,
+        make: true,
+        model: true,
+        year: true,
+        variant: true,
+        price: true,
+        mileage: true,
+        transmissionType: true,
+        fuelType: true,
+        color: true,
+        descriptionId: true,
+        status: true,
+        createdAt: true,
+        photos: {
+          orderBy: { displayOrder: 'asc' },
+          select: {
+            id: true,
+            originalUrl: true,
+            thumbnailUrl: true,
+            displayOrder: true,
+          },
+        },
+      },
+    });
+
+    if (!vehicle) return null;
+
+    return {
+      ...vehicle,
+      price: Number(vehicle.price),
+    };
+  }
+
+  /**
+   * Get featured vehicles (for homepage)
+   */
+  static async getFeaturedVehicles(
+    tenantId: string,
+    limit: number = 6
+  ): Promise<CatalogVehicle[]> {
+    const vehicles = await prisma.vehicle.findMany({
+      where: {
+        tenantId,
+        status: 'AVAILABLE',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        displayId: true,
+        make: true,
+        model: true,
+        year: true,
+        variant: true,
+        price: true,
+        mileage: true,
+        transmissionType: true,
+        fuelType: true,
+        color: true,
+        descriptionId: true,
+        status: true,
+        createdAt: true,
+        photos: {
+          orderBy: { displayOrder: 'asc' },
+          take: 1,
+          select: {
+            id: true,
+            originalUrl: true,
+            thumbnailUrl: true,
+            displayOrder: true,
+          },
+        },
+      },
+    });
+
+    return vehicles.map((v) => ({
+      ...v,
+      price: Number(v.price),
+    }));
+  }
+}
