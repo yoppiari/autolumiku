@@ -228,6 +228,7 @@ export default function CatalogPage({ params }: PageProps) {
                   key={vehicle.id}
                   vehicle={vehicle}
                   slug={slug}
+                  tenantId={branding.tenantId}
                   onWhatsAppClick={handleWhatsAppClick}
                 />
               ))}

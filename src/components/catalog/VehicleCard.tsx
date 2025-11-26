@@ -2,6 +2,8 @@
  * Vehicle Card Component for Catalog
  */
 
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -21,13 +23,43 @@ interface VehicleCardProps {
     photos: { thumbnailUrl: string; originalUrl: string }[];
   };
   slug: string;
+  tenantId?: string;
   onWhatsAppClick?: (vehicle: any) => void;
 }
 
-export default function VehicleCard({ vehicle, slug, onWhatsAppClick }: VehicleCardProps) {
+export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }: VehicleCardProps) {
   const formatPrice = (price: number) => {
     const rupiah = price / 100;
     return `Rp ${rupiah.toFixed(0)} jt`;
+  };
+
+  const handleWhatsAppClick = async () => {
+    // Track WhatsApp click
+    if (tenantId) {
+      try {
+        await fetch('/api/v1/leads/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenantId,
+            vehicleId: vehicle.id,
+            source: 'whatsapp_catalog',
+            metadata: {
+              vehicleName: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+              price: vehicle.price,
+              slug,
+            },
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to track WhatsApp click:', error);
+      }
+    }
+
+    // Call the original handler
+    if (onWhatsAppClick) {
+      onWhatsAppClick(vehicle);
+    }
   };
 
   const mainPhoto = vehicle.photos[0];
@@ -112,7 +144,7 @@ export default function VehicleCard({ vehicle, slug, onWhatsAppClick }: VehicleC
             Lihat Detail
           </Link>
           <button
-            onClick={() => onWhatsAppClick && onWhatsAppClick(vehicle)}
+            onClick={handleWhatsAppClick}
             className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-1"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

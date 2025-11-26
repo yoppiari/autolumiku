@@ -1162,6 +1162,67 @@ model LeadScore {
   @@map("lead_scores")
 }
 
+// Message Templates for Lead Communication (Epic 6)
+model MessageTemplate {
+  id                String   @id @default(uuid())
+  tenantId          String
+
+  // Template Details
+  name              String
+  category          String   // "greeting", "follow_up", "closing", "custom"
+  subject           String?  // For email templates
+  content           String   @db.Text // Template with {{variables}}
+
+  // Variables
+  variables         String[] // List of available variables like ["customerName", "vehicleName", "price"]
+
+  // Status
+  isActive          Boolean  @default(true)
+
+  // Usage Stats
+  usageCount        Int      @default(0)
+  lastUsedAt        DateTime?
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([isActive])
+  @@map("message_templates")
+}
+
+// WhatsApp Settings (Epic 6)
+model WhatsAppSettings {
+  id                String   @id @default(uuid())
+  tenantId          String   @unique
+
+  // Phone Configuration
+  phoneNumber       String
+  isActive          Boolean  @default(true)
+
+  // Messaging
+  defaultMessage    String   @db.Text
+  autoReply         Boolean  @default(false)
+  autoReplyMessage  String?  @db.Text
+
+  // Working Hours
+  workingHours      Json?    // { start: "08:00", end: "17:00", timezone: "Asia/Jakarta" }
+
+  // Quick Replies
+  quickReplies      Json?    // Array of quick reply buttons
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("whatsapp_settings")
+}
+
 model CustomerPreference {
   id                String   @id @default(uuid())
   leadId            String   @unique
