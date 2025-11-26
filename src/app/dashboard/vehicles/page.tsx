@@ -377,15 +377,9 @@ export default function VehiclesPage() {
                 <div className="flex gap-2">
                   <Link
                     href={`/dashboard/vehicles/${vehicle.id}/edit`}
-                    className="flex-1 px-3 py-1.5 text-sm text-center bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
+                    className="flex-1 px-3 py-1.5 text-sm text-center bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     Edit
-                  </Link>
-                  <Link
-                    href={`/dashboard/vehicles/${vehicle.id}`}
-                    className="px-3 py-1.5 text-sm bg-gray-50 text-gray-700 rounded hover:bg-gray-100"
-                  >
-                    View
                   </Link>
                 </div>
               </div>
