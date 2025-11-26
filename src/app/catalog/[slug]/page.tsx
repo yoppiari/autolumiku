@@ -10,6 +10,8 @@ import VehicleCard from '@/components/catalog/VehicleCard';
 import SearchFilters from '@/components/catalog/SearchFilters';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import CatalogFooter from '@/components/catalog/CatalogFooter';
+import HeroSection from '@/components/catalog/HeroSection';
+import ThemeProvider from '@/components/catalog/ThemeProvider';
 
 interface PageProps {
   params: Promise<{
@@ -22,6 +24,7 @@ export default function CatalogPage({ params }: PageProps) {
 
   const [branding, setBranding] = useState<any>(null);
   const [businessInfo, setBusinessInfo] = useState<any>(null);
+  const [layoutConfig, setLayoutConfig] = useState<any>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [filterOptions, setFilterOptions] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -57,12 +60,18 @@ export default function CatalogPage({ params }: PageProps) {
         const data = await response.json();
         setBranding(data.data);
 
-        // Fetch full business info
+        // Fetch full business info and layout config
         if (data.data.tenantId) {
           const businessResponse = await fetch(`/api/v1/tenants/${data.data.tenantId}/business-info`);
           if (businessResponse.ok) {
             const businessData = await businessResponse.json();
             setBusinessInfo(businessData.data);
+          }
+
+          const layoutResponse = await fetch(`/api/v1/catalog/layout?tenantId=${data.data.tenantId}`);
+          if (layoutResponse.ok) {
+            const layoutData = await layoutResponse.json();
+            setLayoutConfig(layoutData.data);
           }
         }
       } else {
@@ -169,27 +178,28 @@ export default function CatalogPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <CatalogHeader
-        branding={branding}
-        vehicleCount={totalVehicles}
-        phoneNumber={businessInfo?.phoneNumber}
-        whatsappNumber={businessInfo?.whatsappNumber}
-        slug={slug}
-      />
+    <ThemeProvider tenantId={branding.tenantId}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <CatalogHeader
+          branding={branding}
+          vehicleCount={totalVehicles}
+          phoneNumber={businessInfo?.phoneNumber}
+          whatsappNumber={businessInfo?.whatsappNumber}
+          slug={slug}
+        />
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Pilih Mobil Impian Anda
-          </h2>
-          <p className="text-gray-600">
-            Temukan {totalVehicles} mobil berkualitas dengan harga terbaik
-          </p>
-        </div>
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-8">
+          {/* Hero Section */}
+          {layoutConfig?.heroEnabled && (
+            <HeroSection
+              title={layoutConfig.heroTitle}
+              subtitle={layoutConfig.heroSubtitle}
+              imageUrl={layoutConfig.heroImageUrl}
+              primaryColor={branding.primaryColor}
+            />
+          )}
 
         {/* Filters */}
         {filterOptions && (
@@ -298,10 +308,11 @@ export default function CatalogPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Footer */}
-      {businessInfo && (
-        <CatalogFooter businessInfo={businessInfo} slug={slug} />
-      )}
-    </div>
+        {/* Footer */}
+        {businessInfo && (
+          <CatalogFooter businessInfo={businessInfo} slug={slug} />
+        )}
+      </div>
+    </ThemeProvider>
   );
 }

@@ -29,6 +29,7 @@ model Tenant {
   primaryColor      String   @default("#1a56db")
   secondaryColor    String   @default("#7c3aed")
   theme             String   @default("light") // light, dark, auto
+  selectedTheme     String   @default("modern") // modern, classic, luxury, minimal (Epic 5.8)
 
   // Business Information (Epic 5.9)
   phoneNumber       String?
@@ -846,6 +847,46 @@ model SavedSearch {
   @@index([userId])
   @@index([isDefault])
   @@map("saved_searches")
+}
+
+// ============================================================================
+// CATALOG CUSTOMIZATION (Epic 5: Stories 5.7 & 5.8)
+// ============================================================================
+
+// Catalog Layout Configuration (Epic 5: Story 5.7)
+model CatalogLayout {
+  id                String   @id @default(uuid())
+  tenantId          String   @unique
+
+  // Layout Type
+  layoutType        String   @default("GRID") // GRID, LIST, FEATURED
+
+  // Hero Section
+  heroEnabled       Boolean  @default(true)
+  heroTitle         String?
+  heroSubtitle      String?
+  heroImageUrl      String?
+
+  // Featured Vehicles
+  featuredVehicleIds String[] // Array of vehicle IDs to feature
+
+  // Section Order
+  sectionOrder      String[] @default(["hero", "featured", "filters", "vehicles"]) // Customizable section order
+
+  // Navigation Menu
+  navigationMenu    Json?    // Custom navigation items
+
+  // Display Settings
+  vehiclesPerPage   Int      @default(12)
+  showPriceRange    Boolean  @default(true)
+  showVehicleCount  Boolean  @default(true)
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("catalog_layouts")
 }
 
 // ============================================================================
