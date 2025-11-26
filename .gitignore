@@ -41,3 +41,7 @@ logs/
 # Misc
 .turbo/
 .vercel/
+
+# Uploads directory (exclude uploaded files)
+uploads/*
+!uploads/.gitkeep

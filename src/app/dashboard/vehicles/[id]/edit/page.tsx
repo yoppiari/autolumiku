@@ -369,24 +369,117 @@ export default function EditVehiclePage() {
 
           {/* Existing Photos */}
           {existingPhotosCount > 0 && (
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Foto Saat Ini ({existingPhotosCount})</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {vehicle?.photos.map((photo, index) => (
-                  <div key={photo.id} className="relative group">
+            <div className="mb-6">
+              <p className="text-sm font-medium text-gray-700 mb-3">
+                Foto Saat Ini ({existingPhotosCount})
+                <span className="ml-2 text-xs text-gray-500">• Klik foto untuk manage</span>
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {vehicle?.photos.map((photo: any, index: number) => (
+                  <div
+                    key={photo.id}
+                    className="relative group cursor-pointer transition-all hover:scale-105"
+                  >
+                    {/* Photo Image */}
                     <img
                       src={photo.thumbnailUrl || photo.originalUrl}
                       alt={`Photo ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                      className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 group-hover:border-blue-400"
                     />
-                    {index === 0 && (
-                      <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                        Utama
+
+                    {/* Main Photo Badge */}
+                    {photo.isMainPhoto && (
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold flex items-center gap-1">
+                        ⭐ Utama
                       </div>
                     )}
+
+                    {/* Quality Score Badge */}
+                    {photo.qualityScore && (
+                      <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded font-semibold ${
+                        photo.validationStatus === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                        photo.validationStatus === 'WARNING' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {photo.qualityScore}
+                      </div>
+                    )}
+
+                    {/* Photo Number */}
+                    <div className="absolute bottom-2 left-2 bg-gray-800 bg-opacity-75 text-white text-xs px-2 py-0.5 rounded">
+                      #{index + 1}
+                    </div>
+
+                    {/* Action Buttons (show on hover) */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded-lg transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                      {/* Set as Main Button */}
+                      {!photo.isMainPhoto && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (confirm('Jadikan foto ini sebagai foto utama?')) {
+                              try {
+                                const response = await fetch(`/api/v1/vehicles/${vehicleId}/photos/${photo.id}/main`, {
+                                  method: 'PUT',
+                                });
+                                if (response.ok) {
+                                  fetchVehicle();
+                                } else {
+                                  alert('Gagal mengubah foto utama');
+                                }
+                              } catch (err) {
+                                alert('Terjadi kesalahan');
+                              }
+                            }
+                          }}
+                          className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 shadow-lg"
+                          title="Set as main photo"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Delete Button */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (confirm('Hapus foto ini? Tindakan ini tidak dapat dibatalkan.')) {
+                            try {
+                              const response = await fetch(`/api/v1/vehicles/${vehicleId}/photos/${photo.id}`, {
+                                method: 'DELETE',
+                              });
+                              if (response.ok) {
+                                fetchVehicle();
+                              } else {
+                                alert('Gagal menghapus foto');
+                              }
+                            } catch (err) {
+                              alert('Terjadi kesalahan');
+                            }
+                          }
+                        }}
+                        className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg"
+                        title="Delete photo"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
+
+              {/* Quality Summary */}
+              {vehicle?.photos.some((p: any) => p.qualityScore) && (
+                <div className="mt-3 p-2 bg-gray-50 rounded-md">
+                  <p className="text-xs text-gray-600">
+                    💡 <strong>Kualitas Foto:</strong> Hijau = Baik (70+), Kuning = Cukup (50-69), Merah = Kurang (&lt;50)
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

@@ -1,50 +1,19 @@
 /**
  * POST /api/v1/vehicles/[id]/photos - Upload photos for a vehicle
+ * Enhanced with multi-size generation, quality validation, and actual storage
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { ImageProcessingService } from '@/lib/services/image-processing.service';
+import { StorageService } from '@/lib/services/storage.service';
+import { PhotoQualityService } from '@/lib/services/photo-quality.service';
 
 const prisma = new PrismaClient();
 
 /**
- * Get image dimensions and metadata from base64
- */
-function getImageMetadata(base64String: string): Promise<{
-  width: number;
-  height: number;
-  mimeType: string;
-  fileSize: number;
-}> {
-  return new Promise((resolve, reject) => {
-    // Extract mime type from data URL
-    const mimeMatch = base64String.match(/data:(image\/[a-z]+);base64,/);
-    if (!mimeMatch) {
-      reject(new Error('Invalid base64 image format'));
-      return;
-    }
-    const mimeType = mimeMatch[1];
-
-    // Calculate file size (rough estimate)
-    const base64Data = base64String.split(',')[1];
-    const fileSize = Math.round((base64Data.length * 3) / 4);
-
-    // For dimensions, we'll use a simple approach in Node.js environment
-    // In a real app, you'd want to use sharp or similar library
-    // For now, we'll set default dimensions and let the client handle it
-    // TODO: Implement proper dimension detection with sharp
-    resolve({
-      width: 1920,
-      height: 1080,
-      mimeType,
-      fileSize,
-    });
-  });
-}
-
-/**
  * POST /api/v1/vehicles/[id]/photos
- * Upload photos for a vehicle
+ * Upload photos with multi-size generation, quality validation, and storage
  */
 export async function POST(
   request: NextRequest,
@@ -62,7 +31,7 @@ export async function POST(
       );
     }
 
-    // Verify vehicle exists and get tenantId
+    // Verify vehicle exists and get details
     const vehicle = await prisma.vehicle.findUnique({
       where: { id: vehicleId },
       select: { id: true, tenantId: true, make: true, model: true },
@@ -75,7 +44,10 @@ export async function POST(
       );
     }
 
-    // Get the highest existing displayOrder for this vehicle
+    // Ensure upload directory exists
+    await StorageService.ensureUploadDir();
+
+    // Get the highest existing displayOrder
     const lastPhoto = await prisma.vehiclePhoto.findFirst({
       where: { vehicleId },
       orderBy: { displayOrder: 'desc' },
@@ -84,35 +56,68 @@ export async function POST(
 
     let nextDisplayOrder = lastPhoto ? lastPhoto.displayOrder + 1 : 1;
 
-    // Process each photo and get metadata
+    // Process each photo: convert, validate, resize, upload
     const photoRecordsPromises = photos.map(async (photo: { base64: string }, index: number) => {
-      const metadata = await getImageMetadata(photo.base64);
-      const filename = `${vehicle.make}-${vehicle.model}-${Date.now()}-${index + 1}.jpg`;
-      const storageKey = `vehicles/${vehicleId}/${filename}`;
+      try {
+        // Convert base64 to buffer
+        const buffer = ImageProcessingService.base64ToBuffer(photo.base64);
 
-      return {
-        vehicleId,
-        tenantId: vehicle.tenantId,
-        storageKey,
-        originalUrl: photo.base64, // For now, store base64 directly
-        thumbnailUrl: photo.base64, // TODO: Generate actual thumbnail
-        mediumUrl: photo.base64,    // TODO: Generate medium size
-        largeUrl: photo.base64,     // TODO: Generate large size
-        filename,
-        fileSize: metadata.fileSize,
-        mimeType: metadata.mimeType,
-        width: metadata.width,
-        height: metadata.height,
-        displayOrder: nextDisplayOrder + index,
-        isMainPhoto: (nextDisplayOrder + index) === 1, // First photo is main
-        isFeatured: false,
-        qualityScore: null,
-        validationStatus: 'PENDING',
-        validationMessage: null,
-        validationDetails: null,
-        caption: null,
-        uploadedBy: null, // TODO: Get from authenticated user session
-      };
+        // Validate quality
+        const quality = await PhotoQualityService.validatePhoto(buffer);
+
+        // Process image (generate all sizes)
+        const processed = await ImageProcessingService.processPhoto(buffer);
+
+        // Generate filename
+        const baseFilename = ImageProcessingService.generateFilename(
+          vehicleId,
+          vehicle.make,
+          vehicle.model,
+          index,
+          'original'
+        );
+
+        const filename = baseFilename.replace(/-original\.(jpg|webp)$/, '');
+
+        // Upload to storage (all sizes)
+        const storage = await StorageService.uploadMultipleSize(
+          {
+            original: processed.original,
+            large: processed.large,
+            medium: processed.medium,
+            thumbnail: processed.thumbnail,
+          },
+          vehicleId,
+          filename
+        );
+
+        return {
+          vehicleId,
+          tenantId: vehicle.tenantId,
+          storageKey: storage.storageKey,
+          originalUrl: storage.originalUrl,
+          thumbnailUrl: storage.thumbnailUrl,
+          mediumUrl: storage.mediumUrl,
+          largeUrl: storage.largeUrl,
+          filename: baseFilename,
+          fileSize: processed.metadata.size,
+          mimeType: processed.metadata.mimeType,
+          width: processed.metadata.width,
+          height: processed.metadata.height,
+          displayOrder: nextDisplayOrder + index,
+          isMainPhoto: (nextDisplayOrder + index) === 1,
+          isFeatured: false,
+          qualityScore: quality.score,
+          validationStatus: quality.status,
+          validationMessage: quality.message,
+          validationDetails: quality.details,
+          caption: null,
+          uploadedBy: null, // TODO: Get from authenticated user session
+        };
+      } catch (error) {
+        console.error(`Error processing photo ${index}:`, error);
+        throw error;
+      }
     });
 
     const photoRecords = await Promise.all(photoRecordsPromises);
@@ -122,11 +127,26 @@ export async function POST(
       data: photoRecords,
     });
 
+    // Count quality warnings
+    const warnings = photoRecords.filter((p) => p.validationStatus === 'WARNING');
+    const rejected = photoRecords.filter((p) => p.validationStatus === 'REJECTED');
+
     return NextResponse.json(
       {
         success: true,
         message: `${photos.length} photo(s) uploaded successfully`,
         count: photos.length,
+        quality: {
+          approved: photoRecords.length - warnings.length - rejected.length,
+          warnings: warnings.length,
+          rejected: rejected.length,
+        },
+        photos: photoRecords.map((p) => ({
+          storageKey: p.storageKey,
+          qualityScore: p.qualityScore,
+          validationStatus: p.validationStatus,
+          validationMessage: p.validationMessage,
+        })),
       },
       { status: 201 }
     );
