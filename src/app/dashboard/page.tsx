@@ -1,16 +1,35 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import SubscriptionCard from '@/components/dashboard/SubscriptionCard';
 
 export default function ShowroomDashboardPage() {
   const [user, setUser] = useState<any>(null);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      loadSubscription(parsedUser.tenantId);
     }
   }, []);
+
+  const loadSubscription = async (tenantId: string) => {
+    try {
+      const response = await fetch(`/api/v1/tenants/${tenantId}/subscription`);
+      if (response.ok) {
+        const data = await response.json();
+        setSubscription(data.data?.subscription || null);
+      }
+    } catch (error) {
+      console.error('Failed to load subscription:', error);
+    } finally {
+      setLoadingSubscription(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -119,22 +138,32 @@ export default function ShowroomDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-            <span className="mr-2">➕</span>
-            Tambah Kendaraan
-          </button>
-          <button className="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-            <span className="mr-2">📞</span>
-            Lihat Leads
-          </button>
-          <button className="flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
-            <span className="mr-2">👥</span>
-            Kelola Tim
-          </button>
+      {/* Subscription & Quick Actions Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Subscription Card */}
+        <div className="lg:col-span-1">
+          {!loadingSubscription && <SubscriptionCard subscription={subscription} />}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-lg shadow p-6 h-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button className="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <span className="mr-2">➕</span>
+                Tambah Kendaraan
+              </button>
+              <button className="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                <span className="mr-2">📞</span>
+                Lihat Leads
+              </button>
+              <button className="flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
+                <span className="mr-2">👥</span>
+                Kelola Tim
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ import React, { useState, useEffect, use } from 'react';
 import VehicleCard from '@/components/catalog/VehicleCard';
 import SearchFilters from '@/components/catalog/SearchFilters';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
+import CatalogFooter from '@/components/catalog/CatalogFooter';
 
 interface PageProps {
   params: Promise<{
@@ -20,6 +21,7 @@ export default function CatalogPage({ params }: PageProps) {
   const { slug } = use(params);
 
   const [branding, setBranding] = useState<any>(null);
+  const [businessInfo, setBusinessInfo] = useState<any>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [filterOptions, setFilterOptions] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -54,6 +56,15 @@ export default function CatalogPage({ params }: PageProps) {
       if (response.ok) {
         const data = await response.json();
         setBranding(data.data);
+
+        // Fetch full business info
+        if (data.data.tenantId) {
+          const businessResponse = await fetch(`/api/v1/tenants/${data.data.tenantId}/business-info`);
+          if (businessResponse.ok) {
+            const businessData = await businessResponse.json();
+            setBusinessInfo(businessData.data);
+          }
+        }
       } else {
         setError('Showroom tidak ditemukan');
       }
@@ -160,7 +171,13 @@ export default function CatalogPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <CatalogHeader branding={branding} vehicleCount={totalVehicles} />
+      <CatalogHeader
+        branding={branding}
+        vehicleCount={totalVehicles}
+        phoneNumber={businessInfo?.phoneNumber}
+        whatsappNumber={businessInfo?.whatsappNumber}
+        slug={slug}
+      />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
@@ -282,14 +299,9 @@ export default function CatalogPage({ params }: PageProps) {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-8 mt-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="mb-2">&copy; 2025 {branding.name}. All rights reserved.</p>
-          <p className="text-sm text-gray-400">
-            Powered by AutoLumiku - Platform Showroom Modern
-          </p>
-        </div>
-      </footer>
+      {businessInfo && (
+        <CatalogFooter businessInfo={businessInfo} slug={slug} />
+      )}
     </div>
   );
 }

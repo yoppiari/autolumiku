@@ -30,6 +30,21 @@ model Tenant {
   secondaryColor    String   @default("#7c3aed")
   theme             String   @default("light") // light, dark, auto
 
+  // Business Information (Epic 5.9)
+  phoneNumber       String?
+  phoneNumberSecondary String?
+  whatsappNumber    String?
+  email             String?
+  address           String?
+  city              String?
+  province          String?
+  postalCode        String?
+  googleMapsUrl     String?
+  latitude          Float?
+  longitude         Float?
+  businessHours     Json?   // { monday: { open: "08:00", close: "17:00", closed: false }, ... }
+  socialMedia       Json?   // { instagram: "url", facebook: "url", tiktok: "url" }
+
   // Metadata
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
