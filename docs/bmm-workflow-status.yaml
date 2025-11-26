@@ -774,3 +774,37 @@ completion_details:
             - "Easy photo ordering control"
             - "Improved user experience"
             - "Better photo organization"
+
+        - id: "nextjs-15-api-routes-fix"
+          agent: "developer"
+          status: "COMPLETED"
+          command: "fix-api-routes"
+          output: "src/app/api/v1/vehicles/"
+          requirement_date: "2025-11-26"
+          completion_date: "2025-11-26"
+          priority: "HIGH"
+          description: "Fix API routes for Next.js 15 compatibility (await params requirement)"
+          issue:
+            - "Photo upload error in vehicle edit page"
+            - "Next.js 15 requires params to be awaited in route handlers"
+            - "TypeError: params is a Promise and must be awaited"
+          fixes_applied:
+            - "Updated GET /api/v1/vehicles/[id] to await params"
+            - "Updated PUT /api/v1/vehicles/[id] to await params"
+            - "Updated DELETE /api/v1/vehicles/[id] to await params"
+            - "Updated POST /api/v1/vehicles/[id]/photos to await params"
+          technical_changes:
+            before:
+              - "{ params }: { params: { id: string } }"
+              - "const { id } = params;"
+            after:
+              - "{ params }: { params: Promise<{ id: string }> }"
+              - "const { id } = await params;"
+          files_modified:
+            - "src/app/api/v1/vehicles/[id]/route.ts"
+            - "src/app/api/v1/vehicles/[id]/photos/route.ts"
+          benefits:
+            - "Photo upload now works correctly in edit page"
+            - "Full Next.js 15 compatibility"
+            - "Resolved runtime errors in dynamic routes"
+            - "Better type safety with Promise-based params"
