@@ -113,6 +113,15 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
+# Start Database Services
+print_status "Starting database services..."
+if command -v docker > /dev/null; then
+    docker compose up -d postgres redis
+    print_success "Database services started"
+else
+    print_warning "Docker not found. Skipping docker compose up."
+fi
+
 # Check Prisma setup
 print_status "Checking database setup..."
 if [ -d "prisma" ]; then

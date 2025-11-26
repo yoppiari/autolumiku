@@ -704,10 +704,10 @@ model VehiclePhoto {
 
   // Storage (Cloudflare R2 / S3)
   storageKey        String   // R2/S3 key: vehicles/{uuid}/{filename}
-  originalUrl       String   // Full resolution URL
-  thumbnailUrl      String   // 300x200 for list view
-  mediumUrl         String   // 800x600 for gallery
-  largeUrl          String   // 1920x1080 for detail view
+  originalUrl       String   @db.Text // Full resolution URL (or base64 for now)
+  thumbnailUrl      String   @db.Text // 300x200 for list view (or base64 for now)
+  mediumUrl         String   @db.Text // 800x600 for gallery (or base64 for now)
+  largeUrl          String   @db.Text // 1920x1080 for detail view (or base64 for now)
 
   // File Metadata
   filename          String
@@ -735,7 +735,7 @@ model VehiclePhoto {
   // Metadata
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  uploadedBy        String
+  uploadedBy        String?  // Optional for now (TODO: make required after implementing auth)
 
   // Relations
   vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
