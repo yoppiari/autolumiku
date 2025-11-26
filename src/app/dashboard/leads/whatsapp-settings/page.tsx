@@ -32,76 +32,80 @@ export default function WhatsAppSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [editingSetting, setEditingSetting] = useState<WhatsAppSettings | null>(null);
 
-  // Mock data for development
+  // Load settings from API
   useEffect(() => {
     const loadSettings = async () => {
       setIsLoading(true);
-      
-      // Mock WhatsApp settings data
-      const mockSettings: WhatsAppSettings[] = [
-        {
-          id: '1',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
-          tenantName: 'Showroom Jakarta',
-          phoneNumber: '+62-21-5550-1234',
-          isActive: true,
-          defaultMessage: 'Halo! Terima kasih telah menghubungi Showroom Jakarta. Ada yang bisa kami bantu?',
-          autoReply: true,
-          workingHours: {
-            start: '08:00',
-            end: '17:00',
-            timezone: 'Asia/Jakarta',
-          },
-          createdAt: '2025-11-01T00:00:00Z',
-          updatedAt: '2025-11-23T10:30:00Z',
-        },
-        {
-          id: '2',
-          tenantId: '5536722c-78e5-4dcd-9d35-d16858add414' // MOCK_DATA,
-          tenantName: 'Dealer Mobil',
-          phoneNumber: '+62-22-6666-5678',
-          isActive: true,
-          defaultMessage: 'Selamat datang di Dealer Mobil! Kami siap membantu Anda menemukan mobil impian.',
-          autoReply: false,
-          workingHours: {
-            start: '09:00',
-            end: '18:00',
-            timezone: 'Asia/Jakarta',
-          },
-          createdAt: '2025-11-02T00:00:00Z',
-          updatedAt: '2025-11-20T14:15:00Z',
-        },
-        {
-          id: '3',
-          tenantId: '508b3141-31c4-47fb-8473-d5b5ba940ac6' // MOCK_DATA,
-          tenantName: 'AutoMobil',
-          phoneNumber: '+62-24-7777-8901',
-          isActive: false,
-          defaultMessage: 'Terima kasih telah menghubungi AutoMobil. Kami akan segera merespons.',
-          autoReply: true,
-          workingHours: {
-            start: '08:30',
-            end: '16:30',
-            timezone: 'Asia/Jakarta',
-          },
-          createdAt: '2025-11-05T00:00:00Z',
-          updatedAt: '2025-11-15T11:45:00Z',
-        },
-      ];
 
-      setSettings(mockSettings);
-      setIsLoading(false);
+      try {
+        // Get tenantId from localStorage
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+          console.error('No user found in localStorage');
+          setIsLoading(false);
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+        const tenantId = user.tenantId;
+
+        if (!tenantId) {
+          console.error('No tenantId found in user data');
+          setIsLoading(false);
+          return;
+        }
+
+        // Fetch WhatsApp settings from API
+        const response = await fetch(`/api/v1/whatsapp-settings?tenantId=${tenantId}`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch settings: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setSettings(data);
+      } catch (error) {
+        console.error('Error loading WhatsApp settings:', error);
+        alert('Gagal memuat WhatsApp settings. Silakan coba lagi.');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadSettings();
   }, []);
 
   const handleToggleActive = async (settingId: string) => {
-    // Mock API call
-    setSettings(prev => prev.map(setting => 
-      setting.id === settingId ? { ...setting, isActive: !setting.isActive } : setting
-    ));
-    console.log('Toggle active status for:', settingId);
+    try {
+      // Find the current setting to toggle
+      const currentSetting = settings.find(s => s.id === settingId);
+      if (!currentSetting) return;
+
+      const updatedSetting = { ...currentSetting, isActive: !currentSetting.isActive };
+
+      // Call real API to update setting
+      const response = await fetch('/api/v1/whatsapp-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedSetting),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to toggle active status: ${response.statusText}`);
+      }
+
+      const savedSetting = await response.json();
+
+      // Update local state
+      setSettings(prev => prev.map(setting =>
+        setting.id === settingId ? savedSetting : setting
+      ));
+    } catch (error) {
+      console.error('Error toggling active status:', error);
+      alert('Gagal mengubah status. Silakan coba lagi.');
+    }
   };
 
   const handleEdit = (setting: WhatsAppSettings) => {
@@ -109,12 +113,40 @@ export default function WhatsAppSettingsPage() {
   };
 
   const handleSave = async (updatedSetting: WhatsAppSettings) => {
-    // Mock API call
-    setSettings(prev => prev.map(setting => 
-      setting.id === updatedSetting.id ? updatedSetting : setting
-    ));
-    setEditingSetting(null);
-    console.log('Save setting:', updatedSetting);
+    try {
+      // Call real API to update/create setting
+      const response = await fetch('/api/v1/whatsapp-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedSetting),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save setting: ${response.statusText}`);
+      }
+
+      const savedSetting = await response.json();
+
+      // Update local state with the saved setting
+      setSettings(prev => {
+        const exists = prev.find(s => s.id === savedSetting.id);
+        if (exists) {
+          return prev.map(setting =>
+            setting.id === savedSetting.id ? savedSetting : setting
+          );
+        } else {
+          return [...prev, savedSetting];
+        }
+      });
+
+      setEditingSetting(null);
+      alert('WhatsApp setting berhasil disimpan!');
+    } catch (error) {
+      console.error('Error saving WhatsApp setting:', error);
+      alert('Gagal menyimpan WhatsApp setting. Silakan coba lagi.');
+    }
   };
 
   const handleCancel = () => {
@@ -123,30 +155,65 @@ export default function WhatsAppSettingsPage() {
 
   const handleDelete = async (settingId: string) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus WhatsApp setting ini?')) {
-      setSettings(prev => prev.filter(setting => setting.id !== settingId));
-      console.log('Delete setting:', settingId);
+      try {
+        // Call real API to delete setting
+        const response = await fetch(`/api/v1/whatsapp-settings/${settingId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete setting: ${response.statusText}`);
+        }
+
+        // Update local state to remove the deleted setting
+        setSettings(prev => prev.filter(setting => setting.id !== settingId));
+        alert('WhatsApp setting berhasil dihapus!');
+      } catch (error) {
+        console.error('Error deleting WhatsApp setting:', error);
+        alert('Gagal menghapus WhatsApp setting. Silakan coba lagi.');
+      }
     }
   };
 
   const handleAddNew = () => {
-    const newSetting: WhatsAppSettings = {
-      id: Date.now().toString(),
-      tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
-      tenantName: 'New Tenant',
-      phoneNumber: '+62-',
-      isActive: true,
-      defaultMessage: 'Halo! Terima kasih telah menghubungi kami. Ada yang bisa kami bantu?',
-      autoReply: true,
-      workingHours: {
-        start: '08:00',
-        end: '17:00',
-        timezone: 'Asia/Jakarta',
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      // Get tenantId from localStorage
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert('User tidak ditemukan. Silakan login kembali.');
+        return;
+      }
 
-    setEditingSetting(newSetting);
+      const user = JSON.parse(userStr);
+      const tenantId = user.tenantId;
+
+      if (!tenantId) {
+        alert('TenantId tidak ditemukan. Silakan login kembali.');
+        return;
+      }
+
+      const newSetting: WhatsAppSettings = {
+        id: Date.now().toString(),
+        tenantId: tenantId,
+        tenantName: 'New Tenant',
+        phoneNumber: '+62-',
+        isActive: true,
+        defaultMessage: 'Halo! Terima kasih telah menghubungi kami. Ada yang bisa kami bantu?',
+        autoReply: true,
+        workingHours: {
+          start: '08:00',
+          end: '17:00',
+          timezone: 'Asia/Jakarta',
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      setEditingSetting(newSetting);
+    } catch (error) {
+      console.error('Error creating new setting:', error);
+      alert('Gagal membuat WhatsApp setting baru. Silakan coba lagi.');
+    }
   };
 
   const formatPhoneNumber = (phone: string) => {
