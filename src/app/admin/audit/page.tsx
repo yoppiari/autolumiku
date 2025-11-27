@@ -34,9 +34,9 @@ export default function AuditLogsPage() {
     {
       id: '1',
       timestamp: new Date('2025-11-23T10:30:00'),
-      tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
+      tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
       tenantName: 'Showroom Jakarta Premium',
-      userId: 'f8e7d6c5-b4a3-4c5d-8e9f-1a2b3c4d5e6f' // MOCK_DATA,
+      userId: 'f8e7d6c5-b4a3-4c5d-8e9f-1a2b3c4d5e6f', // MOCK_DATA
       userName: 'Admin Showroom',
       userEmail: 'admin@showroomjakarta.com',
       action: 'CREATE_VEHICLE',
@@ -50,9 +50,9 @@ export default function AuditLogsPage() {
     {
       id: '2',
       timestamp: new Date('2025-11-23T10:25:00'),
-      tenantId: '5536722c-78e5-4dcd-9d35-d16858add414' // MOCK_DATA,
+      tenantId: '5536722c-78e5-4dcd-9d35-d16858add414', // MOCK_DATA
       tenantName: 'Auto Center Surabaya',
-      userId: 'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d' // MOCK_DATA,
+      userId: 'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d', // MOCK_DATA
       userName: 'Manager Sales',
       userEmail: 'manager@autocenter.com',
       action: 'UPDATE_PRICE',
@@ -70,9 +70,9 @@ export default function AuditLogsPage() {
     {
       id: '3',
       timestamp: new Date('2025-11-23T10:20:00'),
-      tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
+      tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
       tenantName: 'Showroom Jakarta Premium',
-      userId: '9e8d7c6b-5a4f-4e3d-2c1b-0a9b8c7d6e5f' // MOCK_DATA,
+      userId: '9e8d7c6b-5a4f-4e3d-2c1b-0a9b8c7d6e5f', // MOCK_DATA
       userName: 'Sales Staff',
       userEmail: 'sales@showroomjakarta.com',
       action: 'LOGIN_FAILED',
