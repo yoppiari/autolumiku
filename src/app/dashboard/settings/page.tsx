@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import SubscriptionCard from '@/components/dashboard/SubscriptionCard';
-import { FaBuilding, FaCreditCard, FaUsers, FaCog } from 'react-icons/fa';
+import { FaBuilding, FaCreditCard, FaCog } from 'react-icons/fa';
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null);
@@ -63,24 +63,6 @@ export default function SettingsPage() {
               <div className="text-gray-400">→</div>
             </div>
           </Link>
-
-          {/* User Management */}
-          <div className="block bg-white rounded-lg shadow p-6 opacity-75">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <FaUsers className="text-purple-600 text-xl" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Manajemen Tim</h3>
-                <p className="text-sm text-gray-600">
-                  Kelola anggota tim dan hak akses pengguna
-                </p>
-                <span className="inline-block mt-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                  Coming Soon
-                </span>
-              </div>
-            </div>
-          </div>
 
           {/* System Settings */}
           <div className="block bg-white rounded-lg shadow p-6 opacity-75">
