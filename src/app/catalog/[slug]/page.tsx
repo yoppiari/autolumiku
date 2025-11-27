@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import VehicleCard from '@/components/catalog/VehicleCard';
 import SearchFilters from '@/components/catalog/SearchFilters';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
@@ -14,13 +14,13 @@ import HeroSection from '@/components/catalog/HeroSection';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 
 interface PageProps {
-  params: Promise<{
+  params: {
     slug: string;
-  }>;
+  };
 }
 
 export default function CatalogPage({ params }: PageProps) {
-  const { slug } = use(params);
+  const { slug } = params;
 
   const [branding, setBranding] = useState<any>(null);
   const [businessInfo, setBusinessInfo] = useState<any>(null);

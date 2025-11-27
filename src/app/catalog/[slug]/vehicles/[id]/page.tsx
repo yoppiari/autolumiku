@@ -5,20 +5,20 @@
 
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import { SEOService } from '@/lib/services/catalog/seo.service';
 
 interface PageProps {
-  params: Promise<{
+  params: {
     slug: string;
     id: string;
-  }>;
+  };
 }
 
 export default function VehicleDetailPage({ params }: PageProps) {
-  const { slug, id } = use(params);
+  const { slug, id } = params;
 
   const [branding, setBranding] = useState<any>(null);
   const [vehicle, setVehicle] = useState<any>(null);
@@ -28,6 +28,9 @@ export default function VehicleDetailPage({ params }: PageProps) {
 
   useEffect(() => {
     fetchBranding();
+  }, [slug]);
+
+  useEffect(() => {
     fetchVehicle();
   }, [slug, id]);
 
