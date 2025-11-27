@@ -46,94 +46,51 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Mock data for development
   useEffect(() => {
     const loadUsers = async () => {
-      setIsLoading(true);
-      
-      // Mock users data
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          email: 'admin@autolumiku.com',
-          firstName: 'Super',
-          lastName: 'Admin',
-          role: 'super_admin',
-          emailVerified: true,
-          isActive: true,
-          createdAt: '2025-11-01T00:00:00Z',
-          lastLoginAt: '2025-11-23T10:30:00Z',
-        },
-        {
-          id: '2',
-          email: 'admin@showroomjakarta.com',
-          firstName: 'Admin',
-          lastName: 'Showroom',
-          role: 'admin',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
-          tenantName: 'Showroom Jakarta',
-          emailVerified: true,
-          isActive: true,
-          createdAt: '2025-11-02T00:00:00Z',
-          lastLoginAt: '2025-11-23T09:15:00Z',
-        },
-        {
-          id: '3',
-          email: 'manager@showroomjakarta.com',
-          firstName: 'Budi',
-          lastName: 'Santoso',
-          role: 'manager',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
-          tenantName: 'Showroom Jakarta Premium',
-          emailVerified: true,
-          isActive: true,
-          createdAt: '2025-11-03T00:00:00Z',
-          lastLoginAt: '2025-11-23T08:45:00Z',
-        },
-        {
-          id: '4',
-          email: 'sales@showroomjakarta.com',
-          firstName: 'Siti',
-          lastName: 'Rahayu',
-          role: 'staff',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
-          tenantName: 'Showroom Jakarta Premium',
-          emailVerified: true,
-          isActive: true,
-          createdAt: '2025-11-05T00:00:00Z',
-          lastLoginAt: '2025-11-22T16:20:00Z',
-        },
-        {
-          id: '5',
-          email: 'user@dealermobil.com',
-          firstName: 'Ahmad',
-          lastName: 'Pratama',
-          role: 'staff',
-          tenantId: '5536722c-78e5-4dcd-9d35-d16858add414', // MOCK_DATA
-          tenantName: 'Auto Center Surabaya',
-          emailVerified: true,
-          isActive: false,
-          createdAt: '2025-11-10T00:00:00Z',
-          lastLoginAt: '2025-11-15T14:30:00Z',
-        },
-      ];
+      try {
+        setIsLoading(true);
 
-      // Calculate stats
-      const userStats = mockUsers.reduce((acc, user) => {
-        acc.total++;
-        if (user.isActive) acc.active++;
-        else acc.inactive++;
-        
-        if (user.role === 'super_admin' || user.role === 'admin') acc.admins++;
-        else if (user.role === 'manager') acc.managers++;
-        else acc.staff++;
-        
-        return acc;
-      }, { total: 0, active: 0, inactive: 0, admins: 0, managers: 0, staff: 0 });
+        const response = await fetch('/api/admin/users');
+        const data = await response.json();
 
-      setUsers(mockUsers);
-      setStats(userStats);
-      setIsLoading(false);
+        if (data.success && data.data) {
+          // Map the data to match the User interface
+          const mappedUsers: User[] = data.data.map((user: any) => ({
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            tenantId: user.tenantId,
+            tenantName: user.tenant?.name,
+            emailVerified: user.emailVerified,
+            isActive: user.isActive,
+            createdAt: user.createdAt,
+            lastLoginAt: user.lastLoginAt,
+          }));
+
+          // Calculate stats
+          const userStats = mappedUsers.reduce((acc, user) => {
+            acc.total++;
+            if (user.isActive) acc.active++;
+            else acc.inactive++;
+
+            if (user.role === 'super_admin' || user.role === 'admin') acc.admins++;
+            else if (user.role === 'manager') acc.managers++;
+            else acc.staff++;
+
+            return acc;
+          }, { total: 0, active: 0, inactive: 0, admins: 0, managers: 0, staff: 0 });
+
+          setUsers(mappedUsers);
+          setStats(userStats);
+        }
+      } catch (error) {
+        console.error('Failed to load users:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadUsers();

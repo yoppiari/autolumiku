@@ -45,61 +45,24 @@ export default function TenantEditPage() {
     try {
       setIsLoading(true);
 
-      // MOCK DATA - Replace with real API call when backend is ready
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+      const response = await fetch(`/api/admin/tenants/${tenantId}`);
+      const data = await response.json();
 
-      const mockTenants: Record<string, any> = {
-        '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed': {
-          name: 'Showroom Jakarta Premium',
-          slug: 'showroom-jakarta',
-          domain: '',
-          logoUrl: '',
-          faviconUrl: '',
-          primaryColor: '#2563eb',
-          secondaryColor: '#7c3aed',
-          theme: 'light',
-          status: 'active',
-        },
-        '5536722c-78e5-4dcd-9d35-d16858add414': {
-          name: 'Auto Center Surabaya',
-          slug: 'autocenter-surabaya',
-          domain: '',
-          logoUrl: '',
-          faviconUrl: '',
-          primaryColor: '#059669',
-          secondaryColor: '#0891b2',
-          theme: 'light',
-          status: 'active',
-        },
-        '3a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d': {
-          name: 'Dealer Mobil Bandung',
-          slug: 'dealer-bandung',
-          domain: 'dealerbandung.com',
-          logoUrl: '',
-          faviconUrl: '',
-          primaryColor: '#dc2626',
-          secondaryColor: '#ea580c',
-          theme: 'light',
-          status: 'active',
-        },
-      };
-
-      const tenantData = mockTenants[tenantId];
-
-      if (tenantData) {
+      if (data.success && data.data) {
+        const tenant = data.data;
         setFormData({
-          name: tenantData.name || '',
-          slug: tenantData.slug || '',
-          domain: tenantData.domain || '',
-          logoUrl: tenantData.logoUrl || '',
-          faviconUrl: tenantData.faviconUrl || '',
-          primaryColor: tenantData.primaryColor || '#1a56db',
-          secondaryColor: tenantData.secondaryColor || '#7c3aed',
-          theme: tenantData.theme || 'light',
-          status: tenantData.status || 'active',
+          name: tenant.name || '',
+          slug: tenant.slug || '',
+          domain: tenant.domain || '',
+          logoUrl: tenant.logoUrl || '',
+          faviconUrl: tenant.faviconUrl || '',
+          primaryColor: tenant.primaryColor || '#1a56db',
+          secondaryColor: tenant.secondaryColor || '#7c3aed',
+          theme: tenant.theme || 'light',
+          status: tenant.status || 'active',
         });
       } else {
-        setError('Tenant not found');
+        setError(data.error || 'Tenant not found');
       }
     } catch (error) {
       console.error('Error fetching tenant:', error);
@@ -115,14 +78,22 @@ export default function TenantEditPage() {
     setError(null);
 
     try {
-      // MOCK DATA - Replace with real API call when backend is ready
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+      const response = await fetch(`/api/admin/tenants/${tenantId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-      console.log('Saving tenant data:', formData);
+      const data = await response.json();
 
-      // Simulate successful save
-      alert('Tenant berhasil diupdate!');
-      router.push(`/admin/tenants/${tenantId}`);
+      if (data.success) {
+        alert('Tenant berhasil diupdate!');
+        router.push(`/admin/tenants/${tenantId}`);
+      } else {
+        setError(data.error || 'Failed to update tenant');
+      }
     } catch (error) {
       console.error('Error updating tenant:', error);
       setError('Failed to update tenant');

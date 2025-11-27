@@ -4,116 +4,47 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-
-// Mock users data for development
-const mockUsers = [
-  {
-    id: '1',
-    email: 'admin@autolumiku.com',
-    firstName: 'Super',
-    lastName: 'Admin',
-    role: 'super_admin',
-    emailVerified: true,
-    isActive: true,
-    createdAt: '2025-11-01T00:00:00Z',
-    lastLoginAt: '2025-11-23T10:30:00Z',
-  },
-  {
-    id: '2',
-    email: 'admin@showroomjakarta.com',
-    firstName: 'Admin',
-    lastName: 'Showroom',
-    role: 'admin',
-    tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
-    tenantName: 'Showroom Jakarta',
-    emailVerified: true,
-    isActive: true,
-    createdAt: '2025-11-02T00:00:00Z',
-    lastLoginAt: '2025-11-23T09:15:00Z',
-  },
-  {
-    id: '3',
-    email: 'manager@showroomjakarta.com',
-    firstName: 'Budi',
-    lastName: 'Santoso',
-    role: 'manager',
-    tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
-    tenantName: 'Showroom Jakarta',
-    emailVerified: true,
-    isActive: true,
-    createdAt: '2025-11-03T00:00:00Z',
-    lastLoginAt: '2025-11-23T08:45:00Z',
-  },
-  {
-    id: '4',
-    email: 'sales@showroomjakarta.com',
-    firstName: 'Siti',
-    lastName: 'Rahayu',
-    role: 'staff',
-    tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
-    tenantName: 'Showroom Jakarta',
-    emailVerified: true,
-    isActive: true,
-    createdAt: '2025-11-05T00:00:00Z',
-    lastLoginAt: '2025-11-22T16:20:00Z',
-  },
-  {
-    id: '5',
-    email: 'user@dealermobil.com',
-    firstName: 'Ahmad',
-    lastName: 'Pratama',
-    role: 'staff',
-    tenantId: '5536722c-78e5-4dcd-9d35-d16858add414' // MOCK_DATA,
-    tenantName: 'Dealer Mobil',
-    emailVerified: true,
-    isActive: false,
-    createdAt: '2025-11-10T00:00:00Z',
-    lastLoginAt: '2025-11-15T14:30:00Z',
-  },
-];
+import { prisma } from '@/lib/prisma';
 
 /**
  * GET /api/admin/users - List all users
  */
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const role = searchParams.get('role') || 'all';
-    const status = searchParams.get('status') || 'all';
-    const search = searchParams.get('search') || '';
+    // TODO: Add admin authentication check
+    // const session = await getServerSession(authOptions);
+    // if (!session || session.user.role !== 'super_admin') {
+    //   return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    // }
 
-    // Filter users
-    let filteredUsers = mockUsers;
-
-    if (role !== 'all') {
-      filteredUsers = filteredUsers.filter(user => user.role === role);
-    }
-
-    if (status !== 'all') {
-      const isActive = status === 'active';
-      filteredUsers = filteredUsers.filter(user => user.isActive === isActive);
-    }
-
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filteredUsers = filteredUsers.filter(user => 
-        user.email.toLowerCase().includes(searchLower) ||
-        user.firstName.toLowerCase().includes(searchLower) ||
-        user.lastName.toLowerCase().includes(searchLower) ||
-        (user.tenantName && user.tenantName.toLowerCase().includes(searchLower))
-      );
-    }
+    const users = await prisma.user.findMany({
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      data: filteredUsers,
-      total: filteredUsers.length,
+      data: users,
+      total: users.length,
     });
 
   } catch (error) {
     console.error('Users API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        success: false,
+        error: 'Internal server error'
+      },
       { status: 500 }
     );
   }
@@ -124,53 +55,97 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // TODO: Add admin authentication check
+
     const body = await request.json();
-    
+    const {
+      email,
+      firstName,
+      lastName,
+      password,
+      role,
+      tenantId,
+      isActive,
+      emailVerified,
+    } = body;
+
     // Validate required fields
-    if (!body.email || !body.firstName || !body.lastName || !body.password) {
+    if (!email || !firstName || !password || !role || !tenantId) {
       return NextResponse.json(
-        { error: 'Email, nama, dan password wajib diisi' },
+        {
+          success: false,
+          error: 'Email, nama, password, role, dan tenant wajib diisi',
+        },
         { status: 400 }
       );
     }
 
     // Check if email already exists
-    const existingUser = mockUsers.find(user => user.email === body.email);
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Email sudah terdaftar' },
+        {
+          success: false,
+          error: 'Email sudah terdaftar',
+        },
         { status: 409 }
       );
     }
 
-    // Create new user (mock)
-    const newUser = {
-      id: Date.now().toString(),
-      email: body.email,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      role: body.role,
-      tenantId: body.tenantId,
-      tenantName: body.tenantId ? mockUsers.find(u => u.id === body.tenantId)?.tenantName : undefined,
-      emailVerified: body.emailVerified || true,
-      isActive: body.isActive !== undefined ? body.isActive : true,
-      createdAt: new Date().toISOString(),
-      lastLoginAt: null,
-    };
+    // Check if tenant exists
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
 
-    // In production, save to database
-    console.log('Creating user:', newUser);
+    if (!tenant) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Tenant tidak ditemukan',
+        },
+        { status: 404 }
+      );
+    }
+
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        firstName,
+        lastName: lastName || '',
+        password, // TODO: Hash password before storing
+        role,
+        tenantId,
+        isActive: isActive !== undefined ? isActive : true,
+        emailVerified: emailVerified !== undefined ? emailVerified : false,
+      },
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
 
     return NextResponse.json({
       success: true,
       message: 'User berhasil dibuat',
-      data: newUser,
+      data: user,
     });
 
   } catch (error) {
     console.error('Create user error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        success: false,
+        error: 'Internal server error',
+      },
       { status: 500 }
     );
   }

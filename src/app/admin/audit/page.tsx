@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AuditLog {
   id: string;
@@ -30,63 +30,57 @@ interface AuditLog {
 }
 
 export default function AuditLogsPage() {
-  const [logs, setLogs] = useState<AuditLog[]>([
-    {
-      id: '1',
-      timestamp: new Date('2025-11-23T10:30:00'),
-      tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
-      tenantName: 'Showroom Jakarta Premium',
-      userId: 'f8e7d6c5-b4a3-4c5d-8e9f-1a2b3c4d5e6f', // MOCK_DATA
-      userName: 'Admin Showroom',
-      userEmail: 'admin@showroomjakarta.com',
-      action: 'CREATE_VEHICLE',
-      actionType: 'create',
-      resource: 'vehicle',
-      resourceId: 'veh-123',
-      ipAddress: '103.140.192.45',
-      userAgent: 'Mozilla/5.0...',
-      status: 'success',
-    },
-    {
-      id: '2',
-      timestamp: new Date('2025-11-23T10:25:00'),
-      tenantId: '5536722c-78e5-4dcd-9d35-d16858add414', // MOCK_DATA
-      tenantName: 'Auto Center Surabaya',
-      userId: 'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d', // MOCK_DATA
-      userName: 'Manager Sales',
-      userEmail: 'manager@autocenter.com',
-      action: 'UPDATE_PRICE',
-      actionType: 'update',
-      resource: 'vehicle',
-      resourceId: 'veh-456',
-      ipAddress: '36.85.71.22',
-      userAgent: 'Mozilla/5.0...',
-      status: 'success',
-      details: {
-        before: { price: 200000000 },
-        after: { price: 195000000 },
-      },
-    },
-    {
-      id: '3',
-      timestamp: new Date('2025-11-23T10:20:00'),
-      tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
-      tenantName: 'Showroom Jakarta Premium',
-      userId: '9e8d7c6b-5a4f-4e3d-2c1b-0a9b8c7d6e5f', // MOCK_DATA
-      userName: 'Sales Staff',
-      userEmail: 'sales@showroomjakarta.com',
-      action: 'LOGIN_FAILED',
-      actionType: 'security',
-      resource: 'auth',
-      resourceId: 'auth-789',
-      ipAddress: '103.140.192.45',
-      userAgent: 'Mozilla/5.0...',
-      status: 'failed',
-      details: {
-        reason: 'Invalid password',
-      },
-    },
-  ]);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAuditLogs();
+  }, []);
+
+  const fetchAuditLogs = async () => {
+    try {
+      setIsLoading(true);
+
+      const response = await fetch('/api/admin/audit?limit=100');
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        const mappedLogs: AuditLog[] = data.data.map((log: any) => ({
+          id: log.id,
+          timestamp: new Date(log.createdAt),
+          tenantId: log.tenantId,
+          tenantName: log.tenant?.name || 'Unknown',
+          userId: log.userId || '',
+          userName: log.user ? `${log.user.firstName} ${log.user.lastName}` : 'System',
+          userEmail: log.user?.email || '',
+          action: log.action,
+          actionType: getActionType(log.action),
+          resource: log.resourceType,
+          resourceId: log.resourceId || '',
+          ipAddress: log.ipAddress || '',
+          userAgent: log.userAgent || '',
+          status: 'success' as const,
+          details: {
+            before: log.oldValue,
+            after: log.newValue,
+          },
+        }));
+        setLogs(mappedLogs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch audit logs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getActionType = (action: string): 'create' | 'update' | 'delete' | 'access' | 'security' => {
+    if (action.includes('CREATE')) return 'create';
+    if (action.includes('UPDATE')) return 'update';
+    if (action.includes('DELETE')) return 'delete';
+    if (action.includes('LOGIN') || action.includes('SECURITY')) return 'security';
+    return 'access';
+  };
 
   const [filters, setFilters] = useState({
     tenantId: '',

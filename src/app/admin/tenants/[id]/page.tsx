@@ -52,99 +52,13 @@ export default function TenantDetailPage() {
     try {
       setIsLoading(true);
 
-      // MOCK DATA - Replace with real API call when backend is ready
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+      const response = await fetch(`/api/admin/tenants/${tenantId}`);
+      const data = await response.json();
 
-      const mockTenants: Record<string, TenantDetail> = {
-        '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed': {
-          id: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed',
-          name: 'Showroom Jakarta Premium',
-          slug: 'showroom-jakarta',
-          domain: undefined,
-          status: 'active',
-          logoUrl: undefined,
-          faviconUrl: undefined,
-          primaryColor: '#2563eb',
-          secondaryColor: '#7c3aed',
-          theme: 'light',
-          createdAt: '2025-11-02T00:00:00Z',
-          updatedAt: '2025-11-23T10:30:00Z',
-          createdBy: 'f8e7d6c5-b4a3-4c5d-8e9f-1a2b3c4d5e6f',
-          subscription: {
-            id: 'sub-001',
-            plan: 'enterprise',
-            status: 'active',
-            currentPeriodStart: '2025-11-27T00:00:00Z',
-            currentPeriodEnd: '2026-11-27T00:00:00Z',
-            pricePerMonth: 2500000,
-          },
-          _count: {
-            users: 3,
-            vehicles: 12,
-          },
-        },
-        '5536722c-78e5-4dcd-9d35-d16858add414': {
-          id: '5536722c-78e5-4dcd-9d35-d16858add414',
-          name: 'Auto Center Surabaya',
-          slug: 'autocenter-surabaya',
-          domain: undefined,
-          status: 'active',
-          logoUrl: undefined,
-          faviconUrl: undefined,
-          primaryColor: '#059669',
-          secondaryColor: '#0891b2',
-          theme: 'light',
-          createdAt: '2025-11-05T00:00:00Z',
-          updatedAt: '2025-11-22T14:20:00Z',
-          createdBy: 'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d',
-          subscription: {
-            id: 'sub-002',
-            plan: 'enterprise',
-            status: 'active',
-            currentPeriodStart: '2025-11-05T00:00:00Z',
-            currentPeriodEnd: '2026-11-05T00:00:00Z',
-            pricePerMonth: 2500000,
-          },
-          _count: {
-            users: 2,
-            vehicles: 8,
-          },
-        },
-        '3a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d': {
-          id: '3a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d',
-          name: 'Dealer Mobil Bandung',
-          slug: 'dealer-bandung',
-          domain: 'dealerbandung.com',
-          status: 'active',
-          logoUrl: undefined,
-          faviconUrl: undefined,
-          primaryColor: '#dc2626',
-          secondaryColor: '#ea580c',
-          theme: 'light',
-          createdAt: '2025-11-10T00:00:00Z',
-          updatedAt: '2025-11-23T09:15:00Z',
-          createdBy: 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e',
-          subscription: {
-            id: 'sub-003',
-            plan: 'enterprise',
-            status: 'active',
-            currentPeriodStart: '2025-11-10T00:00:00Z',
-            currentPeriodEnd: '2026-11-10T00:00:00Z',
-            pricePerMonth: 2500000,
-          },
-          _count: {
-            users: 4,
-            vehicles: 15,
-          },
-        },
-      };
-
-      const tenantData = mockTenants[tenantId];
-
-      if (tenantData) {
-        setTenant(tenantData);
+      if (data.success && data.data) {
+        setTenant(data.data);
       } else {
-        throw new Error('Tenant not found');
+        throw new Error(data.error || 'Tenant not found');
       }
     } catch (error) {
       console.error('Error fetching tenant:', error);

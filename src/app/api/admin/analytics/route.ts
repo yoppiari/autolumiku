@@ -4,63 +4,215 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
     // TODO: Add proper authentication in production
-    // For development, allow all requests
+    // const session = await getServerSession(authOptions);
+    // if (!session || session.user.role !== 'super_admin') {
+    //   return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    // }
 
     const searchParams = request.nextUrl.searchParams;
     const timeRange = searchParams.get('timeRange') || '7d';
 
-    // Mock analytics data for development
+    // Calculate date range
+    const now = new Date();
+    let startDate = new Date();
+
+    switch (timeRange) {
+      case '24h':
+        startDate.setHours(now.getHours() - 24);
+        break;
+      case '7d':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(now.getDate() - 90);
+        break;
+      default:
+        startDate.setDate(now.getDate() - 7);
+    }
+
+    // Get tenant summaries with real data
+    const tenants = await prisma.tenant.findMany({
+      include: {
+        _count: {
+          select: {
+            vehicles: true,
+            users: true,
+            leads: true,
+          },
+        },
+      },
+    });
+
+    const tenantSummary = await Promise.all(
+      tenants.map(async (tenant) => {
+        const soldVehicles = await prisma.vehicle.count({
+          where: {
+            tenantId: tenant.id,
+            status: 'sold',
+          },
+        });
+
+        const totalLeads = tenant._count.leads;
+        const conversionRate = tenant._count.vehicles > 0
+          ? ((soldVehicles / tenant._count.vehicles) * 100).toFixed(1)
+          : '0.0';
+
+        return {
+          tenantId: tenant.id,
+          tenantName: tenant.name,
+          totalVehicles: tenant._count.vehicles,
+          soldVehicles,
+          totalViews: Math.floor(Math.random() * 5000) + 1000, // Mock: view tracking not implemented
+          totalInquiries: totalLeads,
+          conversionRate: parseFloat(conversionRate),
+        };
+      })
+    );
+
+    // Get most sold vehicles
+    const soldVehicles = await prisma.vehicle.findMany({
+      where: {
+        status: 'sold',
+      },
+      include: {
+        tenant: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      take: 10,
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+
+    // Group by make/model for most sold
+    const soldByModel = soldVehicles.reduce((acc: any, vehicle) => {
+      const key = `${vehicle.make}-${vehicle.model}`;
+      if (!acc[key]) {
+        acc[key] = {
+          vehicleId: vehicle.id,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          count: 0,
+          tenantName: vehicle.tenant.name,
+        };
+      }
+      acc[key].count++;
+      return acc;
+    }, {});
+
+    const mostSold = Object.values(soldByModel)
+      .sort((a: any, b: any) => b.count - a.count)
+      .slice(0, 5);
+
+    // Get most collected (available vehicles)
+    const availableVehicles = await prisma.vehicle.findMany({
+      where: {
+        status: 'available',
+      },
+      include: {
+        tenant: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      take: 20,
+    });
+
+    const collectedByModel = availableVehicles.reduce((acc: any, vehicle) => {
+      const key = `${vehicle.make}-${vehicle.model}`;
+      if (!acc[key]) {
+        acc[key] = {
+          vehicleId: vehicle.id,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          count: 0,
+          tenantName: vehicle.tenant.name,
+        };
+      }
+      acc[key].count++;
+      return acc;
+    }, {});
+
+    const mostCollected = Object.values(collectedByModel)
+      .sort((a: any, b: any) => b.count - a.count)
+      .slice(0, 5);
+
+    // Get leads for most asked (inquiries)
+    const leads = await prisma.lead.findMany({
+      where: {
+        interestedIn: {
+          not: null,
+        },
+      },
+      include: {
+        tenant: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      take: 50,
+    });
+
+    const askedByVehicle = leads.reduce((acc: any, lead) => {
+      if (lead.interestedIn) {
+        const key = lead.interestedIn;
+        if (!acc[key]) {
+          acc[key] = {
+            vehicleId: lead.id,
+            make: lead.interestedIn.split(' ')[0] || 'Unknown',
+            model: lead.interestedIn.split(' ').slice(1).join(' ') || 'Unknown',
+            year: new Date().getFullYear(),
+            count: 0,
+            tenantName: lead.tenant.name,
+          };
+        }
+        acc[key].count++;
+      }
+      return acc;
+    }, {});
+
+    const mostAsked = Object.values(askedByVehicle)
+      .sort((a: any, b: any) => b.count - a.count)
+      .slice(0, 5);
+
+    // Time series data - mock for now (requires historical tracking)
+    const timeSeriesData = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      timeSeriesData.push({
+        date: date.toISOString().split('T')[0],
+        views: Math.floor(Math.random() * 2000) + 2000,
+        inquiries: Math.floor(Math.random() * 40) + 40,
+        sales: Math.floor(Math.random() * 15) + 10,
+        newVehicles: Math.floor(Math.random() * 10) + 5,
+      });
+    }
+
     const analyticsData = {
-      mostCollected: [
-        { vehicleId: '1', make: 'Toyota', model: 'Avanza', year: 2023, count: 45, tenantName: 'AutoMobil', percentage: 15.2 },
-        { vehicleId: '2', make: 'Honda', model: 'CR-V', year: 2023, count: 38, tenantName: 'HondaCenter', percentage: 12.8 },
-        { vehicleId: '3', make: 'Suzuki', model: 'Ertiga', year: 2023, count: 32, tenantName: 'SuzukiDealer', percentage: 10.8 },
-        { vehicleId: '4', make: 'Mitsubishi', model: 'Xpander', year: 2023, count: 28, tenantName: 'MitsubishiMotors', percentage: 9.5 },
-        { vehicleId: '5', make: 'Daihatsu', model: 'Xenia', year: 2023, count: 25, tenantName: 'AutoMobil', percentage: 8.4 }
-      ],
-      mostViewed: [
-        { vehicleId: '6', make: 'Toyota', model: 'Alphard', year: 2024, count: 1250, tenantName: 'LuxuryCars', percentage: 18.5 },
-        { vehicleId: '7', make: 'Mercedes', model: 'C-Class', year: 2024, count: 980, tenantName: 'EuroAuto', percentage: 14.5 },
-        { vehicleId: '8', make: 'Honda', model: 'Civic', year: 2024, count: 850, tenantName: 'HondaCenter', percentage: 12.6 },
-        { vehicleId: '9', make: 'Mazda', model: 'CX-5', year: 2024, count: 720, tenantName: 'MazdaDealer', percentage: 10.7 },
-        { vehicleId: '10', make: 'BMW', model: '3-Series', year: 2024, count: 650, tenantName: 'EuroAuto', percentage: 9.6 }
-      ],
-      mostAsked: [
-        { vehicleId: '11', make: 'Toyota', model: 'Kijang Innova', year: 2024, count: 156, tenantName: 'ToyotaDealer', percentage: 22.3 },
-        { vehicleId: '12', make: 'Honda', model: 'HR-V', year: 2024, count: 134, tenantName: 'HondaCenter', percentage: 19.2 },
-        { vehicleId: '13', make: 'Suzuki', model: 'Jimny', year: 2024, count: 98, tenantName: 'SuzukiDealer', percentage: 14.0 },
-        { vehicleId: '14', make: 'Mitsubishi', model: 'Pajero Sport', year: 2024, count: 87, tenantName: 'MitsubishiMotors', percentage: 12.4 },
-        { vehicleId: '15', make: 'Daihatsu', model: 'Terios', year: 2024, count: 76, tenantName: 'AutoMobil', percentage: 10.9 }
-      ],
-      mostSold: [
-        { vehicleId: '16', make: 'Toyota', model: 'Avanza', year: 2023, count: 28, tenantName: 'AutoMobil', percentage: 20.1 },
-        { vehicleId: '17', make: 'Honda', model: 'Brio', year: 2023, count: 22, tenantName: 'HondaCenter', percentage: 15.8 },
-        { vehicleId: '18', make: 'Suzuki', model: 'Carry Pick-up', year: 2023, count: 18, tenantName: 'SuzukiDealer', percentage: 12.9 },
-        { vehicleId: '19', make: 'Daihatsu', model: 'Ayla', year: 2023, count: 15, tenantName: 'AutoMobil', percentage: 10.8 },
-        { vehicleId: '20', make: 'Mitsubishi', model: 'L300', year: 2023, count: 12, tenantName: 'MitsubishiMotors', percentage: 8.6 }
-      ],
-      tenantSummary: [
-        { tenantId: '1', tenantName: 'AutoMobil', totalVehicles: 85, soldVehicles: 43, totalViews: 12500, totalInquiries: 234, conversionRate: 18.4 },
-        { tenantId: '2', tenantName: 'HondaCenter', totalVehicles: 72, soldVehicles: 37, totalViews: 10800, totalInquiries: 198, conversionRate: 18.7 },
-        { tenantId: '3', tenantName: 'SuzukiDealer', totalVehicles: 68, soldVehicles: 31, totalViews: 9200, totalInquiries: 167, conversionRate: 18.6 },
-        { tenantId: '4', tenantName: 'MitsubishiMotors', totalVehicles: 54, soldVehicles: 25, totalViews: 7800, totalInquiries: 143, conversionRate: 17.5 },
-        { tenantId: '5', tenantName: 'LuxuryCars', totalVehicles: 28, soldVehicles: 12, totalViews: 15600, totalInquiries: 89, conversionRate: 13.5 }
-      ],
-      timeSeriesData: [
-        { date: '2025-11-17', views: 2400, inquiries: 45, sales: 12, newVehicles: 8 },
-        { date: '2025-11-18', views: 2800, inquiries: 52, sales: 15, newVehicles: 12 },
-        { date: '2025-11-19', views: 3200, inquiries: 61, sales: 18, newVehicles: 6 },
-        { date: '2025-11-20', views: 2900, inquiries: 48, sales: 14, newVehicles: 9 },
-        { date: '2025-11-21', views: 3500, inquiries: 67, sales: 22, newVehicles: 15 },
-        { date: '2025-11-22', views: 3800, inquiries: 72, sales: 25, newVehicles: 11 },
-        { date: '2025-11-23', views: 4200, inquiries: 85, sales: 28, newVehicles: 18 }
-      ],
+      mostCollected,
+      mostViewed: mostCollected, // Mock: view tracking not implemented
+      mostAsked: mostAsked.length > 0 ? mostAsked : mostCollected,
+      mostSold: mostSold.length > 0 ? mostSold : mostCollected,
+      tenantSummary,
+      timeSeriesData,
       generated: new Date().toISOString(),
-      timeRange
+      timeRange,
     };
 
     return NextResponse.json(analyticsData);
