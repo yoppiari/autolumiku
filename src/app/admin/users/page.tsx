@@ -70,7 +70,7 @@ export default function UsersPage() {
           firstName: 'Admin',
           lastName: 'Showroom',
           role: 'admin',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
+          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
           tenantName: 'Showroom Jakarta',
           emailVerified: true,
           isActive: true,
