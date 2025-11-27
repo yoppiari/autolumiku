@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         const soldVehicles = await prisma.vehicle.count({
           where: {
             tenantId: tenant.id,
-            status: 'sold',
+            status: 'SOLD',
           },
         });
 
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     // Get most sold vehicles
     const soldVehicles = await prisma.vehicle.findMany({
       where: {
-        status: 'sold',
+        status: 'SOLD',
       },
       include: {
         tenant: {
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
     // Get most collected (available vehicles)
     const availableVehicles = await prisma.vehicle.findMany({
       where: {
-        status: 'available',
+        status: 'AVAILABLE',
       },
       include: {
         tenant: {
@@ -162,15 +162,27 @@ export async function GET(request: NextRequest) {
           not: null,
         },
       },
-      include: {
-        tenant: {
-          select: {
-            name: true,
-          },
-        },
-      },
       take: 50,
     });
+
+    // Get tenant names for leads
+    const tenantIds = [...new Set(leads.map(l => l.tenantId))];
+    const tenantsForLeads = await prisma.tenant.findMany({
+      where: {
+        id: {
+          in: tenantIds,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    const tenantMap = tenantsForLeads.reduce((acc: any, t) => {
+      acc[t.id] = t.name;
+      return acc;
+    }, {});
 
     const askedByVehicle = leads.reduce((acc: any, lead) => {
       if (lead.interestedIn) {
@@ -182,7 +194,7 @@ export async function GET(request: NextRequest) {
             model: lead.interestedIn.split(' ').slice(1).join(' ') || 'Unknown',
             year: new Date().getFullYear(),
             count: 0,
-            tenantName: lead.tenant.name,
+            tenantName: tenantMap[lead.tenantId] || 'Unknown',
           };
         }
         acc[key].count++;
@@ -223,8 +235,15 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Analytics API error:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
