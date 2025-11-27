@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 
 type BlogStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'ARCHIVED';
 type BlogCategory =
@@ -56,7 +55,7 @@ const STATUS_COLORS: Record<BlogStatus, string> = {
 
 export default function BlogListPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const [tenantId, setTenantId] = useState<string>('');
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -73,23 +72,34 @@ export default function BlogListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
+  // Load tenantId from localStorage
   useEffect(() => {
-    fetchPosts();
-  }, [pagination.page, statusFilter, categoryFilter]);
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setTenantId(parsedUser.tenantId || '');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tenantId) {
+      fetchPosts();
+    }
+  }, [tenantId, pagination.page, statusFilter, categoryFilter]);
 
   const fetchPosts = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      if (!user?.tenantId) {
+      if (!tenantId) {
         setError('User tenant information not found');
         setIsLoading(false);
         return;
       }
 
       const params = new URLSearchParams({
-        tenantId: user.tenantId, // ✅ From auth context
+        tenantId: tenantId,
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
       });
