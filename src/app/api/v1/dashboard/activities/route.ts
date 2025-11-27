@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
         where: { tenantId },
         select: {
           id: true,
-          customerName: true,
-          vehicleName: true,
+          name: true,
+          interestedIn: true,
           createdAt: true,
           source: true,
         },
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       activities.push({
         type: 'LEAD',
         icon: 'blue',
-        message: `Lead baru dari ${lead.vehicleName || 'kendaraan'}${lead.customerName ? ` - ${lead.customerName}` : ''}`,
+        message: `Lead baru dari ${lead.name}${lead.interestedIn ? ` - ${lead.interestedIn}` : ''}`,
         timestamp: lead.createdAt,
         details: {
           source: lead.source,

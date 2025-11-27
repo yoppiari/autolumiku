@@ -74,11 +74,10 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Team members (active users)
+      // Team members (all users)
       prisma.user.count({
         where: {
           tenantId,
-          status: 'ACTIVE',
         },
       }),
 

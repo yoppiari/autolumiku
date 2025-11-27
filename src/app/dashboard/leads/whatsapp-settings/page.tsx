@@ -62,8 +62,9 @@ export default function WhatsAppSettingsPage() {
           throw new Error(`Failed to fetch settings: ${response.statusText}`);
         }
 
-        const data = await response.json();
-        setSettings(data);
+        const result = await response.json();
+        // API returns single object, wrap in array for consistency
+        setSettings(result.data ? [result.data] : []);
       } catch (error) {
         console.error('Error loading WhatsApp settings:', error);
         alert('Gagal memuat WhatsApp settings. Silakan coba lagi.');
@@ -96,7 +97,8 @@ export default function WhatsAppSettingsPage() {
         throw new Error(`Failed to toggle active status: ${response.statusText}`);
       }
 
-      const savedSetting = await response.json();
+      const result = await response.json();
+      const savedSetting = result.data;
 
       // Update local state
       setSettings(prev => prev.map(setting =>
@@ -127,7 +129,8 @@ export default function WhatsAppSettingsPage() {
         throw new Error(`Failed to save setting: ${response.statusText}`);
       }
 
-      const savedSetting = await response.json();
+      const result = await response.json();
+      const savedSetting = result.data;
 
       // Update local state with the saved setting
       setSettings(prev => {
@@ -245,7 +248,7 @@ export default function WhatsAppSettingsPage() {
 
         <div className="flex space-x-4">
           <Link
-            href="/admin/leads"
+            href="/dashboard/leads"
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             ← Kembali ke Leads

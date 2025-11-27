@@ -41,7 +41,7 @@ export default function WhatsAppSettingsPage() {
       const mockSettings: WhatsAppSettings[] = [
         {
           id: '1',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
+          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
           tenantName: 'Showroom Jakarta',
           phoneNumber: '+62-21-5550-1234',
           isActive: true,
@@ -57,7 +57,7 @@ export default function WhatsAppSettingsPage() {
         },
         {
           id: '2',
-          tenantId: '5536722c-78e5-4dcd-9d35-d16858add414' // MOCK_DATA,
+          tenantId: '5536722c-78e5-4dcd-9d35-d16858add414', // MOCK_DATA
           tenantName: 'Dealer Mobil',
           phoneNumber: '+62-22-6666-5678',
           isActive: true,
@@ -73,7 +73,7 @@ export default function WhatsAppSettingsPage() {
         },
         {
           id: '3',
-          tenantId: '508b3141-31c4-47fb-8473-d5b5ba940ac6' // MOCK_DATA,
+          tenantId: '508b3141-31c4-47fb-8473-d5b5ba940ac6', // MOCK_DATA
           tenantName: 'AutoMobil',
           phoneNumber: '+62-24-7777-8901',
           isActive: false,
@@ -131,7 +131,7 @@ export default function WhatsAppSettingsPage() {
   const handleAddNew = () => {
     const newSetting: WhatsAppSettings = {
       id: Date.now().toString(),
-      tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
+      tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
       tenantName: 'New Tenant',
       phoneNumber: '+62-',
       isActive: true,
