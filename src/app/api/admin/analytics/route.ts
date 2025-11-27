@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
           select: {
             vehicles: true,
             users: true,
-            leads: true,
           },
         },
       },
@@ -60,7 +59,12 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        const totalLeads = tenant._count.leads;
+        const totalLeads = await prisma.lead.count({
+          where: {
+            tenantId: tenant.id,
+          },
+        });
+
         const conversionRate = tenant._count.vehicles > 0
           ? ((soldVehicles / tenant._count.vehicles) * 100).toFixed(1)
           : '0.0';
