@@ -83,8 +83,8 @@ export default function UsersPage() {
           firstName: 'Budi',
           lastName: 'Santoso',
           role: 'manager',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
-          tenantName: 'Showroom Jakarta',
+          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
+          tenantName: 'Showroom Jakarta Premium',
           emailVerified: true,
           isActive: true,
           createdAt: '2025-11-03T00:00:00Z',
@@ -96,8 +96,8 @@ export default function UsersPage() {
           firstName: 'Siti',
           lastName: 'Rahayu',
           role: 'staff',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed' // MOCK_DATA,
-          tenantName: 'Showroom Jakarta',
+          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
+          tenantName: 'Showroom Jakarta Premium',
           emailVerified: true,
           isActive: true,
           createdAt: '2025-11-05T00:00:00Z',
@@ -109,8 +109,8 @@ export default function UsersPage() {
           firstName: 'Ahmad',
           lastName: 'Pratama',
           role: 'staff',
-          tenantId: '5536722c-78e5-4dcd-9d35-d16858add414' // MOCK_DATA,
-          tenantName: 'Dealer Mobil',
+          tenantId: '5536722c-78e5-4dcd-9d35-d16858add414', // MOCK_DATA
+          tenantName: 'Auto Center Surabaya',
           emailVerified: true,
           isActive: false,
           createdAt: '2025-11-10T00:00:00Z',
