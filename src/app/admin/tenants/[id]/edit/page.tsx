@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import ImageUpload from '@/components/admin/image-upload';
 
 interface TenantEditForm {
   name: string;
   slug: string;
   domain: string;
+  logoUrl: string;
+  faviconUrl: string;
   primaryColor: string;
   secondaryColor: string;
   theme: string;
@@ -22,6 +25,8 @@ export default function TenantEditPage() {
     name: '',
     slug: '',
     domain: '',
+    logoUrl: '',
+    faviconUrl: '',
     primaryColor: '#1a56db',
     secondaryColor: '#7c3aed',
     theme: 'light',
@@ -48,6 +53,8 @@ export default function TenantEditPage() {
           name: 'Showroom Jakarta Premium',
           slug: 'showroom-jakarta',
           domain: '',
+          logoUrl: '',
+          faviconUrl: '',
           primaryColor: '#2563eb',
           secondaryColor: '#7c3aed',
           theme: 'light',
@@ -57,6 +64,8 @@ export default function TenantEditPage() {
           name: 'Auto Center Surabaya',
           slug: 'autocenter-surabaya',
           domain: '',
+          logoUrl: '',
+          faviconUrl: '',
           primaryColor: '#059669',
           secondaryColor: '#0891b2',
           theme: 'light',
@@ -66,6 +75,8 @@ export default function TenantEditPage() {
           name: 'Dealer Mobil Bandung',
           slug: 'dealer-bandung',
           domain: 'dealerbandung.com',
+          logoUrl: '',
+          faviconUrl: '',
           primaryColor: '#dc2626',
           secondaryColor: '#ea580c',
           theme: 'light',
@@ -80,6 +91,8 @@ export default function TenantEditPage() {
           name: tenantData.name || '',
           slug: tenantData.slug || '',
           domain: tenantData.domain || '',
+          logoUrl: tenantData.logoUrl || '',
+          faviconUrl: tenantData.faviconUrl || '',
           primaryColor: tenantData.primaryColor || '#1a56db',
           secondaryColor: tenantData.secondaryColor || '#7c3aed',
           theme: tenantData.theme || 'light',
@@ -120,6 +133,40 @@ export default function TenantEditPage() {
 
   const handleChange = (field: keyof TenantEditForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    // MOCK DATA - Replace with real upload API when backend is ready
+    console.log('Uploading logo:', file.name);
+
+    // Simulate file upload and create a preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const logoUrl = reader.result as string;
+      setFormData(prev => ({ ...prev, logoUrl }));
+      console.log('Logo uploaded successfully');
+    };
+    reader.readAsDataURL(file);
+
+    // Simulate upload delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  };
+
+  const handleFaviconUpload = async (file: File) => {
+    // MOCK DATA - Replace with real upload API when backend is ready
+    console.log('Uploading favicon:', file.name);
+
+    // Simulate file upload and create a preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const faviconUrl = reader.result as string;
+      setFormData(prev => ({ ...prev, faviconUrl }));
+      console.log('Favicon uploaded successfully');
+    };
+    reader.readAsDataURL(file);
+
+    // Simulate upload delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
   };
 
   if (isLoading) {
@@ -226,9 +273,31 @@ export default function TenantEditPage() {
           </div>
         </div>
 
+        {/* Logo & Favicon */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Logo & Favicon</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Logo dan favicon yang di-upload akan digunakan di website catalog showroom Anda
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ImageUpload
+              label="Logo Showroom"
+              currentImageUrl={formData.logoUrl}
+              onUpload={handleLogoUpload}
+              helpText="PNG, JPG, atau SVG (max 5MB)"
+            />
+            <ImageUpload
+              label="Favicon"
+              currentImageUrl={formData.faviconUrl}
+              onUpload={handleFaviconUpload}
+              helpText="PNG, JPG, atau SVG (max 5MB) - Disarankan ukuran 32x32px"
+            />
+          </div>
+        </div>
+
         {/* Branding */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Branding</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Warna & Tema</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="primaryColor" className="block text-sm font-medium text-gray-700 mb-1">
