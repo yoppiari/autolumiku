@@ -12,6 +12,7 @@ import CatalogHeader from '@/components/catalog/CatalogHeader';
 import CatalogFooter from '@/components/catalog/CatalogFooter';
 import HeroSection from '@/components/catalog/HeroSection';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
+import { Button } from '@/components/ui/button';
 
 interface PageProps {
   params: {
@@ -237,41 +238,37 @@ export default function CatalogPage({ params }: PageProps) {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-2">
-                <button
+                <Button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
                 >
                   Sebelumnya
-                </button>
+                </Button>
 
                 <div className="flex gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                     (page) => (
-                      <button
+                      <Button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-4 py-2 rounded-md ${
-                          currentPage === page
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white border border-gray-300 hover:bg-gray-50'
-                        }`}
+                        variant={currentPage === page ? 'default' : 'outline'}
                       >
                         {page}
-                      </button>
+                      </Button>
                     )
                   )}
                 </div>
 
-                <button
+                <Button
                   onClick={() =>
                     setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
                 >
                   Selanjutnya
-                </button>
+                </Button>
               </div>
             )}
           </>
@@ -299,12 +296,9 @@ export default function CatalogPage({ params }: PageProps) {
             <p className="text-gray-600 mb-4">
               Coba ubah filter pencarian Anda
             </p>
-            <button
-              onClick={handleClearFilters}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
+            <Button onClick={handleClearFilters}>
               Reset Filter
-            </button>
+            </Button>
           </div>
         )}
       </div>
