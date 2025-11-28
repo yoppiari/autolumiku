@@ -154,7 +154,10 @@ export default function BlogListPage() {
       const response = await fetch(`/api/v1/blog/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'PUBLISHED' }),
+        body: JSON.stringify({
+          status: 'PUBLISHED',
+          tenantId, // ✅ FIX: Add tenantId for API security validation
+        }),
       });
 
       if (!response.ok) {

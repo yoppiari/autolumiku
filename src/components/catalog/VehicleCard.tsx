@@ -1,15 +1,17 @@
 /**
  * Vehicle Card Component for Catalog
  * Updated to use shadcn/ui components
+ * WITH WhatsApp AI Dual Contact (Story 8.6)
  */
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import WhatsAppContactModal from './WhatsAppContactModal';
 
 interface VehicleCardProps {
   vehicle: {
@@ -31,35 +33,18 @@ interface VehicleCardProps {
 }
 
 export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }: VehicleCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const formatPrice = (price: number) => {
     const rupiah = price / 100;
-    return `Rp ${rupiah.toFixed(0)} jt`;
+    return `Rp ${rupiah.toLocaleString('id-ID')}`;
   };
 
   const handleWhatsAppClick = async () => {
-    // Track WhatsApp click
-    if (tenantId) {
-      try {
-        await fetch('/api/v1/leads/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tenantId,
-            vehicleId: vehicle.id,
-            source: 'whatsapp_catalog',
-            metadata: {
-              vehicleName: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
-              price: vehicle.price,
-              slug,
-            },
-          }),
-        });
-      } catch (error) {
-        console.error('Failed to track WhatsApp click:', error);
-      }
-    }
+    // Open dual contact modal
+    setIsModalOpen(true);
 
-    // Call the original handler
+    // Call the original handler if provided
     if (onWhatsAppClick) {
       onWhatsAppClick(vehicle);
     }
@@ -157,6 +142,22 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
           WA
         </Button>
       </CardFooter>
+
+      {/* WhatsApp Contact Modal (AI vs Human) */}
+      {tenantId && (
+        <WhatsAppContactModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          vehicle={{
+            id: vehicle.id,
+            make: vehicle.make,
+            model: vehicle.model,
+            year: vehicle.year,
+            price: vehicle.price,
+          }}
+          tenantId={tenantId}
+        />
+      )}
     </Card>
   );
 }
