@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
         isConnected: account.isActive,
         phoneNumber: account.phoneNumber,
         clientId: account.clientId,
+        qrCode: account.qrCode,
         connectionStatus: account.connectionStatus,
         lastConnectedAt: account.lastConnectedAt,
         totalConversations,

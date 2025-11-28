@@ -129,6 +129,32 @@ export default function WhatsAppAIConfigPage() {
     }
   };
 
+  // Disconnect WhatsApp
+  const handleDisconnect = async () => {
+    if (!confirm('Are you sure you want to disconnect WhatsApp? You will need to scan the QR code again to reconnect.')) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/whatsapp-ai/disconnect?tenantId=${tenantId}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        router.push('/dashboard/whatsapp-ai/setup');
+      } else {
+        setSaveMessage({ type: 'error', text: data.error || 'Failed to disconnect' });
+      }
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+      setSaveMessage({ type: 'error', text: 'Error disconnecting WhatsApp' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -167,14 +193,12 @@ export default function WhatsAppAIConfigPage() {
       {/* Save Message */}
       {saveMessage && (
         <div
-          className={`mb-6 p-4 rounded-lg ${
-            saveMessage.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-          }`}
+          className={`mb-6 p-4 rounded-lg ${saveMessage.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+            }`}
         >
           <p
-            className={`${
-              saveMessage.type === 'success' ? 'text-green-800' : 'text-red-800'
-            }`}
+            className={`${saveMessage.type === 'success' ? 'text-green-800' : 'text-red-800'
+              }`}
           >
             {saveMessage.text}
           </p>
@@ -409,21 +433,30 @@ export default function WhatsAppAIConfigPage() {
           </div>
         </div>
 
-        {/* Save Button */}
-        <div className="flex justify-end space-x-4">
+        {/* Actions */}
+        <div className="flex justify-between items-center pt-6 border-t border-gray-200">
           <button
-            onClick={() => router.push('/dashboard/whatsapp-ai')}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            onClick={handleDisconnect}
+            className="px-6 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
           >
-            Cancel
+            Disconnect WhatsApp
           </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSaving ? 'Saving...' : 'Save Configuration'}
-          </button>
+
+          <div className="flex space-x-4">
+            <button
+              onClick={() => router.push('/dashboard/whatsapp-ai')}
+              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? 'Saving...' : 'Save Configuration'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

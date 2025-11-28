@@ -79,27 +79,57 @@ export class AimeowClientService {
       }
 
       const data = await response.json();
-      const clientId = data.clientId;
+      const clientId = data.clientId || data.id;
 
-      // Simpan ke database
-      await prisma.aimeowAccount.create({
-        data: {
+      if (!clientId) {
+        throw new Error("Failed to get client ID from Aimeow API");
+      }
+
+      // Fetch the actual QR code string (raw data)
+      const clientStatusResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`);
+      let rawQrCode = "";
+
+      if (clientStatusResponse.ok) {
+        const clientData = await clientStatusResponse.json();
+        rawQrCode = clientData.qrCode || "";
+      } else {
+        console.warn(`Failed to fetch client status for QR code: ${clientStatusResponse.statusText}`);
+      }
+
+      // Fallback to qrUrl if rawQrCode is empty (though unlikely to work for display if it's localhost)
+      const qrCodeToSave = rawQrCode || data.qr || data.qrUrl;
+
+      // Simpan ke database (upsert untuk handle re-initialization)
+      const account = await prisma.aimeowAccount.upsert({
+        where: { tenantId },
+        update: {
+          clientId,
+          connectionStatus: "qr_ready", // Status dari Aimeow: qr_ready
+          qrCode: qrCodeToSave, // Raw QR string
+          qrCodeExpiresAt: new Date(Date.now() + 120000), // QR expired dalam 120 detik
+          isActive: false,
+        },
+        create: {
           tenantId,
           clientId,
-          apiKey: "", // Tidak perlu API key berdasarkan user input
+          apiKey: "",
           phoneNumber: "",
           isActive: false,
-          connectionStatus: "qr_ready", // Status dari Aimeow: qr_ready
-          qrCode: data.qr, // Field 'qr' dari Aimeow API response
-          qrCodeExpiresAt: new Date(Date.now() + 120000), // QR expired dalam 120 detik
+          connectionStatus: "qr_ready",
+          qrCode: data.qr || data.qrUrl,
+          qrCodeExpiresAt: new Date(Date.now() + 120000),
         },
       });
 
-      // Create default AI config
-      await prisma.whatsAppAIConfig.create({
-        data: {
+      // Create or update default AI config
+      await prisma.whatsAppAIConfig.upsert({
+        where: { tenantId },
+        update: {
+          accountId: account.id,
+        },
+        create: {
           tenantId,
-          accountId: "", // Will be updated after account creation
+          accountId: account.id,
           welcomeMessage: "Halo! 👋 Saya asisten virtual showroom. Ada yang bisa saya bantu?",
           aiName: "AI Assistant",
           aiPersonality: "friendly",
@@ -120,22 +150,10 @@ export class AimeowClientService {
         },
       });
 
-      // Update accountId in config
-      const account = await prisma.aimeowAccount.findUnique({
-        where: { clientId },
-      });
-
-      if (account) {
-        await prisma.whatsAppAIConfig.updateMany({
-          where: { tenantId },
-          data: { accountId: account.id },
-        });
-      }
-
       return {
         success: true,
         clientId,
-        qrCode: data.qr, // Field 'qr' dari Aimeow API response
+        qrCode: qrCodeToSave,
       };
     } catch (error: any) {
       console.error("Failed to initialize Aimeow client:", error);
@@ -164,8 +182,9 @@ export class AimeowClientService {
       const data = await response.json();
 
       // Map Aimeow status to our status
-      const isConnected = data.status === "connected";
-      const connectionStatus = data.status; // "qr_ready", "connected", "disconnected"
+      // API returns isConnected as boolean
+      const isConnected = data.isConnected === true;
+      const connectionStatus = isConnected ? "connected" : "qr_ready"; // "qr_ready", "connected", "disconnected"
 
       // Update database
       await prisma.aimeowAccount.update({
@@ -175,6 +194,7 @@ export class AimeowClientService {
           phoneNumber: data.phoneNumber || undefined,
           isActive: isConnected,
           lastConnectedAt: isConnected ? new Date() : undefined,
+          qrCode: data.qrCode || undefined, // Update QR code if available
         },
       });
 
@@ -182,6 +202,7 @@ export class AimeowClientService {
         clientId,
         phoneNumber: data.phoneNumber,
         isConnected,
+        qrCode: data.qrCode,
         lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
       };
     } catch (error) {
@@ -309,7 +330,22 @@ export class AimeowClientService {
       }
 
       const data = await response.json();
-      const newClientId = data.clientId;
+      const newClientId = data.clientId || data.id;
+
+      if (!newClientId) {
+        throw new Error("Failed to get new client ID from Aimeow API");
+      }
+
+      // Fetch the actual QR code string (raw data)
+      const clientStatusResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${newClientId}`);
+      let rawQrCode = "";
+
+      if (clientStatusResponse.ok) {
+        const clientData = await clientStatusResponse.json();
+        rawQrCode = clientData.qrCode || "";
+      }
+
+      const qrCodeToSave = rawQrCode || data.qr || data.qrUrl;
 
       // 4. Update database dengan client ID baru
       await prisma.aimeowAccount.update({
@@ -317,7 +353,7 @@ export class AimeowClientService {
         data: {
           clientId: newClientId,
           connectionStatus: "qr_ready",
-          qrCode: data.qr,
+          qrCode: qrCodeToSave,
           qrCodeExpiresAt: new Date(Date.now() + 120000),
           isActive: false,
           phoneNumber: "",
@@ -327,7 +363,7 @@ export class AimeowClientService {
       return {
         success: true,
         clientId: newClientId,
-        qrCode: data.qr,
+        qrCode: qrCodeToSave,
       };
     } catch (error: any) {
       console.error("Failed to restart client:", error);
@@ -380,18 +416,35 @@ export class AimeowClientService {
 
       const data = await response.json();
 
+      // Note: getQRCode endpoint usually returns HTML or raw string depending on implementation
+      // But based on our findings, we might need to fetch client details to get the raw string
+      // However, let's assume for this method we might get it from the response if it's the /qr endpoint
+      // If this is the /api/v1/clients/{id}/qr endpoint (which returns JSON), then data.qrCode should be there.
+      // If it's the HTML endpoint, this fetch would fail or return HTML string.
+      // Let's try to fetch client details to be safe if data.qrCode is missing.
+
+      let qrCodeToSave = data.qrCode || data.qr || data.qrUrl;
+
+      if (!qrCodeToSave) {
+        const clientStatusResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`);
+        if (clientStatusResponse.ok) {
+          const clientData = await clientStatusResponse.json();
+          qrCodeToSave = clientData.qrCode;
+        }
+      }
+
       // Update database dengan QR baru
       await prisma.aimeowAccount.update({
         where: { clientId },
         data: {
-          qrCode: data.qr,
+          qrCode: qrCodeToSave,
           qrCodeExpiresAt: new Date(Date.now() + 120000),
         },
       });
 
       return {
         success: true,
-        qrCode: data.qr,
+        qrCode: qrCodeToSave,
       };
     } catch (error: any) {
       console.error("Failed to get QR code:", error);

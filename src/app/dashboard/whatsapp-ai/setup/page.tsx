@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { QRCodeSVG } from 'qrcode.react';
 
 type SetupStep = 'init' | 'qr' | 'connecting' | 'success' | 'error';
 
@@ -63,6 +64,7 @@ export default function WhatsAppSetupPage() {
 
       setQrCode(data.data.qrCode);
       setClientId(data.data.clientId);
+      console.log('QR Code data:', data.data.qrCode); // Debugging
 
       // Start polling for connection status
       startPollingStatus(data.data.clientId);
@@ -83,21 +85,27 @@ export default function WhatsAppSetupPage() {
         const response = await fetch(`/api/v1/whatsapp-ai/status?clientId=${clientIdToCheck}`);
         const data = await response.json();
 
-        if (data.success && data.data.isConnected) {
-          // Connected!
-          setPhoneNumber(data.data.phoneNumber);
-          setStep('success');
-          setIsPolling(false);
-
-          // Clear interval
-          if (pollIntervalRef.current) {
-            clearInterval(pollIntervalRef.current);
+        if (data.success) {
+          if (data.data.qrCode) {
+            setQrCode(data.data.qrCode);
           }
 
-          // Redirect to config after 2 seconds
-          setTimeout(() => {
-            router.push('/dashboard/whatsapp-ai/config');
-          }, 2000);
+          if (data.data.isConnected) {
+            // Connected!
+            setPhoneNumber(data.data.phoneNumber);
+            setStep('success');
+            setIsPolling(false);
+
+            // Clear interval
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+            }
+
+            // Redirect to config after 2 seconds
+            setTimeout(() => {
+              router.push('/dashboard/whatsapp-ai/config');
+            }, 2000);
+          }
         }
       } catch (err) {
         console.error('Error polling status:', err);
@@ -156,27 +164,24 @@ export default function WhatsAppSetupPage() {
       <div className="mb-8">
         <div className="flex items-center justify-center space-x-4">
           <div className={`flex items-center ${step !== 'init' ? 'text-green-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              step !== 'init' ? 'bg-green-100' : 'bg-gray-100'
-            }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step !== 'init' ? 'bg-green-100' : 'bg-gray-100'
+              }`}>
               {step !== 'init' ? '✓' : '1'}
             </div>
             <span className="ml-2 text-sm font-medium">Initialize</span>
           </div>
           <div className="w-16 h-1 bg-gray-200"></div>
           <div className={`flex items-center ${step === 'success' ? 'text-green-600' : step === 'qr' || step === 'connecting' ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              step === 'success' ? 'bg-green-100' : step === 'qr' || step === 'connecting' ? 'bg-blue-100' : 'bg-gray-100'
-            }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 'success' ? 'bg-green-100' : step === 'qr' || step === 'connecting' ? 'bg-blue-100' : 'bg-gray-100'
+              }`}>
               {step === 'success' ? '✓' : '2'}
             </div>
             <span className="ml-2 text-sm font-medium">Connect</span>
           </div>
           <div className="w-16 h-1 bg-gray-200"></div>
           <div className={`flex items-center ${step === 'success' ? 'text-green-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              step === 'success' ? 'bg-green-100' : 'bg-gray-100'
-            }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 'success' ? 'bg-green-100' : 'bg-gray-100'
+              }`}>
               {step === 'success' ? '✓' : '3'}
             </div>
             <span className="ml-2 text-sm font-medium">Done</span>
@@ -224,11 +229,20 @@ export default function WhatsAppSetupPage() {
             {qrCode ? (
               <div className="flex flex-col items-center">
                 <div className="bg-white p-4 rounded-lg border-4 border-green-500 mb-4">
-                  <img
-                    src={qrCode}
-                    alt="WhatsApp QR Code"
-                    className="w-64 h-64"
-                  />
+                  {qrCode.startsWith('http') ? (
+                    <img
+                      src={qrCode}
+                      alt="WhatsApp QR Code"
+                      className="w-64 h-64"
+                    />
+                  ) : (
+                    <QRCodeSVG
+                      value={qrCode}
+                      size={256}
+                      level={"L"}
+                      includeMargin={true}
+                    />
+                  )}
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
