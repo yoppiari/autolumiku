@@ -553,7 +553,7 @@ class PuppeteerOLXScraper {
           const metaSection = listing.querySelector('[data-aut-id="itemDetails"]');
           if (metaSection) {
             // Location is usually in span elements within the details
-            const spans = metaSection.querySelectorAll('span');
+            const spans = Array.from(metaSection.querySelectorAll('span'));
             for (const span of spans) {
               const text = span.textContent?.trim() || '';
               // Location patterns: contains city names or "Kab.", "Kota"

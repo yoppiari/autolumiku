@@ -352,7 +352,7 @@ export default function AnalyticsPage() {
             </span>
           </li>
           <li className="flex items-start">
-            <span className={analytics.overview.escalationRate > 20 ? 'text-orange-600' : 'text-green-600'} mr-2">
+            <span className={`${analytics.overview.escalationRate > 20 ? 'text-orange-600' : 'text-green-600'} mr-2`}>
               {analytics.overview.escalationRate > 20 ? '!' : '✓'}
             </span>
             <span>

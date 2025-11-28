@@ -26,7 +26,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     console.log('Submitting login form:', formData); // Debug log
 
     try {
@@ -144,39 +144,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">Don&#x27;t have an account? </span>
-            <a className="text-blue-600 hover:text-blue-700 font-medium" href="/signup">Sign up</a>
-          </div>
-          <div className="mt-4 text-center">
-            <a
-              href="/admin/login"
-              className="text-sm text-gray-600 hover:text-gray-700"
-            >
-              Super Admin Login →
-            </a>
-          </div>
 
-          <div className="mt-6 relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">New to AutoLumiKu?</span>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <Link href="/signup/tenant" className="block w-full">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 py-2 rounded-lg font-medium transition-colors"
-              >
-                Create your dealership
-              </Button>
-            </Link>
-          </div>
         </CardContent>
       </Card>
     </div>

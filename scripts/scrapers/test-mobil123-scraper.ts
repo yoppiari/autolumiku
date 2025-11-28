@@ -221,4 +221,5 @@ if (require.main === module) {
   main();
 }
 
-export { Mobil123Scraper, ScrapedVehicle };
+export { Mobil123Scraper };
+export type { ScrapedVehicle };

@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     const staffCommands = await prisma.staffCommandLog.count({
       where: {
         tenantId,
-        createdAt: { gte: todayStart },
+        executedAt: { gte: todayStart },
       },
     });
 

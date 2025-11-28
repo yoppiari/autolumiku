@@ -74,7 +74,7 @@ export default async function ShowroomHomePage() {
       fuelType: true,
       photos: {
         take: 1,
-        orderBy: { order: 'asc' },
+        orderBy: { createdAt: 'asc' },
         select: { thumbnailUrl: true, originalUrl: true },
       },
     },

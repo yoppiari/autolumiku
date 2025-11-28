@@ -64,25 +64,22 @@ export class AimeowClientService {
     error?: string;
   }> {
     try {
-      // Generate unique client ID untuk tenant
-      const clientId = `tenant_${tenantId}_${Date.now()}`;
-
-      // Request QR code dari Aimeow
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/client/init`, {
+      // Request QR code dari Aimeow - API akan generate clientId otomatis
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/new`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          clientId,
-        }),
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
-        throw new Error(`Aimeow API error: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Aimeow API error: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
+      const clientId = data.clientId;
 
       // Simpan ke database
       await prisma.aimeowAccount.create({
@@ -92,9 +89,9 @@ export class AimeowClientService {
           apiKey: "", // Tidak perlu API key berdasarkan user input
           phoneNumber: "",
           isActive: false,
-          connectionStatus: "waiting_qr",
-          qrCode: data.qrCode,
-          qrCodeExpiresAt: new Date(Date.now() + 60000), // QR expired dalam 60 detik
+          connectionStatus: "qr_ready", // Status dari Aimeow: qr_ready
+          qrCode: data.qr, // Field 'qr' dari Aimeow API response
+          qrCodeExpiresAt: new Date(Date.now() + 120000), // QR expired dalam 120 detik
         },
       });
 
@@ -138,7 +135,7 @@ export class AimeowClientService {
       return {
         success: true,
         clientId,
-        qrCode: data.qrCode,
+        qrCode: data.qr, // Field 'qr' dari Aimeow API response
       };
     } catch (error: any) {
       console.error("Failed to initialize Aimeow client:", error);
@@ -154,29 +151,37 @@ export class AimeowClientService {
    */
   static async getClientStatus(clientId: string): Promise<AimeowClientStatus | null> {
     try {
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/client/${clientId}/status`);
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`);
 
       if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`Client ${clientId} not found on Aimeow`);
+          return null;
+        }
         throw new Error(`Failed to get client status: ${response.statusText}`);
       }
 
       const data = await response.json();
 
+      // Map Aimeow status to our status
+      const isConnected = data.status === "connected";
+      const connectionStatus = data.status; // "qr_ready", "connected", "disconnected"
+
       // Update database
       await prisma.aimeowAccount.update({
         where: { clientId },
         data: {
-          connectionStatus: data.isConnected ? "connected" : "disconnected",
+          connectionStatus,
           phoneNumber: data.phoneNumber || undefined,
-          isActive: data.isConnected,
-          lastConnectedAt: data.isConnected ? new Date() : undefined,
+          isActive: isConnected,
+          lastConnectedAt: isConnected ? new Date() : undefined,
         },
       });
 
       return {
         clientId,
         phoneNumber: data.phoneNumber,
-        isConnected: data.isConnected,
+        isConnected,
         lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
       };
     } catch (error) {
@@ -190,22 +195,24 @@ export class AimeowClientService {
    */
   static async sendMessage(params: AimeowSendMessageParams): Promise<AimeowMessageResponse> {
     try {
-      const { clientId, to, message, mediaUrl, mediaType } = params;
+      const { clientId, to, message, mediaUrl } = params;
 
+      // Send text message
       const payload: any = {
         to,
-        message,
+        text: message, // Field 'text' untuk Aimeow API (bukan 'message')
       };
 
-      // Add media if provided
-      if (mediaUrl && mediaType) {
-        payload.media = {
-          url: mediaUrl,
-          type: mediaType,
-        };
+      // If mediaUrl provided, use send-images endpoint instead
+      let endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/send-message`;
+
+      if (mediaUrl) {
+        endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/send-images`;
+        payload.images = [mediaUrl]; // Array of image URLs
+        delete payload.text; // Images endpoint tidak butuh text
       }
 
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/client/${clientId}/send`, {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -214,14 +221,15 @@ export class AimeowClientService {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to send message: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Failed to send message: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
 
       return {
         success: true,
-        messageId: data.messageId,
+        messageId: data.messageId || data.id || `msg_${Date.now()}`,
       };
     } catch (error: any) {
       console.error("Failed to send WhatsApp message:", error);
@@ -237,8 +245,8 @@ export class AimeowClientService {
    */
   static async disconnectClient(clientId: string): Promise<boolean> {
     try {
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/client/${clientId}/disconnect`, {
-        method: "POST",
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`, {
+        method: "DELETE",
       });
 
       if (!response.ok) {
@@ -263,40 +271,63 @@ export class AimeowClientService {
 
   /**
    * Restart WhatsApp client
+   * Aimeow tidak punya restart endpoint, jadi kita DELETE + CREATE new
    */
-  static async restartClient(clientId: string): Promise<{
+  static async restartClient(tenantId: string, oldClientId: string): Promise<{
     success: boolean;
+    clientId?: string;
     qrCode?: string;
     error?: string;
   }> {
     try {
-      // Disconnect first
-      await this.disconnectClient(clientId);
+      // 1. Delete existing client dari Aimeow
+      await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${oldClientId}`, {
+        method: "DELETE",
+      });
 
-      // Re-initialize
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/client/${clientId}/restart`, {
+      // 2. Delete dari database (soft delete dengan update)
+      await prisma.aimeowAccount.update({
+        where: { clientId: oldClientId },
+        data: {
+          connectionStatus: "disconnected",
+          isActive: false,
+        },
+      });
+
+      // 3. Create new client
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/new`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to restart: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Failed to create new client: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
+      const newClientId = data.clientId;
 
-      // Update database with new QR
+      // 4. Update database dengan client ID baru
       await prisma.aimeowAccount.update({
-        where: { clientId },
+        where: { tenantId },
         data: {
-          connectionStatus: "waiting_qr",
-          qrCode: data.qrCode,
-          qrCodeExpiresAt: new Date(Date.now() + 60000),
+          clientId: newClientId,
+          connectionStatus: "qr_ready",
+          qrCode: data.qr,
+          qrCodeExpiresAt: new Date(Date.now() + 120000),
+          isActive: false,
+          phoneNumber: "",
         },
       });
 
       return {
         success: true,
-        qrCode: data.qrCode,
+        clientId: newClientId,
+        qrCode: data.qr,
       };
     } catch (error: any) {
       console.error("Failed to restart client:", error);
@@ -330,6 +361,77 @@ export class AimeowClientService {
         tenant: true,
       },
     });
+  }
+
+  /**
+   * Get QR code untuk client
+   */
+  static async getQRCode(clientId: string): Promise<{
+    success: boolean;
+    qrCode?: string;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/qr`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to get QR code: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Update database dengan QR baru
+      await prisma.aimeowAccount.update({
+        where: { clientId },
+        data: {
+          qrCode: data.qr,
+          qrCodeExpiresAt: new Date(Date.now() + 120000),
+        },
+      });
+
+      return {
+        success: true,
+        qrCode: data.qr,
+      };
+    } catch (error: any) {
+      console.error("Failed to get QR code:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Fetch messages dari Aimeow
+   */
+  static async fetchMessages(clientId: string, limit: number = 50): Promise<{
+    success: boolean;
+    messages?: any[];
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(
+        `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/messages?limit=${limit}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch messages: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      return {
+        success: true,
+        messages: data.messages || data,
+      };
+    } catch (error: any) {
+      console.error("Failed to fetch messages:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 }
 

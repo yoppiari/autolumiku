@@ -302,6 +302,7 @@ async function main() {
         ...post,
         tenantId: tenant1.id,
         metaDescription: post.excerpt,
+        focusKeyword: post.title.split(' ')[0].toLowerCase(), // Use first word as focus keyword
         tone: 'CASUAL',
         category: post.category as any,
         status: post.status as any,

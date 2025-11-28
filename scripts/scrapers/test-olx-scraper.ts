@@ -185,7 +185,7 @@ class OLXScraper {
     // Look for patterns like: window.__PRELOADED_STATE__ or similar
 
     // Check for JSON data in HTML
-    const jsonMatch = html.match(/__PRELOADED_STATE__\s*=\s*(\{.+?\});/s);
+    const jsonMatch = html.match(/__PRELOADED_STATE__\s*=\s*(\{[\s\S]+?\});/);
     if (jsonMatch) {
       console.log('✅ Found JSON data in HTML');
       try {
@@ -381,4 +381,5 @@ if (require.main === module) {
   main();
 }
 
-export { OLXScraper, ScrapedVehicle };
+export { OLXScraper };
+export type { ScrapedVehicle };

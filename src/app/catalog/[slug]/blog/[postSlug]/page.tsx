@@ -204,13 +204,16 @@ export default async function BlogPostPage({
                         )}
 
                         {/* CTA */}
-                        <div className="text-center bg-primary/5 rounded-lg p-8 border border-primary/10">
-                            <h3 className="text-xl font-bold mb-4">Tertarik dengan kendaraan kami?</h3>
-                            <div className="flex justify-center gap-4">
-                                <Button asChild size="lg">
+                        <div className="text-center bg-gradient-to-b from-primary/5 to-primary/10 rounded-xl p-8 md:p-12 border border-primary/10 shadow-sm">
+                            <h3 className="text-2xl font-bold mb-3">Tertarik dengan kendaraan kami?</h3>
+                            <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
+                                Temukan mobil impian Anda dari koleksi terbaik kami atau konsultasikan kebutuhan Anda dengan tim ahli kami.
+                            </p>
+                            <div className="flex flex-col sm:flex-row justify-center gap-4">
+                                <Button asChild size="lg" className="w-full sm:w-auto shadow-sm hover:shadow-md transition-all">
                                     <Link href={`/catalog/${tenant.slug}/vehicles`}>Lihat Koleksi Mobil</Link>
                                 </Button>
-                                <Button asChild size="lg" variant="outline">
+                                <Button asChild size="lg" variant="outline" className="w-full sm:w-auto bg-background/50 hover:bg-background transition-all">
                                     <Link href={`/catalog/${tenant.slug}/contact`}>Hubungi Kami</Link>
                                 </Button>
                             </div>
