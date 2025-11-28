@@ -369,10 +369,92 @@ export function getAllThemes(): ThemeDefinition[] {
   return Object.values(themes);
 }
 
+function hexToHsl(hex: string): string {
+  // Remove # if present
+  hex = hex.replace(/^#/, '');
+
+  // Parse r, g, b
+  let r = parseInt(hex.substring(0, 2), 16);
+  let g = parseInt(hex.substring(2, 4), 16);
+  let b = parseInt(hex.substring(4, 6), 16);
+
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  // Round values
+  h = Math.round(h * 360);
+  s = Math.round(s * 100);
+  l = Math.round(l * 100);
+
+  return `${h} ${s}% ${l}%`;
+}
+
 export function generateCSSVariables(theme: ThemeDefinition, mode: 'light' | 'dark' = 'light'): string {
   const colors = mode === 'dark' && theme.colors.dark ? theme.colors.dark : theme.colors.light;
 
+  // Convert colors to HSL for shadcn/ui
+  const background = hexToHsl(colors.background);
+  const foreground = hexToHsl(colors.text);
+  const card = hexToHsl(colors.surface);
+  const cardForeground = hexToHsl(colors.text);
+  const popover = hexToHsl(colors.surface);
+  const popoverForeground = hexToHsl(colors.text);
+  const primary = hexToHsl(colors.primary);
+  const primaryForeground = hexToHsl(mode === 'dark' ? colors.text : '#ffffff'); // Assuming white text on primary for light mode
+  const secondary = hexToHsl(colors.secondary);
+  const secondaryForeground = hexToHsl('#ffffff');
+  const muted = hexToHsl(mode === 'dark' ? '#1f2937' : '#f3f4f6'); // Default muted colors
+  const mutedForeground = hexToHsl(colors.textSecondary);
+  const accent = hexToHsl(colors.accent);
+  const accentForeground = hexToHsl('#ffffff');
+  const destructive = hexToHsl(colors.error);
+  const destructiveForeground = hexToHsl('#ffffff');
+  const border = hexToHsl(colors.border);
+  const input = hexToHsl(colors.border);
+  const ring = hexToHsl(colors.primary);
+
   return `
+    /* Base Colors */
+    --background: ${background};
+    --foreground: ${foreground};
+
+    /* Component Colors */
+    --card: ${card};
+    --card-foreground: ${cardForeground};
+    --popover: ${popover};
+    --popover-foreground: ${popoverForeground};
+    --primary: ${primary};
+    --primary-foreground: ${primaryForeground};
+    --secondary: ${secondary};
+    --secondary-foreground: ${secondaryForeground};
+    --muted: ${muted};
+    --muted-foreground: ${mutedForeground};
+    --accent: ${accent};
+    --accent-foreground: ${accentForeground};
+    --destructive: ${destructive};
+    --destructive-foreground: ${destructiveForeground};
+    --border: ${border};
+    --input: ${input};
+    --ring: ${ring};
+    --radius: ${theme.borderRadius.md};
+
+    /* Legacy Custom Variables (Keep for backward compatibility if needed) */
     --color-primary: ${colors.primary};
     --color-secondary: ${colors.secondary};
     --color-accent: ${colors.accent};

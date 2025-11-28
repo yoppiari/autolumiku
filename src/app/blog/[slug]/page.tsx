@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { getTenantFromHeaders } from '@/lib/tenant';
 
 interface BlogPostPageProps {
   params: {
@@ -8,10 +9,11 @@ interface BlogPostPageProps {
   };
 }
 
-async function getBlogPost(slug: string) {
+async function getBlogPost(slug: string, tenantId: string) {
   const post = await prisma.blogPost.findFirst({
     where: {
       slug,
+      tenantId, // ✅ CRITICAL FIX: Filter by tenant
       status: 'PUBLISHED',
     },
     include: {
@@ -40,7 +42,15 @@ async function getBlogPost(slug: string) {
 export async function generateMetadata({
   params,
 }: BlogPostPageProps): Promise<Metadata> {
-  const post = await getBlogPost(params.slug);
+  const tenant = await getTenantFromHeaders();
+
+  if (!tenant.id) {
+    return {
+      title: 'Blog Post Not Found',
+    };
+  }
+
+  const post = await getBlogPost(params.slug, tenant.id);
 
   if (!post) {
     return {
@@ -80,7 +90,13 @@ export async function generateMetadata({
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const post = await getBlogPost(params.slug);
+  const tenant = await getTenantFromHeaders();
+
+  if (!tenant.id) {
+    notFound();
+  }
+
+  const post = await getBlogPost(params.slug, tenant.id);
 
   if (!post) {
     notFound();

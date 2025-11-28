@@ -1,263 +1,210 @@
 /**
- * Contact Page - Catalog
- * Display contact information and Google Maps
+ * Contact Page
+ * Route: /catalog/[slug]/contact
  */
 
-import { Metadata } from 'next';
-import Link from 'next/link';
-import { BrandingService } from '@/lib/services/catalog/branding.service';
-import CatalogHeader from '@/components/catalog/CatalogHeader';
-import CatalogFooter from '@/components/catalog/CatalogFooter';
-import { FaPhone, FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaClock, FaArrowLeft } from 'react-icons/fa';
+import React from 'react';
 import { PrismaClient } from '@prisma/client';
+import CatalogHeader from '@/components/catalog/CatalogHeader';
+import GlobalFooter from '@/components/showroom/GlobalFooter';
+import ThemeProvider from '@/components/catalog/ThemeProvider';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FaPhone, FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
 
 const prisma = new PrismaClient();
 
-interface PageProps {
-  params: Promise<{ slug: string }>;
-}
+export default async function ContactPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const branding = await BrandingService.getBrandingBySlugOrDomain(slug);
-
-  return {
-    title: `Hubungi Kami - ${branding?.name || 'Showroom'}`,
-    description: `Informasi kontak dan lokasi showroom ${branding?.name || 'kami'}`,
-  };
-}
-
-export default async function ContactPage({ params }: PageProps) {
-  const { slug } = await params;
-
-  const branding = await BrandingService.getBrandingBySlugOrDomain(slug);
-  if (!branding) {
-    return <div>Showroom not found</div>;
-  }
-
-  // Get full business info
   const tenant = await prisma.tenant.findUnique({
-    where: { id: branding.tenantId },
-    select: {
-      name: true,
-      phoneNumber: true,
-      phoneNumberSecondary: true,
-      whatsappNumber: true,
-      email: true,
-      address: true,
-      city: true,
-      province: true,
-      postalCode: true,
-      googleMapsUrl: true,
-      latitude: true,
-      longitude: true,
-      businessHours: true,
-      socialMedia: true,
-    },
+    where: { slug },
   });
 
   if (!tenant) {
-    return <div>Tenant not found</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Showroom Not Found</h1>
+        </div>
+      </div>
+    );
   }
 
-  const fullAddress = [
-    tenant.address,
-    tenant.city,
-    tenant.province,
-    tenant.postalCode
-  ].filter(Boolean).join(', ');
+  const fullAddress = [tenant.address, tenant.city, tenant.province]
+    .filter(Boolean)
+    .join(', ');
 
-  const businessHours = tenant.businessHours as any;
-  const socialMedia = tenant.socialMedia as any;
-
-  const handleWhatsAppClick = () => {
-    if (tenant.whatsappNumber) {
-      const cleanNumber = tenant.whatsappNumber.replace(/[^0-9]/g, '');
-      const message = encodeURIComponent(`Halo, saya ingin menghubungi ${tenant.name}`);
-      return `https://wa.me/${cleanNumber}?text=${message}`;
-    }
-    return '#';
-  };
+  // Construct Google Maps Embed URL
+  // Using the embed API with the address as the query
+  const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(fullAddress || tenant.name)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <CatalogHeader branding={branding} />
+    <ThemeProvider tenantId={tenant.id}>
+      <div className="min-h-screen bg-background flex flex-col">
+        <CatalogHeader
+          branding={{
+            name: tenant.name,
+            logoUrl: tenant.logoUrl,
+            primaryColor: tenant.primaryColor,
+            secondaryColor: tenant.secondaryColor,
+            slug: tenant.slug,
+          }}
+          phoneNumber={tenant.phoneNumber || undefined}
+          whatsappNumber={tenant.whatsappNumber || undefined}
+          slug={tenant.slug}
+        />
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <div className="mb-6">
-          <Link
-            href={`/catalog/${slug}`}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
-          >
-            <FaArrowLeft size={16} />
-            <span>Kembali ke Katalog</span>
-          </Link>
-        </div>
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Hubungi Kami</h1>
-          <p className="text-gray-600">Kami siap membantu Anda menemukan kendaraan impian</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Contact Information */}
-          <div className="space-y-6">
-            {/* Phone Numbers */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <FaPhone className="text-blue-600" />
-                Telepon
-              </h2>
-              <div className="space-y-3">
-                {tenant.phoneNumber && (
-                  <div>
-                    <p className="text-sm text-gray-500">Primary</p>
-                    <a
-                      href={`tel:${tenant.phoneNumber}`}
-                      className="text-lg font-medium text-blue-600 hover:text-blue-800"
-                    >
-                      {tenant.phoneNumber}
-                    </a>
-                  </div>
-                )}
-                {tenant.phoneNumberSecondary && (
-                  <div>
-                    <p className="text-sm text-gray-500">Secondary</p>
-                    <a
-                      href={`tel:${tenant.phoneNumberSecondary}`}
-                      className="text-lg font-medium text-blue-600 hover:text-blue-800"
-                    >
-                      {tenant.phoneNumberSecondary}
-                    </a>
-                  </div>
-                )}
-              </div>
+        <main className="flex-1 container mx-auto px-4 py-12">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Hubungi Kami
+              </h1>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Kunjungi showroom kami atau hubungi kami melalui kontak di bawah ini untuk informasi lebih lanjut mengenai kendaraan impian Anda.
+              </p>
             </div>
 
-            {/* WhatsApp */}
-            {tenant.whatsappNumber && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <FaWhatsapp className="text-green-600" />
-                  WhatsApp
-                </h2>
-                <a
-                  href={handleWhatsAppClick()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                >
-                  <FaWhatsapp size={20} />
-                  Chat via WhatsApp
-                </a>
-              </div>
-            )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Contact Info */}
+              <div className="lg:col-span-1 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informasi Kontak</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {tenant.phoneNumber && (
+                      <div className="flex items-start gap-4">
+                        <div className="bg-primary/10 p-3 rounded-full text-primary">
+                          <FaPhone className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-foreground">Telepon</h3>
+                          <a href={`tel:${tenant.phoneNumber}`} className="text-muted-foreground hover:text-primary transition-colors">
+                            {tenant.phoneNumber}
+                          </a>
+                          {tenant.phoneNumberSecondary && (
+                            <>
+                              <br />
+                              <a href={`tel:${tenant.phoneNumberSecondary}`} className="text-muted-foreground hover:text-primary transition-colors">
+                                {tenant.phoneNumberSecondary}
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
-            {/* Email */}
-            {tenant.email && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <FaEnvelope className="text-red-600" />
-                  Email
-                </h2>
-                <a
-                  href={`mailto:${tenant.email}`}
-                  className="text-lg text-blue-600 hover:text-blue-800"
-                >
-                  {tenant.email}
-                </a>
-              </div>
-            )}
+                    {tenant.whatsappNumber && (
+                      <div className="flex items-start gap-4">
+                        <div className="bg-green-100 p-3 rounded-full text-green-600">
+                          <FaWhatsapp className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-foreground">WhatsApp</h3>
+                          <a
+                            href={`https://wa.me/${tenant.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-green-600 transition-colors"
+                          >
+                            Chat WhatsApp
+                          </a>
+                        </div>
+                      </div>
+                    )}
 
-            {/* Business Hours */}
-            {businessHours && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <FaClock className="text-orange-600" />
-                  Jam Operasional
-                </h2>
-                <div className="space-y-2">
-                  {Object.entries(businessHours).map(([day, hours]: [string, any]) => (
-                    <div key={day} className="flex justify-between items-center py-1">
-                      <span className="font-medium capitalize">{day}</span>
-                      {hours.closed ? (
-                        <span className="text-red-600">Tutup</span>
-                      ) : (
-                        <span className="text-gray-600">{hours.open} - {hours.close}</span>
-                      )}
+                    {tenant.email && (
+                      <div className="flex items-start gap-4">
+                        <div className="bg-red-100 p-3 rounded-full text-red-600">
+                          <FaEnvelope className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-foreground">Email</h3>
+                          <a href={`mailto:${tenant.email}`} className="text-muted-foreground hover:text-red-600 transition-colors">
+                            {tenant.email}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-start gap-4">
+                      <div className="bg-blue-100 p-3 rounded-full text-blue-600">
+                        <FaClock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-foreground">Jam Operasional</h3>
+                        <p className="text-muted-foreground">
+                          Senin - Minggu<br />
+                          09:00 - 18:00 WIB
+                        </p>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Alamat Showroom</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-start gap-4">
+                      <div className="bg-gray-100 p-3 rounded-full text-gray-600">
+                        <FaMapMarkerAlt className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">
+                          {tenant.address}<br />
+                          {tenant.city}, {tenant.province}
+                        </p>
+                        <Button asChild variant="outline" className="mt-4 w-full">
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Buka di Google Maps
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            )}
-          </div>
 
-          {/* Map & Address */}
-          <div className="space-y-6">
-            {/* Address */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <FaMapMarkerAlt className="text-red-600" />
-                Alamat
-              </h2>
-              <p className="text-gray-700 leading-relaxed">{fullAddress}</p>
-            </div>
-
-            {/* Google Maps */}
-            {tenant.googleMapsUrl && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4">Peta Lokasi</h2>
-                <div className="aspect-video rounded-lg overflow-hidden">
+              {/* Map */}
+              <div className="lg:col-span-2">
+                <Card className="h-full min-h-[400px] overflow-hidden">
                   <iframe
-                    src={tenant.googleMapsUrl.replace('/maps/place/', '/maps/embed/v1/place?key=').replace('?', '&')}
                     width="100%"
                     height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
+                    style={{ border: 0, minHeight: '500px' }}
                     loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Google Maps Location"
+                    allowFullScreen
+                    src={mapUrl}
+                    title="Showroom Location"
                   ></iframe>
-                </div>
-                <a
-                  href={tenant.googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Buka di Google Maps
-                </a>
+                </Card>
               </div>
-            )}
-
-            {/* Coordinates (for reference) */}
-            {tenant.latitude && tenant.longitude && (
-              <div className="bg-gray-100 rounded-lg p-4 text-sm text-gray-600">
-                <p>Koordinat: {tenant.latitude}, {tenant.longitude}</p>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
 
-      <CatalogFooter
-        businessInfo={{
-          name: tenant.name,
-          phoneNumber: tenant.phoneNumber || undefined,
-          phoneNumberSecondary: tenant.phoneNumberSecondary || undefined,
-          whatsappNumber: tenant.whatsappNumber || undefined,
-          email: tenant.email || undefined,
-          address: tenant.address || undefined,
-          city: tenant.city || undefined,
-          province: tenant.province || undefined,
-          postalCode: tenant.postalCode || undefined,
-          googleMapsUrl: tenant.googleMapsUrl || undefined,
-          socialMedia: socialMedia,
-        }}
-        slug={slug}
-      />
-    </div>
+        <GlobalFooter
+          tenant={{
+            name: tenant.name,
+            phoneNumber: tenant.phoneNumber,
+            phoneNumberSecondary: tenant.phoneNumberSecondary,
+            whatsappNumber: tenant.whatsappNumber,
+            email: tenant.email,
+            address: tenant.address,
+            city: tenant.city,
+            province: tenant.province,
+            primaryColor: tenant.primaryColor,
+          }}
+        />
+      </div>
+    </ThemeProvider>
   );
 }

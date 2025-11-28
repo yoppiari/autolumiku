@@ -1,312 +1,334 @@
 /**
- * Public Catalog Page
- * Route: /catalog/[slug]
+ * Showroom Homepage
+ * Featured vehicles, stats, and blog preview
  */
 
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import VehicleCard from '@/components/catalog/VehicleCard';
-import SearchFilters from '@/components/catalog/SearchFilters';
+import React from 'react';
+import Link from 'next/link';
+import { PrismaClient } from '@prisma/client';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
-import CatalogFooter from '@/components/catalog/CatalogFooter';
+import GlobalFooter from '@/components/showroom/GlobalFooter';
 import HeroSection from '@/components/catalog/HeroSection';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
-interface PageProps {
-  params: {
-    slug: string;
-  };
-}
+const prisma = new PrismaClient();
 
-export default function CatalogPage({ params }: PageProps) {
+export default async function ShowroomHomePage({ params }: { params: { slug: string } }) {
   const { slug } = params;
 
-  const [branding, setBranding] = useState<any>(null);
-  const [businessInfo, setBusinessInfo] = useState<any>(null);
-  const [layoutConfig, setLayoutConfig] = useState<any>(null);
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [filterOptions, setFilterOptions] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalVehicles, setTotalVehicles] = useState(0);
-
-  const [filters, setFilters] = useState({
-    search: '',
-    make: '',
-    minPrice: '',
-    maxPrice: '',
-    minYear: '',
-    maxYear: '',
-    transmissionType: '',
-    fuelType: '',
-    sortBy: 'date-desc',
+  const tenant = await prisma.tenant.findUnique({
+    where: { slug },
   });
 
-  useEffect(() => {
-    fetchBranding();
-  }, [slug]);
-
-  useEffect(() => {
-    fetchVehicles();
-  }, [slug, filters, currentPage]);
-
-  const fetchBranding = async () => {
-    try {
-      const response = await fetch(`/api/public/branding/${slug}`);
-      if (response.ok) {
-        const data = await response.json();
-        setBranding(data.data);
-
-        // Fetch full business info and layout config
-        if (data.data.tenantId) {
-          const businessResponse = await fetch(`/api/v1/tenants/${data.data.tenantId}/business-info`);
-          if (businessResponse.ok) {
-            const businessData = await businessResponse.json();
-            setBusinessInfo(businessData.data);
-          }
-
-          const layoutResponse = await fetch(`/api/v1/catalog/layout?tenantId=${data.data.tenantId}`);
-          if (layoutResponse.ok) {
-            const layoutData = await layoutResponse.json();
-            setLayoutConfig(layoutData.data);
-          }
-        }
-      } else {
-        setError('Showroom tidak ditemukan');
-      }
-    } catch (err) {
-      console.error('Failed to fetch branding:', err);
-      setError('Gagal memuat data showroom');
-    }
-  };
-
-  const fetchVehicles = async () => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams({
-        ...(filters.search && { search: filters.search }),
-        ...(filters.make && { make: filters.make }),
-        ...(filters.minPrice && { minPrice: filters.minPrice }),
-        ...(filters.maxPrice && { maxPrice: filters.maxPrice }),
-        ...(filters.minYear && { minYear: filters.minYear }),
-        ...(filters.maxYear && { maxYear: filters.maxYear }),
-        ...(filters.transmissionType && {
-          transmissionType: filters.transmissionType,
-        }),
-        ...(filters.fuelType && { fuelType: filters.fuelType }),
-        sortBy: filters.sortBy,
-        page: currentPage.toString(),
-        limit: '12',
-      });
-
-      const response = await fetch(
-        `/api/public/catalog/${slug}?${queryParams.toString()}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setVehicles(data.data.vehicles);
-        setFilterOptions(data.data.filters);
-        setTotalPages(data.data.totalPages);
-        setTotalVehicles(data.data.total);
-      } else {
-        setError('Gagal memuat daftar kendaraan');
-      }
-    } catch (err) {
-      console.error('Failed to fetch vehicles:', err);
-      setError('Gagal memuat daftar kendaraan');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFilterChange = (name: string, value: string) => {
-    setFilters((prev) => ({ ...prev, [name]: value }));
-    setCurrentPage(1); // Reset to first page when filters change
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
-      search: '',
-      make: '',
-      minPrice: '',
-      maxPrice: '',
-      minYear: '',
-      maxYear: '',
-      transmissionType: '',
-      fuelType: '',
-      sortBy: 'date-desc',
-    });
-    setCurrentPage(1);
-  };
-
-  const handleWhatsAppClick = (vehicle: any) => {
-    const message = `Halo, saya tertarik dengan ${vehicle.year} ${vehicle.make} ${vehicle.model}${
-      vehicle.variant ? ` ${vehicle.variant}` : ''
-    } (ID: ${vehicle.displayId || vehicle.id.slice(0, 8)})`;
-
-    const phoneNumber = '6281234567890'; // TODO: Get from tenant settings
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-      message
-    )}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  if (error && !branding) {
+  if (!tenant) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
-          <p className="text-gray-600">{error}</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Showroom Not Found</h1>
+          <p className="text-gray-600">This showroom is not configured properly.</p>
         </div>
       </div>
     );
   }
 
-  if (!branding) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  const tenantId = tenant.id;
+
+  // Fetch featured vehicles (6 latest)
+  const featuredVehicles = await prisma.vehicle.findMany({
+    where: {
+      tenantId,
+      status: 'AVAILABLE',
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: 6,
+    select: {
+      id: true,
+      displayId: true,
+      make: true,
+      model: true,
+      variant: true,
+      year: true,
+      price: true,
+      mileage: true,
+      transmissionType: true,
+      fuelType: true,
+      photos: {
+        take: 1,
+        orderBy: { displayOrder: 'asc' },
+        select: { thumbnailUrl: true, originalUrl: true },
+      },
+    },
+  });
+
+  // Fetch blog preview (3 latest published posts)
+  const blogPosts = await prisma.blogPost.findMany({
+    where: {
+      tenantId,
+      status: 'PUBLISHED',
+    },
+    orderBy: {
+      publishedAt: 'desc',
+    },
+    take: 3,
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      excerpt: true,
+      featuredImage: true,
+      publishedAt: true,
+      views: true,
+    },
+  });
+
+  // Get stats
+  const [totalVehicles, totalMakes] = await Promise.all([
+    prisma.vehicle.count({
+      where: { tenantId, status: 'AVAILABLE' },
+    }),
+    prisma.vehicle.findMany({
+      where: { tenantId, status: 'AVAILABLE' },
+      select: { make: true },
+      distinct: ['make'],
+    }),
+  ]);
+
+  const formatPrice = (price: bigint | number) => {
+    const priceNumber = typeof price === 'bigint' ? Number(price) : price;
+    const rupiah = priceNumber / 100;
+    return `Rp ${rupiah.toLocaleString('id-ID')}`;
+  };
+
+  const getExcerpt = (content: string | null, maxLength: number = 150): string => {
+    if (!content) return '';
+    // Remove HTML tags and get first paragraph
+    const text = content.replace(/<[^>]*>/g, '');
+    const firstPara = text.split('\n\n')[0] || text.split('\n')[0] || text;
+    if (firstPara.length > maxLength) {
+      return firstPara.substring(0, maxLength) + '...';
+    }
+    return firstPara;
+  };
 
   return (
-    <ThemeProvider tenantId={branding.tenantId}>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
+    <ThemeProvider tenantId={tenantId}>
+      <div className="min-h-screen bg-background flex flex-col">
         <CatalogHeader
-          branding={branding}
+          branding={{
+            name: tenant.name,
+            logoUrl: tenant.logoUrl,
+            primaryColor: tenant.primaryColor,
+            secondaryColor: tenant.secondaryColor,
+            slug: tenant.slug,
+          }}
           vehicleCount={totalVehicles}
-          phoneNumber={businessInfo?.phoneNumber}
-          whatsappNumber={businessInfo?.whatsappNumber}
-          slug={slug}
+          phoneNumber={tenant.phoneNumber || undefined}
+          whatsappNumber={tenant.whatsappNumber || undefined}
+          slug={tenant.slug}
         />
 
-        {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
+        <main className="flex-1">
           {/* Hero Section */}
-          {layoutConfig?.heroEnabled && (
+          <div className="container mx-auto px-4 pt-8">
             <HeroSection
-              title={layoutConfig.heroTitle}
-              subtitle={layoutConfig.heroSubtitle}
-              imageUrl={layoutConfig.heroImageUrl}
-              primaryColor={branding.primaryColor}
+              title={`Selamat Datang di ${tenant.name}`}
+              subtitle="Temukan kendaraan impian Anda dengan harga terbaik"
+              primaryColor={tenant.primaryColor}
             />
-          )}
-
-        {/* Filters */}
-        {filterOptions && (
-          <SearchFilters
-            filters={filters}
-            filterOptions={filterOptions}
-            onChange={handleFilterChange}
-            onClear={handleClearFilters}
-          />
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Memuat kendaraan...</p>
           </div>
-        )}
 
-        {/* Vehicle Grid */}
-        {!loading && vehicles.length > 0 && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-              {vehicles.map((vehicle) => (
-                <VehicleCard
-                  key={vehicle.id}
-                  vehicle={vehicle}
-                  slug={slug}
-                  tenantId={branding.tenantId}
-                  onWhatsAppClick={handleWhatsAppClick}
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
-                <Button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  variant="outline"
-                >
-                  Sebelumnya
-                </Button>
-
-                <div className="flex gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <Button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        variant={currentPage === page ? 'default' : 'outline'}
-                      >
-                        {page}
-                      </Button>
-                    )
-                  )}
+          {/* Stats Section */}
+          <section className="py-8 bg-card border-y">
+            <div className="container mx-auto px-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div>
+                  <div className="text-3xl font-bold text-primary">
+                    {totalVehicles}+
+                  </div>
+                  <div className="text-muted-foreground">Mobil Tersedia</div>
                 </div>
+                <div>
+                  <div className="text-3xl font-bold text-primary">
+                    {totalMakes.length}+
+                  </div>
+                  <div className="text-muted-foreground">Merk</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-primary">
+                    100%
+                  </div>
+                  <div className="text-muted-foreground">Terpercaya</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-primary">
+                    24/7
+                  </div>
+                  <div className="text-muted-foreground">Layanan</div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-                <Button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  variant="outline"
-                >
-                  Selanjutnya
+          {/* Featured Vehicles */}
+          <section className="py-12" id="vehicles">
+            <div className="container mx-auto px-4">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-bold text-foreground">Kendaraan Terbaru</h2>
+                <Button asChild variant="outline">
+                  <Link href={`/catalog/${tenant.slug}/vehicles`}>Lihat Semua →</Link>
                 </Button>
               </div>
-            )}
-          </>
-        )}
 
-        {/* Empty State */}
-        {!loading && vehicles.length === 0 && (
-          <div className="text-center py-12">
-            <svg
-              className="w-16 h-16 text-gray-400 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-              />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Tidak ada kendaraan ditemukan
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Coba ubah filter pencarian Anda
-            </p>
-            <Button onClick={handleClearFilters}>
-              Reset Filter
-            </Button>
-          </div>
-        )}
-      </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {featuredVehicles.map((vehicle) => {
+                  const mainPhoto = vehicle.photos[0];
+                  return (
+                    <Card key={vehicle.id} className="hover:shadow-xl transition-shadow overflow-hidden">
+                      <CardHeader className="p-0">
+                        <div className="aspect-video relative">
+                          {mainPhoto ? (
+                            <img
+                              src={mainPhoto.thumbnailUrl || mainPhoto.originalUrl}
+                              alt={`${vehicle.make} ${vehicle.model}`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              <span className="text-muted-foreground">No Image</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <CardTitle className="text-lg mb-2 line-clamp-1">
+                          {vehicle.year} {vehicle.make} {vehicle.model}
+                        </CardTitle>
+                        {vehicle.variant && (
+                          <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{vehicle.variant}</p>
+                        )}
+                        <p className="text-xl font-bold text-primary">
+                          {formatPrice(vehicle.price)}
+                        </p>
+                        <div className="flex gap-2 mt-2 text-sm text-muted-foreground">
+                          {vehicle.mileage && <span>{vehicle.mileage.toLocaleString()} km</span>}
+                          {vehicle.transmissionType && <span>• {vehicle.transmissionType}</span>}
+                        </div>
+                      </CardContent>
+                      <CardFooter className="p-4 pt-0">
+                        <Button asChild className="w-full">
+                          <Link href={`/catalog/${tenant.slug}/vehicles/${vehicle.id}`}>Lihat Detail</Link>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
 
-        {/* Footer */}
-        {businessInfo && (
-          <CatalogFooter businessInfo={businessInfo} slug={slug} />
-        )}
+          {/* Blog Preview */}
+          {blogPosts.length > 0 && (
+            <section className="py-12 bg-muted/30">
+              <div className="container mx-auto px-4">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-3xl font-bold text-foreground">Artikel Terbaru</h2>
+                  <Button asChild variant="outline">
+                    <Link href={`/catalog/${tenant.slug}/blog`}>Lihat Semua →</Link>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {blogPosts.map((post) => (
+                    <Card key={post.id} className="hover:shadow-xl transition-shadow overflow-hidden">
+                      {post.featuredImage && (
+                        <CardHeader className="p-0">
+                          <div className="aspect-video relative">
+                            <img
+                              src={post.featuredImage}
+                              alt={post.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </CardHeader>
+                      )}
+                      <CardContent className="p-4">
+                        <CardTitle className="text-lg mb-2 line-clamp-2">{post.title}</CardTitle>
+                        <p className="text-sm text-muted-foreground line-clamp-3">
+                          {getExcerpt(post.excerpt)}
+                        </p>
+                        <div className="mt-4 text-xs text-muted-foreground">
+                          {post.publishedAt && new Date(post.publishedAt).toLocaleDateString('id-ID')} • {post.views} views
+                        </div>
+                      </CardContent>
+                      <CardFooter className="p-4 pt-0">
+                        <Button asChild variant="outline" className="w-full">
+                          <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`}>Baca Selengkapnya</Link>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* CTA Section */}
+          <section
+            className="py-16 text-primary-foreground"
+            style={{ backgroundColor: tenant.primaryColor }}
+          >
+            <div className="container mx-auto px-4 text-center">
+              <h2 className="text-3xl font-bold mb-4">Siap Menemukan Mobil Impian Anda?</h2>
+              <p className="text-xl mb-8 opacity-90">
+                Hubungi kami sekarang untuk konsultasi dan penawaran terbaik
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                {tenant.whatsappNumber && (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-green-600 hover:bg-green-700 text-white border-none"
+                  >
+                    <a
+                      href={`https://wa.me/${tenant.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Chat via WhatsApp
+                    </a>
+                  </Button>
+                )}
+                <Button asChild size="lg" variant="secondary">
+                  <Link href={`/catalog/${tenant.slug}/contact`}>Lihat Lokasi Kami</Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <GlobalFooter
+          tenant={{
+            name: tenant.name,
+            phoneNumber: tenant.phoneNumber,
+            phoneNumberSecondary: tenant.phoneNumberSecondary,
+            whatsappNumber: tenant.whatsappNumber,
+            email: tenant.email,
+            address: tenant.address,
+            city: tenant.city,
+            province: tenant.province,
+            primaryColor: tenant.primaryColor,
+          }}
+        />
       </div>
     </ThemeProvider>
   );

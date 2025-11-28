@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { getTenantFromHeaders } from '@/lib/tenant';
 
 export const metadata: Metadata = {
   title: 'Blog - Tips & Panduan Mobil Bekas',
@@ -17,13 +19,28 @@ interface BlogListPageProps {
 }
 
 export default async function BlogListPage({ searchParams }: BlogListPageProps) {
+  // Get tenant from headers
+  const tenant = await getTenantFromHeaders();
+
+  if (!tenant.id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Blog Not Available</h1>
+          <p className="text-gray-600">This showroom's blog is not accessible.</p>
+        </div>
+      </div>
+    );
+  }
+
   const category = searchParams.category;
   const page = parseInt(searchParams.page || '1', 10);
   const limit = 12;
   const skip = (page - 1) * limit;
 
-  // Build where clause
+  // Build where clause - FILTER BY TENANT!
   const where: any = {
+    tenantId: tenant.id, // ✅ CRITICAL FIX: Only show this tenant's blog posts
     status: 'PUBLISHED',
   };
 

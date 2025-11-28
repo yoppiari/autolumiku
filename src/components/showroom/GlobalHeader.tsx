@@ -3,59 +3,34 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaPhone, FaWhatsapp } from 'react-icons/fa';
-import { Menu, X } from 'lucide-react';
 import GlobalSearch from '@/components/catalog/GlobalSearch';
 import { Button } from '@/components/ui/button';
+import { Menu, X } from 'lucide-react';
 
-interface CatalogHeaderProps {
+interface GlobalHeaderProps {
   branding: {
     name: string;
     logoUrl: string | null;
     primaryColor: string;
-    secondaryColor: string;
-    slug?: string;
+    slug: string;
   };
-  vehicleCount?: number;
-  phoneNumber?: string;
-  whatsappNumber?: string;
-  slug?: string;
 }
 
-export default function CatalogHeader({
-  branding,
-  vehicleCount,
-  phoneNumber,
-  whatsappNumber,
-  slug
-}: CatalogHeaderProps) {
+export default function GlobalHeader({ branding }: GlobalHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const tenantSlug = slug || branding.slug;
 
   const navLinks = [
-    { href: `/catalog/${tenantSlug}`, label: 'Home' },
-    { href: `/catalog/${tenantSlug}/vehicles`, label: 'Mobil' }, // Assuming this route exists or will exist
-    { href: `/catalog/${tenantSlug}/blog`, label: 'Blog' },
-    { href: `/catalog/${tenantSlug}/contact`, label: 'Contact' },
+    { href: '/', label: 'Home' },
+    { href: '/vehicles', label: 'Mobil' },
+    { href: '/blog', label: 'Blog' },
+    { href: '/contact', label: 'Contact' },
   ];
 
   const isActive = (path: string) => {
-    return pathname === path || pathname?.startsWith(path + '/');
-  };
-
-  const handlePhoneClick = () => {
-    if (phoneNumber) {
-      window.location.href = `tel:${phoneNumber}`;
-    }
-  };
-
-  const handleWhatsAppClick = () => {
-    if (whatsappNumber) {
-      const cleanNumber = whatsappNumber.replace(/[^0-9]/g, '');
-      const message = encodeURIComponent(`Halo, saya tertarik dengan kendaraan di ${branding.name}`);
-      window.open(`https://wa.me/${cleanNumber}?text=${message}`, '_blank');
-    }
+    if (path === '/' && pathname === '/') return true;
+    if (path !== '/' && pathname?.startsWith(path)) return true;
+    return false;
   };
 
   return (
@@ -66,12 +41,12 @@ export default function CatalogHeader({
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo & Name */}
-          <Link href={`/catalog/${tenantSlug}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             {branding.logoUrl ? (
               <img
                 src={branding.logoUrl}
                 alt={branding.name}
-                className="h-10 w-auto object-contain"
+                className="h-12 w-auto object-contain"
               />
             ) : (
               <div
@@ -81,13 +56,13 @@ export default function CatalogHeader({
                 {branding.name.charAt(0)}
               </div>
             )}
-            <div className="hidden md:block">
-              <h1 className="text-lg font-bold text-foreground leading-tight">{branding.name}</h1>
-            </div>
+            <span className="text-xl font-bold text-foreground hidden md:block">
+              {branding.name}
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -103,7 +78,7 @@ export default function CatalogHeader({
 
           {/* Search Bar (Desktop) */}
           <div className="hidden md:block w-full max-w-xs mx-4">
-            <GlobalSearch slug={tenantSlug} />
+            <GlobalSearch slug={branding.slug} />
           </div>
 
           {/* Mobile Menu Button */}
@@ -121,7 +96,7 @@ export default function CatalogHeader({
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-20 left-0 w-full bg-background border-b shadow-lg p-4 flex flex-col gap-4 animate-in slide-in-from-top-5">
-          <GlobalSearch className="w-full max-w-none" slug={tenantSlug} />
+          <GlobalSearch className="w-full max-w-none" slug={branding.slug} />
           <nav className="flex flex-col gap-2">
             {navLinks.map((link) => (
               <Link
@@ -135,22 +110,6 @@ export default function CatalogHeader({
                 {link.label}
               </Link>
             ))}
-
-            {/* Mobile Contact Buttons */}
-            <div className="flex gap-2 mt-2">
-              {phoneNumber && (
-                <Button onClick={handlePhoneClick} className="flex-1 gap-2" variant="outline">
-                  <FaPhone size={16} />
-                  Telepon
-                </Button>
-              )}
-              {whatsappNumber && (
-                <Button onClick={handleWhatsAppClick} className="flex-1 gap-2 bg-green-600 hover:bg-green-700 text-white">
-                  <FaWhatsapp size={18} />
-                  WhatsApp
-                </Button>
-              )}
-            </div>
           </nav>
         </div>
       )}

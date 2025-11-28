@@ -24,6 +24,11 @@ async function main() {
       secondaryColor: '#3b82f6',
       theme: 'light',
       createdBy: 'system',
+      whatsappNumber: '6281234567890',
+      phoneNumber: '6281234567890',
+      address: 'Jl. Jend. Sudirman No. 1, Jakarta Pusat',
+      city: 'Jakarta Pusat',
+      province: 'DKI Jakarta',
     },
   });
   console.log(`✅ Tenant created: ${tenant.name} (ID: ${tenant.id})`);
