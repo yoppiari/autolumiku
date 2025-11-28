@@ -12,6 +12,8 @@ import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, User, Eye } from 'lucide-react';
+import ShareButtons from '@/components/blog/ShareButtons';
+import VehicleCard from '@/components/catalog/VehicleCard';
 
 const prisma = new PrismaClient();
 
@@ -37,20 +39,71 @@ export default async function BlogPostPage({
             slug: postSlug,
             status: 'PUBLISHED',
         },
-        // author relation doesn't exist, we use authorName directly from the model
     });
 
     if (!post) {
         return notFound();
     }
 
-    // Increment view count (this should ideally be a server action or API call to avoid hydration issues, 
-    // but for now we'll skip it or do it in a useEffect if it was a client component. 
-    // Since this is a server component, we can update it directly but it makes the page dynamic)
-    // await prisma.blogPost.update({
-    //   where: { id: post.id },
-    //   data: { views: { increment: 1 } },
-    // });
+    // Fetch relevant vehicles
+    let relatedVehicles: any[] = [];
+
+    // 1. Try explicit related vehicles
+    if (post.relatedVehicles && post.relatedVehicles.length > 0) {
+        relatedVehicles = await prisma.vehicle.findMany({
+            where: {
+                id: { in: post.relatedVehicles },
+                status: 'AVAILABLE',
+            },
+            include: { photos: true },
+        });
+    }
+
+    // 2. If no explicit, try matching keywords
+    if (relatedVehicles.length === 0 && post.keywords.length > 0) {
+        const searchConditions = post.keywords.flatMap(k => [
+            { make: { contains: k, mode: 'insensitive' as const } },
+            { model: { contains: k, mode: 'insensitive' as const } }
+        ]);
+
+        if (searchConditions.length > 0) {
+            relatedVehicles = await prisma.vehicle.findMany({
+                where: {
+                    tenantId: tenant.id,
+                    status: 'AVAILABLE',
+                    OR: searchConditions
+                },
+                include: { photos: true },
+                take: 3,
+            });
+        }
+    }
+
+    // 3. Fallback to Featured or Latest
+    if (relatedVehicles.length === 0) {
+        relatedVehicles = await prisma.vehicle.findMany({
+            where: {
+                tenantId: tenant.id,
+                status: 'AVAILABLE',
+                isFeatured: true,
+            },
+            include: { photos: true },
+            take: 3,
+        });
+
+        // If still 0, just take latest
+        if (relatedVehicles.length === 0) {
+            relatedVehicles = await prisma.vehicle.findMany({
+                where: {
+                    tenantId: tenant.id,
+                    status: 'AVAILABLE',
+                },
+                include: { photos: true },
+                take: 3,
+                orderBy: { createdAt: 'desc' },
+            });
+        }
+    }
 
     return (
         <ThemeProvider tenantId={tenant.id}>
@@ -77,7 +130,7 @@ export default async function BlogPostPage({
                             </Link>
                         </Button>
 
-                        <article className="bg-card rounded-lg shadow-sm overflow-hidden border">
+                        <article className="bg-card rounded-lg shadow-sm overflow-hidden border mb-8">
                             {post.featuredImage && (
                                 <div className="aspect-video w-full relative">
                                     <img
@@ -119,11 +172,39 @@ export default async function BlogPostPage({
                                     className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary"
                                     dangerouslySetInnerHTML={{ __html: post.content }}
                                 />
+
+                                {/* Share Buttons */}
+                                <div className="mt-8 pt-8 border-t">
+                                    <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                                        Bagikan artikel ini:
+                                    </h3>
+                                    <ShareButtons title={post.title} />
+                                </div>
                             </div>
                         </article>
 
-                        {/* Share or CTA could go here */}
-                        <div className="mt-12 text-center">
+                        {/* Related Vehicles */}
+                        {relatedVehicles.length > 0 && (
+                            <div className="mb-12">
+                                <h2 className="text-2xl font-bold mb-6">Rekomendasi Mobil Untuk Anda</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {relatedVehicles.map((vehicle) => (
+                                        <VehicleCard
+                                            key={vehicle.id}
+                                            vehicle={{
+                                                ...vehicle,
+                                                price: Number(vehicle.price)
+                                            }}
+                                            slug={tenant.slug}
+                                            tenantId={tenant.id}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* CTA */}
+                        <div className="text-center bg-primary/5 rounded-lg p-8 border border-primary/10">
                             <h3 className="text-xl font-bold mb-4">Tertarik dengan kendaraan kami?</h3>
                             <div className="flex justify-center gap-4">
                                 <Button asChild size="lg">

@@ -28,6 +28,7 @@ interface GeneratedBlog {
   wordCount: number;
   readabilityScore: number;
   relatedTopics: string[];
+  featuredImage?: string;
 }
 
 const CATEGORIES = [
@@ -213,6 +214,48 @@ export default function BlogGeneratorPage() {
                 <div className="text-gray-600">Readability</div>
               </div>
             </div>
+
+            {/* Featured Image */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold mb-3">🖼️ Featured Image</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Image URL
+                  </label>
+                  <input
+                    type="text"
+                    value={editedBlog.featuredImage || ''}
+                    onChange={(e) =>
+                      setEditedBlog({ ...editedBlog, featuredImage: e.target.value })
+                    }
+                    placeholder="https://example.com/image.jpg"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="mt-2 text-xs text-gray-500">
+                    Masukkan URL gambar yang ingin ditampilkan sebagai cover artikel.
+                  </p>
+                </div>
+                <div className="flex items-center justify-center bg-gray-200 rounded-lg h-48 overflow-hidden">
+                  {editedBlog.featuredImage ? (
+                    <img
+                      src={editedBlog.featuredImage}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://via.placeholder.com/400x300?text=Invalid+Image+URL';
+                      }}
+                    />
+                  ) : (
+                    <div className="text-gray-400 flex flex-col items-center">
+                      <span className="text-4xl mb-2">🖼️</span>
+                      <span>No Image Selected</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Title */}
@@ -251,10 +294,10 @@ export default function BlogGeneratorPage() {
             />
             {(editedBlog.metaDescription.length < 140 ||
               editedBlog.metaDescription.length > 160) && (
-              <p className="mt-1 text-xs text-orange-600">
-                ⚠️ Panjang ideal: 140-160 karakter
-              </p>
-            )}
+                <p className="mt-1 text-xs text-orange-600">
+                  ⚠️ Panjang ideal: 140-160 karakter
+                </p>
+              )}
           </div>
 
           {/* Keywords */}
@@ -371,11 +414,10 @@ export default function BlogGeneratorPage() {
               <button
                 key={cat.id}
                 onClick={() => setCategory(cat.id as BlogCategory)}
-                className={`p-4 border-2 rounded-lg text-left transition-all ${
-                  category === cat.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300'
-                }`}
+                className={`p-4 border-2 rounded-lg text-left transition-all ${category === cat.id
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-blue-300'
+                  }`}
               >
                 <div className="text-3xl mb-2">{cat.icon}</div>
                 <div className="font-semibold text-sm mb-1">{cat.name}</div>
@@ -491,11 +533,10 @@ export default function BlogGeneratorPage() {
           <button
             onClick={handleGenerate}
             disabled={isGenerating || !topic.trim()}
-            className={`px-8 py-3 rounded-lg font-semibold flex items-center gap-2 ${
-              isGenerating || !topic.trim()
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+            className={`px-8 py-3 rounded-lg font-semibold flex items-center gap-2 ${isGenerating || !topic.trim()
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
           >
             {isGenerating ? (
               <>
