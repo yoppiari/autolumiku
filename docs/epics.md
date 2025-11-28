@@ -1671,29 +1671,307 @@ So that **my business operates legally and maintains customer trust**.
 
 **Checkpoint Security & Data Complete** ✅
 
+---
+
+## Epic 8: WhatsApp AI Automation
+
+**Epic Goal:** Enable setiap showroom untuk memiliki dedicated WhatsApp AI assistant yang dapat melayani customer 24/7 dan memfasilitasi staff operations via command-based interface. Sistem ini mengintegrasikan Aimeow WhatsApp Business API dengan Z.ai (GLM-4) untuk memberikan pengalaman conversational yang natural dan efisien.
+
+**Business Value:**
+- 🚀 **Instant Response:** Customer dapat tanya jawab 24/7 tanpa menunggu staff
+- 📈 **Higher Conversion:** +5% lead conversion (10% → 15%) dengan response cepat
+- ⏰ **Staff Efficiency:** Save 2 hours/day per staff dengan automation
+- 💰 **Revenue Impact:** Additional Rp 50M/month per showroom
+- 🏆 **Competitive Advantage:** First mover in Indonesia automotive dengan AI WhatsApp
+
+**Implementation Details:** See `/docs/sprint-artifacts/epic-8-whatsapp-ai-implementation-plan.md`
+
+---
+
+### Story 8.1: WhatsApp Connection Setup
+
+As a **showroom administrator**,
+I want **to connect a dedicated WhatsApp number to autolumiku via QR code scanning**,
+So that **my showroom has an AI-powered WhatsApp assistant without complex technical setup**.
+
+**Acceptance Criteria:**
+
+**Given** I am logged into the dashboard
+**When** I navigate to WhatsApp AI settings
+**Then** I can initiate a new WhatsApp connection and see a QR code to scan
+
+**Given** I scan the QR code with my WhatsApp Business phone
+**When** The connection is established
+**Then** The system shows "Connected" status and my WhatsApp is ready to receive messages
+
+**Given** My WhatsApp is connected
+**When** I view the connection dashboard
+**Then** I see real-time connection status, last activity, and can disconnect/reconnect
+
+**Technical Notes:**
+- Integrate Aimeow WhatsApp Business API
+- Store connection credentials encrypted in database
+- Auto-reconnect on connection loss
+- Support QR code refresh if expired
+
+**Coverage:** New functionality - WhatsApp AI foundation
+
+---
+
+### Story 8.2: AI Customer Assistant Configuration
+
+As a **showroom administrator**,
+I want **to configure my AI assistant's personality and behavior**,
+So that **the AI represents my showroom's brand and communicates appropriately with customers**.
+
+**Acceptance Criteria:**
+
+**Given** My WhatsApp is connected
+**When** I access AI configuration settings
+**Then** I can customize AI name, personality style (friendly/professional/casual), and welcome message
+
+**Given** I configure business hours
+**When** Customers message outside business hours
+**Then** AI sends an after-hours message and captures inquiry for follow-up
+
+**Given** I have frequently asked questions specific to my showroom
+**When** I add custom FAQ entries
+**Then** AI prioritizes these responses when relevant questions are detected
+
+**Given** I want to control AI features
+**When** I toggle feature settings
+**Then** I can enable/disable customer chat, staff commands, and specific capabilities
+
+**Technical Notes:**
+- Store configuration per tenant in WhatsAppAIConfig model
+- Support business hours per timezone
+- Custom FAQ stored as JSON array
+- Real-time config updates without restart
+
+**Coverage:** New functionality - AI personalization
+
+---
+
+### Story 8.3: AI-Powered Customer Inquiry Handling
+
+As a **potential customer browsing the catalog**,
+I want **to chat with an AI assistant via WhatsApp about vehicles I'm interested in**,
+So that **I can get instant answers 24/7 without waiting for sales staff**.
+
+**Acceptance Criteria:**
+
+**Given** I'm viewing a vehicle on the catalog website
+**When** I click "Chat dengan AI" button
+**Then** WhatsApp opens with a pre-filled message about the specific vehicle
+
+**Given** I send a message to the showroom's WhatsApp
+**When** The AI receives my inquiry
+**Then** I get an instant response (< 3 seconds) with relevant information
+
+**Given** I ask about vehicle specifications, price, or condition
+**When** The AI processes my question
+**Then** I receive accurate information from the showroom's database
+
+**Given** I want to compare multiple vehicles or discuss financing
+**When** I ask comparative questions
+**Then** The AI provides helpful comparisons and financing simulations
+
+**Given** I need to speak with a human sales person
+**When** I request or the AI detects complex negotiation
+**Then** The AI escalates to staff and creates a lead record for follow-up
+
+**Technical Notes:**
+- Integrate Z.ai (GLM-4) for natural language understanding
+- Intent classification for query routing
+- Context-aware multi-turn conversations
+- Automatic lead creation on first contact
+- Confidence scoring for escalation decisions
+
+**Coverage:** New functionality - AI customer service
+
+---
+
+### Story 8.4: Staff Vehicle Upload via WhatsApp
+
+As a **showroom staff member**,
+I want **to upload new vehicles to the catalog directly from WhatsApp**,
+So that **I can quickly add inventory without accessing the dashboard**.
+
+**Acceptance Criteria:**
+
+**Given** I am an authorized staff member
+**When** I send "#upload mobil" command to the WhatsApp
+**Then** The AI guides me through the upload process step-by-step
+
+**Given** The AI requests photos
+**When** I send 5-10 vehicle photos
+**Then** The AI confirms receipt and asks for vehicle details
+
+**Given** I send vehicle details in the specified format (year, make, model, km, price, etc.)
+**When** The AI processes my input
+**Then** The AI generates SEO-optimized description using existing vehicle AI service
+
+**Given** The AI shows a preview of the listing
+**When** I type "approve"
+**Then** The vehicle is published to the catalog with a display ID (VH-XXX) and I receive confirmation with catalog link
+
+**Given** I make a mistake during upload
+**When** I want to cancel or restart
+**Then** I can type "cancel" to abort and start over
+
+**Technical Notes:**
+- Multi-step conversation state management
+- Reuse existing VehicleAIService for description generation
+- Photo upload to storage (same logic as dashboard)
+- Validation of required fields
+- Command authentication by phone number
+
+**Coverage:** New functionality - Staff operations automation
+
+---
+
+### Story 8.5: Staff Inventory Management Commands
+
+As a **showroom staff member**,
+I want **to manage vehicle status and check inventory via WhatsApp commands**,
+So that **I can update the system quickly from anywhere without the dashboard**.
+
+**Acceptance Criteria:**
+
+**Given** I am an authorized staff member
+**When** I send "VH-XXX sold" command
+**Then** The vehicle status is updated to SOLD and I can optionally add customer lead info
+
+**Given** I want to mark a vehicle as booked
+**When** I send "VH-XXX booking"
+**Then** The status changes to BOOKED and the vehicle is no longer shown as available in catalog
+
+**Given** I want to see inventory by brand
+**When** I send "koleksi toyota"
+**Then** I receive a list of all Toyota vehicles with display ID, name, price, and status
+
+**Given** I want to check available inventory
+**When** I send "mobil available"
+**Then** I receive count and total value of available vehicles
+
+**Given** I want sales statistics
+**When** I send "stats penjualan"
+**Then** I receive current month's sales data (units sold, revenue, top sellers)
+
+**Technical Notes:**
+- Command parser with regex patterns
+- Role-based command access control
+- All commands logged for audit trail
+- Formatted responses with emojis for readability
+- Integration with existing VehicleService and AnalyticsService
+
+**Coverage:** New functionality - Staff command interface
+
+---
+
+### Story 8.6: Dual Contact Options in Catalog
+
+As a **potential customer**,
+I want **to choose between chatting with AI or a human sales person**,
+So that **I can select the interaction style that suits my needs**.
+
+**Acceptance Criteria:**
+
+**Given** I'm viewing a vehicle in the catalog
+**When** I look at contact options
+**Then** I see two clear buttons: "Chat dengan AI" (instant, 24/7) and "Chat dengan Sales" (personal)
+
+**Given** I click "Chat dengan AI"
+**When** WhatsApp opens
+**Then** I'm connected to the AI assistant with context about the vehicle I was viewing
+
+**Given** I click "Chat dengan Sales"
+**When** WhatsApp opens
+**Then** I'm connected directly to a human sales person with pre-filled message about the vehicle
+
+**Given** I'm chatting with AI but want human assistance
+**When** I ask to speak with sales or AI detects need for human
+**Then** AI seamlessly hands off the conversation and notifies the sales team
+
+**Technical Notes:**
+- Update VehicleCard component with dual buttons
+- Different WhatsApp links for AI vs human
+- AI handoff creates high-priority lead
+- Sales team notification system
+
+**Coverage:** New functionality - Customer choice & flexibility
+
+---
+
+### Story 8.7: Conversation Monitoring & Analytics
+
+As a **showroom administrator**,
+I want **to monitor AI conversations and see analytics**,
+So that **I can ensure quality service and understand customer needs**.
+
+**Acceptance Criteria:**
+
+**Given** I access the WhatsApp AI dashboard
+**When** I view the conversations tab
+**Then** I see all recent conversations (customer and staff) with status (active, escalated, closed)
+
+**Given** I want to review a specific conversation
+**When** I click on a conversation
+**Then** I see the full message history with timestamps and can takeover the conversation if needed
+
+**Given** I want to understand AI performance
+**When** I view the analytics dashboard
+**Then** I see metrics: total conversations, AI resolution rate, average response time, escalation rate, top intents, and lead conversion rate
+
+**Given** A customer inquiry becomes high-value
+**When** The AI detects buying intent
+**Then** I receive a real-time notification to potentially takeover the conversation
+
+**Given** I want to improve AI responses
+**When** I review conversation logs
+**Then** I can identify common questions and add them to custom FAQ
+
+**Technical Notes:**
+- Real-time conversation list with SSE or polling
+- Full conversation history with message metadata
+- Analytics aggregation queries
+- Notification service for high-value leads
+- Export conversation logs for training
+
+**Coverage:** New functionality - Monitoring & optimization
+
+---
+
+**Checkpoint Epic 8 Complete** ✅
+
+---
+
 ## Summary
 
-**Total Epics:** 7 Main Epics + 1 Cross-Cutting
-**Total Stories:** 50 user stories
-**Functional Requirements Coverage:** All 68 requirements addressed
+**Total Epics:** 8 Main Epics + 1 Cross-Cutting
+**Total Stories:** 70 user stories
+**Functional Requirements Coverage:** All 68 original requirements + new WhatsApp AI functionality
 
 **Epic Distribution:**
-- Epic 1: Multi-Tenant Foundation (12 stories)
-- Epic 2: AI-Powered Vehicle Processing (8 stories)
-- Epic 3: Natural Language Control Center (5 stories)
-- Epic 4: Real-Time Inventory Management (7 stories)
-- Epic 5: Customer-Facing Catalog Generation (9 stories)
-- Epic 6: WhatsApp Lead Management (5 stories)
-- Epic 7: Analytics & Business Intelligence (8 stories)
-- Cross-Cutting: Security & Data (6 stories)
+- Epic 1: Multi-Tenant Foundation (12 stories) ✅
+- Epic 2: AI-Powered Vehicle Processing (10 stories) ✅
+- Epic 3: Natural Language Control Center (6 stories) ✅
+- Epic 4: Real-Time Inventory Management (7 stories) ✅
+- Epic 5: Customer-Facing Catalog Generation (9 stories) ✅
+- Epic 6: WhatsApp Lead Management (5 stories) ✅
+- Epic 7: Analytics & Business Intelligence (8 stories) ✅
+- **Epic 8: WhatsApp AI Automation (7 stories) ✅ COMPLETED**
+- Cross-Cutting: Security & Data (6 stories) ✅
 
 **Implementation Priority:**
-1. **Foundation First:** Epic 1, Cross-Cutting Security & Data
-2. **Core Functionality:** Epic 2, Epic 3, Epic 4
-3. **Customer Value:** Epic 5, Epic 6
-4. **Business Intelligence:** Epic 7
+1. **Foundation First:** Epic 1, Cross-Cutting Security & Data ✅
+2. **Core Functionality:** Epic 2, Epic 3, Epic 4 ✅
+3. **Customer Value:** Epic 5, Epic 6 ✅
+4. **Business Intelligence:** Epic 7 ✅
+5. **Advanced Automation:** Epic 8 ✅
 
-**Estimated Development Timeline:** 6-8 weeks with parallel development streams
+**Development Status:** ALL EPICS COMPLETE - Production Ready
+**Completion Date:** 2025-11-28
 
 ---
 

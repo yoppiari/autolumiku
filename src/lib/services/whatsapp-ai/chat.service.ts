@@ -1,0 +1,323 @@
+/**
+ * WhatsApp AI Chat Service
+ * Handles customer conversations dengan Z.ai GLM-4 model
+ * Context-aware dengan vehicle inventory dan showroom info
+ */
+
+import { createZAIClient } from "@/lib/ai/zai-client";
+import { prisma } from "@/lib/prisma";
+import { MessageIntent } from "./intent-classifier.service";
+
+// ==================== TYPES ====================
+
+export interface ChatContext {
+  tenantId: string;
+  conversationId: string;
+  customerPhone: string;
+  customerName?: string;
+  intent: MessageIntent;
+  messageHistory: Array<{
+    role: "user" | "assistant";
+    content: string;
+  }>;
+}
+
+export interface ChatResponse {
+  message: string;
+  shouldEscalate: boolean;
+  confidence: number;
+  processingTime: number;
+}
+
+// ==================== WHATSAPP AI CHAT SERVICE ====================
+
+export class WhatsAppAIChatService {
+  /**
+   * Generate AI response untuk customer message
+   */
+  static async generateResponse(
+    context: ChatContext,
+    userMessage: string
+  ): Promise<ChatResponse> {
+    const startTime = Date.now();
+
+    try {
+      // Get AI config
+      const account = await prisma.aimeowAccount.findUnique({
+        where: { tenantId: context.tenantId },
+        include: {
+          aiConfig: true,
+          tenant: true,
+        },
+      });
+
+      if (!account || !account.aiConfig) {
+        throw new Error("AI configuration not found");
+      }
+
+      const config = account.aiConfig;
+
+      // Check if customer chat is enabled
+      if (!config.customerChatEnabled) {
+        return {
+          message: "Maaf, fitur chat otomatis sedang tidak aktif. Mohon tunggu, staff kami akan segera merespons.",
+          shouldEscalate: true,
+          confidence: 1.0,
+          processingTime: Date.now() - startTime,
+        };
+      }
+
+      // Check business hours (optional)
+      const shouldCheckHours = config.businessHours && config.afterHoursMessage;
+      if (shouldCheckHours && !this.isWithinBusinessHours(config.businessHours, config.timezone)) {
+        return {
+          message: config.afterHoursMessage || "Kami sedang tutup. Silakan hubungi lagi pada jam operasional.",
+          shouldEscalate: false,
+          confidence: 1.0,
+          processingTime: Date.now() - startTime,
+        };
+      }
+
+      // Build system prompt
+      const systemPrompt = await this.buildSystemPrompt(
+        account.tenant,
+        config,
+        context.intent
+      );
+
+      // Build context dengan conversation history
+      const conversationContext = this.buildConversationContext(
+        context.messageHistory,
+        userMessage
+      );
+
+      // Generate response dengan Z.ai
+      const zaiClient = createZAIClient();
+      const aiResponse = await zaiClient.generateText({
+        systemPrompt,
+        userPrompt: conversationContext,
+        temperature: config.temperature,
+        maxTokens: config.maxTokens,
+      });
+
+      // Analyze response untuk escalation
+      const shouldEscalate = this.shouldEscalateToHuman(
+        aiResponse.content,
+        context.intent
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      return {
+        message: aiResponse.content,
+        shouldEscalate,
+        confidence: 0.85, // Simplified - bisa dikembangkan dengan analysis lebih lanjut
+        processingTime,
+      };
+    } catch (error: any) {
+      console.error("[WhatsApp AI Chat] Error generating response:", error);
+
+      // Fallback response
+      return {
+        message: "Maaf, terjadi gangguan sistem. Staff kami akan segera membantu Anda.",
+        shouldEscalate: true,
+        confidence: 0,
+        processingTime: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * Build system prompt untuk AI
+   */
+  private static async buildSystemPrompt(
+    tenant: any,
+    config: any,
+    intent: MessageIntent
+  ): Promise<string> {
+    let systemPrompt = `Anda adalah ${config.aiName}, asisten virtual untuk ${tenant.name}, sebuah showroom mobil bekas.
+
+Personality: ${config.aiPersonality}
+Tugas Anda:
+- Menjawab pertanyaan customer tentang mobil yang tersedia
+- Memberikan informasi harga, spesifikasi, dan kondisi kendaraan
+- Membantu customer untuk menemukan mobil yang sesuai kebutuhan
+- Menjadwalkan test drive atau kunjungan showroom
+- Bersikap ramah, profesional, dan membantu
+
+Informasi Showroom:
+- Nama: ${tenant.name}
+- Lokasi: ${tenant.city || "Indonesia"}
+${tenant.phoneNumber ? `- Telepon: ${tenant.phoneNumber}` : ""}
+${tenant.whatsappNumber ? `- WhatsApp: ${tenant.whatsappNumber}` : ""}
+
+Aturan Penting:
+1. JANGAN memberikan informasi yang tidak Anda ketahui dengan pasti
+2. Jika ditanya tentang mobil spesifik yang tidak ada di inventory, jujur katakan tidak tersedia
+3. Jika pertanyaan terlalu kompleks atau butuh konfirmasi staff, sarankan customer untuk berbicara dengan staff
+4. Selalu gunakan Bahasa Indonesia yang sopan dan mudah dipahami
+5. Fokus pada kebutuhan customer, bukan hard selling
+`;
+
+    // Add vehicle inventory context jika relevant
+    if (
+      intent === "customer_vehicle_inquiry" ||
+      intent === "customer_price_inquiry"
+    ) {
+      const vehicles = await this.getAvailableVehicles(tenant.id);
+      if (vehicles.length > 0) {
+        systemPrompt += `\n\nInventory Mobil Tersedia (${vehicles.length} unit):\n`;
+        systemPrompt += vehicles
+          .map(
+            (v) =>
+              `- ${v.brand} ${v.model} ${v.year} (${v.transmission}) - Rp ${this.formatPrice(v.price)} - ${v.mileage}km - ${v.color}`
+          )
+          .join("\n");
+      } else {
+        systemPrompt += `\n\nSaat ini sedang tidak ada inventory yang tersedia di sistem. Sarankan customer untuk menghubungi staff untuk informasi terbaru.`;
+      }
+    }
+
+    // Add FAQ if configured
+    if (config.customFAQ) {
+      systemPrompt += `\n\nFAQ:\n${JSON.stringify(config.customFAQ, null, 2)}`;
+    }
+
+    return systemPrompt;
+  }
+
+  /**
+   * Build conversation context
+   */
+  private static buildConversationContext(
+    messageHistory: Array<{ role: "user" | "assistant"; content: string }>,
+    currentMessage: string
+  ): string {
+    let context = "";
+
+    // Add recent conversation history (last 5 messages)
+    const recentHistory = messageHistory.slice(-5);
+    if (recentHistory.length > 0) {
+      context += "Riwayat Percakapan:\n";
+      recentHistory.forEach((msg) => {
+        const label = msg.role === "user" ? "Customer" : "AI";
+        context += `${label}: ${msg.content}\n`;
+      });
+      context += "\n";
+    }
+
+    context += `Customer sekarang mengirim:\n${currentMessage}\n\nBerikan respons yang membantu dan relevan:`;
+
+    return context;
+  }
+
+  /**
+   * Get available vehicles untuk context
+   */
+  private static async getAvailableVehicles(tenantId: string) {
+    return await prisma.vehicle.findMany({
+      where: {
+        tenantId,
+        status: "AVAILABLE",
+      },
+      select: {
+        id: true,
+        brand: true,
+        model: true,
+        year: true,
+        price: true,
+        mileage: true,
+        transmission: true,
+        color: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10, // Limit to 10 most recent
+    });
+  }
+
+  /**
+   * Format price to Indonesian format
+   */
+  private static formatPrice(price: number): string {
+    return new Intl.NumberFormat("id-ID").format(price);
+  }
+
+  /**
+   * Check if within business hours
+   */
+  private static isWithinBusinessHours(
+    businessHours: any,
+    timezone: string
+  ): boolean {
+    // Simplified check - dalam production perlu timezone handling proper
+    const now = new Date();
+    const day = now
+      .toLocaleDateString("en-US", { weekday: "long", timeZone: timezone })
+      .toLowerCase();
+    const currentHour = now.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: timezone,
+    });
+
+    const todayHours = businessHours[day];
+    if (!todayHours || todayHours.open === "closed") {
+      return false;
+    }
+
+    return currentHour >= todayHours.open && currentHour <= todayHours.close;
+  }
+
+  /**
+   * Determine if conversation should be escalated to human
+   */
+  private static shouldEscalateToHuman(
+    aiResponse: string,
+    intent: MessageIntent
+  ): boolean {
+    // Escalate if AI mentions uncertainty
+    const uncertaintyKeywords = [
+      "tidak yakin",
+      "tidak tahu",
+      "maaf saya tidak",
+      "hubungi staff",
+      "berbicara dengan staff",
+      "tidak dapat membantu",
+    ];
+
+    const hasUncertainty = uncertaintyKeywords.some((keyword) =>
+      aiResponse.toLowerCase().includes(keyword)
+    );
+
+    // Escalate for price negotiation (if not enabled in config)
+    const isPriceNegotiation =
+      intent === "customer_price_inquiry" &&
+      (aiResponse.toLowerCase().includes("nego") ||
+        aiResponse.toLowerCase().includes("diskon"));
+
+    return hasUncertainty || isPriceNegotiation;
+  }
+
+  /**
+   * Get conversation history untuk context building
+   */
+  static async getConversationHistory(
+    conversationId: string,
+    limit: number = 10
+  ): Promise<Array<{ role: "user" | "assistant"; content: string }>> {
+    const messages = await prisma.whatsAppMessage.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+
+    // Reverse untuk chronological order
+    return messages.reverse().map((msg) => ({
+      role: msg.direction === "inbound" ? ("user" as const) : ("assistant" as const),
+      content: msg.content,
+    }));
+  }
+}
+
+export default WhatsAppAIChatService;

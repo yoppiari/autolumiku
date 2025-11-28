@@ -16,55 +16,57 @@ datasource db {
 // ============================================================================
 
 model Tenant {
-  id                String   @id @default(uuid())
-  name              String
-  slug              String   @unique
-  domain            String?  @unique
-  status            String   @default("active") // active, suspended, canceled
-  subscriptionId    String?  @unique
+  id             String  @id @default(uuid())
+  name           String
+  slug           String  @unique
+  domain         String? @unique
+  status         String  @default("active") // active, suspended, canceled
+  subscriptionId String? @unique
 
   // Branding
-  logoUrl           String?
-  faviconUrl        String?
-  primaryColor      String   @default("#1a56db")
-  secondaryColor    String   @default("#7c3aed")
-  theme             String   @default("light") // light, dark, auto
-  selectedTheme     String   @default("modern") // modern, classic, luxury, minimal (Epic 5.8)
+  logoUrl        String?
+  faviconUrl     String?
+  primaryColor   String  @default("#1a56db")
+  secondaryColor String  @default("#7c3aed")
+  theme          String  @default("light") // light, dark, auto
+  selectedTheme  String  @default("modern") // modern, classic, luxury, minimal (Epic 5.8)
 
   // Business Information (Epic 5.9)
-  phoneNumber       String?
+  phoneNumber          String?
   phoneNumberSecondary String?
-  whatsappNumber    String?
-  email             String?
-  address           String?
-  city              String?
-  province          String?
-  postalCode        String?
-  googleMapsUrl     String?
-  latitude          Float?
-  longitude         Float?
-  businessHours     Json?   // { monday: { open: "08:00", close: "17:00", closed: false }, ... }
-  socialMedia       Json?   // { instagram: "url", facebook: "url", tiktok: "url" }
+  whatsappNumber       String?
+  email                String?
+  address              String?
+  city                 String?
+  province             String?
+  postalCode           String?
+  googleMapsUrl        String?
+  latitude             Float?
+  longitude            Float?
+  businessHours        Json? // { monday: { open: "08:00", close: "17:00", closed: false }, ... }
+  socialMedia          Json? // { instagram: "url", facebook: "url", tiktok: "url" }
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  createdBy         String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
 
   // Relations
-  users             User[]
-  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
-  teamMembers       TeamMember[]
-  sessions          Session[]
-  invoices          Invoice[]
-  payments          Payment[]
-  auditLogs         AuditLog[]
-  securityEvents    SecurityEvent[]
-  vehicles          Vehicle[]
-  competitorVehicles CompetitorVehicle[]
+  users                  User[]
+  subscription           Subscription?            @relation(fields: [subscriptionId], references: [id])
+  teamMembers            TeamMember[]
+  sessions               Session[]
+  invoices               Invoice[]
+  payments               Payment[]
+  auditLogs              AuditLog[]
+  securityEvents         SecurityEvent[]
+  vehicles               Vehicle[]
+  competitorVehicles     CompetitorVehicle[]
   competitorPriceHistory CompetitorPriceHistory[]
-  apiKeys           ApiKey[]
-  blogPosts         BlogPost[]
+  apiKeys                ApiKey[]
+  blogPosts              BlogPost[]
+  aimeowAccount          AimeowAccount? // Epic 8: WhatsApp AI connection
+  searchAnalytics        SearchAnalytics[] // Epic 5: Search analytics
 
   @@index([slug])
   @@index([status])
@@ -72,40 +74,40 @@ model Tenant {
 }
 
 model User {
-  id                        String    @id @default(uuid())
-  email                     String    @unique
-  passwordHash              String
-  firstName                 String
-  lastName                  String
-  phone                     String?
+  id           String  @id @default(uuid())
+  email        String  @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
 
-  tenantId                  String
-  role                      String    @default("user")
+  tenantId String
+  role     String @default("user")
 
   // Email Verification
-  emailVerified             Boolean   @default(false)
-  emailVerificationToken    String?   @unique
-  emailVerificationExpiry   DateTime?
+  emailVerified           Boolean   @default(false)
+  emailVerificationToken  String?   @unique
+  emailVerificationExpiry DateTime?
 
   // Password Reset
-  passwordResetToken        String?   @unique
-  passwordResetExpiry       DateTime?
+  passwordResetToken  String?   @unique
+  passwordResetExpiry DateTime?
 
   // Security
-  failedLoginAttempts       Int       @default(0)
-  lockedUntil               DateTime?
-  lastLoginAt               DateTime?
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
 
   // Metadata
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  tenant                    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  sessions                  Session[]
-  auditLogs                 AuditLog[]
-  securityEvents            SecurityEvent[]
-  teamMemberships           TeamMember[]
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions        Session[]
+  auditLogs       AuditLog[]
+  securityEvents  SecurityEvent[]
+  teamMemberships TeamMember[]
 
   @@index([email])
   @@index([tenantId])
@@ -115,37 +117,37 @@ model User {
 }
 
 model Session {
-  id                String   @id @default(uuid())
-  userId            String
-  tenantId          String
+  id       String @id @default(uuid())
+  userId   String
+  tenantId String
 
   // Session Data
-  accessToken       String   @unique
-  refreshToken      String   @unique
-  expiresAt         DateTime
+  accessToken  String   @unique
+  refreshToken String   @unique
+  expiresAt    DateTime
 
   // Device Info
-  deviceName        String?
-  deviceType        String?  // desktop, mobile, tablet
-  browser           String?
-  os                String?
-  ipAddress         String?
+  deviceName String?
+  deviceType String? // desktop, mobile, tablet
+  browser    String?
+  os         String?
+  ipAddress  String?
 
   // Location
-  country           String?
-  city              String?
+  country String?
+  city    String?
 
   // Status
-  isActive          Boolean  @default(true)
-  lastActivity      DateTime @default(now())
+  isActive     Boolean  @default(true)
+  lastActivity DateTime @default(now())
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([tenantId])
@@ -156,28 +158,28 @@ model Session {
 }
 
 model TeamMember {
-  id                String   @id @default(uuid())
-  tenantId          String
-  userId            String?
+  id       String  @id @default(uuid())
+  tenantId String
+  userId   String?
 
   // Member Info
-  email             String
-  name              String?
-  role              String   // showroom_owner, showroom_staff, sales_person
-  status            String   @default("invited") // invited, active, suspended
+  email  String
+  name   String?
+  role   String // showroom_owner, showroom_staff, sales_person
+  status String  @default("invited") // invited, active, suspended
 
   // Invitation
-  invitationToken   String?  @unique
-  invitedAt         DateTime @default(now())
-  acceptedAt        DateTime?
+  invitationToken String?   @unique
+  invitedAt       DateTime  @default(now())
+  acceptedAt      DateTime?
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -191,34 +193,34 @@ model TeamMember {
 // ============================================================================
 
 model Subscription {
-  id                    String   @id @default(uuid())
-  tenantId              String   @unique
+  id       String @id @default(uuid())
+  tenantId String @unique
 
   // Plan Details
-  plan                  String   // basic, professional, enterprise
-  status                String   @default("trialing") // trialing, active, past_due, canceled, expired
+  plan   String // basic, professional, enterprise
+  status String @default("trialing") // trialing, active, past_due, canceled, expired
 
   // Billing Period
-  currentPeriodStart    DateTime
-  currentPeriodEnd      DateTime
-  trialEnd              DateTime?
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialEnd           DateTime?
 
   // Cancellation
-  canceledAt            DateTime?
-  cancelAt              DateTime?
+  canceledAt DateTime?
+  cancelAt   DateTime?
 
   // Pricing
-  pricePerMonth         Int      // in IDR cents (Rp 299000 = 29900000)
-  currency              String   @default("IDR")
-  paymentMethod         String?
+  pricePerMonth Int // in IDR cents (Rp 299000 = 29900000)
+  currency      String  @default("IDR")
+  paymentMethod String?
 
   // Metadata
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  tenant                Tenant?
-  invoices              Invoice[]
+  tenant   Tenant?
+  invoices Invoice[]
 
   @@index([status])
   @@index([currentPeriodEnd])
@@ -226,42 +228,42 @@ model Subscription {
 }
 
 model Invoice {
-  id                String   @id @default(uuid())
-  invoiceNumber     String   @unique
-  tenantId          String
-  subscriptionId    String?
+  id             String  @id @default(uuid())
+  invoiceNumber  String  @unique
+  tenantId       String
+  subscriptionId String?
 
   // Invoice Details
-  status            String   @default("open") // draft, open, paid, void, overdue
-  amount            Int      // Total amount in IDR cents
-  subtotal          Int
-  taxAmount         Int      // PPN 11%
-  currency          String   @default("IDR")
+  status    String @default("open") // draft, open, paid, void, overdue
+  amount    Int // Total amount in IDR cents
+  subtotal  Int
+  taxAmount Int // PPN 11%
+  currency  String @default("IDR")
 
   // Dates
-  dueDate           DateTime
-  paidAt            DateTime?
+  dueDate DateTime
+  paidAt  DateTime?
 
   // Period
-  periodStart       DateTime
-  periodEnd         DateTime
+  periodStart DateTime
+  periodEnd   DateTime
 
   // Tax Information
-  ppnRate           Float    @default(11.0)
-  ppnAmount         Int
-  npwp              String?
-  companyName       String
-  companyAddress    String
+  ppnRate        Float   @default(11.0)
+  ppnAmount      Int
+  npwp           String?
+  companyName    String
+  companyAddress String
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  payments          Payment[]
-  lineItems         InvoiceLineItem[]
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription Subscription?     @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  payments     Payment[]
+  lineItems    InvoiceLineItem[]
 
   @@index([tenantId])
   @@index([invoiceNumber])
@@ -271,52 +273,52 @@ model Invoice {
 }
 
 model InvoiceLineItem {
-  id                String   @id @default(uuid())
-  invoiceId         String
+  id        String @id @default(uuid())
+  invoiceId String
 
-  description       String
-  quantity          Int
-  unitPrice         Int      // in IDR cents
-  amount            Int      // in IDR cents
+  description String
+  quantity    Int
+  unitPrice   Int // in IDR cents
+  amount      Int // in IDR cents
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  invoice           Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
   @@map("invoice_line_items")
 }
 
 model Payment {
-  id                    String   @id @default(uuid())
-  tenantId              String
-  subscriptionId        String?
-  invoiceId             String
+  id             String  @id @default(uuid())
+  tenantId       String
+  subscriptionId String?
+  invoiceId      String
 
   // Payment Details
-  amount                Int      // in IDR cents
-  currency              String   @default("IDR")
-  paymentMethod         String   // bank_transfer_bca, ewallet_gopay, etc
-  status                String   @default("pending") // pending, paid, failed, refunded, expired
+  amount        Int // in IDR cents
+  currency      String @default("IDR")
+  paymentMethod String // bank_transfer_bca, ewallet_gopay, etc
+  status        String @default("pending") // pending, paid, failed, refunded, expired
 
   // Payment Info
-  paidAt                DateTime?
-  failureReason         String?
+  paidAt        DateTime?
+  failureReason String?
 
   // Gateway Info
-  gatewayTransactionId  String?  @unique
-  gatewayProvider       String?  // midtrans, xendit
-  gatewayResponse       Json?
+  gatewayTransactionId String? @unique
+  gatewayProvider      String? // midtrans, xendit
+  gatewayResponse      Json?
 
   // Metadata
-  metadata              Json?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoice               Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([invoiceId])
@@ -330,32 +332,32 @@ model Payment {
 // ============================================================================
 
 model GlobalSetting {
-  id                String   @id @default(uuid())
-  key               String   @unique
-  value             Json
+  id    String @id @default(uuid())
+  key   String @unique
+  value Json
 
   // Classification
-  category          String   // platform, indonesian_regional, security, billing, etc
-  scope             String   @default("global") // global, tenant, user
+  category String // platform, indonesian_regional, security, billing, etc
+  scope    String @default("global") // global, tenant, user
 
   // Metadata
-  description       String?
-  dataType          String   // string, number, boolean, json, array
-  isSecret          Boolean  @default(false)
-  defaultValue      Json?
+  description  String?
+  dataType     String // string, number, boolean, json, array
+  isSecret     Boolean @default(false)
+  defaultValue Json?
 
   // Tenant/User specific (if scope is tenant or user)
-  tenantId          String?
-  userId            String?
+  tenantId String?
+  userId   String?
 
   // Audit
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  createdBy         String
-  updatedBy         String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
+  updatedBy String
 
   // Relations
-  changeHistory     SettingChange[]
+  changeHistory SettingChange[]
 
   @@index([key])
   @@index([category])
@@ -365,20 +367,20 @@ model GlobalSetting {
 }
 
 model SettingChange {
-  id                String   @id @default(uuid())
-  settingId         String
-  settingKey        String
+  id         String @id @default(uuid())
+  settingId  String
+  settingKey String
 
-  oldValue          Json?
-  newValue          Json
+  oldValue Json?
+  newValue Json
 
-  changedBy         String
-  changedAt         DateTime @default(now())
-  reason            String?
-  tenantId          String?
+  changedBy String
+  changedAt DateTime @default(now())
+  reason    String?
+  tenantId  String?
 
   // Relations
-  setting           GlobalSetting @relation(fields: [settingId], references: [id], onDelete: Cascade)
+  setting GlobalSetting @relation(fields: [settingId], references: [id], onDelete: Cascade)
 
   @@index([settingId])
   @@index([settingKey])
@@ -391,31 +393,31 @@ model SettingChange {
 // ============================================================================
 
 model SecurityEvent {
-  id                String   @id @default(uuid())
-  eventType         String   // UNAUTHORIZED_ACCESS, PERMISSION_DENIED, etc
-  severity          String   // LOW, MEDIUM, HIGH, CRITICAL
+  id        String @id @default(uuid())
+  eventType String // UNAUTHORIZED_ACCESS, PERMISSION_DENIED, etc
+  severity  String // LOW, MEDIUM, HIGH, CRITICAL
 
-  userId            String?
-  tenantId          String
+  userId   String?
+  tenantId String
 
   // Event Details
-  resourceType      String?
-  resourceId        String?
-  attemptedAction   String?
-  deniedPermission  String?
+  resourceType     String?
+  resourceId       String?
+  attemptedAction  String?
+  deniedPermission String?
 
   // Context
-  ipAddress         String?
-  userAgent         String?
-  details           Json?
+  ipAddress String?
+  userAgent String?
+  details   Json?
 
   // Metadata
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  alerts            SecurityAlert[]
+  user   User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tenant Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alerts SecurityAlert[]
 
   @@index([tenantId])
   @@index([userId])
@@ -426,28 +428,28 @@ model SecurityEvent {
 }
 
 model SecurityAlert {
-  id                String   @id @default(uuid())
-  eventId           String
-  eventType         String
-  severity          String
+  id        String @id @default(uuid())
+  eventId   String
+  eventType String
+  severity  String
 
-  tenantId          String
-  userId            String?
+  tenantId String
+  userId   String?
 
-  message           String
-  detectedAt        DateTime @default(now())
+  message    String
+  detectedAt DateTime @default(now())
 
   // Notification
-  notifiedTo        String[] // Array of user IDs or email addresses
+  notifiedTo String[] // Array of user IDs or email addresses
 
   // Resolution
-  resolved          Boolean  @default(false)
-  resolvedAt        DateTime?
-  resolvedBy        String?
-  resolutionNotes   String?
+  resolved        Boolean   @default(false)
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?
 
   // Relations
-  event             SecurityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event SecurityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([eventId])
@@ -457,30 +459,30 @@ model SecurityAlert {
 }
 
 model AuditLog {
-  id                String   @id @default(uuid())
-  tenantId          String
-  userId            String?
+  id       String  @id @default(uuid())
+  tenantId String
+  userId   String?
 
   // Action Details
-  action            String   // CREATE, UPDATE, DELETE, LOGIN, etc
-  resourceType      String   // user, tenant, subscription, etc
-  resourceId        String?
+  action       String // CREATE, UPDATE, DELETE, LOGIN, etc
+  resourceType String // user, tenant, subscription, etc
+  resourceId   String?
 
   // Changes
-  oldValue          Json?
-  newValue          Json?
+  oldValue Json?
+  newValue Json?
 
   // Context
-  ipAddress         String?
-  userAgent         String?
-  metadata          Json?
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
 
   // Timestamp
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([userId])
@@ -495,22 +497,22 @@ model AuditLog {
 // ============================================================================
 
 model Role {
-  id                String   @id @default(uuid())
-  name              String   @unique
-  displayName       String
-  displayNameId     String   // Indonesian display name
-  description       String?
+  id            String  @id @default(uuid())
+  name          String  @unique
+  displayName   String
+  displayNameId String // Indonesian display name
+  description   String?
 
   // Role Type
-  isSystem          Boolean  @default(false) // System roles cannot be deleted
-  tenantId          String?  // null = global role, uuid = tenant-specific
+  isSystem Boolean @default(false) // System roles cannot be deleted
+  tenantId String? // null = global role, uuid = tenant-specific
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  permissions       RolePermission[]
+  permissions RolePermission[]
 
   @@index([name])
   @@index([tenantId])
@@ -518,20 +520,20 @@ model Role {
 }
 
 model Permission {
-  id                String   @id @default(uuid())
-  name              String   @unique
-  resource          String   // user, tenant, subscription, vehicle, etc
-  action            String   // create, read, update, delete, manage
-  description       String?
+  id          String  @id @default(uuid())
+  name        String  @unique
+  resource    String // user, tenant, subscription, vehicle, etc
+  action      String // create, read, update, delete, manage
+  description String?
 
   // Grouping
-  category          String   // security, audit, billing, inventory, etc
+  category String // security, audit, billing, inventory, etc
 
   // Metadata
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  roles             RolePermission[]
+  roles RolePermission[]
 
   @@unique([resource, action])
   @@index([name])
@@ -541,15 +543,15 @@ model Permission {
 }
 
 model RolePermission {
-  id                String   @id @default(uuid())
-  roleId            String
-  permissionId      String
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  role              Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission        Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -562,19 +564,19 @@ model RolePermission {
 // ============================================================================
 
 model HealthCheck {
-  id                String   @id @default(uuid())
+  id String @id @default(uuid())
 
   // Check Details
-  checkType         String   // database, redis, api, disk, memory
-  status            String   // healthy, degraded, unhealthy
-  responseTime      Int      // in milliseconds
+  checkType    String // database, redis, api, disk, memory
+  status       String // healthy, degraded, unhealthy
+  responseTime Int // in milliseconds
 
   // Metrics
-  details           Json?
-  errorMessage      String?
+  details      Json?
+  errorMessage String?
 
   // Timestamp
-  checkedAt         DateTime @default(now())
+  checkedAt DateTime @default(now())
 
   @@index([checkType])
   @@index([status])
@@ -583,18 +585,18 @@ model HealthCheck {
 }
 
 model PlatformMetric {
-  id                String   @id @default(uuid())
+  id String @id @default(uuid())
 
   // Metric Details
-  metricName        String
-  metricValue       Float
-  unit              String?
+  metricName  String
+  metricValue Float
+  unit        String?
 
   // Tags
-  tags              Json?
+  tags Json?
 
   // Timestamp
-  recordedAt        DateTime @default(now())
+  recordedAt DateTime @default(now())
 
   @@index([metricName])
   @@index([recordedAt])
@@ -606,64 +608,64 @@ model PlatformMetric {
 // ============================================================================
 
 model Vehicle {
-  id                String   @id @default(uuid())
-  tenantId          String
-  displayId         String?  @unique // Human-readable ID like "VH-001", "VH-002"
+  id        String  @id @default(uuid())
+  tenantId  String
+  displayId String? @unique // Human-readable ID like "VH-001", "VH-002"
 
   // Basic Information (AI-identified)
-  make              String
-  model             String
-  year              Int
-  variant           String?
+  make    String
+  model   String
+  year    Int
+  variant String?
 
   // AI-Generated Content
-  descriptionId     String?  @db.Text // Indonesian description
-  descriptionEn     String?  @db.Text // English description
-  features          Json?    // Array of features extracted by AI
-  specifications    Json?    // Technical specs object
+  descriptionId  String? @db.Text // Indonesian description
+  descriptionEn  String? @db.Text // English description
+  features       Json? // Array of features extracted by AI
+  specifications Json? // Technical specs object
 
   // AI Identification Metadata
-  aiConfidence      Float?   // 0-100 confidence score
-  aiReasoning       String?  @db.Text // AI's reasoning for identification
-  manuallyEdited    Boolean  @default(false) // User edited AI content
+  aiConfidence   Float? // 0-100 confidence score
+  aiReasoning    String? @db.Text // AI's reasoning for identification
+  manuallyEdited Boolean @default(false) // User edited AI content
 
   // Pricing
-  price             BigInt   // In IDR cents (Rp 250jt = 25000000000)
-  aiSuggestedPrice  BigInt?  // AI recommendation in IDR cents
-  priceConfidence   Float?   // 0-100 confidence score for pricing
-  priceAnalysis     Json?    // Market analysis data
+  price            BigInt // In IDR cents (Rp 250jt = 25000000000)
+  aiSuggestedPrice BigInt? // AI recommendation in IDR cents
+  priceConfidence  Float? // 0-100 confidence score for pricing
+  priceAnalysis    Json? // Market analysis data
 
   // Vehicle Details
-  mileage           Int?     // Kilometers
-  transmissionType  String?  // manual, automatic, cvt
-  fuelType          String?  // bensin, diesel, hybrid, electric
-  color             String?
-  licensePlate      String?
-  engineCapacity    String?  // e.g., "1500cc"
-  condition         String?  // excellent, good, fair, poor
+  mileage          Int? // Kilometers
+  transmissionType String? // manual, automatic, cvt
+  fuelType         String? // bensin, diesel, hybrid, electric
+  color            String?
+  licensePlate     String?
+  engineCapacity   String? // e.g., "1500cc"
+  condition        String? // excellent, good, fair, poor
 
   // Status
-  status            VehicleStatus @default(DRAFT)
-  publishedAt       DateTime?
+  status      VehicleStatus @default(DRAFT)
+  publishedAt DateTime?
 
   // Organization
-  tags              String[] // custom tags like "Promo", "Best Seller"
-  categories        String[] // "Mobil Keluarga", "SUV", "MPV"
-  isFeatured        Boolean  @default(false)
-  displayOrder      Int      @default(0)
+  tags         String[] // custom tags like "Promo", "Best Seller"
+  categories   String[] // "Mobil Keluarga", "SUV", "MPV"
+  isFeatured   Boolean  @default(false)
+  displayOrder Int      @default(0)
 
   // Metadata
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  createdBy         String
-  updatedBy         String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
+  updatedBy String?
 
   // Relations
-  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  photos            VehiclePhoto[]
-  history           VehicleHistory[]
-  views             VehicleView[]
-  aiConversations   AIConversation[]
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  photos          VehiclePhoto[]
+  history         VehicleHistory[]
+  views           VehicleView[]
+  aiConversations AIConversation[]
 
   @@index([tenantId])
   @@index([status])
@@ -676,34 +678,34 @@ model Vehicle {
 
 // Vehicle Version History (Epic 4: Story 4.3)
 model VehicleHistory {
-  id                String   @id @default(uuid())
-  vehicleId         String
-  tenantId          String
+  id        String @id @default(uuid())
+  vehicleId String
+  tenantId  String
 
   // Version Information
-  version           Int      // Sequential version number
-  action            String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, PRICE_CHANGE
+  version Int // Sequential version number
+  action  String // CREATE, UPDATE, DELETE, STATUS_CHANGE, PRICE_CHANGE
 
   // Snapshot of vehicle data at this version
-  snapshot          Json     // Complete vehicle data snapshot
+  snapshot Json // Complete vehicle data snapshot
 
   // Change Details
-  changedFields     String[] // Fields that were modified
-  previousValues    Json?    // Previous values of changed fields
-  newValues         Json?    // New values of changed fields
+  changedFields  String[] // Fields that were modified
+  previousValues Json? // Previous values of changed fields
+  newValues      Json? // New values of changed fields
 
   // User who made the change
-  changedBy         String
-  changedByName     String?  // Cache user name for display
+  changedBy     String
+  changedByName String? // Cache user name for display
 
   // Change reason/notes
-  changeReason      String?  @db.Text
+  changeReason String? @db.Text
 
   // Metadata
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   @@index([vehicleId])
   @@index([tenantId])
@@ -714,47 +716,47 @@ model VehicleHistory {
 }
 
 model VehiclePhoto {
-  id                String   @id @default(uuid())
-  vehicleId         String
-  tenantId          String
+  id        String @id @default(uuid())
+  vehicleId String
+  tenantId  String
 
   // Storage (Cloudflare R2 / S3)
-  storageKey        String   // R2/S3 key: vehicles/{uuid}/{filename}
-  originalUrl       String   @db.Text // Full resolution URL (or base64 for now)
-  thumbnailUrl      String   @db.Text // 300x200 for list view (or base64 for now)
-  mediumUrl         String   @db.Text // 800x600 for gallery (or base64 for now)
-  largeUrl          String   @db.Text // 1920x1080 for detail view (or base64 for now)
+  storageKey   String // R2/S3 key: vehicles/{uuid}/{filename}
+  originalUrl  String @db.Text // Full resolution URL (or base64 for now)
+  thumbnailUrl String @db.Text // 300x200 for list view (or base64 for now)
+  mediumUrl    String @db.Text // 800x600 for gallery (or base64 for now)
+  largeUrl     String @db.Text // 1920x1080 for detail view (or base64 for now)
 
   // File Metadata
-  filename          String
-  fileSize          Int      // bytes
-  mimeType          String   // image/jpeg, image/png, image/webp
-  width             Int
-  height            Int
+  filename String
+  fileSize Int // bytes
+  mimeType String // image/jpeg, image/png, image/webp
+  width    Int
+  height   Int
 
   // Organization
-  displayOrder      Int      @default(0)
-  isMainPhoto       Boolean  @default(false)
-  isFeatured        Boolean  @default(false) // Highlight in gallery
-  caption           String?
+  displayOrder Int     @default(0)
+  isMainPhoto  Boolean @default(false)
+  isFeatured   Boolean @default(false) // Highlight in gallery
+  caption      String?
 
   // Quality Validation (Story 2.2)
-  qualityScore      Float?   // 0-100
+  qualityScore      Float? // 0-100
   validationStatus  PhotoValidationStatus @default(PENDING)
   validationMessage String?
-  validationDetails Json?   // Detailed quality analysis
+  validationDetails Json? // Detailed quality analysis
 
   // CDN & Optimization (Story 2.8)
-  cdnUrl            String?  // CDN-optimized URL
-  blurHash          String?  // Placeholder while loading
+  cdnUrl   String? // CDN-optimized URL
+  blurHash String? // Placeholder while loading
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  uploadedBy        String?  // Optional for now (TODO: make required after implementing auth)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  uploadedBy String? // Optional for now (TODO: make required after implementing auth)
 
   // Relations
-  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   @@index([vehicleId])
   @@index([tenantId])
@@ -768,26 +770,26 @@ model VehiclePhoto {
 // ============================================================================
 
 model CommandHistory {
-  id                String   @id @default(uuid())
-  tenantId          String
-  userId            String
+  id       String @id @default(uuid())
+  tenantId String
+  userId   String
 
   // Command Details
-  originalCommand   String   @db.Text
-  intent            String   // CommandIntent enum as string
-  confidence        Float    // 0-1 confidence score
-  entities          String   @db.Text // JSON serialized CommandEntity[]
+  originalCommand String @db.Text
+  intent          String // CommandIntent enum as string
+  confidence      Float // 0-1 confidence score
+  entities        String @db.Text // JSON serialized CommandEntity[]
 
   // Execution
-  success           Boolean
-  executionTimeMs   Int?
-  errorMessage      String?  @db.Text
+  success         Boolean
+  executionTimeMs Int?
+  errorMessage    String? @db.Text
 
   // Context
-  context           String?  @db.Text // JSON serialized context object
+  context String? @db.Text // JSON serialized context object
 
   // Metadata
-  timestamp         DateTime @default(now())
+  timestamp DateTime @default(now())
 
   @@index([tenantId])
   @@index([userId])
@@ -798,22 +800,22 @@ model CommandHistory {
 }
 
 model UserCommandPreference {
-  id                String   @id @default(uuid())
-  userId            String
-  tenantId          String
-  intent            String   // CommandIntent as string
+  id       String @id @default(uuid())
+  userId   String
+  tenantId String
+  intent   String // CommandIntent as string
 
   // Usage Statistics
-  frequency         Int      @default(1)
-  lastUsed          DateTime @default(now())
+  frequency Int      @default(1)
+  lastUsed  DateTime @default(now())
 
   // Pattern Analysis
-  timeOfDayPattern  String?  @db.Text // JSON: { "8": 5, "9": 3, "14": 2 }
-  contextPattern    String?  @db.Text // JSON: contextual usage patterns
+  timeOfDayPattern String? @db.Text // JSON: { "8": 5, "9": 3, "14": 2 }
+  contextPattern   String? @db.Text // JSON: contextual usage patterns
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, tenantId, intent], name: "userId_tenantId_intent")
   @@index([userId])
@@ -830,18 +832,18 @@ model UserCommandPreference {
 
 // Saved Search Filters (Epic 4: Story 4.7)
 model SavedSearch {
-  id                String   @id @default(uuid())
-  tenantId          String
-  userId            String
+  id       String @id @default(uuid())
+  tenantId String
+  userId   String
 
   // Search Configuration
-  name              String
-  filters           Json     // SearchFilters object
-  isDefault         Boolean  @default(false)
+  name      String
+  filters   Json // SearchFilters object
+  isDefault Boolean @default(false)
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId])
   @@index([userId])
@@ -855,35 +857,35 @@ model SavedSearch {
 
 // Catalog Layout Configuration (Epic 5: Story 5.7)
 model CatalogLayout {
-  id                String   @id @default(uuid())
-  tenantId          String   @unique
+  id       String @id @default(uuid())
+  tenantId String @unique
 
   // Layout Type
-  layoutType        String   @default("GRID") // GRID, LIST, FEATURED
+  layoutType String @default("GRID") // GRID, LIST, FEATURED
 
   // Hero Section
-  heroEnabled       Boolean  @default(true)
-  heroTitle         String?
-  heroSubtitle      String?
-  heroImageUrl      String?
+  heroEnabled  Boolean @default(true)
+  heroTitle    String?
+  heroSubtitle String?
+  heroImageUrl String?
 
   // Featured Vehicles
   featuredVehicleIds String[] // Array of vehicle IDs to feature
 
   // Section Order
-  sectionOrder      String[] @default(["hero", "featured", "filters", "vehicles"]) // Customizable section order
+  sectionOrder String[] @default(["hero", "featured", "filters", "vehicles"]) // Customizable section order
 
   // Navigation Menu
-  navigationMenu    Json?    // Custom navigation items
+  navigationMenu Json? // Custom navigation items
 
   // Display Settings
-  vehiclesPerPage   Int      @default(12)
-  showPriceRange    Boolean  @default(true)
-  showVehicleCount  Boolean  @default(true)
+  vehiclesPerPage  Int     @default(12)
+  showPriceRange   Boolean @default(true)
+  showVehicleCount Boolean @default(true)
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId])
   @@map("catalog_layouts")
@@ -895,59 +897,59 @@ model CatalogLayout {
 
 // Tenant Branding Configuration (Epic 5: Story 5.2, 5.9)
 model TenantBranding {
-  id                String   @id @default(uuid())
-  tenantId          String   @unique
+  id       String @id @default(uuid())
+  tenantId String @unique
 
   // Business Information
-  businessName      String
-  tagline           String?
-  description       String?  @db.Text
+  businessName String
+  tagline      String?
+  description  String? @db.Text
 
   // Contact Information
-  email             String?
-  phone             String?
-  whatsappNumber    String?
-  address           String?  @db.Text
-  city              String?
-  province          String?
-  postalCode        String?
+  email          String?
+  phone          String?
+  whatsappNumber String?
+  address        String? @db.Text
+  city           String?
+  province       String?
+  postalCode     String?
 
   // Location
-  latitude          Float?
-  longitude         Float?
-  mapUrl            String?  // Google Maps embed URL
+  latitude  Float?
+  longitude Float?
+  mapUrl    String? // Google Maps embed URL
 
   // Branding Assets
-  logoUrl           String?
-  faviconUrl        String?
-  coverImageUrl     String?
+  logoUrl       String?
+  faviconUrl    String?
+  coverImageUrl String?
 
   // Color Theme
-  primaryColor      String   @default("#2563eb")  // Blue
-  secondaryColor    String   @default("#7c3aed")  // Purple
-  accentColor       String   @default("#f59e0b")  // Amber
+  primaryColor   String @default("#2563eb") // Blue
+  secondaryColor String @default("#7c3aed") // Purple
+  accentColor    String @default("#f59e0b") // Amber
 
   // Typography
-  fontFamily        String   @default("Inter")
+  fontFamily String @default("Inter")
 
   // Social Media
-  facebookUrl       String?
-  instagramUrl      String?
-  tiktokUrl         String?
-  youtubeUrl        String?
+  facebookUrl  String?
+  instagramUrl String?
+  tiktokUrl    String?
+  youtubeUrl   String?
 
   // SEO
-  metaTitle         String?
-  metaDescription   String?  @db.Text
-  metaKeywords      String[]
+  metaTitle       String?
+  metaDescription String?  @db.Text
+  metaKeywords    String[]
 
   // Custom Domain
-  customDomain      String?  @unique
-  subdomain         String   @unique  // e.g., showroom.autolumiku.com
+  customDomain String? @unique
+  subdomain    String  @unique // e.g., showroom.autolumiku.com
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId])
   @@index([customDomain])
@@ -957,50 +959,50 @@ model TenantBranding {
 
 // Website Theme Configuration (Epic 5: Story 5.7, 5.8)
 model WebsiteTheme {
-  id                String   @id @default(uuid())
-  tenantId          String
+  id       String @id @default(uuid())
+  tenantId String
 
   // Theme Identification
-  name              String   // "Modern", "Classic", "Minimalist"
-  slug              String   // "modern", "classic", "minimalist"
-  isActive          Boolean  @default(false)
-  isDefault         Boolean  @default(false)
+  name      String // "Modern", "Classic", "Minimalist"
+  slug      String // "modern", "classic", "minimalist"
+  isActive  Boolean @default(false)
+  isDefault Boolean @default(false)
 
   // Layout Configuration
-  layoutType        String   @default("grid") // grid, list, masonry
-  featuredLayout    String   @default("hero") // hero, carousel, grid
+  layoutType     String @default("grid") // grid, list, masonry
+  featuredLayout String @default("hero") // hero, carousel, grid
 
   // Homepage Sections (ordered array of section IDs)
-  homepageSections  String[] // ["hero", "featured", "latest", "categories"]
+  homepageSections String[] // ["hero", "featured", "latest", "categories"]
 
   // Navigation
-  menuItems         Json     // Custom menu structure
-  showCategories    Boolean  @default(true)
-  showSearch        Boolean  @default(true)
+  menuItems      Json // Custom menu structure
+  showCategories Boolean @default(true)
+  showSearch     Boolean @default(true)
 
   // Catalog Display
-  vehiclesPerPage   Int      @default(12)
-  showGridView      Boolean  @default(true)
-  showListView      Boolean  @default(true)
-  defaultView       String   @default("grid")
+  vehiclesPerPage Int     @default(12)
+  showGridView    Boolean @default(true)
+  showListView    Boolean @default(true)
+  defaultView     String  @default("grid")
 
   // Vehicle Card Settings
-  showPrice         Boolean  @default(true)
-  showMileage       Boolean  @default(true)
-  showYear          Boolean  @default(true)
-  showFeatures      Boolean  @default(true)
+  showPrice    Boolean @default(true)
+  showMileage  Boolean @default(true)
+  showYear     Boolean @default(true)
+  showFeatures Boolean @default(true)
 
   // Advanced Settings
-  enableAnimations  Boolean  @default(true)
-  enableLazyLoading Boolean  @default(true)
+  enableAnimations     Boolean @default(true)
+  enableLazyLoading    Boolean @default(true)
   enableInfiniteScroll Boolean @default(false)
 
   // Custom CSS
-  customCss         String?  @db.Text
+  customCss String? @db.Text
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -1010,41 +1012,42 @@ model WebsiteTheme {
 
 // Customer Inquiry / Lead (Epic 5: Story 5.5)
 model Lead {
-  id                String   @id @default(uuid())
-  tenantId          String
-  vehicleId         String?  // Optional: specific vehicle interest
+  id        String  @id @default(uuid())
+  tenantId  String
+  vehicleId String? // Optional: specific vehicle interest
 
   // Customer Information
-  name              String
-  email             String?
-  phone             String
-  whatsappNumber    String?
+  name           String
+  email          String?
+  phone          String
+  whatsappNumber String?
 
   // Inquiry Details
-  message           String   @db.Text
-  source            String   @default("website") // website, whatsapp, phone
-  status            LeadStatus @default(NEW)
-  priority          LeadPriority @default(MEDIUM)
+  message  String       @db.Text
+  source   String       @default("website") // website, whatsapp, phone
+  status   LeadStatus   @default(NEW)
+  priority LeadPriority @default(MEDIUM)
 
   // Classification
-  interestedIn      String?  // Make/model they're interested in
-  budgetRange       String?  // e.g., "100-200 juta"
-  timeframe         String?  // "Minggu ini", "Bulan ini", "Surveying"
+  interestedIn String? // Make/model they're interested in
+  budgetRange  String? // e.g., "100-200 juta"
+  timeframe    String? // "Minggu ini", "Bulan ini", "Surveying"
 
   // Follow-up
-  followUpDate      DateTime?
-  notes             String?  @db.Text
-  assignedTo        String?  // User ID
+  followUpDate DateTime?
+  notes        String?   @db.Text
+  assignedTo   String? // User ID
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  activities        LeadActivity[]
-  tasks             LeadTask[]
-  scores            LeadScore[]
-  preference        CustomerPreference?
+  activities            LeadActivity[]
+  tasks                 LeadTask[]
+  scores                LeadScore[]
+  preference            CustomerPreference?
+  whatsappConversations WhatsAppConversation[] // Epic 8: WhatsApp AI conversations
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -1059,29 +1062,29 @@ model Lead {
 // ============================================================================
 
 model LeadActivity {
-  id                String   @id @default(uuid())
-  leadId            String
-  tenantId          String
+  id       String @id @default(uuid())
+  leadId   String
+  tenantId String
 
   // Activity Details
-  type              LeadActivityType
-  channel           CommunicationChannel
-  direction         String   // "inbound" or "outbound"
+  type      LeadActivityType
+  channel   CommunicationChannel
+  direction String // "inbound" or "outbound"
 
   // Content
-  subject           String?
-  message           String?  @db.Text
-  metadata          Json?    // Additional context (attachments, links, etc)
+  subject  String?
+  message  String? @db.Text
+  metadata Json? // Additional context (attachments, links, etc)
 
   // User
-  performedBy       String?  // User ID if staff initiated
-  performedByName   String?
+  performedBy     String? // User ID if staff initiated
+  performedByName String?
 
   // Timestamp
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([leadId])
   @@index([tenantId])
@@ -1091,36 +1094,36 @@ model LeadActivity {
 }
 
 model LeadTask {
-  id                String   @id @default(uuid())
-  leadId            String
-  tenantId          String
+  id       String @id @default(uuid())
+  leadId   String
+  tenantId String
 
   // Task Details
-  title             String
-  description       String?  @db.Text
-  type              TaskType @default(FOLLOW_UP)
-  priority          LeadPriority @default(MEDIUM)
+  title       String
+  description String?      @db.Text
+  type        TaskType     @default(FOLLOW_UP)
+  priority    LeadPriority @default(MEDIUM)
 
   // Assignment
-  assignedTo        String   // User ID
-  assignedToName    String?
+  assignedTo     String // User ID
+  assignedToName String?
 
   // Scheduling
-  dueDate           DateTime
-  reminderDate      DateTime?
+  dueDate      DateTime
+  reminderDate DateTime?
 
   // Status
-  status            TaskStatus @default(PENDING)
-  completedAt       DateTime?
-  completedBy       String?
+  status      TaskStatus @default(PENDING)
+  completedAt DateTime?
+  completedBy String?
 
   // Metadata
-  notes             String?  @db.Text
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([leadId])
   @@index([tenantId])
@@ -1131,28 +1134,28 @@ model LeadTask {
 }
 
 model LeadScore {
-  id                String   @id @default(uuid())
-  leadId            String
-  tenantId          String
+  id       String @id @default(uuid())
+  leadId   String
+  tenantId String
 
   // Score Components
-  totalScore        Int      // 0-100
-  budgetScore       Int      // 0-25
-  urgencyScore      Int      // 0-25
-  matchScore        Int      // 0-25
-  engagementScore   Int      // 0-25
+  totalScore      Int // 0-100
+  budgetScore     Int // 0-25
+  urgencyScore    Int // 0-25
+  matchScore      Int // 0-25
+  engagementScore Int // 0-25
 
   // Score Details
-  factors           Json     // Detailed breakdown of scoring factors
+  factors Json // Detailed breakdown of scoring factors
 
   // Calculated Tier
-  tier              LeadTier // HOT, WARM, COLD
+  tier LeadTier // HOT, WARM, COLD
 
   // Metadata
-  calculatedAt      DateTime @default(now())
+  calculatedAt DateTime @default(now())
 
   // Relations
-  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([leadId])
   @@index([tenantId])
@@ -1162,31 +1165,52 @@ model LeadScore {
   @@map("lead_scores")
 }
 
-// Message Templates for Lead Communication (Epic 6)
-model MessageTemplate {
-  id                String   @id @default(uuid())
-  tenantId          String
+// Search Analytics - Track search keywords to capture demand (Epic 5: Search Feature)
+model SearchAnalytics {
+  id       String @id @default(uuid())
+  tenantId String
 
-  // Template Details
-  name              String
-  category          String   // "greeting", "follow_up", "closing", "custom"
-  subject           String?  // For email templates
-  content           String   @db.Text // Template with {{variables}}
-
-  // Variables
-  variables         String[] // List of available variables like ["customerName", "vehicleName", "price"]
-
-  // Status
-  isActive          Boolean  @default(true)
-
-  // Usage Stats
-  usageCount        Int      @default(0)
-  lastUsedAt        DateTime?
+  // Search Details
+  keyword     String // The search term used
+  resultCount Int // Number of results found
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  createdBy         String
+  searchedAt DateTime @default(now())
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([keyword])
+  @@index([searchedAt])
+  @@map("search_analytics")
+}
+
+// Message Templates for Lead Communication (Epic 6)
+model MessageTemplate {
+  id       String @id @default(uuid())
+  tenantId String
+
+  // Template Details
+  name     String
+  category String // "greeting", "follow_up", "closing", "custom"
+  subject  String? // For email templates
+  content  String  @db.Text // Template with {{variables}}
+
+  // Variables
+  variables String[] // List of available variables like ["customerName", "vehicleName", "price"]
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Usage Stats
+  usageCount Int       @default(0)
+  lastUsedAt DateTime?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
 
   @@index([tenantId])
   @@index([category])
@@ -1196,27 +1220,27 @@ model MessageTemplate {
 
 // WhatsApp Settings (Epic 6)
 model WhatsAppSettings {
-  id                String   @id @default(uuid())
-  tenantId          String   @unique
+  id       String @id @default(uuid())
+  tenantId String @unique
 
   // Phone Configuration
-  phoneNumber       String
-  isActive          Boolean  @default(true)
+  phoneNumber String
+  isActive    Boolean @default(true)
 
   // Messaging
-  defaultMessage    String   @db.Text
-  autoReply         Boolean  @default(false)
-  autoReplyMessage  String?  @db.Text
+  defaultMessage   String  @db.Text
+  autoReply        Boolean @default(false)
+  autoReplyMessage String? @db.Text
 
   // Working Hours
-  workingHours      Json?    // { start: "08:00", end: "17:00", timezone: "Asia/Jakarta" }
+  workingHours Json? // { start: "08:00", end: "17:00", timezone: "Asia/Jakarta" }
 
   // Quick Replies
-  quickReplies      Json?    // Array of quick reply buttons
+  quickReplies Json? // Array of quick reply buttons
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId])
   @@index([isActive])
@@ -1224,39 +1248,39 @@ model WhatsAppSettings {
 }
 
 model CustomerPreference {
-  id                String   @id @default(uuid())
-  leadId            String   @unique
-  tenantId          String
+  id       String @id @default(uuid())
+  leadId   String @unique
+  tenantId String
 
   // Communication Preferences
-  preferredChannel  CommunicationChannel @default(WHATSAPP)
+  preferredChannel  CommunicationChannel   @default(WHATSAPP)
   alternateChannels CommunicationChannel[]
 
   // Timing Preferences
   preferredContactTimes String[] // ["morning", "afternoon", "evening"]
-  timezone          String?
+  timezone              String?
 
   // Frequency
-  maxContactsPerWeek Int     @default(3)
+  maxContactsPerWeek Int @default(3)
 
   // Status
-  isPaused          Boolean  @default(false)
-  pausedUntil       DateTime?
-  pauseReason       String?
+  isPaused    Boolean   @default(false)
+  pausedUntil DateTime?
+  pauseReason String?
 
   // Language
-  preferredLanguage String   @default("id") // "id" or "en"
+  preferredLanguage String @default("id") // "id" or "en"
 
   // Do Not Contact
-  doNotContact      Boolean  @default(false)
+  doNotContact       Boolean @default(false)
   doNotContactReason String?
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([leadId])
@@ -1270,16 +1294,16 @@ model CustomerPreference {
 // ============================================================================
 
 enum LeadActivityType {
-  INQUIRY          // Initial inquiry received
-  EMAIL            // Email sent/received
-  PHONE_CALL       // Phone call made/received
-  WHATSAPP         // WhatsApp message
-  SMS              // SMS sent/received
-  MEETING          // In-person meeting
-  TEST_DRIVE       // Test drive scheduled/completed
-  NOTE             // Internal note added
-  STATUS_CHANGE    // Lead status changed
-  ASSIGNMENT       // Lead assigned/reassigned
+  INQUIRY // Initial inquiry received
+  EMAIL // Email sent/received
+  PHONE_CALL // Phone call made/received
+  WHATSAPP // WhatsApp message
+  SMS // SMS sent/received
+  MEETING // In-person meeting
+  TEST_DRIVE // Test drive scheduled/completed
+  NOTE // Internal note added
+  STATUS_CHANGE // Lead status changed
+  ASSIGNMENT // Lead assigned/reassigned
 }
 
 enum CommunicationChannel {
@@ -1292,28 +1316,28 @@ enum CommunicationChannel {
 }
 
 enum TaskType {
-  FOLLOW_UP        // General follow-up
-  CALL_BACK        // Return customer call
-  SEND_INFO        // Send additional information
+  FOLLOW_UP // General follow-up
+  CALL_BACK // Return customer call
+  SEND_INFO // Send additional information
   SCHEDULE_MEETING // Schedule meeting/test drive
-  PRICE_QUOTE      // Send price quotation
-  NEGOTIATION      // Price negotiation
-  PAPERWORK        // Complete paperwork
-  OTHER            // Other task
+  PRICE_QUOTE // Send price quotation
+  NEGOTIATION // Price negotiation
+  PAPERWORK // Complete paperwork
+  OTHER // Other task
 }
 
 enum TaskStatus {
-  PENDING          // Not yet started
-  IN_PROGRESS      // Currently working on
-  COMPLETED        // Task completed
-  CANCELLED        // Task cancelled
-  OVERDUE          // Past due date
+  PENDING // Not yet started
+  IN_PROGRESS // Currently working on
+  COMPLETED // Task completed
+  CANCELLED // Task cancelled
+  OVERDUE // Past due date
 }
 
 enum LeadTier {
-  HOT              // 75-100 score
-  WARM             // 50-74 score
-  COLD             // 0-49 score
+  HOT // 75-100 score
+  WARM // 50-74 score
+  COLD // 0-49 score
 }
 
 // ============================================================================
@@ -1321,29 +1345,29 @@ enum LeadTier {
 // ============================================================================
 
 model PageView {
-  id                String   @id @default(uuid())
-  tenantId          String
+  id       String @id @default(uuid())
+  tenantId String
 
   // Page Info
-  path              String
-  vehicleId         String?  // If viewing vehicle detail
-  referrer          String?
-  userAgent         String?
+  path      String
+  vehicleId String? // If viewing vehicle detail
+  referrer  String?
+  userAgent String?
 
   // Session
-  sessionId         String
-  visitorId         String?  // For returning visitors
+  sessionId String
+  visitorId String? // For returning visitors
 
   // Engagement
-  duration          Int?     // Seconds on page
-  bounced           Boolean  @default(false)
+  duration Int? // Seconds on page
+  bounced  Boolean @default(false)
 
   // Conversion
-  leadGenerated     Boolean  @default(false)
-  inquirySubmitted  Boolean  @default(false)
+  leadGenerated    Boolean @default(false)
+  inquirySubmitted Boolean @default(false)
 
   // Metadata
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -1353,37 +1377,37 @@ model PageView {
 }
 
 model MarketingCampaign {
-  id                String   @id @default(uuid())
-  tenantId          String
+  id       String @id @default(uuid())
+  tenantId String
 
   // Campaign Details
-  name              String
-  channel           MarketingChannel
-  type              CampaignType @default(PROMOTION)
+  name    String
+  channel MarketingChannel
+  type    CampaignType     @default(PROMOTION)
 
   // Budget
-  budget            Int      // In cents
-  spent             Int      @default(0) // In cents
+  budget Int // In cents
+  spent  Int @default(0) // In cents
 
   // Schedule
-  startDate         DateTime
-  endDate           DateTime?
+  startDate DateTime
+  endDate   DateTime?
 
   // Performance
-  impressions       Int      @default(0)
-  clicks            Int      @default(0)
-  leads             Int      @default(0)
-  conversions       Int      @default(0)
-  revenue           Int      @default(0) // In cents
+  impressions Int @default(0)
+  clicks      Int @default(0)
+  leads       Int @default(0)
+  conversions Int @default(0)
+  revenue     Int @default(0) // In cents
 
   // Status
-  status            CampaignStatus @default(ACTIVE)
+  status CampaignStatus @default(ACTIVE)
 
   // Metadata
-  description       String?  @db.Text
-  targetAudience    String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  description    String?  @db.Text
+  targetAudience String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([tenantId])
   @@index([channel])
@@ -1393,37 +1417,37 @@ model MarketingCampaign {
 }
 
 model CustomerFeedback {
-  id                String   @id @default(uuid())
-  tenantId          String
-  leadId            String?  // Optional: related lead
+  id       String  @id @default(uuid())
+  tenantId String
+  leadId   String? // Optional: related lead
 
   // Feedback
-  rating            Int      // 1-5 stars
-  category          FeedbackCategory
-  comment           String?  @db.Text
+  rating   Int // 1-5 stars
+  category FeedbackCategory
+  comment  String?          @db.Text
 
   // Customer Info (optional anonymous)
-  customerName      String?
-  customerEmail     String?
-  customerPhone     String?
+  customerName  String?
+  customerEmail String?
+  customerPhone String?
 
   // Context
-  vehicleId         String?  // If related to specific vehicle
-  source            String   @default("website") // website, whatsapp, phone
+  vehicleId String? // If related to specific vehicle
+  source    String  @default("website") // website, whatsapp, phone
 
   // Status
-  status            FeedbackStatus @default(NEW)
-  respondedAt       DateTime?
-  respondedBy       String?
-  response          String?  @db.Text
+  status      FeedbackStatus @default(NEW)
+  respondedAt DateTime?
+  respondedBy String?
+  response    String?        @db.Text
 
   // Sentiment Analysis
-  sentiment         String?  // "positive", "neutral", "negative"
-  sentimentScore    Float?   // -1 to 1
+  sentiment      String? // "positive", "neutral", "negative"
+  sentimentScore Float? // -1 to 1
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId])
   @@index([leadId])
@@ -1454,12 +1478,12 @@ enum MarketingChannel {
 }
 
 enum CampaignType {
-  PROMOTION        // Special offer/discount
-  BRAND_AWARENESS  // Build brand recognition
-  LEAD_GENERATION  // Generate inquiries
-  REMARKETING      // Re-engage past visitors
-  SEASONAL         // Holiday/seasonal campaign
-  PRODUCT_LAUNCH   // New inventory
+  PROMOTION // Special offer/discount
+  BRAND_AWARENESS // Build brand recognition
+  LEAD_GENERATION // Generate inquiries
+  REMARKETING // Re-engage past visitors
+  SEASONAL // Holiday/seasonal campaign
+  PRODUCT_LAUNCH // New inventory
 }
 
 enum CampaignStatus {
@@ -1471,39 +1495,39 @@ enum CampaignStatus {
 }
 
 enum FeedbackCategory {
-  VEHICLE_QUALITY  // Vehicle condition/quality
-  PRICING          // Price competitiveness
-  SERVICE          // Customer service
-  PROCESS          // Buying process
-  WEBSITE          // Online experience
-  COMMUNICATION    // Staff communication
-  FACILITY         // Showroom facilities
-  GENERAL          // General feedback
+  VEHICLE_QUALITY // Vehicle condition/quality
+  PRICING // Price competitiveness
+  SERVICE // Customer service
+  PROCESS // Buying process
+  WEBSITE // Online experience
+  COMMUNICATION // Staff communication
+  FACILITY // Showroom facilities
+  GENERAL // General feedback
 }
 
 enum FeedbackStatus {
-  NEW              // Just received
-  REVIEWED         // Reviewed by staff
-  RESPONDED        // Response sent
-  RESOLVED         // Issue resolved
-  CLOSED           // Closed
+  NEW // Just received
+  REVIEWED // Reviewed by staff
+  RESPONDED // Response sent
+  RESOLVED // Issue resolved
+  CLOSED // Closed
 }
 
 enum VehicleStatus {
-  DRAFT           // Being created
-  AVAILABLE       // Available for sale
-  BOOKED          // Reserved by customer
-  SOLD            // Marked as sold
-  DELETED         // Soft deleted
+  DRAFT // Being created
+  AVAILABLE // Available for sale
+  BOOKED // Reserved by customer
+  SOLD // Marked as sold
+  DELETED // Soft deleted
 }
 
 enum LeadStatus {
-  NEW             // Just received
-  CONTACTED       // First contact made
-  QUALIFIED       // Lead is qualified/interested
-  NEGOTIATING     // In negotiation
-  WON             // Converted to sale
-  LOST            // Lost the lead
+  NEW // Just received
+  CONTACTED // First contact made
+  QUALIFIED // Lead is qualified/interested
+  NEGOTIATING // In negotiation
+  WON // Converted to sale
+  LOST // Lost the lead
 }
 
 enum LeadPriority {
@@ -1518,74 +1542,74 @@ enum LeadPriority {
 // ============================================================================
 
 model PopularVehicle {
-  id                String   @id @default(uuid())
+  id String @id @default(uuid())
 
   // Basic Information
-  make              String   // Toyota, Honda, Mitsubishi, etc
-  model             String   // Avanza, Xpander, CR-V, etc
-  category          String   // MPV, SUV, Sedan, Hatchback, Pickup
-  bodyType          String   // 5-seater, 7-seater, etc
+  make     String // Toyota, Honda, Mitsubishi, etc
+  model    String // Avanza, Xpander, CR-V, etc
+  category String // MPV, SUV, Sedan, Hatchback, Pickup
+  bodyType String // 5-seater, 7-seater, etc
 
   // Variants & Years
-  variants          Json     // ["1.3 E MT", "1.3 G MT", "1.5 G AT"]
-  productionYears   Json     // { start: 2019, end: 2024, current: true }
+  variants        Json // ["1.3 E MT", "1.3 G MT", "1.5 G AT"]
+  productionYears Json // { start: 2019, end: 2024, current: true }
 
   // Technical Specifications
   engineOptions     String[] // ["1.3L", "1.5L"]
-  engineCapacity    Json     // { "1.3L": "1329cc", "1.5L": "1496cc" }
+  engineCapacity    Json // { "1.3L": "1329cc", "1.5L": "1496cc" }
   transmissionTypes String[] // ["Manual 5-speed", "CVT", "Automatic 4-speed"]
   fuelTypes         String[] // ["Bensin"]
-  fuelConsumption   Json?    // { city: "13 km/L", highway: "16 km/L" }
-  seatingCapacity   Int[]    // [7] for MPV
+  fuelConsumption   Json? // { city: "13 km/L", highway: "16 km/L" }
+  seatingCapacity   Int[] // [7] for MPV
   driveType         String[] // ["FWD", "RWD", "4WD"]
 
   // Dimensions & Weight
-  dimensions        Json?    // { length: 4395, width: 1730, height: 1665 } in mm
-  groundClearance   Int?     // in mm
-  curbWeight        Json?    // { min: 1070, max: 1150 } in kg
+  dimensions      Json? // { length: 4395, width: 1730, height: 1665 } in mm
+  groundClearance Int? // in mm
+  curbWeight      Json? // { min: 1070, max: 1150 } in kg
 
   // Market Data & Pricing
-  newCarPrice       Json?    // { "2024": { min: 233300000, max: 282600000 } }
-  usedCarPrices     Json     // { "2023": {min: 200000000, max: 240000000}, "2022": {...} }
-  depreciation      Json?    // { yearlyRate: 0.15, resaleValue3Years: 0.65 }
+  newCarPrice   Json? // { "2024": { min: 233300000, max: 282600000 } }
+  usedCarPrices Json // { "2023": {min: 200000000, max: 240000000}, "2022": {...} }
+  depreciation  Json? // { yearlyRate: 0.15, resaleValue3Years: 0.65 }
 
   // Popularity Metrics
-  popularityScore   Int      @default(50) // 1-100 based on market share
-  marketShare       Float?   // 0.0-1.0
-  salesVolume       Json?    // { "2023": 15000, "2024": 18000 }
-  commonInRegions   String[] // ["Jakarta", "Surabaya", "Bandung"]
-  targetMarket      String[] // ["Family", "First-time buyer", "Urban"]
+  popularityScore Int      @default(50) // 1-100 based on market share
+  marketShare     Float? // 0.0-1.0
+  salesVolume     Json? // { "2023": 15000, "2024": 18000 }
+  commonInRegions String[] // ["Jakarta", "Surabaya", "Bandung"]
+  targetMarket    String[] // ["Family", "First-time buyer", "Urban"]
 
   // Features & Equipment
-  standardFeatures  Json     // { safety: [], comfort: [], technology: [] }
-  commonOptions     String[] // ["Sunroof", "Leather seats", "Navigation"]
+  standardFeatures Json // { safety: [], comfort: [], technology: [] }
+  commonOptions    String[] // ["Sunroof", "Leather seats", "Navigation"]
 
   // AI Helper Data
-  commonKeywords    String[] // ["avanza", "avy", "grand avanza", "veloz"]
+  commonKeywords     String[] // ["avanza", "avy", "grand avanza", "veloz"]
   commonMisspellings String[] // ["avansa", "afanza"]
-  searchAliases     String[] // Alternative names
+  searchAliases      String[] // Alternative names
 
   // Competition & Comparison
-  directCompetitors String[] // ["Mitsubishi Xpander", "Suzuki Ertiga"]
+  directCompetitors     String[] // ["Mitsubishi Xpander", "Suzuki Ertiga"]
   competitiveAdvantages String[] // ["Best resale value", "Lowest maintenance"]
 
   // Content Generation Support
-  prosAndCons       Json?    // { pros: [], cons: [] }
-  expertReview      String?  // Short expert opinion
-  commonIssues      Json?    // { "2020": ["AC compressor"], "2021": [] }
-  maintenanceCost   Json?    // { yearly: 5000000, per10k: 500000 }
+  prosAndCons     Json? // { pros: [], cons: [] }
+  expertReview    String? // Short expert opinion
+  commonIssues    Json? // { "2020": ["AC compressor"], "2021": [] }
+  maintenanceCost Json? // { yearly: 5000000, per10k: 500000 }
 
   // SEO & Marketing
-  seoKeywords       String[] // For blog content generation
-  metaDescription   String?
+  seoKeywords        String[] // For blog content generation
+  metaDescription    String?
   popularComparisons String[] // ["Avanza vs Xpander", "Avanza vs Ertiga"]
 
   // Metadata
-  isActive          Boolean  @default(true)
-  dataSource        String?  // "Manual", "OLX API", "OtoDriver"
-  lastVerified      DateTime @default(now())
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  isActive     Boolean  @default(true)
+  dataSource   String? // "Manual", "OLX API", "OtoDriver"
+  lastVerified DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([make, model])
   @@index([make, model])
@@ -1596,10 +1620,10 @@ model PopularVehicle {
 }
 
 enum PhotoValidationStatus {
-  PENDING     // Not yet validated
-  VALID       // Passed quality checks
+  PENDING // Not yet validated
+  VALID // Passed quality checks
   LOW_QUALITY // Quality issues detected
-  REJECTED    // Failed validation
+  REJECTED // Failed validation
 }
 
 // ============================================================================
@@ -1607,23 +1631,23 @@ enum PhotoValidationStatus {
 // ============================================================================
 
 model CompetitorVehicle {
-  id               String   @id @default(uuid())
-  tenantId         String
-  competitorName   String   // Competitor showroom name
-  location         String   // Competitor location
-  vehicleMake      String
-  vehicleModel     String
-  year             Int
-  price            Float
-  mileage          Int?
-  condition        String?  // excellent, good, fair
-  sourceUrl        String?  // Where data came from
-  lastUpdated      DateTime @default(now())
-  createdAt        DateTime @default(now())
+  id             String   @id @default(uuid())
+  tenantId       String
+  competitorName String // Competitor showroom name
+  location       String // Competitor location
+  vehicleMake    String
+  vehicleModel   String
+  year           Int
+  price          Float
+  mileage        Int?
+  condition      String? // excellent, good, fair
+  sourceUrl      String? // Where data came from
+  lastUpdated    DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   // Relations
-  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  priceHistory     CompetitorPriceHistory[]
+  tenant       Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  priceHistory CompetitorPriceHistory[]
 
   @@index([tenantId])
   @@index([competitorName])
@@ -1632,16 +1656,16 @@ model CompetitorVehicle {
 }
 
 model CompetitorPriceHistory {
-  id                    String   @id @default(uuid())
-  tenantId              String
-  competitorVehicleId   String
-  oldPrice              Float
-  newPrice              Float
-  changedAt             DateTime @default(now())
+  id                  String   @id @default(uuid())
+  tenantId            String
+  competitorVehicleId String
+  oldPrice            Float
+  newPrice            Float
+  changedAt           DateTime @default(now())
 
   // Relations
-  tenant                Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  competitorVehicle     CompetitorVehicle @relation(fields: [competitorVehicleId], references: [id], onDelete: Cascade)
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  competitorVehicle CompetitorVehicle @relation(fields: [competitorVehicleId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([competitorVehicleId])
@@ -1654,22 +1678,22 @@ model CompetitorPriceHistory {
 // ============================================================================
 
 model ApiKey {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   tenantId    String
-  name        String   // Descriptive name (e.g., "Website Integration")
-  keyPrefix   String   // First 15 chars for identification (e.g., "sk_live_abc123...")
-  keyHash     String   // Bcrypt hashed full key
+  name        String // Descriptive name (e.g., "Website Integration")
+  keyPrefix   String // First 15 chars for identification (e.g., "sk_live_abc123...")
+  keyHash     String // Bcrypt hashed full key
   permissions String[] // Array of permissions (e.g., ["vehicles:read", "leads:write"])
-  rateLimit   Int      @default(100) // Requests per minute
+  rateLimit   Int       @default(100) // Requests per minute
   expiresAt   DateTime?
   lastUsedAt  DateTime?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  usage       ApiKeyUsage[]
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  usage  ApiKeyUsage[]
 
   @@index([tenantId])
   @@index([keyPrefix])
@@ -1683,7 +1707,7 @@ model ApiKeyUsage {
   timestamp DateTime @default(now())
 
   // Relations
-  apiKey    ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
 
   @@index([apiKeyId, timestamp])
   @@map("api_key_usage")
@@ -1694,26 +1718,26 @@ model ApiKeyUsage {
 // ============================================================================
 
 model VehicleView {
-  id                String   @id @default(uuid())
-  vehicleId         String
-  tenantId          String
+  id        String @id @default(uuid())
+  vehicleId String
+  tenantId  String
 
   // View Details
-  sessionId         String?  // For session tracking
-  visitorId         String?  // For returning visitors
-  ipAddress         String?
-  userAgent         String?
-  referrer          String?
+  sessionId String? // For session tracking
+  visitorId String? // For returning visitors
+  ipAddress String?
+  userAgent String?
+  referrer  String?
 
   // Engagement
-  duration          Int?     // Seconds on page
-  bounced           Boolean  @default(false)
+  duration Int? // Seconds on page
+  bounced  Boolean @default(false)
 
   // Metadata
-  viewedAt          DateTime @default(now())
+  viewedAt DateTime @default(now())
 
   // Relations
-  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   @@index([vehicleId])
   @@index([tenantId])
@@ -1727,27 +1751,27 @@ model VehicleView {
 // ============================================================================
 
 model AIConversation {
-  id                String   @id @default(uuid())
-  tenantId          String
-  vehicleId         String?  // Optional: if about specific vehicle
+  id        String  @id @default(uuid())
+  tenantId  String
+  vehicleId String? // Optional: if about specific vehicle
 
   // Conversation Details
-  sessionId         String
-  message           String   @db.Text
-  response          String   @db.Text
-  intent            String?  // e.g., "vehicle_inquiry", "price_question"
-  confidence        Float?   // 0-1 confidence score
-  entities          Json?    // Extracted entities
+  sessionId  String
+  message    String  @db.Text
+  response   String  @db.Text
+  intent     String? // e.g., "vehicle_inquiry", "price_question"
+  confidence Float? // 0-1 confidence score
+  entities   Json? // Extracted entities
 
   // Context
-  context           Json?    // Conversation context
-  metadata          Json?    // Additional metadata
+  context  Json? // Conversation context
+  metadata Json? // Additional metadata
 
   // Metadata
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  vehicle           Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -1762,28 +1786,28 @@ model AIConversation {
 // ============================================================================
 
 model ScraperJob {
-  id              String   @id @default(uuid())
-  status          String   // 'running', 'completed', 'failed', 'cancelled'
-  startedAt       DateTime @default(now())
-  completedAt     DateTime?
+  id          String    @id @default(uuid())
+  status      String // 'running', 'completed', 'failed', 'cancelled'
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
 
   // Configuration
-  source          String   // 'OLX', 'Mobil123'
-  targetCount     Int      @default(50)
+  source      String // 'OLX', 'Mobil123'
+  targetCount Int    @default(50)
 
   // Results
-  vehiclesFound   Int      @default(0)
-  vehiclesNew     Int      @default(0)
-  vehiclesUpdated Int      @default(0)
-  duplicates      Int      @default(0)
-  errors          Json?    // Array of error messages
+  vehiclesFound   Int   @default(0)
+  vehiclesNew     Int   @default(0)
+  vehiclesUpdated Int   @default(0)
+  duplicates      Int   @default(0)
+  errors          Json? // Array of error messages
 
   // Metadata
-  executedBy      String   // Admin user ID
-  duration        Int?     // Seconds
+  executedBy String // Admin user ID
+  duration   Int? // Seconds
 
   // Relations
-  results         ScraperResult[]
+  results ScraperResult[]
 
   @@index([status])
   @@index([startedAt])
@@ -1792,38 +1816,38 @@ model ScraperJob {
 }
 
 model ScraperResult {
-  id              String   @id @default(uuid())
-  jobId           String
-  job             ScraperJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id    String     @id @default(uuid())
+  jobId String
+  job   ScraperJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   // Scraped data
-  source          String   // 'OLX'
-  make            String
-  model           String
-  year            Int
-  price           BigInt   // IDR cents
-  priceDisplay    String
-  location        String?
-  url             String
+  source       String // 'OLX'
+  make         String
+  model        String
+  year         Int
+  price        BigInt // IDR cents
+  priceDisplay String
+  location     String?
+  url          String
 
   // Additional specs (for AI content generation)
-  variant         String?   // e.g., "1.5 G MT", "RS CVT"
-  transmission    String?   // "Manual", "Automatic", "CVT"
-  fuelType        String?   // "Bensin", "Diesel", "Hybrid", "Electric"
-  bodyType        String?   // "SUV", "MPV", "Sedan", "Hatchback", "Pickup"
-  features        String?   // Comma-separated features (e.g., "Sunroof, Leather Seats, ABS")
-  description     String?   // Short description from listing
+  variant      String? // e.g., "1.5 G MT", "RS CVT"
+  transmission String? // "Manual", "Automatic", "CVT"
+  fuelType     String? // "Bensin", "Diesel", "Hybrid", "Electric"
+  bodyType     String? // "SUV", "MPV", "Sedan", "Hatchback", "Pickup"
+  features     String? // Comma-separated features (e.g., "Sunroof, Leather Seats, ABS")
+  description  String? // Short description from listing
 
   // Status
-  status          String   // 'pending', 'approved', 'rejected', 'duplicate'
-  reviewedAt      DateTime?
-  reviewedBy      String?
+  status     String // 'pending', 'approved', 'rejected', 'duplicate'
+  reviewedAt DateTime?
+  reviewedBy String?
 
   // Duplicate detection
   matchedVehicleId String? // PopularVehicle.id if duplicate found
-  confidence      Int      @default(0) // 0-100
+  confidence       Int     @default(0) // 0-100
 
-  createdAt       DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([jobId])
   @@index([status])
@@ -1832,33 +1856,34 @@ model ScraperResult {
 }
 
 model ScraperConfig {
-  id              String   @id @default(uuid())
-  key             String   @unique
-  value           Json
-  description     String?
-  updatedAt       DateTime @updatedAt
-  updatedBy       String
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String
 
   @@map("scraper_config")
 }
+
 // ============================================================================
 // BLOG SYSTEM - AI-Powered Content Generation
 // ============================================================================
 
 enum BlogCategory {
-  BUYING_GUIDE      // Panduan membeli mobil bekas
-  COMPARISON        // Perbandingan model
-  MAINTENANCE_TIPS  // Tips perawatan
-  MARKET_NEWS       // Berita pasar mobil bekas
-  FEATURE_REVIEW    // Review fitur kendaraan
-  FINANCING         // Panduan kredit/pembiayaan
-  LOCAL_INSIGHTS    // Insight lokal (traffic, parkir, dll)
+  BUYING_GUIDE // Panduan membeli mobil bekas
+  COMPARISON // Perbandingan model
+  MAINTENANCE_TIPS // Tips perawatan
+  MARKET_NEWS // Berita pasar mobil bekas
+  FEATURE_REVIEW // Review fitur kendaraan
+  FINANCING // Panduan kredit/pembiayaan
+  LOCAL_INSIGHTS // Insight lokal (traffic, parkir, dll)
 }
 
 enum BlogTone {
-  FORMAL            // Profesional, edukatif
-  CASUAL            // Santai, ramah
-  FRIENDLY          // Hangat, personal
+  FORMAL // Profesional, edukatif
+  CASUAL // Santai, ramah
+  FRIENDLY // Hangat, personal
 }
 
 enum BlogStatus {
@@ -1869,69 +1894,69 @@ enum BlogStatus {
 }
 
 model BlogPost {
-  id                String   @id @default(uuid())
-  tenantId          String
+  id       String @id @default(uuid())
+  tenantId String
 
   // Content
-  title             String   // SEO-optimized title
-  slug              String   // URL-friendly slug
-  metaDescription   String   @db.Text
-  content           String   @db.Text // HTML content
-  excerpt           String?  @db.Text // Short summary
+  title           String // SEO-optimized title
+  slug            String // URL-friendly slug
+  metaDescription String  @db.Text
+  content         String  @db.Text // HTML content
+  excerpt         String? @db.Text // Short summary
 
   // SEO Fields
-  keywords          String[] // Target keywords
-  localKeywords     String[] // City/area-specific keywords
-  focusKeyword      String   // Primary keyword
+  keywords      String[] // Target keywords
+  localKeywords String[] // City/area-specific keywords
+  focusKeyword  String // Primary keyword
 
   // Categorization
-  category          BlogCategory
-  tags              String[]
+  category BlogCategory
+  tags     String[]
 
   // Local SEO
-  targetLocation    String?  // "Jakarta", "Bandung", etc.
-  locationMentions  String[] // ["Jakarta Selatan", "BSD", etc.]
+  targetLocation   String? // "Jakarta", "Bandung", etc.
+  locationMentions String[] // ["Jakarta Selatan", "BSD", etc.]
 
   // AI Generation Metadata
-  aiGenerated       Boolean  @default(true)
-  tone              BlogTone
-  aiPrompt          String?  @db.Text
-  aiModel           String?  // "glm-4-plus", etc.
+  aiGenerated Boolean  @default(true)
+  tone        BlogTone
+  aiPrompt    String?  @db.Text
+  aiModel     String? // "glm-4-plus", etc.
 
   // Related Content
-  relatedVehicles   String[] // Vehicle IDs
-  relatedPosts      String[] // Other blog post IDs
+  relatedVehicles String[] // Vehicle IDs
+  relatedPosts    String[] // Other blog post IDs
 
   // SEO Score & Analysis
-  seoScore          Float?   // 0-100
-  readabilityScore  Float?   // Flesch reading ease
-  wordCount         Int?
+  seoScore         Float? // 0-100
+  readabilityScore Float? // Flesch reading ease
+  wordCount        Int?
 
   // Publishing
-  status            BlogStatus @default(DRAFT)
-  publishedAt       DateTime?
-  scheduledAt       DateTime?
+  status      BlogStatus @default(DRAFT)
+  publishedAt DateTime?
+  scheduledAt DateTime?
 
   // Featured Image
-  featuredImage     String?  // URL to image
-  featuredImageAlt  String?  // Alt text for SEO
+  featuredImage    String? // URL to image
+  featuredImageAlt String? // Alt text for SEO
 
   // Engagement Metrics
-  views             Int      @default(0)
-  shares            Int      @default(0)
-  avgTimeOnPage     Float?   // seconds
+  views         Int    @default(0)
+  shares        Int    @default(0)
+  avgTimeOnPage Float? // seconds
 
   // Author
-  authorId          String
-  authorName        String   // Cache for display
+  authorId   String
+  authorName String // Cache for display
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  lastReviewedAt    DateTime? // Human review timestamp
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastReviewedAt DateTime? // Human review timestamp
 
   // Relations
-  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@unique([tenantId, slug])
   @@index([tenantId, status, publishedAt])
@@ -1939,4 +1964,221 @@ model BlogPost {
   @@index([targetLocation])
   @@index([focusKeyword])
   @@map("blog_posts")
+}
+
+// ============================================================================
+// EPIC 8: WHATSAPP AI AUTOMATION
+// ============================================================================
+
+// Aimeow WhatsApp connection per showroom
+model AimeowAccount {
+  id       String @id @default(uuid())
+  tenantId String @unique
+
+  // Aimeow credentials
+  apiKey      String @db.Text // Encrypted
+  clientId    String @unique // Aimeow client ID
+  phoneNumber String // WhatsApp number (E.164 format)
+
+  // Connection state
+  isActive         Boolean   @default(false)
+  connectionStatus String    @default("disconnected") // connected, disconnected, reconnecting
+  lastConnectedAt  DateTime?
+  qrCode           String?   @db.Text // Last QR code (expires)
+  qrCodeExpiresAt  DateTime?
+
+  // Webhook
+  webhookUrl    String?
+  webhookSecret String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aiConfig      WhatsAppAIConfig?
+  conversations WhatsAppConversation[]
+
+  @@map("aimeow_accounts")
+}
+
+// AI configuration per showroom
+model WhatsAppAIConfig {
+  id        String @id @default(uuid())
+  tenantId  String @unique
+  accountId String @unique
+
+  // AI Assistant Identity
+  aiName         String @default("AI Assistant")
+  aiPersonality  String @default("friendly") // friendly, professional, casual
+  welcomeMessage String @db.Text
+
+  // Behavior Settings
+  autoReply            Boolean @default(true)
+  customerChatEnabled  Boolean @default(true)
+  staffCommandsEnabled Boolean @default(true)
+
+  // Business Hours (for AI responses)
+  businessHours     Json? // { monday: {open: "08:00", close: "17:00"}, ... }
+  timezone          String  @default("Asia/Jakarta")
+  afterHoursMessage String? @db.Text
+
+  // AI Model Settings
+  aiModel     String @default("glm-4-plus") // glm-4-plus, glm-4-flash
+  temperature Float  @default(0.7)
+  maxTokens   Int    @default(1000)
+
+  // Knowledge Base
+  customFAQ        Json? // Array of {question, answer}
+  productKnowledge Json? // Additional context
+
+  // Features Toggle
+  enableVehicleInfo      Boolean @default(true)
+  enablePriceNegotiation Boolean @default(false)
+  enableTestDriveBooking Boolean @default(true)
+  enableStaffUpload      Boolean @default(true)
+  enableStaffStatus      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account AimeowAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@map("whatsapp_ai_configs")
+}
+
+// WhatsApp conversation history with AI
+model WhatsAppConversation {
+  id        String @id @default(uuid())
+  accountId String // Which WhatsApp account
+  tenantId  String
+
+  // Participant
+  customerPhone String // E.164 format
+  customerName  String?
+
+  // Conversation Metadata
+  isStaff          Boolean @default(false)
+  conversationType String  @default("customer") // customer, staff, system
+
+  // Lead Association
+  leadId String?
+
+  // Context
+  lastIntent        String? // Last detected intent
+  contextData       Json? // Conversation state
+  conversationState String? // For multi-step commands (e.g., upload flow)
+
+  // Status
+  status      String    @default("active") // active, escalated, closed
+  escalatedTo String? // User ID if escalated to human
+  escalatedAt DateTime?
+
+  // Timestamps
+  startedAt     DateTime  @default(now())
+  lastMessageAt DateTime  @default(now())
+  closedAt      DateTime?
+
+  // Relations
+  messages WhatsAppMessage[]
+  lead     Lead?             @relation(fields: [leadId], references: [id])
+  account  AimeowAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerPhone])
+  @@index([tenantId, lastMessageAt])
+  @@map("whatsapp_conversations")
+}
+
+// Individual messages in WhatsApp conversation
+model WhatsAppMessage {
+  id             String @id @default(uuid())
+  conversationId String
+  tenantId       String
+
+  // Message Content
+  direction  String // inbound, outbound
+  sender     String // phone number or "ai"
+  senderType String // customer, staff, ai, system
+  content    String @db.Text
+
+  // Media (for future photo support)
+  mediaType      String? // image, video, document, audio
+  mediaUrl       String? @db.Text
+  mediaThumbnail String? @db.Text
+
+  // AI Processing
+  intent         String? // Detected intent
+  confidence     Float? // Intent confidence score
+  entities       Json? // Extracted entities
+  aiResponse     Boolean @default(false)
+  processingTime Int? // milliseconds
+
+  // Aimeow Integration
+  aimeowMessageId String?   @unique
+  aimeowStatus    String? // sent, delivered, read, failed
+  deliveredAt     DateTime?
+  readAt          DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  conversation WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([tenantId, createdAt])
+  @@map("whatsapp_messages")
+}
+
+// Staff authentication for commands
+model StaffWhatsAppAuth {
+  id       String @id @default(uuid())
+  tenantId String
+  userId   String // User from autolumiku
+
+  phoneNumber String  @unique // Staff WhatsApp number
+  isActive    Boolean @default(true)
+  role        String  @default("staff") // staff, admin, manager
+
+  // Access Control
+  canUploadVehicle Boolean @default(true)
+  canUpdateStatus  Boolean @default(true)
+  canViewAnalytics Boolean @default(false)
+  canManageLeads   Boolean @default(true)
+
+  // Audit
+  lastCommandAt DateTime?
+  commandCount  Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, phoneNumber])
+  @@map("staff_whatsapp_auth")
+}
+
+// Command execution log
+model StaffCommandLog {
+  id         String @id @default(uuid())
+  tenantId   String
+  staffPhone String
+
+  // Command
+  command     String // Original message
+  commandType String // upload, status, check, stats
+  parameters  Json? // Parsed parameters
+
+  // Result
+  success       Boolean
+  resultMessage String? @db.Text
+  error         String? @db.Text
+
+  // Affected Resources
+  vehicleId String?
+  leadId    String?
+
+  executedAt DateTime @default(now())
+
+  @@index([tenantId, executedAt])
+  @@index([staffPhone, executedAt])
+  @@map("staff_command_logs")
 }

@@ -1,0 +1,949 @@
+openapi: 3.0.3
+info:
+  title: autolumiku WhatsApp AI API
+  description: API for WhatsApp AI Automation - customer chat & staff commands management
+  version: 1.0.0
+  contact:
+    name: autolumiku Support
+    email: support@autolumiku.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.autolumiku.com/v1
+    description: Production server
+  - url: https://staging-api.autolumiku.com/v1
+    description: Staging server
+  - url: http://localhost:3000/api/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /whatsapp-ai/initialize:
+    post:
+      tags:
+        - Setup
+      summary: Initialize WhatsApp connection
+      description: Generate QR code for WhatsApp Business connection via Aimeow
+      operationId: initializeWhatsApp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tenantId
+              properties:
+                tenantId:
+                  type: string
+                  format: uuid
+                  example: "8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed"
+      responses:
+        '200':
+          description: QR code generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      clientId:
+                        type: string
+                        example: "tenant_8dd6398e_1732789123456"
+                      qrCode:
+                        type: string
+                        description: Base64 encoded QR code image
+                      qrCodeExpiresAt:
+                        type: string
+                        format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /whatsapp-ai/status:
+    get:
+      tags:
+        - Status
+      summary: Get WhatsApp connection status
+      description: Check if WhatsApp is connected and get basic stats
+      operationId: getWhatsAppStatus
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed"
+      responses:
+        '200':
+          description: Status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/WhatsAppStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /whatsapp-ai/config:
+    get:
+      tags:
+        - Configuration
+      summary: Get AI configuration
+      description: Retrieve WhatsApp AI settings (personality, business hours, etc.)
+      operationId: getAIConfig
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/AIConfig'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Configuration
+      summary: Update AI configuration
+      description: Update WhatsApp AI settings
+      operationId: updateAIConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  required:
+                    - tenantId
+                  properties:
+                    tenantId:
+                      type: string
+                      format: uuid
+                - $ref: '#/components/schemas/AIConfigUpdate'
+      responses:
+        '200':
+          description: Configuration updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AIConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Configuration
+      summary: Create initial AI configuration
+      description: Create AI configuration during setup (called automatically)
+      operationId: createAIConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tenantId
+                - accountId
+              properties:
+                tenantId:
+                  type: string
+                  format: uuid
+                accountId:
+                  type: string
+                  format: uuid
+                aiName:
+                  type: string
+                  default: "AI Assistant"
+                welcomeMessage:
+                  type: string
+      responses:
+        '200':
+          description: Configuration created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/AIConfig'
+
+  /whatsapp-ai/stats:
+    get:
+      tags:
+        - Analytics
+      summary: Get conversation statistics
+      description: Retrieve detailed stats for conversations and messages
+      operationId: getStats
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ConversationStats'
+
+  /whatsapp-ai/analytics:
+    get:
+      tags:
+        - Analytics
+      summary: Get comprehensive analytics
+      description: Retrieve analytics with time series, intent breakdown, and staff activity
+      operationId: getAnalytics
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: range
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [today, week, month]
+            default: week
+          description: Time range for analytics
+      responses:
+        '200':
+          description: Analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Analytics'
+
+  /whatsapp-ai/conversations:
+    get:
+      tags:
+        - Conversations
+      summary: List conversations
+      description: Retrieve all WhatsApp conversations with filters
+      operationId: listConversations
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, closed, escalated]
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [customer, staff]
+      responses:
+        '200':
+          description: Conversations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Conversation'
+
+  /whatsapp-ai/conversations/{conversationId}/messages:
+    get:
+      tags:
+        - Conversations
+      summary: Get conversation messages
+      description: Retrieve all messages in a conversation thread
+      operationId: getMessages
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+
+  /whatsapp-ai/staff:
+    get:
+      tags:
+        - Staff Management
+      summary: List staff with WhatsApp access
+      description: Retrieve all staff members authorized for WhatsApp commands
+      operationId: listStaff
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Staff list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StaffMember'
+
+    post:
+      tags:
+        - Staff Management
+      summary: Add staff member
+      description: Grant WhatsApp command access to a staff member
+      operationId: addStaff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStaffRequest'
+      responses:
+        '201':
+          description: Staff member added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/StaffMember'
+
+  /whatsapp-ai/staff/{staffId}:
+    put:
+      tags:
+        - Staff Management
+      summary: Update staff permissions
+      description: Modify staff member permissions for WhatsApp commands
+      operationId: updateStaff
+      parameters:
+        - name: staffId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStaffRequest'
+      responses:
+        '200':
+          description: Staff updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/StaffMember'
+
+    delete:
+      tags:
+        - Staff Management
+      summary: Remove staff access
+      description: Revoke WhatsApp command access from staff member
+      operationId: deleteStaff
+      parameters:
+        - name: staffId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Staff removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /webhooks/aimeow:
+    post:
+      tags:
+        - Webhooks
+      summary: Aimeow webhook endpoint
+      description: Receives WhatsApp events from Aimeow (messages, status updates, connection events)
+      operationId: aimeowWebhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookPayload'
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '400':
+          description: Bad request
+        '404':
+          description: Account not found
+
+    get:
+      tags:
+        - Webhooks
+      summary: Webhook verification
+      description: Verify webhook endpoint (used by Aimeow for initial handshake)
+      operationId: verifyWebhook
+      security: []
+      parameters:
+        - name: hub.mode
+          in: query
+          schema:
+            type: string
+        - name: hub.verify_token
+          in: query
+          schema:
+            type: string
+        - name: hub.challenge
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verification successful
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Verification failed
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    WhatsAppStatus:
+      type: object
+      properties:
+        isConnected:
+          type: boolean
+          example: true
+        phoneNumber:
+          type: string
+          example: "+628123456789"
+        clientId:
+          type: string
+          example: "tenant_8dd6398e_1732789123456"
+        lastConnectedAt:
+          type: string
+          format: date-time
+        totalConversations:
+          type: integer
+          example: 45
+        activeConversations:
+          type: integer
+          example: 12
+        todayMessages:
+          type: integer
+          example: 128
+        aiResponseRate:
+          type: integer
+          description: Percentage (0-100)
+          example: 85
+
+    AIConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+        aiName:
+          type: string
+          example: "AutoBot"
+        aiPersonality:
+          type: string
+          enum: [friendly, professional, casual]
+          default: friendly
+        welcomeMessage:
+          type: string
+          example: "Halo! 👋 Ada yang bisa saya bantu?"
+        autoReply:
+          type: boolean
+          default: true
+        customerChatEnabled:
+          type: boolean
+          default: true
+        staffCommandsEnabled:
+          type: boolean
+          default: true
+        businessHours:
+          type: object
+          example:
+            monday: { open: "09:00", close: "17:00" }
+            tuesday: { open: "09:00", close: "17:00" }
+        timezone:
+          type: string
+          example: "Asia/Jakarta"
+        afterHoursMessage:
+          type: string
+        aiModel:
+          type: string
+          example: "glm-4-plus"
+        temperature:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.7
+        maxTokens:
+          type: integer
+          default: 1000
+        customFAQ:
+          type: object
+        productKnowledge:
+          type: object
+        enableVehicleInfo:
+          type: boolean
+          default: true
+        enablePriceNegotiation:
+          type: boolean
+          default: false
+        enableTestDriveBooking:
+          type: boolean
+          default: true
+        enableStaffUpload:
+          type: boolean
+          default: true
+        enableStaffStatus:
+          type: boolean
+          default: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AIConfigUpdate:
+      type: object
+      properties:
+        aiName:
+          type: string
+        aiPersonality:
+          type: string
+          enum: [friendly, professional, casual]
+        welcomeMessage:
+          type: string
+        autoReply:
+          type: boolean
+        customerChatEnabled:
+          type: boolean
+        staffCommandsEnabled:
+          type: boolean
+        businessHours:
+          type: object
+        timezone:
+          type: string
+        afterHoursMessage:
+          type: string
+        temperature:
+          type: number
+        maxTokens:
+          type: integer
+
+    ConversationStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        active:
+          type: integer
+        escalated:
+          type: integer
+        customerChats:
+          type: integer
+        staffCommands:
+          type: integer
+        avgResponseTime:
+          type: number
+          description: In seconds
+        aiAccuracy:
+          type: number
+          description: Percentage (0-100)
+
+    Analytics:
+      type: object
+      properties:
+        overview:
+          type: object
+          properties:
+            totalConversations:
+              type: integer
+            activeConversations:
+              type: integer
+            totalMessages:
+              type: integer
+            aiResponseRate:
+              type: integer
+            avgResponseTime:
+              type: number
+            escalationRate:
+              type: integer
+        performance:
+          type: object
+          properties:
+            aiAccuracy:
+              type: integer
+            customerSatisfaction:
+              type: integer
+            resolutionRate:
+              type: integer
+            firstResponseTime:
+              type: number
+        timeSeriesData:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              conversations:
+                type: integer
+              messages:
+                type: integer
+              escalations:
+                type: integer
+        intentBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              intent:
+                type: string
+              count:
+                type: integer
+              percentage:
+                type: integer
+        staffActivity:
+          type: array
+          items:
+            type: object
+            properties:
+              staffPhone:
+                type: string
+              commandCount:
+                type: integer
+              successRate:
+                type: integer
+              lastActive:
+                type: string
+                format: date-time
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customerPhone:
+          type: string
+        isStaff:
+          type: boolean
+        conversationType:
+          type: string
+          enum: [customer, staff]
+        lastIntent:
+          type: string
+        status:
+          type: string
+          enum: [active, closed, escalated]
+        escalatedTo:
+          type: string
+        lastMessageAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        sender:
+          type: string
+        senderType:
+          type: string
+          enum: [customer, staff, ai]
+        content:
+          type: string
+        mediaUrl:
+          type: string
+        intent:
+          type: string
+        aiResponse:
+          type: boolean
+        aimeowStatus:
+          type: string
+          enum: [sent, delivered, read, failed]
+        createdAt:
+          type: string
+          format: date-time
+
+    StaffMember:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        phoneNumber:
+          type: string
+          example: "+628123456789"
+        staffName:
+          type: string
+          example: "John Doe"
+        canUploadVehicle:
+          type: boolean
+          default: false
+        canUpdateStatus:
+          type: boolean
+          default: false
+        canViewInventory:
+          type: boolean
+          default: true
+        canViewStats:
+          type: boolean
+          default: true
+        isActive:
+          type: boolean
+          default: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateStaffRequest:
+      type: object
+      required:
+        - tenantId
+        - phoneNumber
+        - staffName
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        phoneNumber:
+          type: string
+          pattern: "^\\+628[0-9]{8,12}$"
+        staffName:
+          type: string
+        canUploadVehicle:
+          type: boolean
+          default: false
+        canUpdateStatus:
+          type: boolean
+          default: false
+
+    UpdateStaffRequest:
+      type: object
+      properties:
+        staffName:
+          type: string
+        canUploadVehicle:
+          type: boolean
+        canUpdateStatus:
+          type: boolean
+        canViewInventory:
+          type: boolean
+        canViewStats:
+          type: boolean
+        isActive:
+          type: boolean
+
+    WebhookPayload:
+      type: object
+      required:
+        - clientId
+        - event
+      properties:
+        clientId:
+          type: string
+        event:
+          type: string
+          enum: [message, status, qr, connected, disconnected]
+        data:
+          type: object
+          description: Event-specific data
+
+  responses:
+    BadRequest:
+      description: Bad request - validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+              details:
+                type: string
+
+tags:
+  - name: Setup
+    description: WhatsApp connection initialization
+  - name: Status
+    description: Connection status and health checks
+  - name: Configuration
+    description: AI configuration management
+  - name: Analytics
+    description: Performance metrics and insights
+  - name: Conversations
+    description: Conversation and message management
+  - name: Staff Management
+    description: Staff access and permissions
+  - name: Webhooks
+    description: Aimeow webhook integration

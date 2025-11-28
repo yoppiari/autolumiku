@@ -18,6 +18,7 @@ export async function GET(
         logoUrl: true,
         address: true,
         phoneNumber: true,
+        whatsappNumber: true, // Epic 8: For dual contact modal
         email: true,
       },
     });
