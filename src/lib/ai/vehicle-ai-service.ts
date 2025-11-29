@@ -410,5 +410,24 @@ Response format (JSON):
   }
 }
 
-// Export singleton instance
-export const vehicleAIService = new VehicleAIService();
+// Export lazy-initialized singleton instance
+let _vehicleAIService: VehicleAIService | null = null;
+export function getVehicleAIService(): VehicleAIService {
+  if (!_vehicleAIService) {
+    _vehicleAIService = new VehicleAIService();
+  }
+  return _vehicleAIService;
+}
+
+// For backward compatibility
+export const vehicleAIService = {
+  get _instance() {
+    return getVehicleAIService();
+  },
+  identifyFromText: (...args: Parameters<VehicleAIService['identifyFromText']>) =>
+    getVehicleAIService().identifyFromText(...args),
+  regenerateDescription: (...args: Parameters<VehicleAIService['regenerateDescription']>) =>
+    getVehicleAIService().regenerateDescription(...args),
+  analyzePricing: (...args: Parameters<VehicleAIService['analyzePricing']>) =>
+    getVehicleAIService().analyzePricing(...args),
+};
