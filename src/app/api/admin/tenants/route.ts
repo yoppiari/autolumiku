@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
           email: adminEmail,
           firstName: adminFirstName,
           lastName: adminLastName || '',
-          password: adminPassword, // TODO: Hash password before storing
+          passwordHash: adminPassword, // TODO: Hash password before storing (using bcrypt)
           role: 'admin',
           tenantId: tenant.id,
           emailVerified: true,
