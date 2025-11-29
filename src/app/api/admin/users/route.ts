@@ -119,7 +119,6 @@ export async function POST(request: NextRequest) {
         passwordHash: password, // TODO: Hash password before storing (using bcrypt)
         role,
         tenantId,
-        isActive: isActive !== undefined ? isActive : true,
         emailVerified: emailVerified !== undefined ? emailVerified : false,
       },
       include: {
