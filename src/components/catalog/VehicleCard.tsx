@@ -28,7 +28,7 @@ interface VehicleCardProps {
     photos: { thumbnailUrl: string; originalUrl: string }[];
   };
   slug: string;
-  tenantId?: string;
+  tenantId?: string | null;
   onWhatsAppClick?: (vehicle: any) => void;
 }
 
