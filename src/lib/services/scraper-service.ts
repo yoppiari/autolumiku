@@ -7,7 +7,7 @@
  * Story 2.10: Super Admin Vehicle Data Scraper
  */
 
-import { PrismaClient, ScraperJob, ScraperResult } from '@prisma/client';
+import { PrismaClient, Prisma, ScraperJob, ScraperResult } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -155,7 +155,7 @@ export class ScraperService {
           vehiclesNew: newCount,
           duplicates: duplicateCount,
           duration,
-          errors: errors.length > 0 ? errors : null,
+          errors: errors.length > 0 ? errors : Prisma.JsonNull,
         },
       });
     } catch (error) {
