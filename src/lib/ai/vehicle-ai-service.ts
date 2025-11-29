@@ -154,7 +154,6 @@ export class VehicleAIService {
           bodyType: true,
           features: true,
           description: true,
-          mileage: true,
           source: true,
         },
         orderBy: {
