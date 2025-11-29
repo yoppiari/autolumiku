@@ -212,13 +212,13 @@ export class StaffCommandService {
         command: "status",
         params: {},
         isValid: false,
-        error: "Format: /status [vehicle_id] [AVAILABLE|RESERVED|SOLD]",
+        error: "Format: /status [vehicle_id] [AVAILABLE|BOOKED|SOLD]",
       };
     }
 
     const [cmd, vehicleId, status] = parts;
 
-    const validStatuses = ["AVAILABLE", "RESERVED", "SOLD", "DELETED"];
+    const validStatuses = ["AVAILABLE", "BOOKED", "SOLD", "DELETED"];
     if (!validStatuses.includes(status.toUpperCase())) {
       return {
         command: "status",
@@ -411,7 +411,7 @@ export class StaffCommandService {
     }
 
     // FIX: Validate status against allowed values before update
-    const validStatuses = ["AVAILABLE", "RESERVED", "SOLD", "DELETED"];
+    const validStatuses = ["AVAILABLE", "BOOKED", "SOLD", "DELETED"];
     if (!validStatuses.includes(status)) {
       return {
         success: false,
@@ -422,7 +422,7 @@ export class StaffCommandService {
     // Update status with proper typing
     const updated = await prisma.vehicle.update({
       where: { id: vehicle.id },
-      data: { status: status as "AVAILABLE" | "RESERVED" | "SOLD" | "DELETED" },
+      data: { status: status as "AVAILABLE" | "BOOKED" | "SOLD" | "DELETED" },
     });
 
     // Log history
@@ -457,7 +457,7 @@ export class StaffCommandService {
     // Apply filter
     if (filter) {
       const upperFilter = filter.toUpperCase();
-      if (["AVAILABLE", "RESERVED", "SOLD", "DELETED"].includes(upperFilter)) {
+      if (["AVAILABLE", "BOOKED", "SOLD", "DELETED"].includes(upperFilter)) {
         whereClause.status = upperFilter;
       } else {
         // Filter by make
