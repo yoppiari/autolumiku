@@ -106,10 +106,7 @@ export default function WhatsAppAIConfigPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          tenantId,
-          ...config,
-        }),
+        body: JSON.stringify(config), // config already includes tenantId
       });
 
       const data = await response.json();
