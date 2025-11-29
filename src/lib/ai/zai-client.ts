@@ -117,17 +117,19 @@ export class ZAIClient {
 
 /**
  * Create ZAI client from environment variables
+ * Returns null if environment variables are not configured (e.g., during build time)
  */
-export function createZAIClient(): ZAIClient {
+export function createZAIClient(): ZAIClient | null {
   const apiKey = process.env.ZAI_API_KEY;
   const baseURL = process.env.ZAI_BASE_URL;
 
-  if (!apiKey || apiKey === 'your-zai-api-key-here') {
-    throw new Error('ZAI_API_KEY not configured in environment variables');
-  }
-
-  if (!baseURL) {
-    throw new Error('ZAI_BASE_URL not configured in environment variables');
+  // Return null during build time or when not configured
+  if (!apiKey || apiKey === 'your-zai-api-key-here' || !baseURL) {
+    if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
+      // During build time, return null instead of throwing
+      return null;
+    }
+    throw new Error('ZAI_API_KEY and ZAI_BASE_URL not configured in environment variables');
   }
 
   return new ZAIClient({

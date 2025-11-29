@@ -6,10 +6,20 @@
  */
 
 import { popularVehicleService } from '../services/popular-vehicle-service';
-import { createZAIClient } from '../ai/zai-client';
+import { createZAIClient, ZAIClient } from '../ai/zai-client';
 import { PopularVehicle } from '@prisma/client';
 
-const aiClient = createZAIClient();
+// Lazy initialization to avoid errors during build time
+let aiClient: ZAIClient | null = null;
+function getAIClient(): ZAIClient {
+  if (!aiClient) {
+    aiClient = createZAIClient();
+    if (!aiClient) {
+      throw new Error('ZAI client not configured. Please set ZAI_API_KEY and ZAI_BASE_URL environment variables.');
+    }
+  }
+  return aiClient;
+}
 
 export interface BlogPostResult {
   title: string;
@@ -65,7 +75,7 @@ Format as Markdown with proper headings (##).
 Tone: Informative, objective, helpful for Indonesian car buyers.
 Include specific price points and real-world observations.`;
 
-  const response = await aiClient.generateText({
+  const response = await getAIClient().generateText({
     systemPrompt: 'You are an automotive journalist writing for Indonesian car buyers.',
     userPrompt: prompt,
     temperature: 0.7,
@@ -131,7 +141,7 @@ Format as Markdown with proper headings (##).
 Tone: Objective, data-driven, helpful for decision making.
 End with clear recommendation for different buyer types.`;
 
-  const response = await aiClient.generateText({
+  const response = await getAIClient().generateText({
     systemPrompt: 'You are an automotive expert helping buyers make informed decisions.',
     userPrompt: prompt,
     temperature: 0.6,
@@ -186,7 +196,7 @@ Format as Markdown with checklists where appropriate.
 Be specific with price ranges and year recommendations.
 Include red flags and green flags for inspection.`;
 
-  const response = await aiClient.generateText({
+  const response = await getAIClient().generateText({
     systemPrompt: 'You are a used car buying consultant helping buyers avoid mistakes.',
     userPrompt: prompt,
     temperature: 0.7,
@@ -242,7 +252,7 @@ Include schema-friendly FAQ format.
 Natural keyword usage, no keyword stuffing.
 Persuasive but honest tone.`;
 
-  const response = await aiClient.generateText({
+  const response = await getAIClient().generateText({
     systemPrompt: 'You are an SEO content writer specializing in automotive.',
     userPrompt: prompt,
     temperature: 0.6,

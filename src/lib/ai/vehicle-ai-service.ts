@@ -112,10 +112,24 @@ Response format (JSON):
 }`;
 
 export class VehicleAIService {
-  private client: ZAIClient;
+  private client: ZAIClient | null;
 
-  constructor(client?: ZAIClient) {
-    this.client = client || createZAIClient();
+  constructor(client?: ZAIClient | null) {
+    if (client) {
+      this.client = client;
+    } else {
+      this.client = createZAIClient();
+      if (!this.client) {
+        throw new Error('ZAI client not configured. Please set ZAI_API_KEY and ZAI_BASE_URL environment variables.');
+      }
+    }
+  }
+
+  private getClient(): ZAIClient {
+    if (!this.client) {
+      throw new Error('ZAI client not initialized');
+    }
+    return this.client;
   }
 
   /**
@@ -232,7 +246,7 @@ IMPORTANT - Use this reference data to:
         temperature = 0.5; // Lower temperature for more consistent results with reference data
       }
 
-      const response = await this.client.generateText({
+      const response = await this.getClient().generateText({
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
         userPrompt: prompt,
         temperature,
@@ -240,7 +254,7 @@ IMPORTANT - Use this reference data to:
       });
 
       // Parse JSON response
-      const result = this.client.parseJSON<VehicleAIResult>(response.content);
+      const result = this.getClient().parseJSON<VehicleAIResult>(response.content);
 
       // Validate required fields
       this.validateResult(result);
@@ -340,14 +354,14 @@ Response format (JSON):
   "descriptionId": "Deskripsi dalam Bahasa Indonesia dengan kaidah SEO..."
 }`;
 
-    const response = await this.client.generateText({
+    const response = await this.getClient().generateText({
       systemPrompt: 'Anda adalah copywriter profesional untuk showroom mobil bekas.',
       userPrompt: prompt,
       temperature: 0.8,
       maxTokens: 1500,
     });
 
-    return this.client.parseJSON<{ descriptionId: string }>(
+    return this.getClient().parseJSON<{ descriptionId: string }>(
       response.content
     );
   }
@@ -385,14 +399,14 @@ Response format (JSON):
   }
 }`;
 
-    const response = await this.client.generateText({
+    const response = await this.getClient().generateText({
       systemPrompt: 'Anda adalah pricing analyst untuk used car market di Indonesia.',
       userPrompt: prompt,
       temperature: 0.5,
       maxTokens: 1500,
     });
 
-    return this.client.parseJSON(response.content);
+    return this.getClient().parseJSON(response.content);
   }
 }
 

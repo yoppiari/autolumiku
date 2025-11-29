@@ -218,10 +218,24 @@ Full HTML content here (no escaping needed, just raw HTML)
 ===END===`;
 
 export class BlogAIService {
-  private client: ZAIClient;
+  private client: ZAIClient | null;
 
-  constructor(client?: ZAIClient) {
-    this.client = client || createZAIClient();
+  constructor(client?: ZAIClient | null) {
+    if (client) {
+      this.client = client;
+    } else {
+      this.client = createZAIClient();
+      if (!this.client) {
+        throw new Error('ZAI client not configured. Please set ZAI_API_KEY and ZAI_BASE_URL environment variables.');
+      }
+    }
+  }
+
+  private getClient(): ZAIClient {
+    if (!this.client) {
+      throw new Error('ZAI client not initialized');
+    }
+    return this.client;
   }
 
   /**
@@ -239,7 +253,7 @@ export class BlogAIService {
         const prompt = this.buildPrompt(input);
 
         // Generate content with GLM-4-Plus
-        const response = await this.client.generateText({
+        const response = await this.getClient().generateText({
           systemPrompt: 'You are an expert SEO content writer for automotive industry in Indonesia. You MUST respond with VALID JSON only. Properly escape all quotes and special characters in JSON strings.',
           userPrompt: prompt,
           temperature: 0.7, // Balance between creativity and consistency

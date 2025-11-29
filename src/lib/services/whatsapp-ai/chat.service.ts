@@ -93,6 +93,9 @@ export class WhatsAppAIChatService {
 
       // Generate response dengan Z.ai
       const zaiClient = createZAIClient();
+      if (!zaiClient) {
+        throw new Error('ZAI client not configured. Please set ZAI_API_KEY and ZAI_BASE_URL environment variables.');
+      }
       const aiResponse = await zaiClient.generateText({
         systemPrompt,
         userPrompt: conversationContext,
