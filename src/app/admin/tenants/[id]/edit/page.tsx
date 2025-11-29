@@ -255,14 +255,14 @@ export default function TenantEditPage() {
                 value={formData.domain}
                 onChange={(e) => handleChange('domain', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="showroom1.autolumiku.com atau showroom1.com"
+                placeholder="showroom1.auto.lumiku.com atau showroom1.com"
                 required
               />
               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
                 <p className="text-sm text-blue-800 font-medium mb-1">ℹ️ Petunjuk Setup Domain:</p>
                 <ol className="text-xs text-blue-700 space-y-1 ml-4 list-decimal">
                   <li>Masukkan domain lengkap (subdomain atau custom domain)</li>
-                  <li>Contoh: <code className="bg-blue-100 px-1 py-0.5 rounded">showroom1.autolumiku.com</code> atau <code className="bg-blue-100 px-1 py-0.5 rounded">showroom1.com</code></li>
+                  <li>Contoh: <code className="bg-blue-100 px-1 py-0.5 rounded">showroom1.auto.lumiku.com</code> atau <code className="bg-blue-100 px-1 py-0.5 rounded">showroom1.com</code></li>
                   <li>Arahkan A record domain ke IP server: <code className="bg-blue-100 px-1 py-0.5 rounded">cf.avolut.com</code></li>
                   <li>Klik "Save" - Traefik akan otomatis di-sync jika domain berubah</li>
                   <li>SSL certificate akan otomatis di-provision (~2 menit)</li>

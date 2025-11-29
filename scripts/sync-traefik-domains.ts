@@ -95,7 +95,7 @@ function generateTraefikConfig(tenants: TenantDomain[]): string {
 #
 # IMPORTANT: All tenant domains must be explicitly configured here
 # Each tenant has ONE domain (Tenant.domain) which can be:
-# - Subdomain: showroom1.autolumiku.com
+# - Subdomain: showroom1.auto.lumiku.com
 # - Custom domain: showroom1.com
 # - Any domain pointing to this server
 #

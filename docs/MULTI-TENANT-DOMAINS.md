@@ -95,7 +95,7 @@ AND status = 'active'
    A    @         <server-ip>
    CNAME www      showroom1.com
 
-   # For subdomain (e.g., showroom1.autolumiku.com)
+   # For subdomain (e.g., showroom1.auto.lumiku.com)
    # Already configured in main DNS
    ```
 
@@ -150,9 +150,9 @@ Each tenant has **ONE domain** (`Tenant.domain`). This can be:
 **Usage**: Full white-label experience with tenant's own domain
 
 ### 2. Subdomain
-**Example**: `showroom1.autolumiku.com`, `primamobil.autolumiku.com`
+**Example**: `showroom1.auto.lumiku.com`, `primamobil.auto.lumiku.com`
 
-**Database**: `Tenant.domain = 'showroom1.autolumiku.com'`
+**Database**: `Tenant.domain = 'showroom1.auto.lumiku.com'`
 
 **Usage**: Multi-tenant under main platform domain
 
@@ -292,7 +292,7 @@ await prisma.tenant.create({
   data: {
     name: 'Showroom 1',
     slug: 'showroom-1',
-    domain: 'showroom1.autolumiku.com',
+    domain: 'showroom1.auto.lumiku.com',
     status: 'active',
     createdBy: userId,
   }
@@ -301,7 +301,7 @@ await prisma.tenant.create({
 // 2. Sync Traefik (REQUIRED)
 npm run traefik:sync
 
-// 3. Access via: https://showroom1.autolumiku.com
+// 3. Access via: https://showroom1.auto.lumiku.com
 ```
 
 ### Example 2: Add Custom Domain for Existing Tenant
