@@ -170,7 +170,7 @@ Aturan Penting:
         systemPrompt += vehicles
           .map(
             (v) =>
-              `- ${v.brand} ${v.model} ${v.year} (${v.transmission}) - Rp ${this.formatPrice(v.price)} - ${v.mileage}km - ${v.color}`
+              `- ${v.make} ${v.model} ${v.year} (${v.transmissionType}) - Rp ${this.formatPrice(v.price)} - ${v.mileage}km - ${v.color}`
           )
           .join("\n");
       } else {
@@ -222,12 +222,12 @@ Aturan Penting:
       },
       select: {
         id: true,
-        brand: true,
+        make: true,
         model: true,
         year: true,
         price: true,
         mileage: true,
-        transmission: true,
+        transmissionType: true,
         color: true,
       },
       orderBy: { createdAt: "desc" },
