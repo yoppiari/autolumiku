@@ -430,8 +430,12 @@ export class StaffCommandService {
       data: {
         vehicleId: vehicle.id,
         tenantId,
+        version: 1, // Increment this in production
         action: "STATUS_UPDATE",
-        changes: { oldStatus: vehicle.status, newStatus: status },
+        snapshot: {}, // Full vehicle snapshot would go here
+        changedFields: ["status"],
+        previousValues: { status: vehicle.status },
+        newValues: { status },
         changedBy: staffPhone,
       },
     });
