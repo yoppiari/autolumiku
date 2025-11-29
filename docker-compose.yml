@@ -59,13 +59,15 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
 
-      # ZhipuAI
-      ZHIPUAI_API_KEY: ${ZHIPUAI_API_KEY}
-      ZHIPUAI_MODEL_VISION: ${ZHIPUAI_MODEL_VISION:-glm-4v-flash}
-      ZHIPUAI_MODEL_TEXT: ${ZHIPUAI_MODEL_TEXT:-glm-4-flash}
+      # Z.ai (GLM Models)
+      ZAI_API_KEY: ${ZAI_API_KEY}
+      ZAI_BASE_URL: ${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4}
+      ZAI_TEXT_MODEL: ${ZAI_TEXT_MODEL:-glm-4.6}
+      ZAI_VISION_MODEL: ${ZAI_VISION_MODEL:-glm-4.5v}
 
       # Application
       NODE_ENV: production
+      PORT: ${PORT:-3000}
       # Domain/CORS handled dynamically per tenant from database
 
       # Security
@@ -106,14 +108,13 @@ services:
       redis:
         condition: service_healthy
 
-    ports:
-      - "3000:3000"
+    # Port removed - Coolify will handle reverse proxy routing
+    expose:
+      - "3000"
 
     volumes:
       - app_logs:/app/logs
       - uploaded_files:/app/public/uploads
-      # Mount Traefik dynamic config for multi-tenant domain management
-      - /data/coolify/proxy/dynamic:/data/coolify/proxy/dynamic
 
     networks:
       - autolumiku-network
@@ -125,28 +126,7 @@ services:
       retries: 3
       start_period: 40s
 
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    container_name: autolumiku-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-      - nginx_logs:/var/log/nginx
-    depends_on:
-      - app
-    networks:
-      - autolumiku-network
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+  # Nginx removed - Coolify handles reverse proxy
 
 volumes:
   postgres_data:
@@ -156,8 +136,6 @@ volumes:
   app_logs:
     driver: local
   uploaded_files:
-    driver: local
-  nginx_logs:
     driver: local
 
 networks:
