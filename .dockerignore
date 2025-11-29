@@ -61,8 +61,21 @@ docs/
 prisma/migrations/
 !prisma/schema.prisma
 
-# Scripts
-scripts/
+# Scripts (Keep scrapers for runtime)
+scripts/seed.ts
+scripts/test-*.ts
+scripts/backup.sh
+scripts/restore.sh
+scripts/deploy.sh
+scripts/install-epic2-deps.sh
+scripts/run-team-tests.sh
+scripts/setup-ssl.sh
+scripts/test-*.sh
+scripts/update-*.ts
+scripts/delete-*.js
+scripts/generate-*.ts
+# Note: Keep scripts/scrapers/ for scraper service
+# Note: Keep scripts/sync-traefik-domains.ts and scripts/create-platform-tenant.ts
 
 # Tests
 tests/
