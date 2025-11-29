@@ -154,7 +154,7 @@ export class StaffCommandService {
 
   /**
    * Parse /upload command
-   * Format: /upload [brand] [model] [year] [price] [mileage] [color] [transmission]
+   * Format: /upload [make] [model] [year] [price] [mileage] [color] [transmission]
    * Example: /upload Toyota Avanza 2020 150000000 50000 Hitam Manual
    */
   private static parseUploadCommand(message: string): CommandParseResult {
@@ -181,13 +181,13 @@ export class StaffCommandService {
       };
     }
 
-    const [cmd, brand, model, year, price, mileage, color, ...transmissionParts] = parts;
+    const [cmd, make, model, year, price, mileage, color, ...transmissionParts] = parts;
     const transmission = transmissionParts.join(" ") || "Manual";
 
     return {
       command: "upload",
       params: {
-        brand,
+        make,
         model,
         year: parseInt(year),
         price: parseInt(price),
@@ -303,9 +303,9 @@ export class StaffCommandService {
     }
 
     // Validate required fields
-    const { brand, model, year, price, mileage, color, transmission } = params;
+    const { make, model, year, price, mileage, color, transmission } = params;
 
-    if (!brand || !model || !year || !price) {
+    if (!make || !model || !year || !price) {
       return {
         success: false,
         message:
@@ -342,16 +342,16 @@ export class StaffCommandService {
     const vehicle = await prisma.vehicle.create({
       data: {
         tenantId,
-        brand,
+        make,
         model,
         year,
         price,
         mileage: mileage || 0,
-        transmission: transmission || "Manual",
+        transmissionType: transmission || "Manual",
         color: color || "Unknown",
         status: "AVAILABLE",
         condition: "Good",
-        description: `${brand} ${model} ${year} - Uploaded via WhatsApp by staff`,
+        description: `${make} ${model} ${year} - Uploaded via WhatsApp by staff`,
         features: ["Standard Features"],
         // Note: Photos will be added in next message if mediaUrl provided
       },
@@ -370,7 +370,7 @@ export class StaffCommandService {
 
     return {
       success: true,
-      message: `✅ Mobil berhasil ditambahkan!\n\n📋 Detail:\n- ID: ${vehicle.displayId || vehicle.id}\n- Mobil: ${brand} ${model} ${year}\n- Harga: Rp ${this.formatPrice(price)}\n- KM: ${this.formatNumber(mileage || 0)} km\n- Status: AVAILABLE\n\n${!mediaUrl ? "⚠️ Jangan lupa upload foto di dashboard admin!" : ""}`,
+      message: `✅ Mobil berhasil ditambahkan!\n\n📋 Detail:\n- ID: ${vehicle.displayId || vehicle.id}\n- Mobil: ${make} ${model} ${year}\n- Harga: Rp ${this.formatPrice(price)}\n- KM: ${this.formatNumber(mileage || 0)} km\n- Status: AVAILABLE\n\n${!mediaUrl ? "⚠️ Jangan lupa upload foto di dashboard admin!" : ""}`,
       vehicleId: vehicle.id,
     };
   }
@@ -428,7 +428,7 @@ export class StaffCommandService {
 
     return {
       success: true,
-      message: `✅ Status mobil berhasil diupdate!\n\n📋 ${vehicle.brand} ${vehicle.model} ${vehicle.year}\n- ID: ${vehicle.displayId || vehicle.id}\n- Status: ${vehicle.status} → ${status}`,
+      message: `✅ Status mobil berhasil diupdate!\n\n📋 ${vehicle.make} ${vehicle.model} ${vehicle.year}\n- ID: ${vehicle.displayId || vehicle.id}\n- Status: ${vehicle.status} → ${status}`,
       vehicleId: vehicle.id,
     };
   }
@@ -450,8 +450,8 @@ export class StaffCommandService {
       if (["AVAILABLE", "RESERVED", "SOLD", "DELETED"].includes(upperFilter)) {
         whereClause.status = upperFilter;
       } else {
-        // Filter by brand
-        whereClause.brand = { contains: filter, mode: "insensitive" };
+        // Filter by make
+        whereClause.make = { contains: filter, mode: "insensitive" as const };
       }
     }
 
@@ -489,9 +489,9 @@ export class StaffCommandService {
     // List vehicles (max 10)
     message += `\n*Daftar Mobil (${Math.min(vehicles.length, 10)} teratas):*\n`;
     vehicles.slice(0, 10).forEach((v, idx) => {
-      message += `\n${idx + 1}. ${v.brand} ${v.model} ${v.year}\n`;
+      message += `\n${idx + 1}. ${v.make} ${v.model} ${v.year}\n`;
       message += `   ID: ${v.displayId || v.id}\n`;
-      message += `   Harga: Rp ${this.formatPrice(v.price)}\n`;
+      message += `   Harga: Rp ${this.formatPrice(Number(v.price))}\n`;
       message += `   Status: ${v.status}\n`;
     });
 
