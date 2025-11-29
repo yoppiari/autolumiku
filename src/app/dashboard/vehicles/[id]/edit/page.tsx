@@ -397,8 +397,8 @@ export default function EditVehiclePage() {
                     {/* Quality Score Badge */}
                     {photo.qualityScore && (
                       <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded font-semibold ${
-                        photo.validationStatus === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                        photo.validationStatus === 'WARNING' ? 'bg-yellow-100 text-yellow-800' :
+                        photo.validationStatus === 'VALID' ? 'bg-green-100 text-green-800' :
+                        photo.validationStatus === 'LOW_QUALITY' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-red-100 text-red-800'
                       }`}>
                         {photo.qualityScore}

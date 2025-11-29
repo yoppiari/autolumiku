@@ -36,7 +36,7 @@ export interface StorageUploadResult {
 
 export interface PhotoQualityResult {
   score: number; // 0-100
-  status: 'APPROVED' | 'WARNING' | 'REJECTED';
+  status: 'VALID' | 'LOW_QUALITY' | 'REJECTED'; // Matches PhotoValidationStatus enum
   details: {
     sharpness: number;
     brightness: number;
