@@ -8,10 +8,19 @@
  */
 
 import { PrismaClient, ScraperJob, ScraperResult } from '@prisma/client';
-import { PuppeteerOLXScraper } from '../../../scripts/scrapers/puppeteer-olx-scraper';
-import { PuppeteerCarsomeScraper } from '../../../scripts/scrapers/puppeteer-carsome-scraper';
 
 const prisma = new PrismaClient();
+
+// Dynamic imports for scrapers (only loaded at runtime, not during build)
+async function loadOLXScraper() {
+  const { PuppeteerOLXScraper } = await import('../../../scripts/scrapers/puppeteer-olx-scraper');
+  return new PuppeteerOLXScraper();
+}
+
+async function loadCarsomeScraper() {
+  const { PuppeteerCarsomeScraper } = await import('../../../scripts/scrapers/puppeteer-carsome-scraper');
+  return new PuppeteerCarsomeScraper();
+}
 
 export interface ScraperJobOptions {
   source: 'OLX' | 'CARSOME' | 'ALL';
@@ -67,8 +76,8 @@ export class ScraperService {
         // Run both scrapers
         console.log('Running ALL scrapers...');
 
-        const olxScraper = new PuppeteerOLXScraper();
-        const carsomeScraper = new PuppeteerCarsomeScraper();
+        const olxScraper = await loadOLXScraper();
+        const carsomeScraper = await loadCarsomeScraper();
 
         const [olxVehicles, carsomeVehicles] = await Promise.all([
           olxScraper.scrape(Math.floor((options.targetCount || 50) / 2), true),
@@ -79,12 +88,12 @@ export class ScraperService {
 
       } else if (options.source === 'OLX') {
         // Run OLX scraper with detail page visits
-        const scraper = new PuppeteerOLXScraper();
+        const scraper = await loadOLXScraper();
         vehicles = await scraper.scrape(options.targetCount || 50, true);
 
       } else if (options.source === 'CARSOME') {
         // Run CARSOME scraper
-        const scraper = new PuppeteerCarsomeScraper();
+        const scraper = await loadCarsomeScraper();
         vehicles = await scraper.scrape(options.targetCount || 50);
 
       } else {
