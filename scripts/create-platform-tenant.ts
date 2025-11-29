@@ -51,30 +51,33 @@ async function main() {
     } else {
       console.log('📝 Creating platform tenant...');
 
-      // Get or create system user for createdBy
-      let systemUser = await prisma.user.findFirst({
-        where: { email: 'system@autolumiku.com' },
-      });
-
-      if (!systemUser) {
-        console.log('📝 Creating system user...');
-        systemUser = await prisma.user.create({
-          data: {
-            email: 'system@autolumiku.com',
-            name: 'System',
-            password: 'SYSTEM_USER_NO_PASSWORD',
-            status: 'active',
-            role: 'SUPER_ADMIN',
-          },
-        });
-      }
-
-      // Create platform tenant
+      // Create platform tenant first (use placeholder for createdBy)
+      // We'll create the system user after, since User requires a tenantId
       platformTenant = await prisma.tenant.create({
         data: {
           ...PLATFORM_TENANT,
-          createdBy: systemUser.id,
+          createdBy: 'SYSTEM', // Placeholder, will be updated after system user is created
         },
+      });
+
+      console.log('📝 Creating system user...');
+
+      // Now create system user with the platform tenant ID
+      const systemUser = await prisma.user.create({
+        data: {
+          email: 'system@autolumiku.com',
+          firstName: 'System',
+          lastName: 'Administrator',
+          passwordHash: 'SYSTEM_USER_NO_PASSWORD', // This account cannot be used to login
+          tenantId: platformTenant.id,
+          role: 'SUPER_ADMIN',
+        },
+      });
+
+      // Update platform tenant to reference system user
+      platformTenant = await prisma.tenant.update({
+        where: { id: platformTenant.id },
+        data: { createdBy: systemUser.id },
       });
 
       console.log('✅ Platform tenant created successfully!');
