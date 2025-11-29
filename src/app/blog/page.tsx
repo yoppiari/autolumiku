@@ -192,7 +192,7 @@ export default async function BlogListPage({ searchParams }: BlogListPageProps) 
                     {/* Meta Info */}
                     <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t">
                       <div className="flex items-center gap-3">
-                        <span>{readingTime(post.wordCount)} menit</span>
+                        <span>{readingTime(post.wordCount ?? 0)} menit</span>
                         <span>•</span>
                         <span>{post.views} views</span>
                       </div>

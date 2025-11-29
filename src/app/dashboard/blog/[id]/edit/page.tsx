@@ -159,7 +159,7 @@ export default function BlogEditPage() {
                         </div>
                         <div className="text-center">
                             <div className="font-semibold text-lg text-green-600">
-                                {post.wordCount}
+                                {post.wordCount ?? 0}
                             </div>
                             <div className="text-gray-600">Words</div>
                         </div>

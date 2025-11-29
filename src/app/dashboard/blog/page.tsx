@@ -369,7 +369,7 @@ export default function BlogListPage() {
                           {post.excerpt}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          {post.wordCount} kata • {post.authorName}
+                          {post.wordCount ?? 0} kata • {post.authorName}
                         </div>
                       </div>
                     </td>
@@ -493,7 +493,7 @@ export default function BlogListPage() {
                 </div>
 
                 <div className="text-xs text-gray-500 mb-3">
-                  {post.wordCount} kata • {formatDate(post.publishedAt || post.createdAt)}
+                  {post.wordCount ?? 0} kata • {formatDate(post.publishedAt || post.createdAt)}
                 </div>
 
                 {/* Actions */}

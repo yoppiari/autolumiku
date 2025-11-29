@@ -102,7 +102,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
-  const readingTime = Math.ceil(post.wordCount / 200); // Assume 200 words per minute
+  const readingTime = Math.ceil((post.wordCount ?? 0) / 200); // Assume 200 words per minute
 
   // JSON-LD Schema.org markup for SEO
   const jsonLd = {
@@ -131,7 +131,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     },
     keywords: [...post.keywords, ...post.localKeywords].join(', '),
     articleBody: post.content,
-    wordCount: post.wordCount,
+    wordCount: post.wordCount ?? 0,
   };
 
   // Related posts (same category, exclude current)
