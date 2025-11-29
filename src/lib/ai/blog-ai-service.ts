@@ -524,5 +524,22 @@ export class BlogAIService {
   }
 }
 
-// Export singleton instance
-export const blogAIService = new BlogAIService();
+// Export lazy-initialized singleton instance
+let _blogAIService: BlogAIService | null = null;
+export function getBlogAIService(): BlogAIService {
+  if (!_blogAIService) {
+    _blogAIService = new BlogAIService();
+  }
+  return _blogAIService;
+}
+
+// For backward compatibility
+export const blogAIService = {
+  get _instance() {
+    return getBlogAIService();
+  },
+  generateBlogPost: (...args: Parameters<BlogAIService['generateBlogPost']>) =>
+    getBlogAIService().generateBlogPost(...args),
+  generateSlug: (...args: Parameters<BlogAIService['generateSlug']>) =>
+    getBlogAIService().generateSlug(...args),
+};
