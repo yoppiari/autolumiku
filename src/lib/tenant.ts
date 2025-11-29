@@ -11,41 +11,50 @@ const prisma = new PrismaClient();
 
 /**
  * Get tenant information from request headers (set by middleware)
- * Queries database based on slug hint from middleware
+ * Queries database based on domain from middleware
+ *
+ * Tenant Resolution:
+ * - Each tenant has ONE domain (Tenant.domain)
+ * - Domain can be anything: subdomain.autolumiku.com, customdomain.com, etc.
+ * - All domains must be explicitly configured in Traefik
  */
 export async function getTenantFromHeaders(): Promise<{
   id: string | null;
   slug: string | null;
   name: string | null;
+  domain: string | null;
 }> {
   const headersList = headers();
-  const slugHint = headersList.get('x-tenant-slug-hint');
+  const tenantDomain = headersList.get('x-tenant-domain');
 
-  if (!slugHint) {
-    return { id: null, slug: null, name: null };
+  // No domain hint - return null
+  if (!tenantDomain) {
+    return { id: null, slug: null, name: null, domain: null };
   }
 
-  // Query tenant from database (this runs in server component, not edge)
+  // Query tenant from database by domain (this runs in server component, not edge)
   const tenant = await prisma.tenant.findFirst({
     where: {
-      slug: slugHint,
+      domain: tenantDomain,
       status: 'active',
     },
     select: {
       id: true,
       slug: true,
       name: true,
+      domain: true,
     },
   });
 
   if (!tenant) {
-    return { id: null, slug: null, name: null };
+    return { id: null, slug: null, name: null, domain: null };
   }
 
   return {
     id: tenant.id,
     slug: tenant.slug,
     name: tenant.name,
+    domain: tenant.domain,
   };
 }
 
@@ -114,4 +123,57 @@ export async function requireTenant() {
   }
 
   return tenant;
+}
+
+/**
+ * Get allowed CORS origins for a tenant
+ */
+export async function getTenantCorsOrigins(tenantId: string): Promise<string[]> {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: {
+      domain: true,
+    },
+  });
+
+  if (!tenant || !tenant.domain) {
+    return [];
+  }
+
+  const origins: string[] = [
+    `https://${tenant.domain}`,
+    `http://${tenant.domain}`,
+  ];
+
+  // Add development origins
+  if (process.env.NODE_ENV === 'development') {
+    origins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+  }
+
+  return origins;
+}
+
+/**
+ * Get the primary URL for a tenant
+ */
+export async function getTenantUrl(tenantId: string): Promise<string> {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: {
+      domain: true,
+      slug: true,
+    },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  // If domain is set, use it
+  if (tenant.domain) {
+    return `https://${tenant.domain}`;
+  }
+
+  // Fallback to catalog URL pattern
+  return `https://auto.lumiku.com/catalog/${tenant.slug}`;
 }

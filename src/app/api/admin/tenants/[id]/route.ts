@@ -7,6 +7,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 // GET /api/admin/tenants/[id] - Get tenant details
 export async function GET(
@@ -108,6 +112,9 @@ export async function PUT(
       }
     }
 
+    // Check if domain is being changed
+    const domainChanged = domain !== undefined && domain !== existingTenant.domain;
+
     // Update tenant
     const updatedTenant = await prisma.tenant.update({
       where: { id },
@@ -133,10 +140,28 @@ export async function PUT(
       },
     });
 
+    // Auto-sync Traefik if domain was changed
+    let traefikSyncStatus = null;
+    if (domainChanged) {
+      try {
+        console.log('🔄 Domain changed, syncing Traefik configuration...');
+        const { stdout, stderr } = await execAsync('npm run traefik:sync -- --no-confirm', {
+          cwd: process.cwd(),
+          timeout: 30000, // 30 seconds
+        });
+        console.log('✅ Traefik sync completed:', stdout);
+        traefikSyncStatus = 'success';
+      } catch (error) {
+        console.error('❌ Traefik sync failed:', error);
+        traefikSyncStatus = 'failed';
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: updatedTenant,
       message: 'Tenant updated successfully',
+      traefikSynced: traefikSyncStatus,
     });
   } catch (error) {
     console.error('Error updating tenant:', error);

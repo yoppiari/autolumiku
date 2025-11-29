@@ -30,48 +30,30 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Extract potential tenant slug from various sources
-  let tenantSlug: string | null = null;
+  // Extract domain from Host header
+  const cleanHost = host.split(':')[0]; // Remove port
 
-  // 1. Check if custom domain (not localhost or vercel domain)
-  const cleanHost = host.split(':')[0];
+  // Skip for localhost and development
   if (
-    !cleanHost.includes('localhost') &&
-    !cleanHost.includes('127.0.0.1') &&
-    !cleanHost.includes('.vercel.app')
+    cleanHost.includes('localhost') ||
+    cleanHost.includes('127.0.0.1') ||
+    cleanHost.includes('.vercel.app')
   ) {
-    // Custom domain - use subdomain or domain as slug hint
-    const parts = cleanHost.split('.');
-    if (parts.length >= 2) {
-      tenantSlug = parts[0]; // subdomain becomes slug hint
-    }
+    return NextResponse.next();
   }
 
-  // 2. Check old catalog URL pattern: /catalog/[slug]
-  if (pathname.startsWith('/catalog/')) {
-    const slugMatch = pathname.match(/^\/catalog\/([^\/]+)/);
-    if (slugMatch) {
-      tenantSlug = slugMatch[1];
-    }
-  }
+  // Set tenant domain hint for database lookup
+  // All domains (subdomains, custom domains, etc.) are stored in Tenant.domain
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-tenant-domain', cleanHost);
 
-  // Add tenant slug hint to headers if found
-  // Actual tenant validation will happen in server components with Prisma
-  if (tenantSlug) {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-tenant-slug-hint', tenantSlug);
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
-    const response = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-
-    return response;
-  }
-
-  // No tenant slug hint - continue anyway
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

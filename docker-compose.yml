@@ -68,13 +68,11 @@ services:
 
       # Application
       NODE_ENV: production
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost/api}
+      # Domain/CORS handled dynamically per tenant from database
 
       # Security
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
       SESSION_SECRET: ${SESSION_SECRET}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
 
       # Email (Optional)
       SMTP_HOST: ${SMTP_HOST}
@@ -116,6 +114,8 @@ services:
     volumes:
       - app_logs:/app/logs
       - uploaded_files:/app/public/uploads
+      # Mount Traefik dynamic config for multi-tenant domain management
+      - /data/coolify/proxy/dynamic:/data/coolify/proxy/dynamic
 
     networks:
       - autolumiku-network

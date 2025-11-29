@@ -10,10 +10,10 @@ import { StorageUploadResult } from '../types/photo.types';
 
 export class StorageService {
   private static uploadDir = process.env.UPLOAD_DIR || './uploads';
-  private static publicUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   /**
    * Upload photo to storage (Docker volume)
+   * Returns a relative URL that works with any domain (multi-tenant support)
    */
   static async uploadPhoto(
     buffer: Buffer,
@@ -28,9 +28,9 @@ export class StorageService {
     const filePath = path.join(this.uploadDir, storageKey);
     await fs.writeFile(filePath, buffer);
 
-    // Return public URL
-    const publicPath = `/uploads/${storageKey}`;
-    return `${this.publicUrl}${publicPath}`;
+    // Return relative URL (nginx serves /uploads from volume)
+    // This works with any custom domain in multi-tenant setup
+    return `/uploads/${storageKey}`;
   }
 
   /**

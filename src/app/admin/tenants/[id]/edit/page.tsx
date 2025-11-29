@@ -36,6 +36,8 @@ export default function TenantEditPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTenantData();
@@ -76,6 +78,7 @@ export default function TenantEditPage() {
     e.preventDefault();
     setIsSaving(true);
     setError(null);
+    setSyncStatus(null);
 
     try {
       const response = await fetch(`/api/admin/tenants/${tenantId}`, {
@@ -89,7 +92,14 @@ export default function TenantEditPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert('Tenant berhasil diupdate!');
+        // Show sync status if domain was changed
+        if (data.traefikSynced === 'success') {
+          setSyncStatus('Traefik configuration synced successfully!');
+        } else if (data.traefikSynced === 'failed') {
+          setSyncStatus('Warning: Traefik sync failed. Please sync manually.');
+        }
+
+        alert('Tenant berhasil diupdate!' + (data.traefikSynced === 'success' ? ' Domain dikonfigurasi di Traefik.' : ''));
         router.push(`/admin/tenants/${tenantId}`);
       } else {
         setError(data.error || 'Failed to update tenant');
@@ -99,6 +109,32 @@ export default function TenantEditPage() {
       setError('Failed to update tenant');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    setSyncStatus(null);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/admin/tenants/sync-traefik', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSyncStatus('✅ Traefik configuration synced successfully!');
+        alert('Traefik synced! All tenant domains are now configured.');
+      } else {
+        setError(data.error || 'Failed to sync Traefik');
+      }
+    } catch (error) {
+      console.error('Error syncing Traefik:', error);
+      setError('Failed to sync Traefik configuration');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -167,6 +203,12 @@ export default function TenantEditPage() {
           </div>
         )}
 
+        {syncStatus && (
+          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md">
+            {syncStatus}
+          </div>
+        )}
+
         {/* Basic Information */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Dasar</h2>
@@ -187,26 +229,25 @@ export default function TenantEditPage() {
 
             <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-                Subdomain <span className="text-red-500">*</span>
+                Slug <span className="text-red-500">*</span>
               </label>
-              <div className="flex">
-                <input
-                  type="text"
-                  id="slug"
-                  value={formData.slug}
-                  onChange={(e) => handleChange('slug', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <div className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-600">
-                  .autolumiku.com
-                </div>
-              </div>
+              <input
+                type="text"
+                id="slug"
+                value={formData.slug}
+                onChange={(e) => handleChange('slug', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="showroom-1"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                URL identifier untuk tenant (e.g., auto.lumiku.com/catalog/showroom-1)
+              </p>
             </div>
 
             <div>
               <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
-                Custom Domain <span className="text-gray-500">(Opsional)</span>
+                Domain <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -214,15 +255,35 @@ export default function TenantEditPage() {
                 value={formData.domain}
                 onChange={(e) => handleChange('domain', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="www.showroom.com"
+                placeholder="showroom1.autolumiku.com atau showroom1.com"
+                required
               />
               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm text-blue-800 font-medium mb-1">ℹ️ Petunjuk Setup Custom Domain:</p>
+                <p className="text-sm text-blue-800 font-medium mb-1">ℹ️ Petunjuk Setup Domain:</p>
                 <ol className="text-xs text-blue-700 space-y-1 ml-4 list-decimal">
-                  <li>Buat CNAME record di DNS provider Anda yang mengarah ke: <code className="bg-blue-100 px-1 py-0.5 rounded">proxy.autolumiku.com</code></li>
-                  <li>Tunggu propagasi DNS (biasanya 5-15 menit)</li>
-                  <li>SSL certificate akan otomatis di-provision setelah domain terverifikasi</li>
+                  <li>Masukkan domain lengkap (subdomain atau custom domain)</li>
+                  <li>Contoh: <code className="bg-blue-100 px-1 py-0.5 rounded">showroom1.autolumiku.com</code> atau <code className="bg-blue-100 px-1 py-0.5 rounded">showroom1.com</code></li>
+                  <li>Arahkan A record domain ke IP server: <code className="bg-blue-100 px-1 py-0.5 rounded">cf.avolut.com</code></li>
+                  <li>Klik "Save" - Traefik akan otomatis di-sync jika domain berubah</li>
+                  <li>SSL certificate akan otomatis di-provision (~2 menit)</li>
                 </ol>
+              </div>
+
+              {/* Manual Sync Button */}
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleManualSync}
+                  disabled={isSyncing}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+                >
+                  {isSyncing ? '🔄 Syncing...' : '🔄 Sync Traefik Manually'}
+                </button>
+                {syncStatus && (
+                  <span className="text-sm text-green-600 font-medium">
+                    {syncStatus}
+                  </span>
+                )}
               </div>
             </div>
 

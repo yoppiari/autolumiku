@@ -19,7 +19,8 @@
     "scraper:olx": "npx tsx scripts/scrapers/test-olx-scraper.ts",
     "scraper:olx-puppeteer": "npx tsx scripts/scrapers/puppeteer-olx-scraper.ts",
     "scraper:analyze": "npx tsx scripts/scrapers/analyze-results.ts",
-    "scraper:test": "npx tsx scripts/scrapers/run-all-tests.ts"
+    "scraper:test": "npx tsx scripts/scrapers/run-all-tests.ts",
+    "traefik:sync": "npx tsx scripts/sync-traefik-domains.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.936.0",
