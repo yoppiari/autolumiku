@@ -351,7 +351,7 @@ export class StaffCommandService {
         color: color || "Unknown",
         status: "AVAILABLE",
         condition: "Good",
-        description: `${make} ${model} ${year} - Uploaded via WhatsApp by staff`,
+        descriptionId: `${make} ${model} ${year} - Uploaded via WhatsApp by staff`,
         features: ["Standard Features"],
         // Note: Photos will be added in next message if mediaUrl provided
       },
