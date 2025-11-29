@@ -49,7 +49,7 @@ model Tenant {
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  createdBy String
+  createdBy String? // Optional: tenant can be created before users exist (bootstrapping)
 
   // Relations
   users                  User[]
@@ -353,8 +353,8 @@ model GlobalSetting {
   // Audit
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  createdBy String
-  updatedBy String
+  createdBy String? // Optional: settings can be created by system
+  updatedBy String? // Optional: system updates
 
   // Relations
   changeHistory SettingChange[]
@@ -657,7 +657,7 @@ model Vehicle {
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  createdBy String
+  createdBy String? // Optional: vehicle can be created via AI without user context
   updatedBy String?
 
   // Relations
@@ -1210,7 +1210,7 @@ model MessageTemplate {
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  createdBy String
+  createdBy String? // Optional: templates can be system-generated
 
   @@index([tenantId])
   @@index([category])
