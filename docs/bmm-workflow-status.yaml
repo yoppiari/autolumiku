@@ -1293,3 +1293,126 @@ completion_details:
             - "Price display meets Indonesian number format standards"
             - "Catalog navigation works seamlessly"
           commit: "TBD"
+
+        - id: "multi-tenant-domain-system-refactor"
+          agent: "developer"
+          status: "COMPLETED"
+          command: "refactor-domain-system"
+          output: "src/middleware.ts, src/lib/tenant.ts, scripts/traefik-sync.ts"
+          requirement_date: "2025-11-29"
+          completion_date: "2025-11-29"
+          priority: "CRITICAL"
+          description: "Complete refactor of multi-tenant domain management with explicit Traefik routing and dedicated SSL certificates"
+          epic: "Epic 1: Multi-Tenant Foundation"
+          story_enhanced: "Story 1.2: Tenant Branding Configuration"
+          architecture_changes:
+            before:
+              - "Wildcard subdomain routing with shared SSL"
+              - "Multiple domain fields (customDomain, subdomain)"
+              - "Complex domain resolution logic"
+              - "Manual SSL certificate management"
+            after:
+              - "Explicit Traefik routing per domain"
+              - "Single domain field per tenant (Tenant.domain)"
+              - "Simple database lookup: WHERE domain = ?"
+              - "Automatic Let's Encrypt SSL per domain"
+          implementation:
+            database_simplification:
+              - "Unified to single Tenant.domain field"
+              - "One tenant = One domain (custom or subdomain)"
+              - "Removed separate customDomain/subdomain fields"
+              - "Simple active tenant query by domain"
+            traefik_integration:
+              - "Created /data/coolify/proxy/dynamic/autolmk.yaml config"
+              - "Explicit HTTP/HTTPS routes per domain"
+              - "Dedicated Let's Encrypt cert resolver per domain"
+              - "Auto-reload on config change (~30s)"
+              - "Volume mount for container-based config updates"
+            automation:
+              - "Created npm run traefik:sync script"
+              - "Fetches active tenants from database"
+              - "Generates Traefik YAML config dynamically"
+              - "Uploads to Coolify proxy directory"
+              - "Supports cron scheduling for periodic sync"
+            middleware_simplification:
+              - "Extract domain from Host header"
+              - "Set x-tenant-domain header"
+              - "Single database query for resolution"
+              - "No complex domain parsing logic"
+            platform_tenant:
+              - "Added auto.lumiku.com as platform tenant"
+              - "Undeletable platform tenant (prevent user error)"
+              - "Base domain migration: autolumiku.com → auto.lumiku.com"
+              - "All existing configs updated"
+          features:
+            ssl_certificates:
+              - "Dedicated SSL per domain (no shared wildcard)"
+              - "Automatic Let's Encrypt provisioning"
+              - "Auto-renewal before expiration"
+              - "DNS validation for custom domains"
+            domain_types_supported:
+              - "Custom domains (e.g., showroom1.com)"
+              - "Subdomains (e.g., showroom1.auto.lumiku.com)"
+              - "Slug-based fallback (auto.lumiku.com/catalog/slug)"
+            tenant_resolution:
+              - "Host header extraction via middleware"
+              - "Database query: WHERE domain = ? AND status = 'active'"
+              - "Tenant context injection for all requests"
+            url_generation:
+              - "getTenantUrl(tenantId) helper function"
+              - "Returns https://domain or fallback to slug URL"
+              - "getTenantCorsOrigins(tenantId) for API CORS"
+          files_created:
+            - "scripts/traefik-sync.ts (Traefik config generator)"
+            - "docs/MULTI-TENANT-DOMAINS.md (Complete guide)"
+            - "/data/coolify/proxy/dynamic/autolmk.yaml (Traefik config)"
+          files_modified:
+            - "src/middleware.ts (Simplified domain extraction)"
+            - "src/lib/tenant.ts (Single domain field logic)"
+            - "package.json (Added traefik:sync script)"
+            - "prisma/schema.prisma (Tenant.domain field)"
+          commits:
+            - "80e51f8 - feat: refactor multi-tenant domain system with explicit Traefik routing"
+            - "416f440 - fix: update base domain from autolumiku.com to auto.lumiku.com"
+            - "e6efd25 - feat: add platform tenant (auto.lumiku.com) as undeletable first tenant"
+          benefits:
+            reliability:
+              - "Dedicated SSL per domain (no shared cert vulnerabilities)"
+              - "Explicit routing (no wildcard catch-all issues)"
+              - "Better error isolation per tenant"
+            security:
+              - "Each domain gets its own SSL certificate"
+              - "Certificate compromise isolated to one tenant"
+              - "DNS ownership validation before activation"
+            maintainability:
+              - "Single domain field (simpler data model)"
+              - "Automated config sync (npm run traefik:sync)"
+              - "Clear documentation and troubleshooting guide"
+            scalability:
+              - "No wildcard cert limitations"
+              - "Supports unlimited custom domains"
+              - "Volume-mounted config for container updates"
+            developer_experience:
+              - "Simple database schema (one domain field)"
+              - "Clear tenant resolution flow"
+              - "Automated deployment with script"
+              - "Comprehensive documentation"
+          production_checklist:
+            - "Tenant updates DNS (A/CNAME records)"
+            - "DNS propagation verified (dig/nslookup)"
+            - "Database updated with domain"
+            - "Traefik config synced (npm run traefik:sync)"
+            - "HTTP→HTTPS redirect tested"
+            - "SSL certificate validated"
+            - "Tenant content loads correctly"
+          documentation:
+            - "Complete setup guide in MULTI-TENANT-DOMAINS.md"
+            - "Architecture diagrams (Traefik → Nginx → Middleware → DB)"
+            - "Troubleshooting section with common issues"
+            - "Examples for subdomain and custom domain setup"
+            - "SSL certificate provisioning workflow"
+          impact:
+            epic_completion: "Enhanced Epic 1 Story 1.2 with production-grade domain management"
+            technical_debt: "Eliminated complex domain resolution logic"
+            operational_efficiency: "Automated domain provisioning with traefik:sync"
+            production_readiness: "Enterprise-grade multi-tenant domain architecture"
