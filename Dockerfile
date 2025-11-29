@@ -11,7 +11,8 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install dependencies
-RUN npm ci --only=production && \
+# Note: Using npm install instead of npm ci since package-lock.json is gitignored
+RUN npm install --production --no-audit && \
     npm cache clean --force
 
 # Generate Prisma Client
