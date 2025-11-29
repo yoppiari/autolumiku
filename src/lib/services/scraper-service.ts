@@ -424,7 +424,15 @@ export class ScraperService {
             make: result.make,
             model: result.model,
             category: 'Unknown', // Will be categorized manually later
+            bodyType: 'Unknown',
+            variants: [],
             productionYears: result.year > 0 ? [result.year] : [],
+            engineOptions: [],
+            engineCapacity: {},
+            transmissionTypes: [],
+            fuelTypes: [],
+            seatingCapacity: [],
+            driveType: [],
             usedCarPrices: result.year > 0 ? {
               [result.year]: {
                 min: Number(result.price),
@@ -432,6 +440,11 @@ export class ScraperService {
               },
             } : {},
             popularityScore: 10, // Default low score
+            commonInRegions: [],
+            targetMarket: [],
+            standardFeatures: {},
+            commonKeywords: [],
+            commonMisspellings: [],
             isActive: true,
           },
         });
