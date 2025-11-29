@@ -157,7 +157,7 @@ export class VehicleAIService {
           source: true,
         },
         orderBy: {
-          scrapedAt: 'desc',
+          createdAt: 'desc', // ScraperResult uses createdAt not scrapedAt
         },
         take: 5, // Get top 5 most recent
       });
