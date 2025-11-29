@@ -21,7 +21,7 @@ interface VehicleCardProps {
     model: string;
     year: number;
     variant: string | null;
-    price: number;
+    price: bigint | number;
     mileage: number | null;
     transmissionType: string | null;
     fuelType: string | null;
@@ -35,8 +35,8 @@ interface VehicleCardProps {
 export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }: VehicleCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const formatPrice = (price: number) => {
-    const rupiah = price / 100;
+  const formatPrice = (price: bigint | number) => {
+    const rupiah = Number(price) / 100;
     return `Rp ${rupiah.toLocaleString('id-ID')}`;
   };
 
