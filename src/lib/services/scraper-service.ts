@@ -7,9 +7,8 @@
  * Story 2.10: Super Admin Vehicle Data Scraper
  */
 
-import { PrismaClient, Prisma, ScraperJob, ScraperResult } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Prisma, ScraperJob, ScraperResult } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 // Dynamic imports for scrapers (only loaded at runtime, not during build)
 async function loadOLXScraper() {

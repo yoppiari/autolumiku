@@ -7,12 +7,11 @@ const nextConfig = {
     serverComponentsExternalPackages: ['pg']
   },
 
-  env: {
-    DATABASE_URL: process.env.DATABASE_URL,
-    JWT_SECRET: process.env.JWT_SECRET,
-    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
-    REDIS_URL: process.env.REDIS_URL
-  }
+  // NOTE: Do NOT add 'env' block here!
+  // Server-side code can already access process.env directly.
+  // Adding env block makes variables accessible to client-side (browser),
+  // which exposes secrets to anyone inspecting the browser.
+  // For client-side env vars, use NEXT_PUBLIC_ prefix and add to .env file.
 }
 
 module.exports = nextConfig

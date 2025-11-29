@@ -5,9 +5,8 @@
  * Provides search, suggestions, and data retrieval for AI integration
  */
 
-import { PrismaClient, PopularVehicle } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PopularVehicle } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 export interface VehicleSearchResult {
   id: string;

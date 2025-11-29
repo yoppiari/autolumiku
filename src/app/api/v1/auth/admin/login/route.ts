@@ -1,25 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Super admin users only - for platform management
-const mockSuperAdmins = [
-  {
-    id: 'admin-1',
-    email: 'admin@autolumiku.com',
-    password: 'admin123', // In production, this would be hashed
-    firstName: 'Super',
-    lastName: 'Admin',
-    role: 'super_admin',
-    tenantId: null,
-    isActive: true,
-    createdAt: new Date('2025-11-01T00:00:00Z'),
-    lastLogin: null
-  }
-];
+import bcrypt from 'bcrypt';
+import { prisma } from '@/lib/prisma';
+import { generateTokenPair } from '@/lib/auth/jwt';
+import { getUserPermissions } from '@/lib/auth/middleware';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('Super admin login request body:', body); // Debug log
     const { email, password } = body;
 
     // Validate input
@@ -30,54 +17,111 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find super admin by email
-    const admin = mockSuperAdmins.find(a => a.email.toLowerCase() === email.toLowerCase());
+    // Find super admin by email (must be super_admin role)
+    // Note: super_admin role already implies tenantId is null in our schema
+    const user = await prisma.user.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        role: 'super_admin',
+      },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        tenantId: true,
+        emailVerified: true,
+        failedLoginAttempts: true,
+        lockedUntil: true,
+      },
+    });
 
-    if (!admin) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid admin credentials' },
         { status: 401 }
       );
     }
 
-    // Check password (in production, use bcrypt.compare)
-    if (admin.password !== password) {
+    // Check if account is locked
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingMinutes = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 60000
+      );
       return NextResponse.json(
-        { error: 'Invalid admin credentials' },
+        { error: `Account locked. Try again in ${remainingMinutes} minutes.` },
         { status: 401 }
       );
     }
 
-    // Check if admin is active
-    if (!admin.isActive) {
+    // Verify password using bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      // Increment failed login attempts
+      const newFailedAttempts = user.failedLoginAttempts + 1;
+      const shouldLock = newFailedAttempts >= 5;
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: newFailedAttempts,
+          lockedUntil: shouldLock
+            ? new Date(Date.now() + 15 * 60 * 1000) // Lock for 15 minutes
+            : null,
+        },
+      });
+
       return NextResponse.json(
-        { error: 'Admin account is deactivated' },
+        {
+          error: shouldLock
+            ? 'Too many failed attempts. Account locked for 15 minutes.'
+            : 'Invalid admin credentials',
+        },
         { status: 401 }
       );
     }
 
-    // Remove password from response
-    const { password: _, ...adminWithoutPassword } = admin;
+    // Reset failed login attempts and update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        lastLoginAt: new Date(),
+      },
+    });
 
-    // Create mock JWT token (in production, use proper JWT)
-    const token = Buffer.from(JSON.stringify({
-      userId: admin.id,
-      email: admin.email,
-      role: admin.role,
-      tenantId: admin.tenantId
-    })).toString('base64');
+    // Generate JWT token pair
+    const tokens = generateTokenPair({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId,
+    });
 
     // Return success response
     return NextResponse.json({
       success: true,
       message: 'Super admin login successful',
       data: {
-        user: adminWithoutPassword,
-        token: token,
-        expiresIn: '24h'
-      }
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          tenantId: user.tenantId,
+          emailVerified: user.emailVerified,
+        },
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresIn: tokens.expiresIn,
+        permissions: getUserPermissions(user.role),
+      },
     });
-
   } catch (error) {
     console.error('Super admin login error:', error);
     return NextResponse.json(

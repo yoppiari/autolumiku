@@ -1,38 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Mock showroom users database - using actual UUIDs from database
-// NOTE: In production, query from database instead of mock data
-const mockUsers = [
-  {
-    id: 'f8e7d6c5-b4a3-4c5d-8e9f-1a2b3c4d5e6f', // Use real user UUID
-    email: 'user@showroom.com',
-    password: 'user123', // In production, this would be hashed
-    firstName: 'John',
-    lastName: 'Doe',
-    role: 'admin',
-    tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // ✅ Actual tenant UUID (Showroom Jakarta Premium)
-    isActive: true,
-    createdAt: new Date('2025-11-15T00:00:00Z'),
-    lastLogin: null
-  },
-  {
-    id: 'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d', // Use real user UUID
-    email: 'staff@showroom.com',
-    password: 'staff123', // In production, this would be hashed
-    firstName: 'Staff',
-    lastName: 'Member',
-    role: 'staff',
-    tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // ✅ Actual tenant UUID (Showroom Jakarta Premium)
-    isActive: true,
-    createdAt: new Date('2025-11-20T00:00:00Z'),
-    lastLogin: null
-  }
-];
+import bcrypt from 'bcrypt';
+import { prisma } from '@/lib/prisma';
+import { generateTokenPair } from '@/lib/auth/jwt';
+import { getUserPermissions } from '@/lib/auth/middleware';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('Login request body:', body); // Debug log
     const { email, password } = body;
 
     // Validate input
@@ -44,7 +18,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user by email
-    const user = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        tenantId: true,
+        emailVerified: true,
+        failedLoginAttempts: true,
+        lockedUntil: true,
+      },
+    });
 
     if (!user) {
       return NextResponse.json(
@@ -53,44 +41,83 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check password (in production, use bcrypt.compare)
-    if (user.password !== password) {
+    // Check if account is locked
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingMinutes = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 60000
+      );
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: `Account locked. Try again in ${remainingMinutes} minutes.` },
         { status: 401 }
       );
     }
 
-    // Check if user is active
-    if (!user.isActive) {
+    // Verify password using bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      // Increment failed login attempts
+      const newFailedAttempts = user.failedLoginAttempts + 1;
+      const shouldLock = newFailedAttempts >= 5;
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: newFailedAttempts,
+          lockedUntil: shouldLock
+            ? new Date(Date.now() + 15 * 60 * 1000) // Lock for 15 minutes
+            : null,
+        },
+      });
+
       return NextResponse.json(
-        { error: 'Account is deactivated' },
+        {
+          error: shouldLock
+            ? 'Too many failed attempts. Account locked for 15 minutes.'
+            : 'Invalid credentials',
+        },
         { status: 401 }
       );
     }
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    // Reset failed login attempts and update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        lastLoginAt: new Date(),
+      },
+    });
 
-    // Create mock JWT token (in production, use proper JWT)
-    const token = Buffer.from(JSON.stringify({
+    // Generate JWT token pair
+    const tokens = generateTokenPair({
       userId: user.id,
       email: user.email,
       role: user.role,
-      tenantId: user.tenantId
-    })).toString('base64');
+      tenantId: user.tenantId,
+    });
 
     // Return success response
     return NextResponse.json({
       success: true,
       message: 'Login successful',
       data: {
-        user: userWithoutPassword,
-        token: token,
-        expiresIn: '24h'
-      }
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          tenantId: user.tenantId,
+          emailVerified: user.emailVerified,
+        },
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresIn: tokens.expiresIn,
+        permissions: getUserPermissions(user.role),
+      },
     });
-
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

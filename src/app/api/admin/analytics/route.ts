@@ -5,17 +5,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
 export async function GET(request: NextRequest) {
-  try {
-    // TODO: Add proper authentication in production
-    // const session = await getServerSession(authOptions);
-    // if (!session || session.user.role !== 'super_admin') {
-    //   return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    // }
+  return withSuperAdminAuth(request, async (request, auth) => {
+    try {
+      // TODO: Add proper authentication in production
+      // const session = await getServerSession(authOptions);
+      // if (!session || session.user.role !== 'super_admin') {
+      //   return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      // }
 
-    const searchParams = request.nextUrl.searchParams;
-    const timeRange = searchParams.get('timeRange') || '7d';
+      const searchParams = request.nextUrl.searchParams;
+      const timeRange = searchParams.get('timeRange') || '7d';
 
     // Calculate date range
     const now = new Date();
@@ -231,20 +233,21 @@ export async function GET(request: NextRequest) {
       timeRange,
     };
 
-    return NextResponse.json(analyticsData);
+      return NextResponse.json(analyticsData);
 
-  } catch (error) {
-    console.error('Analytics API error:', error);
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
+    } catch (error) {
+      console.error('Analytics API error:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
+      return NextResponse.json(
+        {
+          error: 'Internal server error',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        },
+        { status: 500 }
+      );
     }
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
-  }
+  });
 }

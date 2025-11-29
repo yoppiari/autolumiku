@@ -3,9 +3,7 @@
  * Epic 5: Story 5.7 - Layout Customization
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export interface CatalogLayoutConfig {
   id?: string;

@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-autolumiku}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}  # REQUIRED: No default password for security
       POSTGRES_DB: ${DB_NAME:-autolumiku_prod}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
@@ -28,7 +28,7 @@ services:
     image: redis:7-alpine
     container_name: autolumiku-redis
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
+    command: redis-server --requirepass ${REDIS_PASSWORD}  # REQUIRED: No default password for security
     volumes:
       - redis_data:/data
     # Ports removed - only accessible via internal Docker network
@@ -51,7 +51,7 @@ services:
     restart: unless-stopped
     environment:
       # Database
-      DATABASE_URL: postgresql://${DB_USER:-autolumiku}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-autolumiku_prod}?schema=public
+      DATABASE_URL: postgresql://${DB_USER:-autolumiku}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-autolumiku_prod}?schema=public
 
       # JWT Secrets
       JWT_SECRET: ${JWT_SECRET}
@@ -82,7 +82,7 @@ services:
       EMAIL_FROM: ${EMAIL_FROM}
 
       # Redis
-      REDIS_URL: redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
 
       # File Upload
       MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}

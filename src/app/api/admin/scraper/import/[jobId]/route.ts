@@ -5,29 +5,32 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { scraperService } from '@/lib/services/scraper-service';
+import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { jobId: string } }
 ) {
-  try {
-    const body = await request.json().catch(() => ({}));
-    const options = body.options || {};
+  return withSuperAdminAuth(request, async (request, auth) => {
+    try {
+      const body = await request.json().catch(() => ({}));
+      const options = body.options || {};
 
-    const result = await scraperService.importResults(params.jobId, options);
+      const result = await scraperService.importResults(params.jobId, options);
 
-    return NextResponse.json({
-      success: true,
-      ...result,
-    });
-  } catch (error) {
-    console.error('Import results error:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to import results',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
+      return NextResponse.json({
+        success: true,
+        ...result,
+      });
+    } catch (error) {
+      console.error('Import results error:', error);
+      return NextResponse.json(
+        {
+          error: 'Failed to import results',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+  });
 }

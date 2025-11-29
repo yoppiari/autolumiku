@@ -3,10 +3,8 @@
  * Epic 5: Story 5.8 - Multiple Themes
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { getTheme, getAllThemes, generateCSSVariables, ThemeDefinition } from '@/lib/themes/theme-definitions';
-
-const prisma = new PrismaClient();
 
 export class ThemeService {
   /**

@@ -3,9 +3,8 @@
  * Main service for public catalog functionality
  */
 
-import { PrismaClient, VehicleStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { VehicleStatus } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 export interface CatalogVehicle {
   id: string;

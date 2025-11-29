@@ -3,9 +3,8 @@
  * Epic 6: Lead Management System
  */
 
-import { PrismaClient, LeadStatus, LeadPriority } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { LeadStatus, LeadPriority } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 export interface LeadCreateInput {
   tenantId: string;
