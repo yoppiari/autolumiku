@@ -52,6 +52,14 @@ export async function GET(request: NextRequest) {
       } else if (tenantId) {
         account = await AimeowClientService.getAccountByTenant(tenantId);
       }
+
+      // Check if account still exists after re-fetch
+      if (!account) {
+        return NextResponse.json({
+          success: false,
+          error: "Account not found after status update",
+        }, { status: 404 });
+      }
     }
 
     // Get conversation statistics
