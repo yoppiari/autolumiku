@@ -362,8 +362,18 @@ export class StaffCommandService {
       await prisma.vehiclePhoto.create({
         data: {
           vehicleId: vehicle.id,
-          url: mediaUrl,
-          isPrimary: true,
+          tenantId,
+          storageKey: `whatsapp-upload/${vehicle.id}/${Date.now()}`,
+          originalUrl: mediaUrl,
+          thumbnailUrl: mediaUrl,
+          mediumUrl: mediaUrl,
+          largeUrl: mediaUrl,
+          filename: 'whatsapp-upload.jpg',
+          fileSize: 0, // Unknown from WhatsApp
+          mimeType: 'image/jpeg',
+          width: 0, // Unknown
+          height: 0, // Unknown
+          isMainPhoto: true,
         },
       });
     }
