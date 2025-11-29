@@ -95,9 +95,9 @@ export default async function ShowroomHomePage() {
       slug: true,
       title: true,
       excerpt: true,
-      featuredImageUrl: true,
+      featuredImage: true,
       publishedAt: true,
-      viewCount: true,
+      views: true,
     },
   });
 
@@ -274,10 +274,10 @@ export default async function ShowroomHomePage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {blogPosts.map((post) => (
                   <Card key={post.id} className="hover:shadow-xl transition-shadow">
-                    {post.featuredImageUrl && (
+                    {post.featuredImage && (
                       <CardHeader className="p-0">
                         <img
-                          src={post.featuredImageUrl}
+                          src={post.featuredImage}
                           alt={post.title}
                           className="w-full h-48 object-cover rounded-t-lg"
                         />
@@ -289,7 +289,7 @@ export default async function ShowroomHomePage() {
                         {getExcerpt(post.excerpt)}
                       </p>
                       <div className="mt-4 text-xs text-gray-500">
-                        {post.publishedAt && new Date(post.publishedAt).toLocaleDateString('id-ID')} • {post.viewCount} views
+                        {post.publishedAt && new Date(post.publishedAt).toLocaleDateString('id-ID')} • {post.views} views
                       </div>
                     </CardContent>
                     <CardFooter className="p-4 pt-0">
