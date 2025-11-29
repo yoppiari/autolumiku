@@ -206,6 +206,17 @@ export async function DELETE(
       );
     }
 
+    // Prevent deletion of platform tenant (auto.lumiku.com)
+    if (tenant.slug === 'autolumiku-platform' || tenant.domain === 'auto.lumiku.com') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Cannot delete platform tenant',
+        },
+        { status: 403 }
+      );
+    }
+
     // Check if tenant has users or vehicles
     if (tenant._count.users > 0 || tenant._count.vehicles > 0) {
       return NextResponse.json(
