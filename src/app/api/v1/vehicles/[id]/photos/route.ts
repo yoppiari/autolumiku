@@ -127,8 +127,8 @@ export async function POST(
       data: photoRecords,
     });
 
-    // Count quality warnings
-    const warnings = photoRecords.filter((p) => p.validationStatus === 'WARNING');
+    // Count quality warnings (using PhotoValidationStatus enum values)
+    const warnings = photoRecords.filter((p) => p.validationStatus === 'LOW_QUALITY');
     const rejected = photoRecords.filter((p) => p.validationStatus === 'REJECTED');
 
     return NextResponse.json(

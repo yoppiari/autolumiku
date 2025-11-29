@@ -27,10 +27,10 @@ export class PhotoQualityService {
       (aspectRatio === 'PASS' ? 100 : 0) * 0.2 // Aspect ratio is binary
     );
 
-    // Determine status
-    let status: 'APPROVED' | 'WARNING' | 'REJECTED';
-    if (score >= 70) status = 'APPROVED';
-    else if (score >= 50) status = 'WARNING';
+    // Determine status (matching PhotoValidationStatus enum)
+    let status: 'VALID' | 'LOW_QUALITY' | 'REJECTED';
+    if (score >= 70) status = 'VALID';
+    else if (score >= 50) status = 'LOW_QUALITY';
     else status = 'REJECTED';
 
     // Generate message
