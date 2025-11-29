@@ -170,7 +170,7 @@ Aturan Penting:
         systemPrompt += vehicles
           .map(
             (v) =>
-              `- ${v.make} ${v.model} ${v.year} (${v.transmissionType}) - Rp ${this.formatPrice(v.price)} - ${v.mileage}km - ${v.color}`
+              `- ${v.make} ${v.model} ${v.year} (${v.transmissionType}) - Rp ${this.formatPrice(Number(v.price))} - ${v.mileage}km - ${v.color}`
           )
           .join("\n");
       } else {
