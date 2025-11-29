@@ -243,8 +243,8 @@ export class PopularVehicleService {
                 const [compMake, compModel] = comp.split(' ');
                 return {
                   AND: [
-                    { make: { contains: compMake, mode: 'insensitive' } },
-                    { model: { contains: compModel || '', mode: 'insensitive' } },
+                    { make: { contains: compMake, mode: 'insensitive' as const } },
+                    { model: { contains: compModel || '', mode: 'insensitive' as const } },
                   ],
                 };
               }),
