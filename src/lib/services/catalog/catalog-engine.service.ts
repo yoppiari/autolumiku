@@ -199,22 +199,18 @@ export class CatalogEngineService {
       },
     });
 
-    const makes = [...new Set(allVehicles.map((v) => v.make))].sort();
-    const years = [...new Set(allVehicles.map((v) => v.year))].sort(
+    const makes = Array.from(new Set(allVehicles.map((v) => v.make))).sort();
+    const years = Array.from(new Set(allVehicles.map((v) => v.year))).sort(
       (a, b) => b - a
     );
-    const transmissionTypes = [
-      ...new Set(
+    const transmissionTypes = Array.from(new Set(
         allVehicles
           .map((v) => v.transmissionType)
           .filter((t): t is string => t !== null)
-      ),
-    ].sort();
-    const fuelTypes = [
-      ...new Set(
+      )).sort();
+    const fuelTypes = Array.from(new Set(
         allVehicles.map((v) => v.fuelType).filter((f): f is string => f !== null)
-      ),
-    ].sort();
+      )).sort();
 
     const prices = allVehicles.map((v) => Number(v.price) / 100000000);
     const priceRange = {

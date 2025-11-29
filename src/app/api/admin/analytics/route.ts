@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get tenant names for leads
-    const tenantIds = [...new Set(leads.map(l => l.tenantId))];
+    const tenantIds = Array.from(new Set(leads.map(l => l.tenantId)));
     const tenantsForLeads = await prisma.tenant.findMany({
       where: {
         id: {

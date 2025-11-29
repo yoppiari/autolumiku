@@ -169,7 +169,7 @@ export default function TemplatesPage() {
   const extractVariables = (content: string): string[] => {
     const regex = /\{\{(\w+)\}\}/g;
     const matches = content.match(regex) || [];
-    return [...new Set(matches)];
+    return Array.from(new Set(matches));
   };
 
   const insertVariable = (variable: string) => {
