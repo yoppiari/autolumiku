@@ -20,10 +20,34 @@ RUN npx prisma generate
 
 # Stage 2: Builder
 FROM node:18-alpine AS builder
+
+# Install Chromium for Puppeteer (needed for scrapers during build)
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Tell Puppeteer to use Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
 WORKDIR /app
 
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install ALL dependencies (including dev deps needed for build)
+RUN npm install --no-audit && \
+    npm cache clean --force
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Copy source files
 COPY . .
 
 # Set environment for build
@@ -35,6 +59,20 @@ RUN npm run build
 
 # Stage 3: Runner (Production)
 FROM node:18-alpine AS runner
+
+# Install Chromium for Puppeteer runtime (scrapers need it)
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Tell Puppeteer to use Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
 WORKDIR /app
 
 # Set production environment
@@ -50,12 +88,15 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
 
+# Copy scripts folder (needed for scrapers and utilities)
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+
 # Copy built application
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy node_modules (including Prisma Client)
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+# Copy node_modules (including Prisma Client and puppeteer from builder which has all deps)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Switch to non-root user
 USER nextjs
