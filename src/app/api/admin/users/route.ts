@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         email,
         firstName,
         lastName: lastName || '',
-        password, // TODO: Hash password before storing
+        passwordHash: password, // TODO: Hash password before storing (using bcrypt)
         role,
         tenantId,
         isActive: isActive !== undefined ? isActive : true,
