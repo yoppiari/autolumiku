@@ -113,8 +113,8 @@ export default async function ShowroomHomePage() {
     }),
   ]);
 
-  const formatPrice = (price: number) => {
-    const rupiah = price / 100;
+  const formatPrice = (price: bigint | number) => {
+    const rupiah = Number(price) / 100;
     return `Rp ${rupiah.toLocaleString('id-ID')}`;
   };
 
