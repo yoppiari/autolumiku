@@ -153,7 +153,7 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
             make: vehicle.make,
             model: vehicle.model,
             year: vehicle.year,
-            price: vehicle.price,
+            price: Number(vehicle.price), // Convert BigInt to number
           }}
           tenantId={tenantId}
         />
