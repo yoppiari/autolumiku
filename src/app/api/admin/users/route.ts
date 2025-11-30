@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
 /**
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
           email,
           firstName,
           lastName: lastName || '',
-          passwordHash: password, // TODO: Hash password before storing (using bcrypt)
+          passwordHash: await bcrypt.hash(password, 10),
           role,
           tenantId,
           emailVerified: emailVerified !== undefined ? emailVerified : false,

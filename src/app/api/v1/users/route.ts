@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export async function GET(request: NextRequest) {
   try {
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
         firstName,
         lastName: lastName || '',
         role: role.toUpperCase(),
-        passwordHash: 'temporary_hash', // In production: await bcrypt.hash(randomPassword, 10)
+        passwordHash: await bcrypt.hash('temporary_password', 10), // In production: generate random password
         emailVerified: false,
       },
       select: {

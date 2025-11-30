@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
 // GET /api/admin/tenants - List all tenants
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
             email: adminEmail,
             firstName: adminFirstName,
             lastName: adminLastName || '',
-            passwordHash: adminPassword, // TODO: Hash password before storing (using bcrypt)
+            passwordHash: await bcrypt.hash(adminPassword, 10),
             role: 'admin',
             tenantId: tenant.id,
             emailVerified: true,
