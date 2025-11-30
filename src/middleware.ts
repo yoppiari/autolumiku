@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  console.log(`[Middleware] Request: ${request.method} ${request.nextUrl.pathname}`);
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || 'localhost:3000';
 
