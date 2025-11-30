@@ -4,47 +4,42 @@
 # Usage: ./scripts/deploy-prod.sh
 
 SERVER="root@cf.avolut.com"
-CONTAINER="autolumiku-app"
+DEPLOY_DIR="/root/autolumiku-manual"
+REPO_URL="https://github.com/yoppiari/autolumiku.git"
 
 echo "🚀 Starting deployment to $SERVER..."
 
 # Commands to run on the remote server
 REMOTE_CMDS="
-    # 1. Find directory
-    if [ -d /root/autolumiku ]; then
-        cd /root/autolumiku
-    elif [ -d /var/www/autolumiku ]; then
-        cd /var/www/autolumiku
-    else
-        echo '❌ Project directory not found!'
-        exit 1
+    # 1. Setup Directory
+    if [ ! -d $DEPLOY_DIR ]; then
+        echo '📂 Creating deployment directory...'
+        git clone $REPO_URL $DEPLOY_DIR
     fi
-
+    
+    cd $DEPLOY_DIR
     echo '📂 Working directory: \$(pwd)'
 
-    # 2. Check .env file
+    # 2. Pull latest code
+    echo '⬇️  Pulling latest changes...'
+    git fetch origin
+    git reset --hard origin/main
+
+    # 3. Setup Environment
     if [ ! -f .env ]; then
         echo '⚠️  .env file not found! Creating from .env.example...'
-        if [ -f .env.example ]; then
-            cp .env.example .env
-            echo '✅ Created .env from .env.example'
-            # Generate random secrets
-            sed -i 's/your-secret-key-change-in-production/'\$(openssl rand -hex 32)'/g' .env
-            sed -i 's/your-refresh-secret-change-in-production/'\$(openssl rand -hex 32)'/g' .env
-        else
-            echo '❌ .env.example not found! Cannot create .env'
-        fi
-    else
-        echo '✅ .env file found'
+        cp .env.example .env
+        # Generate random secrets
+        sed -i 's/your-secret-key-change-in-production/'\$(openssl rand -hex 32)'/g' .env
+        sed -i 's/your-refresh-secret-change-in-production/'\$(openssl rand -hex 32)'/g' .env
     fi
-
-    # 3. Pull latest code
-    echo '⬇️  Pulling latest changes...'
-    git pull
 
     # 4. Rebuild and restart
     echo '🏗️  Rebuilding and restarting containers...'
-    # Force rebuild to ensure code changes are picked up
+    # Stop existing containers if any (to avoid port conflicts if running elsewhere)
+    # docker stop autolumiku-app autolumiku-postgres autolumiku-redis || true
+    
+    # Force rebuild
     docker compose up -d --build --force-recreate
 
     # 5. Cleanup
@@ -56,9 +51,14 @@ REMOTE_CMDS="
     sleep 5
     docker compose exec -T app env | grep DATABASE_URL || echo '❌ DATABASE_URL not found in container!'
 
-    # 7. Check logs
+    # 7. Run Migrations & Seed
+    echo '🌱 Running migrations and seeding...'
+    docker compose exec -T app npx prisma migrate deploy
+    docker compose exec -T app npm run db:seed || echo '⚠️ Seeding failed (might be already seeded)'
+
+    # 8. Check logs
     echo '📋 Checking logs for errors...'
-    docker compose logs --tail=20 app
+    docker compose logs --tail=50 app
 "
 
 # Execute via SSH
