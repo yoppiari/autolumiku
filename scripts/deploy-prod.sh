@@ -22,22 +22,42 @@ REMOTE_CMDS="
 
     echo '📂 Working directory: \$(pwd)'
 
-    # 2. Pull latest code
+    # 2. Check .env file
+    if [ ! -f .env ]; then
+        echo '⚠️  .env file not found! Creating from .env.example...'
+        if [ -f .env.example ]; then
+            cp .env.example .env
+            echo '✅ Created .env from .env.example'
+            # Generate random secrets
+            sed -i 's/your-secret-key-change-in-production/'\$(openssl rand -hex 32)'/g' .env
+            sed -i 's/your-refresh-secret-change-in-production/'\$(openssl rand -hex 32)'/g' .env
+        else
+            echo '❌ .env.example not found! Cannot create .env'
+        fi
+    else
+        echo '✅ .env file found'
+    fi
+
+    # 3. Pull latest code
     echo '⬇️  Pulling latest changes...'
     git pull
 
-    # 3. Rebuild and restart
+    # 4. Rebuild and restart
     echo '🏗️  Rebuilding and restarting containers...'
-    # Force rebuild to ensure code changes (like bcrypt removal) are picked up
+    # Force rebuild to ensure code changes are picked up
     docker compose up -d --build --force-recreate
 
-    # 4. Cleanup
+    # 5. Cleanup
     echo '🧹 Cleaning up unused images...'
     docker image prune -f
 
-    # 5. Check logs
-    echo '📋 Checking logs for errors...'
+    # 6. Verify Environment
+    echo '🔍 Verifying DATABASE_URL in container...'
     sleep 5
+    docker compose exec -T app env | grep DATABASE_URL || echo '❌ DATABASE_URL not found in container!'
+
+    # 7. Check logs
+    echo '📋 Checking logs for errors...'
     docker compose logs --tail=20 app
 "
 

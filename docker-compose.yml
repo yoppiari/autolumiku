@@ -49,9 +49,11 @@ services:
         NODE_ENV: production
     container_name: autolumiku-app
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       # Database
-      DATABASE_URL: postgresql://${DB_USER:-autolumiku}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-autolumiku_prod}?schema=public
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${DB_USER:-autolumiku}:${DB_PASSWORD:-autolumiku}@postgres:5432/${DB_NAME:-autolumiku_prod}?schema=public}
 
       # JWT Secrets
       JWT_SECRET: ${JWT_SECRET}
