@@ -37,8 +37,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Construct webhook URL
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get("host")}`;
+    const webhookUrl = `${appUrl}/api/v1/webhooks/aimeow`;
+
     // Initialize new connection
-    const result = await AimeowClientService.initializeClient(tenantId);
+    const result = await AimeowClientService.initializeClient(tenantId, webhookUrl);
 
     if (!result.success) {
       return NextResponse.json(

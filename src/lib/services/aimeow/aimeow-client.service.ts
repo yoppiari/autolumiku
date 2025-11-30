@@ -57,7 +57,7 @@ export class AimeowClientService {
    * Inisialisasi client baru untuk tenant
    * Menghasilkan QR code untuk scanning
    */
-  static async initializeClient(tenantId: string): Promise<{
+  static async initializeClient(tenantId: string, webhookUrl?: string): Promise<{
     success: boolean;
     clientId?: string;
     qrCode?: string;
@@ -70,7 +70,9 @@ export class AimeowClientService {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          webhookUrl, // Pass webhook URL if provided
+        }),
       });
 
       if (!response.ok) {
@@ -108,6 +110,7 @@ export class AimeowClientService {
           qrCode: qrCodeToSave, // Raw QR string
           qrCodeExpiresAt: new Date(Date.now() + 120000), // QR expired dalam 120 detik
           isActive: false,
+          webhookUrl, // Save webhook URL
         },
         create: {
           tenantId,
@@ -118,6 +121,7 @@ export class AimeowClientService {
           connectionStatus: "qr_ready",
           qrCode: data.qr || data.qrUrl,
           qrCodeExpiresAt: new Date(Date.now() + 120000),
+          webhookUrl, // Save webhook URL
         },
       });
 
@@ -294,7 +298,7 @@ export class AimeowClientService {
    * Restart WhatsApp client
    * Aimeow tidak punya restart endpoint, jadi kita DELETE + CREATE new
    */
-  static async restartClient(tenantId: string, oldClientId: string): Promise<{
+  static async restartClient(tenantId: string, oldClientId: string, webhookUrl?: string): Promise<{
     success: boolean;
     clientId?: string;
     qrCode?: string;
@@ -321,7 +325,9 @@ export class AimeowClientService {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          webhookUrl, // Pass webhook URL if provided
+        }),
       });
 
       if (!response.ok) {
@@ -357,6 +363,7 @@ export class AimeowClientService {
           qrCodeExpiresAt: new Date(Date.now() + 120000),
           isActive: false,
           phoneNumber: "",
+          webhookUrl, // Save webhook URL
         },
       });
 
