@@ -100,6 +100,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy node_modules (including Prisma Client and puppeteer from builder which has all deps)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
+# Ensure permissions
+RUN chown -R nextjs:nodejs /app
+
 # Switch to non-root user
 USER nextjs
 
@@ -108,7 +111,7 @@ EXPOSE 3000
 
 # Health check (use 127.0.0.1 instead of localhost to avoid IPv6 issues)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://127.0.0.1:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD node -e "require('http').get('http://127.0.0.1:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start application
 CMD ["node", "server.js"]
