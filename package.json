@@ -77,10 +77,10 @@
     "use-debounce": "^10.0.6",
     "winston": "^3.13.0",
     "zod": "^3.23.8",
-    "puppeteer": "^24.31.0"
+    "puppeteer": "^24.31.0",
+    "@tailwindcss/typography": "^0.5.19"
   },
   "devDependencies": {
-    "@tailwindcss/typography": "^0.5.19",
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.10",
