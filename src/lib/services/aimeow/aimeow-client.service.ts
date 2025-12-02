@@ -468,13 +468,16 @@ export class AimeowClientService {
 
       if (account) {
         console.log(`[Aimeow] Found account by phone lookup: ${account.id}, clientId: ${account.clientId}`);
-        console.log(`[Aimeow] Updating clientId from ${account.clientId} to ${clientId}`);
-        await prisma.aimeowAccount.update({
-          where: { id: account.id },
-          data: { clientId, phoneNumber },
-        });
-        account.clientId = clientId;
-        account.phoneNumber = phoneNumber;
+        // Don't update clientId - keep the original UUID for API calls
+        // Only update phone number if not already set
+        if (!account.phoneNumber) {
+          console.log(`[Aimeow] Updating phone number to: ${phoneNumber}`);
+          await prisma.aimeowAccount.update({
+            where: { id: account.id },
+            data: { phoneNumber },
+          });
+          account.phoneNumber = phoneNumber;
+        }
         return account;
       } else {
         console.log(`[Aimeow] No account found by phone number: ${phoneNumber}`);
