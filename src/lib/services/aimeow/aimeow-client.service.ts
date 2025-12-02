@@ -412,6 +412,17 @@ export class AimeowClientService {
    * Get account by client ID
    */
   static async getAccountByClientId(clientId: string) {
+    console.log(`[Aimeow] Looking up account by clientId: ${clientId}`);
+
+    // Debug: List all accounts in database
+    const allAccounts = await prisma.aimeowAccount.findMany({
+      select: { id: true, clientId: true, phoneNumber: true, tenantId: true },
+    });
+    console.log(`[Aimeow] Total accounts in DB: ${allAccounts.length}`);
+    allAccounts.forEach((acc) => {
+      console.log(`[Aimeow] - Account ${acc.id}: clientId="${acc.clientId}", phone="${acc.phoneNumber}", tenant="${acc.tenantId}"`);
+    });
+
     // Try exact match first
     let account = await prisma.aimeowAccount.findUnique({
       where: { clientId },
@@ -421,9 +432,17 @@ export class AimeowClientService {
       },
     });
 
+    if (account) {
+      console.log(`[Aimeow] Found account by exact match: ${account.id}`);
+      return account;
+    }
+
+    console.log(`[Aimeow] No exact match found`);
+
     // If not found and clientId contains "@s.whatsapp.net", try extracting the phone number
-    if (!account && clientId.includes("@s.whatsapp.net")) {
+    if (clientId.includes("@s.whatsapp.net")) {
       const phoneNumber = clientId.split(":")[0];
+      console.log(`[Aimeow] Extracted phone number: ${phoneNumber}, searching by prefix/phone`);
 
       // Try to find by phone number in clientId or by phone number field
       account = await prisma.aimeowAccount.findFirst({
@@ -439,14 +458,16 @@ export class AimeowClientService {
         },
       });
 
-      // If found, update the clientId to the new format
       if (account) {
+        console.log(`[Aimeow] Found account by phone lookup: ${account.id}, clientId: ${account.clientId}`);
         console.log(`[Aimeow] Updating clientId from ${account.clientId} to ${clientId}`);
         await prisma.aimeowAccount.update({
           where: { id: account.id },
           data: { clientId },
         });
         account.clientId = clientId;
+      } else {
+        console.log(`[Aimeow] No account found by phone number: ${phoneNumber}`);
       }
     }
 
