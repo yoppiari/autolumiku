@@ -222,6 +222,14 @@ export class AimeowClientService {
     try {
       const { clientId, to, message, mediaUrl } = params;
 
+      // If clientId is in JID format (6281298329132:17@s.whatsapp.net), extract phone number
+      // Aimeow API accepts phone number as clientId for send operations
+      let apiClientId = clientId;
+      if (clientId.includes("@s.whatsapp.net")) {
+        apiClientId = clientId.split(":")[0];
+        console.log(`[Aimeow] Converting JID ${clientId} to phone ${apiClientId} for API call`);
+      }
+
       // Send text message
       const payload: any = {
         to,
@@ -229,10 +237,10 @@ export class AimeowClientService {
       };
 
       // If mediaUrl provided, use send-images endpoint instead
-      let endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/send-message`;
+      let endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-message`;
 
       if (mediaUrl) {
-        endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/send-images`;
+        endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`;
         payload.images = [mediaUrl]; // Array of image URLs
         delete payload.text; // Images endpoint tidak butuh text
       }
