@@ -463,11 +463,41 @@ export class AimeowClientService {
         console.log(`[Aimeow] Updating clientId from ${account.clientId} to ${clientId}`);
         await prisma.aimeowAccount.update({
           where: { id: account.id },
-          data: { clientId },
+          data: { clientId, phoneNumber },
         });
         account.clientId = clientId;
+        account.phoneNumber = phoneNumber;
+        return account;
       } else {
         console.log(`[Aimeow] No account found by phone number: ${phoneNumber}`);
+      }
+    }
+
+    // Last resort: if no account found and there's only one active account in DB, use that
+    // This handles the case where clientId changed from UUID to JID after connection
+    if (!account && allAccounts.length === 1 && allAccounts[0].clientId) {
+      console.log(`[Aimeow] Only one account in DB, assuming it's the right one`);
+      const phoneNumber = clientId.includes("@s.whatsapp.net") ? clientId.split(":")[0] : "";
+
+      account = await prisma.aimeowAccount.findUnique({
+        where: { id: allAccounts[0].id },
+        include: {
+          aiConfig: true,
+          tenant: true,
+        },
+      });
+
+      if (account) {
+        console.log(`[Aimeow] Updating clientId from ${account.clientId} to ${clientId}`);
+        await prisma.aimeowAccount.update({
+          where: { id: account.id },
+          data: {
+            clientId,
+            ...(phoneNumber && { phoneNumber }),
+          },
+        });
+        account.clientId = clientId;
+        if (phoneNumber) account.phoneNumber = phoneNumber;
       }
     }
 
