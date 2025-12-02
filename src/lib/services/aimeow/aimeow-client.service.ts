@@ -474,7 +474,7 @@ export class AimeowClientService {
     }
 
     // Last resort: if no account found and there's only one active account in DB, use that
-    // This handles the case where clientId changed from UUID to JID after connection
+    // This handles the case where webhooks send JID but DB has UUID
     if (!account && allAccounts.length === 1 && allAccounts[0].clientId) {
       console.log(`[Aimeow] Only one account in DB, assuming it's the right one`);
       const phoneNumber = clientId.includes("@s.whatsapp.net") ? clientId.split(":")[0] : "";
@@ -487,17 +487,13 @@ export class AimeowClientService {
         },
       });
 
-      if (account) {
-        console.log(`[Aimeow] Updating clientId from ${account.clientId} to ${clientId}`);
+      if (account && phoneNumber) {
+        console.log(`[Aimeow] Updating phone number to: ${phoneNumber}`);
         await prisma.aimeowAccount.update({
           where: { id: account.id },
-          data: {
-            clientId,
-            ...(phoneNumber && { phoneNumber }),
-          },
+          data: { phoneNumber },
         });
-        account.clientId = clientId;
-        if (phoneNumber) account.phoneNumber = phoneNumber;
+        account.phoneNumber = phoneNumber;
       }
     }
 

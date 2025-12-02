@@ -344,7 +344,7 @@ export class MessageOrchestratorService {
     intent: MessageIntent
   ) {
     try {
-      // Get account
+      // Get account - fresh from DB to get updated clientId
       const account = await prisma.aimeowAccount.findUnique({
         where: { id: accountId },
       });
@@ -352,6 +352,8 @@ export class MessageOrchestratorService {
       if (!account) {
         throw new Error("Account not found");
       }
+
+      console.log(`[Orchestrator] Sending response via clientId: ${account.clientId}`);
 
       // Send via Aimeow
       const result = await AimeowClientService.sendMessage({
