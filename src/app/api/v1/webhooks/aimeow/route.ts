@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     // Basic verification: check if request comes from expected source
     // NOTE: This is NOT cryptographically secure. Replace with HMAC when available.
     if (process.env.NODE_ENV === "production") {
-      const expectedUserAgent = process.env.AIMEOW_WEBHOOK_USER_AGENT || "Aimeow";
+      const expectedUserAgent = process.env.AIMEOW_WEBHOOK_USER_AGENT || "Go-http-client";
       if (!userAgent.includes(expectedUserAgent)) {
         console.warn(`[Aimeow Webhook] Suspicious user-agent: ${userAgent}`);
         // Log but don't block in case Aimeow changes user-agent
@@ -32,11 +32,11 @@ export async function POST(request: NextRequest) {
 
     console.log("[Aimeow Webhook] Received:", payload);
 
-    const { clientId, event, data } = payload;
+    const { clientId, message, event, data } = payload;
 
-    if (!clientId || !event) {
+    if (!clientId) {
       return NextResponse.json(
-        { error: "Missing required fields: clientId, event" },
+        { error: "Missing required field: clientId" },
         { status: 400 }
       );
     }
@@ -49,32 +49,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
-    // Route event ke handler yang sesuai
-    switch (event) {
-      case "message":
-        await handleIncomingMessage(account, data);
-        break;
+    // Aimeow sends messages with { clientId, message, timestamp } structure
+    // Handle incoming message if message field exists
+    if (message) {
+      // Skip non-text message types
+      if (message.type !== "text") {
+        console.log(`[Aimeow Webhook] Skipping non-text message type: ${message.type}`);
+        return NextResponse.json({ success: true });
+      }
 
-      case "status":
-        await handleMessageStatus(account, data);
-        break;
-
-      case "qr":
-        await handleQRCode(account, data);
-        break;
-
-      case "connected":
-        await handleConnected(account, data);
-        break;
-
-      case "disconnected":
-        await handleDisconnected(account);
-        break;
-
-      default:
-        console.warn(`[Aimeow Webhook] Unknown event type: ${event}`);
+      await handleIncomingMessage(account, {
+        from: message.from,
+        message: message.text,
+        mediaUrl: message.mediaUrl,
+        mediaType: message.mediaType,
+        messageId: message.id,
+      });
+      return NextResponse.json({ success: true });
     }
 
+    // Legacy event-based format (kept for backwards compatibility)
+    if (event) {
+      switch (event) {
+        case "message":
+          await handleIncomingMessage(account, data);
+          break;
+
+        case "status":
+          await handleMessageStatus(account, data);
+          break;
+
+        case "qr":
+          await handleQRCode(account, data);
+          break;
+
+        case "connected":
+          await handleConnected(account, data);
+          break;
+
+        case "disconnected":
+          await handleDisconnected(account);
+          break;
+
+        default:
+          console.warn(`[Aimeow Webhook] Unknown event type: ${event}`);
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    console.warn("[Aimeow Webhook] No message or event field in payload");
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("[Aimeow Webhook] Error:", error);
