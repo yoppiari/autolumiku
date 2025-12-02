@@ -118,6 +118,13 @@ async function handleIncomingMessage(account: any, data: any) {
   const { from, message, mediaUrl, mediaType, messageId } = data;
 
   try {
+    console.log(`[Webhook] Processing message - From: ${from}, MessageId: ${messageId}, Message: ${message}`);
+
+    if (!from || !message || !messageId) {
+      console.error(`[Webhook] Missing required fields - from: ${from}, message: ${message}, messageId: ${messageId}`);
+      return;
+    }
+
     // Check if message already exists (prevent duplicates)
     const existing = await prisma.whatsAppMessage.findUnique({
       where: { aimeowMessageId: messageId },
