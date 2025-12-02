@@ -47,8 +47,9 @@ export default function LoginPage() {
       }
 
       // Store token and user data
-      if (result.data?.token) {
-        localStorage.setItem('authToken', result.data.token);
+      if (result.data?.accessToken) {
+        localStorage.setItem('authToken', result.data.accessToken);
+        localStorage.setItem('refreshToken', result.data.refreshToken);
         localStorage.setItem('user', JSON.stringify(result.data.user));
         console.log('Showroom token stored, user role:', result.data.user.role);
         console.log('Redirecting to dashboard...');
