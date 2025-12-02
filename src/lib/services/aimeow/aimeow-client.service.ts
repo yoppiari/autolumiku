@@ -412,13 +412,45 @@ export class AimeowClientService {
    * Get account by client ID
    */
   static async getAccountByClientId(clientId: string) {
-    return await prisma.aimeowAccount.findUnique({
+    // Try exact match first
+    let account = await prisma.aimeowAccount.findUnique({
       where: { clientId },
       include: {
         aiConfig: true,
         tenant: true,
       },
     });
+
+    // If not found and clientId contains "@s.whatsapp.net", try extracting the phone number
+    if (!account && clientId.includes("@s.whatsapp.net")) {
+      const phoneNumber = clientId.split(":")[0];
+
+      // Try to find by phone number in clientId or by phone number field
+      account = await prisma.aimeowAccount.findFirst({
+        where: {
+          OR: [
+            { clientId: { startsWith: phoneNumber } },
+            { phoneNumber: phoneNumber },
+          ],
+        },
+        include: {
+          aiConfig: true,
+          tenant: true,
+        },
+      });
+
+      // If found, update the clientId to the new format
+      if (account) {
+        console.log(`[Aimeow] Updating clientId from ${account.clientId} to ${clientId}`);
+        await prisma.aimeowAccount.update({
+          where: { id: account.id },
+          data: { clientId },
+        });
+        account.clientId = clientId;
+      }
+    }
+
+    return account;
   }
 
   /**
