@@ -274,11 +274,17 @@ export class AimeowClientService {
         method: "DELETE",
       });
 
-      if (!response.ok) {
+      // If client not found (404), treat as already disconnected
+      if (!response.ok && response.status !== 404) {
         throw new Error(`Failed to disconnect: ${response.statusText}`);
       }
 
-      // Update database
+      // If 404, client already deleted on Aimeow side - just update DB
+      if (response.status === 404) {
+        console.warn(`Client ${clientId} not found on Aimeow - marking as disconnected in database`);
+      }
+
+      // Update database regardless of Aimeow response (404 or success)
       await prisma.aimeowAccount.update({
         where: { clientId },
         data: {
@@ -305,10 +311,19 @@ export class AimeowClientService {
     error?: string;
   }> {
     try {
-      // 1. Delete existing client dari Aimeow
-      await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${oldClientId}`, {
+      // 1. Delete existing client dari Aimeow (ignore 404 if already deleted)
+      const deleteResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${oldClientId}`, {
         method: "DELETE",
       });
+
+      if (!deleteResponse.ok && deleteResponse.status !== 404) {
+        console.warn(`Failed to delete old client ${oldClientId}: ${deleteResponse.statusText}`);
+        // Continue anyway - we'll create a new one
+      }
+
+      if (deleteResponse.status === 404) {
+        console.log(`Old client ${oldClientId} already deleted from Aimeow`);
+      }
 
       // 2. Delete dari database (soft delete dengan update)
       await prisma.aimeowAccount.update({
