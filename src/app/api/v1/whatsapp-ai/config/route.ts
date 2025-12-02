@@ -134,6 +134,32 @@ export async function PUT(request: NextRequest) {
       data: updates,
     });
 
+    // Send callback URL configuration to Aimeow
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get("host")}` || "https://auto.lumiku.com";
+      const callbackUrl = `${appUrl}/api/v1/webhooks/aimeow`;
+
+      const aimeowBaseUrl = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
+      const aimeowResponse = await fetch(`${aimeowBaseUrl}/config`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          callbackUrl,
+        }),
+      });
+
+      if (!aimeowResponse.ok) {
+        console.error("[WhatsApp AI Config] Failed to update Aimeow callback URL:", await aimeowResponse.text());
+      } else {
+        console.log("[WhatsApp AI Config] Successfully updated Aimeow callback URL:", callbackUrl);
+      }
+    } catch (aimeowError: any) {
+      // Log error but don't fail the entire config update
+      console.error("[WhatsApp AI Config] Error sending callback URL to Aimeow:", aimeowError.message);
+    }
+
     return NextResponse.json({
       success: true,
       message: "Configuration updated successfully",
