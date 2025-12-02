@@ -140,13 +140,15 @@ export async function PUT(request: NextRequest) {
       const callbackUrl = `${appUrl}/api/v1/webhooks/aimeow`;
 
       const aimeowBaseUrl = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
-      const aimeowResponse = await fetch(`${aimeowBaseUrl}/config`, {
-        method: "POST",
+
+      // Update the client configuration with the webhook URL
+      const aimeowResponse = await fetch(`${aimeowBaseUrl}/api/v1/clients/${account.clientId}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          callbackUrl,
+          webhookUrl: callbackUrl,
         }),
       });
 
@@ -154,6 +156,12 @@ export async function PUT(request: NextRequest) {
         console.error("[WhatsApp AI Config] Failed to update Aimeow callback URL:", await aimeowResponse.text());
       } else {
         console.log("[WhatsApp AI Config] Successfully updated Aimeow callback URL:", callbackUrl);
+
+        // Update local database with the webhook URL
+        await prisma.aimeowAccount.update({
+          where: { id: account.id },
+          data: { webhookUrl: callbackUrl },
+        });
       }
     } catch (aimeowError: any) {
       // Log error but don't fail the entire config update
