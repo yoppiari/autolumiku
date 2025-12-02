@@ -230,10 +230,10 @@ export class AimeowClientService {
         console.log(`[Aimeow] Converting JID ${clientId} to phone ${apiClientId} for API call`);
       }
 
-      // Send text message
+      // Send text message - Aimeow API uses capitalized field names
       const payload: any = {
-        to,
-        text: message, // Field 'text' untuk Aimeow API (bukan 'message')
+        Phone: to,
+        Message: message,
       };
 
       // If mediaUrl provided, use send-images endpoint instead
@@ -241,8 +241,8 @@ export class AimeowClientService {
 
       if (mediaUrl) {
         endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`;
-        payload.images = [mediaUrl]; // Array of image URLs
-        delete payload.text; // Images endpoint tidak butuh text
+        payload.Images = [mediaUrl]; // Array of image URLs
+        delete payload.Message; // Images endpoint doesn't need message
       }
 
       const response = await fetch(endpoint, {
