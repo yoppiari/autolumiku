@@ -44,6 +44,10 @@ export class MessageOrchestratorService {
   static async processIncomingMessage(
     incoming: IncomingMessage
   ): Promise<ProcessingResult> {
+    console.log(`[Orchestrator] === Processing incoming message ===`);
+    console.log(`[Orchestrator] Account: ${incoming.accountId}, Tenant: ${incoming.tenantId}`);
+    console.log(`[Orchestrator] From: ${incoming.from}, Message: ${incoming.message}`);
+
     try {
       // 1. Get or create conversation
       const conversation = await this.getOrCreateConversation(
@@ -172,6 +176,8 @@ export class MessageOrchestratorService {
     tenantId: string,
     customerPhone: string
   ) {
+    console.log(`[Orchestrator] Getting/creating conversation - accountId: ${accountId}, tenantId: ${tenantId}, phone: ${customerPhone}`);
+
     // Try to find active conversation
     let conversation = await prisma.whatsAppConversation.findFirst({
       where: {
@@ -184,6 +190,7 @@ export class MessageOrchestratorService {
 
     // Create new conversation if not found
     if (!conversation) {
+      console.log(`[Orchestrator] Creating new conversation for ${customerPhone}`);
       conversation = await prisma.whatsAppConversation.create({
         data: {
           accountId,
@@ -194,6 +201,9 @@ export class MessageOrchestratorService {
           status: "active",
         },
       });
+      console.log(`[Orchestrator] Created conversation: ${conversation.id}`);
+    } else {
+      console.log(`[Orchestrator] Found existing conversation: ${conversation.id}`);
     }
 
     return conversation;
@@ -206,6 +216,8 @@ export class MessageOrchestratorService {
     conversationId: string,
     incoming: IncomingMessage
   ) {
+    console.log(`[Orchestrator] Saving incoming message - conversationId: ${conversationId}, messageId: ${incoming.messageId}`);
+
     const conversation = await prisma.whatsAppConversation.findUnique({
       where: { id: conversationId },
     });
@@ -214,7 +226,7 @@ export class MessageOrchestratorService {
       throw new Error("Conversation not found");
     }
 
-    return await prisma.whatsAppMessage.create({
+    const message = await prisma.whatsAppMessage.create({
       data: {
         conversationId,
         tenantId: conversation.tenantId,
@@ -228,6 +240,9 @@ export class MessageOrchestratorService {
         aimeowStatus: "delivered",
       },
     });
+
+    console.log(`[Orchestrator] Saved message: ${message.id}`);
+    return message;
   }
 
   /**
