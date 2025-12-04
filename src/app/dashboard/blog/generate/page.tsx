@@ -104,7 +104,7 @@ export default function BlogGeneratorPage() {
 
     try {
       if (!user?.tenantId) {
-        setError('User tenant information not found');
+        setError('Blog hanya bisa dibuat oleh Showroom Admin. Super Admin tidak memiliki tenant. Silakan login sebagai Showroom Admin untuk membuat blog.');
         setIsGenerating(false);
         return;
       }
@@ -142,7 +142,7 @@ export default function BlogGeneratorPage() {
 
     try {
       if (!user?.tenantId || !user?.id) {
-        setError('User information not found');
+        setError('Blog hanya bisa disimpan oleh Showroom Admin. Super Admin tidak memiliki tenant. Silakan login sebagai Showroom Admin untuk menyimpan blog.');
         return;
       }
 
@@ -405,6 +405,25 @@ export default function BlogGeneratorPage() {
         <p className="text-gray-600 mb-8">
           Buat artikel SEO-optimized dalam hitungan menit
         </p>
+
+        {/* Tenant Warning - Show if user has no tenantId */}
+        {!user?.tenantId && (
+          <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium">Super Admin tidak bisa membuat blog</h3>
+                <div className="mt-2 text-sm">
+                  <p>Blog posts harus terkait dengan tenant (showroom) tertentu. Silakan login sebagai <strong>Showroom Admin</strong> untuk menggunakan fitur ini.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Step 1: Category */}
         <div className="mb-8">

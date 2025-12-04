@@ -93,7 +93,7 @@ export default function BlogListPage() {
 
     try {
       if (!tenantId) {
-        setError('User tenant information not found');
+        setError('Blog hanya bisa dikelola oleh Showroom Admin. Super Admin tidak memiliki tenant. Silakan login sebagai Showroom Admin untuk melihat dan mengelola blog.');
         setIsLoading(false);
         return;
       }
@@ -129,6 +129,11 @@ export default function BlogListPage() {
   };
 
   const handleDelete = async (id: string, title: string) => {
+    if (!tenantId) {
+      alert('Blog hanya bisa dihapus oleh Showroom Admin. Super Admin tidak memiliki tenant.');
+      return;
+    }
+
     if (!confirm(`Apakah Anda yakin ingin menghapus "${title}"?`)) {
       return;
     }
@@ -150,6 +155,11 @@ export default function BlogListPage() {
   };
 
   const handlePublish = async (id: string) => {
+    if (!tenantId) {
+      alert('Blog hanya bisa dipublish oleh Showroom Admin. Super Admin tidak memiliki tenant.');
+      return;
+    }
+
     try {
       const response = await fetch(`/api/v1/blog/${id}`, {
         method: 'PUT',
