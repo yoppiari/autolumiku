@@ -38,8 +38,27 @@ async function main() {
   // ============================================================================
   console.log('\n👤 Creating demo users...');
 
-  // Admin User
+  // Password hash untuk semua user
   const adminPassword = await bcrypt.hash('admin123', 10);
+
+  // Super Admin User (Platform Level)
+  const superAdmin = await prisma.user.upsert({
+    where: { email: 'admin@autolumiku.com' },
+    update: {},
+    create: {
+      email: 'admin@autolumiku.com',
+      passwordHash: adminPassword,
+      firstName: 'Super',
+      lastName: 'Admin',
+      phone: '+62-800-000-0000',
+      role: 'super_admin',
+      tenantId: null, // Platform-level admin, tidak terikat tenant
+      emailVerified: true,
+    },
+  });
+  console.log(`✅ Super Admin user: ${superAdmin.email} / admin123`);
+
+  // Tenant Admin User
   const admin = await prisma.user.upsert({
     where: { email: 'admin@showroomjakarta.com' },
     update: {},
@@ -318,23 +337,30 @@ async function main() {
   console.log('================================================================');
   console.log('📝 DEMO CREDENTIALS');
   console.log('================================================================\n');
-  console.log('👤 Demo Users:');
+  console.log('🔐 Super Admin (Platform Level):');
+  console.log('   Email:     admin@autolumiku.com');
+  console.log('   Password:  admin123');
+  console.log('   Role:      super_admin');
+  console.log('   Access:    All tenants + Admin Panel\n');
+  console.log('👤 Tenant Users (Showroom Jakarta):');
   console.log('   Admin:     admin@showroomjakarta.com / admin123');
   console.log('   Manager:   manager@showroomjakarta.com / manager123');
-  console.log('   Sales:     sales@showroomjakarta.com / sales123');
-  console.log('   Tenant-1:  admin@tenant-1.com / admin123\n');
+  console.log('   Sales:     sales@showroomjakarta.com / sales123\n');
+  console.log('👤 Tenant-1 Users:');
+  console.log('   Admin:     admin@tenant-1.com / admin123\n');
   console.log('🏢 Tenant Information:');
   console.log('   Name:      Showroom Jakarta Premium');
   console.log('   Slug:      showroomjakarta');
   console.log('   Domain:    showroomjakarta.autolumiku.com');
   console.log('   Tenant-1:  tenant-1\n');
   console.log('🌐 Access URLs:');
-  console.log('   Admin Panel:       http://localhost:3000/admin');
-  console.log('   Public Catalog:    http://localhost:3000/catalog/showroomjakarta');
-  console.log('   Login:             http://localhost:3000/login\n');
+  console.log('   🔧 Super Admin:    http://localhost:3000/admin/login');
+  console.log('   📊 Admin Panel:    http://localhost:3000/admin');
+  console.log('   🏪 Public Catalog: http://localhost:3000/catalog/showroomjakarta');
+  console.log('   👤 Tenant Login:   http://localhost:3000/login\n');
   console.log('🚗 Demo Data:');
   console.log('   Vehicles:  5 vehicles created');
-  console.log('   Users:     4 users created');
+  console.log('   Users:     5 users created (1 super admin + 4 tenant users)');
   console.log('   Blogs:     2 posts created for tenant-1');
   console.log('================================================================\n');
 }
