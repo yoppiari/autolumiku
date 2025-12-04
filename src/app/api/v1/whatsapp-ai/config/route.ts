@@ -141,14 +141,14 @@ export async function PUT(request: NextRequest) {
 
       const aimeowBaseUrl = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
 
-      // Update the client configuration with the webhook URL
-      const aimeowResponse = await fetch(`${aimeowBaseUrl}/api/v1/clients/${account.clientId}`, {
-        method: "PUT",
+      // Update the callback URL configuration
+      const aimeowResponse = await fetch(`${aimeowBaseUrl}/config`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          webhookUrl: callbackUrl,
+          callbackUrl: callbackUrl,
         }),
       });
 
