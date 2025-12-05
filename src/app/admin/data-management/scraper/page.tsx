@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { api } from '@/lib/api-client';
 
 interface Stats {
   lastRun: string | null;
@@ -35,17 +36,10 @@ export default function ScraperDashboard() {
 
   const loadData = async () => {
     try {
-      const [statsRes, jobsRes] = await Promise.all([
-        fetch('/api/admin/scraper/stats'),
-        fetch('/api/admin/scraper/jobs?pageSize=10'),
+      const [statsData, jobsData] = await Promise.all([
+        api.get('/api/admin/scraper/stats'),
+        api.get('/api/admin/scraper/jobs?pageSize=10'),
       ]);
-
-      if (!statsRes.ok || !jobsRes.ok) {
-        throw new Error('Failed to load data. Database tables may not exist yet.');
-      }
-
-      const statsData = await statsRes.json();
-      const jobsData = await jobsRes.json();
 
       setStats(statsData.stats || null);
       setJobs(jobsData.jobs || []);
@@ -68,13 +62,10 @@ export default function ScraperDashboard() {
 
     setIsRunning(true);
     try {
-      const res = await fetch('/api/admin/scraper/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: selectedSource, targetCount: 50 }),
+      const data = await api.post('/api/admin/scraper/run', {
+        source: selectedSource,
+        targetCount: 50,
       });
-
-      const data = await res.json();
 
       if (data.success) {
         alert(`Scraper started! Job ID: ${data.job.id}\nSource: ${sourceLabel}`);

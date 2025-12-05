@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api-client';
 
 interface AuditLog {
   id: string;
@@ -41,8 +42,7 @@ export default function AuditLogsPage() {
     try {
       setIsLoading(true);
 
-      const response = await fetch('/api/admin/audit?limit=100');
-      const data = await response.json();
+      const data = await api.get('/api/admin/audit?limit=100');
 
       if (data.success && data.data) {
         const mappedLogs: AuditLog[] = data.data.map((log: any) => ({

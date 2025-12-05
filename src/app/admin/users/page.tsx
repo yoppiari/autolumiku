@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { api } from '@/lib/api-client';
 
 interface User {
   id: string;
@@ -51,8 +52,7 @@ export default function UsersPage() {
       try {
         setIsLoading(true);
 
-        const response = await fetch('/api/admin/users');
-        const data = await response.json();
+        const data = await api.get('/api/admin/users');
 
         if (data.success && data.data) {
           // Map the data to match the User interface

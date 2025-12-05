@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ImageUpload from '@/components/admin/image-upload';
+import { api } from '@/lib/api-client';
 
 interface TenantEditForm {
   name: string;
@@ -47,8 +48,7 @@ export default function TenantEditPage() {
     try {
       setIsLoading(true);
 
-      const response = await fetch(`/api/admin/tenants/${tenantId}`);
-      const data = await response.json();
+      const data = await api.get(`/api/admin/tenants/${tenantId}`);
 
       if (data.success && data.data) {
         const tenant = data.data;
@@ -81,15 +81,7 @@ export default function TenantEditPage() {
     setSyncStatus(null);
 
     try {
-      const response = await fetch(`/api/admin/tenants/${tenantId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
+      const data = await api.put(`/api/admin/tenants/${tenantId}`, formData);
 
       if (data.success) {
         // Show sync status if domain was changed
@@ -118,11 +110,7 @@ export default function TenantEditPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/admin/tenants/sync-traefik', {
-        method: 'POST',
-      });
-
-      const data = await response.json();
+      const data = await api.post('/api/admin/tenants/sync-traefik', {});
 
       if (data.success) {
         setSyncStatus('✅ Traefik configuration synced successfully!');

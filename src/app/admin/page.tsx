@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import TenantDashboard from '@/components/admin/tenant-dashboard';
 import { Tenant } from '@/types/tenant';
+import { api } from '@/lib/api-client';
 
 export default function AdminDashboardPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -12,8 +13,7 @@ export default function AdminDashboardPage() {
     try {
       setIsLoading(true);
 
-      const response = await fetch('/api/admin/tenants');
-      const data = await response.json();
+      const data = await api.get('/api/admin/tenants');
 
       if (data.success && data.data) {
         const mappedTenants: Tenant[] = data.data.map((t: any) => ({

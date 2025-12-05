@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import TenantCreationForm from '@/components/admin/tenant-creation-form';
 import TenantCreationSuccessModal from '@/components/admin/tenant-creation-success-modal';
 import { CreateTenantRequest } from '@/types/tenant';
+import { api } from '@/lib/api-client';
 
 export default function CreateTenantPage() {
   const router = useRouter();
@@ -22,28 +23,20 @@ export default function CreateTenantPage() {
       setIsLoading(true);
 
       // Call API to create tenant (server-side)
-      const response = await fetch('/api/admin/tenants', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const result = await api.post('/api/admin/tenants', {
+        name: data.name,
+        subdomain: data.subdomain,
+        customDomain: data.customDomain, // Custom domain field
+        adminUser: {
+          email: data.adminEmail,
+          firstName: data.adminFirstName,
+          lastName: data.adminLastName,
+          phone: '', // Optional
         },
-        body: JSON.stringify({
-          name: data.name,
-          subdomain: data.subdomain,
-          customDomain: data.customDomain, // Custom domain field
-          adminUser: {
-            email: data.adminEmail,
-            firstName: data.adminFirstName,
-            lastName: data.adminLastName,
-            phone: '', // Optional
-          },
-        }),
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || result.message || 'Failed to create tenant');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create tenant');
       }
 
       // Show success message

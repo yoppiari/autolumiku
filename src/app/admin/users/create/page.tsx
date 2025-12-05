@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { api } from '@/lib/api-client';
 
 interface CreateUserForm {
   email: string;
@@ -87,21 +88,13 @@ export default function CreateUserPage() {
     setIsLoading(true);
 
     try {
-      // Mock API call
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const data = await api.post('/api/admin/users', formData);
 
-      if (response.ok) {
+      if (data.success) {
         alert('User berhasil dibuat!');
         router.push('/admin/users');
       } else {
-        const error = await response.json();
-        alert('Gagal membuat user: ' + error.message);
+        alert('Gagal membuat user: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       alert('Terjadi kesalahan: ' + (error as Error).message);
