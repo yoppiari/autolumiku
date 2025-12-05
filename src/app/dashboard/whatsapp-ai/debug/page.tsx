@@ -35,6 +35,8 @@ export default function WhatsAppDebugPage() {
   const [testMessage, setTestMessage] = useState('Halo, test pesan dari debug');
   const [testPhone, setTestPhone] = useState('6281234567890');
   const [error, setError] = useState('');
+  const [isSettingWebhook, setIsSettingWebhook] = useState(false);
+  const [webhookSetResult, setWebhookSetResult] = useState<string>('');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -43,6 +45,36 @@ export default function WhatsAppDebugPage() {
       setTenantId(parsedUser.tenantId);
     }
   }, []);
+
+  const setWebhookUrl = async () => {
+    if (!tenantId) return;
+
+    setIsSettingWebhook(true);
+    setError('');
+    setWebhookSetResult('');
+
+    try {
+      const response = await fetch(`/api/v1/whatsapp-ai/set-webhook?tenantId=${tenantId}`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to set webhook');
+      }
+
+      setWebhookSetResult(`✅ Webhook URL updated: ${data.data.webhookUrl}`);
+
+      // Reload logs after setting webhook
+      setTimeout(loadLogs, 1000);
+    } catch (err: any) {
+      console.error('Set webhook error:', err);
+      setError(err.message);
+    } finally {
+      setIsSettingWebhook(false);
+    }
+  };
 
   const loadLogs = async () => {
     if (!tenantId) return;
@@ -173,10 +205,24 @@ export default function WhatsAppDebugPage() {
             </div>
           </div>
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">Webhook URL:</p>
+            <div className="flex justify-between items-start mb-2">
+              <p className="text-sm text-gray-600">Webhook URL:</p>
+              <button
+                onClick={setWebhookUrl}
+                disabled={isSettingWebhook}
+                className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {isSettingWebhook ? 'Setting...' : '🔧 Set Webhook'}
+              </button>
+            </div>
             <p className="text-sm font-mono break-all">
               {logs.account.webhookUrl || '❌ NOT SET'}
             </p>
+            {webhookSetResult && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-800">
+                {webhookSetResult}
+              </div>
+            )}
           </div>
         </div>
       )}

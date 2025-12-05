@@ -12,25 +12,24 @@ import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/message-o
 // ==================== WEBHOOK HANDLER ====================
 
 export async function POST(request: NextRequest) {
+  const timestamp = new Date().toISOString();
+  const headers = {
+    origin: request.headers.get("origin") || "none",
+    referer: request.headers.get("referer") || "none",
+    userAgent: request.headers.get("user-agent") || "none",
+    host: request.headers.get("host") || "none",
+    contentType: request.headers.get("content-type") || "none",
+  };
+
+  console.log("=".repeat(80));
+  console.log(`[Aimeow Webhook] ${timestamp} - INCOMING REQUEST`);
+  console.log("[Aimeow Webhook] Headers:", JSON.stringify(headers, null, 2));
+
   try {
-    // FIX: Add basic webhook verification
-    // TODO: Implement HMAC signature verification when Aimeow provides signature header
-    const origin = request.headers.get("origin") || request.headers.get("referer");
-    const userAgent = request.headers.get("user-agent") || "";
-
-    // Basic verification: check if request comes from expected source
-    // NOTE: This is NOT cryptographically secure. Replace with HMAC when available.
-    if (process.env.NODE_ENV === "production") {
-      const expectedUserAgent = process.env.AIMEOW_WEBHOOK_USER_AGENT || "Go-http-client";
-      if (!userAgent.includes(expectedUserAgent)) {
-        console.warn(`[Aimeow Webhook] Suspicious user-agent: ${userAgent}`);
-        // Log but don't block in case Aimeow changes user-agent
-      }
-    }
-
     const payload = await request.json();
 
-    console.log("[Aimeow Webhook] Received:", payload);
+    console.log("[Aimeow Webhook] Payload:", JSON.stringify(payload, null, 2));
+    console.log("[Aimeow Webhook] Payload keys:", Object.keys(payload));
 
     const { clientId, message, event, data } = payload;
 
