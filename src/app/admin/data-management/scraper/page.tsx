@@ -41,8 +41,8 @@ export default function ScraperDashboard() {
         api.get('/api/admin/scraper/jobs?pageSize=10'),
       ]);
 
-      setStats(statsData.stats || null);
-      setJobs(jobsData.jobs || []);
+      setStats(statsData.data?.stats || null);
+      setJobs(jobsData.data?.jobs || []);
       setError(null);
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -68,7 +68,7 @@ export default function ScraperDashboard() {
       });
 
       if (data.success) {
-        alert(`Scraper started! Job ID: ${data.job.id}\nSource: ${sourceLabel}`);
+        alert(`Scraper started! Job ID: ${data.data?.job?.id || 'unknown'}\nSource: ${sourceLabel}`);
         loadData();
       }
     } catch (error) {

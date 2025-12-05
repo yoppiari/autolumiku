@@ -27,8 +27,8 @@ export async function apiClient<T = any>(
 ): Promise<ApiResponse<T>> {
   const token = getAuthToken();
 
-  const headers: HeadersInit = {
-    ...options.headers,
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> || {}),
   };
 
   // Add Authorization header if token exists

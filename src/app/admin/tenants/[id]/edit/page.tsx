@@ -85,13 +85,13 @@ export default function TenantEditPage() {
 
       if (data.success) {
         // Show sync status if domain was changed
-        if (data.traefikSynced === 'success') {
+        if (data.data?.traefikSynced === 'success') {
           setSyncStatus('Traefik configuration synced successfully!');
-        } else if (data.traefikSynced === 'failed') {
+        } else if (data.data?.traefikSynced === 'failed') {
           setSyncStatus('Warning: Traefik sync failed. Please sync manually.');
         }
 
-        alert('Tenant berhasil diupdate!' + (data.traefikSynced === 'success' ? ' Domain dikonfigurasi di Traefik.' : ''));
+        alert('Tenant berhasil diupdate!' + (data.data?.traefikSynced === 'success' ? ' Domain dikonfigurasi di Traefik.' : ''));
         router.push(`/admin/tenants/${tenantId}`);
       } else {
         setError(data.error || 'Failed to update tenant');
