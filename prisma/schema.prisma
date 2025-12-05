@@ -82,7 +82,7 @@ model User {
   lastName     String
   phone        String?
 
-  tenantId String
+  tenantId String?
   role     String @default("user")
 
   // Email Verification
@@ -104,7 +104,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sessions        Session[]
   auditLogs       AuditLog[]
   securityEvents  SecurityEvent[]
