@@ -41,10 +41,11 @@ export default function AdminLoginPage() {
 
       if (data.success) {
         // Store token in localStorage
-        localStorage.setItem('authToken', data.data.token);
+        localStorage.setItem('authToken', data.data.accessToken);
+        localStorage.setItem('refreshToken', data.data.refreshToken);
         localStorage.setItem('user', JSON.stringify(data.data.user));
         console.log('Admin token stored, redirecting to /admin...');
-        
+
         // Redirect to admin dashboard
         router.push('/admin');
       } else {
