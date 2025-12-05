@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import TenantList from '@/components/admin/tenant-list';
 import { Tenant } from '@/types/tenant';
+import { api } from '@/lib/api-client';
 
 export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -17,13 +18,7 @@ export default function TenantsPage() {
     try {
       setIsLoading(true);
 
-      const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/admin/tenants', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await api.get('/api/admin/tenants');
 
       if (data.success && data.data) {
         const mappedTenants: Tenant[] = data.data.map((t: any) => ({
@@ -60,15 +55,7 @@ export default function TenantsPage() {
     try {
       setIsLoading(true);
 
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/admin/tenants/${tenantId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
+      const data = await api.delete(`/api/admin/tenants/${tenantId}`);
 
       if (data.success) {
         // Remove tenant from list

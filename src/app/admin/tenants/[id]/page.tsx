@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import ImageUpload from '@/components/admin/image-upload';
+import { api } from '@/lib/api-client';
 
 interface TenantDetail {
   id: string;
@@ -52,8 +53,7 @@ export default function TenantDetailPage() {
     try {
       setIsLoading(true);
 
-      const response = await fetch(`/api/admin/tenants/${tenantId}`);
-      const data = await response.json();
+      const data = await api.get(`/api/admin/tenants/${tenantId}`);
 
       if (data.success && data.data) {
         setTenant(data.data);
@@ -73,20 +73,14 @@ export default function TenantDetailPage() {
     formData.append('file', file);
     formData.append('type', 'logo');
 
-    const response = await fetch(`/api/admin/tenants/${tenantId}/upload`, {
-      method: 'POST',
-      body: formData,
-    });
+    const data = await api.post(`/api/admin/tenants/${tenantId}/upload`, formData);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to upload logo');
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to upload logo');
     }
 
-    const data = await response.json();
-
     // Update tenant state with new logo URL
-    if (tenant) {
+    if (tenant && data.data) {
       setTenant({
         ...tenant,
         logoUrl: data.data.url,
@@ -99,20 +93,14 @@ export default function TenantDetailPage() {
     formData.append('file', file);
     formData.append('type', 'favicon');
 
-    const response = await fetch(`/api/admin/tenants/${tenantId}/upload`, {
-      method: 'POST',
-      body: formData,
-    });
+    const data = await api.post(`/api/admin/tenants/${tenantId}/upload`, formData);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to upload favicon');
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to upload favicon');
     }
 
-    const data = await response.json();
-
     // Update tenant state with new favicon URL
-    if (tenant) {
+    if (tenant && data.data) {
       setTenant({
         ...tenant,
         faviconUrl: data.data.url,
