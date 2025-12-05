@@ -54,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (storedUser && storedToken) {
           const userData: User = JSON.parse(storedUser);
 
+          // Compute fullName if not present (backward compatibility)
+          if (!userData.fullName && userData.firstName && userData.lastName) {
+            userData.fullName = `${userData.firstName} ${userData.lastName}`;
+          }
+
           // Validate tenant ID format (must be UUID or null)
           if (userData.tenantId && !isValidUUID(userData.tenantId)) {
             console.warn('Invalid tenant ID format in localStorage, clearing auth data');
@@ -107,15 +112,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Login failed');
     }
 
-    const data = await response.json();
-    setUser(data.user);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    localStorage.setItem('authToken', data.token);
+    const result = await response.json();
+    const userData = {
+      ...result.data.user,
+      fullName: `${result.data.user.firstName} ${result.data.user.lastName}`,
+    };
+    const accessToken = result.data.accessToken;
+
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('authToken', accessToken);
 
     // Fetch tenant data
-    if (data.user.tenantId) {
+    if (userData.tenantId) {
       try {
-        const tenantResponse = await fetch(`/api/v1/tenants/${data.user.tenantId}`);
+        const tenantResponse = await fetch(`/api/v1/tenants/${userData.tenantId}`);
         if (tenantResponse.ok) {
           const tenantData = await tenantResponse.json();
           setTenant(tenantData.data);
@@ -123,6 +134,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error('Failed to load tenant:', error);
       }
+    } else {
+      // Clear tenant if user has no tenantId (super admin)
+      setTenant(null);
     }
   };
 
