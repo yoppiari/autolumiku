@@ -17,7 +17,12 @@ export default function TenantsPage() {
     try {
       setIsLoading(true);
 
-      const response = await fetch('/api/admin/tenants');
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/tenants', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
 
       if (data.success && data.data) {
@@ -55,8 +60,12 @@ export default function TenantsPage() {
     try {
       setIsLoading(true);
 
+      const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/admin/tenants/${tenantId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       const data = await response.json();
