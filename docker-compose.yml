@@ -51,10 +51,16 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.autolumiku.rule=Host(`auto.lumiku.com`)"
-      - "traefik.http.routers.autolumiku.entrypoints=https"
-      - "traefik.http.routers.autolumiku.tls=true"
-      - "traefik.http.routers.autolumiku.tls.certresolver=letsencrypt"
+      # HTTP Router (redirects to HTTPS)
+      - "traefik.http.routers.autolumiku-http.rule=Host(`auto.lumiku.com`)"
+      - "traefik.http.routers.autolumiku-http.entrypoints=http"
+      - "traefik.http.routers.autolumiku-http.middlewares=redirect-to-https"
+      # HTTPS Router
+      - "traefik.http.routers.autolumiku-https.rule=Host(`auto.lumiku.com`)"
+      - "traefik.http.routers.autolumiku-https.entrypoints=https"
+      - "traefik.http.routers.autolumiku-https.tls=true"
+      - "traefik.http.routers.autolumiku-https.tls.certresolver=letsencrypt"
+      # Service
       - "traefik.http.services.autolumiku.loadbalancer.server.port=3000"
     env_file:
       - .env
