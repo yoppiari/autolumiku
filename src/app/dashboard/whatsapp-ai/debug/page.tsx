@@ -41,6 +41,8 @@ export default function WhatsAppDebugPage() {
   const [sendTestResult, setSendTestResult] = useState<any>(null);
   const [sendTestPhone, setSendTestPhone] = useState('6281235108908');
   const [sendTestMessage, setSendTestMessage] = useState('Halo, ini test pesan dari AutoLumiku');
+  const [outboundCheck, setOutboundCheck] = useState<any>(null);
+  const [isCheckingOutbound, setIsCheckingOutbound] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -112,6 +114,29 @@ export default function WhatsAppDebugPage() {
       setSendTestResult({ success: false, error: err.message });
     } finally {
       setIsSendingTest(false);
+    }
+  };
+
+  const checkOutbound = async () => {
+    if (!tenantId) return;
+
+    setIsCheckingOutbound(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/v1/whatsapp-ai/check-outbound?tenantId=${tenantId}`);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to check outbound');
+      }
+
+      setOutboundCheck(data.data);
+    } catch (err: any) {
+      console.error('Check outbound error:', err);
+      setError(err.message);
+    } finally {
+      setIsCheckingOutbound(false);
     }
   };
 
@@ -290,6 +315,61 @@ export default function WhatsAppDebugPage() {
           </div>
         </div>
       )}
+
+      {/* Check Outbound Messages */}
+      <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900">📤 Outbound Messages Status</h2>
+          <button
+            onClick={checkOutbound}
+            disabled={isCheckingOutbound}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 text-sm"
+          >
+            {isCheckingOutbound ? 'Checking...' : '🔍 Check Outbound'}
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Check status of all AI responses - did they get sent to WhatsApp?
+        </p>
+
+        {outboundCheck && (
+          <div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-blue-600">Total Outbound</p>
+                <p className="text-xl font-bold text-blue-900">{outboundCheck.summary.totalOutbound}</p>
+              </div>
+              <div className="p-3 bg-red-50 rounded-lg">
+                <p className="text-xs text-red-600">Failed/Not Sent</p>
+                <p className="text-xl font-bold text-red-900">{outboundCheck.summary.failed}</p>
+              </div>
+              {outboundCheck.summary.statusBreakdown.map((stat: any) => (
+                <div key={stat.status} className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-600 capitalize">{stat.status}</p>
+                  <p className="text-xl font-bold text-gray-900">{stat.count}</p>
+                </div>
+              ))}
+            </div>
+
+            {outboundCheck.failedMessages.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h3 className="font-semibold text-red-900 mb-2">
+                  ❌ Failed Messages ({outboundCheck.failedMessages.length})
+                </h3>
+                <div className="space-y-2 max-h-48 overflow-auto">
+                  {outboundCheck.failedMessages.map((msg: any) => (
+                    <div key={msg.id} className="text-xs bg-white p-2 rounded">
+                      <p className="font-mono text-red-600">{msg.customerPhone}</p>
+                      <p className="text-gray-700">{msg.content}</p>
+                      <p className="text-gray-500">{new Date(msg.createdAt).toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Test Send Message */}
       <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">

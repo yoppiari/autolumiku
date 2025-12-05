@@ -343,6 +343,13 @@ export class MessageOrchestratorService {
     conversationId: string,
     intent: MessageIntent
   ) {
+    console.log("=".repeat(80));
+    console.log(`[Orchestrator sendResponse] Starting send...`);
+    console.log(`[Orchestrator sendResponse] Account ID: ${accountId}`);
+    console.log(`[Orchestrator sendResponse] To: ${to}`);
+    console.log(`[Orchestrator sendResponse] Message: ${message.substring(0, 100)}`);
+    console.log(`[Orchestrator sendResponse] Conversation ID: ${conversationId}`);
+
     try {
       // Get account - fresh from DB to get updated clientId
       const account = await prisma.aimeowAccount.findUnique({
@@ -350,21 +357,32 @@ export class MessageOrchestratorService {
       });
 
       if (!account) {
+        console.error(`[Orchestrator sendResponse] ❌ Account not found: ${accountId}`);
         throw new Error("Account not found");
       }
 
-      console.log(`[Orchestrator] Sending response via clientId: ${account.clientId}`);
+      console.log(`[Orchestrator sendResponse] ✅ Account found`);
+      console.log(`[Orchestrator sendResponse] Client ID: ${account.clientId}`);
+      console.log(`[Orchestrator sendResponse] Phone: ${account.phoneNumber}`);
+      console.log(`[Orchestrator sendResponse] Status: ${account.connectionStatus}`);
+      console.log(`[Orchestrator sendResponse] Active: ${account.isActive}`);
 
       // Send via Aimeow
+      console.log(`[Orchestrator sendResponse] Calling AimeowClientService.sendMessage...`);
       const result = await AimeowClientService.sendMessage({
         clientId: account.clientId,
         to,
         message,
       });
 
+      console.log(`[Orchestrator sendResponse] Send result:`, JSON.stringify(result, null, 2));
+
       if (!result.success) {
+        console.error(`[Orchestrator sendResponse] ❌ Send FAILED: ${result.error}`);
         throw new Error(result.error || "Failed to send message");
       }
+
+      console.log(`[Orchestrator sendResponse] ✅ Send SUCCESS!`);
 
       // Save outbound message
       const conversation = await prisma.whatsAppConversation.findUnique({
@@ -372,7 +390,8 @@ export class MessageOrchestratorService {
       });
 
       if (conversation) {
-        await prisma.whatsAppMessage.create({
+        console.log(`[Orchestrator sendResponse] Saving outbound message to database...`);
+        const savedMsg = await prisma.whatsAppMessage.create({
           data: {
             conversationId,
             tenantId: conversation.tenantId,
@@ -386,9 +405,46 @@ export class MessageOrchestratorService {
             aimeowStatus: "sent",
           },
         });
+        console.log(`[Orchestrator sendResponse] ✅ Outbound message saved: ${savedMsg.id}`);
+      } else {
+        console.error(`[Orchestrator sendResponse] ❌ Conversation not found: ${conversationId}`);
       }
-    } catch (error) {
-      console.error("[Message Orchestrator] Failed to send response:", error);
+
+      console.log(`[Orchestrator sendResponse] ✅✅✅ SEND COMPLETE SUCCESS ✅✅✅`);
+    } catch (error: any) {
+      console.error("=".repeat(80));
+      console.error(`[Orchestrator sendResponse] ❌❌❌ CRITICAL ERROR ❌❌❌`);
+      console.error(`[Orchestrator sendResponse] Error message: ${error.message}`);
+      console.error(`[Orchestrator sendResponse] Error stack:`, error.stack);
+      console.error("=".repeat(80));
+
+      // Save failed message to database for tracking
+      try {
+        const conversation = await prisma.whatsAppConversation.findUnique({
+          where: { id: conversationId },
+        });
+
+        if (conversation) {
+          await prisma.whatsAppMessage.create({
+            data: {
+              conversationId,
+              tenantId: conversation.tenantId,
+              direction: "outbound",
+              sender: "AI",
+              senderType: "ai",
+              content: message,
+              intent,
+              aiResponse: true,
+              aimeowMessageId: null,
+              aimeowStatus: "failed",
+            },
+          });
+          console.log(`[Orchestrator sendResponse] Saved FAILED message to database for tracking`);
+        }
+      } catch (dbError) {
+        console.error(`[Orchestrator sendResponse] Failed to save error to DB:`, dbError);
+      }
+
       // Don't throw - message saved but not sent, can retry later
     }
   }
