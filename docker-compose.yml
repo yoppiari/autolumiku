@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-autolumiku}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}  # REQUIRED: No default password for security
+      POSTGRES_PASSWORD: ${DB_PASSWORD} # REQUIRED: No default password for security
       POSTGRES_DB: ${DB_NAME:-autolumiku_prod}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
@@ -16,7 +16,7 @@ services:
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     # Ports removed - only accessible via internal Docker network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-autolumiku}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-autolumiku}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,12 +28,12 @@ services:
     image: redis:7-alpine
     container_name: autolumiku-redis
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD}  # REQUIRED: No default password for security
+    command: redis-server --requirepass ${REDIS_PASSWORD} # REQUIRED: No default password for security
     volumes:
       - redis_data:/data
     # Ports removed - only accessible via internal Docker network
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -112,7 +112,7 @@ services:
 
     # Port removed - Coolify will handle reverse proxy routing
     expose:
-      - "3000"
+      - "3001"
 
     volumes:
       - app_logs:/app/logs
@@ -122,12 +122,11 @@ services:
       - autolumiku-network
 
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
   # Nginx removed - Coolify handles reverse proxy
 
 volumes:

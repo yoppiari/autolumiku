@@ -80,9 +80,9 @@ export async function POST(request: NextRequest) {
           tenantId: user.tenantId,
           userId: user.id,
           action: 'PASSWORD_RESET_SUCCESS',
-          resource: 'User',
+          resourceType: 'User',
           resourceId: user.id,
-          details: {
+          metadata: {
             email: user.email,
             method: 'whatsapp_otp',
           },

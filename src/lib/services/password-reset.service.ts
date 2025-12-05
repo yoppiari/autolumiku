@@ -138,9 +138,9 @@ export class PasswordResetService {
           tenantId,
           userId,
           action: 'PASSWORD_RESET_OTP_SENT',
-          resource: 'User',
+          resourceType: 'User',
           resourceId: userId,
-          details: {
+          metadata: {
             email: user.email,
             method: 'whatsapp',
             messageId: result.messageId,
@@ -343,9 +343,9 @@ export class PasswordResetService {
             tenantId,
             userId,
             action: 'PASSWORD_RESET_COMPLETED',
-            resource: 'User',
+            resourceType: 'User',
             resourceId: userId,
-            details: {
+            metadata: {
               method: 'whatsapp_otp',
             },
             ipAddress: '',

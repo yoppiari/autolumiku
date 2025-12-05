@@ -82,9 +82,9 @@ export async function POST(request: NextRequest) {
           tenantId: user.tenantId,
           userId: user.id,
           action: 'PASSWORD_RESET_OTP_VERIFIED',
-          resource: 'User',
+          resourceType: 'User',
           resourceId: user.id,
-          details: {
+          metadata: {
             email: user.email,
           },
           ipAddress: request.headers.get('x-forwarded-for') || '',

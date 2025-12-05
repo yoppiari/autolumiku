@@ -8,7 +8,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+
+
 export async function middleware(request: NextRequest) {
+  console.log('[Middleware] Incoming request:', request.url);
+  console.log('[Middleware] Headers:', JSON.stringify(Object.fromEntries(request.headers)));
+
   console.log(`[Middleware] Request: ${request.method} ${request.nextUrl.pathname}`);
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || 'localhost:3000';

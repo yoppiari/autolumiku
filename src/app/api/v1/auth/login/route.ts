@@ -5,7 +5,8 @@ import { generateTokenPair } from '@/lib/auth/jwt';
 import { getUserPermissions } from '@/lib/auth/middleware';
 
 export async function POST(request: NextRequest) {
-  console.log('[Login] Starting login request');
+  console.log('[Login] Starting login request - HIT');
+  console.log('[Login] Request headers:', JSON.stringify(Object.fromEntries(request.headers)));
   try {
     const body = await request.json();
     const { email, password } = body;
