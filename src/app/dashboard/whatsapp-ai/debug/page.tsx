@@ -43,6 +43,8 @@ export default function WhatsAppDebugPage() {
   const [sendTestMessage, setSendTestMessage] = useState('Halo, ini test pesan dari AutoLumiku');
   const [outboundCheck, setOutboundCheck] = useState<any>(null);
   const [isCheckingOutbound, setIsCheckingOutbound] = useState(false);
+  const [isFixingClientId, setIsFixingClientId] = useState(false);
+  const [fixClientIdResult, setFixClientIdResult] = useState<string>('');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -137,6 +139,39 @@ export default function WhatsAppDebugPage() {
       setError(err.message);
     } finally {
       setIsCheckingOutbound(false);
+    }
+  };
+
+  const fixClientId = async () => {
+    if (!tenantId) return;
+
+    setIsFixingClientId(true);
+    setError('');
+    setFixClientIdResult('');
+
+    try {
+      const response = await fetch(`/api/v1/whatsapp-ai/fix-clientid?tenantId=${tenantId}`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to fix clientId');
+      }
+
+      setFixClientIdResult(
+        `✅ ClientId fixed!\nOld: ${data.data.oldClientId}\nNew: ${data.data.newClientId}`
+      );
+
+      // Reload logs after fixing
+      setTimeout(loadLogs, 1000);
+    } catch (err: any) {
+      console.error('Fix clientId error:', err);
+      setError(err.message);
+      setFixClientIdResult(`❌ Error: ${err.message}`);
+    } finally {
+      setIsFixingClientId(false);
     }
   };
 
@@ -285,6 +320,31 @@ export default function WhatsAppDebugPage() {
             {webhookSetResult && (
               <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-800">
                 {webhookSetResult}
+              </div>
+            )}
+          </div>
+
+          {/* Fix ClientId Button */}
+          <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <p className="text-sm font-semibold text-red-900">🚨 ClientId Mismatch Detected</p>
+                <p className="text-xs text-red-700 mt-1">
+                  Your clientId is in UUID format but Aimeow sends JID format. This causes send
+                  failures.
+                </p>
+              </div>
+              <button
+                onClick={fixClientId}
+                disabled={isFixingClientId}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 font-medium"
+              >
+                {isFixingClientId ? 'Fixing...' : '🔧 Fix ClientId Now'}
+              </button>
+            </div>
+            {fixClientIdResult && (
+              <div className="mt-3 p-3 bg-white border border-red-200 rounded text-xs font-mono whitespace-pre-wrap">
+                {fixClientIdResult}
               </div>
             )}
           </div>
