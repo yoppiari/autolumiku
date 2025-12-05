@@ -1,7 +1,13 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getTenantFromHeaders } from '@/lib/tenant';
+import CatalogHeader from '@/components/catalog/CatalogHeader';
+import GlobalFooter from '@/components/showroom/GlobalFooter';
+import ThemeProvider from '@/components/catalog/ThemeProvider';
+import VehicleCard from '@/components/catalog/VehicleCard';
+import { Calendar, User, Eye, ArrowLeft } from 'lucide-react';
 import ShareButtons from './ShareButtons';
 
 interface BlogPostPageProps {
@@ -25,8 +31,19 @@ async function getBlogPost(slug: string, tenantId: string | null, domain: string
     include: {
       tenant: {
         select: {
+          id: true,
           name: true,
           slug: true,
+          logoUrl: true,
+          primaryColor: true,
+          secondaryColor: true,
+          phoneNumber: true,
+          phoneNumberSecondary: true,
+          whatsappNumber: true,
+          email: true,
+          address: true,
+          city: true,
+          province: true,
         },
       },
     },
@@ -43,6 +60,70 @@ async function getBlogPost(slug: string, tenantId: string | null, domain: string
   });
 
   return post;
+}
+
+async function getRelatedVehicles(post: any, tenantId: string) {
+  let relatedVehicles: any[] = [];
+
+  // 1. Try explicit related vehicles
+  if (post.relatedVehicles && post.relatedVehicles.length > 0) {
+    relatedVehicles = await prisma.vehicle.findMany({
+      where: {
+        id: { in: post.relatedVehicles },
+        status: 'AVAILABLE',
+      },
+      include: { photos: true },
+      take: 3,
+    });
+  }
+
+  // 2. If no explicit, try matching keywords
+  if (relatedVehicles.length === 0 && post.keywords.length > 0) {
+    const searchConditions = post.keywords.flatMap((k: string) => [
+      { make: { contains: k, mode: 'insensitive' as const } },
+      { model: { contains: k, mode: 'insensitive' as const } }
+    ]);
+
+    if (searchConditions.length > 0) {
+      relatedVehicles = await prisma.vehicle.findMany({
+        where: {
+          tenantId,
+          status: 'AVAILABLE',
+          OR: searchConditions
+        },
+        include: { photos: true },
+        take: 3,
+      });
+    }
+  }
+
+  // 3. Fallback to Featured or Latest
+  if (relatedVehicles.length === 0) {
+    relatedVehicles = await prisma.vehicle.findMany({
+      where: {
+        tenantId,
+        status: 'AVAILABLE',
+        isFeatured: true,
+      },
+      include: { photos: true },
+      take: 3,
+    });
+
+    // If still 0, just take latest
+    if (relatedVehicles.length === 0) {
+      relatedVehicles = await prisma.vehicle.findMany({
+        where: {
+          tenantId,
+          status: 'AVAILABLE',
+        },
+        include: { photos: true },
+        take: 3,
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+  }
+
+  return relatedVehicles;
 }
 
 export async function generateMetadata({
@@ -98,237 +179,203 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
-  const readingTime = Math.ceil((post.wordCount ?? 0) / 200); // Assume 200 words per minute
+  const readingTime = Math.ceil((post.wordCount ?? 0) / 200);
 
-  // JSON-LD Schema.org markup for SEO
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: post.title,
-    description: post.metaDescription,
-    image: post.featuredImage || '',
-    datePublished: post.publishedAt?.toISOString(),
-    dateModified: post.updatedAt.toISOString(),
-    author: {
-      '@type': 'Person',
-      name: post.authorName,
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: post.tenant.name,
-      logo: {
-        '@type': 'ImageObject',
-        url: '', // TODO: Add tenant logo
-      },
-    },
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': `https://yourdomain.com/blog/${post.slug}`,
-    },
-    keywords: [...post.keywords, ...post.localKeywords].join(', '),
-    articleBody: post.content,
-    wordCount: post.wordCount ?? 0,
-  };
-
-  // Related posts (same category, exclude current)
-  const relatedPosts = await prisma.blogPost.findMany({
-    where: {
-      tenantId: post.tenantId,
-      category: post.category,
-      status: 'PUBLISHED',
-      id: { not: post.id },
-    },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      excerpt: true,
-      featuredImage: true,
-    },
-    take: 3,
-    orderBy: { views: 'desc' },
-  });
+  // Get related vehicles
+  const relatedVehicles = await getRelatedVehicles(post, post.tenant.id);
 
   return (
-    <>
-      {/* JSON-LD Schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+    <ThemeProvider tenantId={post.tenant.id}>
+      <div className="min-h-screen bg-background flex flex-col">
+        <CatalogHeader
+          branding={{
+            name: post.tenant.name,
+            logoUrl: post.tenant.logoUrl,
+            primaryColor: post.tenant.primaryColor,
+            secondaryColor: post.tenant.secondaryColor,
+            slug: post.tenant.slug,
+          }}
+          phoneNumber={post.tenant.phoneNumber || undefined}
+          whatsappNumber={post.tenant.whatsappNumber || undefined}
+          slug={post.tenant.slug}
+        />
 
-      <article className="min-h-screen bg-gray-50">
-        {/* Hero Section */}
-        {post.featuredImage && (
-          <div className="w-full h-96 bg-gray-900">
-            <img
-              src={post.featuredImage}
-              alt={post.featuredImageAlt || post.title}
-              className="w-full h-full object-cover opacity-90"
-            />
-          </div>
-        )}
-
-        {/* Article Header */}
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="bg-white rounded-lg shadow-lg p-8 -mt-20 relative z-10">
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
             {/* Breadcrumb */}
-            <nav className="text-sm text-gray-600 mb-4">
-              <a href="/" className="hover:text-blue-600">
+            <nav className="text-sm text-muted-foreground mb-6 flex items-center gap-2">
+              <Link href="/" className="hover:text-primary transition-colors">
                 Home
-              </a>
-              {' > '}
-              <a href="/blog" className="hover:text-blue-600">
+              </Link>
+              <span>{'>'}</span>
+              <Link href={`/catalog/${post.tenant.slug}/blog`} className="hover:text-primary transition-colors">
                 Blog
-              </a>
-              {' > '}
-              <span className="text-gray-900">{post.title}</span>
+              </Link>
+              <span>{'>'}</span>
+              <span className="text-foreground">{post.title}</span>
             </nav>
 
-            {/* Title */}
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
-
-            {/* Meta Info */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6 pb-6 border-b">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">{post.authorName}</span>
-              </div>
-              <span>•</span>
-              <div>
-                {post.publishedAt
-                  ? new Date(post.publishedAt).toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })
-                  : ''}
-              </div>
-              <span>•</span>
-              <div>{readingTime} menit baca</div>
-              <span>•</span>
-              <div>{post.views.toLocaleString()} views</div>
-            </div>
-
-            {/* Category & Keywords */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
-                {post.category}
-              </span>
-              {post.targetLocation && (
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                  📍 {post.targetLocation}
-                </span>
+            <article className="bg-card rounded-lg shadow-sm overflow-hidden border mb-8">
+              {post.featuredImage && (
+                <div className="aspect-video w-full relative">
+                  <img
+                    src={post.featuredImage}
+                    alt={post.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               )}
-            </div>
 
-            {/* Excerpt */}
-            {post.excerpt && (
-              <div className="text-xl text-gray-700 font-medium mb-8 pb-8 border-b">
-                {post.excerpt}
+              <div className="p-6 md:p-10">
+                {/* Meta info */}
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
+                  {post.publishedAt && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        {new Date(post.publishedAt).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <User className="w-4 h-4" />
+                    <span>{post.authorName || 'Admin'}</span>
+                  </div>
+                  <span>•</span>
+                  <span>{readingTime} menit baca</span>
+                  <span>•</span>
+                  <div className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" />
+                    <span>{post.views} views</span>
+                  </div>
+                </div>
+
+                {/* Category & Location */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-semibold">
+                    {post.category}
+                  </span>
+                  {post.targetLocation && (
+                    <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-full text-sm">
+                      📍 {post.targetLocation}
+                    </span>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-tight">
+                  {post.title}
+                </h1>
+
+                {/* Excerpt */}
+                {post.excerpt && (
+                  <div className="text-xl text-muted-foreground font-medium mb-8 pb-8 border-b">
+                    {post.excerpt}
+                  </div>
+                )}
+
+                {/* Content */}
+                <div
+                  className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary"
+                  dangerouslySetInnerHTML={{ __html: post.content }}
+                  style={{ lineHeight: '1.8' }}
+                />
+
+                {/* Tags */}
+                {post.keywords.length > 0 && (
+                  <div className="pt-8 border-t mt-8">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                      Tags:
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {post.keywords.map((keyword: string, idx: number) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm hover:bg-secondary/80 cursor-pointer transition-colors"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Share Buttons */}
+                <div className="pt-8 border-t mt-8">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                    Bagikan artikel ini:
+                  </h3>
+                  <ShareButtons title={post.title} />
+                </div>
+              </div>
+            </article>
+
+            {/* Related Vehicles */}
+            {relatedVehicles.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold text-foreground mb-6">
+                  Rekomendasi Mobil Untuk Anda
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {relatedVehicles.map((vehicle) => (
+                    <VehicleCard
+                      key={vehicle.id}
+                      vehicle={{
+                        ...vehicle,
+                        price: Number(vehicle.price)
+                      }}
+                      slug={post.tenant.slug}
+                      tenantId={post.tenant.id}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Article Content */}
-            <div
-              className="prose prose-lg max-w-none mb-8"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-              style={{
-                lineHeight: '1.8',
-              }}
-            />
-
-            {/* Tags/Keywords */}
-            <div className="pt-8 border-t">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Tags:
+            {/* CTA */}
+            <div className="text-center bg-gradient-to-b from-primary/5 to-primary/10 rounded-xl p-8 md:p-12 border border-primary/10 shadow-sm">
+              <h3 className="text-2xl font-bold mb-3">
+                Tertarik dengan kendaraan kami?
               </h3>
-              <div className="flex flex-wrap gap-2">
-                {post.keywords.map((keyword, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
-                  >
-                    {keyword}
-                  </span>
-                ))}
+              <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
+                Temukan mobil impian Anda dari koleksi terbaik kami atau konsultasikan kebutuhan Anda dengan tim ahli kami.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Link
+                  href={`/catalog/${post.tenant.slug}/vehicles`}
+                  className="inline-flex items-center justify-center px-8 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-semibold shadow-sm hover:shadow-md transition-all"
+                >
+                  Lihat Koleksi Mobil
+                </Link>
+                <Link
+                  href={`/catalog/${post.tenant.slug}/contact`}
+                  className="inline-flex items-center justify-center px-8 py-3 bg-background border-2 border-primary text-primary rounded-lg hover:bg-primary/5 font-semibold transition-all"
+                >
+                  Hubungi Kami
+                </Link>
               </div>
             </div>
-
-            {/* Share Buttons */}
-            <div className="pt-8 border-t mt-8">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Bagikan artikel ini:
-              </h3>
-              <ShareButtons title={post.title} />
-            </div>
           </div>
-        </div>
+        </main>
 
-        {/* Related Posts */}
-        {relatedPosts.length > 0 && (
-          <div className="max-w-4xl mx-auto px-6 py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Artikel Terkait
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedPosts.map((related) => (
-                <a
-                  key={related.id}
-                  href={`/blog/${related.slug}`}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  {related.featuredImage ? (
-                    <img
-                      src={related.featuredImage}
-                      alt={related.title}
-                      className="w-full h-48 object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-5xl">
-                      📝
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {related.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {related.excerpt}
-                    </p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* CTA Section */}
-        <div className="bg-blue-600 text-white py-16">
-          <div className="max-w-4xl mx-auto px-6 text-center">
-            <h2 className="text-3xl font-bold mb-4">
-              Tertarik dengan mobil bekas berkualitas?
-            </h2>
-            <p className="text-xl mb-8 text-blue-100">
-              Kunjungi showroom {post.tenant.name} di {post.targetLocation} untuk
-              pilihan terbaik!
-            </p>
-            <div className="flex justify-center gap-4">
-              <a
-                href="/inventory"
-                className="px-8 py-3 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-semibold"
-              >
-                Lihat Stok Mobil
-              </a>
-              <a
-                href="/contact"
-                className="px-8 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-semibold border-2 border-white"
-              >
-                Hubungi Kami
-              </a>
-            </div>
-          </div>
-        </div>
-      </article>
-    </>
+        <GlobalFooter
+          tenant={{
+            name: post.tenant.name,
+            phoneNumber: post.tenant.phoneNumber,
+            phoneNumberSecondary: post.tenant.phoneNumberSecondary,
+            whatsappNumber: post.tenant.whatsappNumber,
+            email: post.tenant.email,
+            address: post.tenant.address,
+            city: post.tenant.city,
+            province: post.tenant.province,
+            primaryColor: post.tenant.primaryColor,
+          }}
+        />
+      </div>
+    </ThemeProvider>
   );
 }
