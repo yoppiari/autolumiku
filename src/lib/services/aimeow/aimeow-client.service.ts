@@ -219,6 +219,13 @@ export class AimeowClientService {
    * Send WhatsApp message via Aimeow
    */
   static async sendMessage(params: AimeowSendMessageParams): Promise<AimeowMessageResponse> {
+    const timestamp = new Date().toISOString();
+    console.log("=".repeat(80));
+    console.log(`[Aimeow Send] ${timestamp} - SENDING MESSAGE`);
+    console.log(`[Aimeow Send] Original Client ID: ${params.clientId}`);
+    console.log(`[Aimeow Send] To: ${params.to}`);
+    console.log(`[Aimeow Send] Message: ${params.message.substring(0, 100)}`);
+
     try {
       const { clientId, to, message, mediaUrl } = params;
 
@@ -227,7 +234,7 @@ export class AimeowClientService {
       let apiClientId = clientId;
       if (clientId.includes("@s.whatsapp.net")) {
         apiClientId = clientId.split(":")[0];
-        console.log(`[Aimeow] Converting JID ${clientId} to phone ${apiClientId} for API call`);
+        console.log(`[Aimeow Send] Converting JID ${clientId} to phone ${apiClientId}`);
       }
 
       // Send text message - Aimeow API uses lowercase field names per Swagger docs
@@ -245,6 +252,9 @@ export class AimeowClientService {
         delete payload.message; // Images endpoint doesn't need message
       }
 
+      console.log(`[Aimeow Send] Endpoint: ${endpoint}`);
+      console.log(`[Aimeow Send] Payload:`, JSON.stringify(payload, null, 2));
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -253,19 +263,24 @@ export class AimeowClientService {
         body: JSON.stringify(payload),
       });
 
+      console.log(`[Aimeow Send] Response Status: ${response.status} ${response.statusText}`);
+
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`[Aimeow Send] Error Response: ${errorText}`);
         throw new Error(`Failed to send message: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log(`[Aimeow Send] Success Response:`, JSON.stringify(data, null, 2));
 
       return {
         success: true,
         messageId: data.messageId || data.id || `msg_${Date.now()}`,
       };
     } catch (error: any) {
-      console.error("Failed to send WhatsApp message:", error);
+      console.error(`[Aimeow Send] CRITICAL ERROR:`, error.message);
+      console.error(`[Aimeow Send] Stack:`, error.stack);
       return {
         success: false,
         error: error.message,

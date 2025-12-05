@@ -37,6 +37,10 @@ export default function WhatsAppDebugPage() {
   const [error, setError] = useState('');
   const [isSettingWebhook, setIsSettingWebhook] = useState(false);
   const [webhookSetResult, setWebhookSetResult] = useState<string>('');
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [sendTestResult, setSendTestResult] = useState<any>(null);
+  const [sendTestPhone, setSendTestPhone] = useState('6281235108908');
+  const [sendTestMessage, setSendTestMessage] = useState('Halo, ini test pesan dari AutoLumiku');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -73,6 +77,41 @@ export default function WhatsAppDebugPage() {
       setError(err.message);
     } finally {
       setIsSettingWebhook(false);
+    }
+  };
+
+  const testSendMessage = async () => {
+    if (!tenantId) return;
+
+    setIsSendingTest(true);
+    setError('');
+    setSendTestResult(null);
+
+    try {
+      const response = await fetch(`/api/v1/whatsapp-ai/test-send?tenantId=${tenantId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: sendTestPhone,
+          message: sendTestMessage,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Test send failed');
+      }
+
+      setSendTestResult(data);
+    } catch (err: any) {
+      console.error('Test send error:', err);
+      setError(err.message);
+      setSendTestResult({ success: false, error: err.message });
+    } finally {
+      setIsSendingTest(false);
     }
   };
 
@@ -252,9 +291,66 @@ export default function WhatsAppDebugPage() {
         </div>
       )}
 
+      {/* Test Send Message */}
+      <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">📤 Test Send Message</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Test sending outbound message ke WhatsApp (untuk debug AI reply issue)
+        </p>
+
+        <div className="space-y-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Target Phone Number
+            </label>
+            <input
+              type="text"
+              value={sendTestPhone}
+              onChange={(e) => setSendTestPhone(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="6281235108908"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Message to Send</label>
+            <input
+              type="text"
+              value={sendTestMessage}
+              onChange={(e) => setSendTestMessage(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="Halo, ini test pesan dari AutoLumiku"
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={testSendMessage}
+          disabled={isSendingTest || !tenantId}
+          className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
+        >
+          {isSendingTest ? 'Sending...' : '📤 Send Test Message'}
+        </button>
+
+        {sendTestResult && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium text-gray-900 mb-2">
+              Send Test Result:{' '}
+              {sendTestResult.success ? (
+                <span className="text-green-600">✅ SUCCESS</span>
+              ) : (
+                <span className="text-red-600">❌ FAILED</span>
+              )}
+            </h3>
+            <pre className="text-xs overflow-auto max-h-64 bg-white p-3 rounded border">
+              {JSON.stringify(sendTestResult, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+
       {/* Test Webhook */}
       <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">🧪 Test Webhook</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">🧪 Test Webhook (Incoming)</h2>
         <p className="text-sm text-gray-600 mb-4">
           Simulate incoming message untuk test message processing pipeline
         </p>
