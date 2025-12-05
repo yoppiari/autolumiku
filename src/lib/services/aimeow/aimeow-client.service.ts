@@ -229,12 +229,39 @@ export class AimeowClientService {
     try {
       const { clientId, to, message, mediaUrl } = params;
 
-      // If clientId is in JID format (6281298329132:17@s.whatsapp.net), extract phone number
-      // Aimeow API accepts phone number as clientId for send operations
+      // If clientId is in JID format (6281298329132:17@s.whatsapp.net), we need to get the correct UUID
+      // Database might have wrong format - fetch from Aimeow API to get correct UUID
       let apiClientId = clientId;
-      if (clientId.includes("@s.whatsapp.net")) {
-        apiClientId = clientId.split(":")[0];
-        console.log(`[Aimeow Send] Converting JID ${clientId} to phone ${apiClientId}`);
+      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
+        console.log(`[Aimeow Send] ⚠️  ClientId appears to be in wrong format: ${clientId}`);
+        console.log(`[Aimeow Send] Fetching correct UUID from Aimeow API...`);
+
+        // Fetch all clients and find the connected one
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+            console.log(`[Aimeow Send] ✅ Found correct UUID from API: ${apiClientId}`);
+
+            // Update database with correct clientId to fix future sends
+            try {
+              await prisma.aimeowAccount.update({
+                where: { clientId },
+                data: { clientId: apiClientId },
+              });
+              console.log(`[Aimeow Send] ✅ Updated database with correct UUID`);
+            } catch (dbError) {
+              console.warn(`[Aimeow Send] Failed to update database:`, dbError);
+            }
+          } else {
+            throw new Error("No connected client found on Aimeow. Please reconnect WhatsApp.");
+          }
+        } else {
+          throw new Error("Failed to fetch clients from Aimeow API");
+        }
       }
 
       // Send text message - Aimeow API uses lowercase field names per Swagger docs

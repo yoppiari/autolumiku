@@ -1,11 +1,16 @@
 /**
  * WhatsApp AI - Fix ClientId
  * POST /api/v1/whatsapp-ai/fix-clientid?tenantId=xxx
- * Update clientId to JID format based on latest webhook
+ * Update clientId to correct UUID format from Aimeow API
+ *
+ * ISSUE: Database has JID format (6283134446903:80@s.whatsapp.net) but Aimeow API expects UUID
+ * FIX: Fetch active client from Aimeow and update database with correct UUID
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+
+const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,50 +39,62 @@ export async function POST(request: NextRequest) {
     console.log(`[Fix ClientId] Current clientId: ${account.clientId}`);
     console.log(`[Fix ClientId] Phone: ${account.phoneNumber}`);
 
-    // Based on logs, the correct clientId from Aimeow webhook is:
-    // "6283134446903:80@s.whatsapp.net"
-    // Format: {phoneNumber}:80@s.whatsapp.net
+    // Fetch all clients from Aimeow API
+    const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
 
-    if (!account.phoneNumber) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Phone number not set. Cannot determine correct clientId.",
-        },
-        { status: 400 }
-      );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch clients from Aimeow: ${response.statusText}`);
     }
 
-    // Extract just the phone number part if it's already in JID format
+    const clients = await response.json();
+    console.log(`[Fix ClientId] Found ${clients.length} clients on Aimeow`);
+
+    // Find the connected client
+    const connectedClient = clients.find((c: any) => c.isConnected === true);
+
+    if (!connectedClient) {
+      return NextResponse.json({
+        success: false,
+        error: "No connected client found on Aimeow. Please reconnect WhatsApp first.",
+        details: "Check the Configure page to scan QR code and connect.",
+      }, { status: 404 });
+    }
+
+    const correctClientId = connectedClient.id;
+    console.log(`[Fix ClientId] Found connected client UUID: ${correctClientId}`);
+
+    // Extract phone number from current clientId if it's in JID format
     let phoneNumber = account.phoneNumber;
-    if (phoneNumber.includes("@") || phoneNumber.includes(":")) {
-      phoneNumber = phoneNumber.split(":")[0].split("@")[0];
+    if (account.clientId.includes("@s.whatsapp.net")) {
+      phoneNumber = account.clientId.split(":")[0];
+      console.log(`[Fix ClientId] Extracted phone number from JID: ${phoneNumber}`);
     }
 
-    // Build correct JID format based on Aimeow's format from logs
-    // The format from webhook is: 6283134446903:80@s.whatsapp.net
-    const correctClientId = `${phoneNumber}:80@s.whatsapp.net`;
-
-    console.log(`[Fix ClientId] Updating to correct JID format: ${correctClientId}`);
-
-    // Update to the correct JID format
+    // Update database with correct UUID clientId
+    const oldClientId = account.clientId;
     await prisma.aimeowAccount.update({
       where: { id: account.id },
       data: {
         clientId: correctClientId,
+        phoneNumber: phoneNumber,
+        connectionStatus: "connected",
+        isActive: true,
+        lastConnectedAt: new Date(),
       },
     });
 
-    console.log(`[Fix ClientId] ✅ Updated clientId successfully`);
+    console.log(`[Fix ClientId] ✅ Updated clientId from ${oldClientId} to ${correctClientId}`);
 
     return NextResponse.json({
       success: true,
-      message: "ClientId fixed successfully! Now using JID format from Aimeow webhook.",
+      message: "ClientId fixed successfully! Now using correct UUID from Aimeow API.",
       data: {
-        oldClientId: account.clientId,
+        oldClientId,
         newClientId: correctClientId,
-        phoneNumber: account.phoneNumber,
-        explanation: "ClientId updated to match the format Aimeow sends in webhooks. This should fix the send message issue.",
+        phoneNumber,
+        explanation: "ClientId must be a UUID (not JID format). The UUID is what Aimeow uses to identify sessions for sending messages.",
+        connectedAt: connectedClient.connectedAt,
+        messageCount: connectedClient.messageCount,
       },
     });
   } catch (error: any) {
