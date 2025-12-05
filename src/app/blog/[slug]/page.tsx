@@ -9,11 +9,16 @@ interface BlogPostPageProps {
   };
 }
 
-async function getBlogPost(slug: string, tenantId: string) {
+async function getBlogPost(slug: string, tenantId: string | null, domain: string | null) {
+  // If accessing from platform domain (auto.lumiku.com), show blogs from all tenants
+  // Otherwise, filter by specific tenant
+  const isPlatformDomain = domain === 'auto.lumiku.com' || !tenantId;
+
   const post = await prisma.blogPost.findFirst({
     where: {
       slug,
-      tenantId, // ✅ CRITICAL FIX: Filter by tenant
+      // Only filter by tenantId if NOT on platform domain
+      ...(isPlatformDomain ? {} : { tenantId }),
       status: 'PUBLISHED',
     },
     include: {
@@ -44,13 +49,7 @@ export async function generateMetadata({
 }: BlogPostPageProps): Promise<Metadata> {
   const tenant = await getTenantFromHeaders();
 
-  if (!tenant.id) {
-    return {
-      title: 'Blog Post Not Found',
-    };
-  }
-
-  const post = await getBlogPost(params.slug, tenant.id);
+  const post = await getBlogPost(params.slug, tenant.id, tenant.domain);
 
   if (!post) {
     return {
@@ -92,11 +91,7 @@ export async function generateMetadata({
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const tenant = await getTenantFromHeaders();
 
-  if (!tenant.id) {
-    notFound();
-  }
-
-  const post = await getBlogPost(params.slug, tenant.id);
+  const post = await getBlogPost(params.slug, tenant.id, tenant.domain);
 
   if (!post) {
     notFound();
