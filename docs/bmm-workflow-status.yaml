@@ -1436,3 +1436,61 @@ completion_details:
             technical_debt: "Eliminated complex domain resolution logic"
             operational_efficiency: "Automated domain provisioning with traefik:sync"
             production_readiness: "Enterprise-grade multi-tenant domain architecture"
+
+        - id: "password-reset-whatsapp"
+          agent: "developer"
+          status: "IN_PROGRESS"
+          command: "implement-whatsapp-password-reset"
+          output: "src/app/api/v1/auth/forgot-password/"
+          requirement_date: "2025-12-05"
+          priority: "HIGH"
+          description: "WhatsApp-based password reset for showroom admins"
+          features:
+            authentication:
+              - "Password reset via WhatsApp OTP for showroom admins"
+              - "Auto-detect WhatsApp connection status"
+              - "Role-based reset method (WhatsApp for showroom, email for super admin)"
+              - "OTP generation and validation (6 digits, 5 min expiry)"
+              - "Rate limiting (3 requests per hour per user)"
+            security:
+              - "OTP expires in 5 minutes"
+              - "Maximum 3 failed OTP attempts"
+              - "Reset token with 15 minute expiry"
+              - "Audit log for all reset attempts"
+              - "Password strength validation"
+            ui_ux:
+              - "Forgot password page with email input"
+              - "OTP verification page with countdown timer"
+              - "Reset password page with strength indicator"
+              - "Resend OTP with 60 second cooldown"
+              - "Error handling for disconnected WhatsApp"
+          database_changes:
+            user_model_additions:
+              - "otpCode: String? - OTP 6 digit"
+              - "otpExpiry: DateTime? - OTP expiration time"
+              - "otpAttempts: Int - Failed OTP attempt counter"
+              - "resetRequestCount: Int - Rate limiting counter"
+              - "resetRequestWindow: DateTime? - Rate limit window"
+          files_created:
+            services:
+              - "src/lib/services/password-reset.service.ts"
+              - "src/lib/services/auth-guard.service.ts"
+              - "src/types/auth.types.ts"
+            apis:
+              - "src/app/api/v1/auth/forgot-password/route.ts"
+              - "src/app/api/v1/auth/verify-otp/route.ts"
+              - "src/app/api/v1/auth/reset-password/route.ts"
+            pages:
+              - "src/app/(auth)/verify-otp/page.tsx"
+              - "src/app/(auth)/reset-password/page.tsx"
+          files_modified:
+            - "src/app/(auth)/forgot-password/page.tsx"
+            - "prisma/schema.prisma"
+          epic: "Epic 1: Multi-Tenant Foundation - Authentication Enhancement"
+          story: "Story 1.12: WhatsApp-Based Password Reset"
+          benefits:
+            - "Improved UX for showroom admins (no email needed)"
+            - "Leverages existing WhatsApp AI infrastructure"
+            - "Secure OTP-based authentication"
+            - "Multi-tenant safe (each tenant uses own WhatsApp bot)"
+            - "Rate limiting prevents abuse"

@@ -94,6 +94,13 @@ model User {
   passwordResetToken  String?   @unique
   passwordResetExpiry DateTime?
 
+  // OTP for Password Reset (WhatsApp-based)
+  otpCode            String?
+  otpExpiry          DateTime?
+  otpAttempts        Int       @default(0)
+  resetRequestCount  Int       @default(0)
+  resetRequestWindow DateTime?
+
   // Security
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
