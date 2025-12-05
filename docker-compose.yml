@@ -52,7 +52,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.autolumiku.rule=Host(`auto.lumiku.com`)"
-      - "traefik.http.routers.autolumiku.entrypoints=websecure"
+      - "traefik.http.routers.autolumiku.entrypoints=https"
       - "traefik.http.routers.autolumiku.tls=true"
       - "traefik.http.routers.autolumiku.tls.certresolver=letsencrypt"
       - "traefik.http.services.autolumiku.loadbalancer.server.port=3000"
