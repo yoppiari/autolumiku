@@ -43,7 +43,7 @@ export class ZAIClient {
     console.log('[ZAI Client] 🚀 Starting generateText call...');
     console.log('[ZAI Client] Model:', this.textModel);
     console.log('[ZAI Client] Temperature:', params.temperature ?? 0.7);
-    console.log('[ZAI Client] Max Tokens:', params.maxTokens ?? 4000);
+    console.log('[ZAI Client] Max Tokens:', params.maxTokens ?? 100000);
     console.log('[ZAI Client] System Prompt Length:', params.systemPrompt.length);
     console.log('[ZAI Client] User Prompt Length:', params.userPrompt.length);
 
@@ -56,7 +56,7 @@ export class ZAIClient {
           { role: 'user', content: params.userPrompt },
         ],
         temperature: params.temperature ?? 0.7,
-        max_tokens: params.maxTokens ?? 4000,
+        max_tokens: params.maxTokens ?? 100000,
       });
 
       console.log('[ZAI Client] ✅ API call successful!');
@@ -118,7 +118,7 @@ export class ZAIClient {
         },
       ],
       temperature: params.temperature ?? 0.7,
-      max_tokens: params.maxTokens ?? 4000,
+      max_tokens: params.maxTokens ?? 100000,
     });
 
     return {

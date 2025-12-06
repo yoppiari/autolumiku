@@ -2032,9 +2032,9 @@ model WhatsAppAIConfig {
   afterHoursMessage String? @db.Text
 
   // AI Model Settings
-  aiModel     String @default("glm-4-plus") // glm-4-plus, glm-4-flash
+  aiModel     String @default("glm-4.6") // glm-4.6, glm-4.5v
   temperature Float  @default(0.7)
-  maxTokens   Int    @default(2000)
+  maxTokens   Int    @default(100000)
 
   // Knowledge Base
   customFAQ        Json? // Array of {question, answer}

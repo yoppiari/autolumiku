@@ -235,9 +235,9 @@ export async function POST(request: NextRequest) {
         },
         timezone: configData.timezone || "Asia/Jakarta",
         afterHoursMessage: configData.afterHoursMessage || "Terima kasih telah menghubungi kami. Kami sedang tutup sekarang. Jam operasional: Senin-Jumat 09:00-17:00, Sabtu 09:00-15:00.",
-        aiModel: configData.aiModel || "glm-4-plus",
+        aiModel: configData.aiModel || "glm-4.6",
         temperature: configData.temperature || 0.7,
-        maxTokens: configData.maxTokens || 2000,
+        maxTokens: configData.maxTokens || 100000,
       },
     });
 

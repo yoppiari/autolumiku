@@ -74,7 +74,7 @@ export class WhatsAppAIChatService {
             autoReply: true,
             staffCommandsEnabled: true,
             temperature: 0.7,
-            maxTokens: 2000,
+            maxTokens: 100000,
             enableVehicleInfo: true,
             enableTestDriveBooking: true,
           },
