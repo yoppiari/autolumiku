@@ -57,8 +57,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
+      // IMPORTANT: Normalize phone number from JID format
+      // Aimeow sends: "6281235108908:17@s.whatsapp.net" or "212270269395003@s.whatsapp.net"
+      // We need: "6281235108908"
+      let normalizedFrom = message.from;
+      if (normalizedFrom.includes("@")) {
+        // Extract phone number from JID format
+        normalizedFrom = normalizedFrom.split("@")[0].split(":")[0];
+        console.log(`[Aimeow Webhook] Normalized phone: ${message.from} -> ${normalizedFrom}`);
+      }
+
       await handleIncomingMessage(account, {
-        from: message.from,
+        from: normalizedFrom,
         message: message.text,
         mediaUrl: message.mediaUrl,
         mediaType: message.mediaType,
