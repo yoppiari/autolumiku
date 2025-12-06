@@ -147,14 +147,33 @@ export class WhatsAppAIChatService {
         console.error(`[WhatsApp AI Chat] ZAI client is null - missing API key or base URL`);
         throw new Error('ZAI client not configured. Please set ZAI_API_KEY and ZAI_BASE_URL environment variables.');
       }
-      console.log(`[WhatsApp AI Chat] ZAI client created successfully. Calling API...`);
-      const aiResponse = await zaiClient.generateText({
-        systemPrompt,
-        userPrompt: conversationContext,
+      console.log(`[WhatsApp AI Chat] ZAI client created successfully. Calling API with params:`, {
         temperature: config.temperature,
         maxTokens: config.maxTokens,
+        systemPromptLength: systemPrompt.length,
+        userPromptLength: conversationContext.length,
       });
-      console.log(`[WhatsApp AI Chat] AI response received: ${aiResponse.content.substring(0, 100)}...`);
+
+      let aiResponse;
+      try {
+        aiResponse = await zaiClient.generateText({
+          systemPrompt,
+          userPrompt: conversationContext,
+          temperature: config.temperature,
+          maxTokens: config.maxTokens,
+        });
+        console.log(`[WhatsApp AI Chat] ✅ AI response received successfully`);
+        console.log(`[WhatsApp AI Chat] Response content (first 100 chars): ${aiResponse.content.substring(0, 100)}...`);
+        console.log(`[WhatsApp AI Chat] Response usage:`, aiResponse.usage);
+      } catch (apiError: any) {
+        console.error(`[WhatsApp AI Chat] ❌ ZAI API call failed:`);
+        console.error(`[WhatsApp AI Chat] API Error name:`, apiError.name);
+        console.error(`[WhatsApp AI Chat] API Error message:`, apiError.message);
+        console.error(`[WhatsApp AI Chat] API Error code:`, apiError.code);
+        console.error(`[WhatsApp AI Chat] API Error status:`, apiError.status);
+        console.error(`[WhatsApp AI Chat] API Error stack:`, apiError.stack);
+        throw apiError;
+      }
 
       // Analyze response untuk escalation
       const shouldEscalate = this.shouldEscalateToHuman(
