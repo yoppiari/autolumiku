@@ -164,7 +164,7 @@ export class WhatsAppAIChatService {
           maxTokens: config.maxTokens,
         });
 
-        const timeoutPromise = new Promise((_, reject) => {
+        const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
             reject(new Error('ZAI API call timed out after 25 seconds'));
           }, 25000); // 25 second timeout
