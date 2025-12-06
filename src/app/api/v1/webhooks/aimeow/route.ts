@@ -63,6 +63,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
+      // DEBUG: Log ALL fields in message object to find correct phone field
+      console.log("[Aimeow Webhook] 🔍 FULL MESSAGE OBJECT:");
+      console.log(JSON.stringify(message, null, 2));
+      console.log("[Aimeow Webhook] Message keys:", Object.keys(message));
+
+      // Check all possible phone number fields
+      const possiblePhoneFields = [
+        message.from,
+        message.sender,
+        message.participant,
+        message.remoteJid,
+        message.key?.remoteJid,
+        message.key?.participant,
+      ];
+      console.log("[Aimeow Webhook] 🔍 ALL POSSIBLE PHONE FIELDS:", possiblePhoneFields);
+
       // IMPORTANT: Normalize phone number from JID format
       // Aimeow sends: "6281235108908:17@s.whatsapp.net" or "212270269395003@s.whatsapp.net"
       // We need: "6281235108908"
@@ -71,17 +87,6 @@ export async function POST(request: NextRequest) {
         // Extract phone number from JID format
         normalizedFrom = normalizedFrom.split("@")[0].split(":")[0];
         console.log(`[Aimeow Webhook] Normalized phone: ${message.from} -> ${normalizedFrom}`);
-      }
-
-      // WORKAROUND: Manual phone mapping for known routing numbers
-      // Aimeow sometimes uses routing/virtual numbers that don't match actual sender
-      const PHONE_MAPPING: Record<string, string> = {
-        "212270269395003": "6281235108908", // Morocco routing -> Actual Indonesian number
-      };
-
-      if (PHONE_MAPPING[normalizedFrom]) {
-        console.log(`[Aimeow Webhook] ⚠️  PHONE MAPPING APPLIED: ${normalizedFrom} -> ${PHONE_MAPPING[normalizedFrom]}`);
-        normalizedFrom = PHONE_MAPPING[normalizedFrom];
       }
 
       await handleIncomingMessage(account, {
