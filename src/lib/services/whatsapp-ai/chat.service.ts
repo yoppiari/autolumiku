@@ -74,7 +74,6 @@ export class WhatsAppAIChatService {
             autoReply: true,
             staffCommandsEnabled: true,
             temperature: 0.7,
-            maxTokens: 100000,
             enableVehicleInfo: true,
             enableTestDriveBooking: true,
           },
@@ -149,7 +148,7 @@ export class WhatsAppAIChatService {
       }
       console.log(`[WhatsApp AI Chat] ZAI client created successfully. Calling API with params:`, {
         temperature: config.temperature,
-        maxTokens: config.maxTokens,
+        maxTokens: 100000,
         systemPromptLength: systemPrompt.length,
         userPromptLength: conversationContext.length,
       });
@@ -161,13 +160,13 @@ export class WhatsAppAIChatService {
           systemPrompt,
           userPrompt: conversationContext,
           temperature: config.temperature,
-          maxTokens: config.maxTokens,
+          maxTokens: 100000, // Hard-coded - not user configurable
         });
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
-            reject(new Error('ZAI API call timed out after 10 seconds'));
-          }, 10000); // 10 second timeout
+            reject(new Error('ZAI API call timed out after 60 seconds'));
+          }, 60000); // 60 second timeout for 100k token responses
         });
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
