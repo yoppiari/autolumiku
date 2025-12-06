@@ -114,6 +114,7 @@ export class WhatsAppAIChatService {
       // Check business hours (optional)
       const shouldCheckHours = config.businessHours && config.afterHoursMessage;
       if (shouldCheckHours && !this.isWithinBusinessHours(config.businessHours, config.timezone)) {
+        console.log(`[WhatsApp AI Chat] Outside business hours, returning after-hours message`);
         return {
           message: config.afterHoursMessage || "Kami sedang tutup. Silakan hubungi lagi pada jam operasional.",
           shouldEscalate: false,
@@ -123,29 +124,37 @@ export class WhatsAppAIChatService {
       }
 
       // Build system prompt
+      console.log(`[WhatsApp AI Chat] Building system prompt for tenant: ${account.tenant.name}`);
       const systemPrompt = await this.buildSystemPrompt(
         account.tenant,
         config,
         context.intent
       );
+      console.log(`[WhatsApp AI Chat] System prompt built (${systemPrompt.length} chars)`);
 
       // Build context dengan conversation history
+      console.log(`[WhatsApp AI Chat] Building conversation context with ${context.messageHistory.length} history messages`);
       const conversationContext = this.buildConversationContext(
         context.messageHistory,
         userMessage
       );
+      console.log(`[WhatsApp AI Chat] Conversation context built (${conversationContext.length} chars)`);
 
       // Generate response dengan Z.ai
+      console.log(`[WhatsApp AI Chat] Creating ZAI client...`);
       const zaiClient = createZAIClient();
       if (!zaiClient) {
+        console.error(`[WhatsApp AI Chat] ZAI client is null - missing API key or base URL`);
         throw new Error('ZAI client not configured. Please set ZAI_API_KEY and ZAI_BASE_URL environment variables.');
       }
+      console.log(`[WhatsApp AI Chat] ZAI client created successfully. Calling API...`);
       const aiResponse = await zaiClient.generateText({
         systemPrompt,
         userPrompt: conversationContext,
         temperature: config.temperature,
         maxTokens: config.maxTokens,
       });
+      console.log(`[WhatsApp AI Chat] AI response received: ${aiResponse.content.substring(0, 100)}...`);
 
       // Analyze response untuk escalation
       const shouldEscalate = this.shouldEscalateToHuman(
@@ -162,7 +171,10 @@ export class WhatsAppAIChatService {
         processingTime,
       };
     } catch (error: any) {
-      console.error("[WhatsApp AI Chat] Error generating response:", error);
+      console.error("[WhatsApp AI Chat] ❌ ERROR generating response:");
+      console.error("[WhatsApp AI Chat] Error name:", error.name);
+      console.error("[WhatsApp AI Chat] Error message:", error.message);
+      console.error("[WhatsApp AI Chat] Error stack:", error.stack);
 
       // Fallback response
       return {
