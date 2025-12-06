@@ -166,8 +166,8 @@ export class WhatsAppAIChatService {
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
-            reject(new Error('ZAI API call timed out after 25 seconds'));
-          }, 25000); // 25 second timeout
+            reject(new Error('ZAI API call timed out after 10 seconds'));
+          }, 10000); // 10 second timeout
         });
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
