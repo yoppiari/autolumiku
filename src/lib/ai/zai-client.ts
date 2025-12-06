@@ -21,6 +21,9 @@ export class ZAIClient {
   private visionModel: string;
 
   constructor(config: ZAIClientConfig) {
+    console.log('[ZAI Client Constructor] Creating OpenAI client with baseURL:', config.baseURL);
+    console.log('[ZAI Client Constructor] OpenAI SDK will call:', config.baseURL + 'chat/completions');
+
     this.client = new OpenAI({
       apiKey: config.apiKey,
       baseURL: config.baseURL,
@@ -48,8 +51,7 @@ export class ZAIClient {
     console.log('[ZAI Client] User Prompt Length:', params.userPrompt.length);
 
     try {
-      console.log('[ZAI Client] 📡 Calling OpenAI API (ZAI endpoint)...');
-      const response = await this.client.chat.completions.create({
+      const requestPayload = {
         model: this.textModel,
         messages: [
           { role: 'system', content: params.systemPrompt },
@@ -57,7 +59,20 @@ export class ZAIClient {
         ],
         temperature: params.temperature ?? 0.7,
         max_tokens: params.maxTokens ?? 100000,
-      });
+      };
+
+      console.log('[ZAI Client] 📡 Calling OpenAI API (ZAI endpoint)...');
+      console.log('[ZAI Client] Request payload:', JSON.stringify({
+        model: requestPayload.model,
+        temperature: requestPayload.temperature,
+        max_tokens: requestPayload.max_tokens,
+        messages: requestPayload.messages.map(m => ({
+          role: m.role,
+          contentLength: m.content.length
+        }))
+      }, null, 2));
+
+      const response = await this.client.chat.completions.create(requestPayload);
 
       console.log('[ZAI Client] ✅ API call successful!');
       console.log('[ZAI Client] Response ID:', response.id);
