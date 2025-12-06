@@ -64,6 +64,10 @@ export class ZAIClient {
       console.log('[ZAI Client] Model used:', response.model);
       console.log('[ZAI Client] Finish reason:', response.choices[0]?.finish_reason);
       console.log('[ZAI Client] Usage:', response.usage);
+      console.log('[ZAI Client] 🔍 Full response.choices[0]:', JSON.stringify(response.choices[0], null, 2));
+      console.log('[ZAI Client] 🔍 Message object:', response.choices[0]?.message);
+      console.log('[ZAI Client] 🔍 Content value:', response.choices[0]?.message?.content);
+      console.log('[ZAI Client] 🔍 Content type:', typeof response.choices[0]?.message?.content);
 
       const content = response.choices[0]?.message?.content || '';
       console.log('[ZAI Client] Response length:', content.length, 'characters');
