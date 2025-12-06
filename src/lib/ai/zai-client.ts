@@ -177,7 +177,7 @@ export function createZAIClient(): ZAIClient | null {
   return new ZAIClient({
     apiKey,
     baseURL,
-    timeout: parseInt(process.env.API_TIMEOUT_MS || '300000', 10),
+    timeout: parseInt(process.env.API_TIMEOUT_MS || '60000', 10),  // Reduced timeout from 300s to 60s
     textModel: process.env.ZAI_TEXT_MODEL || 'glm-4.6',
     visionModel: process.env.ZAI_VISION_MODEL || 'glm-4.5v',
   });

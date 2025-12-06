@@ -156,12 +156,21 @@ export class WhatsAppAIChatService {
 
       let aiResponse;
       try {
-        aiResponse = await zaiClient.generateText({
+        // Add a race condition with manual timeout to ensure we fail fast
+        const apiCallPromise = zaiClient.generateText({
           systemPrompt,
           userPrompt: conversationContext,
           temperature: config.temperature,
           maxTokens: config.maxTokens,
         });
+
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('ZAI API call timed out after 25 seconds'));
+          }, 25000); // 25 second timeout
+        });
+
+        aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
         console.log(`[WhatsApp AI Chat] ✅ AI response received successfully`);
         console.log(`[WhatsApp AI Chat] Response content (first 100 chars): ${aiResponse.content.substring(0, 100)}...`);
         console.log(`[WhatsApp AI Chat] Response usage:`, aiResponse.usage);
