@@ -40,22 +40,50 @@ export class ZAIClient {
     temperature?: number;
     maxTokens?: number;
   }) {
-    const response = await this.client.chat.completions.create({
-      model: this.textModel,
-      messages: [
-        { role: 'system', content: params.systemPrompt },
-        { role: 'user', content: params.userPrompt },
-      ],
-      temperature: params.temperature ?? 0.7,
-      max_tokens: params.maxTokens ?? 4000,
-    });
+    console.log('[ZAI Client] 🚀 Starting generateText call...');
+    console.log('[ZAI Client] Model:', this.textModel);
+    console.log('[ZAI Client] Temperature:', params.temperature ?? 0.7);
+    console.log('[ZAI Client] Max Tokens:', params.maxTokens ?? 4000);
+    console.log('[ZAI Client] System Prompt Length:', params.systemPrompt.length);
+    console.log('[ZAI Client] User Prompt Length:', params.userPrompt.length);
 
-    return {
-      content: response.choices[0]?.message?.content || '',
-      reasoning: (response.choices[0]?.message as any)?.reasoning_content || null,
-      finishReason: response.choices[0]?.finish_reason,
-      usage: response.usage,
-    };
+    try {
+      console.log('[ZAI Client] 📡 Calling OpenAI API (ZAI endpoint)...');
+      const response = await this.client.chat.completions.create({
+        model: this.textModel,
+        messages: [
+          { role: 'system', content: params.systemPrompt },
+          { role: 'user', content: params.userPrompt },
+        ],
+        temperature: params.temperature ?? 0.7,
+        max_tokens: params.maxTokens ?? 4000,
+      });
+
+      console.log('[ZAI Client] ✅ API call successful!');
+      console.log('[ZAI Client] Response ID:', response.id);
+      console.log('[ZAI Client] Model used:', response.model);
+      console.log('[ZAI Client] Finish reason:', response.choices[0]?.finish_reason);
+      console.log('[ZAI Client] Usage:', response.usage);
+
+      const content = response.choices[0]?.message?.content || '';
+      console.log('[ZAI Client] Response length:', content.length, 'characters');
+
+      return {
+        content,
+        reasoning: (response.choices[0]?.message as any)?.reasoning_content || null,
+        finishReason: response.choices[0]?.finish_reason,
+        usage: response.usage,
+      };
+    } catch (error: any) {
+      console.error('[ZAI Client] ❌ API call failed!');
+      console.error('[ZAI Client] Error type:', error.constructor.name);
+      console.error('[ZAI Client] Error message:', error.message);
+      console.error('[ZAI Client] Error status:', error.status);
+      console.error('[ZAI Client] Error code:', error.code);
+      console.error('[ZAI Client] Error response:', error.response?.data);
+      console.error('[ZAI Client] Error stack:', error.stack);
+      throw error;
+    }
   }
 
   /**
@@ -123,15 +151,29 @@ export function createZAIClient(): ZAIClient | null {
   const apiKey = process.env.ZAI_API_KEY;
   const baseURL = process.env.ZAI_BASE_URL;
 
+  console.log('[ZAI Client Factory] 🔧 Creating ZAI client...');
+  console.log('[ZAI Client Factory] API Key exists:', !!apiKey);
+  console.log('[ZAI Client Factory] API Key (first 10 chars):', apiKey?.substring(0, 10) + '...');
+  console.log('[ZAI Client Factory] Base URL:', baseURL);
+  console.log('[ZAI Client Factory] Text Model:', process.env.ZAI_TEXT_MODEL || 'glm-4.6');
+  console.log('[ZAI Client Factory] Vision Model:', process.env.ZAI_VISION_MODEL || 'glm-4.5v');
+  console.log('[ZAI Client Factory] Timeout:', process.env.API_TIMEOUT_MS || '300000', 'ms');
+
   // Return null during build time or when not configured
   if (!apiKey || apiKey === 'your-zai-api-key-here' || !baseURL) {
+    console.warn('[ZAI Client Factory] ⚠️ ZAI client not configured properly');
+    console.warn('[ZAI Client Factory] API Key missing or placeholder:', !apiKey || apiKey === 'your-zai-api-key-here');
+    console.warn('[ZAI Client Factory] Base URL missing:', !baseURL);
+
     if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
       // During build time, return null instead of throwing
+      console.log('[ZAI Client Factory] Returning null for build time');
       return null;
     }
     throw new Error('ZAI_API_KEY and ZAI_BASE_URL not configured in environment variables');
   }
 
+  console.log('[ZAI Client Factory] ✅ ZAI client created successfully');
   return new ZAIClient({
     apiKey,
     baseURL,
