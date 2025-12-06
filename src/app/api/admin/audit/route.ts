@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/audit - List all audit logs
 export async function GET(request: NextRequest) {
   return withSuperAdminAuth(request, async (request, auth) => {

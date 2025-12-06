@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { scraperService } from '@/lib/services/scraper-service';
 import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   return withSuperAdminAuth(request, async (request, auth) => {
     try {
