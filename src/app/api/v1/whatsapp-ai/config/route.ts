@@ -141,8 +141,8 @@ export async function PUT(request: NextRequest) {
 
       const aimeowBaseUrl = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
 
-      // Update the callback URL configuration
-      const aimeowResponse = await fetch(`${aimeowBaseUrl}/config`, {
+      // Update the callback URL configuration using the correct endpoint
+      const aimeowResponse = await fetch(`${aimeowBaseUrl}/api/v1/config`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
