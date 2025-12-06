@@ -3,7 +3,6 @@
  * Mengklasifikasi intent dari WhatsApp message:
  * - Customer inquiry (butuh AI response)
  * - Staff command (butuh command parser)
- * - Spam/invalid
  */
 
 import { prisma } from "@/lib/prisma";
@@ -20,7 +19,6 @@ export type MessageIntent =
   | "staff_update_status"
   | "staff_check_inventory"
   | "staff_get_stats"
-  | "spam"
   | "unknown";
 
 export interface IntentClassificationResult {
@@ -87,13 +85,6 @@ const CUSTOMER_PATTERNS = {
   ],
 };
 
-// Spam patterns
-const SPAM_PATTERNS = [
-  /\b(pulsa|voucher|game|chip|diamond|promo\s+pinjaman)\b/i,
-  /\b(menang|hadiah|klik\s+link|claim|bonus)\b/i,
-  /^[0-9\s\.\-\(\)]+$/, // Only numbers and punctuation
-];
-
 // ==================== INTENT CLASSIFIER ====================
 
 export class IntentClassifierService {
@@ -111,18 +102,7 @@ export class IntentClassifierService {
     // Check if sender is staff
     const isStaff = await this.isStaffMember(senderPhone, tenantId);
 
-    // 1. Check for spam first
-    if (this.isSpam(normalizedMessage)) {
-      return {
-        intent: "spam",
-        confidence: 0.9,
-        isStaff: false,
-        isCustomer: false,
-        reason: "Detected spam pattern",
-      };
-    }
-
-    // 2. If staff, check for commands
+    // 1. If staff, check for commands
     if (isStaff) {
       const staffIntent = this.classifyStaffCommand(normalizedMessage);
       if (staffIntent) {
@@ -134,7 +114,7 @@ export class IntentClassifierService {
       }
     }
 
-    // 3. Classify customer intent
+    // 2. Classify customer intent
     const customerIntent = this.classifyCustomerIntent(normalizedMessage);
 
     return {
@@ -160,13 +140,6 @@ export class IntentClassifierService {
     });
 
     return !!staff;
-  }
-
-  /**
-   * Check if message is spam
-   */
-  private static isSpam(message: string): boolean {
-    return SPAM_PATTERNS.some((pattern) => pattern.test(message));
   }
 
   /**

@@ -94,15 +94,7 @@ export class MessageOrchestratorService {
       let responseMessage: string | undefined;
       let escalated = false;
 
-      if (classification.intent === "spam") {
-        // Ignore spam, no response
-        return {
-          success: true,
-          conversationId: conversation.id,
-          intent: classification.intent,
-          escalated: false,
-        };
-      } else if (classification.isStaff) {
+      if (classification.isStaff) {
         // Handle staff command
         const result = await this.handleStaffCommand(
           conversation,

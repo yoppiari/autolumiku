@@ -43,7 +43,7 @@ export class WhatsAppAIChatService {
 
     try {
       // Get AI config
-      const account = await prisma.aimeowAccount.findUnique({
+      let account = await prisma.aimeowAccount.findUnique({
         where: { tenantId: context.tenantId },
         include: {
           aiConfig: true,
@@ -51,11 +51,44 @@ export class WhatsAppAIChatService {
         },
       });
 
-      if (!account || !account.aiConfig) {
-        throw new Error("AI configuration not found");
+      if (!account) {
+        throw new Error("Aimeow account not found");
       }
 
-      const config = account.aiConfig;
+      // Auto-generate AI config if it doesn't exist
+      if (!account.aiConfig) {
+        console.log(`[WhatsApp AI Chat] Auto-generating AI config for tenant: ${context.tenantId}`);
+
+        const defaultConfig = await prisma.whatsAppAIConfig.create({
+          data: {
+            accountId: account.id,
+            tenantId: context.tenantId,
+            aiName: "AI Assistant",
+            aiPersonality: "friendly",
+            welcomeMessage: `Halo! Saya adalah asisten virtual ${account.tenant.name}. Ada yang bisa saya bantu?`,
+            customerChatEnabled: true,
+            autoReply: true,
+            staffCommandsEnabled: true,
+            temperature: 0.7,
+            maxTokens: 1000,
+            enableVehicleInfo: true,
+            enableTestDriveBooking: true,
+          },
+        });
+
+        // Reload account with the new config
+        account = await prisma.aimeowAccount.findUnique({
+          where: { tenantId: context.tenantId },
+          include: {
+            aiConfig: true,
+            tenant: true,
+          },
+        });
+
+        console.log(`[WhatsApp AI Chat] Created default AI config: ${defaultConfig.id}`);
+      }
+
+      const config = account!.aiConfig!;
 
       // Check if customer chat is enabled
       if (!config.customerChatEnabled) {
