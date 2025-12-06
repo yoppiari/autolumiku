@@ -85,10 +85,14 @@ export class WhatsAppAIChatService {
           },
         });
 
+        if (!account) {
+          throw new Error("Failed to reload account after creating AI config");
+        }
+
         console.log(`[WhatsApp AI Chat] Created default AI config: ${defaultConfig.id}`);
       }
 
-      const config = account!.aiConfig!;
+      const config = account.aiConfig!;
 
       // Check if customer chat is enabled
       if (!config.customerChatEnabled) {

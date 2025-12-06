@@ -17,6 +17,7 @@ interface WhatsAppSettings {
   isActive: boolean;
   defaultMessage: string;
   autoReply: boolean;
+  aiAutoAnswer: boolean; // New field for AI auto-answer
   workingHours: {
     start: string;
     end: string;
@@ -47,6 +48,7 @@ export default function WhatsAppSettingsPage() {
           isActive: true,
           defaultMessage: 'Halo! Terima kasih telah menghubungi Showroom Jakarta. Ada yang bisa kami bantu?',
           autoReply: true,
+          aiAutoAnswer: true,
           workingHours: {
             start: '08:00',
             end: '17:00',
@@ -63,6 +65,7 @@ export default function WhatsAppSettingsPage() {
           isActive: true,
           defaultMessage: 'Selamat datang di Dealer Mobil! Kami siap membantu Anda menemukan mobil impian.',
           autoReply: false,
+          aiAutoAnswer: false,
           workingHours: {
             start: '09:00',
             end: '18:00',
@@ -79,6 +82,7 @@ export default function WhatsAppSettingsPage() {
           isActive: false,
           defaultMessage: 'Terima kasih telah menghubungi AutoMobil. Kami akan segera merespons.',
           autoReply: true,
+          aiAutoAnswer: true,
           workingHours: {
             start: '08:30',
             end: '16:30',
@@ -98,10 +102,31 @@ export default function WhatsAppSettingsPage() {
 
   const handleToggleActive = async (settingId: string) => {
     // Mock API call
-    setSettings(prev => prev.map(setting => 
+    setSettings(prev => prev.map(setting =>
       setting.id === settingId ? { ...setting, isActive: !setting.isActive } : setting
     ));
     console.log('Toggle active status for:', settingId);
+  };
+
+  const handleToggleAIAutoAnswer = async (settingId: string) => {
+    // Update state optimistically
+    setSettings(prev => prev.map(setting =>
+      setting.id === settingId ? { ...setting, aiAutoAnswer: !setting.aiAutoAnswer } : setting
+    ));
+
+    // In production, make API call to update AI config
+    const setting = settings.find(s => s.id === settingId);
+    if (setting) {
+      console.log('Toggle AI auto-answer for tenant:', setting.tenantId);
+      // API call would be:
+      // await fetch('/api/v1/whatsapp-ai-config', {
+      //   method: 'PUT',
+      //   body: JSON.stringify({
+      //     tenantId: setting.tenantId,
+      //     customerChatEnabled: !setting.aiAutoAnswer
+      //   })
+      // });
+    }
   };
 
   const handleEdit = (setting: WhatsAppSettings) => {
@@ -137,6 +162,7 @@ export default function WhatsAppSettingsPage() {
       isActive: true,
       defaultMessage: 'Halo! Terima kasih telah menghubungi kami. Ada yang bisa kami bantu?',
       autoReply: true,
+      aiAutoAnswer: true,
       workingHours: {
         start: '08:00',
         end: '17:00',
@@ -248,13 +274,34 @@ export default function WhatsAppSettingsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Auto Reply</label>
                   <div className="flex items-center space-x-2">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      setting.autoReply 
-                        ? 'bg-green-100 text-green-800' 
+                      setting.autoReply
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-gray-100 text-gray-800'
                     }`}>
                       {setting.autoReply ? 'Aktif' : 'Tidak Aktif'}
                     </span>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">AI Auto-Answer 🤖</label>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleToggleAIAutoAnswer(setting.id)}
+                      className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                        setting.aiAutoAnswer
+                          ? 'bg-purple-100 text-purple-800 hover:bg-purple-200'
+                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      }`}
+                    >
+                      {setting.aiAutoAnswer ? '✓ AI Aktif' : '✗ AI Mati'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {setting.aiAutoAnswer
+                      ? 'AI akan otomatis merespons pesan customer'
+                      : 'AI tidak akan merespons, perlu manual'}
+                  </p>
                 </div>
 
                 <div>
@@ -399,7 +446,7 @@ export default function WhatsAppSettingsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 flex-wrap gap-y-2">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -410,6 +457,19 @@ export default function WhatsAppSettingsPage() {
                   />
                   <label htmlFor="autoReply" className="ml-2 text-sm text-gray-700">
                     Aktifkan Auto Reply
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="aiAutoAnswer"
+                    checked={editingSetting.aiAutoAnswer}
+                    onChange={(e) => setEditingSetting({...editingSetting, aiAutoAnswer: e.target.checked})}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="aiAutoAnswer" className="ml-2 text-sm text-gray-700">
+                    Aktifkan AI Auto-Answer 🤖
                   </label>
                 </div>
 
