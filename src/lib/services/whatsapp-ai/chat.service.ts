@@ -41,6 +41,8 @@ export class WhatsAppAIChatService {
   ): Promise<ChatResponse> {
     const startTime = Date.now();
 
+    console.log(`[WhatsApp AI Chat] Generating response for tenant: ${context.tenantId}, message: ${userMessage.substring(0, 50)}`);
+
     try {
       // Get AI config
       let account = await prisma.aimeowAccount.findUnique({
@@ -52,8 +54,10 @@ export class WhatsAppAIChatService {
       });
 
       if (!account) {
+        console.error(`[WhatsApp AI Chat] Aimeow account not found for tenant: ${context.tenantId}`);
         throw new Error("Aimeow account not found");
       }
+      console.log(`[WhatsApp AI Chat] Account found: ${account.id}`);
 
       // Auto-generate AI config if it doesn't exist
       if (!account.aiConfig) {
@@ -93,9 +97,11 @@ export class WhatsAppAIChatService {
       }
 
       const config = account.aiConfig!;
+      console.log(`[WhatsApp AI Chat] AI Config loaded. customerChatEnabled: ${config.customerChatEnabled}`);
 
       // Check if customer chat is enabled
       if (!config.customerChatEnabled) {
+        console.log(`[WhatsApp AI Chat] Customer chat is DISABLED. Returning escalation message.`);
         return {
           message: "Maaf, fitur chat otomatis sedang tidak aktif. Mohon tunggu, staff kami akan segera merespons.",
           shouldEscalate: true,
@@ -103,6 +109,7 @@ export class WhatsAppAIChatService {
           processingTime: Date.now() - startTime,
         };
       }
+      console.log(`[WhatsApp AI Chat] Customer chat is ENABLED. Proceeding with AI response.`);
 
       // Check business hours (optional)
       const shouldCheckHours = config.businessHours && config.afterHoursMessage;

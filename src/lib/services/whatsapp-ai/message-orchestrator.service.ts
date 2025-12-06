@@ -63,11 +63,13 @@ export class MessageOrchestratorService {
       );
 
       // 3. Classify intent
+      console.log(`[Orchestrator] Classifying intent for message: ${incoming.message}`);
       const classification = await IntentClassifierService.classify(
         incoming.message,
         incoming.from,
         incoming.tenantId
       );
+      console.log(`[Orchestrator] Intent classified: ${classification.intent}, isStaff: ${classification.isStaff}, isCustomer: ${classification.isCustomer}`);
 
       // Update message with intent
       await prisma.whatsAppMessage.update({
@@ -78,6 +80,7 @@ export class MessageOrchestratorService {
           senderType: classification.isStaff ? "staff" : "customer",
         },
       });
+      console.log(`[Orchestrator] Message updated with intent: ${classification.intent}`);
 
       // Update conversation type
       if (classification.isStaff) {
@@ -96,6 +99,7 @@ export class MessageOrchestratorService {
 
       if (classification.isStaff) {
         // Handle staff command
+        console.log(`[Orchestrator] Routing to staff command handler`);
         const result = await this.handleStaffCommand(
           conversation,
           classification.intent,
@@ -106,8 +110,10 @@ export class MessageOrchestratorService {
         );
         responseMessage = result.message;
         escalated = result.escalated;
+        console.log(`[Orchestrator] Staff command result: ${responseMessage?.substring(0, 50)}...`);
       } else {
         // Handle customer inquiry dengan AI
+        console.log(`[Orchestrator] Routing to AI customer inquiry handler`);
         const result = await this.handleCustomerInquiry(
           conversation,
           classification.intent,
@@ -115,10 +121,12 @@ export class MessageOrchestratorService {
         );
         responseMessage = result.message;
         escalated = result.escalated;
+        console.log(`[Orchestrator] AI response generated: ${responseMessage?.substring(0, 50)}...`);
       }
 
       // 5. Send response if generated
       if (responseMessage) {
+        console.log(`[Orchestrator] Sending response to ${incoming.from}`);
         await this.sendResponse(
           incoming.accountId,
           incoming.from,
@@ -126,6 +134,9 @@ export class MessageOrchestratorService {
           conversation.id,
           classification.intent
         );
+        console.log(`[Orchestrator] Response sent successfully`);
+      } else {
+        console.log(`[Orchestrator] No response message generated`);
       }
 
       // 6. Update conversation status
