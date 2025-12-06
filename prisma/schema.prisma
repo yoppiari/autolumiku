@@ -2034,7 +2034,7 @@ model WhatsAppAIConfig {
   // AI Model Settings
   aiModel     String @default("glm-4-plus") // glm-4-plus, glm-4-flash
   temperature Float  @default(0.7)
-  maxTokens   Int    @default(1000)
+  maxTokens   Int    @default(2000)
 
   // Knowledge Base
   customFAQ        Json? // Array of {question, answer}

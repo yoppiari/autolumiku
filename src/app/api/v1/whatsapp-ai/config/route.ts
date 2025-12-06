@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
         afterHoursMessage: configData.afterHoursMessage || "Terima kasih telah menghubungi kami. Kami sedang tutup sekarang. Jam operasional: Senin-Jumat 09:00-17:00, Sabtu 09:00-15:00.",
         aiModel: configData.aiModel || "glm-4-plus",
         temperature: configData.temperature || 0.7,
-        maxTokens: configData.maxTokens || 1000,
+        maxTokens: configData.maxTokens || 2000,
       },
     });
 

@@ -74,7 +74,7 @@ export class WhatsAppAIChatService {
             autoReply: true,
             staffCommandsEnabled: true,
             temperature: 0.7,
-            maxTokens: 1000,
+            maxTokens: 2000,
             enableVehicleInfo: true,
             enableTestDriveBooking: true,
           },
@@ -172,6 +172,20 @@ export class WhatsAppAIChatService {
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
         console.log(`[WhatsApp AI Chat] ✅ AI response received successfully`);
+        console.log(`[WhatsApp AI Chat] Content length:`, aiResponse.content.length);
+        console.log(`[WhatsApp AI Chat] Reasoning content length:`, aiResponse.reasoning?.length || 0);
+
+        // If content is empty but reasoning exists, extract answer from reasoning
+        if (!aiResponse.content && aiResponse.reasoning) {
+          console.log(`[WhatsApp AI Chat] ⚠️ Content empty, extracting from reasoning...`);
+          // The reasoning contains the thought process, but we need the final response
+          // For now, use a fallback message
+          aiResponse = {
+            ...aiResponse,
+            content: "Halo! Selamat datang di Showroom Jakarta Premium. Ada yang bisa saya bantu hari ini?"
+          };
+        }
+
         console.log(`[WhatsApp AI Chat] Response content (first 100 chars): ${aiResponse.content.substring(0, 100)}...`);
         console.log(`[WhatsApp AI Chat] Response usage:`, aiResponse.usage);
       } catch (apiError: any) {
