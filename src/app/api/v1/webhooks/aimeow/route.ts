@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
 import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/message-orchestrator.service";
+import fs from "fs";
+import path from "path";
 
 // ==================== WEBHOOK HANDLER ====================
 
@@ -30,6 +32,27 @@ export async function POST(request: NextRequest) {
 
     console.log("[Aimeow Webhook] Payload:", JSON.stringify(payload, null, 2));
     console.log("[Aimeow Webhook] Payload keys:", Object.keys(payload));
+
+    // EXTRA DEBUG: Log message.from field specifically
+    if (payload.message && payload.message.from) {
+      console.log("[Aimeow Webhook] RAW message.from:", payload.message.from);
+      console.log("[Aimeow Webhook] message.from type:", typeof payload.message.from);
+    }
+
+    // Save last webhook payload for debugging
+    try {
+      const tmpDir = path.join(process.cwd(), "tmp");
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+      }
+      const webhookFile = path.join(tmpDir, "last-webhook.json");
+      fs.writeFileSync(
+        webhookFile,
+        JSON.stringify({ ...payload, _capturedAt: new Date().toISOString() }, null, 2)
+      );
+    } catch (e) {
+      console.warn("[Aimeow Webhook] Failed to save webhook payload:", e);
+    }
 
     const { clientId, message, event, data } = payload;
 
