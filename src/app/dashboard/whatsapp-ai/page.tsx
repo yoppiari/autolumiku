@@ -116,6 +116,43 @@ export default function WhatsAppAIDashboard() {
     return `${minutes}m ${seconds % 60}s`;
   };
 
+  const handleToggleAI = async () => {
+    if (!aiConfig || !tenantId) return;
+
+    // Optimistically update UI
+    setAiConfig({
+      ...aiConfig,
+      customerChatEnabled: !aiConfig.customerChatEnabled,
+    });
+
+    try {
+      const response = await fetch('/api/v1/whatsapp-ai-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId,
+          customerChatEnabled: !aiConfig.customerChatEnabled,
+        }),
+      });
+
+      if (!response.ok) {
+        // Revert on error
+        setAiConfig({
+          ...aiConfig,
+          customerChatEnabled: aiConfig.customerChatEnabled,
+        });
+        console.error('Failed to toggle AI');
+      }
+    } catch (error) {
+      // Revert on error
+      setAiConfig({
+        ...aiConfig,
+        customerChatEnabled: aiConfig.customerChatEnabled,
+      });
+      console.error('Error toggling AI:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -170,14 +207,39 @@ export default function WhatsAppAIDashboard() {
               )}
             </div>
           </div>
-          {!status.isConnected && (
-            <Link
-              href="/dashboard/whatsapp-ai/setup"
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md hover:shadow-lg"
-            >
-              Setup WhatsApp →
-            </Link>
-          )}
+          <div className="flex items-center space-x-4">
+            {/* AI Auto-Answer Toggle */}
+            {status.isConnected && aiConfig && (
+              <div className="flex flex-col items-end">
+                <button
+                  onClick={handleToggleAI}
+                  className={`relative inline-flex items-center px-6 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all ${
+                    aiConfig.customerChatEnabled
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                      : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                  }`}
+                >
+                  <span className="text-2xl mr-2">🤖</span>
+                  <span>
+                    {aiConfig.customerChatEnabled ? 'AI Auto-Answer: ON' : 'AI Auto-Answer: OFF'}
+                  </span>
+                </button>
+                <p className="text-xs text-gray-600 mt-2">
+                  {aiConfig.customerChatEnabled
+                    ? 'AI will respond to customer messages automatically'
+                    : 'AI responses are disabled - manual replies only'}
+                </p>
+              </div>
+            )}
+            {!status.isConnected && (
+              <Link
+                href="/dashboard/whatsapp-ai/setup"
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md hover:shadow-lg"
+              >
+                Setup WhatsApp →
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
