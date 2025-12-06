@@ -73,6 +73,17 @@ export async function POST(request: NextRequest) {
         console.log(`[Aimeow Webhook] Normalized phone: ${message.from} -> ${normalizedFrom}`);
       }
 
+      // WORKAROUND: Manual phone mapping for known routing numbers
+      // Aimeow sometimes uses routing/virtual numbers that don't match actual sender
+      const PHONE_MAPPING: Record<string, string> = {
+        "212270269395003": "6281235108908", // Morocco routing -> Actual Indonesian number
+      };
+
+      if (PHONE_MAPPING[normalizedFrom]) {
+        console.log(`[Aimeow Webhook] ⚠️  PHONE MAPPING APPLIED: ${normalizedFrom} -> ${PHONE_MAPPING[normalizedFrom]}`);
+        normalizedFrom = PHONE_MAPPING[normalizedFrom];
+      }
+
       await handleIncomingMessage(account, {
         from: normalizedFrom,
         message: message.text,
