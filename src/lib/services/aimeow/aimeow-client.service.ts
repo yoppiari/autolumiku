@@ -81,25 +81,43 @@ export class AimeowClientService {
       }
 
       const data = await response.json();
+
+      console.log('[Aimeow Initialize] POST /clients/new response:', JSON.stringify(data, null, 2));
+      console.log('[Aimeow Initialize] Response keys:', Object.keys(data));
+      console.log('[Aimeow Initialize] data.clientId:', data.clientId);
+      console.log('[Aimeow Initialize] data.id:', data.id);
+
       const clientId = data.clientId || data.id;
 
       if (!clientId) {
+        console.error('[Aimeow Initialize] ❌ No clientId found in response!');
+        console.error('[Aimeow Initialize] Full response:', data);
         throw new Error("Failed to get client ID from Aimeow API");
       }
 
+      console.log('[Aimeow Initialize] ✅ Using clientId:', clientId);
+
       // Fetch the actual QR code string (raw data)
+      console.log(`[Aimeow Initialize] Fetching client status: GET /clients/${clientId}`);
       const clientStatusResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`);
       let rawQrCode = "";
 
       if (clientStatusResponse.ok) {
         const clientData = await clientStatusResponse.json();
+        console.log('[Aimeow Initialize] GET /clients/{id} response:', JSON.stringify(clientData, null, 2));
         rawQrCode = clientData.qrCode || "";
+        console.log('[Aimeow Initialize] Extracted QR code length:', rawQrCode.length);
       } else {
-        console.warn(`Failed to fetch client status for QR code: ${clientStatusResponse.statusText}`);
+        console.warn(`[Aimeow Initialize] Failed to fetch client status: ${clientStatusResponse.status} ${clientStatusResponse.statusText}`);
       }
 
       // Fallback to qrUrl if rawQrCode is empty (though unlikely to work for display if it's localhost)
       const qrCodeToSave = rawQrCode || data.qr || data.qrUrl;
+
+      console.log('[Aimeow Initialize] Saving to database:');
+      console.log('[Aimeow Initialize] - clientId:', clientId);
+      console.log('[Aimeow Initialize] - tenantId:', tenantId);
+      console.log('[Aimeow Initialize] - qrCode length:', qrCodeToSave?.length);
 
       // Simpan ke database (upsert untuk handle re-initialization)
       const account = await prisma.aimeowAccount.upsert({
@@ -124,6 +142,9 @@ export class AimeowClientService {
           webhookUrl, // Save webhook URL
         },
       });
+
+      console.log('[Aimeow Initialize] ✅ Saved to database - Account ID:', account.id);
+      console.log('[Aimeow Initialize] Database record clientId:', account.clientId);
 
       // Create or update default AI config
       await prisma.whatsAppAIConfig.upsert({
@@ -154,11 +175,15 @@ export class AimeowClientService {
         },
       });
 
-      return {
+      const result = {
         success: true,
         clientId,
         qrCode: qrCodeToSave,
       };
+
+      console.log('[Aimeow Initialize] 🎉 Returning to API endpoint:', result);
+
+      return result;
     } catch (error: any) {
       console.error("Failed to initialize Aimeow client:", error);
       return {
