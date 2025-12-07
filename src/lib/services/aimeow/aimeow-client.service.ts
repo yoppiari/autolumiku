@@ -220,7 +220,7 @@ export class AimeowClientService {
         where: { clientId },
         data: {
           connectionStatus,
-          phoneNumber: data.phoneNumber || undefined,
+          phoneNumber: data.phone || undefined,
           isActive: isConnected,
           lastConnectedAt: isConnected ? new Date() : undefined,
           qrCode: data.qrCode || undefined, // Update QR code if available
@@ -229,7 +229,7 @@ export class AimeowClientService {
 
       return {
         clientId,
-        phoneNumber: data.phoneNumber,
+        phoneNumber: data.phone,
         isConnected,
         qrCode: data.qrCode,
         lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
