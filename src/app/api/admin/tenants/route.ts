@@ -8,6 +8,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { withSuperAdminAuth } from '@/lib/auth/middleware';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 // GET /api/admin/tenants - List all tenants
 export async function GET(request: NextRequest) {
@@ -134,10 +138,28 @@ export async function POST(request: NextRequest) {
         return { tenant, adminUser: createdAdminUser };
       });
 
+      // Auto-sync Traefik configuration for new domain
+      let traefikSyncStatus = null;
+      if (domain) {
+        try {
+          console.log('🔄 New tenant created with domain, syncing Traefik configuration...');
+          const { stdout, stderr } = await execAsync('npm run traefik:sync -- --no-confirm', {
+            cwd: process.cwd(),
+            timeout: 30000, // 30 seconds
+          });
+          console.log('✅ Traefik sync completed:', stdout);
+          traefikSyncStatus = 'success';
+        } catch (error) {
+          console.error('❌ Traefik sync failed:', error);
+          traefikSyncStatus = 'failed';
+        }
+      }
+
       return NextResponse.json({
         success: true,
         data: result.tenant,
         message: 'Tenant created successfully',
+        traefikSynced: traefikSyncStatus,
       });
     } catch (error) {
       console.error('Error creating tenant:', error);
