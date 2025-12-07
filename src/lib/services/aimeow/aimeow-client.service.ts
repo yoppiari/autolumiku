@@ -198,7 +198,14 @@ export class AimeowClientService {
    */
   static async getClientStatus(clientId: string): Promise<AimeowClientStatus | null> {
     try {
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`);
+      const url = `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`;
+      console.log('[getClientStatus] Fetching from URL:', url);
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+        },
+        cache: 'no-store', // Disable caching
+      });
 
       if (!response.ok) {
         if (response.status === 404) {
