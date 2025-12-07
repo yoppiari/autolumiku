@@ -100,9 +100,9 @@ export class WhatsAppAIChatService {
 
       // Check if customer chat is enabled
       if (!config.customerChatEnabled) {
-        console.log(`[WhatsApp AI Chat] Customer chat is DISABLED. Returning escalation message.`);
+        console.log(`[WhatsApp AI Chat] Customer chat is DISABLED. No auto-reply will be sent.`);
         return {
-          message: "Maaf, fitur chat otomatis sedang tidak aktif. Mohon tunggu, staff kami akan segera merespons.",
+          message: "", // Return empty message - no auto-reply will be sent
           shouldEscalate: true,
           confidence: 1.0,
           processingTime: Date.now() - startTime,
