@@ -209,6 +209,7 @@ export class AimeowClientService {
       }
 
       const data = await response.json();
+      console.log('[getClientStatus] Raw API response:', JSON.stringify(data, null, 2));
 
       // Map Aimeow status to our status
       // API returns isConnected as boolean
@@ -227,13 +228,15 @@ export class AimeowClientService {
         },
       });
 
-      return {
+      const result = {
         clientId,
         phoneNumber: data.phone,
         isConnected,
         qrCode: data.qrCode,
         lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
       };
+      console.log('[getClientStatus] Returning:', JSON.stringify(result, null, 2));
+      return result;
     } catch (error) {
       console.error("Failed to get client status:", error);
       return null;
