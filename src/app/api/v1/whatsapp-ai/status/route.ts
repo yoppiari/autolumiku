@@ -46,7 +46,9 @@ export async function GET(request: NextRequest) {
 
     // Update status dari Aimeow API (jika sudah ada clientId)
     if (account.clientId) {
-      await AimeowClientService.getClientStatus(account.clientId);
+      console.log(`[Status API] Checking Aimeow status for clientId: ${account.clientId}`);
+      const aimeowStatus = await AimeowClientService.getClientStatus(account.clientId);
+      console.log(`[Status API] Aimeow returned:`, aimeowStatus);
 
       // Re-fetch account untuk get updated data
       if (clientId) {
@@ -62,6 +64,8 @@ export async function GET(request: NextRequest) {
           error: "Account not found after status update",
         }, { status: 404 });
       }
+
+      console.log(`[Status API] Updated account - isActive: ${account.isActive}, connectionStatus: ${account.connectionStatus}, phoneNumber: ${account.phoneNumber}`);
     }
 
     // Get conversation statistics
@@ -107,7 +111,7 @@ export async function GET(request: NextRequest) {
 
     const aiResponseRate = totalInbound > 0 ? Math.round((aiResponded / totalInbound) * 100) : 0;
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       data: {
         isConnected: account.isActive,
@@ -121,7 +125,11 @@ export async function GET(request: NextRequest) {
         todayMessages,
         aiResponseRate,
       },
-    });
+    };
+
+    console.log(`[Status API] Returning to frontend:`, JSON.stringify(responseData, null, 2));
+
+    return NextResponse.json(responseData);
   } catch (error: any) {
     console.error("[WhatsApp AI Status] Error:", error);
     return NextResponse.json(

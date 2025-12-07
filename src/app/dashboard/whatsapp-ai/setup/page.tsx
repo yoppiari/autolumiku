@@ -82,8 +82,14 @@ export default function WhatsAppSetupPage() {
     // Check every 3 seconds
     pollIntervalRef.current = setInterval(async () => {
       try {
+        console.log('[Setup Polling] Checking status for clientId:', clientIdToCheck);
         const response = await fetch(`/api/v1/whatsapp-ai/status?clientId=${clientIdToCheck}`);
         const data = await response.json();
+
+        console.log('[Setup Polling] Response:', data);
+        console.log('[Setup Polling] isConnected:', data.data?.isConnected);
+        console.log('[Setup Polling] phoneNumber:', data.data?.phoneNumber);
+        console.log('[Setup Polling] connectionStatus:', data.data?.connectionStatus);
 
         if (data.success) {
           if (data.data.qrCode) {
@@ -92,6 +98,7 @@ export default function WhatsAppSetupPage() {
 
           if (data.data.isConnected) {
             // Connected!
+            console.log('[Setup Polling] ✅ CONNECTION DETECTED! Phone:', data.data.phoneNumber);
             setPhoneNumber(data.data.phoneNumber);
             setStep('success');
             setIsPolling(false);
@@ -105,6 +112,8 @@ export default function WhatsAppSetupPage() {
             setTimeout(() => {
               router.push('/dashboard/whatsapp-ai/config');
             }, 2000);
+          } else {
+            console.log('[Setup Polling] Still waiting... isConnected:', data.data.isConnected);
           }
         }
       } catch (err) {
