@@ -60,35 +60,44 @@ export async function POST(request: NextRequest) {
       const body = await request.json();
       const {
         name,
-        slug,
         domain,
+        adminUser,
         adminEmail,
         adminFirstName,
         adminLastName,
         adminPassword,
       } = body;
 
+      // Support both old format (direct fields) and new format (adminUser object)
+      const email = adminUser?.email || adminEmail;
+      const firstName = adminUser?.firstName || adminFirstName;
+      const lastName = adminUser?.lastName || adminLastName;
+      const password = adminPassword || Math.random().toString(36).slice(-12); // Auto-generate if not provided
+
       // Validate required fields
-      if (!name || !slug || !adminEmail || !adminFirstName || !adminPassword) {
+      if (!name || !domain || !email || !firstName) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Missing required fields',
+            error: 'Missing required fields: name, domain, admin email, and admin first name are required',
           },
           { status: 400 }
         );
       }
 
-      // Check if slug already exists
+      // Generate slug from domain (remove www. and dots)
+      const slug = domain.replace(/^www\./, '').replace(/\./g, '-');
+
+      // Check if domain already exists
       const existingTenant = await prisma.tenant.findUnique({
-        where: { slug },
+        where: { domain },
       });
 
       if (existingTenant) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Subdomain already exists',
+            error: 'Domain already exists',
           },
           { status: 400 }
         );
@@ -101,7 +110,7 @@ export async function POST(request: NextRequest) {
           data: {
             name,
             slug,
-            domain: domain || null,
+            domain,
             status: 'active',
             primaryColor: '#2563eb',
             secondaryColor: '#7c3aed',
@@ -110,19 +119,19 @@ export async function POST(request: NextRequest) {
         });
 
         // Create admin user for the tenant
-        const adminUser = await tx.user.create({
+        const createdAdminUser = await tx.user.create({
           data: {
-            email: adminEmail,
-            firstName: adminFirstName,
-            lastName: adminLastName || '',
-            passwordHash: await bcrypt.hash(adminPassword, 10),
+            email,
+            firstName,
+            lastName: lastName || '',
+            passwordHash: await bcrypt.hash(password, 10),
             role: 'admin',
             tenantId: tenant.id,
             emailVerified: true,
           },
         });
 
-        return { tenant, adminUser };
+        return { tenant, adminUser: createdAdminUser };
       });
 
       return NextResponse.json({

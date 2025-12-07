@@ -2,8 +2,7 @@ export type TenantStatus = 'setup_required' | 'active' | 'suspended' | 'deactiva
 
 export interface CreateTenantRequest {
   name: string;
-  subdomain: string;
-  customDomain?: string; // Optional custom domain
+  domain: string; // Main domain for the tenant
   adminEmail: string;
   adminFirstName: string;
   adminLastName: string;

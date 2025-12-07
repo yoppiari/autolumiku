@@ -25,8 +25,7 @@ export default function CreateTenantPage() {
       // Call API to create tenant (server-side)
       const result = await api.post('/api/admin/tenants', {
         name: data.name,
-        subdomain: data.subdomain,
-        customDomain: data.customDomain, // Custom domain field
+        domain: data.domain, // Main domain field
         adminUser: {
           email: data.adminEmail,
           firstName: data.adminFirstName,

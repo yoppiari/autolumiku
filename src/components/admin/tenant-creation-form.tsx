@@ -11,8 +11,7 @@ interface TenantCreationFormProps {
 
 interface FormErrors {
   name?: string;
-  subdomain?: string;
-  customDomain?: string;
+  domain?: string;
   adminEmail?: string;
   adminFirstName?: string;
   adminLastName?: string;
@@ -23,8 +22,7 @@ interface FormErrors {
 export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: TenantCreationFormProps) {
   const [formData, setFormData] = useState<CreateTenantRequest>({
     name: '',
-    subdomain: '',
-    customDomain: '',
+    domain: '',
     adminEmail: '',
     adminFirstName: '',
     adminLastName: '',
@@ -71,22 +69,13 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
       newErrors.name = 'Nama tenant maksimal 100 karakter';
     }
 
-    // Subdomain validation
-    if (!formData.subdomain.trim()) {
-      newErrors.subdomain = 'Subdomain wajib diisi';
-    } else if (!/^[a-z0-9][a-z0-9-]*$/.test(formData.subdomain)) {
-      newErrors.subdomain = 'Subdomain hanya boleh huruf kecil, angka, dan strip (-), dimulai dengan huruf';
-    } else if (formData.subdomain.length < 3) {
-      newErrors.subdomain = 'Subdomain minimal 3 karakter';
-    } else if (formData.subdomain.length > 50) {
-      newErrors.subdomain = 'Subdomain maksimal 50 karakter';
-    }
-
-    // Custom domain validation (optional)
-    if (formData.customDomain && formData.customDomain.trim()) {
+    // Domain validation
+    if (!formData.domain.trim()) {
+      newErrors.domain = 'Domain wajib diisi';
+    } else {
       const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
-      if (!domainRegex.test(formData.customDomain.trim())) {
-        newErrors.customDomain = 'Format domain tidak valid (contoh: showroom.com atau www.showroom.com)';
+      if (!domainRegex.test(formData.domain.trim())) {
+        newErrors.domain = 'Format domain tidak valid (contoh: showroom.com atau www.showroom.com)';
       }
     }
 
@@ -157,17 +146,6 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
     }
   };
 
-  const generateSubdomain = () => {
-    if (formData.name) {
-      const cleanName = formData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
-
-      setFormData(prev => ({ ...prev, subdomain: cleanName }));
-    }
-  };
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -214,64 +192,27 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
               )}
             </div>
 
-            {/* Subdomain */}
+            {/* Domain */}
             <div>
-              <label htmlFor="subdomain" className="block text-sm font-medium text-gray-700 mb-1">
-                Subdomain <span className="text-red-500">*</span>
-              </label>
-              <div className="flex">
-                <input
-                  type="text"
-                  id="subdomain"
-                  value={formData.subdomain}
-                  onChange={(e) => handleInputChange('subdomain', e.target.value)}
-                  className={`flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.subdomain ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="showroom-mobil-jakarta"
-                  disabled={isSubmitting}
-                />
-                <div className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-600">
-                  .autolumiku.com
-                </div>
-              </div>
-              {errors.subdomain && (
-                <p className="mt-1 text-sm text-red-600">{errors.subdomain}</p>
-              )}
-              <p className="mt-1 text-sm text-gray-500">
-                Subdomain akan digunakan untuk URL: https://subdomain.autolumiku.com
-              </p>
-              <button
-                type="button"
-                onClick={generateSubdomain}
-                className="mt-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
-                disabled={isSubmitting}
-              >
-                Generate dari nama tenant
-              </button>
-            </div>
-
-            {/* Custom Domain */}
-            <div>
-              <label htmlFor="customDomain" className="block text-sm font-medium text-gray-700 mb-1">
-                Custom Domain <span className="text-gray-500">(Opsional)</span>
+              <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
+                Domain <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                id="customDomain"
-                value={formData.customDomain}
-                onChange={(e) => handleInputChange('customDomain', e.target.value)}
+                id="domain"
+                value={formData.domain}
+                onChange={(e) => handleInputChange('domain', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.customDomain ? 'border-red-500' : 'border-gray-300'
+                  errors.domain ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="showroom.com atau www.showroom.com"
                 disabled={isSubmitting}
               />
-              {errors.customDomain && (
-                <p className="mt-1 text-sm text-red-600">{errors.customDomain}</p>
+              {errors.domain && (
+                <p className="mt-1 text-sm text-red-600">{errors.domain}</p>
               )}
               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm text-blue-800 font-medium mb-1">ℹ️ Petunjuk Setup Custom Domain:</p>
+                <p className="text-sm text-blue-800 font-medium mb-1">ℹ️ Petunjuk Setup Domain:</p>
                 <ol className="text-xs text-blue-700 space-y-1 ml-4 list-decimal">
                   <li>Buat CNAME record di DNS provider Anda yang mengarah ke: <code className="bg-blue-100 px-1 py-0.5 rounded">proxy.autolumiku.com</code></li>
                   <li>Contoh: <code className="bg-blue-100 px-1 py-0.5 rounded">www.showroom.com</code> → <code className="bg-blue-100 px-1 py-0.5 rounded">proxy.autolumiku.com</code></li>
