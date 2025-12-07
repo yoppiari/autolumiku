@@ -372,64 +372,6 @@ export default function WhatsAppAIConfigPage() {
           </div>
         </div>
 
-        {/* Advanced Settings */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Advanced Settings</h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                AI Model
-              </label>
-              <select
-                value={config.aiModel}
-                onChange={(e) => setConfig({ ...config, aiModel: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="glm-4-plus">GLM-4 Plus (Recommended)</option>
-                <option value="glm-4">GLM-4 Standard</option>
-                <option value="glm-4-flash">GLM-4 Flash (Faster)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Temperature: {config.temperature}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={config.temperature}
-                onChange={(e) => setConfig({ ...config, temperature: parseFloat(e.target.value) })}
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Lower = more focused, Higher = more creative
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Max Tokens
-              </label>
-              <input
-                type="number"
-                value={config.maxTokens}
-                onChange={(e) => setConfig({ ...config, maxTokens: parseInt(e.target.value) })}
-                min="100"
-                max="4000"
-                step="100"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Maksimal panjang response AI (100-4000 tokens)
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Actions */}
         <div className="flex justify-between items-center pt-6 border-t border-gray-200">
           <button
