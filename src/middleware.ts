@@ -17,10 +17,32 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || 'localhost:3000';
 
-  // Handle root path - redirect to login
+  // Extract domain from Host header
+  const cleanHost = host.split(':')[0]; // Remove port
+
+  // Custom domain to slug mapping
+  // TODO: Move to database or environment variable for dynamic mapping
+  const domainToSlug: Record<string, string> = {
+    'primamobil.id': 'primamobil',
+    'www.primamobil.id': 'primamobil',
+  };
+
+  // Check if this is a custom tenant domain
+  const tenantSlug = domainToSlug[cleanHost];
+  const isCustomDomain = !!tenantSlug;
+  const isPlatformDomain = cleanHost.includes('auto.lumiku.com');
+
+  // Handle root path
   if (pathname === '/') {
-    console.log('[Middleware] Root path detected, redirecting to /login');
-    return NextResponse.redirect(new URL('/login', request.url));
+    if (isCustomDomain) {
+      // Custom domain: redirect to catalog
+      console.log(`[Middleware] Custom domain ${cleanHost} detected, redirecting to catalog`);
+      return NextResponse.redirect(new URL(`/catalog/${tenantSlug}`, request.url));
+    } else if (isPlatformDomain || cleanHost.includes('localhost') || cleanHost.includes('127.0.0.1')) {
+      // Platform domain: redirect to login
+      console.log('[Middleware] Platform domain detected, redirecting to /login');
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
   // Skip middleware for:
@@ -41,14 +63,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Extract domain from Host header
-  const cleanHost = host.split(':')[0]; // Remove port
-
-  // Skip for localhost and development
+  // Skip for localhost and development (if not already handled above)
   if (
-    cleanHost.includes('localhost') ||
+    !isCustomDomain &&
+    (cleanHost.includes('localhost') ||
     cleanHost.includes('127.0.0.1') ||
-    cleanHost.includes('.vercel.app')
+    cleanHost.includes('.vercel.app'))
   ) {
     return NextResponse.next();
   }
