@@ -37,6 +37,7 @@ export default function UsersPage() {
     email: '',
     firstName: '',
     lastName: '',
+    phone: '',
     role: 'SALES',
   });
   const [formError, setFormError] = useState('');
@@ -116,7 +117,7 @@ export default function UsersPage() {
         // Reload users list
         await loadUsers(tenantId);
         // Reset form and close modal
-        setFormData({ email: '', firstName: '', lastName: '', role: 'SALES' });
+        setFormData({ email: '', firstName: '', lastName: '', phone: '', role: 'SALES' });
         setShowCreateModal(false);
       } else {
         setFormError(data.error || 'Failed to create user');
@@ -135,6 +136,7 @@ export default function UsersPage() {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      phone: (user as any).phone || '',
       role: user.role,
     });
     setFormError('');
@@ -155,6 +157,7 @@ export default function UsersPage() {
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
+          phone: formData.phone,
           role: formData.role,
         }),
       });
@@ -165,7 +168,7 @@ export default function UsersPage() {
         // Reload users list
         await loadUsers(tenantId);
         // Reset form and close modal
-        setFormData({ email: '', firstName: '', lastName: '', role: 'SALES' });
+        setFormData({ email: '', firstName: '', lastName: '', phone: '', role: 'SALES' });
         setEditingUser(null);
         setShowEditModal(false);
       } else {
@@ -509,6 +512,25 @@ export default function UsersPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nomor WhatsApp *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="6281234567890"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: kode negara + nomor (tanpa + atau spasi). Contoh: 6281234567890
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Role *
                   </label>
                   <select
@@ -534,6 +556,7 @@ export default function UsersPage() {
                         email: '',
                         firstName: '',
                         lastName: '',
+                        phone: '',
                         role: 'SALES',
                       });
                     }}
@@ -616,6 +639,25 @@ export default function UsersPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nomor WhatsApp *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="6281234567890"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Digunakan untuk WhatsApp AI commands
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Role *
                   </label>
                   <select
@@ -642,6 +684,7 @@ export default function UsersPage() {
                         email: '',
                         firstName: '',
                         lastName: '',
+                        phone: '',
                         role: 'SALES',
                       });
                     }}

@@ -22,6 +22,7 @@ export async function GET(
         email: true,
         firstName: true,
         lastName: true,
+        phone: true,
         role: true,
         emailVerified: true,
         lastLoginAt: true,
@@ -57,7 +58,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { firstName, lastName, role } = body;
+    const { firstName, lastName, phone, role } = body;
 
     if (!firstName || !role) {
       return NextResponse.json(
@@ -66,11 +67,26 @@ export async function PUT(
       );
     }
 
+    // Get current user to check tenantId
+    const currentUser = await prisma.user.findUnique({
+      where: { id },
+      select: { tenantId: true, phone: true },
+    });
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update user
     const user = await prisma.user.update({
       where: { id },
       data: {
         firstName,
         lastName: lastName || '',
+        phone: phone || null,
         role: role.toUpperCase(),
       },
       select: {
@@ -78,6 +94,7 @@ export async function PUT(
         email: true,
         firstName: true,
         lastName: true,
+        phone: true,
         role: true,
         emailVerified: true,
         lastLoginAt: true,
@@ -85,6 +102,46 @@ export async function PUT(
         updatedAt: true,
       },
     });
+
+    // Sync with WhatsApp staff auth
+    const existingStaffAuth = await prisma.staffWhatsAppAuth.findFirst({
+      where: { userId: id },
+    });
+
+    if (phone) {
+      // Phone provided - create or update staff auth
+      if (existingStaffAuth) {
+        // Update existing
+        await prisma.staffWhatsAppAuth.update({
+          where: { id: existingStaffAuth.id },
+          data: {
+            phoneNumber: phone,
+            role: role.toLowerCase(),
+            canViewAnalytics: role.toUpperCase() === 'ADMIN',
+          },
+        });
+      } else {
+        // Create new
+        await prisma.staffWhatsAppAuth.create({
+          data: {
+            tenantId: currentUser.tenantId,
+            userId: id,
+            phoneNumber: phone,
+            role: role.toLowerCase(),
+            isActive: true,
+            canUploadVehicle: true,
+            canUpdateStatus: true,
+            canViewAnalytics: role.toUpperCase() === 'ADMIN',
+            canManageLeads: true,
+          },
+        });
+      }
+    } else if (existingStaffAuth) {
+      // Phone removed - delete staff auth
+      await prisma.staffWhatsAppAuth.delete({
+        where: { id: existingStaffAuth.id },
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -107,6 +164,12 @@ export async function DELETE(
   try {
     const { id } = await params;
 
+    // Delete related WhatsApp staff auth first (if exists)
+    await prisma.staffWhatsAppAuth.deleteMany({
+      where: { userId: id },
+    });
+
+    // Delete user
     await prisma.user.delete({
       where: { id },
     });

@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
         email: true,
         firstName: true,
         lastName: true,
+        phone: true,
         role: true,
         emailVerified: true,
         lastLoginAt: true,
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tenantId, email, firstName, lastName, role } = body;
+    const { tenantId, email, firstName, lastName, phone, role } = body;
 
     if (!tenantId || !email || !firstName || !role) {
       return NextResponse.json(
@@ -117,6 +118,7 @@ export async function POST(request: NextRequest) {
         email,
         firstName,
         lastName: lastName || '',
+        phone: phone || null,
         role: role.toUpperCase(),
         passwordHash: await bcrypt.hash('temporary_password', 10), // In production: generate random password
         emailVerified: false,
@@ -126,11 +128,29 @@ export async function POST(request: NextRequest) {
         email: true,
         firstName: true,
         lastName: true,
+        phone: true,
         role: true,
         emailVerified: true,
         createdAt: true,
       },
     });
+
+    // Auto-create WhatsApp staff auth if phone is provided
+    if (phone) {
+      await prisma.staffWhatsAppAuth.create({
+        data: {
+          tenantId,
+          userId: user.id,
+          phoneNumber: phone,
+          role: role.toLowerCase(),
+          isActive: true,
+          canUploadVehicle: true,
+          canUpdateStatus: true,
+          canViewAnalytics: role.toUpperCase() === 'ADMIN',
+          canManageLeads: true,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
