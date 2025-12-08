@@ -62,14 +62,27 @@ export class MessageOrchestratorService {
         incoming
       );
 
-      // 3. Classify intent
-      console.log(`[Orchestrator] Classifying intent for message: ${incoming.message}`);
-      const classification = await IntentClassifierService.classify(
-        incoming.message,
-        incoming.from,
-        incoming.tenantId
-      );
-      console.log(`[Orchestrator] Intent classified: ${classification.intent}, isStaff: ${classification.isStaff}, isCustomer: ${classification.isCustomer}`);
+      // 3. Check conversation state for multi-step flows
+      let classification;
+      if (conversation.conversationState === "upload_vehicle") {
+        // Staff is in middle of vehicle upload flow
+        console.log(`[Orchestrator] Conversation in upload_vehicle state, treating message as vehicle data`);
+        classification = {
+          intent: "staff_upload_vehicle" as MessageIntent,
+          confidence: 1.0,
+          isStaff: true,
+          isCustomer: false,
+        };
+      } else {
+        // Normal intent classification
+        console.log(`[Orchestrator] Classifying intent for message: ${incoming.message}`);
+        classification = await IntentClassifierService.classify(
+          incoming.message,
+          incoming.from,
+          incoming.tenantId
+        );
+        console.log(`[Orchestrator] Intent classified: ${classification.intent}, isStaff: ${classification.isStaff}, isCustomer: ${classification.isCustomer}`);
+      }
 
       // Update message with intent
       await prisma.whatsAppMessage.update({

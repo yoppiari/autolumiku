@@ -57,16 +57,11 @@ export async function POST(request: NextRequest) {
     // Aimeow sends messages with { clientId, message, timestamp } structure
     // Handle incoming message if message field exists
     if (message) {
-      // Skip non-text message types
-      if (message.type !== "text") {
-        console.log(`[Aimeow Webhook] Skipping non-text message type: ${message.type}`);
-        return NextResponse.json({ success: true });
-      }
-
       // DEBUG: Log ALL fields in message object to find correct phone field
       console.log("[Aimeow Webhook] 🔍 FULL MESSAGE OBJECT:");
       console.log(JSON.stringify(message, null, 2));
       console.log("[Aimeow Webhook] Message keys:", Object.keys(message));
+      console.log("[Aimeow Webhook] Message type:", message.type);
 
       // Check all possible phone number fields
       const possiblePhoneFields = [
@@ -89,11 +84,40 @@ export async function POST(request: NextRequest) {
         console.log(`[Aimeow Webhook] Normalized phone: ${message.from} -> ${normalizedFrom}`);
       }
 
+      // Extract message text and media based on message type
+      let messageText = "";
+      let mediaUrl = undefined;
+      let mediaType = undefined;
+
+      if (message.type === "text") {
+        messageText = message.text || "";
+      } else if (message.type === "image") {
+        // Image message - extract caption as text and media URL
+        messageText = message.caption || message.text || "";
+        mediaUrl = message.mediaUrl || message.url || message.imageUrl;
+        mediaType = "image";
+        console.log(`[Aimeow Webhook] Image message - URL: ${mediaUrl}, Caption: ${messageText}`);
+      } else if (message.type === "video") {
+        messageText = message.caption || message.text || "";
+        mediaUrl = message.mediaUrl || message.url || message.videoUrl;
+        mediaType = "video";
+        console.log(`[Aimeow Webhook] Video message - URL: ${mediaUrl}, Caption: ${messageText}`);
+      } else if (message.type === "document") {
+        messageText = message.caption || message.text || message.filename || "";
+        mediaUrl = message.mediaUrl || message.url || message.documentUrl;
+        mediaType = "document";
+        console.log(`[Aimeow Webhook] Document message - URL: ${mediaUrl}, Caption: ${messageText}`);
+      } else {
+        // Unknown type - log and skip
+        console.log(`[Aimeow Webhook] Unsupported message type: ${message.type}`);
+        return NextResponse.json({ success: true });
+      }
+
       await handleIncomingMessage(account, {
         from: normalizedFrom,
-        message: message.text,
-        mediaUrl: message.mediaUrl,
-        mediaType: message.mediaType,
+        message: messageText,
+        mediaUrl: mediaUrl,
+        mediaType: mediaType,
         messageId: message.id,
       });
       return NextResponse.json({ success: true });

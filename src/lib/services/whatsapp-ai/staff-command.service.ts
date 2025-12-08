@@ -156,6 +156,7 @@ export class StaffCommandService {
    * Parse /upload command
    * Format: /upload [make] [model] [year] [price] [mileage] [color] [transmission]
    * Example: /upload Toyota Avanza 2020 150000000 50000 Hitam Manual
+   * Also accepts vehicle data without /upload prefix (when in upload state)
    */
   private static parseUploadCommand(message: string): CommandParseResult {
     // Simple format: wait for multi-step conversation
@@ -168,20 +169,26 @@ export class StaffCommandService {
       };
     }
 
-    // Parse full command format
+    // Parse full command format or direct vehicle data
     const parts = message.split(/\s+/).filter((p) => p);
 
-    if (parts.length < 6) {
+    // Check if first part is /upload command
+    const hasUploadPrefix = parts[0]?.toLowerCase() === "/upload";
+    const dataStartIndex = hasUploadPrefix ? 1 : 0;
+    const dataParts = hasUploadPrefix ? parts.slice(1) : parts;
+
+    // Need at least: make, model, year, price (minimum 4 fields)
+    if (dataParts.length < 4) {
       return {
         command: "upload",
         params: {},
         isValid: false,
         error:
-          "Format tidak lengkap. Gunakan: /upload [merk] [model] [tahun] [harga] [km] [warna] [transmisi]",
+          "Format tidak lengkap. Format: [merk] [model] [tahun] [harga] [km] [warna] [transmisi]\n\nContoh:\nToyota Avanza 2020 150000000 50000 Hitam Manual",
       };
     }
 
-    const [cmd, make, model, year, price, mileage, color, ...transmissionParts] = parts;
+    const [make, model, year, price, mileage, color, ...transmissionParts] = dataParts;
     const transmission = transmissionParts.join(" ") || "Manual";
 
     return {
@@ -191,8 +198,8 @@ export class StaffCommandService {
         model,
         year: parseInt(year),
         price: parseInt(price),
-        mileage: parseInt(mileage),
-        color,
+        mileage: parseInt(mileage || "0"),
+        color: color || "Unknown",
         transmission,
       },
       isValid: true,
@@ -374,6 +381,17 @@ export class StaffCommandService {
           width: 0, // Unknown
           height: 0, // Unknown
           isMainPhoto: true,
+        },
+      });
+    }
+
+    // Clear conversation state after successful upload
+    if (conversationId) {
+      await prisma.whatsAppConversation.update({
+        where: { id: conversationId },
+        data: {
+          conversationState: null,
+          contextData: null,
         },
       });
     }
