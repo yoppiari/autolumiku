@@ -121,7 +121,14 @@ export async function PUT(
           },
         });
       } else {
-        // Create new
+        // Create new - verify user has tenantId
+        if (!currentUser.tenantId) {
+          return NextResponse.json(
+            { error: 'User has no tenant assigned' },
+            { status: 400 }
+          );
+        }
+
         await prisma.staffWhatsAppAuth.create({
           data: {
             tenantId: currentUser.tenantId,
