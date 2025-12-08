@@ -8,6 +8,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { MessageIntent } from "./intent-classifier.service";
 
 // ==================== TYPES ====================
@@ -390,8 +391,8 @@ export class StaffCommandService {
       await prisma.whatsAppConversation.update({
         where: { id: conversationId },
         data: {
-          conversationState: null,
-          contextData: null,
+          conversationState: Prisma.JsonNull,
+          contextData: Prisma.JsonNull,
         },
       });
     }
