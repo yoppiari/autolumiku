@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 
+// Force dynamic rendering since we use headers()
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   try {
     // Check if this is a custom domain (tenant site) or platform domain
