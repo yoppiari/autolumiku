@@ -51,10 +51,13 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
+      # Middleware definition
+      - "traefik.http.middlewares.autolumiku-redirect-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.autolumiku-redirect-https.redirectscheme.permanent=true"
       # HTTP Router (redirects to HTTPS) - supports both domains
       - "traefik.http.routers.autolumiku-http.rule=Host(`auto.lumiku.com`) || Host(`primamobil.id`)"
       - "traefik.http.routers.autolumiku-http.entrypoints=http"
-      - "traefik.http.routers.autolumiku-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.autolumiku-http.middlewares=autolumiku-redirect-https"
       # HTTPS Router - supports both domains
       - "traefik.http.routers.autolumiku-https.rule=Host(`auto.lumiku.com`) || Host(`primamobil.id`)"
       - "traefik.http.routers.autolumiku-https.entrypoints=https"
