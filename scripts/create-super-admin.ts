@@ -15,7 +15,6 @@ async function main() {
     update: {
       passwordHash,
       role: 'super_admin',
-      tenantId: null,
       emailVerified: true,
     },
     create: {
@@ -25,7 +24,6 @@ async function main() {
       lastName: 'Admin',
       phone: '+62-800-000-0000',
       role: 'super_admin',
-      tenantId: null,
       emailVerified: true,
     },
   });
