@@ -342,22 +342,6 @@ export default function WhatsAppAIDashboard() {
               Configure →
             </div>
           </Link>
-
-          <Link
-            href="/dashboard/whatsapp-ai/staff"
-            className="group bg-white p-6 rounded-xl shadow-sm border-2 border-gray-200 hover:border-green-400 hover:shadow-lg transition-all"
-          >
-            <div className="text-4xl mb-3">👥</div>
-            <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-green-600 transition-colors">
-              Staff Access
-            </h3>
-            <p className="text-sm text-gray-600">
-              Manage staff permissions for WhatsApp commands
-            </p>
-            <div className="mt-4 text-green-600 text-sm font-medium group-hover:translate-x-1 transition-transform inline-block">
-              Manage staff →
-            </div>
-          </Link>
         </div>
       )}
 
