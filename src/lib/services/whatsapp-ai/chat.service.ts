@@ -474,7 +474,7 @@ Aturan Penting:
       },
       include: {
         photos: {
-          where: { isPrimary: true },
+          where: { isMainPhoto: true },
           take: 1,
         },
       },
