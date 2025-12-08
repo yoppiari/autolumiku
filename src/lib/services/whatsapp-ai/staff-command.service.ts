@@ -391,8 +391,8 @@ export class StaffCommandService {
       await prisma.whatsAppConversation.update({
         where: { id: conversationId },
         data: {
-          conversationState: Prisma.JsonNull,
-          contextData: Prisma.JsonNull,
+          conversationState: null,
+          contextData: Prisma.DbNull,
         },
       });
     }
