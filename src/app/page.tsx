@@ -1,8 +1,6 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export default async function HomePage() {
   // Check if this is a custom domain (tenant site) or platform domain
