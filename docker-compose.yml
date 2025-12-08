@@ -58,11 +58,13 @@ services:
       - "traefik.http.routers.autolumiku-http.rule=Host(`auto.lumiku.com`) || Host(`primamobil.id`)"
       - "traefik.http.routers.autolumiku-http.entrypoints=http"
       - "traefik.http.routers.autolumiku-http.middlewares=autolumiku-redirect-https"
+      - "traefik.http.routers.autolumiku-http.service=autolumiku"
       # HTTPS Router - supports both domains
       - "traefik.http.routers.autolumiku-https.rule=Host(`auto.lumiku.com`) || Host(`primamobil.id`)"
       - "traefik.http.routers.autolumiku-https.entrypoints=https"
       - "traefik.http.routers.autolumiku-https.tls=true"
       - "traefik.http.routers.autolumiku-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.autolumiku-https.service=autolumiku"
       # Service
       - "traefik.http.services.autolumiku.loadbalancer.server.port=3000"
     env_file:
