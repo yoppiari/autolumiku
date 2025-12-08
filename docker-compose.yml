@@ -67,6 +67,7 @@ services:
       - "traefik.http.routers.autolumiku-https.service=autolumiku"
       # Service
       - "traefik.http.services.autolumiku.loadbalancer.server.port=3000"
+      - "traefik.docker.network=coolify"
     env_file:
       - .env
     environment:
