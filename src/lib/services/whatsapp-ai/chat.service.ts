@@ -27,6 +27,7 @@ export interface ChatResponse {
   shouldEscalate: boolean;
   confidence: number;
   processingTime: number;
+  images?: Array<{ imageUrl: string; caption?: string }>; // Optional vehicle images
 }
 
 // ==================== WHATSAPP AI CHAT SERVICE ====================
@@ -205,11 +206,19 @@ export class WhatsAppAIChatService {
 
       const processingTime = Date.now() - startTime;
 
+      // Detect if user is asking for photos/images
+      const images = await this.detectAndFetchVehicleImages(
+        userMessage,
+        aiResponse.content,
+        context.tenantId
+      );
+
       return {
         message: aiResponse.content,
         shouldEscalate,
         confidence: 0.85, // Simplified - bisa dikembangkan dengan analysis lebih lanjut
         processingTime,
+        ...(images && images.length > 0 && { images }),
       };
     } catch (error: any) {
       console.error("[WhatsApp AI Chat] ❌ ERROR generating response:");
@@ -397,6 +406,96 @@ Aturan Penting:
         aiResponse.toLowerCase().includes("diskon"));
 
     return hasUncertainty || isPriceNegotiation;
+  }
+
+  /**
+   * Detect if user is asking for images and fetch vehicle photos
+   */
+  private static async detectAndFetchVehicleImages(
+    userMessage: string,
+    aiResponse: string,
+    tenantId: string
+  ): Promise<Array<{ imageUrl: string; caption?: string }> | null> {
+    // Keywords that indicate user wants to see images
+    const imageRequestKeywords = [
+      /\b(foto|photo|gambar|pic|picture|image)\b/i,
+      /\b(lihat|tampil|tunjuk|perlihat|kirim|show)\b.*\b(foto|gambar|photo)\b/i,
+      /\bada foto\b/i,
+      /\bfoto.*nya\b/i,
+      /\bpenampakan\b/i,
+    ];
+
+    const isAskingForImages = imageRequestKeywords.some(pattern =>
+      pattern.test(userMessage)
+    );
+
+    if (!isAskingForImages) {
+      console.log('[WhatsApp AI Chat] User not requesting images');
+      return null;
+    }
+
+    console.log('[WhatsApp AI Chat] 📸 User is asking for vehicle images');
+
+    // Extract vehicle brand/model from user message or AI response
+    const vehicleBrands = ['toyota', 'honda', 'suzuki', 'daihatsu', 'mitsubishi', 'nissan', 'mazda', 'bmw', 'mercedes', 'mercy'];
+    const vehicleModels = ['avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'terios', 'rush', 'innova', 'fortuner', 'pajero', 'alphard', 'civic', 'accord'];
+
+    let searchTerms: string[] = [];
+    const combinedText = (userMessage + ' ' + aiResponse).toLowerCase();
+
+    // Extract matching brands and models
+    vehicleBrands.forEach(brand => {
+      if (combinedText.includes(brand)) {
+        searchTerms.push(brand);
+      }
+    });
+
+    vehicleModels.forEach(model => {
+      if (combinedText.includes(model)) {
+        searchTerms.push(model);
+      }
+    });
+
+    console.log('[WhatsApp AI Chat] Search terms for vehicles:', searchTerms);
+
+    // Query vehicles with photos
+    const vehicles = await prisma.vehicle.findMany({
+      where: {
+        tenantId,
+        status: 'available',
+        ...(searchTerms.length > 0 && {
+          OR: searchTerms.map(term => ({
+            OR: [
+              { make: { contains: term, mode: 'insensitive' } },
+              { model: { contains: term, mode: 'insensitive' } },
+            ]
+          }))
+        }),
+      },
+      include: {
+        photos: {
+          where: { isPrimary: true },
+          take: 1,
+        },
+      },
+      take: 3, // Max 3 vehicles to avoid spamming
+    });
+
+    if (vehicles.length === 0 || !vehicles.some(v => v.photos.length > 0)) {
+      console.log('[WhatsApp AI Chat] No vehicles with photos found');
+      return null;
+    }
+
+    // Build image array
+    const images = vehicles
+      .filter(v => v.photos.length > 0)
+      .map(v => ({
+        imageUrl: v.photos[0].photoUrl,
+        caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage}km • ${v.transmissionType} • ${v.color}`,
+      }));
+
+    console.log(`[WhatsApp AI Chat] Found ${images.length} vehicle images to send`);
+    return images.length > 0 ? images : null;
   }
 
   /**

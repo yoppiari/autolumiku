@@ -96,6 +96,7 @@ export class MessageOrchestratorService {
       // 4. Route based on intent
       let responseMessage: string | undefined;
       let escalated = false;
+      let responseImages: Array<{ imageUrl: string; caption?: string }> | undefined;
 
       if (classification.isStaff) {
         // Handle staff command
@@ -121,18 +122,23 @@ export class MessageOrchestratorService {
         );
         responseMessage = result.message;
         escalated = result.escalated;
+        responseImages = result.images;
         console.log(`[Orchestrator] AI response generated: ${responseMessage?.substring(0, 50)}...`);
+        if (responseImages) {
+          console.log(`[Orchestrator] AI also generated ${responseImages.length} images to send`);
+        }
       }
 
       // 5. Send response if generated
-      if (responseMessage) {
+      if (responseMessage || responseImages) {
         console.log(`[Orchestrator] Sending response to ${incoming.from}`);
         await this.sendResponse(
           incoming.accountId,
           incoming.from,
           responseMessage,
           conversation.id,
-          classification.intent
+          classification.intent,
+          responseImages
         );
         console.log(`[Orchestrator] Response sent successfully`);
       } else {
@@ -301,7 +307,7 @@ export class MessageOrchestratorService {
     conversation: any,
     intent: MessageIntent,
     message: string
-  ): Promise<{ message: string; escalated: boolean }> {
+  ): Promise<{ message: string; escalated: boolean; images?: Array<{ imageUrl: string; caption?: string }> }> {
     try {
       // Get conversation history
       const messageHistory = await WhatsAppAIChatService.getConversationHistory(
@@ -325,6 +331,7 @@ export class MessageOrchestratorService {
       return {
         message: aiResponse.message,
         escalated: aiResponse.shouldEscalate,
+        ...(aiResponse.images && { images: aiResponse.images }),
       };
     } catch (error: any) {
       console.error("[Message Orchestrator] AI response error:", error);
@@ -344,7 +351,8 @@ export class MessageOrchestratorService {
     to: string,
     message: string,
     conversationId: string,
-    intent: MessageIntent
+    intent: MessageIntent,
+    images?: Array<{ imageUrl: string; caption?: string }>
   ) {
     console.log("=".repeat(80));
     console.log(`[Orchestrator sendResponse] Starting send...`);
@@ -370,22 +378,59 @@ export class MessageOrchestratorService {
       console.log(`[Orchestrator sendResponse] Status: ${account.connectionStatus}`);
       console.log(`[Orchestrator sendResponse] Active: ${account.isActive}`);
 
-      // Send via Aimeow
-      console.log(`[Orchestrator sendResponse] Calling AimeowClientService.sendMessage...`);
-      const result = await AimeowClientService.sendMessage({
-        clientId: account.clientId,
-        to,
-        message,
-      });
+      // Send text message via Aimeow
+      let result: any;
+      if (message) {
+        console.log(`[Orchestrator sendResponse] Calling AimeowClientService.sendMessage...`);
+        result = await AimeowClientService.sendMessage({
+          clientId: account.clientId,
+          to,
+          message,
+        });
 
-      console.log(`[Orchestrator sendResponse] Send result:`, JSON.stringify(result, null, 2));
+        console.log(`[Orchestrator sendResponse] Send result:`, JSON.stringify(result, null, 2));
 
-      if (!result.success) {
-        console.error(`[Orchestrator sendResponse] ❌ Send FAILED: ${result.error}`);
-        throw new Error(result.error || "Failed to send message");
+        if (!result.success) {
+          console.error(`[Orchestrator sendResponse] ❌ Send FAILED: ${result.error}`);
+          throw new Error(result.error || "Failed to send message");
+        }
+
+        console.log(`[Orchestrator sendResponse] ✅ Text message sent SUCCESS!`);
       }
 
-      console.log(`[Orchestrator sendResponse] ✅ Send SUCCESS!`);
+      // Send images if provided
+      if (images && images.length > 0) {
+        console.log(`[Orchestrator sendResponse] Sending ${images.length} images...`);
+
+        if (images.length === 1) {
+          // Send single image
+          const imageResult = await AimeowClientService.sendImage(
+            account.clientId,
+            to,
+            images[0].imageUrl,
+            images[0].caption
+          );
+
+          if (!imageResult.success) {
+            console.error(`[Orchestrator sendResponse] ❌ Image send FAILED: ${imageResult.error}`);
+          } else {
+            console.log(`[Orchestrator sendResponse] ✅ Image sent SUCCESS!`);
+          }
+        } else {
+          // Send multiple images
+          const imagesResult = await AimeowClientService.sendImages(
+            account.clientId,
+            to,
+            images
+          );
+
+          if (!imagesResult.success) {
+            console.error(`[Orchestrator sendResponse] ❌ Images send FAILED: ${imagesResult.error}`);
+          } else {
+            console.log(`[Orchestrator sendResponse] ✅ ${images.length} images sent SUCCESS!`);
+          }
+        }
+      }
 
       // Save outbound message
       const conversation = await prisma.whatsAppConversation.findUnique({

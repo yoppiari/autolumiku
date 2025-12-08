@@ -351,6 +351,102 @@ export class AimeowClientService {
   }
 
   /**
+   * Send single image via WhatsApp
+   */
+  static async sendImage(
+    clientId: string,
+    to: string,
+    imageUrl: string,
+    caption?: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Send Image] Sending image to ${to}`);
+      console.log(`[Aimeow Send Image] Image URL: ${imageUrl}`);
+      console.log(`[Aimeow Send Image] Caption: ${caption || 'none'}`);
+
+      const payload = {
+        phone: to,
+        imageUrl,
+        ...(caption && { caption }),
+      };
+
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/send-image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Aimeow Send Image] Error: ${errorText}`);
+        throw new Error(`Failed to send image: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log(`[Aimeow Send Image] Success:`, data);
+
+      return {
+        success: true,
+        messageId: data.messageId || `img_${Date.now()}`,
+      };
+    } catch (error: any) {
+      console.error(`[Aimeow Send Image] Error:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Send multiple images via WhatsApp
+   */
+  static async sendImages(
+    clientId: string,
+    to: string,
+    images: Array<{ imageUrl: string; caption?: string }>
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Send Images] Sending ${images.length} images to ${to}`);
+
+      const payload = {
+        phone: to,
+        images,
+      };
+
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/send-images`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Aimeow Send Images] Error: ${errorText}`);
+        throw new Error(`Failed to send images: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log(`[Aimeow Send Images] Success:`, data);
+
+      return {
+        success: true,
+        messageId: data.messageId || `imgs_${Date.now()}`,
+      };
+    } catch (error: any) {
+      console.error(`[Aimeow Send Images] Error:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
    * Disconnect WhatsApp client
    */
   static async disconnectClient(clientId: string): Promise<boolean> {
