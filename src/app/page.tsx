@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 export default async function HomePage() {
   try {
     // Check if this is a custom domain (tenant site) or platform domain
-    const headersList = await headers();
+    const headersList = headers();
     const tenantDomain = headersList.get('x-tenant-domain');
     const host = headersList.get('host') || '';
 
