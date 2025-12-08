@@ -462,7 +462,7 @@ Aturan Penting:
     const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId,
-        status: 'available',
+        status: 'AVAILABLE',
         ...(searchTerms.length > 0 && {
           OR: searchTerms.map(term => ({
             OR: [
