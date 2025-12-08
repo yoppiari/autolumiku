@@ -17,6 +17,12 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || 'localhost:3000';
 
+  // Handle root path - redirect to login
+  if (pathname === '/') {
+    console.log('[Middleware] Root path detected, redirecting to /login');
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   // Skip middleware for:
   // - API routes (handled separately)
   // - Static files
