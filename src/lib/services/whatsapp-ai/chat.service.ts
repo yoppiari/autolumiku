@@ -490,7 +490,7 @@ Aturan Penting:
     const images = vehicles
       .filter(v => v.photos.length > 0)
       .map(v => ({
-        imageUrl: v.photos[0].photoUrl,
+        imageUrl: v.photos[0].mediumUrl,
         caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage}km • ${v.transmissionType} • ${v.color}`,
       }));
 
