@@ -32,19 +32,6 @@ export async function middleware(request: NextRequest) {
   const isCustomDomain = !!tenantSlug;
   const isPlatformDomain = cleanHost.includes('auto.lumiku.com');
 
-  // Handle root path
-  if (pathname === '/') {
-    if (isCustomDomain) {
-      // Custom domain: redirect to catalog
-      console.log(`[Middleware] Custom domain ${cleanHost} detected, redirecting to catalog`);
-      return NextResponse.redirect(new URL(`/catalog/${tenantSlug}`, request.url));
-    } else if (isPlatformDomain || cleanHost.includes('localhost') || cleanHost.includes('127.0.0.1')) {
-      // Platform domain: redirect to login
-      console.log('[Middleware] Platform domain detected, redirecting to /login');
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
   // Skip middleware for:
   // - API routes (handled separately)
   // - Static files
@@ -58,6 +45,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/admin') ||
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/team') ||
+    pathname.startsWith('/login') ||
     pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff|woff2|ttf|eot)$/)
   ) {
     return NextResponse.next();
@@ -78,6 +66,26 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-tenant-domain', cleanHost);
 
+  // Handle custom domain routing with URL rewriting
+  if (isCustomDomain) {
+    // Set custom headers for downstream detection
+    requestHeaders.set('x-tenant-slug', tenantSlug);
+    requestHeaders.set('x-is-custom-domain', 'true');
+    requestHeaders.set('x-original-path', pathname);
+
+    // Rewrite URL to internal catalog structure
+    // This is invisible to the user - they see clean URLs
+    const catalogPath = `/catalog/${tenantSlug}${pathname}`;
+    console.log(`[Middleware] Custom domain ${cleanHost} - Rewriting ${pathname} → ${catalogPath}`);
+
+    return NextResponse.rewrite(new URL(catalogPath, request.url), {
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  // Platform domain: pass through with headers
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,

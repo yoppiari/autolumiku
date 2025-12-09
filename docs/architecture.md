@@ -1366,6 +1366,327 @@ This architecture provides a solid foundation for building autolumiku as a scala
 1. Epic breakdown from architecture decisions
 2. Implementation readiness validation
 3. Sprint planning for development execution
+## Dual Domain Routing Architecture (v1.1)
+
+### Overview
+
+**Decision Date:** 2025-12-09
+**Version:** 1.1
+**Status:** Approved for Implementation
+
+The platform supports two distinct domain routing strategies to optimize both platform multi-tenancy and custom domain SEO:
+
+1. **Platform Domain** (`auto.lumiku.com`): Multi-tenant structure with slug-based routing
+2. **Custom Domains** (`primamobil.id`): Clean URLs without slug for SEO optimization
+
+### Problem Statement
+
+**Previous Implementation:**
+Custom domains redirected to catalog routes with tenant slug:
+```
+https://primamobil.id/ → 307 redirect → https://primamobil.id/catalog/primamobil
+```
+
+**Issues:**
+1. **SEO Suboptimal:** 307 redirects penalize search rankings
+2. **User Experience:** Unnatural URLs visible to customers
+3. **Duplicate Content Risk:** Same content accessible via multiple URLs
+4. **Canonical URL Conflicts:** Unclear canonical URL for search engines
+
+### Architecture Decision
+
+**Solution:** Middleware-based URL rewriting without route duplication
+
+**Platform Domain Behavior:**
+```
+https://auto.lumiku.com/               → /login (no tenant context)
+https://auto.lumiku.com/catalog/primamobil     → Shows Primamobil catalog
+https://auto.lumiku.com/catalog/primamobil/vehicles → Vehicle listings
+```
+
+**Custom Domain Behavior:**
+```
+https://primamobil.id/                 → Rewrites to /catalog/primamobil (invisible)
+https://primamobil.id/vehicles         → Rewrites to /catalog/primamobil/vehicles
+https://primamobil.id/blog/post-123    → Rewrites to /catalog/primamobil/blog/post-123
+```
+
+### Technical Implementation
+
+#### 1. Domain Detection (middleware.ts)
+
+```typescript
+// Domain to tenant slug mapping
+const domainToSlug: Record<string, string> = {
+  'primamobil.id': 'primamobil',
+  'www.primamobil.id': 'primamobil',
+  // Additional custom domains added dynamically
+};
+
+const cleanHost = request.headers.get('host')?.split(':')[0];
+const tenantSlug = domainToSlug[cleanHost];
+const isCustomDomain = !!tenantSlug;
+const isPlatformDomain = cleanHost.includes('auto.lumiku.com');
+```
+
+#### 2. URL Rewriting Strategy
+
+**For Custom Domains:**
+```typescript
+if (isCustomDomain) {
+  // Set headers for downstream use
+  requestHeaders.set('x-tenant-slug', tenantSlug);
+  requestHeaders.set('x-is-custom-domain', 'true');
+  requestHeaders.set('x-original-path', pathname);
+
+  // Rewrite URL to internal catalog structure
+  const catalogPath = `/catalog/${tenantSlug}${pathname}`;
+  return NextResponse.rewrite(new URL(catalogPath, request.url), {
+    request: { headers: requestHeaders },
+  });
+}
+```
+
+**For Platform Domain:**
+```typescript
+// No rewriting - use existing routes as-is
+return NextResponse.next();
+```
+
+#### 3. SEO Metadata Generation
+
+**Dynamic Canonical URLs:**
+```typescript
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const headersList = headers();
+  const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
+  const originalPath = headersList.get('x-original-path') || '';
+
+  const canonicalUrl = isCustomDomain
+    ? `https://${tenant.domain}${originalPath}` // Clean URL
+    : `https://auto.lumiku.com/catalog/${tenant.slug}${originalPath}`; // Platform URL
+
+  return {
+    title: `${vehicle.make} ${vehicle.model} | ${tenant.name}`,
+    description: vehicle.descriptionId,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      url: canonicalUrl,
+      // ... other OG tags
+    },
+  };
+}
+```
+
+#### 4. URL Helper Utilities
+
+**Purpose:** Generate correct URLs in components based on domain context
+
+```typescript
+// src/lib/utils/url-helper.ts
+import { headers } from 'next/headers';
+
+export function getCatalogUrl(path: string = ''): string {
+  const headersList = headers();
+  const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
+  const tenantSlug = headersList.get('x-tenant-slug') || '';
+
+  if (isCustomDomain) {
+    // Custom domain: clean URLs
+    return path.startsWith('/') ? path : `/${path}`;
+  } else {
+    // Platform domain: slug-based URLs
+    const base = `/catalog/${tenantSlug}`;
+    return path ? `${base}/${path}` : base;
+  }
+}
+
+export function getVehicleUrl(vehicleId: string): string {
+  return getCatalogUrl(`vehicles/${vehicleId}`);
+}
+
+export function getBlogUrl(postSlug: string): string {
+  return getCatalogUrl(`blog/${postSlug}`);
+}
+```
+
+#### 5. Sitemap Generation
+
+**Dynamic per domain:**
+```typescript
+// src/app/sitemap.ts
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const headersList = headers();
+  const tenantDomain = headersList.get('x-tenant-domain');
+
+  if (!tenantDomain) {
+    return []; // Platform domain doesn't generate sitemap
+  }
+
+  const tenant = await getTenantByDomain(tenantDomain);
+  const vehicles = await getVehiclesByTenant(tenant.id);
+  const posts = await getBlogPostsByTenant(tenant.id);
+
+  return [
+    {
+      url: `https://${tenant.domain}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1,
+    },
+    {
+      url: `https://${tenant.domain}/vehicles`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.9,
+    },
+    ...vehicles.map(v => ({
+      url: `https://${tenant.domain}/vehicles/${v.id}`,
+      lastModified: v.updatedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
+    ...posts.map(p => ({
+      url: `https://${tenant.domain}/blog/${p.slug}`,
+      lastModified: p.updatedAt,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
+  ];
+}
+```
+
+#### 6. Robots.txt
+
+**Domain-specific rules:**
+```typescript
+// src/app/robots.ts
+export default function robots(): MetadataRoute.Robots {
+  const headersList = headers();
+  const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
+  const tenantDomain = headersList.get('x-tenant-domain');
+
+  if (isCustomDomain && tenantDomain) {
+    return {
+      rules: {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/api/', '/dashboard/'],
+      },
+      sitemap: `https://${tenantDomain}/sitemap.xml`,
+    };
+  }
+
+  // Platform domain - restrict crawling
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/catalog/',
+      disallow: ['/', '/admin/', '/dashboard/', '/api/'],
+    },
+  };
+}
+```
+
+### Rationale & Trade-offs
+
+| Aspect | Decision | Rationale | Trade-off |
+|--------|----------|-----------|-----------|
+| **URL Rewriting vs Route Duplication** | URL Rewriting | No code duplication, single source of truth | Slight middleware overhead |
+| **Canonical URLs** | Domain-specific | Better SEO, clear canonical signals | Requires header-based detection |
+| **Sitemap Strategy** | Per-domain generation | Search engines get clean URLs | Dynamic generation per request |
+| **Domain Mapping** | Middleware-based | Centralized configuration | Must update middleware for new domains |
+
+### SEO Benefits
+
+1. **Clean URLs:** `https://primamobil.id/vehicles/123` vs `https://primamobil.id/catalog/primamobil/vehicles/123`
+2. **No Redirects:** Direct content serving, no 307 redirect penalty
+3. **Proper Canonicalization:** Clear canonical URL per domain
+4. **Improved Crawlability:** Search engines see natural URL structure
+5. **Better User Sharing:** Shareable URLs without platform artifacts
+
+### Migration Path
+
+**Phase 1:** Enhance Middleware (Week 1)
+- Add URL rewriting logic for custom domains
+- Set custom headers for downstream detection
+- Keep platform domain routing unchanged
+
+**Phase 2:** Update SEO Metadata (Week 1)
+- Modify `catalog/[slug]/layout.tsx` for canonical URLs
+- Update all page metadata functions
+- Test with Google Search Console
+
+**Phase 3:** URL Helper Integration (Week 2)
+- Create `url-helper.ts` utility
+- Update components to use helper
+- Ensure consistent URL generation
+
+**Phase 4:** SEO Files (Week 2)
+- Implement dynamic `sitemap.ts`
+- Implement domain-specific `robots.ts`
+- Submit sitemaps to search engines
+
+### Testing Strategy
+
+**Manual Testing:**
+1. Platform domain access: `https://auto.lumiku.com/catalog/primamobil`
+2. Custom domain access: `https://primamobil.id/`
+3. Verify same content rendered
+4. Check canonical URLs in HTML head
+5. Verify sitemap.xml generation
+6. Test robots.txt responses
+
+**Automated Tests:**
+```typescript
+describe('Dual Routing Architecture', () => {
+  test('Platform domain shows catalog with slug', async () => {
+    const response = await fetch('https://auto.lumiku.com/catalog/primamobil');
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain('canonical" href="https://auto.lumiku.com/catalog/primamobil');
+  });
+
+  test('Custom domain rewrites to catalog', async () => {
+    const response = await fetch('https://primamobil.id/');
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain('canonical" href="https://primamobil.id/');
+  });
+
+  test('Custom domain sitemap uses clean URLs', async () => {
+    const response = await fetch('https://primamobil.id/sitemap.xml');
+    const xml = await response.text();
+    expect(xml).toContain('<loc>https://primamobil.id/vehicles/');
+    expect(xml).not.toContain('/catalog/');
+  });
+});
+```
+
+### Performance Considerations
+
+**Middleware Overhead:**
+- URL rewriting adds ~2-5ms per request
+- Headers caching reduces repeated lookups
+- Edge runtime ensures minimal latency
+
+**CDN Integration:**
+- Cache-Control headers respect domain context
+- Vary header: `Host` for domain-specific caching
+- Cloudflare/Traefik cache keys include domain
+
+### Future Enhancements
+
+1. **Dynamic Domain Mapping:** Database-driven domain configuration
+2. **Subdomain Support:** `www.primamobil.id`, `m.primamobil.id`
+3. **Multi-language URLs:** `/id/kendaraan`, `/en/vehicles`
+4. **Wildcard Domains:** `*.autolumiku.com` for tenant subdomains
+5. **AMP Pages:** Separate AMP URLs for mobile SEO
+
+---
+
 ## Authentication & Routing Architecture
 
 ### **CRITICAL ROUTING RULES - DO NOT MODIFY**
