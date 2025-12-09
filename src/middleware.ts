@@ -39,6 +39,7 @@ export async function middleware(request: NextRequest) {
   // - Dashboard
   // - Auth routes
   // - Next.js internals
+  // - Catalog routes (already in correct format)
   if (
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
@@ -46,6 +47,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/team') ||
     pathname.startsWith('/login') ||
+    pathname.startsWith('/catalog/') ||
     pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff|woff2|ttf|eot)$/)
   ) {
     return NextResponse.next();
