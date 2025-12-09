@@ -18,6 +18,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  getCatalogUrl,
+  getVehiclesUrl,
+  getVehicleUrl,
+  getBlogsUrl,
+  getBlogUrl,
+  getContactUrl,
+} from '@/lib/utils/url-helper';
 
 const prisma = new PrismaClient();
 
@@ -185,7 +193,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-3xl font-bold text-foreground">Kendaraan Terbaru</h2>
                 <Button asChild variant="outline">
-                  <Link href={`/catalog/${tenant.slug}/vehicles`}>Lihat Semua →</Link>
+                  <Link href={getVehiclesUrl()}>Lihat Semua →</Link>
                 </Button>
               </div>
 
@@ -226,7 +234,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                       </CardContent>
                       <CardFooter className="p-4 pt-0">
                         <Button asChild className="w-full">
-                          <Link href={`/catalog/${tenant.slug}/vehicles/${vehicle.id}`}>Lihat Detail</Link>
+                          <Link href={getVehicleUrl(vehicle.id)}>Lihat Detail</Link>
                         </Button>
                       </CardFooter>
                     </Card>
@@ -243,7 +251,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                 <div className="flex justify-between items-center mb-8">
                   <h2 className="text-3xl font-bold text-foreground">Artikel Terbaru</h2>
                   <Button asChild variant="outline">
-                    <Link href={`/catalog/${tenant.slug}/blog`}>Lihat Semua →</Link>
+                    <Link href={getBlogsUrl()}>Lihat Semua →</Link>
                   </Button>
                 </div>
 
@@ -272,7 +280,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                       </CardContent>
                       <CardFooter className="p-4 pt-0">
                         <Button asChild variant="outline" className="w-full">
-                          <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`}>Baca Selengkapnya</Link>
+                          <Link href={getBlogUrl(post.slug)}>Baca Selengkapnya</Link>
                         </Button>
                       </CardFooter>
                     </Card>
@@ -309,7 +317,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                   </Button>
                 )}
                 <Button asChild size="lg" variant="secondary">
-                  <Link href={`/catalog/${tenant.slug}/contact`}>Lihat Lokasi Kami</Link>
+                  <Link href={getContactUrl()}>Lihat Lokasi Kami</Link>
                 </Button>
               </div>
             </div>

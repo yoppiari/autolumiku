@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FaPhone, FaWhatsapp } from 'react-icons/fa';
@@ -22,6 +22,12 @@ interface CatalogHeaderProps {
   slug?: string;
 }
 
+// Domain mapping for custom domains
+const customDomainMap: Record<string, string> = {
+  'primamobil.id': 'primamobil',
+  'www.primamobil.id': 'primamobil',
+};
+
 export default function CatalogHeader({
   branding,
   vehicleCount,
@@ -30,14 +36,34 @@ export default function CatalogHeader({
   slug
 }: CatalogHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCustomDomain, setIsCustomDomain] = useState(false);
   const pathname = usePathname();
   const tenantSlug = slug || branding.slug;
 
+  // Detect if we're on a custom domain
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      setIsCustomDomain(!!customDomainMap[hostname]);
+    }
+  }, []);
+
+  // Generate URLs based on domain context
+  const getUrl = (path: string) => {
+    if (isCustomDomain) {
+      // Custom domain: clean URLs
+      return path;
+    } else {
+      // Platform domain: include catalog prefix
+      return `/catalog/${tenantSlug}${path}`;
+    }
+  };
+
   const navLinks = [
-    { href: `/catalog/${tenantSlug}`, label: 'Home' },
-    { href: `/catalog/${tenantSlug}/vehicles`, label: 'Mobil' }, // Assuming this route exists or will exist
-    { href: `/catalog/${tenantSlug}/blog`, label: 'Blog' },
-    { href: `/catalog/${tenantSlug}/contact`, label: 'Contact' },
+    { href: getUrl(''), label: 'Home' },
+    { href: getUrl('/vehicles'), label: 'Mobil' },
+    { href: getUrl('/blog'), label: 'Blog' },
+    { href: getUrl('/contact'), label: 'Contact' },
   ];
 
   const isActive = (path: string) => {
@@ -66,7 +92,7 @@ export default function CatalogHeader({
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo & Name */}
-          <Link href={`/catalog/${tenantSlug}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link href={getUrl('')} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             {branding.logoUrl ? (
               <img
                 src={branding.logoUrl}
