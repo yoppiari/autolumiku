@@ -68,19 +68,17 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-tenant-domain', cleanHost);
 
-  // Handle custom domain routing with URL rewriting
+  // Handle custom domain routing
   if (isCustomDomain) {
     // Set custom headers for downstream detection
     requestHeaders.set('x-tenant-slug', tenantSlug);
     requestHeaders.set('x-is-custom-domain', 'true');
     requestHeaders.set('x-original-path', pathname);
 
-    // Rewrite URL to internal catalog structure
-    // This is invisible to the user - they see clean URLs
-    const catalogPath = `/catalog/${tenantSlug}${pathname}`;
-    console.log(`[Middleware] Custom domain ${cleanHost} - Rewriting ${pathname} → ${catalogPath}`);
+    console.log(`[Middleware] Custom domain ${cleanHost} - Path: ${pathname}`);
 
-    return NextResponse.rewrite(new URL(catalogPath, request.url), {
+    // Pass through with headers, let root routes handle rendering
+    return NextResponse.next({
       request: {
         headers: requestHeaders,
       },
