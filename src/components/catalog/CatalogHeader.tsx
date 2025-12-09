@@ -7,12 +7,6 @@ import { FaPhone, FaWhatsapp } from 'react-icons/fa';
 import { Menu, X } from 'lucide-react';
 import GlobalSearch from '@/components/catalog/GlobalSearch';
 import { Button } from '@/components/ui/button';
-import {
-  getCatalogUrl,
-  getVehiclesUrl,
-  getBlogsUrl,
-  getContactUrl
-} from '@/lib/utils/url-helper';
 
 interface CatalogHeaderProps {
   branding: {
@@ -26,6 +20,7 @@ interface CatalogHeaderProps {
   phoneNumber?: string;
   whatsappNumber?: string;
   slug?: string;
+  isCustomDomain?: boolean;
 }
 
 export default function CatalogHeader({
@@ -33,17 +28,29 @@ export default function CatalogHeader({
   vehicleCount,
   phoneNumber,
   whatsappNumber,
-  slug
+  slug,
+  isCustomDomain = false
 }: CatalogHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const tenantSlug = slug || branding.slug;
 
+  // Generate URLs based on domain context
+  const getUrl = (path: string) => {
+    if (isCustomDomain) {
+      // Custom domain: clean URLs
+      return path;
+    } else {
+      // Platform domain: include catalog prefix
+      return `/catalog/${tenantSlug}${path}`;
+    }
+  };
+
   const navLinks = [
-    { href: getCatalogUrl(), label: 'Home' },
-    { href: getVehiclesUrl(), label: 'Mobil' },
-    { href: getBlogsUrl(), label: 'Blog' },
-    { href: getContactUrl(), label: 'Contact' },
+    { href: getUrl(''), label: 'Home' },
+    { href: getUrl('/vehicles'), label: 'Mobil' },
+    { href: getUrl('/blog'), label: 'Blog' },
+    { href: getUrl('/contact'), label: 'Contact' },
   ];
 
   const isActive = (path: string) => {
@@ -72,7 +79,7 @@ export default function CatalogHeader({
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo & Name */}
-          <Link href={getCatalogUrl()} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link href={getUrl('')} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             {branding.logoUrl ? (
               <img
                 src={branding.logoUrl}
