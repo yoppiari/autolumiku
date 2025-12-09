@@ -11,7 +11,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     if (!tenant) return {};
 
     // Generate canonical URL based on domain context
-    const canonicalUrl = getCanonicalUrl(tenant, '');
+    const canonicalUrl = getCanonicalUrl(
+        {
+            domain: tenant.domain || `${tenant.slug}.autolumiku.com`,
+            slug: tenant.slug
+        },
+        ''
+    );
 
     return {
         title: {
