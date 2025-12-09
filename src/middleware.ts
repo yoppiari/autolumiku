@@ -23,8 +23,8 @@ export async function middleware(request: NextRequest) {
   // Custom domain to slug mapping
   // TODO: Move to database or environment variable for dynamic mapping
   const domainToSlug: Record<string, string> = {
-    'primamobil.id': 'primamobil',
-    'www.primamobil.id': 'primamobil',
+    'primamobil.id': 'primamobil-id',
+    'www.primamobil.id': 'primamobil-id',
   };
 
   // Check if this is a custom tenant domain

@@ -24,8 +24,8 @@ interface CatalogHeaderProps {
 
 // Domain mapping for custom domains
 const customDomainMap: Record<string, string> = {
-  'primamobil.id': 'primamobil',
-  'www.primamobil.id': 'primamobil',
+  'primamobil.id': 'primamobil-id',
+  'www.primamobil.id': 'primamobil-id',
 };
 
 export default function CatalogHeader({
