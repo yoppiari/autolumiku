@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { getCanonicalUrl } from '@/lib/utils/url-helper';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
     const tenant = await prisma.tenant.findUnique({
@@ -10,14 +9,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
     if (!tenant) return {};
 
+    // Get headers to determine domain context
+    const headersList = headers();
+    const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
+    const originalPath = headersList.get('x-original-path') || '';
+
     // Generate canonical URL based on domain context
-    const canonicalUrl = getCanonicalUrl(
-        {
-            domain: tenant.domain || `${tenant.slug}.autolumiku.com`,
-            slug: tenant.slug
-        },
-        ''
-    );
+    const canonicalUrl = isCustomDomain
+        ? `https://${tenant.domain}${originalPath}`
+        : `https://auto.lumiku.com/catalog/${tenant.slug}`;
 
     return {
         title: {
