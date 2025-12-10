@@ -86,19 +86,23 @@ export default async function TenantLayout({
     const cssVariables = generateCSSVariables(themeDef, mode);
 
     return (
-        <html lang="id" className={mode}>
-            <head>
-                {/* Critical CSS Injection to prevent FOUC */}
-                <style
-                    id="server-side-theme"
-                    dangerouslySetInnerHTML={{
-                        __html: `:root { ${cssVariables} }`
-                    }}
-                />
-            </head>
-            <body>
+        <>
+            {/* Critical CSS Injection to prevent FOUC */}
+            <style
+                id="server-side-theme"
+                dangerouslySetInnerHTML={{
+                    __html: `:root { ${cssVariables} }`
+                }}
+            />
+            {/* 
+                We cannot render <html> or <body> here because RootLayout already does.
+                To apply the theme class 'dark' or 'light', we apply it to a wrapper div.
+                However, for full page background, we might need to style the wrapper to cover viewport.
+                Also, Client-side next-themes will try to update <html> class.
+            */}
+            <div className={`min-h-screen ${mode} bg-background text-foreground`}>
                 {children}
-            </body>
-        </html>
+            </div>
+        </>
     );
 }
