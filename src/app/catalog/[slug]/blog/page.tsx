@@ -94,47 +94,55 @@ export default async function BlogPage({ params }: { params: { slug: string } })
                     </div>
 
                     {blogPosts.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                             {blogPosts.map((post) => (
-                                <Card key={post.id} className="hover:shadow-xl transition-shadow overflow-hidden flex flex-col">
-                                    {post.featuredImage && (
-                                        <CardHeader className="p-0">
-                                            <div className="aspect-video relative">
+                                <div key={post.id} className="group cursor-pointer flex flex-col h-full">
+                                    <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`} className="block">
+                                        <div className="aspect-video relative rounded-2xl overflow-hidden mb-5 bg-muted">
+                                            {post.featuredImage ? (
                                                 <img
                                                     src={post.featuredImage}
                                                     alt={post.title}
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                                 />
-                                            </div>
-                                        </CardHeader>
-                                    )}
-                                    <CardContent className="p-6 flex-1">
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                                            {post.publishedAt && (
-                                                <span>{new Date(post.publishedAt).toLocaleDateString('id-ID', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric'
-                                                })}</span>
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-500">
+                                                    No Image
+                                                </div>
                                             )}
-                                            <span>•</span>
-                                            <span>{post.authorName || 'Admin'}</span>
+                                            {/* Date Badge */}
+                                            {post.publishedAt && (
+                                                <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
+                                                    {new Date(post.publishedAt).toLocaleDateString('id-ID', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric'
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
-                                        <CardTitle className="text-xl mb-3 line-clamp-2 hover:text-primary transition-colors">
+                                    </Link>
+
+                                    <div className="flex-1 flex flex-col">
+                                        <div className="text-xs text-primary font-bold mb-2 uppercase tracking-wide">
+                                            {post.authorName || 'Redaksi'}
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-foreground mb-3 leading-tight group-hover:text-primary transition-colors">
                                             <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`}>
                                                 {post.title}
                                             </Link>
-                                        </CardTitle>
-                                        <p className="text-sm text-muted-foreground line-clamp-3">
+                                        </h3>
+                                        <p className="text-muted-foreground line-clamp-3 mb-4 flex-1">
                                             {getExcerpt(post.excerpt)}
                                         </p>
-                                    </CardContent>
-                                    <CardFooter className="p-6 pt-0 mt-auto">
-                                        <Button asChild variant="outline" className="w-full">
-                                            <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`}>Baca Selengkapnya</Link>
-                                        </Button>
-                                    </CardFooter>
-                                </Card>
+                                        <Link
+                                            href={`/catalog/${tenant.slug}/blog/${post.slug}`}
+                                            className="inline-flex items-center text-primary font-semibold hover:underline mt-auto"
+                                        >
+                                            Baca Selengkapnya
+                                        </Link>
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     ) : (

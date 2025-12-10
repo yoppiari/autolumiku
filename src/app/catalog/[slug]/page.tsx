@@ -7,6 +7,7 @@ import React from 'react';
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { PrismaClient } from '@prisma/client';
+import { FaWhatsapp } from 'react-icons/fa';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import HeroSection from '@/components/catalog/HeroSection';
@@ -195,53 +196,52 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
           <section className="py-12" id="vehicles">
             <div className="container mx-auto px-4">
               <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold text-foreground">Kendaraan Terbaru</h2>
-                <Button asChild variant="outline">
+                <h2 className="text-4xl font-bold text-foreground tracking-tight">Koleksi Pilihan</h2>
+                <Button asChild variant="ghost" className="text-primary hover:text-primary/80">
                   <Link href={getVehiclesUrl()}>Lihat Semua →</Link>
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {featuredVehicles.map((vehicle) => {
                   const mainPhoto = vehicle.photos[0];
                   return (
-                    <Card key={vehicle.id} className="hover:shadow-xl transition-shadow overflow-hidden">
-                      <CardHeader className="p-0">
-                        <div className="aspect-video relative">
-                          {mainPhoto ? (
-                            <img
-                              src={mainPhoto.thumbnailUrl || mainPhoto.originalUrl}
-                              alt={`${vehicle.make} ${vehicle.model}`}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-muted flex items-center justify-center">
-                              <span className="text-muted-foreground">No Image</span>
-                            </div>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        <CardTitle className="text-lg mb-2 line-clamp-1">
-                          {vehicle.year} {vehicle.make} {vehicle.model}
-                        </CardTitle>
-                        {vehicle.variant && (
-                          <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{vehicle.variant}</p>
+                    <div key={vehicle.id} className="group cursor-pointer">
+                      <div className="aspect-[4/3] relative rounded-2xl overflow-hidden mb-5 bg-muted">
+                        {mainPhoto ? (
+                          <img
+                            src={mainPhoto.thumbnailUrl || mainPhoto.originalUrl}
+                            alt={`${vehicle.make} ${vehicle.model}`}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            No Image
+                          </div>
                         )}
-                        <p className="text-xl font-bold text-primary">
-                          {formatPrice(vehicle.price)}
-                        </p>
-                        <div className="flex gap-2 mt-2 text-sm text-muted-foreground">
-                          {vehicle.mileage && <span>{vehicle.mileage.toLocaleString()} km</span>}
-                          {vehicle.transmissionType && <span>• {vehicle.transmissionType}</span>}
+                        {/* Interactive overlay on hover */}
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+
+                      <div className="space-y-2 px-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+                              {vehicle.make} {vehicle.model}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">{vehicle.year} • {vehicle.transmissionType || 'N/A'}</p>
+                          </div>
+                          <p className="text-xl font-bold text-primary whitespace-nowrap">
+                            {formatPrice(vehicle.price)}
+                          </p>
                         </div>
-                      </CardContent>
-                      <CardFooter className="p-4 pt-0">
-                        <Button asChild className="w-full">
-                          <Link href={getVehicleUrl(vehicle.id)}>Lihat Detail</Link>
-                        </Button>
-                      </CardFooter>
-                    </Card>
+                        <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+                          <Button asChild className="w-full rounded-full" variant="outline">
+                            <Link href={getVehicleUrl(vehicle.id)}>Lihat Detail</Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -261,7 +261,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {blogPosts.map((post) => (
-                    <Card key={post.id} className="hover:shadow-xl transition-shadow overflow-hidden">
+                    <Card key={post.id} className="hover:shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)] hover:border-primary/50 transition-all duration-300 overflow-hidden bg-card/60 backdrop-blur-sm group border-muted">
                       {post.featuredImage && (
                         <CardHeader className="p-0">
                           <div className="aspect-video relative">
@@ -309,18 +309,19 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                   <Button
                     asChild
                     size="lg"
-                    className="bg-green-600 hover:bg-green-700 text-white border-none"
+                    className="bg-black hover:bg-black/80 text-white border-none transition-colors duration-300"
                   >
                     <a
                       href={`https://wa.me/${tenant.whatsappNumber.replace(/[^0-9]/g, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
+                      <FaWhatsapp className="mr-2 h-5 w-5" />
                       Chat via WhatsApp
                     </a>
                   </Button>
                 )}
-                <Button asChild size="lg" variant="secondary">
+                <Button asChild size="lg" className="bg-black hover:bg-black/80 text-white border-none transition-colors duration-300">
                   <Link href={getContactUrl()}>Lihat Lokasi Kami</Link>
                 </Button>
               </div>

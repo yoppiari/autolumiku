@@ -7,30 +7,27 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
 
 interface ThemeProviderProps {
   tenantId: string;
   children: React.ReactNode;
-  mode?: 'light' | 'dark';
 }
 
-export default function ThemeProvider({
-  tenantId,
-  children,
-  mode = 'light',
-}: ThemeProviderProps) {
+function ThemeVariables({ tenantId }: { tenantId: string }) {
+  const { theme, resolvedTheme } = useTheme();
   const [cssVariables, setCssVariables] = useState<string>('');
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadTheme();
-  }, [tenantId, mode]);
+  }, [tenantId, resolvedTheme]); // Reload when theme mode changes
 
   const loadTheme = async () => {
     try {
       const response = await fetch(`/api/v1/catalog/theme?tenantId=${tenantId}`);
       if (response.ok) {
         const data = await response.json();
+        const mode = resolvedTheme === 'dark' ? 'dark' : 'light';
         const css = mode === 'dark' && data.data.cssDark
           ? data.data.cssDark
           : data.data.cssLight;
@@ -38,14 +35,11 @@ export default function ThemeProvider({
       }
     } catch (error) {
       console.error('Failed to load theme:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (cssVariables) {
-      // Apply CSS variables to root
       const styleId = 'theme-variables';
       let styleElement = document.getElementById(styleId) as HTMLStyleElement;
 
@@ -59,9 +53,18 @@ export default function ThemeProvider({
     }
   }, [cssVariables]);
 
-  if (loading) {
-    return <>{children}</>;
-  }
+  return null;
+}
 
-  return <>{children}</>;
+export default function ThemeProvider({
+  tenantId,
+  children,
+}: ThemeProviderProps) {
+  // Using 'class' attribute for tailwind dark mode
+  return (
+    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeVariables tenantId={tenantId} />
+      {children}
+    </NextThemesProvider>
+  );
 }

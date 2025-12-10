@@ -351,6 +351,82 @@ export const minimalTheme: ThemeDefinition = {
 };
 
 // ============================================================================
+// THEME 5: AUTOMOTIVE DARK (Prima Mobil)
+// ============================================================================
+
+export const automotiveDarkTheme: ThemeDefinition = {
+  id: 'automotive-dark',
+  name: 'Automotive Dark',
+  description: 'Pure black aesthetic with high-contrast automotive accents',
+  preview: '/themes/automotive-preview.png',
+  colors: {
+    light: {
+      // Force Dark Mode even in Light Mode (Base tetap hitam)
+      primary: '#D32F2F', // Prima Red
+      secondary: '#FBC02D', // Prima Yellow
+      accent: '#FBC02D',
+      background: '#000000', // Pure Black
+      surface: '#09090B', // Zinc-950
+      text: '#FAFAFA', // Zinc-50
+      textSecondary: '#A1A1AA', // Zinc-400
+      border: '#27272A', // Zinc-800
+      success: '#22C55E',
+      warning: '#FACC15',
+      error: '#EF4444',
+    },
+    dark: {
+      primary: '#D32F2F', // Prima Red
+      secondary: '#FBC02D', // Prima Yellow
+      accent: '#FBC02D',
+      background: '#000000', // Pure Black (OLED)
+      surface: '#09090B', // Zinc-950
+      text: '#FAFAFA', // Zinc-50
+      textSecondary: '#A1A1AA', // Zinc-400
+      border: '#27272A', // Zinc-800
+      success: '#22C55E',
+      warning: '#FACC15',
+      error: '#EF4444',
+    },
+  },
+  typography: {
+    fontFamily: '"Outfit", "Inter", sans-serif', // Sporty, modern font
+    headingFont: '"Outfit", "Inter", sans-serif',
+    fontSize: {
+      xs: '0.75rem',
+      sm: '0.875rem',
+      base: '1rem',
+      lg: '1.125rem',
+      xl: '1.25rem',
+      '2xl': '1.5rem',
+      '3xl': '2rem',
+    },
+    fontWeight: {
+      normal: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+    },
+  },
+  spacing: {
+    unit: 4,
+    scale: [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64],
+  },
+  borderRadius: {
+    // Sharp angles for sportiness
+    sm: '0px',
+    md: '2px',
+    lg: '4px',
+    xl: '8px',
+  },
+  shadows: {
+    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.5)',
+    md: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
+    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+    xl: '0 20px 25px -5px rgba(211, 47, 47, 0.15)', // Subtle Red glow
+  },
+};
+
+// ============================================================================
 // THEME REGISTRY
 // ============================================================================
 
@@ -359,6 +435,7 @@ export const themes: Record<string, ThemeDefinition> = {
   classic: classicTheme,
   luxury: luxuryTheme,
   minimal: minimalTheme,
+  'automotive-dark': automotiveDarkTheme,
 };
 
 export function getTheme(themeId: string): ThemeDefinition {
@@ -370,8 +447,26 @@ export function getAllThemes(): ThemeDefinition[] {
 }
 
 function hexToHsl(hex: string): string {
+  // Default fallback (black)
+  const fallback = '0 0% 0%';
+
+  if (!hex || typeof hex !== 'string') {
+    return fallback;
+  }
+
   // Remove # if present
   hex = hex.replace(/^#/, '');
+
+  // Handle shorthand (e.g. F00 -> FF0000)
+  if (hex.length === 3) {
+    hex = hex.split('').map(char => char + char).join('');
+  }
+
+  // Validate hex format
+  if (!/^[0-9A-Fa-f]{6}$/.test(hex)) {
+    console.warn(`Invalid hex color: #${hex}, using fallback.`);
+    return fallback;
+  }
 
   // Parse r, g, b
   let r = parseInt(hex.substring(0, 2), 16);

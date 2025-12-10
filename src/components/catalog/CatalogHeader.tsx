@@ -73,29 +73,31 @@ export default function CatalogHeader({
 
   return (
     <header
-      className="bg-background shadow-md sticky top-0 z-50 border-b"
-      style={{ borderTop: `4px solid ${branding.primaryColor}` }}
+      className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
+      {/* Top Gradient Accent */}
+      <div className="h-1 w-full bg-gradient-to-r from-primary via-secondary to-primary" />
+
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo & Name */}
-          <Link href={getUrl('')} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <div className="flex items-center justify-between h-24 md:h-28 transition-all duration-300">
+          {/* Logo & Name - Large & Prominent */}
+          <Link href={getUrl('')} className="flex items-center gap-4 hover:opacity-90 transition-opacity group">
             {branding.logoUrl ? (
               <img
                 src={branding.logoUrl}
                 alt={branding.name}
-                className="h-10 w-auto object-contain"
+                className="h-10 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105 max-w-[200px] md:max-w-[280px]"
               />
             ) : (
               <div
-                className="h-10 w-10 rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl"
-                style={{ backgroundColor: branding.primaryColor }}
+                className="h-10 w-10 rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl bg-primary"
               >
                 {branding.name.charAt(0)}
               </div>
             )}
             <div className="hidden md:block">
-              <h1 className="text-lg font-bold text-foreground leading-tight">{branding.name}</h1>
+              {/* Hide text if logo exists to keep it clean, or show minimal */}
+              {!branding.logoUrl && <h1 className="text-2xl font-bold text-foreground tracking-tight">{branding.name}</h1>}
             </div>
           </Link>
 
@@ -107,7 +109,6 @@ export default function CatalogHeader({
                 href={link.href}
                 className={`text-sm font-medium transition-colors hover:text-primary ${isActive(link.href) ? 'text-primary' : 'text-muted-foreground'
                   }`}
-                style={{ color: isActive(link.href) ? branding.primaryColor : undefined }}
               >
                 {link.label}
               </Link>
@@ -142,12 +143,13 @@ export default function CatalogHeader({
                 href={link.href}
                 className={`px-4 py-3 rounded-md text-sm font-medium transition-colors hover:bg-muted ${isActive(link.href) ? 'bg-muted text-primary' : 'text-foreground'
                   }`}
-                style={{ color: isActive(link.href) ? branding.primaryColor : undefined }}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.label}
               </Link>
             ))}
+
+
 
             {/* Mobile Contact Buttons */}
             <div className="flex gap-2 mt-2">

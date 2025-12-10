@@ -68,8 +68,9 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
     const result = await CatalogEngineService.getVehicles(tenantId, filters);
     const { vehicles, totalPages, total, filters: filterOptions } = result;
 
-    const formatPrice = (price: number) => {
-        const rupiah = price / 100;
+    const formatPrice = (price: bigint | number) => {
+        const numPrice = typeof price === 'bigint' ? Number(price) : price;
+        const rupiah = numPrice / 100;
         return `Rp ${rupiah.toLocaleString('id-ID')}`;
     };
 
@@ -106,47 +107,46 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                     {/* Vehicle Grid */}
                     {vehicles.length > 0 ? (
                         <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 mb-8">
                                 {vehicles.map((vehicle) => {
                                     const mainPhoto = vehicle.photos[0];
                                     return (
-                                        <Card key={vehicle.id} className="hover:shadow-xl transition-shadow overflow-hidden flex flex-col">
-                                            <CardHeader className="p-0">
-                                                <div className="aspect-video relative">
-                                                    {mainPhoto ? (
-                                                        <img
-                                                            src={mainPhoto.thumbnailUrl || mainPhoto.originalUrl}
-                                                            alt={`${vehicle.make} ${vehicle.model}`}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                                                            <span className="text-muted-foreground">No Image</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className="p-4 flex-1">
-                                                <CardTitle className="text-lg mb-2 line-clamp-1">
-                                                    {vehicle.year} {vehicle.make} {vehicle.model}
-                                                </CardTitle>
-                                                {vehicle.variant && (
-                                                    <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{vehicle.variant}</p>
+                                        <div key={vehicle.id} className="group cursor-pointer">
+                                            <div className="aspect-[4/3] relative rounded-2xl overflow-hidden mb-5 bg-muted">
+                                                {mainPhoto ? (
+                                                    <img
+                                                        src={mainPhoto.thumbnailUrl || mainPhoto.originalUrl}
+                                                        alt={`${vehicle.make} ${vehicle.model}`}
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                                        No Image
+                                                    </div>
                                                 )}
-                                                <p className="text-xl font-bold text-primary">
-                                                    {formatPrice(vehicle.price)}
-                                                </p>
-                                                <div className="flex gap-2 mt-2 text-sm text-muted-foreground">
-                                                    {vehicle.mileage && <span>{vehicle.mileage.toLocaleString()} km</span>}
-                                                    {vehicle.transmissionType && <span>• {vehicle.transmissionType}</span>}
+                                                {/* Interactive overlay on hover */}
+                                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                            </div>
+
+                                            <div className="space-y-2 px-1">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                                                            {vehicle.make} {vehicle.model}
+                                                        </h3>
+                                                        <p className="text-sm text-muted-foreground">{vehicle.year} • {vehicle.transmissionType || 'N/A'}</p>
+                                                    </div>
+                                                    <p className="text-lg font-bold text-primary whitespace-nowrap">
+                                                        {formatPrice(vehicle.price)}
+                                                    </p>
                                                 </div>
-                                            </CardContent>
-                                            <CardFooter className="p-4 pt-0 mt-auto">
-                                                <Button asChild className="w-full">
-                                                    <Link href={`/catalog/${tenant.slug}/vehicles/${vehicle.id}`}>Lihat Detail</Link>
-                                                </Button>
-                                            </CardFooter>
-                                        </Card>
+                                                <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+                                                    <Button asChild className="w-full rounded-full" variant="outline">
+                                                        <Link href={`/catalog/${tenant.slug}/vehicles/${vehicle.id}`}>Lihat Detail</Link>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     );
                                 })}
                             </div>

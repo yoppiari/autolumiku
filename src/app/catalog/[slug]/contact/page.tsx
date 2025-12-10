@@ -69,113 +69,107 @@ export default async function ContactPage({ params }: { params: { slug: string }
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Contact Info */}
               <div className="lg:col-span-1 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informasi Kontak</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {tenant.phoneNumber && (
-                      <div className="flex items-start gap-4">
-                        <div className="bg-primary/10 p-3 rounded-full text-primary">
-                          <FaPhone className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-foreground">Telepon</h3>
-                          <a href={`tel:${tenant.phoneNumber}`} className="text-muted-foreground hover:text-primary transition-colors">
-                            {tenant.phoneNumber}
-                          </a>
-                          {tenant.phoneNumberSecondary && (
-                            <>
-                              <br />
-                              <a href={`tel:${tenant.phoneNumberSecondary}`} className="text-muted-foreground hover:text-primary transition-colors">
+                {/* Contact Methods */}
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-6">Informasi Kontak</h2>
+                    <div className="space-y-6">
+                      {tenant.phoneNumber && (
+                        <div className="flex items-start gap-4">
+                          <div className="bg-primary/10 p-3 rounded-full text-primary">
+                            <FaPhone className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-foreground mb-1">Telepon</h3>
+                            <a href={`tel:${tenant.phoneNumber}`} className="text-muted-foreground hover:text-primary transition-colors block">
+                              {tenant.phoneNumber}
+                            </a>
+                            {tenant.phoneNumberSecondary && (
+                              <a href={`tel:${tenant.phoneNumberSecondary}`} className="text-muted-foreground hover:text-primary transition-colors block">
                                 {tenant.phoneNumberSecondary}
                               </a>
-                            </>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {tenant.whatsappNumber && (
+                      {tenant.whatsappNumber && (
+                        <div className="flex items-start gap-4">
+                          <div className="bg-green-500/10 p-3 rounded-full text-green-500">
+                            <FaWhatsapp className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-foreground mb-1">WhatsApp</h3>
+                            <a
+                              href={`https://wa.me/${tenant.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-muted-foreground hover:text-green-500 transition-colors block"
+                            >
+                              Chat WhatsApp
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      {tenant.email && (
+                        <div className="flex items-start gap-4">
+                          <div className="bg-red-500/10 p-3 rounded-full text-red-500">
+                            <FaEnvelope className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-foreground mb-1">Email</h3>
+                            <a href={`mailto:${tenant.email}`} className="text-muted-foreground hover:text-red-500 transition-colors block">
+                              {tenant.email}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-start gap-4">
-                        <div className="bg-green-100 p-3 rounded-full text-green-600">
-                          <FaWhatsapp className="w-5 h-5" />
+                        <div className="bg-blue-500/10 p-3 rounded-full text-blue-500">
+                          <FaClock className="w-5 h-5" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-foreground">WhatsApp</h3>
-                          <a
-                            href={`https://wa.me/${tenant.whatsappNumber.replace(/[^0-9]/g, '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-green-600 transition-colors"
-                          >
-                            Chat WhatsApp
-                          </a>
+                          <h3 className="font-bold text-foreground mb-1">Jam Operasional</h3>
+                          <p className="text-muted-foreground">
+                            Senin - Minggu<br />
+                            09:00 - 18:00 WIB
+                          </p>
                         </div>
-                      </div>
-                    )}
-
-                    {tenant.email && (
-                      <div className="flex items-start gap-4">
-                        <div className="bg-red-100 p-3 rounded-full text-red-600">
-                          <FaEnvelope className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-foreground">Email</h3>
-                          <a href={`mailto:${tenant.email}`} className="text-muted-foreground hover:text-red-600 transition-colors">
-                            {tenant.email}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-start gap-4">
-                      <div className="bg-blue-100 p-3 rounded-full text-blue-600">
-                        <FaClock className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-foreground">Jam Operasional</h3>
-                        <p className="text-muted-foreground">
-                          Senin - Minggu<br />
-                          09:00 - 18:00 WIB
-                        </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Alamat Showroom</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-start gap-4">
-                      <div className="bg-gray-100 p-3 rounded-full text-gray-600">
-                        <FaMapMarkerAlt className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">
-                          {tenant.address}<br />
-                          {tenant.city}, {tenant.province}
-                        </p>
-                        <Button asChild variant="outline" className="mt-4 w-full">
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Buka di Google Maps
-                          </a>
-                        </Button>
-                      </div>
+                <div className="mt-8">
+                  <h2 className="text-2xl font-bold mb-6">Alamat Showroom</h2>
+                  <div className="flex items-start gap-4">
+                    <div className="bg-zinc-800 p-3 rounded-full text-zinc-400">
+                      <FaMapMarkerAlt className="w-5 h-5" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <p className="text-muted-foreground mb-4 leading-relaxed">
+                        {tenant.address}<br />
+                        {tenant.city}, {tenant.province}
+                      </p>
+                      <Button asChild variant="outline" className="w-full">
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Buka di Google Maps
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Map */}
               <div className="lg:col-span-2">
-                <Card className="h-full min-h-[400px] overflow-hidden">
+                <div className="h-full min-h-[500px] rounded-2xl overflow-hidden bg-muted relative">
                   <iframe
                     width="100%"
                     height="100%"
@@ -184,8 +178,9 @@ export default async function ContactPage({ params }: { params: { slug: string }
                     allowFullScreen
                     src={mapUrl}
                     title="Showroom Location"
+                    className="grayscale hover:grayscale-0 transition-all duration-500"
                   ></iframe>
-                </Card>
+                </div>
               </div>
             </div>
           </div>

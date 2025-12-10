@@ -57,8 +57,8 @@ export async function middleware(request: NextRequest) {
   if (
     !isCustomDomain &&
     (cleanHost.includes('localhost') ||
-    cleanHost.includes('127.0.0.1') ||
-    cleanHost.includes('.vercel.app'))
+      cleanHost.includes('127.0.0.1') ||
+      cleanHost.includes('.vercel.app'))
   ) {
     return NextResponse.next();
   }
@@ -77,8 +77,12 @@ export async function middleware(request: NextRequest) {
 
     console.log(`[Middleware] Custom domain ${cleanHost} - Path: ${pathname}`);
 
-    // Pass through with headers, let root routes handle rendering
-    return NextResponse.next({
+    // Rewrite URL to internal catalog path
+    // primamobil.id/vehicles -> /catalog/primamobil-id/vehicles
+    const url = request.nextUrl.clone();
+    url.pathname = `/catalog/${tenantSlug}${pathname}`;
+
+    return NextResponse.rewrite(url, {
       request: {
         headers: requestHeaders,
       },

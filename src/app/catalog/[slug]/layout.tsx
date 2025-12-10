@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { getTheme, generateCSSVariables } from '@/lib/themes/theme-definitions';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
     const tenant = await prisma.tenant.findUnique({
@@ -56,6 +57,48 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     };
 }
 
-export default function TenantLayout({ children }: { children: React.ReactNode }) {
-    return <>{children}</>;
+export default async function TenantLayout({
+    children,
+    params
+}: {
+    children: React.ReactNode,
+    params: { slug: string }
+}) {
+    // 1. Fetch Tenant Theme Info Server-Side
+    const tenant = await prisma.tenant.findUnique({
+        where: { slug: params.slug },
+        select: {
+            selectedTheme: true,
+            theme: true // 'light' | 'dark' | 'auto'
+        }
+    });
+
+    if (!tenant) return <>{children}</>;
+
+    // 2. Resolve Theme Definition
+    const themeDef = getTheme(tenant.selectedTheme || 'modern');
+
+    // 3. Generate CSS Variables (Force Dark for 'automotive-dark' or rely on tenant.theme)
+    // For Prima Mobil (automotive-dark), we know it prefers dark.
+    // Ideally we generate both or handle based on user pref, but for FOUC protection 
+    // we inject the "Default" for this tenant.
+    const mode = tenant.selectedTheme === 'automotive-dark' ? 'dark' : (tenant.theme === 'dark' ? 'dark' : 'light');
+    const cssVariables = generateCSSVariables(themeDef, mode);
+
+    return (
+        <html lang="id" className={mode}>
+            <head>
+                {/* Critical CSS Injection to prevent FOUC */}
+                <style
+                    id="server-side-theme"
+                    dangerouslySetInnerHTML={{
+                        __html: `:root { ${cssVariables} }`
+                    }}
+                />
+            </head>
+            <body>
+                {children}
+            </body>
+        </html>
+    );
 }
