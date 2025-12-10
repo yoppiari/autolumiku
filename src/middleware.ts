@@ -80,8 +80,13 @@ export async function middleware(request: NextRequest) {
     // Rewrite URL to internal catalog path
     // primamobil.id/vehicles -> /catalog/primamobil-id/vehicles
     const url = request.nextUrl.clone();
-    url.pathname = `/catalog/${tenantSlug}${pathname}`;
+    // Rewrite to the tenant's catalog page
+    // Ensure we don't end up with double slashes or trailing slashes for root
+    const newPathname = url.pathname === '/'
+      ? `/catalog/${tenantSlug}`
+      : `/catalog/${tenantSlug}${url.pathname}`;
 
+    url.pathname = newPathname;
     return NextResponse.rewrite(url, {
       request: {
         headers: requestHeaders,
