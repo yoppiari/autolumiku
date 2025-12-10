@@ -75,7 +75,7 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-is-custom-domain', 'true');
     requestHeaders.set('x-original-path', pathname);
 
-    console.log(`[Middleware] Custom domain ${cleanHost} - Path: ${pathname}`);
+    console.log(`[Middleware V2] Custom domain ${cleanHost} - Path: ${pathname}`);
 
     // Rewrite URL to internal catalog path
     // primamobil.id/vehicles -> /catalog/primamobil-id/vehicles
