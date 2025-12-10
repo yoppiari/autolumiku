@@ -12,6 +12,7 @@ import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
 interface ThemeProviderProps {
   tenantId: string;
   children: React.ReactNode;
+  forcedTheme?: 'light' | 'dark' | null;
 }
 
 function ThemeVariables({ tenantId }: { tenantId: string }) {
@@ -62,10 +63,16 @@ function ThemeVariables({ tenantId }: { tenantId: string }) {
 export default function ThemeProvider({
   tenantId,
   children,
+  forcedTheme = null,
 }: ThemeProviderProps) {
   // Using 'class' attribute for tailwind dark mode
+  // If forcedTheme is set, use it and disable system detection
+  const themeProps = forcedTheme
+    ? { attribute: "class" as const, forcedTheme, enableSystem: false }
+    : { attribute: "class" as const, defaultTheme: "system", enableSystem: true };
+
   return (
-    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+    <NextThemesProvider {...themeProps}>
       <ThemeVariables tenantId={tenantId} />
       {children}
     </NextThemesProvider>

@@ -133,8 +133,11 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
       return firstPara;
     };
 
+    // Determine forced theme based on tenant configuration
+    const forcedTheme = tenant.selectedTheme === 'automotive-dark' || tenant.theme === 'dark' ? 'dark' : null;
+
     return (
-      <ThemeProvider tenantId={tenantId}>
+      <ThemeProvider tenantId={tenantId} forcedTheme={forcedTheme}>
         <div className="min-h-screen bg-background flex flex-col">
           <CatalogHeader
             branding={{
