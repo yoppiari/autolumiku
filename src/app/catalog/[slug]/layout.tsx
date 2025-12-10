@@ -92,22 +92,29 @@ export default async function TenantLayout({
     const mode = tenant.selectedTheme === 'automotive-dark' ? 'dark' : (tenant.theme === 'dark' ? 'dark' : 'light');
     const cssVariables = generateCSSVariables(themeDef, mode);
 
+    // Convert CSS variables string to style object
+    const cssVarsObject = cssVariables
+        .split(';')
+        .filter(v => v.trim())
+        .reduce((acc, rule) => {
+            const [key, value] = rule.split(':').map(s => s.trim());
+            if (key && value) {
+                acc[key] = value;
+            }
+            return acc;
+        }, {} as Record<string, string>);
+
     return (
         <>
-            {/* Critical CSS Injection to prevent FOUC */}
-            <style
-                id="server-side-theme"
-                dangerouslySetInnerHTML={{
-                    __html: `:root { ${cssVariables} }`
-                }}
-            />
-            {/* 
-                We cannot render <html> or <body> here because RootLayout already does.
-                To apply the theme class 'dark' or 'light', we apply it to a wrapper div.
-                However, for full page background, we might need to style the wrapper to cover viewport.
-                Also, Client-side next-themes will try to update <html> class.
+            {/*
+                Inject theme CSS variables as inline style on wrapper div.
+                Inline styles have highest specificity and override globals.css @layer base.
+                CSS variables inherit to all children elements.
             */}
-            <div className={`min-h-screen ${mode} bg-background text-foreground`}>
+            <div
+                className={`min-h-screen ${mode} bg-background text-foreground`}
+                style={cssVarsObject}
+            >
                 {children}
             </div>
         </>

@@ -232,7 +232,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                               </h3>
                               <p className="text-sm text-muted-foreground">{vehicle.year} • {vehicle.transmissionType || 'N/A'}</p>
                             </div>
-                            <p className="text-xl font-bold text-primary whitespace-nowrap">
+                            <p className="text-xl font-bold text-foreground whitespace-nowrap">
                               {formatPrice(vehicle.price)}
                             </p>
                           </div>

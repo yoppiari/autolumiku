@@ -40,6 +40,8 @@ function ThemeVariables({ tenantId }: { tenantId: string }) {
 
   useEffect(() => {
     if (cssVariables) {
+      // Apply CSS variables to body instead of :root to avoid conflict with globals.css @layer base
+      // This allows theme switching while maintaining proper CSS specificity
       const styleId = 'theme-variables';
       let styleElement = document.getElementById(styleId) as HTMLStyleElement;
 
@@ -49,7 +51,8 @@ function ThemeVariables({ tenantId }: { tenantId: string }) {
         document.head.appendChild(styleElement);
       }
 
-      styleElement.textContent = `:root { ${cssVariables} }`;
+      // Use body selector with higher specificity to override :root defaults
+      styleElement.textContent = `body { ${cssVariables} }`;
     }
   }, [cssVariables]);
 

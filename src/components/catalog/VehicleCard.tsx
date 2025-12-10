@@ -86,21 +86,21 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
       {/* Content */}
       <CardContent className="p-4">
         <Link href={`/catalog/${slug}/vehicles/${vehicle.id}`}>
-          <h3 className="font-bold text-lg text-gray-900 mb-1 hover:text-blue-600">
+          <h3 className="font-bold text-lg text-foreground mb-1 hover:text-primary transition-colors">
             {vehicle.make} {vehicle.model}
           </h3>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-muted-foreground mb-2">
             {vehicle.year}
             {vehicle.variant && ` • ${vehicle.variant}`}
           </p>
         </Link>
 
-        <p className="text-2xl font-bold text-blue-600 mb-3">
+        <p className="text-2xl font-bold text-foreground mb-3">
           {formatPrice(vehicle.price)}
         </p>
 
         {/* Specs */}
-        <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
           {vehicle.mileage && (
             <span className="flex items-center gap-1">
               <svg
