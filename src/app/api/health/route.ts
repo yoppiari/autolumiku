@@ -1,42 +1,19 @@
-/**
- * GET /api/health
- *
- * Health check endpoint for Docker healthcheck and monitoring
- */
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
-    // Check database connection
-    await prisma.$queryRaw`SELECT 1`;
-
-    return NextResponse.json(
-      {
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV,
-        database: 'connected',
-      },
-      { status: 200 }
-    );
+    // Simple query to check DB connection
+    await prisma.tenant.findFirst({ select: { id: true } });
+    return NextResponse.json({ status: 'ok', timestamp: new Date().toISOString() });
   } catch (error) {
-    console.error('Health check failed:', error);
-
-    // Return 200 even on error to prevent container restart loops
-    // This allows us to inspect logs in Coolify/Docker
+    console.error('Health Check Failed:', error);
     return NextResponse.json(
-      {
-        status: 'degraded',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV,
-        database: 'disconnected',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 200 } // Changed from 503 to 200
+      { status: 'error', message: String(error) },
+      { status: 500 }
     );
   }
 }
