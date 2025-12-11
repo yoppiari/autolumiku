@@ -101,11 +101,19 @@ export async function middleware(request: NextRequest) {
       : `/catalog/${tenantSlug}${url.pathname}`;
 
     url.pathname = newPathname;
-    return NextResponse.rewrite(url, {
+    const rewriteResponse = NextResponse.rewrite(url, {
       request: {
         headers: requestHeaders,
       },
     });
+
+    // Add cache-control headers to prevent HTML caching
+    // This ensures browser always gets fresh HTML with correct chunk hashes
+    rewriteResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    rewriteResponse.headers.set('Pragma', 'no-cache');
+    rewriteResponse.headers.set('Expires', '0');
+
+    return rewriteResponse;
   }
 
   // Platform domain: pass through with headers
@@ -114,6 +122,12 @@ export async function middleware(request: NextRequest) {
       headers: requestHeaders,
     },
   });
+
+  // Add cache-control headers to prevent HTML caching
+  // This ensures browser always gets fresh HTML with correct chunk hashes
+  response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
 
   return response;
 }
