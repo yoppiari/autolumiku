@@ -57,6 +57,13 @@ ENV NODE_ENV production
 # Build Next.js application
 RUN npm run build
 
+# Create symlinks for URL-encoded dynamic route directories
+# Fix for browsers requesting %5Bslug%5D instead of [slug]
+RUN cd /app/.next/static/chunks/app/catalog && \
+    if [ -d "[slug]" ]; then \
+      ln -s "[slug]" "%5Bslug%5D"; \
+    fi
+
 # Stage 3: Runner (Production)
 FROM node:18-alpine AS runner
 

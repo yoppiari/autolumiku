@@ -17,6 +17,20 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || 'localhost:3000';
 
+  // FIRST: Proxy URL-encoded static chunk files to API route
+  // Next.js standalone has a bug with symlinks in multi-threaded environment
+  // Middleware Edge Runtime doesn't support Node.js fs APIs
+  // Solution: Rewrite to API route that has full Node.js runtime
+  if (pathname.startsWith('/_next/static/') && (pathname.includes('%5B') || pathname.includes('%5D'))) {
+    const staticPath = pathname.replace('/_next/static/', '');
+    const url = request.nextUrl.clone();
+    url.pathname = `/api/static-proxy/${staticPath}`;
+
+    console.log(`[Middleware] Proxying to API: ${pathname} -> ${url.pathname}`);
+
+    return NextResponse.rewrite(url);
+  }
+
   // Extract domain from Host header
   const cleanHost = host.split(':')[0]; // Remove port
 
@@ -34,7 +48,7 @@ export async function middleware(request: NextRequest) {
 
   // Skip middleware for:
   // - API routes (handled separately)
-  // - Static files
+  // - Static files (but NOT _next/static/ with encoded brackets - handled above)
   // - Admin panel
   // - Dashboard
   // - Auth routes
@@ -42,7 +56,7 @@ export async function middleware(request: NextRequest) {
   // - Catalog routes (already in correct format)
   if (
     pathname.startsWith('/api/') ||
-    pathname.startsWith('/_next/') ||
+    (pathname.startsWith('/_next/') && !(pathname.includes('%5B') || pathname.includes('%5D'))) ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/team') ||
@@ -109,11 +123,12 @@ export const config = {
     /*
      * Match all request paths except:
      * - api routes (handled separately)
-     * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files (images, etc)
+     *
+     * NOTE: We INCLUDE _next/static to handle URL decoding for dynamic route chunks
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)',
+    '/((?!api|_next/image|favicon.ico).*)',
   ],
 };

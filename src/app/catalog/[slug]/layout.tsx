@@ -72,13 +72,22 @@ export default async function TenantLayout({
     params: { slug: string }
 }) {
     // 1. Fetch Tenant Theme Info Server-Side
-    const tenant = await prisma.tenant.findUnique({
-        where: { slug: params.slug },
-        select: {
-            selectedTheme: true,
-            theme: true // 'light' | 'dark' | 'auto'
-        }
-    });
+    let tenant = null;
+    try {
+        tenant = await prisma.tenant.findUnique({
+            where: { slug: params.slug },
+            select: {
+                selectedTheme: true,
+                theme: true // 'light' | 'dark' | 'auto'
+            }
+        });
+    } catch (error) {
+        console.error('TenantLayout Error:', error);
+        // Fallback to null, children will render (likely 404 or error boundary if downstream fails)
+        // Or we can let it throw if we want the Error Boundary to catch it immediately.
+        // But throwing here might be safer to guarantee Error Boundary catches it.
+        throw error;
+    }
 
     if (!tenant) return <>{children}</>;
 

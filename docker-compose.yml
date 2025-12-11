@@ -14,7 +14,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    # Ports removed - only accessible via internal Docker network
+    ports:
+      - "5432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-autolumiku}" ]
       interval: 10s
@@ -69,10 +70,10 @@ services:
       - "traefik.http.services.autolumiku.loadbalancer.server.port=3000"
       - "traefik.docker.network=coolify"
     env_file:
-      - .env
+      - .env.docker
     environment:
       # Database
-      DATABASE_URL: ${DATABASE_URL:-postgresql://${DB_USER:-autolumiku}:${DB_PASSWORD:-autolumiku}@postgres:5432/${DB_NAME:-autolumiku_prod}?schema=public}
+      DATABASE_URL: postgresql://autolumiku:changeme123@postgres:5432/autolumiku_prod?schema=public
 
       # JWT Secrets
       JWT_SECRET: ${JWT_SECRET}
