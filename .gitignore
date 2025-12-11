@@ -38,6 +38,29 @@ Thumbs.db
 logs/
 *.log
 
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Runtime files
+*.pid
+
+# Screenshots and images (debugging)
+*-screenshot.png
+localhost-*.png
+primamobil-*.png
+
+# Backup files
+*.backup.*
+.env.backup.*
+
+# Lockfiles (npm only, not bun/yarn)
+bun.lock
+yarn.lock
+
+# Temporary test files
+check_*.js
+test_*.js
+
 # Misc
 .turbo/
 .vercel/
