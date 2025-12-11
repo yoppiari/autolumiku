@@ -9,10 +9,27 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// Build DATABASE_URL with connection pool parameters
+function getDatabaseUrl(): string {
+  const baseUrl = process.env.DATABASE_URL || '';
+  const poolParams = 'connection_limit=20&pool_timeout=10&connect_timeout=10';
+
+  // Check if URL already has query parameters
+  if (baseUrl.includes('?')) {
+    return `${baseUrl}&${poolParams}`;
+  }
+  return `${baseUrl}?${poolParams}`;
+}
+
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    datasources: {
+      db: {
+        url: getDatabaseUrl(),
+      },
+    },
   });
 
 console.log('[Prisma] Initialized Prisma Client');
