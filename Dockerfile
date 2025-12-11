@@ -41,7 +41,9 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install ALL dependencies (including dev deps needed for build)
-RUN npm install --no-audit && \
+# IMPORTANT: Temporarily unset NODE_ENV to ensure devDependencies are installed
+# Coolify injects NODE_ENV=production as build arg, which causes npm to skip devDeps
+RUN NODE_ENV=development npm install --no-audit && \
     npm cache clean --force
 
 # Generate Prisma Client
