@@ -5,9 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, VehicleStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { VehicleStatus } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 /**
  * GET /api/v1/vehicles/[id]

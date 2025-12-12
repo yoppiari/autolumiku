@@ -4,12 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { ImageProcessingService } from '@/lib/services/image-processing.service';
 import { StorageService } from '@/lib/services/storage.service';
 import { PhotoQualityService } from '@/lib/services/photo-quality.service';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 /**
  * POST /api/v1/vehicles/[id]/photos

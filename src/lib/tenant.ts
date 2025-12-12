@@ -4,10 +4,8 @@
  */
 
 import { headers } from 'next/headers';
-import { PrismaClient } from '@prisma/client';
 import { BrandingService, TenantBranding } from './services/catalog/branding.service';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma';
 
 /**
  * Get tenant information from request headers (set by middleware)
