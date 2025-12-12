@@ -15,13 +15,13 @@ import Pagination from '@/components/catalog/Pagination';
 import { CatalogEngineService, CatalogFilters } from '@/lib/services/catalog/catalog-engine.service';
 import { Button } from '@/components/ui/button';
 import {
-import { prisma } from '@/lib/prisma';
     Card,
     CardContent,
     CardFooter,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { prisma } from '@/lib/prisma';
 
 
 interface PageProps {

@@ -10,13 +10,13 @@ import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import {
-import { prisma } from '@/lib/prisma';
     Card,
     CardContent,
     CardFooter,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { prisma } from '@/lib/prisma';
 
 
 export default async function BlogPage({ params }: { params: { slug: string } }) {

@@ -14,7 +14,6 @@ import ThemeProvider from '@/components/catalog/ThemeProvider';
 import VehicleGallery from '@/components/catalog/VehicleGallery';
 import { Button } from '@/components/ui/button';
 import {
-import { prisma } from '@/lib/prisma';
   Calendar,
   Gauge,
   Zap,
@@ -24,6 +23,7 @@ import { prisma } from '@/lib/prisma';
   ArrowLeft,
   Share2,
 } from 'lucide-react';
+import { prisma } from '@/lib/prisma';
 
 
 interface PageProps {
