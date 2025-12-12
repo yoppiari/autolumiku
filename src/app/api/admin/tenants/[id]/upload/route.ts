@@ -4,9 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import sharp from 'sharp';
 import { prisma } from '@/lib/prisma';
 import { StorageService } from '@/lib/services/storage.service';
-import { ImageProcessingService } from '@/lib/services/image-processing.service';
 
 export async function POST(
   request: NextRequest,
@@ -51,28 +51,41 @@ export async function POST(
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Process image (resize if needed)
-    const processedBuffer = type === 'favicon'
-      ? await ImageProcessingService.resizeImage(buffer, 32, 32) // Favicon: 32x32
-      : await ImageProcessingService.resizeImage(buffer, 400, 400); // Logo: max 400x400
+    let processedBuffer: Buffer;
+    if (type === 'favicon') {
+      // Favicon: resize to 32x32 PNG
+      processedBuffer = await sharp(buffer)
+        .resize(32, 32, { fit: 'cover' })
+        .png()
+        .toBuffer();
+    } else {
+      // Logo: resize to max 400x400, maintain aspect ratio
+      processedBuffer = await sharp(buffer)
+        .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
+        .png()
+        .toBuffer();
+    }
 
-    // Generate filename
-    const extension = file.name.split('.').pop() || 'png';
-    const filename = `${type}-${Date.now()}.${extension}`;
-    const path = `tenants/${tenant.slug}`;
+    // Generate storage key
+    const timestamp = Date.now();
+    const extension = 'png'; // Always save as PNG after processing
+    const filename = `${type}-${timestamp}.${extension}`;
+    const storageKey = `tenants/${tenant.slug}/${filename}`;
 
     // Upload to storage
-    const uploadedUrl = await StorageService.uploadFile(
+    const uploadedUrl = await StorageService.uploadPhoto(
       processedBuffer,
-      path,
-      filename,
-      file.type
+      storageKey,
+      'image/png'
     );
 
     // Delete old file if exists
     const oldUrl = type === 'logo' ? tenant.logoUrl : tenant.faviconUrl;
     if (oldUrl) {
       try {
-        await StorageService.deleteFile(oldUrl);
+        // Extract storage key from URL (remove /uploads/ prefix)
+        const oldStorageKey = oldUrl.replace(/^\/uploads\//, '');
+        await StorageService.deletePhoto(oldStorageKey);
       } catch (error) {
         console.warn('Failed to delete old file:', error);
       }
