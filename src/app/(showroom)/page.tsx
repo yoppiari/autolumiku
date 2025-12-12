@@ -10,13 +10,13 @@ import GlobalFooter from '@/components/showroom/GlobalFooter';
 import { getTenantFromHeaders, getFullTenant, getTenantBranding } from '@/lib/tenant';
 import { Button } from '@/components/ui/button';
 import {
-import { prisma } from '@/lib/prisma';
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { prisma } from '@/lib/prisma';
 
 
 export default async function ShowroomHomePage() {
