@@ -6,9 +6,6 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-// Import the actual catalog page component
-import ShowroomHomePage from './catalog/[slug]/page';
-
 export default async function RootPage() {
   const headersList = headers();
   const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
@@ -20,18 +17,20 @@ export default async function RootPage() {
     redirect('/dashboard');
   }
 
-  // Custom domain: render catalog homepage
-  if (!tenantSlug) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Configuration Error</h1>
-          <p className="text-gray-600">This custom domain is not properly configured.</p>
-        </div>
-      </div>
-    );
+  // Custom domain: redirect to catalog page
+  // Middleware already rewrites custom domain / to /catalog/[slug]
+  // This should not be reached, but if it is, redirect properly
+  if (tenantSlug) {
+    redirect(`/catalog/${tenantSlug}`);
   }
 
-  // Render the catalog page with the tenant slug
-  return <ShowroomHomePage params={{ slug: tenantSlug }} />;
+  // No tenant slug - configuration error
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Configuration Error</h1>
+        <p className="text-gray-600">This custom domain is not properly configured.</p>
+      </div>
+    </div>
+  );
 }

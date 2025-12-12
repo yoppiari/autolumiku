@@ -6,7 +6,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
 import { notFound } from 'next/navigation';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
@@ -16,6 +15,7 @@ import Pagination from '@/components/catalog/Pagination';
 import { CatalogEngineService, CatalogFilters } from '@/lib/services/catalog/catalog-engine.service';
 import { Button } from '@/components/ui/button';
 import {
+import { prisma } from '@/lib/prisma';
     Card,
     CardContent,
     CardFooter,
@@ -23,7 +23,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 
-const prisma = new PrismaClient();
 
 interface PageProps {
     params: {

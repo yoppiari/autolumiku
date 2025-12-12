@@ -5,12 +5,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
 import GlobalHeader from '@/components/showroom/GlobalHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import { getTenantFromHeaders, getFullTenant, getTenantBranding } from '@/lib/tenant';
 import { Button } from '@/components/ui/button';
 import {
+import { prisma } from '@/lib/prisma';
   Card,
   CardContent,
   CardFooter,
@@ -18,7 +18,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-const prisma = new PrismaClient();
 
 export default async function ShowroomHomePage() {
   // Get tenant from headers

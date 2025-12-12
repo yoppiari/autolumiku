@@ -9,9 +9,8 @@ import { BrandingService } from '@/lib/services/catalog/branding.service';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import CatalogFooter from '@/components/catalog/CatalogFooter';
 import { FaPhone, FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaClock, FaArrowLeft } from 'react-icons/fa';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
 
 interface PageProps {
   params: Promise<{ slug: string }>;

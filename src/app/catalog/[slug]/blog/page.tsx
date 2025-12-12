@@ -5,12 +5,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import {
+import { prisma } from '@/lib/prisma';
     Card,
     CardContent,
     CardFooter,
@@ -18,7 +18,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 
-const prisma = new PrismaClient();
 
 export default async function BlogPage({ params }: { params: { slug: string } }) {
     const { slug } = params;

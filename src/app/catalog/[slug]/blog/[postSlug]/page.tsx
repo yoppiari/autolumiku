@@ -6,7 +6,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { PrismaClient } from '@prisma/client';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
@@ -14,8 +13,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, User, Eye } from 'lucide-react';
 import ShareButtons from '@/components/blog/ShareButtons';
 import VehicleCard from '@/components/catalog/VehicleCard';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
 
 export default async function BlogPostPage({
     params

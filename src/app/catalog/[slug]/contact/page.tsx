@@ -4,15 +4,14 @@
  */
 
 import React from 'react';
-import { PrismaClient } from '@prisma/client';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FaPhone, FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
 
 export default async function ContactPage({ params }: { params: { slug: string } }) {
   const { slug } = params;

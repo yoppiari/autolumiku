@@ -7,7 +7,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { PrismaClient } from '@prisma/client';
 import { CatalogEngineService } from '@/lib/services/catalog/catalog-engine.service';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
@@ -15,6 +14,7 @@ import ThemeProvider from '@/components/catalog/ThemeProvider';
 import VehicleGallery from '@/components/catalog/VehicleGallery';
 import { Button } from '@/components/ui/button';
 import {
+import { prisma } from '@/lib/prisma';
   Calendar,
   Gauge,
   Zap,
@@ -25,7 +25,6 @@ import {
   Share2,
 } from 'lucide-react';
 
-const prisma = new PrismaClient();
 
 interface PageProps {
   params: {

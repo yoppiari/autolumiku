@@ -6,7 +6,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { PrismaClient } from '@prisma/client';
 import { FaWhatsapp } from 'react-icons/fa';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
@@ -28,8 +27,7 @@ import {
   getBlogUrl,
   getContactUrl,
 } from '@/lib/utils/url-helper';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export default async function ShowroomHomePage({ params }: { params: { slug: string } }) {
   try {
