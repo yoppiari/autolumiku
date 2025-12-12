@@ -5,7 +5,6 @@
 
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
 
 // Import the actual catalog page component
 import ShowroomHomePage from './catalog/[slug]/page';
