@@ -32,10 +32,12 @@ export const prisma =
     },
   });
 
-console.log('[Prisma] Initialized Prisma Client');
-
-if (process.env.NODE_ENV !== 'production') {
+// Always set global reference to prevent multiple instances
+if (!globalForPrisma.prisma) {
   globalForPrisma.prisma = prisma;
+  console.log('[Prisma] Initialized new Prisma Client');
+} else {
+  console.log('[Prisma] Reusing existing Prisma Client');
 }
 
 /**
