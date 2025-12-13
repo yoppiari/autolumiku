@@ -12,6 +12,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [tenant, setTenant] = useState<any>(null);
 
   // Read user from localStorage
   React.useEffect(() => {
@@ -55,6 +56,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, []);
 
+  // Fetch tenant data when user is loaded
+  React.useEffect(() => {
+    if (user?.tenantId) {
+      fetch(`/api/v1/tenants/${user.tenantId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data) {
+            setTenant(data.data);
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching tenant data:', err);
+        });
+    }
+  }, [user]);
+
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
@@ -92,11 +109,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Logo */}
           <div className="flex items-center h-16 px-6 border-b border-gray-200">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
+              {tenant?.logoUrl ? (
+                <img
+                  src={tenant.logoUrl}
+                  alt={tenant.name || 'Tenant Logo'}
+                  className="w-8 h-8 object-contain rounded-lg"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">
+                    {tenant?.name?.[0] || 'A'}
+                  </span>
+                </div>
+              )}
               <div className="ml-3">
-                <div className="text-lg font-bold text-gray-900">autolumiku</div>
+                <div className="text-lg font-bold text-gray-900">
+                  {tenant?.name || 'autolumiku'}
+                </div>
                 <div className="text-xs text-gray-500">Showroom Dashboard</div>
               </div>
             </div>
@@ -154,50 +183,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Main content */}
       <div className="lg:pl-64">
-        {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 h-16 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-full">
-            <div className="flex items-center">
-              {/* Mobile menu button */}
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-
-              {/* Page title */}
-              <div className="ml-4 lg:ml-0">
-                <h1 className="text-xl font-semibold text-gray-900">
-                  {navigation.find(item => pathname === item.href || pathname?.startsWith(item.href + '/'))?.name || 'Dashboard'}
-                </h1>
-              </div>
-            </div>
-
-            {/* Right side items */}
-            <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 018.14 15.66l-1.405 1.405M15 17H9m0-5a2 2 0 012-2m2-2a2 2 0 012 2m-6-4a2 2 0 012-2m2 2a2 2 0 012 2" />
-                </svg>
-              </button>
-
-              {/* User avatar */}
-              <div className="relative">
-                <button className="flex items-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {user?.firstName?.[0] || 'U'}
-                    </span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
 
         {/* Page content */}
         <main className="p-4 sm:p-6 lg:p-8">
