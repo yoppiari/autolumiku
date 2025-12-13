@@ -111,11 +111,12 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant          Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  sessions        Session[]
-  auditLogs       AuditLog[]
-  securityEvents  SecurityEvent[]
-  teamMemberships TeamMember[]
+  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions            Session[]
+  auditLogs           AuditLog[]
+  securityEvents      SecurityEvent[]
+  teamMemberships     TeamMember[]
+  staffWhatsAppAuths  StaffWhatsAppAuth[]  @relation("StaffWhatsAppAuth")
 
   @@index([email])
   @@index([tenantId])
@@ -2160,7 +2161,11 @@ model StaffWhatsAppAuth {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  user User @relation("StaffWhatsAppAuth", fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([tenantId, phoneNumber])
+  @@index([userId])
   @@map("staff_whatsapp_auth")
 }
 
