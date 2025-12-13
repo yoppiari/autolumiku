@@ -50,9 +50,11 @@ export async function generateMetadata(): Promise<Metadata> {
         default: tenant.name,
       },
       description: `Jelajahi koleksi kendaraan terlengkap di ${tenant.name}. Dapatkan mobil impian Anda dengan harga terbaik.`,
-      icons: {
-        icon: tenant.faviconUrl || '/favicon.ico',
-      },
+      ...(tenant.faviconUrl && {
+        icons: {
+          icon: tenant.faviconUrl,
+        },
+      }),
       alternates: {
         canonical: canonicalUrl,
       },
