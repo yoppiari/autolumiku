@@ -141,7 +141,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => {
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+              // For /dashboard exact match, only highlight on exact path
+              // For other routes, highlight if path matches or starts with route
+              const isActive = item.href === '/dashboard'
+                ? pathname === '/dashboard'
+                : pathname === item.href || pathname?.startsWith(item.href + '/');
               return (
                 <Link
                   key={item.name}
