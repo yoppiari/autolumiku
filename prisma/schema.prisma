@@ -111,12 +111,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  sessions            Session[]
-  auditLogs           AuditLog[]
-  securityEvents      SecurityEvent[]
-  teamMemberships     TeamMember[]
-  staffWhatsAppAuths  StaffWhatsAppAuth[]  @relation("StaffWhatsAppAuth")
+  tenant          Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions        Session[]
+  auditLogs       AuditLog[]
+  securityEvents  SecurityEvent[]
+  teamMemberships TeamMember[]
 
   @@index([email])
   @@index([tenantId])
@@ -2139,6 +2138,8 @@ model WhatsAppMessage {
 }
 
 // Staff authentication for commands
+// Deprecated: Staff authorization now uses User table directly
+// Kept for backward compatibility with existing data
 model StaffWhatsAppAuth {
   id       String @id @default(uuid())
   tenantId String
@@ -2160,9 +2161,6 @@ model StaffWhatsAppAuth {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  user User @relation("StaffWhatsAppAuth", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, phoneNumber])
   @@index([userId])

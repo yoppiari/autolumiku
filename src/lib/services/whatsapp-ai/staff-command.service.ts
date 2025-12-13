@@ -615,36 +615,23 @@ export class StaffCommandService {
 
   /**
    * Verify staff authorization
+   * All users in the tenant can access WhatsApp AI commands
    */
   private static async verifyStaffAuthorization(
     tenantId: string,
     staffPhone: string,
     intent: MessageIntent
   ): Promise<boolean> {
-    const staff = await prisma.staffWhatsAppAuth.findFirst({
+    // Check if user exists in tenant with this phone number
+    const user = await prisma.user.findFirst({
       where: {
         tenantId,
-        phoneNumber: staffPhone,
-        isActive: true,
+        phone: staffPhone,
       },
     });
 
-    if (!staff) {
-      return false;
-    }
-
-    // Check permissions based on intent
-    switch (intent) {
-      case "staff_upload_vehicle":
-        return staff.canUploadVehicle;
-      case "staff_update_status":
-        return staff.canUpdateStatus;
-      case "staff_check_inventory":
-      case "staff_get_stats":
-        return true; // All staff can view
-      default:
-        return false;
-    }
+    // All users in the tenant can use WhatsApp AI commands
+    return !!user;
   }
 
   /**
