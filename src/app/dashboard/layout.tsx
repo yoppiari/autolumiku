@@ -61,15 +61,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // This works correctly with custom domains (e.g., primamobil.id)
   React.useEffect(() => {
     if (user) {
+      console.log('🔍 [Dashboard] Fetching tenant info...');
       fetch('/api/public/tenant-info')
         .then(res => res.json())
         .then(data => {
+          console.log('📦 [Dashboard] Tenant info response:', data);
           if (data.tenant) {
             setTenant(data.tenant);
+            console.log('✅ [Dashboard] Tenant loaded:', data.tenant.name);
+          } else {
+            console.warn('⚠️ [Dashboard] No tenant data in response');
           }
         })
         .catch(err => {
-          console.error('Error fetching tenant data:', err);
+          console.error('❌ [Dashboard] Error fetching tenant data:', err);
         });
     }
   }, [user]);
