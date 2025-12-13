@@ -49,12 +49,10 @@ export async function middleware(request: NextRequest) {
   // Skip middleware for:
   // - API routes (handled separately)
   // - Static files (but NOT _next/static/ with encoded brackets - handled above)
-  // - Admin panel
-  // - Dashboard
-  // - Auth routes
   // - Next.js internals
   // - Catalog routes (already in correct format)
-  if (
+  // BUT: For custom domains, we still need to set tenant headers even for these routes
+  const shouldSkipRewrite =
     pathname.startsWith('/api/') ||
     (pathname.startsWith('/_next/') && !(pathname.includes('%5B') || pathname.includes('%5D'))) ||
     pathname.startsWith('/admin') ||
@@ -62,9 +60,27 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/team') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/catalog/') ||
-    pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff|woff2|ttf|eot)$/)
-  ) {
+    pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff|woff2|ttf|eot)$/);
+
+  // If not a custom domain and should skip, return early
+  if (shouldSkipRewrite && !isCustomDomain) {
     return NextResponse.next();
+  }
+
+  // If custom domain and should skip rewrite (like /dashboard), set headers but don't rewrite URL
+  if (shouldSkipRewrite && isCustomDomain) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-tenant-domain', cleanHost);
+    requestHeaders.set('x-tenant-slug', tenantSlug);
+    requestHeaders.set('x-is-custom-domain', 'true');
+
+    console.log(`[Middleware] Custom domain ${cleanHost} - Setting tenant headers for ${pathname}`);
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   // Skip for localhost and development (if not already handled above)
