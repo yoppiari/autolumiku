@@ -244,6 +244,96 @@ export default function UsersPage() {
         </button>
       </div>
 
+      {/* WhatsApp AI Integration Info */}
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200 p-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white text-2xl">
+              💬
+            </div>
+          </div>
+          <div className="ml-4 flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              WhatsApp AI Commands untuk Staff
+            </h3>
+            <p className="text-sm text-gray-700 mb-3">
+              Semua staff dengan nomor WhatsApp terdaftar dapat menggunakan AI commands untuk operasional harian.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Upload Vehicle */}
+              <div className="bg-white rounded-lg p-4 border border-green-200">
+                <div className="flex items-start">
+                  <span className="text-2xl mr-3">📸</span>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 text-sm mb-1">/upload - Upload Mobil</h4>
+                    <p className="text-xs text-gray-600 mb-2">Upload mobil baru dengan foto via WhatsApp</p>
+                    <code className="text-xs bg-gray-100 px-2 py-1 rounded block">
+                      /upload Toyota Avanza 2020 150000000 50000 Hitam Manual
+                    </code>
+                  </div>
+                </div>
+              </div>
+
+              {/* Update Status */}
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <div className="flex items-start">
+                  <span className="text-2xl mr-3">🔄</span>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 text-sm mb-1">/status - Update Status</h4>
+                    <p className="text-xs text-gray-600 mb-2">Update status mobil (AVAILABLE, BOOKED, SOLD)</p>
+                    <code className="text-xs bg-gray-100 px-2 py-1 rounded block">
+                      /status 12345 SOLD
+                    </code>
+                  </div>
+                </div>
+              </div>
+
+              {/* Check Inventory */}
+              <div className="bg-white rounded-lg p-4 border border-purple-200">
+                <div className="flex items-start">
+                  <span className="text-2xl mr-3">📊</span>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 text-sm mb-1">/inventory - Cek Stok</h4>
+                    <p className="text-xs text-gray-600 mb-2">Lihat daftar mobil dan filter by status/brand</p>
+                    <code className="text-xs bg-gray-100 px-2 py-1 rounded block">
+                      /inventory AVAILABLE
+                    </code>
+                  </div>
+                </div>
+              </div>
+
+              {/* Get Stats */}
+              <div className="bg-white rounded-lg p-4 border border-orange-200">
+                <div className="flex items-start">
+                  <span className="text-2xl mr-3">📈</span>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 text-sm mb-1">/stats - Statistik</h4>
+                    <p className="text-xs text-gray-600 mb-2">Lihat statistik penjualan dan leads</p>
+                    <code className="text-xs bg-gray-100 px-2 py-1 rounded block">
+                      /stats today
+                    </code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-green-200">
+              <div className="flex items-center text-sm text-gray-600">
+                <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                <span>Staff harus memiliki <strong>Nomor WhatsApp</strong> terdaftar untuk menggunakan commands</span>
+              </div>
+              <a
+                href="/dashboard/whatsapp-ai"
+                className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                Lihat WhatsApp AI Dashboard →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
