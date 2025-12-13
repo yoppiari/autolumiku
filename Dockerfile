@@ -94,10 +94,10 @@ ENV PORT 3000
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy necessary files from builder
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/prisma ./prisma
+# Copy necessary files from builder with correct ownership
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Copy scripts folder (needed for scrapers and utilities)
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
@@ -108,9 +108,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Copy node_modules (including Prisma Client and puppeteer from builder which has all deps)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-
-# Ensure permissions
-RUN chown -R nextjs:nodejs /app
 
 # Switch to non-root user
 USER nextjs
