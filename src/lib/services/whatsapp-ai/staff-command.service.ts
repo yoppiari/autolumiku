@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { MessageIntent } from "./intent-classifier.service";
 import { VehicleDataExtractorService } from "@/lib/ai/vehicle-data-extractor.service";
+import { WhatsAppVehicleUploadService } from "./vehicle-upload.service";
 
 // ==================== TYPES ====================
 
@@ -509,6 +510,7 @@ export class StaffCommandService {
 
   /**
    * Create vehicle with photos after both data and photos are collected
+   * Uses AI-powered upload service to get SEO description
    */
   private static async createVehicleWithPhotos(
     vehicleData: any,
@@ -519,46 +521,29 @@ export class StaffCommandService {
   ): Promise<CommandExecutionResult> {
     const { make, model, year, price, mileage, color, transmission } = vehicleData;
 
-    console.log(`[Upload Flow] Creating vehicle with ${photos.length} photos...`);
+    console.log(`[Upload Flow] Creating vehicle with ${photos.length} photos using AI service...`);
 
-    // Create vehicle
-    const vehicle = await prisma.vehicle.create({
-      data: {
-        tenantId,
+    // Use WhatsApp Vehicle Upload Service (AI-powered with SEO description)
+    const uploadResult = await WhatsAppVehicleUploadService.createVehicle(
+      {
         make,
         model,
         year,
         price,
         mileage,
-        transmissionType: transmission,
         color,
-        status: "AVAILABLE",
-        condition: "Good",
-        descriptionId: `${make} ${model} ${year} - Uploaded via WhatsApp by ${staffPhone}`,
-        features: ["Standard Features"],
+        transmission,
       },
-    });
+      photos,
+      tenantId,
+      staffPhone
+    );
 
-    // Create photos (mark first as main photo)
-    for (let i = 0; i < photos.length; i++) {
-      await prisma.vehiclePhoto.create({
-        data: {
-          vehicleId: vehicle.id,
-          tenantId,
-          storageKey: `whatsapp-upload/${vehicle.id}/${Date.now()}-${i}`,
-          originalUrl: photos[i],
-          thumbnailUrl: photos[i],
-          mediumUrl: photos[i],
-          largeUrl: photos[i],
-          filename: `whatsapp-upload-${i + 1}.jpg`,
-          fileSize: 0,
-          mimeType: 'image/jpeg',
-          width: 0,
-          height: 0,
-          isMainPhoto: i === 0, // First photo is main
-          displayOrder: i,
-        },
-      });
+    if (!uploadResult.success) {
+      return {
+        success: false,
+        message: uploadResult.message,
+      };
     }
 
     // Clear conversation state after successful upload
@@ -570,23 +555,18 @@ export class StaffCommandService {
       },
     });
 
-    console.log(`[Upload Flow] ✅ Vehicle created successfully: ${vehicle.id}`);
+    console.log(`[Upload Flow] ✅ Vehicle created successfully: ${uploadResult.vehicleId}`);
+
+    // Add link to dashboard in message
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+    const vehicleUrl = `${baseUrl}/dashboard/vehicles/${uploadResult.vehicleId}`;
 
     return {
       success: true,
       message:
-        `✅ *Mobil berhasil diupload!*\n\n` +
-        `📋 *Detail:*\n` +
-        `• ID: ${vehicle.displayId || vehicle.id}\n` +
-        `• Mobil: ${make} ${model} ${year}\n` +
-        `• Harga: Rp ${this.formatPrice(price)}\n` +
-        `• KM: ${this.formatNumber(mileage)} km\n` +
-        `• Warna: ${color}\n` +
-        `• Transmisi: ${transmission}\n` +
-        `• Foto: ${photos.length} foto\n` +
-        `• Status: AVAILABLE\n\n` +
-        `🎉 Mobil sudah bisa dilihat di dashboard!`,
-      vehicleId: vehicle.id,
+        uploadResult.message +
+        `\n\n🔗 *Link:*\n${vehicleUrl}`,
+      vehicleId: uploadResult.vehicleId,
     };
   }
 
