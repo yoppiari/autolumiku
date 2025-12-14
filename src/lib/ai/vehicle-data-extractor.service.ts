@@ -32,84 +32,29 @@ export interface VehicleDataExtractionResult {
 
 // ==================== SYSTEM PROMPT ====================
 
-const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `You are a JSON extraction API. You MUST respond with ONLY valid JSON, no other text.
+const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `You are a JSON extraction API. Respond with ONLY valid JSON.
 
-TASK:
-Extract vehicle data from Indonesian text and return ONLY a JSON object:
+Extract vehicle data and return JSON with:
+- make (required): Brand (Toyota, Honda, Suzuki, etc)
+- model (required): Model (Avanza, Brio, Ertiga, etc)
+- year (required): Year (1980-2026)
+- price (required): Price in full IDR
+- mileage (optional): Kilometers
+- color (optional): Color (capitalize)
+- transmission (optional): Manual, Automatic, or CVT
 
-FIELDS YANG HARUS DI-EXTRACT:
-1. make (required): Brand/merk mobil (Toyota, Honda, Suzuki, Daihatsu, Mitsubishi, Nissan, Mazda, dll)
-2. model (required): Model mobil (Avanza, Xenia, Brio, Jazz, Ertiga, Terios, Rush, Innova, Fortuner, dll)
-3. year (required): Tahun produksi (1980-2026)
-4. price (required): Harga dalam IDR (angka penuh, bukan juta)
-5. mileage (optional): Kilometer (angka dalam satuan km)
-6. color (optional): Warna (Hitam, Putih, Silver, Merah, Biru, Abu-abu, dll)
-7. transmission (optional): Transmisi (Manual, Automatic, CVT)
+NORMALIZATION:
+Price: "150 juta" → 150000000, "150jt" → 150000000
+Mileage: "50 ribu" → 50000, "50rb" → 50000, "50k" → 50000
+Transmission: "matic" → "Automatic", "manual" → "Manual"
+Capitalize: "toyota" → "Toyota", "hitam" → "Hitam"
 
-RULES UNTUK NORMALISASI DATA:
+CRITICAL: Respond with ONLY JSON. NO markdown, NO text before/after. Start with { end with }
 
-1. PRICE NORMALIZATION:
-   - "150 juta" → 150000000
-   - "150jt" → 150000000
-   - "1.5M" → 1500000
-   - "250rb" → 250000
-   - Selalu return angka penuh dalam IDR
-
-2. MILEAGE NORMALIZATION:
-   - "50 ribu" → 50000
-   - "50rb" → 50000
-   - "50k" → 50000
-   - "100 ribu km" → 100000
-   - Selalu return angka dalam satuan km
-
-3. TRANSMISSION NORMALIZATION:
-   - "matic" → "Automatic"
-   - "AT" → "Automatic"
-   - "automatic" → "Automatic"
-   - "manual" → "Manual"
-   - "MT" → "Manual"
-   - "CVT" → "CVT"
-
-4. BRAND/MAKE CAPITALIZATION:
-   - "toyota" → "Toyota"
-   - "honda" → "Honda"
-   - Selalu kapitalisasi proper (title case)
-
-5. COLOR CAPITALIZATION:
-   - "hitam" → "Hitam"
-   - "putih" → "Putih"
-   - Selalu kapitalisasi proper (title case)
-
-6. YEAR VALIDATION:
-   - Harus antara 1980-2026
-   - Jika di luar range, return null
-
-CRITICAL RULES - MUST FOLLOW:
-1. Response must be ONLY valid JSON
-2. NO markdown code blocks
-3. NO explanations
-4. NO additional text before or after JSON
-5. Start response with { and end with }
-
-RESPONSE FORMAT (copy exactly):
+Example response:
 {"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Manual"}
 
-EXAMPLES - YOUR RESPONSE MUST LOOK EXACTLY LIKE THIS:
-
-Input: "Toyota Avanza tahun 2020 harga 150 juta km 50 ribu warna hitam transmisi manual"
-Your response: {"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Manual"}
-
-Input: "Avanza 2020 hitam matic 150jt km 50rb"
-Your response: {"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Automatic"}
-
-Input: "Honda Brio 2021, 140 juta, kilometer 30000, silver, automatic"
-Your response: {"make":"Honda","model":"Brio","year":2021,"price":140000000,"mileage":30000,"color":"Silver","transmission":"Automatic"}
-
-If data incomplete:
-- Required missing: {"error":"Cannot extract vehicle data"}
-- Optional missing: Use null for mileage/color/transmission
-
-REMEMBER: Your response must START with { and END with } - absolutely nothing else!`;
+If incomplete: {"error":"Cannot extract vehicle data"}`;
 
 // ==================== SERVICE ====================
 
@@ -141,7 +86,7 @@ export class VehicleDataExtractorService {
         systemPrompt: VEHICLE_EXTRACTION_SYSTEM_PROMPT,
         userPrompt: `Extract vehicle data dari text berikut:\n\n${text}`,
         temperature: 0.1, // Low temperature untuk consistency
-        maxTokens: 500,   // Short response expected
+        maxTokens: 1500,  // Increased from 500 - allow room for reasoning + JSON response
       });
 
       console.log('[Vehicle Data Extractor] ===== AI RESPONSE DEBUG =====');
