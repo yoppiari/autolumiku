@@ -86,7 +86,7 @@ RULES UNTUK NORMALISASI DATA:
 
 CRITICAL RULES - MUST FOLLOW:
 1. Response must be ONLY valid JSON
-2. NO markdown (no ```)
+2. NO markdown code blocks
 3. NO explanations
 4. NO additional text before or after JSON
 5. Start response with { and end with }
