@@ -52,50 +52,16 @@ export interface VehicleAIResult {
   aiReasoning: string;
 }
 
-const VEHICLE_IDENTIFICATION_PROMPT = `You are a JSON API for Indonesian used car inventory system.
+const VEHICLE_IDENTIFICATION_PROMPT = `JSON API for Indonesian used car.
 
-Task: Parse vehicle info and generate complete listing data with SEO description.
+Parse vehicle, SEO description (Bahasa Indonesia, 80-120 words, 3 paragraphs).
+Keywords: "mobil bekas", "dijual", make, model, year
 
-SEO Description Rules (Bahasa Indonesia, 150-250 words):
-- Format: [Make] [Model] [Year] Bekas - [Condition]
-- Para 1: Intro (year, KM, transmission, color)
-- Para 2: Key features (3-5 points)
-- Para 3: Condition (engine, exterior, interior)
-- Para 4: Call-to-action
-- Keywords: "mobil bekas", "dijual", make, model, year
-- Tone: Professional, convincing
+Price in IDR cents (130jt=13000000000). Estimate if missing.
+Transmission: manual/automatic/cvt
 
-CRITICAL:
-- Price in IDR cents (Rp 130jt = 13000000000)
-- If no price mentioned: estimate fair market price
-- Transmission: "manual", "automatic", or "cvt"
-- ALWAYS provide price field (required)
-- Description in Bahasa Indonesia only
-
-Response JSON:
-{
-  "make": "Toyota",
-  "model": "Avanza",
-  "year": 2020,
-  "variant": "1.3 G AT",
-  "transmissionType": "automatic",
-  "fuelType": "bensin",
-  "color": "Hitam",
-  "mileage": 20000,
-  "price": 13000000000,
-  "descriptionId": "Toyota Avanza 2020 Bekas - Kondisi Prima\\n\\nMobil bekas Toyota Avanza 1.3 G AT 2020, KM 20rb, transmisi automatic, warna hitam. Terawat dan siap pakai.\\n\\nKeunggulan: Interior bersih, AC dingin, audio touchscreen, semua fitur normal. Mesin halus, tidak rembes. Kaki-kaki nyaman, ban tebal.\\n\\nEksterior cat original mengkilap. Interior bersih, jok kencang.\\n\\nHubungi untuk test drive. Unit terbatas!",
-  "features": ["AC", "Power Steering", ...],
-  "specifications": {"engineCapacity": "1329cc", "seatingCapacity": 7, "driveType": "FWD"},
-  "aiConfidence": 85,
-  "aiReasoning": "Identified based on...",
-  "aiSuggestedPrice": 13500000000,
-  "priceConfidence": 90,
-  "priceAnalysis": {
-    "marketRange": {"min": 13000000000, "max": 14000000000},
-    "factors": ["2020 year", "Low KM"],
-    "recommendation": "Fair market price"
-  }
-}`;
+JSON:
+{"make":"Toyota","model":"Avanza","year":2020,"variant":"G AT","transmissionType":"automatic","fuelType":"bensin","color":"Hitam","mileage":20000,"price":13000000000,"descriptionId":"Toyota Avanza 2020 Bekas\\n\\nDijual mobil bekas Toyota Avanza G AT 2020, KM 20rb, automatic, hitam. Terawat, siap pakai.\\n\\nInterior bersih, AC dingin, mesin halus. Cat original mengkilap.\\n\\nHubungi untuk test drive!","features":["AC","Power Steering"],"specifications":{"engineCapacity":"1329cc"},"aiConfidence":85,"aiReasoning":"OK","aiSuggestedPrice":13500000000,"priceConfidence":90,"priceAnalysis":{"marketRange":{"min":13000000000,"max":14000000000},"factors":["2020"],"recommendation":"Fair"}}`;
 
 export class VehicleAIService {
   private client: ZAIClient | null;
@@ -216,7 +182,7 @@ export class VehicleAIService {
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
         userPrompt: prompt,
         temperature,
-        maxTokens: 1024,  // Reduced from 4000 - GLM-4.6 has lower limits
+        maxTokens: 800,  // Enough for compact JSON response with short SEO description
       });
 
       // Parse JSON response

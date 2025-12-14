@@ -32,29 +32,21 @@ export interface VehicleDataExtractionResult {
 
 // ==================== SYSTEM PROMPT ====================
 
-const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `You are a JSON extraction API. Respond with ONLY valid JSON.
+const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `JSON API. Extract vehicle data.
 
-Extract vehicle data and return JSON with:
-- make (required): Brand (Toyota, Honda, Suzuki, etc)
-- model (required): Model (Avanza, Brio, Ertiga, etc)
-- year (required): Year (1980-2026)
-- price (required): Price in full IDR
-- mileage (optional): Kilometers
-- color (optional): Color (capitalize)
-- transmission (optional): Manual, Automatic, or CVT
+Required: make, model, year, price (full IDR)
+Optional: mileage (km), color, transmission
 
-NORMALIZATION:
-Price: "150 juta" → 150000000, "150jt" → 150000000
-Mileage: "50 ribu" → 50000, "50rb" → 50000, "50k" → 50000
-Transmission: "matic" → "Automatic", "manual" → "Manual"
-Capitalize: "toyota" → "Toyota", "hitam" → "Hitam"
+Normalize:
+- 150jt/150 juta → 150000000
+- 50rb/50k → 50000
+- matic → Automatic
+- Capitalize names
 
-CRITICAL: Respond with ONLY JSON. NO markdown, NO text before/after. Start with { end with }
-
-Example response:
+Return ONLY JSON:
 {"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Manual"}
 
-If incomplete: {"error":"Cannot extract vehicle data"}`;
+If incomplete: {"error":"Missing data"}`;
 
 // ==================== SERVICE ====================
 
@@ -89,7 +81,7 @@ export class VehicleDataExtractorService {
         systemPrompt: VEHICLE_EXTRACTION_SYSTEM_PROMPT,
         userPrompt: text,  // Send text directly - system prompt already has instructions
         temperature: 0.1, // Low temperature untuk consistency
-        maxTokens: 512,  // Reduced to 512 - GLM-4.6 might have lower limits per response
+        maxTokens: 256,  // Aggressively reduced - GLM-4.6 has strict limits
       });
 
       console.log('[Vehicle Data Extractor] ===== AI RESPONSE DEBUG =====');
