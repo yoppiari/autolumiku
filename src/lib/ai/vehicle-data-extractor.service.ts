@@ -157,7 +157,7 @@ export class VehicleDataExtractorService {
       console.log('[Vehicle Data Extractor] AI Reasoning:', aiResponse.reasoning);
 
       // Parse JSON response
-      let extractedData;
+      let extractedData: any;
       try {
         extractedData = zaiClient.parseJSON(aiResponse.content);
       } catch (parseError: any) {
@@ -172,7 +172,7 @@ export class VehicleDataExtractorService {
       }
 
       // Check for AI error response
-      if (extractedData.error) {
+      if (extractedData?.error) {
         console.warn('[Vehicle Data Extractor] AI could not extract data:', extractedData.error);
         return {
           success: false,
@@ -182,7 +182,7 @@ export class VehicleDataExtractorService {
       }
 
       // Validate required fields
-      const { make, model, year, price } = extractedData;
+      const { make, model, year, price } = extractedData as any;
 
       if (!make || !model || !year || !price) {
         const missing = [];
