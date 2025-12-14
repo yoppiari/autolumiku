@@ -82,11 +82,14 @@ export class VehicleDataExtractorService {
 
       // Call AI untuk extraction
       console.log('[Vehicle Data Extractor] Calling AI for data extraction...');
+      console.log('[Vehicle Data Extractor] System prompt length:', VEHICLE_EXTRACTION_SYSTEM_PROMPT.length, 'chars');
+      console.log('[Vehicle Data Extractor] User prompt length:', text.length, 'chars');
+
       const aiResponse = await zaiClient.generateText({
         systemPrompt: VEHICLE_EXTRACTION_SYSTEM_PROMPT,
-        userPrompt: `Extract vehicle data dari text berikut:\n\n${text}`,
+        userPrompt: text,  // Send text directly - system prompt already has instructions
         temperature: 0.1, // Low temperature untuk consistency
-        maxTokens: 1500,  // Increased from 500 - allow room for reasoning + JSON response
+        maxTokens: 512,  // Reduced to 512 - GLM-4.6 might have lower limits per response
       });
 
       console.log('[Vehicle Data Extractor] ===== AI RESPONSE DEBUG =====');
