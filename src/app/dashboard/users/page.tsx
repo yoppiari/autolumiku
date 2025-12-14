@@ -266,11 +266,16 @@ export default function UsersPage() {
                 <div className="flex items-start">
                   <span className="text-2xl mr-3">📸</span>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 text-sm mb-1">/upload - Upload Mobil</h4>
-                    <p className="text-xs text-gray-600 mb-2">Upload mobil baru dengan foto via WhatsApp</p>
-                    <code className="text-xs bg-gray-100 px-2 py-1 rounded block">
-                      /upload Toyota Avanza 2020 150000000 50000 Hitam Manual
-                    </code>
+                    <h4 className="font-semibold text-gray-900 text-sm mb-1">/upload - Upload Mobil (AI-Powered 🤖)</h4>
+                    <p className="text-xs text-gray-600 mb-2">Upload mobil dengan natural language - AI otomatis memproses!</p>
+                    <div className="space-y-1">
+                      <code className="text-xs bg-gray-100 px-2 py-1 rounded block">
+                        /upload Toyota Avanza tahun 2020 harga 150 juta km 50rb hitam manual
+                      </code>
+                      <code className="text-xs bg-gray-100 px-2 py-1 rounded block">
+                        /upload Avanza 2020 hitam matic 150jt km 50ribu
+                      </code>
+                    </div>
                   </div>
                 </div>
               </div>

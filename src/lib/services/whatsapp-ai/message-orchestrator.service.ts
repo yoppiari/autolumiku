@@ -280,8 +280,8 @@ export class MessageOrchestratorService {
     mediaUrl?: string
   ): Promise<{ message: string; escalated: boolean }> {
     try {
-      // Parse command
-      const parseResult = StaffCommandService.parseCommand(message, intent);
+      // Parse command (now async - supports AI-powered natural language extraction)
+      const parseResult = await StaffCommandService.parseCommand(message, intent);
 
       if (!parseResult.isValid) {
         return {

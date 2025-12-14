@@ -10,6 +10,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { MessageIntent } from "./intent-classifier.service";
+import { VehicleDataExtractorService } from "@/lib/ai/vehicle-data-extractor.service";
 
 // ==================== TYPES ====================
 
@@ -33,13 +34,14 @@ export interface CommandExecutionResult {
 export class StaffCommandService {
   /**
    * Parse command dari message
+   * NOW ASYNC: Supports AI-powered natural language extraction
    */
-  static parseCommand(message: string, intent: MessageIntent): CommandParseResult {
+  static async parseCommand(message: string, intent: MessageIntent): Promise<CommandParseResult> {
     const trimmedMessage = message.trim();
 
     switch (intent) {
       case "staff_upload_vehicle":
-        return this.parseUploadCommand(trimmedMessage);
+        return await this.parseUploadCommand(trimmedMessage);
 
       case "staff_update_status":
         return this.parseStatusUpdateCommand(trimmedMessage);
@@ -154,14 +156,23 @@ export class StaffCommandService {
   // ==================== COMMAND PARSERS ====================
 
   /**
-   * Parse /upload command
-   * Format: /upload [make] [model] [year] [price] [mileage] [color] [transmission]
-   * Example: /upload Toyota Avanza 2020 150000000 50000 Hitam Manual
-   * Also accepts vehicle data without /upload prefix (when in upload state)
+   * Parse /upload command with AI-powered natural language extraction
+   * UPDATED: Now handles multi-step flow with conversation context
+   *
+   * Supports natural language formats:
+   * - "/upload Toyota Avanza tahun 2020 harga 150 juta km 50 ribu warna hitam transmisi manual"
+   * - "/upload Avanza 2020 hitam matic 150jt km 50rb"
+   * - "/upload Honda Brio 2021, 140 juta, kilometer 30000, silver, automatic"
+   *
+   * Legacy strict format still supported:
+   * - "/upload Toyota Avanza 2020 150000000 50000 Hitam Manual"
    */
-  private static parseUploadCommand(message: string): CommandParseResult {
-    // Simple format: wait for multi-step conversation
-    // Staff sends /upload, then we ask for details step by step
+  private static async parseUploadCommand(
+    message: string,
+    conversationContext?: any
+  ): Promise<CommandParseResult> {
+    // Simple format: Initialize multi-step upload flow
+    // Staff sends /upload, then we ask for photo first
     if (message.toLowerCase().trim() === "/upload") {
       return {
         command: "upload_init",
@@ -170,40 +181,71 @@ export class StaffCommandService {
       };
     }
 
-    // Parse full command format or direct vehicle data
-    const parts = message.split(/\s+/).filter((p) => p);
+    // Remove /upload prefix untuk extraction
+    let textToExtract = message;
+    if (message.toLowerCase().startsWith("/upload")) {
+      textToExtract = message.substring(7).trim();
+    }
 
-    // Check if first part is /upload command
-    const hasUploadPrefix = parts[0]?.toLowerCase() === "/upload";
-    const dataStartIndex = hasUploadPrefix ? 1 : 0;
-    const dataParts = hasUploadPrefix ? parts.slice(1) : parts;
-
-    // Need at least: make, model, year, price (minimum 4 fields)
-    if (dataParts.length < 4) {
+    if (!textToExtract) {
       return {
         command: "upload",
         params: {},
         isValid: false,
-        error:
-          "Format tidak lengkap. Format: [merk] [model] [tahun] [harga] [km] [warna] [transmisi]\n\nContoh:\nToyota Avanza 2020 150000000 50000 Hitam Manual",
+        error: "Data mobil tidak boleh kosong. Kirim /upload diikuti detail mobil.",
       };
     }
 
-    const [make, model, year, price, mileage, color, ...transmissionParts] = dataParts;
-    const transmission = transmissionParts.join(" ") || "Manual";
+    console.log(`[Staff Command] Parsing upload command with AI: "${textToExtract}"`);
 
+    // Try AI extraction first
+    const aiResult = await VehicleDataExtractorService.extractFromNaturalLanguage(textToExtract);
+
+    if (aiResult.success && aiResult.data) {
+      console.log('[Staff Command] ✅ AI extraction successful:', aiResult.data);
+      return {
+        command: "upload",
+        params: {
+          ...aiResult.data,
+          // Pass conversation context for state tracking
+          _conversationContext: conversationContext,
+        },
+        isValid: true,
+      };
+    }
+
+    // AI extraction failed, try regex fallback
+    console.log('[Staff Command] ⚠️ AI extraction failed, trying regex fallback...');
+    const regexResult = VehicleDataExtractorService.extractUsingRegex(textToExtract);
+
+    if (regexResult.success && regexResult.data) {
+      console.log('[Staff Command] ✅ Regex fallback successful:', regexResult.data);
+      return {
+        command: "upload",
+        params: {
+          ...regexResult.data,
+          _conversationContext: conversationContext,
+        },
+        isValid: true,
+      };
+    }
+
+    // Both failed, return error
+    console.error('[Staff Command] ❌ Both AI and regex extraction failed');
     return {
       command: "upload",
-      params: {
-        make,
-        model,
-        year: parseInt(year),
-        price: parseInt(price),
-        mileage: parseInt(mileage || "0"),
-        color: color || "Unknown",
-        transmission,
-      },
-      isValid: true,
+      params: {},
+      isValid: false,
+      error:
+        aiResult.error || regexResult.error ||
+        "❌ Gagal memproses data mobil.\n\n" +
+        "Format:\n" +
+        "/upload [merk] [model] [tahun] [harga] [km] [warna] [transmisi]\n\n" +
+        "Contoh natural language:\n" +
+        "• /upload Toyota Avanza tahun 2020 harga 150 juta km 50 ribu hitam manual\n" +
+        "• /upload Avanza 2020 hitam matic 150jt km 50rb\n\n" +
+        "Contoh strict format:\n" +
+        "• /upload Toyota Avanza 2020 150000000 50000 Hitam Manual",
     };
   }
 
@@ -281,7 +323,14 @@ export class StaffCommandService {
   // ==================== COMMAND HANDLERS ====================
 
   /**
-   * Handle vehicle upload
+   * Handle vehicle upload with REQUIRED photo and data
+   * Multi-step flow:
+   * 1. /upload → Ask for photo
+   * 2. Photo sent → Store in context, ask for data
+   * 3. Data sent → Check photo exists, create vehicle
+   * OR
+   * 1. /upload + data → Store data, ask for photo
+   * 2. Photo sent → Create vehicle with stored data
    */
   private static async handleUploadVehicle(
     params: Record<string, any>,
@@ -290,38 +339,104 @@ export class StaffCommandService {
     mediaUrl?: string,
     conversationId?: string
   ): Promise<CommandExecutionResult> {
-    // Initialize upload flow (multi-step)
+    if (!conversationId) {
+      return {
+        success: false,
+        message: "❌ Error: Conversation ID tidak ditemukan. Coba lagi dengan /upload",
+      };
+    }
+
+    // Get current conversation context
+    const conversation = await prisma.whatsAppConversation.findUnique({
+      where: { id: conversationId },
+    });
+
+    const contextData = (conversation?.contextData as any) || {};
+
+    // === STEP 1: Initialize upload flow ===
     if (params.step === "init") {
-      // Update conversation state untuk multi-step flow
-      if (conversationId) {
-        await prisma.whatsAppConversation.update({
-          where: { id: conversationId },
-          data: {
-            conversationState: "upload_vehicle",
-            contextData: { step: "awaiting_photo" },
+      await prisma.whatsAppConversation.update({
+        where: { id: conversationId },
+        data: {
+          conversationState: "upload_vehicle",
+          contextData: {
+            uploadStep: "awaiting_photo",
+            photos: [],
+            vehicleData: null,
           },
-        });
-      }
+        },
+      });
 
       return {
         success: true,
         message:
-          "📸 Untuk upload mobil baru:\n\n1. Kirim foto mobil (1-5 foto)\n2. Kemudian kirim detail dengan format:\n\n*Merk Model Tahun Harga KM Warna Transmisi*\n\nContoh:\nToyota Avanza 2020 150000000 50000 Hitam Manual",
+          "📸 *Upload Mobil - Step 1/2*\n\n" +
+          "Kirim foto mobil (1-5 foto). Setelah selesai kirim foto, lanjut dengan detail mobil.\n\n" +
+          "⚠️ *PENTING:* Upload tidak akan berhasil tanpa foto!",
       };
     }
 
-    // Validate required fields
+    // === STEP 2: Handle incoming photo ===
+    if (mediaUrl) {
+      console.log(`[Upload Flow] Photo received: ${mediaUrl}`);
+
+      const photos = contextData.photos || [];
+      photos.push(mediaUrl);
+
+      // Check if we already have vehicle data
+      if (contextData.vehicleData) {
+        // We have both photo and data! Create vehicle now
+        const vehicleData = contextData.vehicleData;
+
+        console.log(`[Upload Flow] Both photo and data available. Creating vehicle...`);
+        return await this.createVehicleWithPhotos(
+          vehicleData,
+          photos,
+          tenantId,
+          staffPhone,
+          conversationId
+        );
+      }
+
+      // We have photo but no data yet
+      await prisma.whatsAppConversation.update({
+        where: { id: conversationId },
+        data: {
+          contextData: {
+            ...contextData,
+            uploadStep: "has_photo_awaiting_data",
+            photos,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        message:
+          `✅ Foto ${photos.length}/5 diterima!\n\n` +
+          "📝 *Upload Mobil - Step 2/2*\n\n" +
+          "Sekarang kirim detail mobil dengan format natural language:\n\n" +
+          "*Contoh:*\n" +
+          "• Toyota Avanza tahun 2020 harga 150 juta km 50rb hitam manual\n" +
+          "• Avanza 2020 hitam matic 150jt km 50ribu\n\n" +
+          "Atau kirim foto lagi jika belum selesai.",
+      };
+    }
+
+    // === STEP 3: Handle incoming vehicle data ===
     const { make, model, year, price, mileage, color, transmission } = params;
 
+    // Validate required fields
     if (!make || !model || !year || !price) {
       return {
         success: false,
         message:
-          "❌ Data tidak lengkap. Format: /upload [merk] [model] [tahun] [harga] [km] [warna] [transmisi]",
+          "❌ Data tidak lengkap. Minimal: merk, model, tahun, harga\n\n" +
+          "Contoh: Toyota Avanza 2020 150 juta",
       };
     }
 
-    // FIX: Add input validation for data integrity
+    // Validate data integrity
     const currentYear = new Date().getFullYear();
     if (year < 1980 || year > currentYear + 1) {
       return {
@@ -337,16 +452,76 @@ export class StaffCommandService {
       };
     }
 
-    if (mileage < 0 || mileage > 1000000) {
+    if (mileage && (mileage < 0 || mileage > 1000000)) {
       return {
         success: false,
         message: "❌ Kilometer tidak valid. Harus antara 0-1,000,000 km",
       };
     }
 
-    // TODO: Integrate dengan VehicleAIService untuk generate description
-    // For now, create basic vehicle entry
+    const vehicleData = {
+      make,
+      model,
+      year,
+      price,
+      mileage: mileage || 0,
+      color: color || "Unknown",
+      transmission: transmission || "Manual",
+    };
 
+    // Check if we already have photos
+    const photos = contextData.photos || [];
+
+    if (photos.length > 0) {
+      // We have both data and photos! Create vehicle now
+      console.log(`[Upload Flow] Both data and photo available. Creating vehicle...`);
+      return await this.createVehicleWithPhotos(
+        vehicleData,
+        photos,
+        tenantId,
+        staffPhone,
+        conversationId
+      );
+    }
+
+    // We have data but no photo yet
+    await prisma.whatsAppConversation.update({
+      where: { id: conversationId },
+      data: {
+        contextData: {
+          ...contextData,
+          uploadStep: "has_data_awaiting_photo",
+          vehicleData,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message:
+        `✅ Data mobil diterima!\n\n` +
+        `📋 ${make} ${model} ${year}\n` +
+        `💰 Rp ${this.formatPrice(price)}\n\n` +
+        `📸 *Sekarang kirim foto mobil (WAJIB)*\n\n` +
+        `Upload tidak akan berhasil tanpa foto!`,
+    };
+  }
+
+  /**
+   * Create vehicle with photos after both data and photos are collected
+   */
+  private static async createVehicleWithPhotos(
+    vehicleData: any,
+    photos: string[],
+    tenantId: string,
+    staffPhone: string,
+    conversationId: string
+  ): Promise<CommandExecutionResult> {
+    const { make, model, year, price, mileage, color, transmission } = vehicleData;
+
+    console.log(`[Upload Flow] Creating vehicle with ${photos.length} photos...`);
+
+    // Create vehicle
     const vehicle = await prisma.vehicle.create({
       data: {
         tenantId,
@@ -354,52 +529,63 @@ export class StaffCommandService {
         model,
         year,
         price,
-        mileage: mileage || 0,
-        transmissionType: transmission || "Manual",
-        color: color || "Unknown",
+        mileage,
+        transmissionType: transmission,
+        color,
         status: "AVAILABLE",
         condition: "Good",
-        descriptionId: `${make} ${model} ${year} - Uploaded via WhatsApp by staff`,
+        descriptionId: `${make} ${model} ${year} - Uploaded via WhatsApp by ${staffPhone}`,
         features: ["Standard Features"],
-        // Note: Photos will be added in next message if mediaUrl provided
       },
     });
 
-    // If mediaUrl provided, add photo
-    if (mediaUrl) {
+    // Create photos (mark first as main photo)
+    for (let i = 0; i < photos.length; i++) {
       await prisma.vehiclePhoto.create({
         data: {
           vehicleId: vehicle.id,
           tenantId,
-          storageKey: `whatsapp-upload/${vehicle.id}/${Date.now()}`,
-          originalUrl: mediaUrl,
-          thumbnailUrl: mediaUrl,
-          mediumUrl: mediaUrl,
-          largeUrl: mediaUrl,
-          filename: 'whatsapp-upload.jpg',
-          fileSize: 0, // Unknown from WhatsApp
+          storageKey: `whatsapp-upload/${vehicle.id}/${Date.now()}-${i}`,
+          originalUrl: photos[i],
+          thumbnailUrl: photos[i],
+          mediumUrl: photos[i],
+          largeUrl: photos[i],
+          filename: `whatsapp-upload-${i + 1}.jpg`,
+          fileSize: 0,
           mimeType: 'image/jpeg',
-          width: 0, // Unknown
-          height: 0, // Unknown
-          isMainPhoto: true,
+          width: 0,
+          height: 0,
+          isMainPhoto: i === 0, // First photo is main
+          displayOrder: i,
         },
       });
     }
 
     // Clear conversation state after successful upload
-    if (conversationId) {
-      await prisma.whatsAppConversation.update({
-        where: { id: conversationId },
-        data: {
-          conversationState: null,
-          contextData: Prisma.DbNull,
-        },
-      });
-    }
+    await prisma.whatsAppConversation.update({
+      where: { id: conversationId },
+      data: {
+        conversationState: null,
+        contextData: Prisma.DbNull,
+      },
+    });
+
+    console.log(`[Upload Flow] ✅ Vehicle created successfully: ${vehicle.id}`);
 
     return {
       success: true,
-      message: `✅ Mobil berhasil ditambahkan!\n\n📋 Detail:\n- ID: ${vehicle.displayId || vehicle.id}\n- Mobil: ${make} ${model} ${year}\n- Harga: Rp ${this.formatPrice(price)}\n- KM: ${this.formatNumber(mileage || 0)} km\n- Status: AVAILABLE\n\n${!mediaUrl ? "⚠️ Jangan lupa upload foto di dashboard admin!" : ""}`,
+      message:
+        `✅ *Mobil berhasil diupload!*\n\n` +
+        `📋 *Detail:*\n` +
+        `• ID: ${vehicle.displayId || vehicle.id}\n` +
+        `• Mobil: ${make} ${model} ${year}\n` +
+        `• Harga: Rp ${this.formatPrice(price)}\n` +
+        `• KM: ${this.formatNumber(mileage)} km\n` +
+        `• Warna: ${color}\n` +
+        `• Transmisi: ${transmission}\n` +
+        `• Foto: ${photos.length} foto\n` +
+        `• Status: AVAILABLE\n\n` +
+        `🎉 Mobil sudah bisa dilihat di dashboard!`,
       vehicleId: vehicle.id,
     };
   }
