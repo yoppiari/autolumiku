@@ -126,20 +126,22 @@ export class IntentClassifierService {
 
   /**
    * Check if phone number belongs to staff
+   * Updated to use User table directly (staff management centralized)
    */
   private static async isStaffMember(
     phoneNumber: string,
     tenantId: string
   ): Promise<boolean> {
-    const staff = await prisma.staffWhatsAppAuth.findFirst({
+    // Check if user exists in tenant with this phone number
+    const user = await prisma.user.findFirst({
       where: {
-        phoneNumber,
         tenantId,
-        isActive: true,
+        phone: phoneNumber,
       },
     });
 
-    return !!staff;
+    // All users in the tenant can use WhatsApp AI commands
+    return !!user;
   }
 
   /**
