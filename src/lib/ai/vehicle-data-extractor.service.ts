@@ -145,12 +145,32 @@ export class VehicleDataExtractorService {
       });
 
       console.log('[Vehicle Data Extractor] ===== AI RESPONSE DEBUG =====');
-      console.log('[Vehicle Data Extractor] Content length:', aiResponse.content.length);
+      console.log('[Vehicle Data Extractor] Content length:', aiResponse.content?.length || 0);
       console.log('[Vehicle Data Extractor] Content type:', typeof aiResponse.content);
-      console.log('[Vehicle Data Extractor] Content (first 200 chars):', aiResponse.content.substring(0, 200));
-      console.log('[Vehicle Data Extractor] Full content:', aiResponse.content);
-      console.log('[Vehicle Data Extractor] Reasoning:', aiResponse.reasoning);
+      console.log('[Vehicle Data Extractor] Content is empty?:', !aiResponse.content || aiResponse.content.trim() === '');
+      console.log('[Vehicle Data Extractor] Content (first 200 chars):', aiResponse.content?.substring(0, 200) || 'EMPTY');
+      console.log('[Vehicle Data Extractor] Full content:', aiResponse.content || 'EMPTY');
+      console.log('[Vehicle Data Extractor] Reasoning:', aiResponse.reasoning || 'NONE');
+      console.log('[Vehicle Data Extractor] Finish reason:', aiResponse.finishReason);
+      console.log('[Vehicle Data Extractor] Usage:', aiResponse.usage);
       console.log('[Vehicle Data Extractor] ================================');
+
+      // Check if AI response is empty
+      if (!aiResponse.content || aiResponse.content.trim() === '') {
+        console.error('[Vehicle Data Extractor] ❌ AI returned empty response!');
+        console.error('[Vehicle Data Extractor] Finish reason:', aiResponse.finishReason);
+        console.error('[Vehicle Data Extractor] This might indicate:');
+        console.error('[Vehicle Data Extractor] - API key issue');
+        console.error('[Vehicle Data Extractor] - Model configuration issue');
+        console.error('[Vehicle Data Extractor] - Content filtering/safety issue');
+        console.error('[Vehicle Data Extractor] - Token limit reached');
+
+        return {
+          success: false,
+          confidence: 0,
+          error: `AI returned empty response. Finish reason: ${aiResponse.finishReason || 'unknown'}. Please try again or use strict format.`,
+        };
+      }
 
       // Parse JSON response
       let extractedData: any;
@@ -270,56 +290,125 @@ export class VehicleDataExtractorService {
   static extractUsingRegex(text: string): VehicleDataExtractionResult {
     console.log('[Vehicle Data Extractor] Using regex fallback for:', text);
 
-    const parts = text.split(/\s+/).filter((p) => p);
+    // Try to extract structured data with Indonesian number formats
+    const extractedData: any = {
+      make: null,
+      model: null,
+      year: null,
+      price: null,
+      mileage: 0,
+      color: 'Unknown',
+      transmission: 'Manual',
+    };
 
-    // Need at least 4 parts: make, model, year, price
-    if (parts.length < 4) {
+    // Extract year (4 digits)
+    const yearMatch = text.match(/\b(19\d{2}|20[0-2]\d)\b/);
+    if (yearMatch) {
+      extractedData.year = parseInt(yearMatch[1]);
+    }
+
+    // Extract price (support: harga 150juta, 150 juta, 150jt, 150000000)
+    const priceMatch = text.match(/(?:harga|price)\s*:?\s*(\d+(?:\.\d+)?)\s*(juta|jt|m)?/i);
+    if (priceMatch) {
+      const num = parseFloat(priceMatch[1]);
+      const unit = priceMatch[2]?.toLowerCase();
+
+      if (unit === 'juta' || unit === 'jt' || unit === 'm') {
+        extractedData.price = Math.round(num * 1000000);
+      } else if (num > 10000000) {
+        // Large number, assume raw rupiah
+        extractedData.price = Math.round(num);
+      }
+    } else {
+      // Fallback: look for large numbers (likely price in full rupiah)
+      const largeNumberMatch = text.match(/\b(\d{8,})\b/);
+      if (largeNumberMatch) {
+        extractedData.price = parseInt(largeNumberMatch[1]);
+      }
+    }
+
+    // Extract mileage (support: km 50rb, 50 ribu km, 50k, 50000)
+    const mileageMatch = text.match(/(?:km|kilometer|odometer|jarak)\s*:?\s*(\d+(?:\.\d+)?)\s*(rb|ribu|k)?/i);
+    if (mileageMatch) {
+      const num = parseFloat(mileageMatch[1]);
+      const unit = mileageMatch[2]?.toLowerCase();
+
+      if (unit === 'rb' || unit === 'ribu' || unit === 'k') {
+        extractedData.mileage = Math.round(num * 1000);
+      } else if (num < 1000000) {
+        // Reasonable mileage range
+        extractedData.mileage = Math.round(num);
+      }
+    }
+
+    // Extract transmission
+    if (/\b(matic|automatic|AT)\b/i.test(text)) {
+      extractedData.transmission = 'Automatic';
+    } else if (/\b(manual|MT)\b/i.test(text)) {
+      extractedData.transmission = 'Manual';
+    } else if (/\bCVT\b/i.test(text)) {
+      extractedData.transmission = 'CVT';
+    }
+
+    // Extract color (common Indonesian colors)
+    const colors = ['hitam', 'putih', 'silver', 'abu-abu', 'merah', 'biru', 'hijau', 'kuning', 'coklat'];
+    for (const color of colors) {
+      if (new RegExp(`\\b${color}\\b`, 'i').test(text)) {
+        extractedData.color = color.charAt(0).toUpperCase() + color.slice(1);
+        break;
+      }
+    }
+
+    // Extract make and model (simple word matching)
+    const parts = text.split(/\s+/).filter((p) => p && !/^\d+$/.test(p));
+
+    // Common brands
+    const brands = ['Toyota', 'Honda', 'Suzuki', 'Daihatsu', 'Mitsubishi', 'Nissan', 'Mazda'];
+    for (const brand of brands) {
+      if (new RegExp(`\\b${brand}\\b`, 'i').test(text)) {
+        extractedData.make = brand;
+        break;
+      }
+    }
+
+    // Common models
+    const models = ['Avanza', 'Xenia', 'Brio', 'Jazz', 'Ertiga', 'Terios', 'Rush', 'Innova', 'Fortuner', 'Pajero', 'Civic', 'CR-V', 'HR-V'];
+    for (const model of models) {
+      if (new RegExp(`\\b${model}\\b`, 'i').test(text)) {
+        extractedData.model = model;
+        break;
+      }
+    }
+
+    // If make/model not found by keyword, use first two words as fallback
+    if (!extractedData.make && parts.length >= 1) {
+      extractedData.make = parts[0];
+    }
+    if (!extractedData.model && parts.length >= 2) {
+      extractedData.model = parts[1];
+    }
+
+    // Validate required fields
+    if (!extractedData.make || !extractedData.model || !extractedData.year || !extractedData.price) {
+      const missing = [];
+      if (!extractedData.make) missing.push('merk');
+      if (!extractedData.model) missing.push('model');
+      if (!extractedData.year) missing.push('tahun');
+      if (!extractedData.price) missing.push('harga');
+
+      console.warn('[Vehicle Data Extractor] Regex extraction missing fields:', missing);
       return {
         success: false,
         confidence: 0,
-        error: 'Format tidak lengkap. Minimal: [merk] [model] [tahun] [harga]',
+        error: `Format tidak lengkap. Field yang hilang: ${missing.join(', ')}. Contoh: Toyota Avanza 2020 150 juta`,
       };
     }
 
-    const [make, model, yearStr, priceStr, mileageStr, color, ...transmissionParts] = parts;
-
-    // Parse year
-    const year = parseInt(yearStr);
-    if (isNaN(year)) {
-      return {
-        success: false,
-        confidence: 0,
-        error: 'Tahun tidak valid',
-      };
-    }
-
-    // Parse price
-    const price = parseInt(priceStr);
-    if (isNaN(price)) {
-      return {
-        success: false,
-        confidence: 0,
-        error: 'Harga tidak valid',
-      };
-    }
-
-    // Parse optional mileage
-    const mileage = mileageStr ? parseInt(mileageStr) : 0;
-
-    // Parse transmission
-    const transmission = transmissionParts.join(' ') || 'Manual';
+    console.log('[Vehicle Data Extractor] ✅ Regex extraction successful:', extractedData);
 
     return {
       success: true,
-      data: {
-        make,
-        model,
-        year,
-        price,
-        mileage: isNaN(mileage) ? 0 : mileage,
-        color: color || 'Unknown',
-        transmission,
-      },
+      data: extractedData,
       confidence: 0.7, // Lower confidence for regex extraction
     };
   }
