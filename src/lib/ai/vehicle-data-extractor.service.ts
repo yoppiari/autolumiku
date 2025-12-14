@@ -32,10 +32,10 @@ export interface VehicleDataExtractionResult {
 
 // ==================== SYSTEM PROMPT ====================
 
-const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `Anda adalah AI assistant yang expert dalam mengekstrak data kendaraan dari text Bahasa Indonesia.
+const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `You are a JSON extraction API. You MUST respond with ONLY valid JSON, no other text.
 
-TUGAS ANDA:
-Extract informasi kendaraan berikut dari text yang diberikan dan return dalam format JSON:
+TASK:
+Extract vehicle data from Indonesian text and return ONLY a JSON object:
 
 FIELDS YANG HARUS DI-EXTRACT:
 1. make (required): Brand/merk mobil (Toyota, Honda, Suzuki, Daihatsu, Mitsubishi, Nissan, Mazda, dll)
@@ -84,41 +84,32 @@ RULES UNTUK NORMALISASI DATA:
    - Harus antara 1980-2026
    - Jika di luar range, return null
 
-OUTPUT FORMAT:
-Return ONLY valid JSON object (no markdown, no explanation):
+CRITICAL RULES - MUST FOLLOW:
+1. Response must be ONLY valid JSON
+2. NO markdown (no ```)
+3. NO explanations
+4. NO additional text before or after JSON
+5. Start response with { and end with }
 
-{
-  "make": "Toyota",
-  "model": "Avanza",
-  "year": 2020,
-  "price": 150000000,
-  "mileage": 50000,
-  "color": "Hitam",
-  "transmission": "Manual"
-}
+RESPONSE FORMAT (copy exactly):
+{"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Manual"}
 
-JIKA DATA TIDAK LENGKAP:
-- Required fields (make, model, year, price) HARUS ada
-- Optional fields boleh null
-- Jika required field tidak ditemukan, return null untuk field tersebut
-
-CONTOH EXTRACTION:
+EXAMPLES - YOUR RESPONSE MUST LOOK EXACTLY LIKE THIS:
 
 Input: "Toyota Avanza tahun 2020 harga 150 juta km 50 ribu warna hitam transmisi manual"
-Output: {"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Manual"}
+Your response: {"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Manual"}
 
 Input: "Avanza 2020 hitam matic 150jt km 50rb"
-Output: {"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Automatic"}
+Your response: {"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Automatic"}
 
 Input: "Honda Brio 2021, 140 juta, kilometer 30000, silver, automatic"
-Output: {"make":"Honda","model":"Brio","year":2021,"price":140000000,"mileage":30000,"color":"Silver","transmission":"Automatic"}
+Your response: {"make":"Honda","model":"Brio","year":2021,"price":140000000,"mileage":30000,"color":"Silver","transmission":"Automatic"}
 
-PENTING:
-- Return ONLY JSON object
-- NO markdown code blocks
-- NO explanations
-- NO additional text
-- Jika tidak bisa extract, return: {"error": "Cannot extract vehicle data"}`;
+If data incomplete:
+- Required missing: {"error":"Cannot extract vehicle data"}
+- Optional missing: Use null for mileage/color/transmission
+
+REMEMBER: Your response must START with { and END with } - absolutely nothing else!`;
 
 // ==================== SERVICE ====================
 
@@ -153,22 +144,50 @@ export class VehicleDataExtractorService {
         maxTokens: 500,   // Short response expected
       });
 
-      console.log('[Vehicle Data Extractor] AI Response:', aiResponse.content);
-      console.log('[Vehicle Data Extractor] AI Reasoning:', aiResponse.reasoning);
+      console.log('[Vehicle Data Extractor] ===== AI RESPONSE DEBUG =====');
+      console.log('[Vehicle Data Extractor] Content length:', aiResponse.content.length);
+      console.log('[Vehicle Data Extractor] Content type:', typeof aiResponse.content);
+      console.log('[Vehicle Data Extractor] Content (first 200 chars):', aiResponse.content.substring(0, 200));
+      console.log('[Vehicle Data Extractor] Full content:', aiResponse.content);
+      console.log('[Vehicle Data Extractor] Reasoning:', aiResponse.reasoning);
+      console.log('[Vehicle Data Extractor] ================================');
 
       // Parse JSON response
       let extractedData: any;
       try {
         extractedData = zaiClient.parseJSON(aiResponse.content);
+        console.log('[Vehicle Data Extractor] ✅ JSON parsed successfully:', extractedData);
       } catch (parseError: any) {
-        console.error('[Vehicle Data Extractor] Failed to parse AI response as JSON:', parseError.message);
-        console.error('[Vehicle Data Extractor] Raw content:', aiResponse.content);
+        console.error('[Vehicle Data Extractor] ❌ Failed to parse AI response as JSON');
+        console.error('[Vehicle Data Extractor] Parse error name:', parseError.name);
+        console.error('[Vehicle Data Extractor] Parse error message:', parseError.message);
+        console.error('[Vehicle Data Extractor] Parse error stack:', parseError.stack);
+        console.error('[Vehicle Data Extractor] Raw content length:', aiResponse.content.length);
+        console.error('[Vehicle Data Extractor] Raw content (full):', JSON.stringify(aiResponse.content));
 
-        return {
-          success: false,
-          confidence: 0,
-          error: 'Failed to parse AI response. Invalid JSON format.',
-        };
+        // Try to extract JSON from text if AI added extra explanation
+        const jsonMatch = aiResponse.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          console.log('[Vehicle Data Extractor] Found JSON pattern in response, trying to extract...');
+          try {
+            extractedData = JSON.parse(jsonMatch[0]);
+            console.log('[Vehicle Data Extractor] ✅ Successfully extracted JSON from text:', extractedData);
+          } catch (extractError) {
+            console.error('[Vehicle Data Extractor] ❌ Failed to extract JSON pattern:', extractError);
+            return {
+              success: false,
+              confidence: 0,
+              error: 'AI returned invalid JSON format. Please try again with different wording.',
+            };
+          }
+        } else {
+          console.error('[Vehicle Data Extractor] ❌ No JSON pattern found in response');
+          return {
+            success: false,
+            confidence: 0,
+            error: 'AI did not return valid JSON. Response: ' + aiResponse.content.substring(0, 100),
+          };
+        }
       }
 
       // Check for AI error response
