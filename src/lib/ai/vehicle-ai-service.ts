@@ -52,37 +52,27 @@ export interface VehicleAIResult {
   aiReasoning: string;
 }
 
-const VEHICLE_IDENTIFICATION_PROMPT = `Anda adalah AI assistant untuk sistem inventory showroom mobil bekas di Indonesia.
+const VEHICLE_IDENTIFICATION_PROMPT = `You are a JSON API for Indonesian used car inventory system.
 
-Tugas Anda:
-1. Parse informasi kendaraan dari input user yang minimal
-2. Generate data lengkap untuk listing kendaraan
-3. Buat deskripsi SEO-friendly dalam Bahasa Indonesia untuk mobil bekas
-4. Extract fitur-fitur kendaraan berdasarkan pengetahuan umum tentang model tersebut
-5. Validasi harga berdasarkan market price Indonesia dan berikan analisis
+Task: Parse vehicle info and generate complete listing data with SEO description.
 
-KAIDAH SEO MOBIL BEKAS INDONESIA:
-- Gunakan kata kunci: "mobil bekas", "second", "dijual", nama merek & model, tahun, kota
-- Format: [Merek] [Model] [Tahun] Bekas - [Kondisi/Variant]
-- Paragraf 1: Pengenalan singkat (kondisi umum, tahun, KM, transmisi, warna)
-- Paragraf 2: Keunggulan & fitur utama (3-5 poin)
-- Paragraf 3: Kondisi mesin & eksterior/interior
-- Paragraf 4: Call-to-action (hubungi, test drive, harga nego)
-- Panjang: 150-250 kata
-- Tone: Profesional tapi ramah, meyakinkan pembeli
-- Hindari: Superlatif berlebihan, klaim tidak terverifikasi
+SEO Description Rules (Bahasa Indonesia, 150-250 words):
+- Format: [Make] [Model] [Year] Bekas - [Condition]
+- Para 1: Intro (year, KM, transmission, color)
+- Para 2: Key features (3-5 points)
+- Para 3: Condition (engine, exterior, interior)
+- Para 4: Call-to-action
+- Keywords: "mobil bekas", "dijual", make, model, year
+- Tone: Professional, convincing
 
-IMPORTANT:
-- Gunakan pengetahuan umum tentang model kendaraan untuk melengkapi data
-- Harga harus dalam format IDR cents (Rp 130jt = 13000000000 cents)
-- JIKA USER TIDAK MENTION HARGA: estimate harga market yang wajar dan set aiSuggestedPrice = price
-- Transmission type: "manual", "automatic", atau "cvt"
-- Confidence score: 0-100
-- PRICE ANALYSIS sangat penting: bandingkan harga user dengan market price, berikan recommendation
-- ALWAYS provide price field (required) - estimate if not provided by user
-- Description HANYA dalam Bahasa Indonesia (SEO-optimized)
+CRITICAL:
+- Price in IDR cents (Rp 130jt = 13000000000)
+- If no price mentioned: estimate fair market price
+- Transmission: "manual", "automatic", or "cvt"
+- ALWAYS provide price field (required)
+- Description in Bahasa Indonesia only
 
-Response format (JSON):
+Response JSON:
 {
   "make": "Toyota",
   "model": "Avanza",
@@ -93,21 +83,17 @@ Response format (JSON):
   "color": "Hitam",
   "mileage": 20000,
   "price": 13000000000,
-  "descriptionId": "Toyota Avanza 2020 Bekas - Kondisi Prima Siap Pakai\\n\\nDijual mobil bekas Toyota Avanza 1.3 G AT tahun 2020 dengan kilometer 20.000, transmisi automatic, dan warna hitam yang elegan. Mobil ini sangat terawat dan siap digunakan untuk kebutuhan keluarga Anda.\\n\\nKeunggulan unit ini meliputi: interior bersih dan rapi, AC dingin, audio touchscreen, dan semua fitur berfungsi dengan baik. Mesin kering dan halus, tidak ada rembesan oli. Kaki-kaki nyaman, ban tebal, dan velg mulus tanpa cacat.\\n\\nEksterior cat masih original dan mengkilap, bebas dari baret atau penyok. Interior bersih, jok masih kencang, dan tidak ada bau tidak sedap.\\n\\nHubungi kami sekarang untuk test drive atau nego harga. Unit terbatas, siapa cepat dia dapat!",
-  "features": ["Fitur 1", "Fitur 2", ...],
-  "specifications": {
-    "engineCapacity": "1329cc",
-    "seatingCapacity": 7,
-    "driveType": "FWD"
-  },
+  "descriptionId": "Toyota Avanza 2020 Bekas - Kondisi Prima\\n\\nMobil bekas Toyota Avanza 1.3 G AT 2020, KM 20rb, transmisi automatic, warna hitam. Terawat dan siap pakai.\\n\\nKeunggulan: Interior bersih, AC dingin, audio touchscreen, semua fitur normal. Mesin halus, tidak rembes. Kaki-kaki nyaman, ban tebal.\\n\\nEksterior cat original mengkilap. Interior bersih, jok kencang.\\n\\nHubungi untuk test drive. Unit terbatas!",
+  "features": ["AC", "Power Steering", ...],
+  "specifications": {"engineCapacity": "1329cc", "seatingCapacity": 7, "driveType": "FWD"},
   "aiConfidence": 85,
-  "aiReasoning": "Reasoning tentang identifikasi dan pricing...",
-  "aiSuggestedPrice": 23500000000,
-  "priceConfidence": 95,
+  "aiReasoning": "Identified based on...",
+  "aiSuggestedPrice": 13500000000,
+  "priceConfidence": 90,
   "priceAnalysis": {
-    "marketRange": { "min": 23000000000, "max": 24500000000 },
-    "factors": ["Tahun 2020", "KM rendah", "Kondisi baik"],
-    "recommendation": "Harga sesuai market / Harga terlalu rendah / Harga terlalu tinggi dengan penjelasan detail"
+    "marketRange": {"min": 13000000000, "max": 14000000000},
+    "factors": ["2020 year", "Low KM"],
+    "recommendation": "Fair market price"
   }
 }`;
 
@@ -202,47 +188,27 @@ export class VehicleAIService {
       // Step 3: Build enhanced prompt with reference data
       let referenceData = '';
 
-      // Add popular vehicle database reference
+      // Add popular vehicle database reference (compact format)
       if (searchResults.length > 0) {
         const topMatch = searchResults[0];
-        referenceData += `\n\nPOPULAR VEHICLE DATABASE:
-Make: ${topMatch.make}
-Model: ${topMatch.model}
-Category: ${topMatch.category}
-Available variants: ${JSON.stringify(topMatch.variants)}
-Market price range: ${JSON.stringify(topMatch.usedCarPrices)}`;
+        const priceRange = topMatch.usedCarPrices?.[0];
+        referenceData += `\nDB: ${topMatch.make} ${topMatch.model}, variants: ${topMatch.variants?.slice(0, 2).join(', ')}`;
+        if (priceRange) {
+          referenceData += `, price: Rp ${priceRange.minPrice}-${priceRange.maxPrice}jt`;
+        }
       }
 
-      // Add scraped data reference (REAL market data from OLX and CARSOME)
+      // Add scraped data reference (compact format - only top 2 examples)
       if (scrapedData.length > 0) {
-        referenceData += `\n\nREAL MARKET DATA (from OLX and CARSOME):`;
-
-        scrapedData.slice(0, 3).forEach((vehicle, idx) => {
-          referenceData += `\n\nExample ${idx + 1} (Source: ${vehicle.source}):
-- ${vehicle.make} ${vehicle.model} ${vehicle.year}${vehicle.variant ? ` ${vehicle.variant}` : ''}
-- Price: ${vehicle.priceDisplay || 'N/A'}
-- Transmission: ${vehicle.transmission || 'N/A'}
-- Fuel Type: ${vehicle.fuelType || 'N/A'}
-- Body Type: ${vehicle.bodyType || 'N/A'}
-- Mileage: ${vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : 'N/A'}
-- Features: ${vehicle.features || 'N/A'}
-${vehicle.description ? `- Description: ${vehicle.description.substring(0, 200)}...` : ''}`;
+        referenceData += `\nMarket:`;
+        scrapedData.slice(0, 2).forEach((v, i) => {
+          referenceData += ` ${i + 1}) ${v.make} ${v.model} ${v.year} ${v.priceDisplay || ''}`;
         });
       }
 
       // If we have reference data, enhance the prompt
       if (referenceData) {
-        prompt = `Parse kendaraan ini dan generate data lengkap: ${input.userDescription}
-${referenceData}
-
-IMPORTANT - Use this reference data to:
-1. Confirm make/model identification
-2. Validate variant against available options
-3. Compare user's price with REAL market data above
-4. Extract features similar to market examples
-5. Generate descriptions inspired by market descriptions
-6. Provide accurate pricing analysis based on actual listings`;
-
+        prompt = `${input.userDescription}${referenceData}\n\nUse reference for price validation.`;
         temperature = 0.5; // Lower temperature for more consistent results with reference data
       }
 
@@ -250,7 +216,7 @@ IMPORTANT - Use this reference data to:
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
         userPrompt: prompt,
         temperature,
-        maxTokens: 4000,
+        maxTokens: 1024,  // Reduced from 4000 - GLM-4.6 has lower limits
       });
 
       // Parse JSON response
