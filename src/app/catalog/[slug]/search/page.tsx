@@ -37,8 +37,9 @@ export default function SearchPage({ params }: PageProps) {
     const [totalVehicles, setTotalVehicles] = useState(0);
 
     // Derive filters from URL search params
+    // Note: GlobalSearch uses 'q' param, but API might use 'search'
     const filters = {
-        search: searchParams.get('search') || '',
+        search: searchParams.get('q') || searchParams.get('search') || '',
         make: searchParams.get('make') || '',
         minPrice: searchParams.get('minPrice') || '',
         maxPrice: searchParams.get('maxPrice') || '',
@@ -95,6 +96,12 @@ export default function SearchPage({ params }: PageProps) {
 
             // Ensure sortBy is set if missing
             if (!queryParams.has('sortBy')) queryParams.set('sortBy', 'date-desc');
+
+            // Convert 'q' to 'search' for API compatibility
+            if (queryParams.has('q') && !queryParams.has('search')) {
+                queryParams.set('search', queryParams.get('q') || '');
+                queryParams.delete('q');
+            }
 
             const response = await fetch(`/api/public/catalog/${slug}?${queryParams.toString()}`);
 
