@@ -51,9 +51,11 @@ export async function middleware(request: NextRequest) {
   // - Static files (but NOT _next/static/ with encoded brackets - handled above)
   // - Next.js internals
   // - Catalog routes (already in correct format)
+  // - Uploads route (serves uploaded images)
   // BUT: For custom domains, we still need to set tenant headers even for these routes
   const shouldSkipRewrite =
     pathname.startsWith('/api/') ||
+    pathname.startsWith('/uploads/') ||
     (pathname.startsWith('/_next/') && !(pathname.includes('%5B') || pathname.includes('%5D'))) ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/dashboard') ||
