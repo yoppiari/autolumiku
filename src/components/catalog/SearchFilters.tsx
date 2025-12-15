@@ -1,9 +1,11 @@
 /**
  * Search Filters Component for Catalog
- * Updated to use shadcn/ui components
+ * Updated to use shadcn/ui components with local state for responsive typing
  */
 
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -44,6 +46,47 @@ export default function SearchFilters({
   onChange,
   onClear,
 }: SearchFiltersProps) {
+  // Local state for text inputs (instant response while typing)
+  const [localSearch, setLocalSearch] = useState(filters.search);
+  const [localMinPrice, setLocalMinPrice] = useState(filters.minPrice);
+  const [localMaxPrice, setLocalMaxPrice] = useState(filters.maxPrice);
+
+  // Sync local state when URL params change (e.g., on clear or external navigation)
+  useEffect(() => {
+    setLocalSearch(filters.search);
+  }, [filters.search]);
+
+  useEffect(() => {
+    setLocalMinPrice(filters.minPrice);
+  }, [filters.minPrice]);
+
+  useEffect(() => {
+    setLocalMaxPrice(filters.maxPrice);
+  }, [filters.maxPrice]);
+
+  // Debounced handlers for text inputs
+  const handleSearchChange = useCallback((value: string) => {
+    setLocalSearch(value);
+    onChange('search', value);
+  }, [onChange]);
+
+  const handleMinPriceChange = useCallback((value: string) => {
+    setLocalMinPrice(value);
+    onChange('minPrice', value);
+  }, [onChange]);
+
+  const handleMaxPriceChange = useCallback((value: string) => {
+    setLocalMaxPrice(value);
+    onChange('maxPrice', value);
+  }, [onChange]);
+
+  // Handle clear with local state reset
+  const handleClear = useCallback(() => {
+    setLocalSearch('');
+    setLocalMinPrice('');
+    setLocalMaxPrice('');
+    onClear();
+  }, [onClear]);
   const hasActiveFilters =
     filters.search ||
     filters.make ||
@@ -60,7 +103,7 @@ export default function SearchFilters({
         <h2 className="text-lg font-semibold text-gray-900">Filter Kendaraan</h2>
         {hasActiveFilters && (
           <Button
-            onClick={onClear}
+            onClick={handleClear}
             variant="link"
             className="text-sm text-blue-600 hover:text-blue-800"
           >
@@ -79,8 +122,8 @@ export default function SearchFilters({
             id="search"
             type="text"
             placeholder="Cari merk, model, variant..."
-            value={filters.search}
-            onChange={(e) => onChange('search', e.target.value)}
+            value={localSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
 
@@ -130,8 +173,8 @@ export default function SearchFilters({
             id="minPrice"
             type="number"
             placeholder="0"
-            value={filters.minPrice}
-            onChange={(e) => onChange('minPrice', e.target.value)}
+            value={localMinPrice}
+            onChange={(e) => handleMinPriceChange(e.target.value)}
           />
         </div>
 
@@ -143,8 +186,8 @@ export default function SearchFilters({
             id="maxPrice"
             type="number"
             placeholder={filterOptions.priceRange.max.toString()}
-            value={filters.maxPrice}
-            onChange={(e) => onChange('maxPrice', e.target.value)}
+            value={localMaxPrice}
+            onChange={(e) => handleMaxPriceChange(e.target.value)}
           />
         </div>
 

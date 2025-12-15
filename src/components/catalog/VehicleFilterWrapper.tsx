@@ -41,14 +41,20 @@ export default function VehicleFilterWrapper({ filterOptions }: VehicleFilterWra
         [searchParams]
     );
 
-    // Debounced search update
+    // Debounced updates for text inputs (search, price)
     const handleSearchDebounced = useDebouncedCallback((value: string) => {
         router.push(`${pathname}?${createQueryString('search', value)}`);
-    }, 500);
+    }, 300);
+
+    const handlePriceDebounced = useDebouncedCallback((name: string, value: string) => {
+        router.push(`${pathname}?${createQueryString(name, value)}`);
+    }, 300);
 
     const handleFilterChange = (name: string, value: string) => {
         if (name === 'search') {
             handleSearchDebounced(value);
+        } else if (name === 'minPrice' || name === 'maxPrice') {
+            handlePriceDebounced(name, value);
         } else {
             router.push(`${pathname}?${createQueryString(name, value)}`);
         }
