@@ -205,15 +205,16 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {featuredVehicles.map((vehicle) => {
                     const mainPhoto = vehicle.photos[0];
+                    const photoUrl = mainPhoto?.thumbnailUrl || mainPhoto?.originalUrl;
                     return (
                       <div key={vehicle.id} className="group cursor-pointer">
-                        <div className="aspect-[4/3] relative rounded-2xl overflow-hidden mb-5 bg-muted">
-                          {mainPhoto ? (
+                        <div className="aspect-[16/10] relative rounded-xl overflow-hidden mb-4 bg-muted">
+                          {photoUrl ? (
                             <img
-                              src={mainPhoto.thumbnailUrl || mainPhoto.originalUrl}
+                              src={photoUrl}
                               alt={`${vehicle.make} ${vehicle.model}`}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />

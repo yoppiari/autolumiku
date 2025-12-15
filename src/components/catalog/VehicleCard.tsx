@@ -51,15 +51,16 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
   };
 
   const mainPhoto = vehicle.photos[0];
+  const photoUrl = mainPhoto?.thumbnailUrl || mainPhoto?.originalUrl;
 
   return (
     <Card className="hover:shadow-xl transition-shadow overflow-hidden">
       {/* Image */}
       <Link href={`/catalog/${slug}/vehicles/${vehicle.id}`}>
-        <div className="relative h-48 bg-gray-200">
-          {mainPhoto ? (
+        <div className="relative aspect-[16/10] bg-gray-200">
+          {photoUrl ? (
             <img
-              src={mainPhoto.thumbnailUrl || mainPhoto.originalUrl}
+              src={photoUrl}
               alt={`${vehicle.make} ${vehicle.model}`}
               className="w-full h-full object-cover"
             />
