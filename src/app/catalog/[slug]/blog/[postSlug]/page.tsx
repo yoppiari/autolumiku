@@ -131,11 +131,11 @@ export default async function BlogPostPage({
 
                         <article className="bg-card rounded-lg shadow-sm overflow-hidden border mb-8">
                             {post.featuredImage && (
-                                <div className="aspect-video w-full relative">
+                                <div className="w-full">
                                     <img
                                         src={post.featuredImage}
                                         alt={post.title}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-auto"
                                     />
                                 </div>
                             )}
