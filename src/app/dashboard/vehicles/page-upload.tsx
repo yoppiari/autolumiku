@@ -253,6 +253,27 @@ export default function VehiclesPage() {
         throw new Error(errorData.message || 'Failed to save vehicle');
       }
 
+      const vehicleResult = await response.json();
+      const vehicleId = vehicleResult.data.id;
+
+      // Upload photos if any
+      if (photos.length > 0) {
+        const photosData = photos.map((photo) => ({
+          base64: photo.base64,
+        }));
+
+        const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ photos: photosData }),
+        });
+
+        if (!photoResponse.ok) {
+          console.error('Failed to upload photos, but vehicle was created');
+          // Don't fail the whole operation, just warn
+        }
+      }
+
       // Redirect to vehicles list
       const message = status === 'DRAFT'
         ? 'Kendaraan berhasil disimpan sebagai draft!'
