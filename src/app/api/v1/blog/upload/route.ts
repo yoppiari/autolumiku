@@ -11,7 +11,16 @@ import { StorageService } from '@/lib/services/storage.service';
 export async function POST(request: NextRequest) {
   try {
     // Get form data
-    const formData = await request.formData();
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'Failed to parse form data' },
+        { status: 400 }
+      );
+    }
+
     const file = formData.get('file') as File;
     const tenantId = formData.get('tenantId') as string;
 
@@ -33,7 +42,7 @@ export async function POST(request: NextRequest) {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.' },
+        { error: `Invalid file type: ${file.type}. Only JPEG, PNG, WebP, and GIF are allowed.` },
         { status: 400 }
       );
     }
@@ -42,19 +51,36 @@ export async function POST(request: NextRequest) {
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: 'File too large. Maximum size is 5MB.' },
+        { error: `File too large: ${(file.size / 1024 / 1024).toFixed(2)}MB. Maximum size is 5MB.` },
         { status: 400 }
       );
     }
 
     // Convert File to Buffer
-    const buffer = Buffer.from(await file.arrayBuffer());
+    let buffer;
+    try {
+      buffer = Buffer.from(await file.arrayBuffer());
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'Failed to read file buffer' },
+        { status: 500 }
+      );
+    }
 
     // Process image - resize to max 1200x630 (optimal for social sharing/OG image)
-    const processedBuffer = await sharp(buffer)
-      .resize(1200, 630, { fit: 'cover', position: 'center' })
-      .jpeg({ quality: 85 })
-      .toBuffer();
+    let processedBuffer;
+    try {
+      processedBuffer = await sharp(buffer)
+        .resize(1200, 630, { fit: 'cover', position: 'center' })
+        .jpeg({ quality: 85 })
+        .toBuffer();
+    } catch (e) {
+      console.error('Sharp processing error:', e);
+      return NextResponse.json(
+        { error: `Image processing failed: ${e instanceof Error ? e.message : 'Unknown error'}` },
+        { status: 500 }
+      );
+    }
 
     // Generate storage key
     const timestamp = Date.now();
@@ -62,11 +88,20 @@ export async function POST(request: NextRequest) {
     const storageKey = `blog/${tenantId}/${filename}`;
 
     // Upload to storage
-    const uploadedUrl = await StorageService.uploadPhoto(
-      processedBuffer,
-      storageKey,
-      'image/jpeg'
-    );
+    let uploadedUrl;
+    try {
+      uploadedUrl = await StorageService.uploadPhoto(
+        processedBuffer,
+        storageKey,
+        'image/jpeg'
+      );
+    } catch (e) {
+      console.error('Storage upload error:', e);
+      return NextResponse.json(
+        { error: `Storage upload failed: ${e instanceof Error ? e.message : 'Unknown error'}` },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -78,8 +113,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Blog image upload error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to upload image' },
+      { error: `Failed to upload image: ${errorMessage}` },
       { status: 500 }
     );
   }
