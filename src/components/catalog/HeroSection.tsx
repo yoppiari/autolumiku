@@ -9,6 +9,7 @@ interface HeroSectionProps {
   subtitle?: string;
   imageUrl?: string;
   primaryColor?: string;
+  slug?: string;
 }
 
 export default function HeroSection({
@@ -16,6 +17,7 @@ export default function HeroSection({
   subtitle = 'Pilihan terbaik dengan harga kompetitif',
   imageUrl,
   primaryColor = '#1a56db',
+  slug,
 }: HeroSectionProps) {
   return (
     <div
@@ -42,10 +44,10 @@ export default function HeroSection({
 
           <div className="pt-4 flex gap-4">
             <Button asChild size="lg" className="bg-white text-gray-900 hover:bg-gray-100 w-full sm:w-auto">
-              <Link href="#vehicles">Lihat Koleksi</Link>
+              <Link href={slug ? `/catalog/${slug}/vehicles` : '/vehicles'}>Lihat Koleksi</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900 bg-transparent w-full sm:w-auto">
-              <Link href="#contact">Hubungi Kami</Link>
+              <Link href={slug ? `/catalog/${slug}/contact` : '/contact'}>Hubungi Kami</Link>
             </Button>
           </div>
         </div>

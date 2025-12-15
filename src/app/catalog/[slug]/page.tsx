@@ -159,6 +159,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                 title={`Selamat Datang di ${tenant.name}`}
                 subtitle="Temukan kendaraan impian Anda dengan harga terbaik"
                 primaryColor={tenant.primaryColor}
+                slug={slug}
               />
             </div>
 
