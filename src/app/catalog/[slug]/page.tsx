@@ -266,11 +266,11 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                       <Card key={post.id} className="hover:shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)] hover:border-primary/50 transition-all duration-300 overflow-hidden bg-card/60 backdrop-blur-sm group border-muted">
                         {post.featuredImage && (
                           <CardHeader className="p-0">
-                            <div className="aspect-video relative">
+                            <div className="aspect-video relative bg-zinc-900">
                               <img
                                 src={post.featuredImage}
                                 alt={post.title}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
                             </div>
                           </CardHeader>
