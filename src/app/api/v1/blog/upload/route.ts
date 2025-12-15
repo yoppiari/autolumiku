@@ -68,10 +68,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Process image - resize to max 1200x630 (optimal for social sharing/OG image)
+    // Use 'contain' to fit image without cropping, with black background
     let processedBuffer;
     try {
       processedBuffer = await sharp(buffer)
-        .resize(1200, 630, { fit: 'cover', position: 'center' })
+        .resize(1200, 630, {
+          fit: 'contain',
+          position: 'center',
+          background: { r: 0, g: 0, b: 0, alpha: 1 } // Black background for letterboxing
+        })
         .jpeg({ quality: 85 })
         .toBuffer();
     } catch (e) {
