@@ -182,12 +182,12 @@ export class VehicleAIService {
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
         userPrompt: prompt,
         temperature,
-        maxTokens: 2000,  // Increased to allow for reasoning + JSON output
+        // No maxTokens limit - GLM-4.6 needs unlimited tokens for reasoning + output
       });
 
-      // Check if response was truncated
+      // Check if response was truncated (shouldn't happen without maxTokens limit)
       if (response.finishReason === 'length' && !response.content?.trim()) {
-        throw new Error('AI response truncated - model ran out of tokens before generating output. Please try again with simpler input.');
+        throw new Error('AI response truncated - please try again with simpler input.');
       }
 
       // Parse JSON response
