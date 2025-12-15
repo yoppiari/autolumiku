@@ -69,14 +69,17 @@ RUN cd /app/.next/static/chunks/app/catalog && \
 # Stage 3: Runner (Production)
 FROM node:18-alpine AS runner
 
-# Install Chromium for Puppeteer runtime (scrapers need it)
+# Install runtime dependencies
 RUN apk add --no-cache \
+    # For Puppeteer/Chromium
     chromium \
     nss \
     freetype \
     harfbuzz \
     ca-certificates \
-    ttf-freefont
+    ttf-freefont \
+    # For Sharp (image processing) - runtime only
+    vips
 
 # Tell Puppeteer to use Chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
