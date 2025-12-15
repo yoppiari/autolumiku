@@ -252,7 +252,9 @@ export default function EditVehiclePage() {
 
       const updateData = {
         ...formData,
+        year: parseInt(String(formData.year), 10), // Ensure year is integer
         price: Math.round(formData.price * 100000000), // Convert juta to cents
+        mileage: formData.mileage ? parseInt(String(formData.mileage), 10) : null, // Ensure mileage is integer
         userId: user.id,
       };
 
