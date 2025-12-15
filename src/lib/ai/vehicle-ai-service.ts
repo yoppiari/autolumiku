@@ -182,7 +182,6 @@ export class VehicleAIService {
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
         userPrompt: prompt,
         temperature,
-        maxTokens: 2000, // Ensure enough tokens for complete JSON response
       });
 
       // Check if response was truncated
