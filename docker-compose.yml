@@ -107,6 +107,7 @@ services:
       REDIS_URL: ${REDIS_URL}
 
       # File Upload
+      UPLOAD_DIR: /app/uploads
       MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}
       ALLOWED_IMAGE_TYPES: ${ALLOWED_IMAGE_TYPES:-image/jpeg,image/png,image/webp}
 
@@ -136,7 +137,7 @@ services:
 
     volumes:
       - app_logs:/app/logs
-      - uploaded_files:/app/public/uploads
+      - uploaded_files:/app/uploads
 
     networks:
       - autolumiku-network
