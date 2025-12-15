@@ -125,7 +125,7 @@ export class VehicleAIService {
         orderBy: {
           createdAt: 'desc', // ScraperResult uses createdAt not scrapedAt
         },
-        take: 5, // Get top 5 most recent
+        take: 2, // Limit for speed - only need reference data
       });
 
       return scrapedVehicles;
@@ -142,11 +142,11 @@ export class VehicleAIService {
    */
   async identifyFromText(input: VehicleInput): Promise<VehicleAIResult> {
     try {
-      // Step 1: Search popular vehicle database for quick match
-      const searchResults = await popularVehicleService.searchVehicles(input.userDescription, 3);
-
-      // Step 2: Query scraped data for real market examples
-      const scrapedData = await this.queryScrapedData(input.userDescription);
+      // Step 1: Run database queries in parallel for speed
+      const [searchResults, scrapedData] = await Promise.all([
+        popularVehicleService.searchVehicles(input.userDescription, 3),
+        this.queryScrapedData(input.userDescription),
+      ]);
 
       let prompt = `Parse kendaraan ini dan generate data lengkap: ${input.userDescription}`;
       let temperature = 0.7;
@@ -182,7 +182,6 @@ export class VehicleAIService {
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
         userPrompt: prompt,
         temperature,
-        // No maxTokens limit - GLM-4.6 needs unlimited tokens for reasoning + output
       });
 
       // Check if response was truncated (shouldn't happen without maxTokens limit)
