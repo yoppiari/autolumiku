@@ -182,15 +182,32 @@ export class VehicleAIService {
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
         userPrompt: prompt,
         temperature,
+        maxTokens: 2000, // Ensure enough tokens for complete JSON response
       });
 
-      // Check if response was truncated (shouldn't happen without maxTokens limit)
-      if (response.finishReason === 'length' && !response.content?.trim()) {
-        throw new Error('AI response truncated - please try again with simpler input.');
+      // Check if response was truncated
+      if (response.finishReason === 'length') {
+        console.error('AI response truncated:', {
+          finishReason: response.finishReason,
+          contentLength: response.content?.length || 0,
+          contentPreview: response.content?.substring(0, 200),
+        });
+        throw new Error('AI response truncated - response was cut off before completion. Please try again.');
       }
 
-      // Parse JSON response
-      const result = this.getClient().parseJSON<VehicleAIResult>(response.content);
+      // Parse JSON response with better error handling
+      let result: VehicleAIResult;
+      try {
+        result = this.getClient().parseJSON<VehicleAIResult>(response.content);
+      } catch (parseError) {
+        console.error('JSON parse error:', {
+          error: parseError instanceof Error ? parseError.message : parseError,
+          contentLength: response.content?.length || 0,
+          contentPreview: response.content?.substring(0, 500),
+          finishReason: response.finishReason,
+        });
+        throw new Error(`Failed to parse AI response: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}. Please try again.`);
+      }
 
       // Validate required fields
       this.validateResult(result);
