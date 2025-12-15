@@ -1,8 +1,25 @@
+/**
+ * Update Tenant WhatsApp Number
+ * Usage: npx ts-node scripts/update-tenant-whatsapp.ts <tenant-slug> <whatsapp-number>
+ * Example: npx ts-node scripts/update-tenant-whatsapp.ts primamobil-id 6281234567890
+ */
+
 import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 
 async function main() {
+    const args = process.argv.slice(2);
+
+    if (args.length < 2) {
+        console.log('Usage: npx ts-node scripts/update-tenant-whatsapp.ts <tenant-slug> <whatsapp-number>');
+        console.log('Example: npx ts-node scripts/update-tenant-whatsapp.ts primamobil-id 6281234567890');
+        process.exit(1);
+    }
+
+    const tenantSlug = args[0];
+    const whatsappNumber = args[1];
+
     // Read .env manually to get the URL and append connection limit
     const envPath = path.join(process.cwd(), '.env');
     let dbUrl: string | undefined;
@@ -45,20 +62,30 @@ async function main() {
     });
 
     try {
-        console.log('Updating tenant WhatsApp number...');
+        // Check if tenant exists
+        const existingTenant = await prisma.tenant.findUnique({
+            where: { slug: tenantSlug },
+        });
+
+        if (!existingTenant) {
+            console.error(`❌ Tenant with slug '${tenantSlug}' not found`);
+            process.exit(1);
+        }
+
+        console.log(`Updating tenant '${tenantSlug}' WhatsApp number to ${whatsappNumber}...`);
+
         const tenant = await prisma.tenant.update({
-            where: { slug: 'showroomjakarta' },
+            where: { slug: tenantSlug },
             data: {
-                whatsappNumber: '6281234567890',
-                phoneNumber: '6281234567890',
-                address: 'Jl. Jend. Sudirman No. 1, Jakarta Pusat',
-                city: 'Jakarta Pusat',
-                province: 'DKI Jakarta',
+                whatsappNumber: whatsappNumber,
+                phoneNumber: existingTenant.phoneNumber || whatsappNumber,
             },
         });
 
         console.log(`✅ Updated tenant: ${tenant.name}`);
+        console.log(`   Slug: ${tenant.slug}`);
         console.log(`   WhatsApp: ${tenant.whatsappNumber}`);
+        console.log(`   Phone: ${tenant.phoneNumber}`);
     } catch (e) {
         console.error('Error updating tenant:', e);
         process.exit(1);
