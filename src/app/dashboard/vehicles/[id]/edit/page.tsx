@@ -264,9 +264,16 @@ export default function EditVehiclePage() {
         body: JSON.stringify(updateData),
       });
 
-      if (response.ok) {
-        // Upload photos if any
-        if (photos.length > 0) {
+      if (!response.ok) {
+        const data = await response.json();
+        console.error('❌ Vehicle update failed:', data);
+        setError(`Gagal menyimpan: ${data.message || data.error || 'Unknown error'}`);
+        setSaving(false);
+        return;
+      }
+
+      // Success - now upload photos if any
+      if (photos.length > 0) {
           console.log(`📸 Uploading ${photos.length} photos for vehicle ${vehicleId}...`);
 
           const photoData = photos.map((photo) => ({
@@ -300,12 +307,8 @@ export default function EditVehiclePage() {
           }
         }
 
-        // Success! Redirect to list
-        router.push('/dashboard/vehicles');
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Gagal menyimpan perubahan');
-      }
+      // Success! Redirect to list
+      router.push('/dashboard/vehicles');
     } catch (err) {
       console.error('Failed to update vehicle:', err);
       setError('Gagal menyimpan perubahan');

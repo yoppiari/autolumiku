@@ -69,7 +69,19 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const body = await request.json();
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
+    console.log('[Vehicle Update] Request body:', JSON.stringify(body, null, 2));
 
     // TODO: Get userId from authenticated user session
     const { userId, ...updateData } = body;
@@ -166,10 +178,18 @@ export async function PUT(
   } catch (error) {
     console.error('Update vehicle error:', error);
 
+    // Log more details for debugging
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to update vehicle',
         message: error instanceof Error ? error.message : 'Unknown error',
+        details: error instanceof Error ? error.name : undefined,
       },
       { status: 500 }
     );
