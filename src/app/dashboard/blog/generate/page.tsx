@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -88,10 +88,65 @@ export default function BlogGeneratorPage() {
   const [topic, setTopic] = useState('');
   const [tone, setTone] = useState<BlogTone>('CASUAL');
   const [targetLocation, setTargetLocation] = useState('Jakarta');
+  const [featuredImage, setFeaturedImage] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Generated blog state
   const [generatedBlog, setGeneratedBlog] = useState<GeneratedBlog | null>(null);
   const [editedBlog, setEditedBlog] = useState<GeneratedBlog | null>(null);
+
+  // Handle image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Format file tidak didukung. Gunakan JPEG, PNG, WebP, atau GIF.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Ukuran file terlalu besar. Maksimal 5MB.');
+      return;
+    }
+
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('tenantSlug', user?.tenantSlug || 'default');
+
+      const response = await fetch('/api/v1/blog/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Gagal upload gambar');
+      }
+
+      const data = await response.json();
+      setFeaturedImage(data.data.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal upload gambar');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFeaturedImage('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -127,8 +182,13 @@ export default function BlogGeneratorPage() {
       }
 
       const data = await response.json();
-      setGeneratedBlog(data.data);
-      setEditedBlog(data.data);
+      // Add featured image if uploaded
+      const blogWithImage = {
+        ...data.data,
+        featuredImage: featuredImage || data.data.featuredImage,
+      };
+      setGeneratedBlog(blogWithImage);
+      setEditedBlog(blogWithImage);
       setStep('preview');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
@@ -192,7 +252,7 @@ export default function BlogGeneratorPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex justify-between items-start mb-6">
             <h1 className="text-2xl font-bold">Preview Article</h1>
             <div className="flex gap-4 text-sm">
               <div className="text-center">
@@ -214,48 +274,40 @@ export default function BlogGeneratorPage() {
                 <div className="text-gray-600">Readability</div>
               </div>
             </div>
+          </div>
 
-            {/* Featured Image */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-3">🖼️ Featured Image</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image URL
-                  </label>
-                  <input
-                    type="text"
-                    value={editedBlog.featuredImage || ''}
-                    onChange={(e) =>
-                      setEditedBlog({ ...editedBlog, featuredImage: e.target.value })
-                    }
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          {/* Featured Image */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="text-lg font-semibold mb-3">Featured Image</h3>
+            <div className="flex items-center justify-center bg-gray-200 rounded-lg h-48 overflow-hidden">
+              {editedBlog.featuredImage ? (
+                <div className="relative w-full h-full">
+                  <img
+                    src={editedBlog.featuredImage}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        'https://via.placeholder.com/400x300?text=Invalid+Image+URL';
+                    }}
                   />
-                  <p className="mt-2 text-xs text-gray-500">
-                    Masukkan URL gambar yang ingin ditampilkan sebagai cover artikel.
-                  </p>
+                  <button
+                    onClick={() => setEditedBlog({ ...editedBlog, featuredImage: '' })}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <div className="flex items-center justify-center bg-gray-200 rounded-lg h-48 overflow-hidden">
-                  {editedBlog.featuredImage ? (
-                    <img
-                      src={editedBlog.featuredImage}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          'https://via.placeholder.com/400x300?text=Invalid+Image+URL';
-                      }}
-                    />
-                  ) : (
-                    <div className="text-gray-400 flex flex-col items-center">
-                      <span className="text-4xl mb-2">🖼️</span>
-                      <span>No Image Selected</span>
-                    </div>
-                  )}
+              ) : (
+                <div className="text-gray-400 flex flex-col items-center">
+                  <span className="text-4xl mb-2">🖼️</span>
+                  <span>No Image</span>
                 </div>
-              </div>
+              )}
             </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Gambar sudah diupload dari form sebelumnya. Kembali ke form untuk mengubah gambar.
+            </p>
           </div>
 
           {/* Title */}
@@ -532,6 +584,59 @@ export default function BlogGeneratorPage() {
           />
           <p className="mt-2 text-sm text-gray-600">
             💡 Artikel akan dioptimasi untuk pencarian lokal di area ini
+          </p>
+        </div>
+
+        {/* Step 5: Featured Image */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-4">5. Gambar Utama (Opsional)</h2>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+            {featuredImage ? (
+              <div className="relative">
+                <img
+                  src={featuredImage}
+                  alt="Featured"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  onClick={handleRemoveImage}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div className="text-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="featured-image-upload"
+                />
+                <label
+                  htmlFor="featured-image-upload"
+                  className={`cursor-pointer inline-flex flex-col items-center ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-3"></div>
+                      <span className="text-gray-600">Mengupload...</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-5xl mb-3">📷</div>
+                      <span className="text-blue-600 font-medium">Klik untuk upload gambar</span>
+                      <span className="text-sm text-gray-500 mt-1">JPEG, PNG, WebP, GIF (max 5MB)</span>
+                    </>
+                  )}
+                </label>
+              </div>
+            )}
+          </div>
+          <p className="mt-2 text-sm text-gray-600">
+            💡 Gambar akan digunakan sebagai cover artikel di halaman blog
           </p>
         </div>
 
