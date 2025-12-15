@@ -19,10 +19,10 @@ import {
   Zap,
   Droplets,
   Palette,
-  MessageCircle,
   ArrowLeft,
   Share2,
 } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { prisma } from '@/lib/prisma';
 
 
@@ -180,7 +180,7 @@ export default async function VehicleDetailPage({ params }: PageProps) {
                       size="lg"
                     >
                       <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                        <MessageCircle className="w-5 h-5 mr-2" />
+                        <FaWhatsapp className="w-5 h-5 mr-2" />
                         Hubungi via WhatsApp
                       </a>
                     </Button>
