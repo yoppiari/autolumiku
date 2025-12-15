@@ -104,7 +104,7 @@ export async function PUT(
     // Basic Information
     if (updateData.make !== undefined) dataToUpdate.make = updateData.make;
     if (updateData.model !== undefined) dataToUpdate.model = updateData.model;
-    if (updateData.year !== undefined) dataToUpdate.year = updateData.year;
+    if (updateData.year !== undefined) dataToUpdate.year = parseInt(String(updateData.year), 10); // Ensure integer
     if (updateData.variant !== undefined) dataToUpdate.variant = updateData.variant;
 
     // AI-Generated Content
@@ -127,7 +127,7 @@ export async function PUT(
     if (updateData.priceAnalysis !== undefined) dataToUpdate.priceAnalysis = updateData.priceAnalysis;
 
     // Vehicle Details
-    if (updateData.mileage !== undefined) dataToUpdate.mileage = updateData.mileage;
+    if (updateData.mileage !== undefined) dataToUpdate.mileage = updateData.mileage ? parseInt(String(updateData.mileage), 10) : null;
     if (updateData.transmissionType !== undefined) dataToUpdate.transmissionType = updateData.transmissionType;
     if (updateData.fuelType !== undefined) dataToUpdate.fuelType = updateData.fuelType;
     if (updateData.color !== undefined) dataToUpdate.color = updateData.color;
