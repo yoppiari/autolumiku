@@ -220,8 +220,31 @@ export default function WhatsAppSettingsPage() {
   };
 
   const formatPhoneNumber = (phone: string) => {
-    // Format phone number for display
-    return phone.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3-$4');
+    // Format phone number for display (Indonesian format)
+    // Remove all non-digit characters except +
+    const cleaned = phone.replace(/[^\d+]/g, '');
+
+    // Handle +62 prefix (Indonesian country code)
+    if (cleaned.startsWith('+62')) {
+      const digits = cleaned.slice(3);
+      if (digits.length >= 9) {
+        // Format: +62-xxx-xxxx-xxxx
+        return `+62-${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+      }
+    } else if (cleaned.startsWith('62')) {
+      const digits = cleaned.slice(2);
+      if (digits.length >= 9) {
+        return `+62-${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+      }
+    } else if (cleaned.startsWith('0')) {
+      const digits = cleaned.slice(1);
+      if (digits.length >= 9) {
+        return `+62-${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+      }
+    }
+
+    // Return original if format not recognized
+    return phone;
   };
 
   const getWhatsAppLink = (phone: string) => {

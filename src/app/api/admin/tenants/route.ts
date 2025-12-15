@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Create tenant with admin user in a transaction
+      // Create tenant with admin user and default subscription in a transaction
       const result = await prisma.$transaction(async (tx) => {
         // Create tenant
         const tenant = await tx.tenant.create({
@@ -120,6 +120,29 @@ export async function POST(request: NextRequest) {
             secondaryColor: '#7c3aed',
             theme: 'light',
           },
+        });
+
+        // Create default subscription (1-year trial/enterprise)
+        const now = new Date();
+        const oneYearLater = new Date(now);
+        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+
+        const subscription = await tx.subscription.create({
+          data: {
+            tenantId: tenant.id,
+            plan: 'enterprise',
+            status: 'active',
+            currentPeriodStart: now,
+            currentPeriodEnd: oneYearLater,
+            pricePerMonth: 299000, // Rp 299.000/month
+            currency: 'IDR',
+          },
+        });
+
+        // Link subscription to tenant
+        await tx.tenant.update({
+          where: { id: tenant.id },
+          data: { subscriptionId: subscription.id },
         });
 
         // Create admin user for the tenant
@@ -135,7 +158,7 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        return { tenant, adminUser: createdAdminUser };
+        return { tenant, adminUser: createdAdminUser, subscription };
       });
 
       // Auto-sync Traefik configuration for new domain
