@@ -57,24 +57,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   // Fetch tenant data when user is loaded
-  // Use public tenant-info API which relies on middleware headers
-  // This works correctly with custom domains (e.g., primamobil.id)
+  // Fetch directly by tenantId from user data for reliability
   React.useEffect(() => {
-    if (user) {
-      console.log('🔍 [Dashboard] Fetching tenant info...');
-      fetch('/api/public/tenant-info')
+    if (user?.tenantId) {
+      fetch(`/api/v1/tenants/${user.tenantId}`)
         .then(res => res.json())
         .then(data => {
-          console.log('📦 [Dashboard] Tenant info response:', data);
-          if (data.tenant) {
+          if (data.data) {
+            setTenant(data.data);
+          } else if (data.tenant) {
             setTenant(data.tenant);
-            console.log('✅ [Dashboard] Tenant loaded:', data.tenant.name);
-          } else {
-            console.warn('⚠️ [Dashboard] No tenant data in response');
           }
         })
         .catch(err => {
-          console.error('❌ [Dashboard] Error fetching tenant data:', err);
+          console.error('Error fetching tenant data:', err);
         });
     }
   }, [user]);
