@@ -9,7 +9,7 @@ import path from 'path';
 import { StorageUploadResult } from '../types/photo.types';
 
 export class StorageService {
-  private static uploadDir = process.env.UPLOAD_DIR || './uploads';
+  private static uploadDir = process.env.UPLOAD_DIR || '/app/uploads';
 
   /**
    * Upload photo to storage (Docker volume)
@@ -22,15 +22,19 @@ export class StorageService {
   ): Promise<string> {
     // Ensure directory exists
     const dirPath = path.dirname(path.join(this.uploadDir, storageKey));
+    console.log(`📁 Creating directory: ${dirPath}`);
     await fs.mkdir(dirPath, { recursive: true });
 
     // Write file
     const filePath = path.join(this.uploadDir, storageKey);
+    console.log(`💾 Writing file: ${filePath} (${buffer.length} bytes)`);
     await fs.writeFile(filePath, buffer);
 
     // Return relative URL (nginx serves /uploads from volume)
     // This works with any custom domain in multi-tenant setup
-    return `/uploads/${storageKey}`;
+    const url = `/uploads/${storageKey}`;
+    console.log(`✅ File saved, URL: ${url}`);
+    return url;
   }
 
   /**

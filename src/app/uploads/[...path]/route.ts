@@ -17,9 +17,14 @@ export async function GET(
     const { path: pathSegments } = await params;
     const filePath = path.join(UPLOAD_DIR, ...pathSegments);
 
+    console.log(`📥 Serve upload request: ${pathSegments.join('/')}`);
+    console.log(`📂 UPLOAD_DIR: ${UPLOAD_DIR}`);
+    console.log(`📄 Full path: ${filePath}`);
+
     // Security: Prevent directory traversal
     const normalizedPath = path.normalize(filePath);
     if (!normalizedPath.startsWith(UPLOAD_DIR)) {
+      console.log(`❌ Security: Invalid path (traversal attempt)`);
       return NextResponse.json(
         { error: 'Invalid path' },
         { status: 400 }
@@ -29,7 +34,9 @@ export async function GET(
     // Check if file exists
     try {
       await fs.access(filePath);
+      console.log(`✅ File exists: ${filePath}`);
     } catch {
+      console.log(`❌ File not found: ${filePath}`);
       return NextResponse.json(
         { error: 'File not found' },
         { status: 404 }

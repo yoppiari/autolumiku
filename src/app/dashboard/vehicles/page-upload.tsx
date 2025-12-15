@@ -258,20 +258,33 @@ export default function VehiclesPage() {
 
       // Upload photos if any
       if (photos.length > 0) {
+        console.log(`📸 Uploading ${photos.length} photos for vehicle ${vehicleId}...`);
+
         const photosData = photos.map((photo) => ({
           base64: photo.base64,
         }));
 
-        const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ photos: photosData }),
-        });
+        try {
+          const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photos: photosData }),
+          });
 
-        if (!photoResponse.ok) {
-          console.error('Failed to upload photos, but vehicle was created');
-          // Don't fail the whole operation, just warn
+          const photoResult = await photoResponse.json();
+
+          if (!photoResponse.ok) {
+            console.error('❌ Photo upload failed:', photoResult);
+            alert(`Kendaraan tersimpan, tetapi foto gagal diupload: ${photoResult.message || photoResult.error}`);
+          } else {
+            console.log('✅ Photos uploaded successfully:', photoResult);
+          }
+        } catch (photoError) {
+          console.error('❌ Photo upload error:', photoError);
+          alert(`Kendaraan tersimpan, tetapi foto gagal diupload: ${photoError instanceof Error ? photoError.message : 'Unknown error'}`);
         }
+      } else {
+        console.log('ℹ️ No photos to upload');
       }
 
       // Redirect to vehicles list
