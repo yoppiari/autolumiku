@@ -109,6 +109,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy node_modules (including Prisma Client and puppeteer from builder which has all deps)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
+# Create uploads directory with correct ownership
+RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
+
 # Switch to non-root user
 USER nextjs
 
