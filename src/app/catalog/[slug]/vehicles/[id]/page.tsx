@@ -12,6 +12,7 @@ import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 import VehicleGallery from '@/components/catalog/VehicleGallery';
+import ShareButton from '@/components/catalog/ShareButton';
 import { Button } from '@/components/ui/button';
 import {
   Calendar,
@@ -20,7 +21,6 @@ import {
   Droplets,
   Palette,
   ArrowLeft,
-  Share2,
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { prisma } from '@/lib/prisma';
@@ -190,10 +190,10 @@ export default async function VehicleDetailPage({ params }: PageProps) {
                     </Button>
                   )}
 
-                  <Button variant="outline" className="w-full" size="lg">
-                    <Share2 className="w-5 h-5 mr-2" />
-                    Bagikan
-                  </Button>
+                  <ShareButton
+                    title={`${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.variant ? ` ${vehicle.variant}` : ''}`}
+                    text={`Lihat ${vehicle.year} ${vehicle.make} ${vehicle.model} di ${tenant.name}`}
+                  />
                 </div>
               </div>
 
