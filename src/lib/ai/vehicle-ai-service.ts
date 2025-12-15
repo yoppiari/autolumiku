@@ -182,8 +182,13 @@ export class VehicleAIService {
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
         userPrompt: prompt,
         temperature,
-        maxTokens: 800,  // Enough for compact JSON response with short SEO description
+        maxTokens: 2000,  // Increased to allow for reasoning + JSON output
       });
+
+      // Check if response was truncated
+      if (response.finishReason === 'length' && !response.content?.trim()) {
+        throw new Error('AI response truncated - model ran out of tokens before generating output. Please try again with simpler input.');
+      }
 
       // Parse JSON response
       const result = this.getClient().parseJSON<VehicleAIResult>(response.content);
