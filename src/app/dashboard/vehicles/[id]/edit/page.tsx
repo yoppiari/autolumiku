@@ -267,21 +267,34 @@ export default function EditVehiclePage() {
       if (response.ok) {
         // Upload photos if any
         if (photos.length > 0) {
+          console.log(`📸 Uploading ${photos.length} photos for vehicle ${vehicleId}...`);
+
           const photoData = photos.map((photo) => ({
             base64: photo.base64,
           }));
 
-          const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ photos: photoData }),
-          });
+          try {
+            const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ photos: photoData }),
+            });
 
-          if (!photoResponse.ok) {
-            const photoError = await photoResponse.json();
-            setError(`Data berhasil disimpan, tapi gagal upload foto: ${photoError.message}`);
+            const photoResult = await photoResponse.json();
+
+            if (!photoResponse.ok) {
+              console.error('❌ Photo upload failed:', photoResult);
+              setError(`Data berhasil disimpan, tapi gagal upload foto: ${photoResult.message || photoResult.error}`);
+              setSaving(false);
+              return;
+            }
+
+            console.log('✅ Photos uploaded successfully:', photoResult);
+          } catch (photoError) {
+            console.error('❌ Photo upload error:', photoError);
+            setError(`Data berhasil disimpan, tapi gagal upload foto: ${photoError instanceof Error ? photoError.message : 'Unknown error'}`);
             setSaving(false);
             return;
           }
