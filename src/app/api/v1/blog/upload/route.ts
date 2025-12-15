@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     // Get form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const tenantSlug = formData.get('tenantSlug') as string;
+    const tenantId = formData.get('tenantId') as string;
 
     if (!file) {
       return NextResponse.json(
@@ -22,9 +22,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!tenantSlug) {
+    if (!tenantId) {
       return NextResponse.json(
-        { error: 'Tenant slug is required' },
+        { error: 'Tenant ID is required' },
         { status: 400 }
       );
     }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     // Generate storage key
     const timestamp = Date.now();
     const filename = `blog-${timestamp}.jpg`;
-    const storageKey = `blog/${tenantSlug}/${filename}`;
+    const storageKey = `blog/${tenantId}/${filename}`;
 
     // Upload to storage
     const uploadedUrl = await StorageService.uploadPhoto(

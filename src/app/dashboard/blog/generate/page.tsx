@@ -120,7 +120,7 @@ export default function BlogGeneratorPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('tenantSlug', user?.tenantSlug || 'default');
+      formData.append('tenantId', user?.tenantId || 'default');
 
       const response = await fetch('/api/v1/blog/upload', {
         method: 'POST',
