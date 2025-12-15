@@ -97,12 +97,12 @@ export default async function BlogPage({ params }: { params: { slug: string } })
                             {blogPosts.map((post) => (
                                 <div key={post.id} className="group cursor-pointer flex flex-col h-full">
                                     <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`} className="block">
-                                        <div className="aspect-video relative rounded-2xl overflow-hidden mb-5 bg-muted">
+                                        <div className="aspect-video relative rounded-2xl overflow-hidden mb-5 bg-zinc-900">
                                             {post.featuredImage ? (
                                                 <img
                                                     src={post.featuredImage}
                                                     alt={post.title}
-                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-500">
