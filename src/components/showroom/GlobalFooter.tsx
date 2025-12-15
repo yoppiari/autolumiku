@@ -41,7 +41,10 @@ export default function GlobalFooter({ tenant }: GlobalFooterProps) {
               {tenant.phoneNumber && (
                 <div className="flex items-center gap-2">
                   <FaPhone className="text-primary" />
-                  <a href={`tel:${tenant.phoneNumber}`} className="hover:text-white transition-colors">
+                  <a
+                    href={`tel:${tenant.phoneNumber.replace(/[^0-9+]/g, '')}`}
+                    className="hover:text-white transition-colors"
+                  >
                     {tenant.phoneNumber}
                   </a>
                 </div>
