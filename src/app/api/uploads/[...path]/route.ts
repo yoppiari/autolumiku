@@ -23,11 +23,16 @@ const MIME_TYPES: Record<string, string> = {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: Promise<{ path: string[] }> }
 ) {
   try {
+    // Await params (required in Next.js 14+)
+    const { path: pathSegments } = await context.params;
+
     // Reconstruct the file path from the path segments
-    const filePath = params.path.join('/');
+    const filePath = pathSegments.join('/');
+
+    console.log(`[Uploads API] Serving file: ${filePath}`);
     const fullPath = path.join(UPLOAD_DIR, filePath);
 
     // Security: Prevent directory traversal
