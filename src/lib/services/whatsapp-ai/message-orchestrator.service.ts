@@ -283,8 +283,12 @@ export class MessageOrchestratorService {
     mediaUrl?: string
   ): Promise<{ message: string; escalated: boolean }> {
     try {
+      // Determine if there's media
+      const hasMedia = !!mediaUrl;
+      console.log(`[Orchestrator] handleStaffCommand - message: "${message}", hasMedia: ${hasMedia}, mediaUrl: ${mediaUrl}`);
+
       // Parse command (now async - supports AI-powered natural language extraction)
-      const parseResult = await StaffCommandService.parseCommand(message, intent);
+      const parseResult = await StaffCommandService.parseCommand(message, intent, hasMedia);
 
       if (!parseResult.isValid) {
         return {

@@ -173,10 +173,17 @@ async function handleIncomingMessage(account: any, data: any) {
   const { from, message, mediaUrl, mediaType, messageId } = data;
 
   try {
-    console.log(`[Webhook] Processing message - From: ${from}, MessageId: ${messageId}, Message: ${message}`);
+    console.log(`[Webhook] Processing message - From: ${from}, MessageId: ${messageId}, Message: ${message}, MediaUrl: ${mediaUrl}`);
 
-    if (!from || !message || !messageId) {
-      console.error(`[Webhook] Missing required fields - from: ${from}, message: ${message}, messageId: ${messageId}`);
+    // Allow empty message for media (photos with no caption)
+    if (!from || !messageId) {
+      console.error(`[Webhook] Missing required fields - from: ${from}, messageId: ${messageId}`);
+      return;
+    }
+
+    // If no message text and no media, skip
+    if (!message && !mediaUrl) {
+      console.error(`[Webhook] No message content or media - skipping`);
       return;
     }
 

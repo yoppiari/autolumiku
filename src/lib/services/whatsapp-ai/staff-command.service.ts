@@ -37,12 +37,13 @@ export class StaffCommandService {
    * Parse command dari message
    * NOW ASYNC: Supports AI-powered natural language extraction
    */
-  static async parseCommand(message: string, intent: MessageIntent): Promise<CommandParseResult> {
-    const trimmedMessage = message.trim();
+  static async parseCommand(message: string, intent: MessageIntent, hasMedia: boolean = false): Promise<CommandParseResult> {
+    const trimmedMessage = (message || "").trim();
+    console.log(`[Staff Command] Parsing command - intent: ${intent}, message: "${trimmedMessage}", hasMedia: ${hasMedia}`);
 
     switch (intent) {
       case "staff_upload_vehicle":
-        return await this.parseUploadCommand(trimmedMessage);
+        return await this.parseUploadCommand(trimmedMessage, hasMedia);
 
       case "staff_update_status":
         return this.parseStatusUpdateCommand(trimmedMessage);
@@ -170,8 +171,20 @@ export class StaffCommandService {
    */
   private static async parseUploadCommand(
     message: string,
-    conversationContext?: any
+    hasMedia: boolean = false
   ): Promise<CommandParseResult> {
+    console.log(`[Staff Command] parseUploadCommand - message: "${message}", hasMedia: ${hasMedia}`);
+
+    // If photo sent without text, treat as photo for multi-step flow
+    if (hasMedia && !message) {
+      console.log(`[Staff Command] Photo without caption - returning photo step`);
+      return {
+        command: "upload_photo",
+        params: { step: "photo_only" },
+        isValid: true,
+      };
+    }
+
     // Simple format: Initialize multi-step upload flow
     // Staff sends /upload, then we ask for photo first
     if (message.toLowerCase().trim() === "/upload") {
@@ -186,6 +199,8 @@ export class StaffCommandService {
     let textToExtract = message;
     if (message.toLowerCase().startsWith("/upload")) {
       textToExtract = message.substring(7).trim();
+    } else if (message.toLowerCase().startsWith("upload")) {
+      textToExtract = message.substring(6).trim();
     }
 
     if (!textToExtract) {
@@ -208,8 +223,6 @@ export class StaffCommandService {
         command: "upload",
         params: {
           ...aiResult.data,
-          // Pass conversation context for state tracking
-          _conversationContext: conversationContext,
         },
         isValid: true,
       };
@@ -225,7 +238,6 @@ export class StaffCommandService {
         command: "upload",
         params: {
           ...regexResult.data,
-          _conversationContext: conversationContext,
         },
         isValid: true,
       };
@@ -371,9 +383,42 @@ export class StaffCommandService {
       return {
         success: true,
         message:
-          "📸 *Upload Mobil - Step 1/2*\n\n" +
-          "Kirim foto mobil (1-5 foto). Setelah selesai kirim foto, lanjut dengan detail mobil.\n\n" +
-          "⚠️ *PENTING:* Upload tidak akan berhasil tanpa foto!",
+          "📸 *Upload Mobil*\n\n" +
+          "Kirim foto mobil dengan caption:\n" +
+          "/upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n\n" +
+          "*Contoh:*\n" +
+          "/upload Brio Satya MT 2015 KM 30.000 Rp 120JT Hitam\n\n" +
+          "Atau kirim foto dulu, lalu detail mobil.",
+      };
+    }
+
+    // === STEP 1b: Photo sent without caption ===
+    if (params.step === "photo_only" && mediaUrl) {
+      console.log(`[Upload Flow] Photo only received (no caption): ${mediaUrl}`);
+
+      const photos = contextData.photos || [];
+      photos.push(mediaUrl);
+
+      await prisma.whatsAppConversation.update({
+        where: { id: conversationId },
+        data: {
+          conversationState: "upload_vehicle",
+          contextData: {
+            ...contextData,
+            uploadStep: "has_photo_awaiting_data",
+            photos,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        message:
+          `✅ Foto ${photos.length} diterima!\n\n` +
+          "📝 Sekarang kirim detail mobil:\n" +
+          "/upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n\n" +
+          "*Contoh:*\n" +
+          "/upload Brio Satya MT 2015 KM 30.000 Rp 120JT Hitam",
       };
     }
 

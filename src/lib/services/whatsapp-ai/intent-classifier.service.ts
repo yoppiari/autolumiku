@@ -103,15 +103,30 @@ export class IntentClassifierService {
     hasMedia: boolean = false
   ): Promise<IntentClassificationResult> {
     // Normalize message
-    const normalizedMessage = message.trim();
+    const normalizedMessage = (message || "").trim();
+    console.log(`[Intent Classifier] Message: "${normalizedMessage}", hasMedia: ${hasMedia}`);
 
     // Check if sender is staff
     const isStaff = await this.isStaffMember(senderPhone, tenantId);
+    console.log(`[Intent Classifier] Is staff: ${isStaff}`);
 
     // 1. If staff, check for commands
     if (isStaff) {
+      // If staff sends photo without caption, treat as photo for upload flow
+      if (hasMedia && !normalizedMessage) {
+        console.log(`[Intent Classifier] Staff sent photo without caption - treating as upload photo`);
+        return {
+          intent: "staff_upload_vehicle",
+          confidence: 0.9,
+          isStaff: true,
+          isCustomer: false,
+          reason: "Staff photo without caption - likely for vehicle upload",
+        };
+      }
+
       const staffIntent = this.classifyStaffCommand(normalizedMessage, hasMedia);
       if (staffIntent) {
+        console.log(`[Intent Classifier] Staff intent detected: ${staffIntent.intent}`);
         return {
           ...staffIntent,
           isStaff: true,
@@ -122,6 +137,7 @@ export class IntentClassifierService {
 
     // 2. Classify customer intent
     const customerIntent = this.classifyCustomerIntent(normalizedMessage);
+    console.log(`[Intent Classifier] Customer intent: ${customerIntent.intent}`);
 
     return {
       ...customerIntent,
