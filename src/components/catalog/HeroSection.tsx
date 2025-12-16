@@ -42,7 +42,7 @@ export default function HeroSection({
             </p>
           )}
 
-          <div className="pt-4 flex gap-4">
+          <div className="pt-4 flex flex-col sm:flex-row gap-4 sm:gap-4 max-w-md sm:max-w-none">
             <Button asChild size="lg" className="bg-white text-gray-900 hover:bg-gray-100 w-full sm:w-auto">
               <Link href={slug ? `/catalog/${slug}/vehicles` : '/vehicles'}>Lihat Koleksi</Link>
             </Button>
