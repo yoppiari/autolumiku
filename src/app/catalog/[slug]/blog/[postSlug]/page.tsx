@@ -6,6 +6,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
@@ -22,6 +23,8 @@ export default async function BlogPostPage({
     params: { slug: string; postSlug: string }
 }) {
     const { slug, postSlug } = params;
+    const headersList = headers();
+    const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
 
     const tenant = await prisma.tenant.findUnique({
         where: { slug },
@@ -30,6 +33,14 @@ export default async function BlogPostPage({
     if (!tenant) {
         return notFound();
     }
+
+    // Generate URLs based on domain context
+    const getUrl = (path: string) => {
+        if (isCustomDomain) {
+            return path; // Clean URL for custom domain
+        }
+        return `/catalog/${tenant.slug}${path}`; // Platform domain with catalog prefix
+    };
 
     // Fetch blog post with author
     const post = await prisma.blogPost.findFirst({
@@ -118,12 +129,13 @@ export default async function BlogPostPage({
                     phoneNumber={tenant.phoneNumber || undefined}
                     whatsappNumber={tenant.whatsappNumber || undefined}
                     slug={tenant.slug}
+                    isCustomDomain={isCustomDomain}
                 />
 
                 <main className="flex-1 container mx-auto px-4 py-8">
                     <div className="max-w-4xl mx-auto">
                         <Button asChild variant="ghost" className="mb-6 pl-0 hover:bg-transparent hover:text-primary">
-                            <Link href={`/catalog/${tenant.slug}/blog`} className="flex items-center gap-2">
+                            <Link href={getUrl('/blog')} className="flex items-center gap-2">
                                 <ArrowLeft className="w-4 h-4" />
                                 Kembali ke Blog
                             </Link>
@@ -210,10 +222,10 @@ export default async function BlogPostPage({
                             </p>
                             <div className="flex flex-col sm:flex-row justify-center gap-4">
                                 <Button asChild size="lg" className="w-full sm:w-auto shadow-sm hover:shadow-md transition-all">
-                                    <Link href={`/catalog/${tenant.slug}/vehicles`}>Lihat Koleksi Mobil</Link>
+                                    <Link href={getUrl('/vehicles')}>Lihat Koleksi Mobil</Link>
                                 </Button>
                                 <Button asChild size="lg" variant="outline" className="w-full sm:w-auto bg-background/50 hover:bg-background transition-all">
-                                    <Link href={`/catalog/${tenant.slug}/contact`}>Hubungi Kami</Link>
+                                    <Link href={getUrl('/contact')}>Hubungi Kami</Link>
                                 </Button>
                             </div>
                         </div>

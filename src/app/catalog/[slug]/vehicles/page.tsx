@@ -7,6 +7,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { FaWhatsapp } from 'react-icons/fa';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
@@ -34,6 +35,8 @@ interface PageProps {
 
 export default async function VehiclesPage({ params, searchParams }: PageProps) {
     const { slug } = params;
+    const headersList = headers();
+    const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
 
     // 1. Fetch Tenant
     const tenant = await prisma.tenant.findUnique({
@@ -74,6 +77,14 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
         return `Rp ${rupiah.toLocaleString('id-ID')}`;
     };
 
+    // Generate URLs based on domain context
+    const getUrl = (path: string) => {
+        if (isCustomDomain) {
+            return path; // Clean URL for custom domain
+        }
+        return `/catalog/${tenant.slug}${path}`; // Platform domain with catalog prefix
+    };
+
     return (
         <ThemeProvider tenantId={tenantId}>
             <div className="min-h-screen bg-background flex flex-col">
@@ -89,6 +100,7 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                     phoneNumber={tenant.phoneNumber || undefined}
                     whatsappNumber={tenant.whatsappNumber || undefined}
                     slug={tenant.slug}
+                    isCustomDomain={isCustomDomain}
                 />
 
                 <main className="flex-1 container mx-auto px-4 py-8">
@@ -120,7 +132,7 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                                     return (
                                         <div key={vehicle.id} className="group">
                                             <div className="aspect-[16/10] relative rounded-xl overflow-hidden mb-4 bg-muted">
-                                                <Link href={`/catalog/${tenant.slug}/vehicles/${vehicle.id}`}>
+                                                <Link href={getUrl(`/vehicles/${vehicle.id}`)}>
                                                     {photoUrl ? (
                                                         <img
                                                             src={photoUrl}
@@ -156,7 +168,7 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                                             </div>
 
                                             <div className="space-y-2 px-1">
-                                                <Link href={`/catalog/${tenant.slug}/vehicles/${vehicle.id}`}>
+                                                <Link href={getUrl(`/vehicles/${vehicle.id}`)}>
                                                     <div className="flex justify-between items-start">
                                                         <div>
                                                             <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
@@ -172,7 +184,7 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                                                 {/* Action Buttons */}
                                                 <div className="pt-2 flex gap-2">
                                                     <Button asChild className={`${isSold ? 'w-full' : 'flex-1'} rounded-full`} variant="outline" size="sm">
-                                                        <Link href={`/catalog/${tenant.slug}/vehicles/${vehicle.id}`}>Detail</Link>
+                                                        <Link href={getUrl(`/vehicles/${vehicle.id}`)}>Detail</Link>
                                                     </Button>
                                                     {waNumber && !isSold && (
                                                         <Button asChild className="flex-1 rounded-full bg-green-500 hover:bg-green-600 text-white" size="sm">
@@ -193,7 +205,7 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                             <Pagination
                                 currentPage={page}
                                 totalPages={totalPages}
-                                baseUrl={`/catalog/${tenant.slug}/vehicles`}
+                                baseUrl={getUrl('/vehicles')}
                                 searchParams={searchParams}
                             />
                         </>
@@ -201,7 +213,7 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                         <div className="text-center py-12">
                             <p className="text-muted-foreground text-lg">Tidak ada kendaraan yang ditemukan.</p>
                             <Button asChild variant="outline" className="mt-4">
-                                <Link href={`/catalog/${tenant.slug}/vehicles`}>Reset Filter</Link>
+                                <Link href={getUrl('/vehicles')}>Reset Filter</Link>
                             </Button>
                         </div>
                     )}

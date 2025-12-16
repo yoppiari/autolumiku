@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { headers } from 'next/headers';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
@@ -15,6 +16,8 @@ import { prisma } from '@/lib/prisma';
 
 export default async function ContactPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
+  const headersList = headers();
+  const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
 
   const tenant = await prisma.tenant.findUnique({
     where: { slug },
@@ -52,6 +55,7 @@ export default async function ContactPage({ params }: { params: { slug: string }
           phoneNumber={tenant.phoneNumber || undefined}
           whatsappNumber={tenant.whatsappNumber || undefined}
           slug={tenant.slug}
+          isCustomDomain={isCustomDomain}
         />
 
         <main className="flex-1 container mx-auto px-4 py-12">

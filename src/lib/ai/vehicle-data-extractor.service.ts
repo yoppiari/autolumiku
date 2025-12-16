@@ -81,7 +81,7 @@ export class VehicleDataExtractorService {
         systemPrompt: VEHICLE_EXTRACTION_SYSTEM_PROMPT,
         userPrompt: text,  // Send text directly - system prompt already has instructions
         temperature: 0.1, // Low temperature untuk consistency
-        maxTokens: 512,  // Increased to prevent truncation
+        maxTokens: 2000,  // High limit to ensure complete responses
       });
 
       console.log('[Vehicle Data Extractor] ===== AI RESPONSE DEBUG =====');

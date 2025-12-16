@@ -7,6 +7,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { CatalogEngineService } from '@/lib/services/catalog/catalog-engine.service';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
@@ -35,6 +36,8 @@ interface PageProps {
 
 export default async function VehicleDetailPage({ params }: PageProps) {
   const { slug, id } = params;
+  const headersList = headers();
+  const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
 
   // 1. Fetch Tenant
   const tenant = await prisma.tenant.findUnique({
@@ -44,6 +47,14 @@ export default async function VehicleDetailPage({ params }: PageProps) {
   if (!tenant) {
     return notFound();
   }
+
+  // Generate URLs based on domain context
+  const getUrl = (path: string) => {
+    if (isCustomDomain) {
+      return path; // Clean URL for custom domain
+    }
+    return `/catalog/${tenant.slug}${path}`; // Platform domain with catalog prefix
+  };
 
   // 2. Fetch Vehicle
   const vehicle = await CatalogEngineService.getVehicleById(id, tenant.id);
@@ -80,13 +91,14 @@ export default async function VehicleDetailPage({ params }: PageProps) {
           phoneNumber={tenant.phoneNumber || undefined}
           whatsappNumber={tenant.whatsappNumber || undefined}
           slug={tenant.slug}
+          isCustomDomain={isCustomDomain}
         />
 
         <main className="flex-1 container mx-auto px-4 py-8">
           {/* Breadcrumb / Back Button */}
           <div className="mb-6">
             <Button asChild variant="ghost" className="pl-0 hover:bg-transparent hover:text-primary">
-              <Link href={`/catalog/${tenant.slug}/vehicles`} className="flex items-center gap-2">
+              <Link href={getUrl('/vehicles')} className="flex items-center gap-2">
                 <ArrowLeft className="w-4 h-4" />
                 Kembali ke Koleksi
               </Link>

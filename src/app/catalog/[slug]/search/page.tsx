@@ -27,6 +27,11 @@ export default function SearchPage({ params }: PageProps) {
     const router = useRouter();
     const pathname = usePathname();
 
+    // Detect if we're on a custom domain by checking if pathname starts with /catalog/
+    // On custom domains, middleware rewrites /vehicles to /catalog/[slug]/vehicles
+    // but the pathname would show /search not /catalog/[slug]/search
+    const isCustomDomain = !pathname?.startsWith('/catalog/');
+
     const [branding, setBranding] = useState<any>(null);
     const [businessInfo, setBusinessInfo] = useState<any>(null);
     const [vehicles, setVehicles] = useState<any[]>([]);
@@ -190,6 +195,7 @@ export default function SearchPage({ params }: PageProps) {
                     phoneNumber={businessInfo?.phoneNumber}
                     whatsappNumber={businessInfo?.whatsappNumber}
                     slug={slug}
+                    isCustomDomain={isCustomDomain}
                 />
 
                 <main className="flex-1 container mx-auto px-4 py-8">
