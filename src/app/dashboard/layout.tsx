@@ -83,22 +83,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       // Update favicon if tenant has a logo
       if (tenant.logoUrl) {
-        // Remove existing favicons
-        const existingFavicons = document.querySelectorAll("link[rel='icon'], link[rel='shortcut icon']");
-        existingFavicons.forEach(el => el.remove());
-
-        // Add new favicon
-        const favicon = document.createElement('link');
-        favicon.rel = 'icon';
-        favicon.type = 'image/png';
-        favicon.href = tenant.logoUrl;
-        document.head.appendChild(favicon);
-
-        // Also add shortcut icon for better compatibility
-        const shortcutIcon = document.createElement('link');
-        shortcutIcon.rel = 'shortcut icon';
-        shortcutIcon.href = tenant.logoUrl;
-        document.head.appendChild(shortcutIcon);
+        try {
+          // Find and update existing favicon, or create new one
+          let favicon = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+          if (!favicon) {
+            favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            document.head.appendChild(favicon);
+          }
+          favicon.href = tenant.logoUrl;
+        } catch (e) {
+          console.error('Error updating favicon:', e);
+        }
       }
     }
   }, [tenant]);
