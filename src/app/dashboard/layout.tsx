@@ -76,31 +76,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [user]);
 
-  // Update document title and favicon based on tenant
+  // Update document title based on tenant
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-
     if (tenant?.name) {
-      try {
-        // Update page title to "Tenant Name Platform"
-        document.title = `${tenant.name} Platform`;
-
-        // Update favicon if tenant has a logo
-        if (tenant.logoUrl && typeof tenant.logoUrl === 'string') {
-          const existingFavicon = document.querySelector("link[rel*='icon']") as HTMLLinkElement | null;
-          if (existingFavicon) {
-            existingFavicon.href = tenant.logoUrl;
-          } else {
-            const newFavicon = document.createElement('link');
-            newFavicon.rel = 'icon';
-            newFavicon.type = 'image/x-icon';
-            newFavicon.href = tenant.logoUrl;
-            document.head.appendChild(newFavicon);
-          }
-        }
-      } catch (e) {
-        console.error('Error updating page meta:', e);
-      }
+      document.title = `${tenant.name} Platform`;
     }
   }, [tenant]);
 

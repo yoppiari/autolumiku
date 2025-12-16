@@ -6,10 +6,10 @@ import { ClientProviders } from '@/components/providers/ClientProviders';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'autolumiku Admin Platform',
-  description: 'Platform administrasi multi-tenant untuk showroom otomotif',
+  title: 'Prima Mobil Platform',
+  description: 'Platform administrasi showroom otomotif',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.ico',
   },
 };
 
