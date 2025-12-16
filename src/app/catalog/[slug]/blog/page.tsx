@@ -3,11 +3,16 @@
  * Route: /catalog/[slug]/blog
  */
 
+// Disable caching to always fetch fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import React from 'react';
 import Link from 'next/link';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
+import BlogCard from '@/components/catalog/BlogCard';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -17,6 +22,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { prisma } from '@/lib/prisma';
+import { getBlogUrl } from '@/lib/utils/url-helper';
 
 
 export default async function BlogPage({ params }: { params: { slug: string } }) {
@@ -94,19 +100,30 @@ export default async function BlogPage({ params }: { params: { slug: string } })
 
                     {blogPosts.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                            {blogPosts.map((post) => (
+                            {blogPosts.map((post) => {
+                                // Check if image URL is valid
+                                const hasValidImage = post.featuredImage &&
+                                    (post.featuredImage.startsWith('/') || post.featuredImage.startsWith('http')) &&
+                                    post.featuredImage.length > 5;
+
+                                return (
                                 <div key={post.id} className="group cursor-pointer flex flex-col h-full">
                                     <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`} className="block">
-                                        <div className="aspect-video relative rounded-2xl overflow-hidden mb-5 bg-zinc-900">
-                                            {post.featuredImage ? (
+                                        <div className="aspect-video relative rounded-2xl overflow-hidden mb-5">
+                                            {hasValidImage ? (
                                                 <img
-                                                    src={post.featuredImage}
+                                                    src={post.featuredImage!}
                                                     alt={post.title}
-                                                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-500">
-                                                    No Image
+                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-700 to-zinc-900">
+                                                    <div className="text-center text-zinc-400">
+                                                        <svg className="w-16 h-16 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                                                        </svg>
+                                                        <span className="text-sm font-medium">Artikel</span>
+                                                    </div>
                                                 </div>
                                             )}
                                             {/* Date Badge */}
@@ -142,7 +159,8 @@ export default async function BlogPage({ params }: { params: { slug: string } })
                                         </Link>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="text-center py-16 bg-muted/30 rounded-lg">
