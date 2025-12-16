@@ -23,7 +23,7 @@ async function debugWhatsAppAI() {
     });
 
     console.log(`   Found ${accounts.length} account(s)`);
-    accounts.forEach((acc) => {
+    accounts.forEach((acc: typeof accounts[number]) => {
       console.log(`   - Account ID: ${acc.id}`);
       console.log(`     Client ID: ${acc.clientId}`);
       console.log(`     Phone: ${acc.phoneNumber || "NOT SET"}`);
@@ -43,7 +43,7 @@ async function debugWhatsAppAI() {
     });
 
     console.log(`   Found ${conversations.length} conversation(s)`);
-    conversations.forEach((conv) => {
+    conversations.forEach((conv: typeof conversations[number]) => {
       console.log(`   - Conversation ID: ${conv.id}`);
       console.log(`     Customer: ${conv.customerPhone}`);
       console.log(`     Type: ${conv.conversationType}`);
@@ -65,7 +65,7 @@ async function debugWhatsAppAI() {
     });
 
     console.log(`   Found ${messages.length} message(s)`);
-    messages.forEach((msg) => {
+    messages.forEach((msg: typeof messages[number]) => {
       console.log(`   - Message ID: ${msg.id}`);
       console.log(`     Direction: ${msg.direction}`);
       console.log(`     From: ${msg.sender}`);
@@ -81,7 +81,7 @@ async function debugWhatsAppAI() {
     const aiConfigs = await prisma.whatsAppAIConfig.findMany({});
 
     console.log(`   Found ${aiConfigs.length} AI config(s)`);
-    aiConfigs.forEach((cfg) => {
+    aiConfigs.forEach((cfg: typeof aiConfigs[number]) => {
       console.log(`   - Config ID: ${cfg.id}`);
       console.log(`     Tenant ID: ${cfg.tenantId}`);
       console.log(`     AI Name: ${cfg.aiName}`);

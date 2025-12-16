@@ -3,8 +3,9 @@ const nextConfig = {
   // Enable standalone output for Docker
   output: 'standalone',
 
+  // External packages for server components (Next.js 14)
   experimental: {
-    serverComponentsExternalPackages: ['pg']
+    serverComponentsExternalPackages: ['pg'],
   },
 
   // Fixed BUILD_ID to prevent chunk hash inconsistencies

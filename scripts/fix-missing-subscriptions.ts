@@ -5,7 +5,7 @@
  * Usage: npx tsx scripts/fix-missing-subscriptions.ts
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -32,7 +32,7 @@ async function main() {
     }
 
     console.log(`📋 Found ${tenantsWithoutSubscription.length} tenant(s) without subscription:\n`);
-    tenantsWithoutSubscription.forEach((t, i) => {
+    tenantsWithoutSubscription.forEach((t: typeof tenantsWithoutSubscription[number], i: number) => {
       console.log(`   ${i + 1}. ${t.name} (${t.domain || t.slug})`);
     });
 
@@ -53,7 +53,7 @@ async function main() {
     for (const tenant of tenantsWithoutSubscription) {
       try {
         // Create subscription in transaction
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const subscription = await tx.subscription.create({
             data: {
               tenantId: tenant.id,

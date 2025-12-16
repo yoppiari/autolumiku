@@ -77,24 +77,28 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Update document title and favicon based on tenant
   React.useEffect(() => {
-    if (tenant) {
-      // Update page title to "Tenant Name Platform"
-      document.title = `${tenant.name} Platform`;
+    if (typeof window === 'undefined') return;
 
-      // Update favicon if tenant has a logo
-      if (tenant.logoUrl) {
-        try {
-          // Find and update existing favicon, or create new one
-          let favicon = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
-          if (!favicon) {
-            favicon = document.createElement('link');
-            favicon.rel = 'icon';
-            document.head.appendChild(favicon);
+    if (tenant?.name) {
+      try {
+        // Update page title to "Tenant Name Platform"
+        document.title = `${tenant.name} Platform`;
+
+        // Update favicon if tenant has a logo
+        if (tenant.logoUrl && typeof tenant.logoUrl === 'string') {
+          const existingFavicon = document.querySelector("link[rel*='icon']") as HTMLLinkElement | null;
+          if (existingFavicon) {
+            existingFavicon.href = tenant.logoUrl;
+          } else {
+            const newFavicon = document.createElement('link');
+            newFavicon.rel = 'icon';
+            newFavicon.type = 'image/x-icon';
+            newFavicon.href = tenant.logoUrl;
+            document.head.appendChild(newFavicon);
           }
-          favicon.href = tenant.logoUrl;
-        } catch (e) {
-          console.error('Error updating favicon:', e);
         }
+      } catch (e) {
+        console.error('Error updating page meta:', e);
       }
     }
   }, [tenant]);
