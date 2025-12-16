@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import BlogCard from '@/components/catalog/BlogCard';
 import {
   getCatalogUrl,
   getVehiclesUrl,
@@ -265,33 +266,11 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {blogPosts.map((post) => (
-                      <Card key={post.id} className="hover:shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)] hover:border-primary/50 transition-all duration-300 overflow-hidden bg-card/60 backdrop-blur-sm group border-muted">
-                        {post.featuredImage && (
-                          <CardHeader className="p-0">
-                            <div className="aspect-video relative bg-zinc-900">
-                              <img
-                                src={post.featuredImage}
-                                alt={post.title}
-                                className="w-full h-full object-contain"
-                              />
-                            </div>
-                          </CardHeader>
-                        )}
-                        <CardContent className="p-4">
-                          <CardTitle className="text-lg mb-2 line-clamp-2">{post.title}</CardTitle>
-                          <p className="text-sm text-muted-foreground line-clamp-3">
-                            {getExcerpt(post.excerpt)}
-                          </p>
-                          <div className="mt-4 text-xs text-muted-foreground">
-                            {post.publishedAt && new Date(post.publishedAt).toLocaleDateString('id-ID')} • {post.views} views
-                          </div>
-                        </CardContent>
-                        <CardFooter className="p-4 pt-0">
-                          <Button asChild variant="outline" className="w-full">
-                            <Link href={getBlogUrl(post.slug)}>Baca Selengkapnya</Link>
-                          </Button>
-                        </CardFooter>
-                      </Card>
+                      <BlogCard
+                        key={post.id}
+                        post={post}
+                        blogUrl={getBlogUrl(post.slug)}
+                      />
                     ))}
                   </div>
                 </div>
