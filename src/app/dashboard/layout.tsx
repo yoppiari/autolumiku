@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import DashboardErrorBoundary from '@/components/dashboard/ErrorBoundary';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -120,6 +121,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   return (
+    <DashboardErrorBoundary>
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
@@ -234,5 +236,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </main>
       </div>
     </div>
+    </DashboardErrorBoundary>
   );
 }
