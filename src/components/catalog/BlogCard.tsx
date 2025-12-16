@@ -24,8 +24,19 @@ interface BlogCardProps {
   blogUrl: string;
 }
 
+// Check if string looks like a valid image URL
+function isValidImageUrl(url: string | null): boolean {
+  if (!url) return false;
+  // Must start with / (relative) or http (absolute)
+  if (!url.startsWith('/') && !url.startsWith('http')) return false;
+  // Should not be too short
+  if (url.length < 5) return false;
+  return true;
+}
+
 export default function BlogCard({ post, blogUrl }: BlogCardProps) {
   const [imageError, setImageError] = useState(false);
+  const hasValidImage = isValidImageUrl(post.featuredImage) && !imageError;
 
   const getExcerpt = (content: string | null, maxLength: number = 150): string => {
     if (!content) return '';
@@ -41,9 +52,9 @@ export default function BlogCard({ post, blogUrl }: BlogCardProps) {
     <Card className="hover:shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)] hover:border-primary/50 transition-all duration-300 overflow-hidden bg-card/60 backdrop-blur-sm group border-muted">
       <CardHeader className="p-0">
         <div className="aspect-video relative bg-zinc-800 overflow-hidden">
-          {post.featuredImage && !imageError ? (
+          {hasValidImage ? (
             <img
-              src={post.featuredImage}
+              src={post.featuredImage!}
               alt={post.title}
               className="w-full h-full object-cover"
               loading="lazy"
