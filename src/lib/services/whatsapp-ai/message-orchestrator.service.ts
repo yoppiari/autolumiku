@@ -322,10 +322,10 @@ export class MessageOrchestratorService {
     message: string
   ): Promise<{ message: string; escalated: boolean; images?: Array<{ imageUrl: string; caption?: string }> }> {
     try {
-      // Get conversation history
+      // Get conversation history (limit to 5 for faster response)
       const messageHistory = await WhatsAppAIChatService.getConversationHistory(
         conversation.id,
-        10
+        5
       );
 
       // Generate AI response

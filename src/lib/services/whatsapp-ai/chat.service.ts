@@ -161,13 +161,13 @@ export class WhatsAppAIChatService {
           systemPrompt,
           userPrompt: conversationContext,
           temperature: config.temperature,
-          maxTokens: 100000, // Hard-coded - not user configurable
+          maxTokens: 800, // Optimal for WhatsApp - short, concise responses
         });
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
-            reject(new Error('ZAI API call timed out after 60 seconds'));
-          }, 60000); // 60 second timeout for 100k token responses
+            reject(new Error('ZAI API call timed out after 15 seconds'));
+          }, 15000); // 15 second timeout for fast responses
         });
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
@@ -244,28 +244,14 @@ export class WhatsAppAIChatService {
     config: any,
     intent: MessageIntent
   ): Promise<string> {
-    let systemPrompt = `Anda adalah ${config.aiName}, asisten virtual untuk ${tenant.name}, sebuah showroom mobil bekas.
+    // Optimized shorter system prompt for faster AI response
+    let systemPrompt = `Anda adalah ${config.aiName}, asisten virtual ${tenant.name} (showroom mobil bekas di ${tenant.city || "Indonesia"}).
 
-Personality: ${config.aiPersonality}
-Tugas Anda:
-- Menjawab pertanyaan customer tentang mobil yang tersedia
-- Memberikan informasi harga, spesifikasi, dan kondisi kendaraan
-- Membantu customer untuk menemukan mobil yang sesuai kebutuhan
-- Menjadwalkan test drive atau kunjungan showroom
-- Bersikap ramah, profesional, dan membantu
-
-Informasi Showroom:
-- Nama: ${tenant.name}
-- Lokasi: ${tenant.city || "Indonesia"}
-${tenant.phoneNumber ? `- Telepon: ${tenant.phoneNumber}` : ""}
-${tenant.whatsappNumber ? `- WhatsApp: ${tenant.whatsappNumber}` : ""}
-
-Aturan Penting:
-1. JANGAN memberikan informasi yang tidak Anda ketahui dengan pasti
-2. Jika ditanya tentang mobil spesifik yang tidak ada di inventory, jujur katakan tidak tersedia
-3. Jika pertanyaan terlalu kompleks atau butuh konfirmasi staff, sarankan customer untuk berbicara dengan staff
-4. Selalu gunakan Bahasa Indonesia yang sopan dan mudah dipahami
-5. Fokus pada kebutuhan customer, bukan hard selling
+PENTING - Aturan Respons:
+1. Respons SINGKAT dan LANGSUNG (max 2-3 kalimat)
+2. Gunakan Bahasa Indonesia yang ramah
+3. Jika tidak tahu, arahkan ke staff
+4. Format untuk WhatsApp (tanpa markdown)
 `;
 
     // Add vehicle inventory context jika relevant
@@ -275,21 +261,16 @@ Aturan Penting:
     ) {
       const vehicles = await this.getAvailableVehicles(tenant.id);
       if (vehicles.length > 0) {
-        systemPrompt += `\n\nInventory Mobil Tersedia (${vehicles.length} unit):\n`;
+        systemPrompt += `\nMobil Tersedia:\n`;
+        // Limit to 5 vehicles for faster processing
         systemPrompt += vehicles
+          .slice(0, 5)
           .map(
             (v) =>
-              `- ${v.make} ${v.model} ${v.year} (${v.transmissionType}) - Rp ${this.formatPrice(Number(v.price))} - ${v.mileage}km - ${v.color}`
+              `• ${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}`
           )
           .join("\n");
-      } else {
-        systemPrompt += `\n\nSaat ini sedang tidak ada inventory yang tersedia di sistem. Sarankan customer untuk menghubungi staff untuk informasi terbaru.`;
       }
-    }
-
-    // Add FAQ if configured
-    if (config.customFAQ) {
-      systemPrompt += `\n\nFAQ:\n${JSON.stringify(config.customFAQ, null, 2)}`;
     }
 
     return systemPrompt;
@@ -304,18 +285,19 @@ Aturan Penting:
   ): string {
     let context = "";
 
-    // Add recent conversation history (last 5 messages)
-    const recentHistory = messageHistory.slice(-5);
+    // Only include last 3 messages for faster processing
+    const recentHistory = messageHistory.slice(-3);
     if (recentHistory.length > 0) {
-      context += "Riwayat Percakapan:\n";
+      context += "Chat sebelumnya:\n";
       recentHistory.forEach((msg) => {
-        const label = msg.role === "user" ? "Customer" : "AI";
-        context += `${label}: ${msg.content}\n`;
+        const label = msg.role === "user" ? "C" : "A";
+        // Truncate long messages
+        const truncated = msg.content.length > 100 ? msg.content.substring(0, 100) + "..." : msg.content;
+        context += `${label}: ${truncated}\n`;
       });
-      context += "\n";
     }
 
-    context += `Customer sekarang mengirim:\n${currentMessage}\n\nBerikan respons yang membantu dan relevan:`;
+    context += `\nPesan: ${currentMessage}\n\nBalas singkat:`;
 
     return context;
   }
@@ -335,12 +317,9 @@ Aturan Penting:
         model: true,
         year: true,
         price: true,
-        mileage: true,
-        transmissionType: true,
-        color: true,
       },
       orderBy: { createdAt: "desc" },
-      take: 10, // Limit to 10 most recent
+      take: 5, // Limit to 5 most recent for faster response
     });
   }
 
@@ -503,12 +482,16 @@ Aturan Penting:
    */
   static async getConversationHistory(
     conversationId: string,
-    limit: number = 10
+    limit: number = 5
   ): Promise<Array<{ role: "user" | "assistant"; content: string }>> {
     const messages = await prisma.whatsAppMessage.findMany({
       where: { conversationId },
       orderBy: { createdAt: "desc" },
       take: limit,
+      select: {
+        direction: true,
+        content: true,
+      },
     });
 
     // Reverse untuk chronological order
