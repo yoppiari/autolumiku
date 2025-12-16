@@ -81,7 +81,7 @@ export class VehicleDataExtractorService {
         systemPrompt: VEHICLE_EXTRACTION_SYSTEM_PROMPT,
         userPrompt: text,  // Send text directly - system prompt already has instructions
         temperature: 0.1, // Low temperature untuk consistency
-        maxTokens: 256,  // Aggressively reduced - GLM-4.6 has strict limits
+        maxTokens: 512,  // Increased to prevent truncation
       });
 
       console.log('[Vehicle Data Extractor] ===== AI RESPONSE DEBUG =====');
@@ -247,10 +247,22 @@ export class VehicleDataExtractorService {
       extractedData.year = parseInt(yearMatch[1]);
     }
 
-    // Extract price (support: harga 150juta, 150 juta, 150jt, 150000000)
-    const priceMatch = text.match(/(?:harga|price)\s*:?\s*(\d+(?:\.\d+)?)\s*(juta|jt|m)?/i);
+    // Extract price (support: harga 150juta, 150 juta, 150jt, Rp 120jt, Rp.120jt, 150000000)
+    // First try "Rp" prefix format (common in WhatsApp messages)
+    let priceMatch = text.match(/(?:Rp\.?\s*)(\d+(?:[.,]\d+)?)\s*(juta|jt|m)?/i);
+    if (!priceMatch) {
+      // Fallback to "harga" prefix
+      priceMatch = text.match(/(?:harga|price)\s*:?\s*(\d+(?:[.,]\d+)?)\s*(juta|jt|m)?/i);
+    }
+    if (!priceMatch) {
+      // Try standalone number with jt/juta suffix
+      priceMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(juta|jt)\b/i);
+    }
+
     if (priceMatch) {
-      const num = parseFloat(priceMatch[1]);
+      // Remove thousands separator (.) and parse
+      const numStr = priceMatch[1].replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(numStr);
       const unit = priceMatch[2]?.toLowerCase();
 
       if (unit === 'juta' || unit === 'jt' || unit === 'm') {
@@ -267,10 +279,13 @@ export class VehicleDataExtractorService {
       }
     }
 
-    // Extract mileage (support: km 50rb, 50 ribu km, 50k, 50000)
-    const mileageMatch = text.match(/(?:km|kilometer|odometer|jarak)\s*:?\s*(\d+(?:\.\d+)?)\s*(rb|ribu|k)?/i);
+    // Extract mileage (support: km 50rb, 50 ribu km, 50k, KM 30.000, 50000)
+    // Handle thousands separator (.) in km values like "KM 30.000"
+    const mileageMatch = text.match(/(?:km|kilometer|odometer|jarak)\s*:?\s*(\d+(?:[.,]\d+)?)\s*(rb|ribu|k)?/i);
     if (mileageMatch) {
-      const num = parseFloat(mileageMatch[1]);
+      // Remove thousands separator (.) and parse
+      const numStr = mileageMatch[1].replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(numStr);
       const unit = mileageMatch[2]?.toLowerCase();
 
       if (unit === 'rb' || unit === 'ribu' || unit === 'k') {
@@ -281,10 +296,10 @@ export class VehicleDataExtractorService {
       }
     }
 
-    // Extract transmission
-    if (/\b(matic|automatic|AT)\b/i.test(text)) {
+    // Extract transmission (MT = Manual Transmission, AT = Automatic Transmission)
+    if (/\b(matic|automatic|AT|A\/T)\b/i.test(text)) {
       extractedData.transmission = 'Automatic';
-    } else if (/\b(manual|MT)\b/i.test(text)) {
+    } else if (/\b(manual|MT|M\/T)\b/i.test(text)) {
       extractedData.transmission = 'Manual';
     } else if (/\bCVT\b/i.test(text)) {
       extractedData.transmission = 'CVT';
@@ -299,11 +314,52 @@ export class VehicleDataExtractorService {
       }
     }
 
+    // Model to make mapping (common Indonesian market vehicles)
+    const modelToMake: Record<string, string> = {
+      // Honda
+      'brio': 'Honda', 'jazz': 'Honda', 'civic': 'Honda', 'city': 'Honda',
+      'cr-v': 'Honda', 'crv': 'Honda', 'hr-v': 'Honda', 'hrv': 'Honda',
+      'accord': 'Honda', 'mobilio': 'Honda', 'br-v': 'Honda', 'brv': 'Honda',
+      'wr-v': 'Honda', 'wrv': 'Honda',
+      // Toyota
+      'avanza': 'Toyota', 'innova': 'Toyota', 'fortuner': 'Toyota', 'rush': 'Toyota',
+      'yaris': 'Toyota', 'vios': 'Toyota', 'camry': 'Toyota', 'corolla': 'Toyota',
+      'alphard': 'Toyota', 'vellfire': 'Toyota', 'hilux': 'Toyota', 'kijang': 'Toyota',
+      'agya': 'Toyota', 'calya': 'Toyota', 'sienta': 'Toyota', 'raize': 'Toyota',
+      'veloz': 'Toyota',
+      // Suzuki
+      'ertiga': 'Suzuki', 'ignis': 'Suzuki', 'baleno': 'Suzuki', 'xl7': 'Suzuki',
+      'sx4': 'Suzuki', 'swift': 'Suzuki', 'karimun': 'Suzuki', 'apv': 'Suzuki',
+      's-cross': 'Suzuki', 'scross': 'Suzuki', 'jimny': 'Suzuki',
+      // Daihatsu
+      'xenia': 'Daihatsu', 'terios': 'Daihatsu', 'sigra': 'Daihatsu', 'ayla': 'Daihatsu',
+      'rocky': 'Daihatsu', 'sirion': 'Daihatsu', 'granmax': 'Daihatsu', 'luxio': 'Daihatsu',
+      // Mitsubishi
+      'pajero': 'Mitsubishi', 'xpander': 'Mitsubishi', 'outlander': 'Mitsubishi',
+      'triton': 'Mitsubishi', 'l300': 'Mitsubishi', 'colt': 'Mitsubishi',
+      'eclipse': 'Mitsubishi',
+      // Nissan
+      'livina': 'Nissan', 'serena': 'Nissan', 'terra': 'Nissan', 'navara': 'Nissan',
+      'juke': 'Nissan', 'x-trail': 'Nissan', 'xtrail': 'Nissan', 'march': 'Nissan',
+      'kicks': 'Nissan', 'magnite': 'Nissan',
+      // Mazda
+      'mazda2': 'Mazda', 'mazda3': 'Mazda', 'cx-3': 'Mazda', 'cx-5': 'Mazda',
+      'cx-8': 'Mazda', 'cx-9': 'Mazda', 'biante': 'Mazda',
+      // Wuling
+      'confero': 'Wuling', 'almaz': 'Wuling', 'cortez': 'Wuling', 'formo': 'Wuling',
+      'air': 'Wuling',
+      // Hyundai
+      'creta': 'Hyundai', 'stargazer': 'Hyundai', 'palisade': 'Hyundai',
+      'santa': 'Hyundai', 'ioniq': 'Hyundai', 'kona': 'Hyundai',
+      // Kia
+      'seltos': 'Kia', 'sonet': 'Kia', 'sportage': 'Kia', 'carnival': 'Kia',
+    };
+
     // Extract make and model (simple word matching)
     const parts = text.split(/\s+/).filter((p) => p && !/^\d+$/.test(p));
 
     // Common brands
-    const brands = ['Toyota', 'Honda', 'Suzuki', 'Daihatsu', 'Mitsubishi', 'Nissan', 'Mazda'];
+    const brands = ['Toyota', 'Honda', 'Suzuki', 'Daihatsu', 'Mitsubishi', 'Nissan', 'Mazda', 'Wuling', 'Hyundai', 'Kia', 'BMW', 'Mercedes', 'Audi', 'Volkswagen'];
     for (const brand of brands) {
       if (new RegExp(`\\b${brand}\\b`, 'i').test(text)) {
         extractedData.make = brand;
@@ -311,21 +367,46 @@ export class VehicleDataExtractorService {
       }
     }
 
-    // Common models
-    const models = ['Avanza', 'Xenia', 'Brio', 'Jazz', 'Ertiga', 'Terios', 'Rush', 'Innova', 'Fortuner', 'Pajero', 'Civic', 'CR-V', 'HR-V'];
+    // Common models with variant support
+    const models = Object.keys(modelToMake);
     for (const model of models) {
       if (new RegExp(`\\b${model}\\b`, 'i').test(text)) {
-        extractedData.model = model;
+        extractedData.model = model.charAt(0).toUpperCase() + model.slice(1);
+        // Auto-detect make if not already set
+        if (!extractedData.make) {
+          extractedData.make = modelToMake[model.toLowerCase()];
+        }
         break;
+      }
+    }
+
+    // Try to extract variant (e.g., "Brio Satya", "Avanza Veloz")
+    if (extractedData.model) {
+      const modelPattern = new RegExp(`\\b${extractedData.model}\\s+(\\w+)`, 'i');
+      const variantMatch = text.match(modelPattern);
+      if (variantMatch && variantMatch[1]) {
+        const potentialVariant = variantMatch[1];
+        // Check if it's not a common keyword
+        const excludedWords = ['mt', 'at', 'cvt', 'km', 'tahun', 'warna', 'harga', 'rp', 'manual', 'matic', 'automatic'];
+        if (!excludedWords.includes(potentialVariant.toLowerCase()) && !/^\d+$/.test(potentialVariant)) {
+          extractedData.model = `${extractedData.model} ${potentialVariant}`;
+        }
       }
     }
 
     // If make/model not found by keyword, use first two words as fallback
     if (!extractedData.make && parts.length >= 1) {
-      extractedData.make = parts[0];
+      // Filter out keywords before using as make
+      const filtered = parts.filter(p => !['km', 'rp', 'warna', 'tahun', 'harga', 'mt', 'at', 'cvt'].includes(p.toLowerCase()));
+      if (filtered.length >= 1) {
+        extractedData.make = filtered[0].charAt(0).toUpperCase() + filtered[0].slice(1);
+      }
     }
     if (!extractedData.model && parts.length >= 2) {
-      extractedData.model = parts[1];
+      const filtered = parts.filter(p => !['km', 'rp', 'warna', 'tahun', 'harga', 'mt', 'at', 'cvt'].includes(p.toLowerCase()));
+      if (filtered.length >= 2 && filtered[1] !== extractedData.make) {
+        extractedData.model = filtered[1].charAt(0).toUpperCase() + filtered[1].slice(1);
+      }
     }
 
     // Validate required fields
