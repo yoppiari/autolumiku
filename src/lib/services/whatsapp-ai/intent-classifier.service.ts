@@ -147,23 +147,53 @@ export class IntentClassifierService {
   }
 
   /**
+   * Normalize phone number for comparison
+   * Handles various formats: +62xxx, 62xxx, 0xxx, 08xxx
+   */
+  private static normalizePhone(phone: string): string {
+    if (!phone) return "";
+    // Remove all non-digit characters
+    let digits = phone.replace(/\D/g, "");
+    // Convert Indonesian formats to standard 62xxx
+    if (digits.startsWith("0")) {
+      digits = "62" + digits.substring(1);
+    }
+    // Remove leading + if present (already stripped by regex above)
+    return digits;
+  }
+
+  /**
    * Check if phone number belongs to staff
    * Updated to use User table directly (staff management centralized)
+   * Now with flexible phone number matching
    */
   private static async isStaffMember(
     phoneNumber: string,
     tenantId: string
   ): Promise<boolean> {
-    // Check if user exists in tenant with this phone number
-    const user = await prisma.user.findFirst({
-      where: {
-        tenantId,
-        phone: phoneNumber,
-      },
+    const normalizedInput = this.normalizePhone(phoneNumber);
+    console.log(`[Intent Classifier] Checking staff - input: ${phoneNumber}, normalized: ${normalizedInput}, tenantId: ${tenantId}`);
+
+    // Get all users in tenant and check phone match with normalization
+    const users = await prisma.user.findMany({
+      where: { tenantId },
+      select: { id: true, phone: true, firstName: true },
     });
 
-    // All users in the tenant can use WhatsApp AI commands
-    return !!user;
+    console.log(`[Intent Classifier] Found ${users.length} users in tenant`);
+
+    for (const user of users) {
+      if (!user.phone) continue;
+      const normalizedUserPhone = this.normalizePhone(user.phone);
+      console.log(`[Intent Classifier] Comparing: ${normalizedInput} vs ${normalizedUserPhone} (${user.firstName})`);
+      if (normalizedInput === normalizedUserPhone) {
+        console.log(`[Intent Classifier] ✅ Staff match found: ${user.firstName}`);
+        return true;
+      }
+    }
+
+    console.log(`[Intent Classifier] ❌ No staff match found`);
+    return false;
   }
 
   /**
