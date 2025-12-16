@@ -290,14 +290,14 @@ export default function VehiclesPage() {
               }`}
             >
               {/* Image */}
-              <div className={viewMode === 'list' ? 'w-48 flex-shrink-0' : ''}>
+              <div className={`relative ${viewMode === 'list' ? 'w-48 flex-shrink-0' : ''}`}>
                 {vehicle.photos && vehicle.photos.length > 0 ? (
                   <img
                     src={vehicle.photos[0].thumbnailUrl || vehicle.photos[0].originalUrl}
                     alt={`${vehicle.make} ${vehicle.model}`}
                     className={`w-full object-cover ${
                       viewMode === 'grid' ? 'h-48 rounded-t-lg' : 'h-full rounded-l-lg'
-                    }`}
+                    } ${vehicle.status === 'SOLD' ? 'grayscale' : ''}`}
                     onError={(e) => {
                       // Fallback to placeholder if image fails to load
                       const target = e.target as HTMLImageElement;
@@ -320,6 +320,14 @@ export default function VehiclesPage() {
                   </svg>
                   <span className="text-xs text-gray-500">No Photo</span>
                 </div>
+                {/* SOLD Overlay */}
+                {vehicle.status === 'SOLD' && (
+                  <div className={`absolute inset-0 bg-black/40 flex items-center justify-center ${
+                    viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'
+                  }`}>
+                    <span className="text-white text-lg font-bold tracking-wider rotate-[-15deg] bg-red-600 px-3 py-1 rounded">TERJUAL</span>
+                  </div>
+                )}
               </div>
 
               {/* Content */}

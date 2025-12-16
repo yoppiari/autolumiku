@@ -79,10 +79,10 @@ export class CatalogEngineService {
       limit = 12,
     } = filters;
 
-    // Build where clause
+    // Build where clause - show both AVAILABLE and SOLD vehicles
     const where: any = {
       tenantId,
-      status: 'AVAILABLE', // Only show available vehicles
+      status: { in: ['AVAILABLE', 'SOLD'] }, // Show available and sold vehicles
     };
 
     // Search filter
@@ -188,7 +188,7 @@ export class CatalogEngineService {
 
     // Get filter options (for filter UI)
     const allVehicles = await prisma.vehicle.findMany({
-      where: { tenantId, status: 'AVAILABLE' },
+      where: { tenantId, status: { in: ['AVAILABLE', 'SOLD'] } },
       select: {
         make: true,
         year: true,
@@ -249,7 +249,7 @@ export class CatalogEngineService {
       where: {
         id: vehicleId,
         tenantId,
-        status: 'AVAILABLE',
+        status: { in: ['AVAILABLE', 'SOLD'] },
       },
       select: {
         id: true,
@@ -296,7 +296,7 @@ export class CatalogEngineService {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId,
-        status: 'AVAILABLE',
+        status: { in: ['AVAILABLE', 'SOLD'] },
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
