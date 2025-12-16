@@ -31,6 +31,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
+  // Rewrite /uploads/ to /api/uploads/ for serving uploaded files
+  // This provides a fallback when nginx is not configured to serve uploads
+  if (pathname.startsWith('/uploads/')) {
+    const uploadPath = pathname.replace('/uploads/', '');
+    const url = request.nextUrl.clone();
+    url.pathname = `/api/uploads/${uploadPath}`;
+
+    console.log(`[Middleware] Serving upload: ${pathname} -> ${url.pathname}`);
+
+    return NextResponse.rewrite(url);
+  }
+
   // Extract domain from Host header
   const cleanHost = host.split(':')[0]; // Remove port
 
@@ -51,11 +63,10 @@ export async function middleware(request: NextRequest) {
   // - Static files (but NOT _next/static/ with encoded brackets - handled above)
   // - Next.js internals
   // - Catalog routes (already in correct format)
-  // - Uploads route (serves uploaded images)
+  // NOTE: /uploads/ is now handled above via rewrite to /api/uploads/
   // BUT: For custom domains, we still need to set tenant headers even for these routes
   const shouldSkipRewrite =
     pathname.startsWith('/api/') ||
-    pathname.startsWith('/uploads/') ||
     (pathname.startsWith('/_next/') && !(pathname.includes('%5B') || pathname.includes('%5D'))) ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/dashboard') ||
