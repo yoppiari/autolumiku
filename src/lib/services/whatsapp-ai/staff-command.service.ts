@@ -384,12 +384,25 @@ export class StaffCommandService {
       const photos = contextData.photos || [];
       photos.push(mediaUrl);
 
-      // Check if we already have vehicle data
-      if (contextData.vehicleData) {
-        // We have both photo and data! Create vehicle now
-        const vehicleData = contextData.vehicleData;
+      // Check if we already have vehicle data from context OR from current params
+      // This handles: /upload Brio 2015 KM 30.000 Rp 120JT + photo in same message
+      const { make, model, year, price, mileage, color, transmission } = params;
+      const hasVehicleDataInParams = make && model && year && price;
 
-        console.log(`[Upload Flow] Both photo and data available. Creating vehicle...`);
+      if (contextData.vehicleData || hasVehicleDataInParams) {
+        // We have both photo and data! Create vehicle now
+        const vehicleData = contextData.vehicleData || {
+          make,
+          model,
+          year,
+          price,
+          mileage: mileage || 0,
+          color: color || "Unknown",
+          transmission: transmission || "Manual",
+        };
+
+        console.log(`[Upload Flow] ✅ Photo + Data in same message! Creating vehicle immediately...`);
+        console.log(`[Upload Flow] Vehicle data:`, vehicleData);
         return await this.createVehicleWithPhotos(
           vehicleData,
           photos,
@@ -416,10 +429,11 @@ export class StaffCommandService {
         message:
           `✅ Foto ${photos.length}/5 diterima!\n\n` +
           "📝 *Upload Mobil - Step 2/2*\n\n" +
-          "Sekarang kirim detail mobil dengan format natural language:\n\n" +
+          "Sekarang kirim detail mobil dengan format:\n" +
+          "/upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n\n" +
           "*Contoh:*\n" +
-          "• Toyota Avanza tahun 2020 harga 150 juta km 50rb hitam manual\n" +
-          "• Avanza 2020 hitam matic 150jt km 50ribu\n\n" +
+          "• /upload Brio Satya MT 2015 KM 30.000 Rp 120JT Hitam\n" +
+          "• /upload Avanza 2020 AT km 20rb 130jt Hitam\n\n" +
           "Atau kirim foto lagi jika belum selesai.",
       };
     }
@@ -489,6 +503,7 @@ export class StaffCommandService {
     await prisma.whatsAppConversation.update({
       where: { id: conversationId },
       data: {
+        conversationState: "upload_vehicle",
         contextData: {
           ...contextData,
           uploadStep: "has_data_awaiting_photo",
@@ -504,7 +519,7 @@ export class StaffCommandService {
         `📋 ${make} ${model} ${year}\n` +
         `💰 Rp ${this.formatPrice(price)}\n\n` +
         `📸 *Sekarang kirim foto mobil (WAJIB)*\n\n` +
-        `Upload tidak akan berhasil tanpa foto!`,
+        `Kirim 1-5 foto mobil untuk melanjutkan upload.`,
     };
   }
 
