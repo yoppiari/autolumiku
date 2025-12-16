@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   title: 'Prima Mobil Platform',
   description: 'Platform administrasi showroom otomotif',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/favicon.png',
+    apple: '/favicon-48.png',
   },
 };
 
@@ -21,10 +22,9 @@ export default function RootLayout({
   return (
     <html lang="id">
       <head>
-        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-        <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/favicon.jpg" />
+        <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+        <link rel="icon" type="image/png" href="/favicon-48.png" sizes="48x48" />
+        <link rel="apple-touch-icon" href="/favicon-48.png" />
       </head>
       <body className={inter.className}>
         <ClientProviders>
