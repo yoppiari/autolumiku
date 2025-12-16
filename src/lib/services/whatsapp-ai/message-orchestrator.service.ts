@@ -75,11 +75,14 @@ export class MessageOrchestratorService {
         };
       } else {
         // Normal intent classification
-        console.log(`[Orchestrator] Classifying intent for message: ${incoming.message}`);
+        // Pass hasMedia flag to help detect vehicle uploads with photos
+        const hasMedia = !!(incoming.mediaUrl && incoming.mediaType === 'image');
+        console.log(`[Orchestrator] Classifying intent for message: ${incoming.message}, hasMedia: ${hasMedia}`);
         classification = await IntentClassifierService.classify(
           incoming.message,
           incoming.from,
-          incoming.tenantId
+          incoming.tenantId,
+          hasMedia
         );
         console.log(`[Orchestrator] Intent classified: ${classification.intent}, isStaff: ${classification.isStaff}, isCustomer: ${classification.isCustomer}`);
       }

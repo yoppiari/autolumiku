@@ -35,10 +35,10 @@ export interface IntentClassificationResult {
 // Staff command patterns (case-insensitive)
 const STAFF_COMMAND_PATTERNS = {
   upload_vehicle: [
-    /^\/upload/i,
-    /^upload\s+mobil/i,
-    /^tambah\s+mobil/i,
-    /^daftar\s+mobil/i,
+    /^\/upload/i,                    // /upload ...
+    /^upload\s+/i,                   // upload Brio..., upload mobil...
+    /^tambah\s+(mobil|unit|kendaraan)/i,
+    /^input\s+(mobil|unit|kendaraan)/i,
   ],
   update_status: [
     /^\/status/i,
@@ -85,16 +85,22 @@ const CUSTOMER_PATTERNS = {
   ],
 };
 
+// Vehicle description pattern - detects natural language vehicle listings
+// Matches patterns like: "Brio Satya MT 2015 KM 30.000 Rp 120JT Warna Hitam"
+const VEHICLE_DESCRIPTION_PATTERN = /\b(brio|avanza|xenia|jazz|ertiga|rush|terios|innova|fortuner|pajero|alphard|civic|accord|crv|hrv|brv|mobilio|freed|city|yaris|vios|camry|corolla|raize|rocky|sigra|ayla|agya|calya|wuling|confero|almaz|cortez|xpander|livina|serena|grand|all\s*new)\b.*\b(20\d{2}|19\d{2})\b.*\b(\d+\s*(jt|juta|rb|ribu|k|km)|\d{2,3}\s*(jt|juta))/i;
+
 // ==================== INTENT CLASSIFIER ====================
 
 export class IntentClassifierService {
   /**
    * Classify intent dari WhatsApp message
+   * @param hasMedia - Optional flag to indicate if message has media (photo)
    */
   static async classify(
     message: string,
     senderPhone: string,
-    tenantId: string
+    tenantId: string,
+    hasMedia: boolean = false
   ): Promise<IntentClassificationResult> {
     // Normalize message
     const normalizedMessage = message.trim();
@@ -104,7 +110,7 @@ export class IntentClassifierService {
 
     // 1. If staff, check for commands
     if (isStaff) {
-      const staffIntent = this.classifyStaffCommand(normalizedMessage);
+      const staffIntent = this.classifyStaffCommand(normalizedMessage, hasMedia);
       if (staffIntent) {
         return {
           ...staffIntent,
@@ -146,11 +152,13 @@ export class IntentClassifierService {
 
   /**
    * Classify staff command
+   * @param hasMedia - If true, check for vehicle description patterns for auto-upload
    */
   private static classifyStaffCommand(
-    message: string
+    message: string,
+    hasMedia: boolean = false
   ): IntentClassificationResult | null {
-    // Check upload vehicle
+    // Check upload vehicle command patterns
     if (STAFF_COMMAND_PATTERNS.upload_vehicle.some((p) => p.test(message))) {
       return {
         intent: "staff_upload_vehicle",
@@ -158,6 +166,32 @@ export class IntentClassifierService {
         isStaff: true,
         isCustomer: false,
         reason: "Matched upload vehicle command pattern",
+      };
+    }
+
+    // If staff sends a photo with vehicle description (no explicit "upload" command)
+    // Auto-detect as vehicle upload
+    if (hasMedia && VEHICLE_DESCRIPTION_PATTERN.test(message)) {
+      console.log(`[Intent Classifier] Staff sent photo with vehicle description: "${message}"`);
+      return {
+        intent: "staff_upload_vehicle",
+        confidence: 0.9,
+        isStaff: true,
+        isCustomer: false,
+        reason: "Staff photo with vehicle description pattern detected",
+      };
+    }
+
+    // Also check for vehicle description without photo but with clear vehicle data
+    // Pattern: [brand/model] [year] [price in jt/juta] [km/kilometer]
+    if (VEHICLE_DESCRIPTION_PATTERN.test(message)) {
+      console.log(`[Intent Classifier] Vehicle description detected: "${message}"`);
+      return {
+        intent: "staff_upload_vehicle",
+        confidence: 0.85,
+        isStaff: true,
+        isCustomer: false,
+        reason: "Vehicle description pattern detected (brand + year + price)",
       };
     }
 
