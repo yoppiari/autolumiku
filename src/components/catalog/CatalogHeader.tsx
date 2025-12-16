@@ -39,7 +39,8 @@ export default function CatalogHeader({
   const getUrl = (path: string) => {
     if (isCustomDomain) {
       // Custom domain: clean URLs
-      return path;
+      // Return '/' for empty path (Home link)
+      return path || '/';
     } else {
       // Platform domain: include catalog prefix
       return `/catalog/${tenantSlug}${path}`;

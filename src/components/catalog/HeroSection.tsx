@@ -10,6 +10,7 @@ interface HeroSectionProps {
   imageUrl?: string;
   primaryColor?: string;
   slug?: string;
+  isCustomDomain?: boolean;
 }
 
 export default function HeroSection({
@@ -18,7 +19,15 @@ export default function HeroSection({
   imageUrl,
   primaryColor = '#1a56db',
   slug,
+  isCustomDomain = false,
 }: HeroSectionProps) {
+  // Generate URLs based on domain context
+  const getUrl = (path: string) => {
+    if (isCustomDomain) {
+      return path || '/';
+    }
+    return `/catalog/${slug}${path}`;
+  };
   return (
     <div
       className={`relative overflow-hidden rounded-2xl mb-12 ${!imageUrl ? 'bg-background' : ''}`}
@@ -44,10 +53,10 @@ export default function HeroSection({
 
           <div className="pt-4 flex flex-col sm:flex-row gap-4 sm:gap-4 max-w-md sm:max-w-none">
             <Button asChild size="lg" className="bg-white text-gray-900 hover:bg-gray-100 w-full sm:w-auto">
-              <Link href={slug ? `/catalog/${slug}/vehicles` : '/vehicles'}>Lihat Koleksi</Link>
+              <Link href={getUrl('/vehicles')}>Lihat Koleksi</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900 bg-transparent w-full sm:w-auto">
-              <Link href={slug ? `/catalog/${slug}/contact` : '/contact'}>Hubungi Kami</Link>
+              <Link href={getUrl('/contact')}>Hubungi Kami</Link>
             </Button>
           </div>
         </div>
