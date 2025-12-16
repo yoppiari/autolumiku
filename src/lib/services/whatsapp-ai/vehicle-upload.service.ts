@@ -2,11 +2,14 @@
  * WhatsApp AI Vehicle Upload Service
  *
  * Handles vehicle upload from WhatsApp with AI-powered SEO description generation
+ * Downloads photos from WhatsApp URLs, processes them, and saves to local storage
  * Integrates with /api/v1/vehicles/ai-identify and /api/v1/vehicles
  */
 
 import { prisma } from "@/lib/prisma";
 import { vehicleAIService } from "@/lib/ai/vehicle-ai-service";
+import { ImageProcessingService } from "@/lib/services/image-processing.service";
+import { StorageService } from "@/lib/services/storage.service";
 
 // ==================== TYPES ====================
 
@@ -111,11 +114,13 @@ export class WhatsAppVehicleUploadService {
           aiConfidence: aiResult.aiConfidence,
           aiReasoning: aiResult.aiReasoning,
 
-          // Pricing (convert to BigInt for database)
-          price: BigInt(vehicleData.price * 100000000),  // Convert to cents
-          aiSuggestedPrice: BigInt(aiResult.aiSuggestedPrice),
-          priceConfidence: aiResult.priceConfidence,
-          priceAnalysis: aiResult.priceAnalysis,
+          // Pricing (convert to BigInt for database - store in cents)
+          // vehicleData.price is in full IDR (e.g., 120000000 for 120 juta)
+          // Database stores in cents: 120000000 * 100 = 12000000000
+          price: BigInt(vehicleData.price * 100),
+          aiSuggestedPrice: BigInt(aiResult.aiSuggestedPrice || vehicleData.price * 100),
+          priceConfidence: aiResult.priceConfidence || 0.8,
+          priceAnalysis: aiResult.priceAnalysis || { recommendation: 'Harga sesuai pasar' },
 
           // Vehicle Details
           mileage: vehicleData.mileage || 0,
@@ -130,34 +135,80 @@ export class WhatsAppVehicleUploadService {
 
       console.log('[WhatsApp Vehicle Upload] ✅ Vehicle created:', vehicle.id);
 
-      // 6. Create photos from WhatsApp media URLs
-      console.log('[WhatsApp Vehicle Upload] Creating vehicle photos...');
+      // 6. Download, process, and save photos from WhatsApp media URLs
+      console.log('[WhatsApp Vehicle Upload] Processing vehicle photos...');
+      let processedPhotoCount = 0;
+
       for (let i = 0; i < photoUrls.length; i++) {
-        await prisma.vehiclePhoto.create({
-          data: {
-            vehicleId: vehicle.id,
-            tenantId,
-            storageKey: `whatsapp-upload/${vehicle.id}/${Date.now()}-${i}`,
-            originalUrl: photoUrls[i],      // WhatsApp media URL
-            thumbnailUrl: photoUrls[i],     // Use same URL for now
-            mediumUrl: photoUrls[i],
-            largeUrl: photoUrls[i],
-            filename: `whatsapp-upload-${i + 1}.jpg`,
-            fileSize: 0,  // Unknown from WhatsApp
-            mimeType: 'image/jpeg',
-            width: 0,     // Unknown from WhatsApp
-            height: 0,
-            isMainPhoto: i === 0,  // First photo is main
-            displayOrder: i,
-          },
-        });
+        try {
+          console.log(`[WhatsApp Vehicle Upload] Downloading photo ${i + 1}/${photoUrls.length}: ${photoUrls[i]}`);
+
+          // Download photo from WhatsApp URL
+          const photoBuffer = await this.downloadPhoto(photoUrls[i]);
+
+          if (!photoBuffer) {
+            console.error(`[WhatsApp Vehicle Upload] Failed to download photo ${i + 1}`);
+            continue;
+          }
+
+          console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1} downloaded: ${photoBuffer.length} bytes`);
+
+          // Process photo (generate multiple sizes)
+          const processed = await ImageProcessingService.processPhoto(photoBuffer);
+
+          // Generate filename
+          const timestamp = Date.now();
+          const baseFilename = `${vehicle.make.toLowerCase()}-${vehicle.model.toLowerCase()}-${timestamp}-${i + 1}`;
+
+          // Upload all sizes to storage
+          const uploadResult = await StorageService.uploadMultipleSize(
+            {
+              original: processed.original,
+              large: processed.large,
+              medium: processed.medium,
+              thumbnail: processed.thumbnail,
+            },
+            vehicle.id,
+            baseFilename
+          );
+
+          console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1} saved:`, uploadResult);
+
+          // Create photo record in database
+          await prisma.vehiclePhoto.create({
+            data: {
+              vehicleId: vehicle.id,
+              tenantId,
+              storageKey: uploadResult.storageKey,
+              originalUrl: uploadResult.originalUrl,
+              thumbnailUrl: uploadResult.thumbnailUrl,
+              mediumUrl: uploadResult.mediumUrl,
+              largeUrl: uploadResult.largeUrl,
+              filename: `${baseFilename}-original.jpg`,
+              fileSize: photoBuffer.length,
+              mimeType: processed.metadata.mimeType,
+              width: processed.metadata.width,
+              height: processed.metadata.height,
+              isMainPhoto: i === 0,  // First photo is main
+              displayOrder: i,
+            },
+          });
+
+          processedPhotoCount++;
+        } catch (photoError: any) {
+          console.error(`[WhatsApp Vehicle Upload] Error processing photo ${i + 1}:`, photoError.message);
+          // Continue with next photo
+        }
       }
 
-      console.log('[WhatsApp Vehicle Upload] ✅ Created', photoUrls.length, 'photos');
+      console.log('[WhatsApp Vehicle Upload] ✅ Processed', processedPhotoCount, 'of', photoUrls.length, 'photos');
 
       // 7. Format success message
       const priceInJuta = Math.round(vehicleData.price / 1000000);
-      const aiPriceInJuta = Math.round(aiResult.aiSuggestedPrice / 100000000 / 1000000);
+      // aiSuggestedPrice is in cents, convert to juta: /100 (to IDR) then /1000000 (to juta)
+      const aiPriceInJuta = aiResult.aiSuggestedPrice
+        ? Math.round(aiResult.aiSuggestedPrice / 100 / 1000000)
+        : priceInJuta;
 
       let message = `✅ *Mobil berhasil diupload!*\n\n`;
       message += `📋 *Detail:*\n`;
@@ -165,10 +216,11 @@ export class WhatsAppVehicleUploadService {
       message += `• Mobil: ${vehicle.make} ${vehicle.model} ${vehicle.year}\n`;
       message += `• Varian: ${aiResult.variant || '-'}\n`;
       message += `• Harga: Rp ${priceInJuta} juta\n`;
-      message += `• Foto: ${photoUrls.length} foto\n\n`;
+      message += `• Foto: ${processedPhotoCount} foto\n\n`;
 
       // Add price analysis if AI suggests different price
-      const priceDiff = Math.abs(vehicleData.price - (aiResult.aiSuggestedPrice / 100000000));
+      const aiPriceInIDR = aiResult.aiSuggestedPrice ? aiResult.aiSuggestedPrice / 100 : vehicleData.price;
+      const priceDiff = Math.abs(vehicleData.price - aiPriceInIDR);
       const priceDiffPercent = (priceDiff / vehicleData.price) * 100;
 
       if (priceDiffPercent > 10) {
@@ -220,6 +272,32 @@ export class WhatsAppVehicleUploadService {
     description += `, Rp ${priceInJuta} juta`;
 
     return description;
+  }
+
+  /**
+   * Download photo from WhatsApp media URL
+   */
+  private static async downloadPhoto(url: string): Promise<Buffer | null> {
+    try {
+      console.log(`[WhatsApp Vehicle Upload] Downloading from: ${url}`);
+
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+
+      if (!response.ok) {
+        console.error(`[WhatsApp Vehicle Upload] Download failed: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    } catch (error: any) {
+      console.error(`[WhatsApp Vehicle Upload] Download error:`, error.message);
+      return null;
+    }
   }
 
   /**
