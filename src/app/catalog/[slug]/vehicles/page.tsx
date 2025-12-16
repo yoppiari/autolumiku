@@ -147,18 +147,6 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                                                         Ready
                                                     </div>
                                                 )}
-                                                {/* WhatsApp Quick Button - only show for available vehicles */}
-                                                {waNumber && !isSold && (
-                                                    <a
-                                                        href={waLink}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="absolute top-3 right-3 bg-green-500 hover:bg-green-600 text-white p-2.5 rounded-full shadow-lg transition-colors"
-                                                        title="Chat WhatsApp"
-                                                    >
-                                                        <FaWhatsapp className="w-5 h-5" />
-                                                    </a>
-                                                )}
                                                 {/* SOLD Overlay */}
                                                 {isSold && (
                                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
