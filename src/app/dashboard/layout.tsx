@@ -75,6 +75,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [user]);
 
+  // Update document title and favicon based on tenant
+  React.useEffect(() => {
+    if (tenant) {
+      // Update page title
+      document.title = `${tenant.name} Dashboard`;
+
+      // Update favicon if tenant has a logo
+      if (tenant.logoUrl) {
+        const existingFavicon = document.querySelector("link[rel='icon']") as HTMLLinkElement;
+        if (existingFavicon) {
+          existingFavicon.href = tenant.logoUrl;
+        } else {
+          const favicon = document.createElement('link');
+          favicon.rel = 'icon';
+          favicon.href = tenant.logoUrl;
+          document.head.appendChild(favicon);
+        }
+      }
+    }
+  }, [tenant]);
+
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
