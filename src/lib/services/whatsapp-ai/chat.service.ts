@@ -156,18 +156,18 @@ export class WhatsAppAIChatService {
 
       let aiResponse;
       try {
-        // Add a race condition with manual timeout to ensure we fail fast
+        // Add a race condition with manual timeout
         const apiCallPromise = zaiClient.generateText({
           systemPrompt,
           userPrompt: conversationContext,
           temperature: config.temperature,
-          maxTokens: 800, // Optimal for WhatsApp - short, concise responses
+          maxTokens: 1500, // Allow for complete responses
         });
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
-            reject(new Error('ZAI API call timed out after 15 seconds'));
-          }, 15000); // 15 second timeout for fast responses
+            reject(new Error('ZAI API call timed out after 30 seconds'));
+          }, 30000); // 30 second timeout
         });
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
@@ -226,11 +226,34 @@ export class WhatsAppAIChatService {
       console.error("[WhatsApp AI Chat] Error message:", error.message);
       console.error("[WhatsApp AI Chat] Error stack:", error.stack);
 
-      // Fallback response
+      // Get tenant info for helpful fallback
+      let tenantName = "Showroom Kami";
+      let whatsappNumber = "";
+      try {
+        const tenant = await prisma.tenant.findUnique({
+          where: { id: context.tenantId },
+          select: { name: true, whatsappNumber: true, phoneNumber: true }
+        });
+        if (tenant) {
+          tenantName = tenant.name;
+          whatsappNumber = tenant.whatsappNumber || tenant.phoneNumber || "";
+        }
+      } catch (e) {
+        // Ignore errors fetching tenant
+      }
+
+      // Helpful fallback response instead of generic error
+      const fallbackMessage = `Halo! Terima kasih sudah menghubungi ${tenantName}. 😊\n\n` +
+        `Untuk informasi lebih lanjut tentang mobil yang tersedia, silakan:\n` +
+        `• Ketik "mobil" untuk melihat daftar mobil\n` +
+        `• Ketik "harga" untuk info harga\n` +
+        (whatsappNumber ? `• Hubungi langsung: ${whatsappNumber}\n` : '') +
+        `\nAda yang bisa kami bantu?`;
+
       return {
-        message: "Maaf, terjadi gangguan sistem. Staff kami akan segera membantu Anda.",
-        shouldEscalate: true,
-        confidence: 0,
+        message: fallbackMessage,
+        shouldEscalate: false,
+        confidence: 0.5,
         processingTime: Date.now() - startTime,
       };
     }
