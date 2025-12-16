@@ -78,20 +78,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Update document title and favicon based on tenant
   React.useEffect(() => {
     if (tenant) {
-      // Update page title
-      document.title = `${tenant.name} Dashboard`;
+      // Update page title to "Tenant Name Platform"
+      document.title = `${tenant.name} Platform`;
 
       // Update favicon if tenant has a logo
       if (tenant.logoUrl) {
-        const existingFavicon = document.querySelector("link[rel='icon']") as HTMLLinkElement;
-        if (existingFavicon) {
-          existingFavicon.href = tenant.logoUrl;
-        } else {
-          const favicon = document.createElement('link');
-          favicon.rel = 'icon';
-          favicon.href = tenant.logoUrl;
-          document.head.appendChild(favicon);
-        }
+        // Remove existing favicons
+        const existingFavicons = document.querySelectorAll("link[rel='icon'], link[rel='shortcut icon']");
+        existingFavicons.forEach(el => el.remove());
+
+        // Add new favicon
+        const favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        favicon.type = 'image/png';
+        favicon.href = tenant.logoUrl;
+        document.head.appendChild(favicon);
+
+        // Also add shortcut icon for better compatibility
+        const shortcutIcon = document.createElement('link');
+        shortcutIcon.rel = 'shortcut icon';
+        shortcutIcon.href = tenant.logoUrl;
+        document.head.appendChild(shortcutIcon);
       }
     }
   }, [tenant]);
