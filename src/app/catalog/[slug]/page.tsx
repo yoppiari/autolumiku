@@ -16,13 +16,6 @@ import GlobalFooter from '@/components/showroom/GlobalFooter';
 import HeroSection from '@/components/catalog/HeroSection';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import BlogCard from '@/components/catalog/BlogCard';
 import {
   getCatalogUrl,
@@ -214,40 +207,73 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                   {featuredVehicles.map((vehicle) => {
                     const mainPhoto = vehicle.photos[0];
                     const photoUrl = mainPhoto?.thumbnailUrl || mainPhoto?.originalUrl;
+                    const waNumber = tenant.whatsappNumber?.replace(/[^0-9]/g, '') || '';
+                    const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${vehicle.make} ${vehicle.model} ${vehicle.year} (${formatPrice(vehicle.price)}). Apakah unit masih tersedia?`);
+                    const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
                     return (
                       <div key={vehicle.id} className="group cursor-pointer">
                         <div className="aspect-[16/10] relative rounded-xl overflow-hidden mb-4 bg-muted">
-                          {photoUrl ? (
-                            <img
-                              src={photoUrl}
-                              alt={`${vehicle.make} ${vehicle.model}`}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                              No Image
-                            </div>
+                          <Link href={getVehicleUrl(vehicle.id)}>
+                            {photoUrl ? (
+                              <img
+                                src={photoUrl}
+                                alt={`${vehicle.make} ${vehicle.model}`}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                No Image
+                              </div>
+                            )}
+                          </Link>
+                          {/* Ready Badge */}
+                          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-green-500 text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-lg">
+                            <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                            Ready
+                          </div>
+                          {/* WhatsApp Quick Button */}
+                          {waNumber && (
+                            <a
+                              href={waLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="absolute top-3 right-3 bg-green-500 hover:bg-green-600 text-white p-2.5 rounded-full shadow-lg transition-colors"
+                              title="Chat WhatsApp"
+                            >
+                              <FaWhatsapp className="w-5 h-5" />
+                            </a>
                           )}
                           {/* Interactive overlay on hover */}
-                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                         </div>
 
                         <div className="space-y-2 px-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
-                                {vehicle.make} {vehicle.model}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">{vehicle.year} • {vehicle.transmissionType || 'N/A'}</p>
+                          <Link href={getVehicleUrl(vehicle.id)}>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+                                  {vehicle.make} {vehicle.model}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">{vehicle.year} • {vehicle.transmissionType || 'N/A'}</p>
+                              </div>
+                              <p className="text-xl font-bold text-foreground whitespace-nowrap">
+                                {formatPrice(vehicle.price)}
+                              </p>
                             </div>
-                            <p className="text-xl font-bold text-foreground whitespace-nowrap">
-                              {formatPrice(vehicle.price)}
-                            </p>
-                          </div>
-                          <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
-                            <Button asChild className="w-full rounded-full" variant="outline">
-                              <Link href={getVehicleUrl(vehicle.id)}>Lihat Detail</Link>
+                          </Link>
+                          {/* Action Buttons */}
+                          <div className="pt-2 flex gap-2">
+                            <Button asChild className="flex-1 rounded-full" variant="outline" size="sm">
+                              <Link href={getVehicleUrl(vehicle.id)}>Detail</Link>
                             </Button>
+                            {waNumber && (
+                              <Button asChild className="flex-1 rounded-full bg-green-500 hover:bg-green-600 text-white" size="sm">
+                                <a href={waLink} target="_blank" rel="noopener noreferrer">
+                                  <FaWhatsapp className="w-4 h-4 mr-1" />
+                                  WhatsApp
+                                </a>
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
