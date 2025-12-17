@@ -8,6 +8,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  phone: string | null;
   role: string;
   emailVerified: boolean;
   createdAt: string;
@@ -412,16 +413,13 @@ export default function UsersPage() {
                   Staff
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
+                  WhatsApp
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email Verified
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Login Terakhir
+                  Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Bergabung
@@ -440,16 +438,13 @@ export default function UsersPage() {
                       <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-40"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-28"></div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-6 bg-gray-200 rounded animate-pulse w-20"></div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-6 bg-gray-200 rounded animate-pulse w-20"></div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
@@ -461,7 +456,7 @@ export default function UsersPage() {
                 ))
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                     <FaUserCircle className="mx-auto text-6xl text-gray-300 mb-4" />
                     <p className="text-lg font-medium">Tidak ada staff ditemukan</p>
                     <p className="text-sm mt-1">
@@ -488,11 +483,22 @@ export default function UsersPage() {
                           <div className="text-sm font-medium text-gray-900">
                             {user.firstName} {user.lastName}
                           </div>
+                          <div className="text-xs text-gray-500">{user.email}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.email}</div>
+                      {user.phone ? (
+                        <div className="flex items-center">
+                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                          <span className="text-sm text-gray-900">{user.phone}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <span className="inline-block w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                          <span className="text-sm text-gray-400 italic">Belum diisi</span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -504,18 +510,26 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.emailVerified
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {user.emailVerified ? 'Verified' : 'Not Verified'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Belum login'}
+                      <div className="flex flex-col gap-1">
+                        <span
+                          className={`px-2 py-0.5 inline-flex text-xs leading-4 font-medium rounded ${
+                            user.emailVerified
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {user.emailVerified ? '✓ Email' : '○ Email'}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 inline-flex text-xs leading-4 font-medium rounded ${
+                            user.phone
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-600'
+                          }`}
+                        >
+                          {user.phone ? '✓ WhatsApp' : '✗ WhatsApp'}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(user.createdAt)}
