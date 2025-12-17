@@ -7,6 +7,15 @@
 
 import { prisma } from "@/lib/prisma";
 
+// ==================== STAFF CACHE (OPTIMIZED) ====================
+// Simple in-memory cache for staff phone numbers to reduce DB queries
+interface StaffCacheEntry {
+  phones: Set<string>;
+  timestamp: number;
+}
+const staffCache = new Map<string, StaffCacheEntry>();
+const STAFF_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
 // ==================== TYPES ====================
 
 export type MessageIntent =
