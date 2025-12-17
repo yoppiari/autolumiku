@@ -12,6 +12,7 @@ import { Prisma } from "@prisma/client";
 import { MessageIntent } from "./intent-classifier.service";
 import { VehicleDataExtractorService } from "@/lib/ai/vehicle-data-extractor.service";
 import { WhatsAppVehicleUploadService } from "./vehicle-upload.service";
+import { UploadNotificationService } from "./upload-notification.service";
 
 // ==================== TYPES ====================
 

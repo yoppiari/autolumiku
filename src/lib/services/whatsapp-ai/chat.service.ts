@@ -161,13 +161,13 @@ export class WhatsAppAIChatService {
           systemPrompt,
           userPrompt: conversationContext,
           temperature: config.temperature,
-          maxTokens: 1500, // Allow for complete responses
+          maxTokens: 300, // Allow for complete responses
         });
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
             reject(new Error('ZAI API call timed out after 30 seconds'));
-          }, 30000); // 30 second timeout
+          }, 10000); // OPTIMIZED: 10 second timeout
         });
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);

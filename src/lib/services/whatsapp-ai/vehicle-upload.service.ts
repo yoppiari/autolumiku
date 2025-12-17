@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { vehicleAIService } from "@/lib/ai/vehicle-ai-service";
 import { ImageProcessingService } from "@/lib/services/image-processing.service";
 import { StorageService } from "@/lib/services/storage.service";
+import { UploadNotificationService } from "./upload-notification.service";
 
 // ==================== TYPES ====================
 
