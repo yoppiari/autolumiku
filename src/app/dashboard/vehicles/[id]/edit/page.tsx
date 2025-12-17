@@ -53,7 +53,7 @@ export default function EditVehiclePage() {
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const MAX_PHOTOS = 30;
+  const MAX_PHOTOS = 15;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
   // Form state
