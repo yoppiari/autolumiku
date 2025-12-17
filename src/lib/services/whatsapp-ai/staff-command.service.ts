@@ -337,14 +337,88 @@ export class StaffCommandService {
   // ==================== COMMAND HANDLERS ====================
 
   /**
-   * Handle vehicle upload with REQUIRED photo and data
+   * Check which required fields are missing from vehicle data
+   * Returns array of missing field names and a user-friendly message
+   */
+  private static checkMissingFields(vehicleData: any): {
+    missingFields: string[];
+    askMessage: string;
+    hasMinimumData: boolean;
+  } {
+    const missingFields: string[] = [];
+    const questions: string[] = [];
+
+    // Required fields - WAJIB untuk upload
+    if (!vehicleData?.make) {
+      missingFields.push("make");
+      questions.push("• Merk mobil apa? (Toyota, Honda, dll)");
+    }
+    if (!vehicleData?.model) {
+      missingFields.push("model");
+      questions.push("• Model/tipe apa? (Avanza, Brio, dll)");
+    }
+    if (!vehicleData?.year) {
+      missingFields.push("year");
+      questions.push("• Tahun berapa?");
+    }
+    if (!vehicleData?.price) {
+      missingFields.push("price");
+      questions.push("• Harga berapa? (contoh: 120jt)");
+    }
+
+    // Optional but recommended fields
+    if (!vehicleData?.mileage && vehicleData?.mileage !== 0) {
+      missingFields.push("mileage");
+      questions.push("• KM berapa? (contoh: 50rb)");
+    }
+    if (!vehicleData?.color || vehicleData?.color === "Unknown") {
+      missingFields.push("color");
+      questions.push("• Warna apa?");
+    }
+    if (!vehicleData?.transmission || vehicleData?.transmission === "Unknown") {
+      missingFields.push("transmission");
+      questions.push("• Transmisi manual atau matic?");
+    }
+
+    // Minimum data = make, model, year, price
+    const hasMinimumData = vehicleData?.make && vehicleData?.model && vehicleData?.year && vehicleData?.price;
+
+    let askMessage = "";
+    if (questions.length > 0) {
+      askMessage = "📝 *Data belum lengkap*\n\nMohon lengkapi data berikut:\n" + questions.join("\n");
+      askMessage += "\n\nBalas dengan info yang kurang, contoh:\n";
+      askMessage += "\"hitam matic km 30rb\"\n";
+      askMessage += "atau \"warna putih, transmisi manual\"";
+    }
+
+    return { missingFields, askMessage, hasMinimumData };
+  }
+
+  /**
+   * Merge partial vehicle data with new data
+   */
+  private static mergeVehicleData(existingData: any, newData: any): any {
+    return {
+      make: newData?.make || existingData?.make,
+      model: newData?.model || existingData?.model,
+      year: newData?.year || existingData?.year,
+      price: newData?.price || existingData?.price,
+      mileage: newData?.mileage ?? existingData?.mileage ?? 0,
+      color: (newData?.color && newData?.color !== "Unknown") ? newData.color :
+             (existingData?.color && existingData?.color !== "Unknown") ? existingData.color : "Unknown",
+      transmission: (newData?.transmission && newData?.transmission !== "Unknown") ? newData.transmission :
+                   (existingData?.transmission && existingData?.transmission !== "Unknown") ? existingData.transmission : "Manual",
+    };
+  }
+
+  /**
+   * Handle vehicle upload with REQUIRED photo and COMPLETE data
    * Multi-step flow:
    * 1. /upload → Ask for photo
    * 2. Photo sent → Store in context, ask for data
-   * 3. Data sent → Check photo exists, create vehicle
-   * OR
-   * 1. /upload + data → Store data, ask for photo
-   * 2. Photo sent → Create vehicle with stored data
+   * 3. Data sent → Check completeness, ask for missing fields if needed
+   * 4. User completes data → Merge and check again
+   * 5. All data complete + photo → Create vehicle
    */
   private static async handleUploadVehicle(
     params: Record<string, any>,
@@ -366,6 +440,86 @@ export class StaffCommandService {
     });
 
     const contextData = (conversation?.contextData as any) || {};
+
+    // === Handle "awaiting_completion" state - user is completing missing data ===
+    if (contextData.uploadStep === "awaiting_completion") {
+      console.log(`[Upload Flow] User completing missing data...`);
+
+      const existingData = contextData.vehicleData || {};
+      const photos = contextData.photos || [];
+
+      // If photo sent while completing data, add to photos
+      if (mediaUrl) {
+        photos.push(mediaUrl);
+      }
+
+      // Merge existing data with new params
+      const mergedData = this.mergeVehicleData(existingData, params);
+      console.log(`[Upload Flow] Merged data:`, mergedData);
+
+      // Check if data is now complete
+      const { missingFields, askMessage, hasMinimumData } = this.checkMissingFields(mergedData);
+
+      if (!hasMinimumData) {
+        // Still missing required fields - ask again
+        await prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: {
+            contextData: {
+              ...contextData,
+              uploadStep: "awaiting_completion",
+              vehicleData: mergedData,
+              photos,
+            },
+          },
+        });
+
+        return {
+          success: true,
+          message: askMessage,
+        };
+      }
+
+      // Minimum data complete - check photos
+      if (photos.length === 0) {
+        await prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: {
+            contextData: {
+              ...contextData,
+              uploadStep: "has_data_awaiting_photo",
+              vehicleData: mergedData,
+            },
+          },
+        });
+
+        // Still ask for optional fields if missing
+        let message = `✅ Data dasar sudah lengkap!\n\n` +
+          `📋 ${mergedData.make} ${mergedData.model} ${mergedData.year}\n` +
+          `💰 Rp ${this.formatPrice(mergedData.price)}\n\n`;
+
+        if (missingFields.length > 0) {
+          message += `ℹ️ Data opsional yang belum ada: ${missingFields.join(", ")}\n\n`;
+        }
+
+        message += `📸 *Sekarang kirim foto mobil (WAJIB)*`;
+
+        return {
+          success: true,
+          message,
+        };
+      }
+
+      // Data and photos complete! Create vehicle
+      console.log(`[Upload Flow] ✅ All data complete! Creating vehicle...`);
+      return await this.createVehicleWithPhotos(
+        mergedData,
+        photos,
+        tenantId,
+        staffPhone,
+        conversationId
+      );
+    }
 
     // === STEP 1: Initialize upload flow ===
     if (params.step === "init") {
@@ -457,21 +611,28 @@ export class StaffCommandService {
       // Check if we already have vehicle data from context OR from current params
       // This handles: /upload Brio 2015 KM 30.000 Rp 120JT + photo in same message
       const { make, model, year, price, mileage, color, transmission } = params;
-      const hasVehicleDataInParams = make && model && year && price;
 
-      if (contextData.vehicleData || hasVehicleDataInParams) {
-        // We have both photo and data! Create vehicle now
-        const vehicleData = contextData.vehicleData || {
-          make,
-          model,
-          year,
-          price,
-          mileage: mileage || 0,
-          color: color || "Unknown",
-          transmission: transmission || "Manual",
+      // Merge any incoming data with existing context data
+      const existingData = contextData.vehicleData || {};
+      const incomingData = { make, model, year, price, mileage, color, transmission };
+      const mergedData = this.mergeVehicleData(existingData, incomingData);
+
+      // Check if data is complete
+      const { missingFields, askMessage, hasMinimumData } = this.checkMissingFields(mergedData);
+
+      if (hasMinimumData) {
+        // We have complete data + photo! Create vehicle now
+        const vehicleData = {
+          make: mergedData.make,
+          model: mergedData.model,
+          year: mergedData.year,
+          price: mergedData.price,
+          mileage: mergedData.mileage || 0,
+          color: mergedData.color || "Unknown",
+          transmission: mergedData.transmission || "Manual",
         };
 
-        console.log(`[Upload Flow] ✅ Photo + Data in same message! Creating vehicle immediately...`);
+        console.log(`[Upload Flow] ✅ Photo + Complete Data! Creating vehicle...`);
         console.log(`[Upload Flow] Vehicle data:`, vehicleData);
         return await this.createVehicleWithPhotos(
           vehicleData,
@@ -480,6 +641,36 @@ export class StaffCommandService {
           staffPhone,
           conversationId
         );
+      }
+
+      // Has some data but not complete - store and ask for more
+      if (mergedData.make || mergedData.model || mergedData.year || mergedData.price) {
+        console.log(`[Upload Flow] Photo received with partial data. Asking for completion...`);
+
+        await prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: {
+            conversationState: "upload_vehicle",
+            contextData: {
+              ...contextData,
+              uploadStep: "awaiting_completion",
+              vehicleData: mergedData,
+              photos,
+            },
+          },
+        });
+
+        // Build response showing what we received and what's missing
+        let receivedInfo = `✅ Foto ${photos.length}/${MAX_PHOTOS} diterima!\n\n`;
+        if (mergedData.make) receivedInfo += `✓ Merk: ${mergedData.make}\n`;
+        if (mergedData.model) receivedInfo += `✓ Model: ${mergedData.model}\n`;
+        if (mergedData.year) receivedInfo += `✓ Tahun: ${mergedData.year}\n`;
+        if (mergedData.price) receivedInfo += `✓ Harga: Rp ${this.formatPrice(mergedData.price)}\n`;
+
+        return {
+          success: true,
+          message: receivedInfo + "\n" + askMessage,
+        };
       }
 
       // We have photo but no data yet
@@ -510,55 +701,109 @@ export class StaffCommandService {
     // === STEP 3: Handle incoming vehicle data ===
     const { make, model, year, price, mileage, color, transmission } = params;
 
-    // Validate required fields
-    if (!make || !model || !year || !price) {
-      return {
-        success: false,
-        message:
-          "❌ Data tidak lengkap. Minimal: merk, model, tahun, harga\n\n" +
-          "Contoh: Toyota Avanza 2020 150 juta",
-      };
+    // Build partial vehicle data from params
+    const partialData = {
+      make,
+      model,
+      year,
+      price,
+      mileage: mileage ?? undefined,
+      color: color || undefined,
+      transmission: transmission || undefined,
+    };
+
+    // Merge with existing data from context (if any)
+    const existingData = contextData.vehicleData || {};
+    const mergedData = this.mergeVehicleData(existingData, partialData);
+
+    console.log(`[Upload Flow] Step 3 - Merged vehicle data:`, mergedData);
+
+    // Check what's missing
+    const { missingFields, askMessage, hasMinimumData } = this.checkMissingFields(mergedData);
+
+    // Get photos from context
+    const photos = contextData.photos || [];
+
+    // Validate data integrity for fields that exist
+    if (mergedData.year) {
+      const currentYear = new Date().getFullYear();
+      if (mergedData.year < 1980 || mergedData.year > currentYear + 1) {
+        return {
+          success: false,
+          message: `❌ Tahun tidak valid. Harus antara 1980-${currentYear + 1}`,
+        };
+      }
     }
 
-    // Validate data integrity
-    const currentYear = new Date().getFullYear();
-    if (year < 1980 || year > currentYear + 1) {
-      return {
-        success: false,
-        message: `❌ Tahun tidak valid. Harus antara 1980-${currentYear + 1}`,
-      };
+    if (mergedData.price) {
+      if (mergedData.price <= 0 || mergedData.price > 100000000000) {
+        return {
+          success: false,
+          message: "❌ Harga tidak valid. Harus antara 0-100 miliar",
+        };
+      }
     }
 
-    if (price <= 0 || price > 100000000000) {
-      return {
-        success: false,
-        message: "❌ Harga tidak valid. Harus antara 0-100 miliar",
-      };
-    }
-
-    if (mileage && (mileage < 0 || mileage > 1000000)) {
+    if (mergedData.mileage && (mergedData.mileage < 0 || mergedData.mileage > 1000000)) {
       return {
         success: false,
         message: "❌ Kilometer tidak valid. Harus antara 0-1,000,000 km",
       };
     }
 
+    // If minimum data not complete, ask user to complete it
+    if (!hasMinimumData) {
+      console.log(`[Upload Flow] Data incomplete. Missing: ${missingFields.join(", ")}`);
+
+      await prisma.whatsAppConversation.update({
+        where: { id: conversationId },
+        data: {
+          conversationState: "upload_vehicle",
+          contextData: {
+            ...contextData,
+            uploadStep: "awaiting_completion",
+            vehicleData: mergedData,
+            photos,
+          },
+        },
+      });
+
+      // Build response showing what we received and what's missing
+      let receivedInfo = "";
+      if (mergedData.make) receivedInfo += `✓ Merk: ${mergedData.make}\n`;
+      if (mergedData.model) receivedInfo += `✓ Model: ${mergedData.model}\n`;
+      if (mergedData.year) receivedInfo += `✓ Tahun: ${mergedData.year}\n`;
+      if (mergedData.price) receivedInfo += `✓ Harga: Rp ${this.formatPrice(mergedData.price)}\n`;
+      if (mergedData.mileage) receivedInfo += `✓ KM: ${this.formatNumber(mergedData.mileage)}\n`;
+      if (mergedData.color && mergedData.color !== "Unknown") receivedInfo += `✓ Warna: ${mergedData.color}\n`;
+      if (mergedData.transmission && mergedData.transmission !== "Unknown") receivedInfo += `✓ Transmisi: ${mergedData.transmission}\n`;
+
+      let message = "";
+      if (receivedInfo) {
+        message = `📋 *Data yang sudah diterima:*\n${receivedInfo}\n`;
+      }
+      message += askMessage;
+
+      return {
+        success: true,
+        message,
+      };
+    }
+
+    // Minimum data is complete!
     const vehicleData = {
-      make,
-      model,
-      year,
-      price,
-      mileage: mileage || 0,
-      color: color || "Unknown",
-      transmission: transmission || "Manual",
+      make: mergedData.make,
+      model: mergedData.model,
+      year: mergedData.year,
+      price: mergedData.price,
+      mileage: mergedData.mileage || 0,
+      color: mergedData.color || "Unknown",
+      transmission: mergedData.transmission || "Manual",
     };
 
-    // Check if we already have photos
-    const photos = contextData.photos || [];
-
     if (photos.length > 0) {
-      // We have both data and photos! Create vehicle now
-      console.log(`[Upload Flow] Both data and photo available. Creating vehicle...`);
+      // We have both complete data and photos! Create vehicle now
+      console.log(`[Upload Flow] Both complete data and photo available. Creating vehicle...`);
       return await this.createVehicleWithPhotos(
         vehicleData,
         photos,
@@ -568,7 +813,7 @@ export class StaffCommandService {
       );
     }
 
-    // We have data but no photo yet
+    // We have complete data but no photo yet
     await prisma.whatsAppConversation.update({
       where: { id: conversationId },
       data: {
@@ -581,14 +826,24 @@ export class StaffCommandService {
       },
     });
 
+    // Build summary of optional fields still missing
+    let optionalMissing = "";
+    if (missingFields.length > 0) {
+      optionalMissing = `\nℹ️ Opsional yang belum ada: ${missingFields.join(", ")}\n`;
+    }
+
     return {
       success: true,
       message:
         `✅ Data mobil diterima!\n\n` +
-        `📋 ${make} ${model} ${year}\n` +
-        `💰 Rp ${this.formatPrice(price)}\n\n` +
-        `📸 *Sekarang kirim foto mobil (WAJIB)*\n\n` +
-        `Kirim 1-5 foto mobil untuk melanjutkan upload.`,
+        `📋 ${vehicleData.make} ${vehicleData.model} ${vehicleData.year}\n` +
+        `💰 Harga: Rp ${this.formatPrice(vehicleData.price)}\n` +
+        `🔧 Transmisi: ${vehicleData.transmission}\n` +
+        `🎨 Warna: ${vehicleData.color}\n` +
+        `📍 KM: ${this.formatNumber(vehicleData.mileage)}` +
+        optionalMissing +
+        `\n\n📸 *Sekarang kirim foto mobil (WAJIB)*\n\n` +
+        `Kirim 1-15 foto mobil untuk melanjutkan upload.`,
     };
   }
 
