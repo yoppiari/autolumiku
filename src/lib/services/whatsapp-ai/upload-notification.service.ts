@@ -45,7 +45,7 @@ export class UploadNotificationService {
         include: { tenant: true },
       });
 
-      if (!aimeowAccount || !aimeowAccount.isConnected) {
+      if (!aimeowAccount || !aimeowAccount.isActive) {
         console.log(`[Upload Notification] WhatsApp not connected for tenant`);
         return;
       }
