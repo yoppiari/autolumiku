@@ -215,13 +215,16 @@ export class WhatsAppAIChatService {
         console.log('[WhatsApp AI Chat] Processing tool calls:', aiResponse.toolCalls.length);
 
         for (const toolCall of aiResponse.toolCalls) {
-          if (toolCall.function.name === 'send_vehicle_images') {
-            const args = JSON.parse(toolCall.function.arguments);
-            const searchQuery = args.search_query;
+          // Type guard: check if this is a function tool call (not custom)
+          if (toolCall.type === 'function' && 'function' in toolCall) {
+            if (toolCall.function.name === 'send_vehicle_images') {
+              const args = JSON.parse(toolCall.function.arguments);
+              const searchQuery = args.search_query;
 
-            console.log('[WhatsApp AI Chat] 📸 AI requested vehicle images for:', searchQuery);
+              console.log('[WhatsApp AI Chat] 📸 AI requested vehicle images for:', searchQuery);
 
-            images = await this.fetchVehicleImagesByQuery(searchQuery, context.tenantId);
+              images = await this.fetchVehicleImagesByQuery(searchQuery, context.tenantId);
+            }
           }
         }
       }
