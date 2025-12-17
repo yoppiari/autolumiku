@@ -253,13 +253,13 @@ export class StaffCommandService {
       error:
         aiResult.error || regexResult.error ||
         "❌ Gagal memproses data mobil.\n\n" +
-        "Format:\n" +
-        "/upload [merk] [model] [tahun] [harga] [km] [warna] [transmisi]\n\n" +
-        "Contoh natural language:\n" +
-        "• /upload Toyota Avanza tahun 2020 harga 150 juta km 50 ribu hitam manual\n" +
-        "• /upload Avanza 2020 hitam matic 150jt km 50rb\n\n" +
-        "Contoh strict format:\n" +
-        "• /upload Toyota Avanza 2020 150000000 50000 Hitam Manual",
+        "Coba ketik ulang dengan lebih jelas.\n\n" +
+        "*Contoh yang benar:*\n" +
+        "• Brio 2020 120jt hitam\n" +
+        "• Avanza 2019 km 50rb 140jt matic\n" +
+        "• Jazz RS 2017 165jt merah\n\n" +
+        "Minimal tulis: nama mobil, tahun, harga\n" +
+        "Contoh: Brio 2020 120jt",
     };
   }
 
@@ -385,11 +385,14 @@ export class StaffCommandService {
         success: true,
         message:
           "📸 *Upload Mobil*\n\n" +
-          "Kirim foto mobil dengan caption:\n" +
-          "/upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n\n" +
-          "*Contoh:*\n" +
-          "/upload Brio Satya MT 2015 KM 30.000 Rp 120JT Hitam\n\n" +
-          "Atau kirim foto dulu, lalu detail mobil.",
+          "Cara upload sangat mudah! Cukup kirim:\n" +
+          "1️⃣ Foto mobil\n" +
+          "2️⃣ Ketik info mobil\n\n" +
+          "*Contoh ketik:*\n" +
+          "• Brio 2020 120jt hitam\n" +
+          "• Avanza 2019 km 50rb 140jt silver matic\n" +
+          "• Xenia 2018 putih 95jt manual\n\n" +
+          "Tidak perlu format khusus, ketik saja seperti biasa! 😊",
       };
     }
 
@@ -427,10 +430,11 @@ export class StaffCommandService {
         success: true,
         message:
           `✅ Foto ${photos.length}/${MAX_PHOTOS} diterima!\n\n` +
-          "📝 Sekarang kirim detail mobil:\n" +
-          "/upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n\n" +
+          "📝 Sekarang ketik info mobilnya:\n\n" +
           "*Contoh:*\n" +
-          "/upload Brio Satya MT 2015 KM 30.000 Rp 120JT Hitam",
+          "• Brio 2020 120jt hitam\n" +
+          "• Avanza 2019 km 50rb 140jt matic\n\n" +
+          "Ketik saja seperti chat biasa! 👍",
       };
     }
 
@@ -494,13 +498,12 @@ export class StaffCommandService {
         success: true,
         message:
           `✅ Foto ${photos.length}/${MAX_PHOTOS} diterima!\n\n` +
-          "📝 *Upload Mobil - Step 2/2*\n\n" +
-          "Sekarang kirim detail mobil dengan format:\n" +
-          "/upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n\n" +
+          "📝 *Langkah Terakhir*\n\n" +
+          "Ketik info mobilnya:\n\n" +
           "*Contoh:*\n" +
-          "• /upload Brio Satya MT 2015 KM 30.000 Rp 120JT Hitam\n" +
-          "• /upload Avanza 2020 AT km 20rb 130jt Hitam\n\n" +
-          "Atau kirim foto lagi (maks ${MAX_PHOTOS}).",
+          "• Brio 2020 120jt hitam\n" +
+          "• Avanza 2019 km 50rb 140jt matic\n\n" +
+          "Atau kirim foto lagi (maks ${MAX_PHOTOS}). 📷",
       };
     }
 

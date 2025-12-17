@@ -32,21 +32,31 @@ export interface VehicleDataExtractionResult {
 
 // ==================== SYSTEM PROMPT ====================
 
-const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `JSON API. Extract vehicle data.
+const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `Kamu adalah asisten yang membantu extract data mobil dari pesan WhatsApp.
+Pengguna adalah orang awam yang tidak paham teknologi, jadi terima format apapun.
 
-Required: make, model, year, price (full IDR)
-Optional: mileage (km), color, transmission
+PENTING: Pahami berbagai cara penulisan:
+- Harga: 120jt, 120 juta, Rp 120jt, 120JT, seratus dua puluh juta, 120000000
+- KM: 30rb, 30 ribu, 30.000, 30000, km 30rb, kilometer 30000
+- Transmisi: MT/manual/Manual, AT/matic/Matic/automatic/Automatic, CVT
+- Warna: hitam, Hitam, abu-abu, abu abu, silver, putih metalik, merah maroon
 
-Normalize:
-- 150jt/150 juta → 150000000
-- 50rb/50k → 50000
-- matic → Automatic
-- Capitalize names
+Contoh input yang HARUS bisa dipahami:
+- "Brio 2020 120jt hitam" → Honda Brio
+- "avanza 2019 km 50rb 140 juta silver matic" → Toyota Avanza
+- "xenia 2018 manual putih harga 95jt km 80000" → Daihatsu Xenia
+- "jazz rs 2017 at merah 165jt" → Honda Jazz RS
 
-Return ONLY JSON:
-{"make":"Toyota","model":"Avanza","year":2020,"price":150000000,"mileage":50000,"color":"Hitam","transmission":"Manual"}
+Return ONLY valid JSON (no explanation):
+{"make":"Honda","model":"Brio","year":2020,"price":120000000,"mileage":0,"color":"Hitam","transmission":"Manual"}
 
-If incomplete: {"error":"Missing data"}`;
+Jika data kurang, tebak yang masuk akal:
+- Tidak ada KM → mileage: 0
+- Tidak ada warna → color: "Unknown"
+- Tidak ada transmisi → transmission: "Manual"
+- Tidak ada merk tapi ada model → auto-detect merk dari model
+
+JANGAN return error kecuali benar-benar tidak bisa dipahami.`;
 
 // ==================== SERVICE ====================
 
@@ -306,7 +316,13 @@ export class VehicleDataExtractorService {
     }
 
     // Extract color (common Indonesian colors)
-    const colors = ['hitam', 'putih', 'silver', 'abu-abu', 'merah', 'biru', 'hijau', 'kuning', 'coklat'];
+    const colors = [
+      'hitam', 'putih', 'silver', 'abu-abu', 'abu abu', 'merah', 'biru', 'hijau',
+      'kuning', 'coklat', 'gold', 'emas', 'orange', 'oranye', 'ungu', 'pink',
+      'cream', 'krem', 'bronze', 'grey', 'gray', 'white', 'black', 'red', 'blue',
+      'metalik', 'metallic', 'maroon', 'burgundy', 'champagne', 'titanium',
+      'dark grey', 'dark gray', 'light grey', 'light gray'
+    ];
     for (const color of colors) {
       if (new RegExp(`\\b${color}\\b`, 'i').test(text)) {
         extractedData.color = color.charAt(0).toUpperCase() + color.slice(1);
