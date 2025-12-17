@@ -167,6 +167,12 @@ export class WhatsAppAIChatService {
         });
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
+
+        // Trim leading/trailing whitespace from AI response
+        if (aiResponse.content) {
+          aiResponse.content = aiResponse.content.trim();
+        }
+
         console.log(`[WhatsApp AI Chat] ✅ AI response received successfully`);
         console.log(`[WhatsApp AI Chat] Content length:`, aiResponse.content.length);
         console.log(`[WhatsApp AI Chat] Reasoning content length (should be 0 with glm-4-flash):`, aiResponse.reasoning?.length || 0);
