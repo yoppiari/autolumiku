@@ -393,10 +393,21 @@ export class StaffCommandService {
     }
 
     // === STEP 1b: Photo sent without caption ===
+    const MAX_PHOTOS = 15;
+
     if (params.step === "photo_only" && mediaUrl) {
       console.log(`[Upload Flow] Photo only received (no caption): ${mediaUrl}`);
 
       const photos = contextData.photos || [];
+
+      // Check max photos limit
+      if (photos.length >= MAX_PHOTOS) {
+        return {
+          success: false,
+          message: `❌ Maksimal ${MAX_PHOTOS} foto per kendaraan. Kirim detail mobil untuk melanjutkan upload.`,
+        };
+      }
+
       photos.push(mediaUrl);
 
       await prisma.whatsAppConversation.update({
@@ -414,7 +425,7 @@ export class StaffCommandService {
       return {
         success: true,
         message:
-          `✅ Foto ${photos.length} diterima!\n\n` +
+          `✅ Foto ${photos.length}/${MAX_PHOTOS} diterima!\n\n` +
           "📝 Sekarang kirim detail mobil:\n" +
           "/upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n\n" +
           "*Contoh:*\n" +
@@ -427,6 +438,15 @@ export class StaffCommandService {
       console.log(`[Upload Flow] Photo received: ${mediaUrl}`);
 
       const photos = contextData.photos || [];
+
+      // Check max photos limit
+      if (photos.length >= MAX_PHOTOS) {
+        return {
+          success: false,
+          message: `❌ Maksimal ${MAX_PHOTOS} foto per kendaraan. Kirim detail mobil untuk melanjutkan upload.`,
+        };
+      }
+
       photos.push(mediaUrl);
 
       // Check if we already have vehicle data from context OR from current params
@@ -472,14 +492,14 @@ export class StaffCommandService {
       return {
         success: true,
         message:
-          `✅ Foto ${photos.length}/5 diterima!\n\n` +
+          `✅ Foto ${photos.length}/${MAX_PHOTOS} diterima!\n\n` +
           "📝 *Upload Mobil - Step 2/2*\n\n" +
           "Sekarang kirim detail mobil dengan format:\n" +
           "/upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n\n" +
           "*Contoh:*\n" +
           "• /upload Brio Satya MT 2015 KM 30.000 Rp 120JT Hitam\n" +
           "• /upload Avanza 2020 AT km 20rb 130jt Hitam\n\n" +
-          "Atau kirim foto lagi jika belum selesai.",
+          "Atau kirim foto lagi (maks ${MAX_PHOTOS}).",
       };
     }
 
@@ -840,24 +860,50 @@ export class StaffCommandService {
   // ==================== HELPER METHODS ====================
 
   /**
+   * Normalize phone number for comparison
+   * Handles various formats: +62xxx, 62xxx, 0xxx, 08xxx
+   */
+  private static normalizePhone(phone: string): string {
+    if (!phone) return "";
+    // Remove all non-digit characters
+    let digits = phone.replace(/\D/g, "");
+    // Convert Indonesian formats to standard 62xxx
+    if (digits.startsWith("0")) {
+      digits = "62" + digits.substring(1);
+    }
+    return digits;
+  }
+
+  /**
    * Verify staff authorization
    * All users in the tenant can access WhatsApp AI commands
+   * Uses normalized phone comparison for flexible matching
    */
   private static async verifyStaffAuthorization(
     tenantId: string,
     staffPhone: string,
     intent: MessageIntent
   ): Promise<boolean> {
-    // Check if user exists in tenant with this phone number
-    const user = await prisma.user.findFirst({
-      where: {
-        tenantId,
-        phone: staffPhone,
-      },
+    const normalizedInput = this.normalizePhone(staffPhone);
+    console.log(`[Staff Command] Verifying authorization - input: ${staffPhone}, normalized: ${normalizedInput}`);
+
+    // Get all users in tenant and check phone match with normalization
+    const users = await prisma.user.findMany({
+      where: { tenantId },
+      select: { id: true, phone: true, firstName: true },
     });
 
-    // All users in the tenant can use WhatsApp AI commands
-    return !!user;
+    for (const user of users) {
+      if (!user.phone) continue;
+      const normalizedUserPhone = this.normalizePhone(user.phone);
+      if (normalizedInput === normalizedUserPhone) {
+        console.log(`[Staff Command] ✅ Authorization granted for: ${user.firstName}`);
+        return true;
+      }
+    }
+
+    console.log(`[Staff Command] ❌ No matching user found for phone: ${staffPhone}`);
+    return false;
   }
 
   /**

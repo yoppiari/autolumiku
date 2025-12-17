@@ -89,28 +89,76 @@ export async function POST(request: NextRequest) {
       let mediaUrl = undefined;
       let mediaType = undefined;
 
+      // DEBUG: Log all possible media URL fields for troubleshooting
+      console.log("[Aimeow Webhook] 🖼️ MEDIA URL DETECTION:");
+      console.log("  - message.mediaUrl:", message.mediaUrl);
+      console.log("  - message.url:", message.url);
+      console.log("  - message.imageUrl:", message.imageUrl);
+      console.log("  - message.image:", message.image);
+      console.log("  - message.media:", message.media);
+      console.log("  - message.image?.url:", message.image?.url);
+      console.log("  - message.media?.url:", message.media?.url);
+      console.log("  - message.imageMessage:", message.imageMessage);
+      console.log("  - message.imageMessage?.url:", message.imageMessage?.url);
+
       if (message.type === "text") {
         messageText = message.text || "";
       } else if (message.type === "image") {
         // Image message - extract caption as text and media URL
         messageText = message.caption || message.text || "";
-        mediaUrl = message.mediaUrl || message.url || message.imageUrl;
+
+        // Try multiple possible field names for media URL
+        mediaUrl = message.mediaUrl
+          || message.url
+          || message.imageUrl
+          || message.image?.url
+          || message.media?.url
+          || message.imageMessage?.url
+          || message.image
+          || message.media;
+
+        // If mediaUrl is an object, try to extract url from it
+        if (mediaUrl && typeof mediaUrl === 'object') {
+          mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.src || undefined;
+        }
+
         mediaType = "image";
-        console.log(`[Aimeow Webhook] Image message - URL: ${mediaUrl}, Caption: ${messageText}`);
+        console.log(`[Aimeow Webhook] ✅ Image message detected:`);
+        console.log(`  - mediaUrl: ${mediaUrl}`);
+        console.log(`  - Caption: "${messageText}"`);
+        console.log(`  - mediaUrl type: ${typeof mediaUrl}`);
+
+        if (!mediaUrl) {
+          console.error(`[Aimeow Webhook] ⚠️ WARNING: Image message has no mediaUrl!`);
+          console.error(`[Aimeow Webhook] Full message object:`, JSON.stringify(message, null, 2));
+        }
       } else if (message.type === "video") {
         messageText = message.caption || message.text || "";
-        mediaUrl = message.mediaUrl || message.url || message.videoUrl;
+        mediaUrl = message.mediaUrl || message.url || message.videoUrl || message.video?.url || message.media?.url;
         mediaType = "video";
         console.log(`[Aimeow Webhook] Video message - URL: ${mediaUrl}, Caption: ${messageText}`);
       } else if (message.type === "document") {
         messageText = message.caption || message.text || message.filename || "";
-        mediaUrl = message.mediaUrl || message.url || message.documentUrl;
+        mediaUrl = message.mediaUrl || message.url || message.documentUrl || message.document?.url || message.media?.url;
         mediaType = "document";
         console.log(`[Aimeow Webhook] Document message - URL: ${mediaUrl}, Caption: ${messageText}`);
       } else {
-        // Unknown type - log and skip
-        console.log(`[Aimeow Webhook] Unsupported message type: ${message.type}`);
-        return NextResponse.json({ success: true });
+        // Unknown type - log but continue processing (might still have useful content)
+        console.log(`[Aimeow Webhook] ⚠️ Unsupported message type: ${message.type}`);
+        messageText = message.text || message.caption || message.body || "";
+
+        // Still try to extract any media
+        mediaUrl = message.mediaUrl || message.url || message.media?.url;
+        if (mediaUrl) {
+          mediaType = "unknown";
+          console.log(`[Aimeow Webhook] Found media in unsupported type: ${mediaUrl}`);
+        }
+
+        // If still no content, skip
+        if (!messageText && !mediaUrl) {
+          console.log(`[Aimeow Webhook] No content found, skipping`);
+          return NextResponse.json({ success: true });
+        }
       }
 
       await handleIncomingMessage(account, {
@@ -173,18 +221,31 @@ async function handleIncomingMessage(account: any, data: any) {
   const { from, message, mediaUrl, mediaType, messageId } = data;
 
   try {
-    console.log(`[Webhook] Processing message - From: ${from}, MessageId: ${messageId}, Message: ${message}, MediaUrl: ${mediaUrl}`);
+    console.log("=".repeat(60));
+    console.log(`[Webhook] 📨 PROCESSING INCOMING MESSAGE`);
+    console.log(`[Webhook] From: ${from}`);
+    console.log(`[Webhook] MessageId: ${messageId}`);
+    console.log(`[Webhook] Message text: "${message || '(empty)'}"`);
+    console.log(`[Webhook] MediaUrl: ${mediaUrl || '(none)'}`);
+    console.log(`[Webhook] MediaType: ${mediaType || '(none)'}`);
+    console.log("=".repeat(60));
 
     // Allow empty message for media (photos with no caption)
     if (!from || !messageId) {
-      console.error(`[Webhook] Missing required fields - from: ${from}, messageId: ${messageId}`);
+      console.error(`[Webhook] ❌ Missing required fields - from: ${from}, messageId: ${messageId}`);
       return;
     }
 
     // If no message text and no media, skip
     if (!message && !mediaUrl) {
-      console.error(`[Webhook] No message content or media - skipping`);
+      console.error(`[Webhook] ❌ No message content AND no media - skipping`);
+      console.error(`[Webhook] This might indicate mediaUrl extraction failed!`);
       return;
+    }
+
+    // Log if photo-only message (no caption)
+    if (!message && mediaUrl) {
+      console.log(`[Webhook] 📷 Photo-only message detected (no caption)`);
     }
 
     // Check if message already exists (prevent duplicates)

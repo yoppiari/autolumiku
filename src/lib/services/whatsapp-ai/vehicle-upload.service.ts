@@ -35,6 +35,46 @@ export interface WhatsAppVehicleUploadResult {
 
 export class WhatsAppVehicleUploadService {
   /**
+   * Normalize phone number for comparison
+   * Handles various formats: +62xxx, 62xxx, 0xxx, 08xxx
+   */
+  private static normalizePhone(phone: string): string {
+    if (!phone) return "";
+    // Remove all non-digit characters
+    let digits = phone.replace(/\D/g, "");
+    // Convert Indonesian formats to standard 62xxx
+    if (digits.startsWith("0")) {
+      digits = "62" + digits.substring(1);
+    }
+    return digits;
+  }
+
+  /**
+   * Find staff by phone number with normalized comparison
+   */
+  private static async findStaffByPhone(tenantId: string, staffPhone: string) {
+    const normalizedInput = this.normalizePhone(staffPhone);
+    console.log(`[WhatsApp Vehicle Upload] Finding staff - input: ${staffPhone}, normalized: ${normalizedInput}`);
+
+    const users = await prisma.user.findMany({
+      where: { tenantId },
+      select: { id: true, phone: true, firstName: true, lastName: true },
+    });
+
+    for (const user of users) {
+      if (!user.phone) continue;
+      const normalizedUserPhone = this.normalizePhone(user.phone);
+      if (normalizedInput === normalizedUserPhone) {
+        console.log(`[WhatsApp Vehicle Upload] ✅ Staff found: ${user.firstName}`);
+        return user;
+      }
+    }
+
+    console.log(`[WhatsApp Vehicle Upload] ❌ No staff found for phone: ${staffPhone}`);
+    return null;
+  }
+
+  /**
    * Create vehicle from WhatsApp with AI-powered SEO description
    *
    * @param vehicleData - Extracted vehicle data from natural language
@@ -71,13 +111,8 @@ export class WhatsAppVehicleUploadService {
       console.log('[WhatsApp Vehicle Upload] - Features count:', aiResult.features.length);
       console.log('[WhatsApp Vehicle Upload] - Price analysis:', aiResult.priceAnalysis.recommendation);
 
-      // 3. Get user ID from phone number
-      const staff = await prisma.user.findFirst({
-        where: {
-          tenantId,
-          phone: staffPhone,
-        },
-      });
+      // 3. Get user ID from phone number (using normalized comparison)
+      const staff = await this.findStaffByPhone(tenantId, staffPhone);
 
       if (!staff) {
         return {
