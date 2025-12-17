@@ -480,8 +480,9 @@ export class StaffCommandService {
         };
       }
 
-      // Minimum data complete - check photos
-      if (photos.length === 0) {
+      // Minimum data complete - check photos (need minimum 6)
+      const MIN_PHOTOS_NEEDED = 6;
+      if (photos.length < MIN_PHOTOS_NEEDED) {
         await prisma.whatsAppConversation.update({
           where: { id: conversationId },
           data: {
@@ -489,20 +490,30 @@ export class StaffCommandService {
               ...contextData,
               uploadStep: "has_data_awaiting_photo",
               vehicleData: mergedData,
+              photos,
             },
           },
         });
 
-        // Still ask for optional fields if missing
+        const photosRemaining = MIN_PHOTOS_NEEDED - photos.length;
+
+        // Build message with data summary and photo requirements
         let message = `✅ Data dasar sudah lengkap!\n\n` +
           `📋 ${mergedData.make} ${mergedData.model} ${mergedData.year}\n` +
           `💰 Rp ${this.formatPrice(mergedData.price)}\n\n`;
 
         if (missingFields.length > 0) {
-          message += `ℹ️ Data opsional yang belum ada: ${missingFields.join(", ")}\n\n`;
+          message += `ℹ️ Opsional: ${missingFields.join(", ")}\n\n`;
         }
 
-        message += `📸 *Sekarang kirim foto mobil (WAJIB)*`;
+        if (photos.length > 0) {
+          message += `📷 Foto: ${photos.length}/${MIN_PHOTOS_NEEDED} (perlu ${photosRemaining} lagi)\n\n`;
+        }
+
+        message += `📸 *Kirim ${photosRemaining} foto mobil (WAJIB)*\n\n` +
+          `*Foto yang diperlukan (6 foto):*\n` +
+          `• Eksterior: depan, belakang, samping\n` +
+          `• Interior: dashboard, jok, bagasi`;
 
         return {
           success: true,
@@ -511,7 +522,7 @@ export class StaffCommandService {
       }
 
       // Data and photos complete! Create vehicle
-      console.log(`[Upload Flow] ✅ All data complete! Creating vehicle...`);
+      console.log(`[Upload Flow] ✅ All data + ${photos.length} photos complete! Creating vehicle...`);
       return await this.createVehicleWithPhotos(
         mergedData,
         photos,
@@ -539,18 +550,19 @@ export class StaffCommandService {
         success: true,
         message:
           "📸 *Upload Mobil*\n\n" +
-          "Cara upload sangat mudah! Cukup kirim:\n" +
-          "1️⃣ Foto mobil\n" +
-          "2️⃣ Ketik info mobil\n\n" +
-          "*Contoh ketik:*\n" +
+          "Cara upload sangat mudah!\n\n" +
+          "*Langkah 1:* Kirim 6 foto mobil\n" +
+          "• Eksterior: depan, belakang, samping\n" +
+          "• Interior: dashboard, jok, bagasi\n\n" +
+          "*Langkah 2:* Ketik info mobil\n" +
           "• Brio 2020 120jt hitam\n" +
-          "• Avanza 2019 km 50rb 140jt silver matic\n" +
-          "• Xenia 2018 putih 95jt manual\n\n" +
+          "• Avanza 2019 km 50rb 140jt matic\n\n" +
           "Tidak perlu format khusus, ketik saja seperti biasa! 😊",
       };
     }
 
     // === STEP 1b: Photo sent without caption ===
+    const MIN_PHOTOS = 6;  // Minimum 6 photos required (interior + exterior)
     const MAX_PHOTOS = 15;
 
     if (params.step === "photo_only" && mediaUrl) {
@@ -580,11 +592,24 @@ export class StaffCommandService {
         },
       });
 
+      // Build photo guidance message
+      const photoRemaining = MIN_PHOTOS - photos.length;
+      let photoGuide = "";
+      if (photoRemaining > 0) {
+        photoGuide = `\n📷 Kirim ${photoRemaining} foto lagi untuk melengkapi.\n\n` +
+          "*Foto yang diperlukan (6 foto):*\n" +
+          "• Depan, belakang, samping kiri/kanan\n" +
+          "• Dashboard, jok, bagasi\n";
+      } else {
+        photoGuide = "\n✅ Jumlah foto sudah cukup!\n";
+      }
+
       return {
         success: true,
         message:
-          `✅ Foto ${photos.length}/${MAX_PHOTOS} diterima!\n\n` +
-          "📝 Sekarang ketik info mobilnya:\n\n" +
+          `✅ Foto ${photos.length}/${MIN_PHOTOS} diterima!` +
+          photoGuide +
+          "\n📝 Sekarang ketik info mobilnya:\n\n" +
           "*Contoh:*\n" +
           "• Brio 2020 120jt hitam\n" +
           "• Avanza 2019 km 50rb 140jt matic\n\n" +
@@ -621,7 +646,36 @@ export class StaffCommandService {
       const { missingFields, askMessage, hasMinimumData } = this.checkMissingFields(mergedData);
 
       if (hasMinimumData) {
-        // We have complete data + photo! Create vehicle now
+        // Check if we have enough photos (minimum 6)
+        if (photos.length < MIN_PHOTOS) {
+          // Data complete but need more photos
+          await prisma.whatsAppConversation.update({
+            where: { id: conversationId },
+            data: {
+              conversationState: "upload_vehicle",
+              contextData: {
+                ...contextData,
+                uploadStep: "has_data_awaiting_photo",
+                vehicleData: mergedData,
+                photos,
+              },
+            },
+          });
+
+          const photoRemaining = MIN_PHOTOS - photos.length;
+          return {
+            success: true,
+            message:
+              `✅ Foto ${photos.length}/${MIN_PHOTOS} diterima!\n` +
+              `✅ Data mobil sudah lengkap!\n\n` +
+              `📷 *Kirim ${photoRemaining} foto lagi*\n\n` +
+              `*Foto yang diperlukan (6 foto):*\n` +
+              `• Eksterior: depan, belakang, samping\n` +
+              `• Interior: dashboard, jok, bagasi`,
+          };
+        }
+
+        // We have complete data + enough photos! Create vehicle now
         const vehicleData = {
           make: mergedData.make,
           model: mergedData.model,
@@ -632,7 +686,7 @@ export class StaffCommandService {
           transmission: mergedData.transmission || "Manual",
         };
 
-        console.log(`[Upload Flow] ✅ Photo + Complete Data! Creating vehicle...`);
+        console.log(`[Upload Flow] ✅ Complete Data + ${photos.length} photos! Creating vehicle...`);
         console.log(`[Upload Flow] Vehicle data:`, vehicleData);
         return await this.createVehicleWithPhotos(
           vehicleData,
@@ -661,7 +715,13 @@ export class StaffCommandService {
         });
 
         // Build response showing what we received and what's missing
-        let receivedInfo = `✅ Foto ${photos.length}/${MAX_PHOTOS} diterima!\n\n`;
+        const photoRemaining = MIN_PHOTOS - photos.length;
+        let receivedInfo = `✅ Foto ${photos.length}/${MIN_PHOTOS} diterima!`;
+        if (photoRemaining > 0) {
+          receivedInfo += ` (perlu ${photoRemaining} lagi)\n\n`;
+        } else {
+          receivedInfo += ` ✅\n\n`;
+        }
         if (mergedData.make) receivedInfo += `✓ Merk: ${mergedData.make}\n`;
         if (mergedData.model) receivedInfo += `✓ Model: ${mergedData.model}\n`;
         if (mergedData.year) receivedInfo += `✓ Tahun: ${mergedData.year}\n`;
@@ -685,16 +745,27 @@ export class StaffCommandService {
         },
       });
 
+      // Build photo status message
+      const photoRemaining = MIN_PHOTOS - photos.length;
+      let photoStatus = `✅ Foto ${photos.length}/${MIN_PHOTOS} diterima!`;
+      if (photoRemaining > 0) {
+        photoStatus += `\n📷 Kirim ${photoRemaining} foto lagi.\n\n` +
+          "*Foto yang diperlukan (6 foto):*\n" +
+          "• Eksterior: depan, belakang, samping\n" +
+          "• Interior: dashboard, jok, bagasi\n";
+      } else {
+        photoStatus += " ✅\n";
+      }
+
       return {
         success: true,
         message:
-          `✅ Foto ${photos.length}/${MAX_PHOTOS} diterima!\n\n` +
-          "📝 *Langkah Terakhir*\n\n" +
-          "Ketik info mobilnya:\n\n" +
+          photoStatus +
+          "\n📝 *Sekarang ketik info mobilnya:*\n\n" +
           "*Contoh:*\n" +
           "• Brio 2020 120jt hitam\n" +
           "• Avanza 2019 km 50rb 140jt matic\n\n" +
-          "Atau kirim foto lagi (maks ${MAX_PHOTOS}). 📷",
+          "Ketik saja seperti chat biasa! 👍",
       };
     }
 
@@ -801,9 +872,11 @@ export class StaffCommandService {
       transmission: mergedData.transmission || "Manual",
     };
 
-    if (photos.length > 0) {
-      // We have both complete data and photos! Create vehicle now
-      console.log(`[Upload Flow] Both complete data and photo available. Creating vehicle...`);
+    // Check if we have enough photos (minimum 6)
+    const MIN_PHOTOS_REQ = 6;
+    if (photos.length >= MIN_PHOTOS_REQ) {
+      // We have both complete data and enough photos! Create vehicle now
+      console.log(`[Upload Flow] Complete data + ${photos.length} photos. Creating vehicle...`);
       return await this.createVehicleWithPhotos(
         vehicleData,
         photos,
@@ -813,7 +886,7 @@ export class StaffCommandService {
       );
     }
 
-    // We have complete data but no photo yet
+    // We have complete data but need more photos
     await prisma.whatsAppConversation.update({
       where: { id: conversationId },
       data: {
@@ -822,6 +895,7 @@ export class StaffCommandService {
           ...contextData,
           uploadStep: "has_data_awaiting_photo",
           vehicleData,
+          photos,
         },
       },
     });
@@ -829,8 +903,14 @@ export class StaffCommandService {
     // Build summary of optional fields still missing
     let optionalMissing = "";
     if (missingFields.length > 0) {
-      optionalMissing = `\nℹ️ Opsional yang belum ada: ${missingFields.join(", ")}\n`;
+      optionalMissing = `ℹ️ Opsional: ${missingFields.join(", ")}\n\n`;
     }
+
+    // Calculate photos needed
+    const photosNeeded = MIN_PHOTOS_REQ - photos.length;
+    const photoStatus = photos.length > 0
+      ? `📷 Foto: ${photos.length}/${MIN_PHOTOS_REQ} (perlu ${photosNeeded} lagi)\n\n`
+      : "";
 
     return {
       success: true,
@@ -840,10 +920,13 @@ export class StaffCommandService {
         `💰 Harga: Rp ${this.formatPrice(vehicleData.price)}\n` +
         `🔧 Transmisi: ${vehicleData.transmission}\n` +
         `🎨 Warna: ${vehicleData.color}\n` +
-        `📍 KM: ${this.formatNumber(vehicleData.mileage)}` +
+        `📍 KM: ${this.formatNumber(vehicleData.mileage)}\n\n` +
         optionalMissing +
-        `\n\n📸 *Sekarang kirim foto mobil (WAJIB)*\n\n` +
-        `Kirim 1-15 foto mobil untuk melanjutkan upload.`,
+        photoStatus +
+        `📸 *Kirim ${photosNeeded > 0 ? photosNeeded : MIN_PHOTOS_REQ} foto mobil (WAJIB)*\n\n` +
+        `*Foto yang diperlukan (6 foto):*\n` +
+        `• Eksterior: depan, belakang, samping\n` +
+        `• Interior: dashboard, jok, bagasi`,
     };
   }
 
