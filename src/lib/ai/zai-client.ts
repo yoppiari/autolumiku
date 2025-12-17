@@ -69,7 +69,7 @@ export class ZAIClient {
         thinking: {
           type: "disabled"
         },
-        // Add tool for sending vehicle images
+        // Add tools for vehicle operations
         tools: [
           {
             type: "function",
@@ -85,6 +85,48 @@ export class ZAIClient {
                   }
                 },
                 required: ["search_query"]
+              }
+            }
+          },
+          {
+            type: "function",
+            function: {
+              name: "upload_vehicle",
+              description: "Upload a new vehicle to inventory. Call this when staff provides vehicle information to add to the showroom catalog. Staff may say 'upload', 'tambah mobil', 'input mobil', etc.",
+              parameters: {
+                type: "object",
+                properties: {
+                  make: {
+                    type: "string",
+                    description: "Vehicle manufacturer/brand (e.g., 'Toyota', 'Honda', 'Daihatsu', 'Suzuki', 'Mitsubishi')"
+                  },
+                  model: {
+                    type: "string",
+                    description: "Vehicle model name (e.g., 'Avanza', 'Brio', 'Xenia', 'Ertiga', 'Xpander')"
+                  },
+                  year: {
+                    type: "integer",
+                    description: "Manufacturing year (e.g., 2020, 2021, 2024)"
+                  },
+                  price: {
+                    type: "number",
+                    description: "Vehicle price in Indonesian Rupiah (IDR). Convert shorthand to full number: '120jt' = 120000000, '95juta' = 95000000, '250rb' = 250000"
+                  },
+                  mileage: {
+                    type: "number",
+                    description: "Mileage in kilometers. Convert shorthand: '30rb' = 30000, '50ribu' = 50000, '100000km' = 100000. If not mentioned, use 0."
+                  },
+                  color: {
+                    type: "string",
+                    description: "Vehicle color in Indonesian (e.g., 'Hitam', 'Putih', 'Silver', 'Merah', 'Abu-abu'). If not mentioned, use 'Unknown'."
+                  },
+                  transmission: {
+                    type: "string",
+                    enum: ["Manual", "Automatic", "CVT"],
+                    description: "Transmission type. Convert: 'MT/manual/Manual' → 'Manual', 'AT/matic/Matic/automatic' → 'Automatic', 'CVT/cvt' → 'CVT'. If not mentioned, use 'Manual'."
+                  }
+                },
+                required: ["make", "model", "year", "price"]
               }
             }
           }

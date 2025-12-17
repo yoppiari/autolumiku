@@ -143,6 +143,68 @@ export class MessageOrchestratorService {
         if (responseImages) {
           console.log(`[Orchestrator] AI also generated ${responseImages.length} images to send`);
         }
+
+        // Check if AI detected an upload request
+        if (result.uploadRequest) {
+          console.log(`[Orchestrator] 🚗 AI detected upload request:`, result.uploadRequest);
+
+          // Verify this is from staff
+          const isStaff = await this.isStaffMember(incoming.from, incoming.tenantId);
+
+          if (isStaff) {
+            console.log(`[Orchestrator] User is staff, initiating upload flow...`);
+
+            // Store vehicle data in conversation context
+            await prisma.whatsAppConversation.update({
+              where: { id: conversation.id },
+              data: {
+                conversationState: "upload_vehicle",
+                isStaff: true,
+                conversationType: "staff",
+                contextData: {
+                  uploadStep: incoming.mediaUrl ? "has_photo_and_data" : "has_data_awaiting_photo",
+                  vehicleData: result.uploadRequest,
+                  photos: incoming.mediaUrl ? [incoming.mediaUrl] : [],
+                },
+              },
+            });
+
+            // Ask for photo (vehicle will be created when photo is sent)
+            responseMessage = `✅ Data mobil diterima!\n\n` +
+              `📋 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
+              `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
+              `🎨 ${result.uploadRequest.color || 'Unknown'}\n` +
+              `⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
+              `📏 ${result.uploadRequest.mileage || 0} km\n\n` +
+              `📸 *Sekarang kirim foto mobil untuk melengkapi upload.*`;
+
+            // If photo provided with message, add it to context
+            if (incoming.mediaUrl) {
+              await prisma.whatsAppConversation.update({
+                where: { id: conversation.id },
+                data: {
+                  contextData: {
+                    uploadStep: "has_photo_and_data",
+                    vehicleData: result.uploadRequest,
+                    photos: [incoming.mediaUrl],
+                  },
+                },
+              });
+
+              responseMessage = `✅ Data dan foto diterima!\n\n` +
+                `📋 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
+                `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
+                `🎨 ${result.uploadRequest.color || 'Unknown'}\n` +
+                `⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
+                `📏 ${result.uploadRequest.mileage || 0} km\n` +
+                `📸 1 foto\n\n` +
+                `Kirim foto lagi atau ketik "selesai" untuk upload.`;
+            }
+          } else {
+            console.log(`[Orchestrator] User is NOT staff, ignoring upload request`);
+            responseMessage = `Maaf, hanya staff yang bisa upload mobil. 😊\n\nApakah ada yang bisa saya bantu?`;
+          }
+        }
       }
 
       // 5. Send response if generated
@@ -327,7 +389,12 @@ export class MessageOrchestratorService {
     conversation: any,
     intent: MessageIntent,
     message: string
-  ): Promise<{ message: string; escalated: boolean; images?: Array<{ imageUrl: string; caption?: string }> }> {
+  ): Promise<{
+    message: string;
+    escalated: boolean;
+    images?: Array<{ imageUrl: string; caption?: string }>;
+    uploadRequest?: any;
+  }> {
     try {
       // Get conversation history (limit to 5 for faster response)
       const messageHistory = await WhatsAppAIChatService.getConversationHistory(
@@ -352,6 +419,7 @@ export class MessageOrchestratorService {
         message: aiResponse.message,
         escalated: aiResponse.shouldEscalate,
         ...(aiResponse.images && { images: aiResponse.images }),
+        ...(aiResponse.uploadRequest && { uploadRequest: aiResponse.uploadRequest }),
       };
     } catch (error: any) {
       console.error("[Message Orchestrator] AI response error:", error);
@@ -515,6 +583,28 @@ export class MessageOrchestratorService {
 
       // Don't throw - message saved but not sent, can retry later
     }
+  }
+
+  /**
+   * Check if phone number belongs to staff
+   */
+  private static async isStaffMember(phone: string, tenantId: string): Promise<boolean> {
+    const user = await prisma.user.findFirst({
+      where: {
+        tenantId,
+        phone,
+        role: { in: ["ADMIN", "STAFF"] },
+      },
+    });
+
+    return !!user;
+  }
+
+  /**
+   * Format price to Indonesian format
+   */
+  private static formatPrice(price: number): string {
+    return new Intl.NumberFormat("id-ID").format(price);
   }
 }
 

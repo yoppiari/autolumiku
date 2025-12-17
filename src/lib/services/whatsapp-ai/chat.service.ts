@@ -28,6 +28,15 @@ export interface ChatResponse {
   confidence: number;
   processingTime: number;
   images?: Array<{ imageUrl: string; caption?: string }>; // Optional vehicle images
+  uploadRequest?: {
+    make: string;
+    model: string;
+    year: number;
+    price: number;
+    mileage?: number;
+    color?: string;
+    transmission?: string;
+  }; // Optional vehicle upload request from AI
 }
 
 // ==================== WHATSAPP AI CHAT SERVICE ====================
@@ -210,6 +219,7 @@ export class WhatsAppAIChatService {
 
       // Handle tool calls (function calling)
       let images: Array<{ imageUrl: string; caption?: string }> | null = null;
+      let uploadRequest: any = null;
 
       if (aiResponse.toolCalls && aiResponse.toolCalls.length > 0) {
         console.log('[WhatsApp AI Chat] Processing tool calls:', aiResponse.toolCalls.length);
@@ -224,6 +234,20 @@ export class WhatsAppAIChatService {
               console.log('[WhatsApp AI Chat] 📸 AI requested vehicle images for:', searchQuery);
 
               images = await this.fetchVehicleImagesByQuery(searchQuery, context.tenantId);
+            } else if (toolCall.function.name === 'upload_vehicle') {
+              const args = JSON.parse(toolCall.function.arguments);
+
+              console.log('[WhatsApp AI Chat] 🚗 AI detected vehicle upload request:', args);
+
+              uploadRequest = {
+                make: args.make,
+                model: args.model,
+                year: args.year,
+                price: args.price,
+                mileage: args.mileage || 0,
+                color: args.color || 'Unknown',
+                transmission: args.transmission || 'Manual',
+              };
             }
           }
         }
@@ -235,6 +259,7 @@ export class WhatsAppAIChatService {
         confidence: 0.85,
         processingTime,
         ...(images && images.length > 0 && { images }),
+        ...(uploadRequest && { uploadRequest }),
       };
     } catch (error: any) {
       console.error("[WhatsApp AI Chat] ❌ ERROR generating response:");
