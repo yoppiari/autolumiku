@@ -275,6 +275,19 @@ export class WhatsAppVehicleUploadService {
       message += `📊 *Dashboard:*\n`;
       message += `https://primamobil.id/dashboard/vehicles/${vehicle.id}`;
 
+      // 🔔 NOTIFY ALL STAFF - Upload Berhasil
+      UploadNotificationService.notifyUploadSuccess(tenantId, staffPhone, {
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        price: vehicleData.price,
+        mileage: vehicleData.mileage,
+        color: vehicleData.color,
+        photoCount: processedPhotoCount,
+        vehicleId: vehicle.id,
+        displayId,
+      }).catch(err => console.error('[Upload Notification] Error:', err.message));
+
       return {
         success: true,
         vehicleId: vehicle.id,
@@ -306,6 +319,13 @@ export class WhatsAppVehicleUploadService {
       }
 
       errorMessage += `\n📞 Jika masih gagal, hubungi admin.`;
+
+      // 🔔 NOTIFY ALL STAFF - Upload Gagal
+      UploadNotificationService.notifyUploadFailed(
+        tenantId,
+        staffPhone,
+        error.message
+      ).catch(err => console.error('[Upload Notification] Error:', err.message));
 
       return {
         success: false,
