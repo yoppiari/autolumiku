@@ -2,6 +2,8 @@
  * WhatsApp AI - Get Status
  * GET /api/v1/whatsapp-ai/status?tenantId=xxx atau ?clientId=xxx
  * Returns connection status dan basic statistics
+ *
+ * AUTO-SYNC: Automatically syncs with Aimeow if database is out of sync
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -9,6 +11,103 @@ import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
+
+const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
+
+/**
+ * Auto-sync Aimeow connection with database
+ * Called when account doesn't exist or isActive is false
+ */
+async function autoSyncAimeow(tenantId: string) {
+  try {
+    console.log(`[Status API] Auto-syncing Aimeow for tenant: ${tenantId}`);
+
+    // Fetch all clients from Aimeow
+    const aimeowResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`, {
+      cache: 'no-store',
+    });
+
+    if (!aimeowResponse.ok) {
+      console.error(`[Status API] Failed to fetch Aimeow clients: ${aimeowResponse.statusText}`);
+      return null;
+    }
+
+    const aimeowClients = await aimeowResponse.json();
+    const connectedClient = aimeowClients.find((c: any) => c.isConnected === true);
+
+    if (!connectedClient) {
+      console.log(`[Status API] No connected client found on Aimeow`);
+      return null;
+    }
+
+    console.log(`[Status API] Found connected Aimeow client: ${connectedClient.id} (${connectedClient.phone})`);
+
+    // Get webhook URL
+    const configResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/config`, { cache: 'no-store' });
+    const configData = configResponse.ok ? await configResponse.json() : {};
+    const webhookUrl = configData.callbackUrl || "";
+
+    // Upsert AimeowAccount
+    const account = await prisma.aimeowAccount.upsert({
+      where: { tenantId },
+      update: {
+        clientId: connectedClient.id,
+        phoneNumber: connectedClient.phone || "",
+        isActive: true,
+        connectionStatus: "connected",
+        lastConnectedAt: connectedClient.connectedAt
+          ? new Date(connectedClient.connectedAt)
+          : new Date(),
+        webhookUrl,
+      },
+      create: {
+        tenantId,
+        clientId: connectedClient.id,
+        apiKey: "",
+        phoneNumber: connectedClient.phone || "",
+        isActive: true,
+        connectionStatus: "connected",
+        lastConnectedAt: connectedClient.connectedAt
+          ? new Date(connectedClient.connectedAt)
+          : new Date(),
+        webhookUrl,
+      },
+    });
+
+    // Ensure WhatsApp AI config exists
+    await prisma.whatsAppAIConfig.upsert({
+      where: { tenantId },
+      update: { accountId: account.id },
+      create: {
+        tenantId,
+        accountId: account.id,
+        welcomeMessage: "Halo! 👋 Saya asisten virtual showroom. Ada yang bisa saya bantu?",
+        aiName: "AI Assistant",
+        aiPersonality: "friendly",
+        autoReply: true,
+        customerChatEnabled: true,
+        staffCommandsEnabled: true,
+        businessHours: {
+          monday: { open: "09:00", close: "17:00" },
+          tuesday: { open: "09:00", close: "17:00" },
+          wednesday: { open: "09:00", close: "17:00" },
+          thursday: { open: "09:00", close: "17:00" },
+          friday: { open: "09:00", close: "17:00" },
+          saturday: { open: "09:00", close: "15:00" },
+          sunday: { open: "closed", close: "closed" },
+        },
+        timezone: "Asia/Jakarta",
+        afterHoursMessage: "Terima kasih telah menghubungi kami.",
+      },
+    });
+
+    console.log(`[Status API] Auto-sync completed: ${account.phoneNumber} (${account.connectionStatus})`);
+    return account;
+  } catch (error: any) {
+    console.error(`[Status API] Auto-sync error:`, error.message);
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,6 +128,15 @@ export async function GET(request: NextRequest) {
       account = await AimeowClientService.getAccountByClientId(clientId);
     } else if (tenantId) {
       account = await AimeowClientService.getAccountByTenant(tenantId);
+    }
+
+    // AUTO-SYNC: If no account or not active, try to sync with Aimeow
+    if (tenantId && (!account || !account.isActive)) {
+      console.log(`[Status API] Account missing or inactive, attempting auto-sync...`);
+      const syncedAccount = await autoSyncAimeow(tenantId);
+      if (syncedAccount) {
+        account = syncedAccount;
+      }
     }
 
     if (!account) {
