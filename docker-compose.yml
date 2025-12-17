@@ -84,7 +84,7 @@ services:
       # Z.ai (GLM Models)
       ZAI_API_KEY: ${ZAI_API_KEY}
       ZAI_BASE_URL: ${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4}
-      ZAI_TEXT_MODEL: ${ZAI_TEXT_MODEL:-glm-4.6}
+      ZAI_TEXT_MODEL: ${ZAI_TEXT_MODEL:-glm-4.6}  # Reasoning disabled via API parameter
       ZAI_VISION_MODEL: ${ZAI_VISION_MODEL:-glm-4.5v}
 
       # Application

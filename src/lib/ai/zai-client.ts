@@ -35,7 +35,7 @@ export class ZAIClient {
   }
 
   /**
-   * Generate text completion using GLM-4.6
+   * Generate text completion using GLM-4.6 with reasoning disabled
    */
   async generateText(params: {
     systemPrompt: string;
@@ -45,8 +45,6 @@ export class ZAIClient {
   }) {
     console.log('[ZAI Client] 🚀 Starting generateText call...');
     console.log('[ZAI Client] Model:', this.textModel);
-    console.log('[ZAI Client] Temperature:', params.temperature ?? 0.7);
-    console.log('[ZAI Client] Max Tokens:', params.maxTokens ?? 100000);
     console.log('[ZAI Client] System Prompt Length:', params.systemPrompt.length);
     console.log('[ZAI Client] User Prompt Length:', params.userPrompt.length);
 
@@ -54,23 +52,34 @@ export class ZAIClient {
       console.log('[ZAI Client] 📡 Calling OpenAI API (ZAI endpoint)...');
       console.log('[ZAI Client] Request details:', JSON.stringify({
         model: this.textModel,
-        temperature: params.temperature ?? 0.7,
-        max_tokens: params.maxTokens ?? 100000,
+        thinking: { type: "disabled" },
         messages: [
           { role: 'system', contentLength: params.systemPrompt.length },
           { role: 'user', contentLength: params.userPrompt.length }
         ]
       }, null, 2));
 
-      const response = await this.client.chat.completions.create({
+      const requestParams: any = {
         model: this.textModel,
         messages: [
           { role: 'system', content: params.systemPrompt },
           { role: 'user', content: params.userPrompt },
         ],
-        temperature: params.temperature ?? 0.7,
-        max_tokens: params.maxTokens ?? 100000,
-      });
+        // Disable thinking/reasoning mode for faster chat responses
+        thinking: {
+          type: "disabled"
+        }
+      };
+
+      // Only add temperature and max_tokens if explicitly provided
+      if (params.temperature !== undefined) {
+        requestParams.temperature = params.temperature;
+      }
+      if (params.maxTokens !== undefined) {
+        requestParams.max_tokens = params.maxTokens;
+      }
+
+      const response = await this.client.chat.completions.create(requestParams);
 
       console.log('[ZAI Client] ✅ API call successful!');
       console.log('[ZAI Client] Response ID:', response.id);
@@ -194,7 +203,7 @@ export function createZAIClient(): ZAIClient | null {
   return new ZAIClient({
     apiKey,
     baseURL,
-    timeout: parseInt(process.env.API_TIMEOUT_MS || '60000', 10),  // Reduced timeout from 300s to 60s
+    timeout: parseInt(process.env.API_TIMEOUT_MS || '30000', 10),
     textModel: process.env.ZAI_TEXT_MODEL || 'glm-4.6',
     visionModel: process.env.ZAI_VISION_MODEL || 'glm-4.5v',
   });

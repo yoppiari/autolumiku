@@ -148,8 +148,6 @@ export class WhatsAppAIChatService {
         throw new Error('ZAI client not configured. Please set ZAI_API_KEY and ZAI_BASE_URL environment variables.');
       }
       console.log(`[WhatsApp AI Chat] ZAI client created successfully. Calling API with params:`, {
-        temperature: config.temperature,
-        maxTokens: 100000,
         systemPromptLength: systemPrompt.length,
         userPromptLength: conversationContext.length,
       });
@@ -160,8 +158,6 @@ export class WhatsAppAIChatService {
         const apiCallPromise = zaiClient.generateText({
           systemPrompt,
           userPrompt: conversationContext,
-          temperature: config.temperature,
-          maxTokens: 1500, // Allow for complete responses
         });
 
         const timeoutPromise = new Promise<never>((_, reject) => {
@@ -173,7 +169,7 @@ export class WhatsAppAIChatService {
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
         console.log(`[WhatsApp AI Chat] ✅ AI response received successfully`);
         console.log(`[WhatsApp AI Chat] Content length:`, aiResponse.content.length);
-        console.log(`[WhatsApp AI Chat] Reasoning content length:`, aiResponse.reasoning?.length || 0);
+        console.log(`[WhatsApp AI Chat] Reasoning content length (should be 0 with glm-4-flash):`, aiResponse.reasoning?.length || 0);
 
         // If content is empty but reasoning exists, extract answer from reasoning
         if (!aiResponse.content && aiResponse.reasoning) {
