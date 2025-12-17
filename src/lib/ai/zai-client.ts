@@ -68,7 +68,28 @@ export class ZAIClient {
         // Disable thinking/reasoning mode for faster chat responses
         thinking: {
           type: "disabled"
-        }
+        },
+        // Add tool for sending vehicle images
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "send_vehicle_images",
+              description: "Send vehicle photos to customer when they request images of a specific car",
+              parameters: {
+                type: "object",
+                properties: {
+                  search_query: {
+                    type: "string",
+                    description: "Vehicle make and model to search for (e.g., 'Toyota Avanza', 'Honda Jazz')"
+                  }
+                },
+                required: ["search_query"]
+              }
+            }
+          }
+        ],
+        tool_choice: "auto"
       };
 
       // Only add temperature and max_tokens if explicitly provided
@@ -92,13 +113,17 @@ export class ZAIClient {
       console.log('[ZAI Client] 🔍 Content type:', typeof response.choices[0]?.message?.content);
 
       const content = response.choices[0]?.message?.content || '';
+      const toolCalls = response.choices[0]?.message?.tool_calls || [];
+
       console.log('[ZAI Client] Response length:', content.length, 'characters');
+      console.log('[ZAI Client] Tool calls:', toolCalls.length);
 
       return {
         content,
         reasoning: (response.choices[0]?.message as any)?.reasoning_content || null,
         finishReason: response.choices[0]?.finish_reason,
         usage: response.usage,
+        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
       };
     } catch (error: any) {
       console.error('[ZAI Client] ❌ API call failed!');

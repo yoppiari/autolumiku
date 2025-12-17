@@ -208,17 +208,28 @@ export class WhatsAppAIChatService {
 
       const processingTime = Date.now() - startTime;
 
-      // Detect if user is asking for photos/images
-      const images = await this.detectAndFetchVehicleImages(
-        userMessage,
-        aiResponse.content,
-        context.tenantId
-      );
+      // Handle tool calls (function calling)
+      let images: Array<{ imageUrl: string; caption?: string }> | null = null;
+
+      if (aiResponse.toolCalls && aiResponse.toolCalls.length > 0) {
+        console.log('[WhatsApp AI Chat] Processing tool calls:', aiResponse.toolCalls.length);
+
+        for (const toolCall of aiResponse.toolCalls) {
+          if (toolCall.function.name === 'send_vehicle_images') {
+            const args = JSON.parse(toolCall.function.arguments);
+            const searchQuery = args.search_query;
+
+            console.log('[WhatsApp AI Chat] 📸 AI requested vehicle images for:', searchQuery);
+
+            images = await this.fetchVehicleImagesByQuery(searchQuery, context.tenantId);
+          }
+        }
+      }
 
       return {
         message: aiResponse.content,
         shouldEscalate,
-        confidence: 0.85, // Simplified - bisa dikembangkan dengan analysis lebih lanjut
+        confidence: 0.85,
         processingTime,
         ...(images && images.length > 0 && { images }),
       };
@@ -413,54 +424,17 @@ PENTING - Aturan Respons:
   }
 
   /**
-   * Detect if user is asking for images and fetch vehicle photos
+   * Fetch vehicle images based on search query
    */
-  private static async detectAndFetchVehicleImages(
-    userMessage: string,
-    aiResponse: string,
+  private static async fetchVehicleImagesByQuery(
+    searchQuery: string,
     tenantId: string
   ): Promise<Array<{ imageUrl: string; caption?: string }> | null> {
-    // Keywords that indicate user wants to see images
-    const imageRequestKeywords = [
-      /\b(foto|photo|gambar|pic|picture|image)\b/i,
-      /\b(lihat|tampil|tunjuk|perlihat|kirim|show)\b.*\b(foto|gambar|photo)\b/i,
-      /\bada foto\b/i,
-      /\bfoto.*nya\b/i,
-      /\bpenampakan\b/i,
-    ];
+    console.log('[WhatsApp AI Chat] Fetching vehicles for query:', searchQuery);
 
-    const isAskingForImages = imageRequestKeywords.some(pattern =>
-      pattern.test(userMessage)
-    );
-
-    if (!isAskingForImages) {
-      console.log('[WhatsApp AI Chat] User not requesting images');
-      return null;
-    }
-
-    console.log('[WhatsApp AI Chat] 📸 User is asking for vehicle images');
-
-    // Extract vehicle brand/model from user message or AI response
-    const vehicleBrands = ['toyota', 'honda', 'suzuki', 'daihatsu', 'mitsubishi', 'nissan', 'mazda', 'bmw', 'mercedes', 'mercy'];
-    const vehicleModels = ['avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'terios', 'rush', 'innova', 'fortuner', 'pajero', 'alphard', 'civic', 'accord'];
-
-    let searchTerms: string[] = [];
-    const combinedText = (userMessage + ' ' + aiResponse).toLowerCase();
-
-    // Extract matching brands and models
-    vehicleBrands.forEach(brand => {
-      if (combinedText.includes(brand)) {
-        searchTerms.push(brand);
-      }
-    });
-
-    vehicleModels.forEach(model => {
-      if (combinedText.includes(model)) {
-        searchTerms.push(model);
-      }
-    });
-
-    console.log('[WhatsApp AI Chat] Search terms for vehicles:', searchTerms);
+    // Parse search query into individual terms
+    const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(term => term.length > 0);
+    console.log('[WhatsApp AI Chat] Search terms:', searchTerms);
 
     // Query vehicles with photos
     const vehicles = await prisma.vehicle.findMany({
