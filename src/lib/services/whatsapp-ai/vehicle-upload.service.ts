@@ -245,13 +245,18 @@ export class WhatsAppVehicleUploadService {
         ? Math.round(aiResult.aiSuggestedPrice / 100 / 1000000)
         : priceInJuta;
 
-      let message = `✅ *Mobil berhasil diupload!*\n\n`;
-      message += `📋 *Detail:*\n`;
-      message += `• ID: ${displayId}\n`;
-      message += `• Mobil: ${vehicle.make} ${vehicle.model} ${vehicle.year}\n`;
-      message += `• Varian: ${aiResult.variant || '-'}\n`;
-      message += `• Harga: Rp ${priceInJuta} juta\n`;
-      message += `• Foto: ${processedPhotoCount} foto\n\n`;
+      let message = `✅ *Mobil Berhasil Diupload!*\n\n`;
+      message += `🚗 *${vehicle.make} ${vehicle.model} ${vehicle.year}*\n`;
+      message += `└ Varian: ${aiResult.variant || '-'}\n`;
+      message += `└ Harga: Rp ${priceInJuta} Juta\n`;
+      message += `└ KM: ${vehicleData.mileage?.toLocaleString('id-ID') || '0'}\n`;
+      message += `└ Warna: ${vehicleData.color || '-'}\n`;
+      message += `└ Transmisi: ${vehicleData.transmission || '-'}\n`;
+      message += `└ Foto: ${processedPhotoCount} foto\n\n`;
+
+      message += `🤖 *AI Generated:*\n`;
+      message += `└ Deskripsi SEO: ✅ (${aiResult.descriptionId.length} karakter)\n`;
+      message += `└ Confidence: ${aiResult.aiConfidence}%\n\n`;
 
       // Add price analysis if AI suggests different price
       const aiPriceInIDR = aiResult.aiSuggestedPrice ? aiResult.aiSuggestedPrice / 100 : vehicleData.price;
@@ -259,14 +264,15 @@ export class WhatsAppVehicleUploadService {
       const priceDiffPercent = (priceDiff / vehicleData.price) * 100;
 
       if (priceDiffPercent > 10) {
-        message += `💰 *Analisis Harga AI:*\n`;
-        message += `• Rekomendasi AI: Rp ${aiPriceInJuta} juta\n`;
-        message += `• ${aiResult.priceAnalysis.recommendation}\n\n`;
+        message += `💰 *Rekomendasi Harga:*\n`;
+        message += `└ AI menyarankan: Rp ${aiPriceInJuta} Juta\n`;
+        message += `└ ${aiResult.priceAnalysis.recommendation}\n\n`;
       }
 
-      message += `🤖 *AI Confidence:* ${aiResult.aiConfidence}%\n`;
-      message += `📝 *Deskripsi SEO:* Otomatis di-generate (${aiResult.descriptionId.length} karakter)\n\n`;
-      message += `Lihat di dashboard: /dashboard/vehicles/${vehicle.id}`;
+      message += `🌐 *Lihat di Website:*\n`;
+      message += `https://primamobil.id/vehicles/${vehicle.id}\n\n`;
+      message += `📊 *Dashboard:*\n`;
+      message += `https://primamobil.id/dashboard/vehicles/${vehicle.id}`;
 
       return {
         success: true,
@@ -277,9 +283,32 @@ export class WhatsAppVehicleUploadService {
 
     } catch (error: any) {
       console.error('[WhatsApp Vehicle Upload] ❌ Error:', error);
+
+      // Provide helpful error messages with solutions
+      let errorMessage = `❌ *Upload Gagal*\n\n`;
+      errorMessage += `🔍 *Masalah:* ${error.message}\n\n`;
+      errorMessage += `💡 *Solusi:*\n`;
+
+      if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+        errorMessage += `• Server sedang sibuk, coba lagi dalam 1-2 menit\n`;
+        errorMessage += `• Pastikan koneksi internet stabil\n`;
+      } else if (error.message.includes('photo') || error.message.includes('download')) {
+        errorMessage += `• Pastikan foto tidak terlalu besar (maks 5MB)\n`;
+        errorMessage += `• Coba kirim ulang foto dengan resolusi lebih kecil\n`;
+      } else if (error.message.includes('Staff') || error.message.includes('staff')) {
+        errorMessage += `• Hubungi admin untuk mendaftarkan nomor WhatsApp Anda\n`;
+        errorMessage += `• Buka: primamobil.id/dashboard/users\n`;
+      } else {
+        errorMessage += `• Coba kirim ulang dengan format:\n`;
+        errorMessage += `  /upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n`;
+        errorMessage += `• Contoh: /upload Brio 2015 KM 30000 Rp 120JT Hitam\n`;
+      }
+
+      errorMessage += `\n📞 Jika masih gagal, hubungi admin.`;
+
       return {
         success: false,
-        message: `❌ Gagal upload kendaraan: ${error.message}`,
+        message: errorMessage,
         error: error.message,
       };
     }
