@@ -30,6 +30,7 @@ interface Activity {
   message: string;
   timestamp: string;
   details: any;
+  link?: string;
 }
 
 export default function ShowroomDashboardPage() {
@@ -117,6 +118,26 @@ export default function ShowroomDashboardPage() {
       case 'purple': return 'bg-purple-500';
       case 'yellow': return 'bg-amber-500';
       default: return 'bg-gray-500';
+    }
+  };
+
+  // Get activity link based on type and details
+  const getActivityLink = (activity: Activity): string => {
+    switch (activity.type) {
+      case 'vehicle_added':
+        return activity.details?.vehicleId
+          ? `/dashboard/vehicles/${activity.details.vehicleId}`
+          : '/dashboard/vehicles';
+      case 'staff_joined':
+        return '/dashboard/users';
+      case 'lead_created':
+        return '/dashboard/leads';
+      case 'sale_completed':
+        return activity.details?.vehicleId
+          ? `/dashboard/vehicles/${activity.details.vehicleId}`
+          : '/dashboard/vehicles?status=SOLD';
+      default:
+        return '/dashboard';
     }
   };
 
@@ -291,10 +312,13 @@ export default function ShowroomDashboardPage() {
                   Aktivitas Terkini
                 </h3>
                 <Link
-                  href="/dashboard/vehicles"
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                  href="/dashboard/vehicles?sort=newest"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 hover:gap-2 transition-all"
                 >
-                  Lihat Semua →
+                  Lihat Semua
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
               </div>
             </div>
@@ -312,11 +336,12 @@ export default function ShowroomDashboardPage() {
                   ))}
                 </div>
               ) : activities.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {activities.map((activity, index) => (
-                    <div
+                    <Link
                       key={index}
-                      className="flex items-start space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors group cursor-pointer"
+                      href={getActivityLink(activity)}
+                      className="flex items-start space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
                     >
                       <div className={`w-10 h-10 ${getActivityColor(activity.icon)} rounded-xl flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform`}>
                         {activity.type === 'vehicle_added' && '🚗'}
@@ -333,12 +358,12 @@ export default function ShowroomDashboardPage() {
                           {formatRelativeTime(activity.timestamp)}
                         </p>
                       </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
@@ -372,53 +397,53 @@ export default function ShowroomDashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
               href="/dashboard/vehicles/upload"
-              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-sm hover:shadow-lg"
+              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all duration-300 hover:shadow-md"
             >
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-slate-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
                 <span className="text-2xl">➕</span>
               </div>
               <div>
-                <p className="font-semibold">Tambah Kendaraan</p>
-                <p className="text-blue-100 text-sm">Upload unit baru</p>
+                <p className="font-semibold text-gray-800 group-hover:text-white transition-colors">Tambah Kendaraan</p>
+                <p className="text-gray-500 group-hover:text-gray-300 text-sm transition-colors">Upload unit baru</p>
               </div>
             </Link>
 
             <Link
               href="/dashboard/leads"
-              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-sm hover:shadow-lg"
+              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all duration-300 hover:shadow-md"
             >
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-slate-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
                 <span className="text-2xl">📞</span>
               </div>
               <div>
-                <p className="font-semibold">Lihat Leads</p>
-                <p className="text-emerald-100 text-sm">Kelola customer</p>
+                <p className="font-semibold text-gray-800 group-hover:text-white transition-colors">Lihat Leads</p>
+                <p className="text-gray-500 group-hover:text-gray-300 text-sm transition-colors">Kelola customer</p>
               </div>
             </Link>
 
             <Link
               href="/dashboard/users"
-              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 text-white hover:from-violet-600 hover:to-violet-700 transition-all duration-300 shadow-sm hover:shadow-lg"
+              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all duration-300 hover:shadow-md"
             >
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-slate-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
                 <span className="text-2xl">👥</span>
               </div>
               <div>
-                <p className="font-semibold">Kelola Tim</p>
-                <p className="text-violet-100 text-sm">Manage staff</p>
+                <p className="font-semibold text-gray-800 group-hover:text-white transition-colors">Kelola Tim</p>
+                <p className="text-gray-500 group-hover:text-gray-300 text-sm transition-colors">Manage staff</p>
               </div>
             </Link>
 
             <Link
               href="/dashboard/whatsapp-ai"
-              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-sm hover:shadow-lg"
+              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all duration-300 hover:shadow-md"
             >
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-slate-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
                 <span className="text-2xl">💬</span>
               </div>
               <div>
-                <p className="font-semibold">WhatsApp AI</p>
-                <p className="text-green-100 text-sm">Setup chatbot</p>
+                <p className="font-semibold text-gray-800 group-hover:text-white transition-colors">WhatsApp AI</p>
+                <p className="text-gray-500 group-hover:text-gray-300 text-sm transition-colors">Setup chatbot</p>
               </div>
             </Link>
           </div>
