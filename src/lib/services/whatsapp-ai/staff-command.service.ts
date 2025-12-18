@@ -339,6 +339,14 @@ export class StaffCommandService {
   /**
    * Check which required fields are missing from vehicle data
    * Returns array of missing field names and a user-friendly message
+   *
+   * DATA WAJIB untuk upload:
+   * - Jenis/Model (Brio, Avanza, dll)
+   * - Tahun
+   * - Harga
+   * - Warna
+   * - Transmisi (manual/matic)
+   * - KM
    */
   private static checkMissingFields(vehicleData: any): {
     missingFields: string[];
@@ -346,49 +354,91 @@ export class StaffCommandService {
     hasMinimumData: boolean;
   } {
     const missingFields: string[] = [];
-    const questions: string[] = [];
+    const missingLabels: string[] = [];
 
-    // Required fields - WAJIB untuk upload
-    if (!vehicleData?.make) {
-      missingFields.push("make");
-      questions.push("• Merk mobil apa? (Toyota, Honda, dll)");
-    }
+    // === SEMUA FIELD WAJIB UNTUK UPLOAD ===
+
+    // 1. Jenis/Model
     if (!vehicleData?.model) {
       missingFields.push("model");
-      questions.push("• Model/tipe apa? (Avanza, Brio, dll)");
+      missingLabels.push("Jenis/Model");
     }
+
+    // 2. Tahun
     if (!vehicleData?.year) {
       missingFields.push("year");
-      questions.push("• Tahun berapa?");
+      missingLabels.push("Tahun");
     }
+
+    // 3. Harga
     if (!vehicleData?.price) {
       missingFields.push("price");
-      questions.push("• Harga berapa? (contoh: 120jt)");
+      missingLabels.push("Harga");
     }
 
-    // Optional but recommended fields
-    if (!vehicleData?.mileage && vehicleData?.mileage !== 0) {
-      missingFields.push("mileage");
-      questions.push("• KM berapa? (contoh: 50rb)");
-    }
+    // 4. Warna (WAJIB, bukan optional)
     if (!vehicleData?.color || vehicleData?.color === "Unknown") {
       missingFields.push("color");
-      questions.push("• Warna apa?");
+      missingLabels.push("Warna");
     }
+
+    // 5. Transmisi (WAJIB, bukan optional)
     if (!vehicleData?.transmission || vehicleData?.transmission === "Unknown") {
       missingFields.push("transmission");
-      questions.push("• Transmisi manual atau matic?");
+      missingLabels.push("Transmisi");
     }
 
-    // Minimum data = make, model, year, price
-    const hasMinimumData = vehicleData?.make && vehicleData?.model && vehicleData?.year && vehicleData?.price;
+    // 6. KM (WAJIB, bukan optional)
+    if (!vehicleData?.mileage && vehicleData?.mileage !== 0) {
+      missingFields.push("mileage");
+      missingLabels.push("KM");
+    }
+
+    // Merk boleh kosong jika model sudah dikenali (auto-detect dari model)
+    // contoh: "Brio" → Honda Brio
+
+    // Data lengkap = semua 6 field terisi
+    const hasMinimumData =
+      vehicleData?.model &&
+      vehicleData?.year &&
+      vehicleData?.price &&
+      vehicleData?.color && vehicleData?.color !== "Unknown" &&
+      vehicleData?.transmission && vehicleData?.transmission !== "Unknown" &&
+      (vehicleData?.mileage || vehicleData?.mileage === 0);
 
     let askMessage = "";
-    if (questions.length > 0) {
-      askMessage = "📝 *Data belum lengkap*\n\nMohon lengkapi data berikut:\n" + questions.join("\n");
-      askMessage += "\n\nBalas dengan info yang kurang, contoh:\n";
-      askMessage += "\"hitam matic km 30rb\"\n";
-      askMessage += "atau \"warna putih, transmisi manual\"";
+    if (missingLabels.length > 0) {
+      // Build helpful message
+      askMessage = `⚠️ *Data Belum Lengkap*\n\n`;
+      askMessage += `Yang kurang: *${missingLabels.join(", ")}*\n\n`;
+
+      // Show what we already have
+      const received: string[] = [];
+      if (vehicleData?.make) received.push(`Merk: ${vehicleData.make}`);
+      if (vehicleData?.model) received.push(`Model: ${vehicleData.model}`);
+      if (vehicleData?.year) received.push(`Tahun: ${vehicleData.year}`);
+      if (vehicleData?.price) received.push(`Harga: Rp ${this.formatPrice(vehicleData.price)}`);
+      if (vehicleData?.color && vehicleData?.color !== "Unknown") received.push(`Warna: ${vehicleData.color}`);
+      if (vehicleData?.transmission && vehicleData?.transmission !== "Unknown") received.push(`Transmisi: ${vehicleData.transmission}`);
+      if (vehicleData?.mileage || vehicleData?.mileage === 0) received.push(`KM: ${this.formatNumber(vehicleData.mileage)}`);
+
+      if (received.length > 0) {
+        askMessage += `✅ Sudah diterima:\n${received.map(r => `• ${r}`).join("\n")}\n\n`;
+      }
+
+      // Give examples based on what's missing
+      askMessage += `📝 *Lengkapi dengan balas seperti ini:*\n`;
+
+      const examples: string[] = [];
+      if (missingFields.includes("color")) examples.push("hitam");
+      if (missingFields.includes("transmission")) examples.push("matic");
+      if (missingFields.includes("mileage")) examples.push("km 30rb");
+      if (missingFields.includes("year")) examples.push("2020");
+      if (missingFields.includes("price")) examples.push("120jt");
+      if (missingFields.includes("model")) examples.push("Brio");
+
+      askMessage += `"${examples.join(" ")}"\n\n`;
+      askMessage += `💡 Format bebas, yang penting lengkap!`;
     }
 
     return { missingFields, askMessage, hasMinimumData };
@@ -554,10 +604,13 @@ export class StaffCommandService {
           "*Langkah 1:* Kirim 6 foto mobil\n" +
           "• Eksterior: depan, belakang, samping\n" +
           "• Interior: dashboard, jok, bagasi\n\n" +
-          "*Langkah 2:* Ketik info mobil\n" +
-          "• Brio 2020 120jt hitam\n" +
-          "• Avanza 2019 km 50rb 140jt matic\n\n" +
-          "Tidak perlu format khusus, ketik saja seperti biasa! 😊",
+          "*Langkah 2:* Ketik info mobil (format bebas)\n" +
+          "Yang penting ada: *Model, Tahun, Harga, Warna, Transmisi, KM*\n\n" +
+          "Contoh:\n" +
+          "• \"Brio 2020 120jt hitam matic km 30rb\"\n" +
+          "• \"avanza silver 2019 manual 140jt kilometer 50ribu\"\n" +
+          "• \"jazz rs merah 2018 at harga 165jt km 45000\"\n\n" +
+          "💡 Format bebas, yang penting lengkap!",
       };
     }
 
@@ -609,11 +662,12 @@ export class StaffCommandService {
         message:
           `✅ Foto ${photos.length}/${MIN_PHOTOS} diterima!` +
           photoGuide +
-          "\n📝 Sekarang ketik info mobilnya:\n\n" +
-          "*Contoh:*\n" +
-          "• Brio 2020 120jt hitam\n" +
-          "• Avanza 2019 km 50rb 140jt matic\n\n" +
-          "Ketik saja seperti chat biasa! 👍",
+          "\n📝 *Sekarang ketik info mobilnya:*\n" +
+          "Yang penting ada: Model, Tahun, Harga, Warna, Transmisi, KM\n\n" +
+          "*Contoh (format bebas):*\n" +
+          "• \"Brio 2020 120jt hitam matic km 30rb\"\n" +
+          "• \"avanza silver 2019 manual 140jt km 50ribu\"\n\n" +
+          "💡 Ketik seperti chat biasa!",
       };
     }
 
@@ -761,11 +815,12 @@ export class StaffCommandService {
         success: true,
         message:
           photoStatus +
-          "\n📝 *Sekarang ketik info mobilnya:*\n\n" +
-          "*Contoh:*\n" +
-          "• Brio 2020 120jt hitam\n" +
-          "• Avanza 2019 km 50rb 140jt matic\n\n" +
-          "Ketik saja seperti chat biasa! 👍",
+          "\n📝 *Sekarang ketik info mobilnya:*\n" +
+          "Yang penting ada: Model, Tahun, Harga, Warna, Transmisi, KM\n\n" +
+          "*Contoh (format bebas):*\n" +
+          "• \"Brio 2020 120jt hitam matic km 30rb\"\n" +
+          "• \"avanza silver 2019 manual 140jt km 50ribu\"\n\n" +
+          "💡 Ketik seperti chat biasa!",
       };
     }
 

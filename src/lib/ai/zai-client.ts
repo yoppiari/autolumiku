@@ -75,16 +75,67 @@ export class ZAIClient {
             type: "function",
             function: {
               name: "send_vehicle_images",
-              description: "Send vehicle photos to customer when they request images of a specific car",
+              description: "Kirim foto mobil ke customer via WhatsApp. PANGGIL LANGSUNG ketika: 1) Customer bilang 'iya/ya/mau/boleh/ok/oke/yup/sip/kirim/gas/lanjut' setelah ditawari foto, 2) Customer minta foto (ada foto/lihat gambar/kirimin foto), 3) Customer tertarik dan konfirmasi. JANGAN panggil jika customer menolak atau tanya hal lain.",
               parameters: {
                 type: "object",
                 properties: {
                   search_query: {
                     type: "string",
-                    description: "Vehicle make and model to search for (e.g., 'Toyota Avanza', 'Honda Jazz')"
+                    description: "Nama mobil dari percakapan sebelumnya. Contoh: 'Brio', 'Avanza', 'Jazz', 'Brio Agya'. Ambil dari konteks chat."
                   }
                 },
                 required: ["search_query"]
+              }
+            }
+          },
+          {
+            type: "function",
+            function: {
+              name: "search_vehicles",
+              description: "Cari mobil berdasarkan kriteria customer (budget, merk, transmisi, tahun, dll). Panggil ini untuk menjawab pertanyaan tentang ketersediaan mobil.",
+              parameters: {
+                type: "object",
+                properties: {
+                  min_price: {
+                    type: "number",
+                    description: "Harga minimum dalam Rupiah. Contoh: budget 100jt → min_price: 100000000"
+                  },
+                  max_price: {
+                    type: "number",
+                    description: "Harga maksimum dalam Rupiah. Contoh: budget 150jt → max_price: 150000000"
+                  },
+                  make: {
+                    type: "string",
+                    description: "Merk mobil: Toyota, Honda, Daihatsu, Suzuki, Mitsubishi, Nissan, dll"
+                  },
+                  transmission: {
+                    type: "string",
+                    enum: ["manual", "automatic", "matic", "at", "mt"],
+                    description: "Jenis transmisi: manual/mt atau automatic/matic/at"
+                  },
+                  min_year: {
+                    type: "integer",
+                    description: "Tahun minimal. Contoh: 'tahun 2020 ke atas' → min_year: 2020"
+                  },
+                  max_year: {
+                    type: "integer",
+                    description: "Tahun maksimal"
+                  },
+                  fuel_type: {
+                    type: "string",
+                    enum: ["bensin", "diesel", "hybrid", "electric"],
+                    description: "Jenis bahan bakar"
+                  },
+                  sort_by: {
+                    type: "string",
+                    enum: ["newest", "oldest", "price_low", "price_high", "mileage_low"],
+                    description: "Urutan: newest (terbaru), oldest (terlama), price_low (termurah), price_high (termahal), mileage_low (km terendah)"
+                  },
+                  limit: {
+                    type: "integer",
+                    description: "Jumlah hasil maksimal (default 5)"
+                  }
+                }
               }
             }
           },

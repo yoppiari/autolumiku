@@ -163,7 +163,7 @@ export class WhatsAppAIChatService {
 
       let aiResponse;
       try {
-        // Add a race condition with manual timeout
+        // Add a race condition with manual timeout (45s for tool calls)
         const apiCallPromise = zaiClient.generateText({
           systemPrompt,
           userPrompt: conversationContext,
@@ -171,8 +171,8 @@ export class WhatsAppAIChatService {
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
-            reject(new Error('ZAI API call timed out after 30 seconds'));
-          }, 30000); // 30 second timeout
+            reject(new Error('ZAI API call timed out after 45 seconds'));
+          }, 45000); // 45 second timeout for tool calls
         });
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
@@ -222,11 +222,13 @@ export class WhatsAppAIChatService {
       let uploadRequest: any = null;
 
       if (aiResponse.toolCalls && aiResponse.toolCalls.length > 0) {
-        console.log('[WhatsApp AI Chat] Processing tool calls:', aiResponse.toolCalls.length);
+        console.log('[WhatsApp AI Chat] 🔧 Processing tool calls:', aiResponse.toolCalls.length);
 
         for (const toolCall of aiResponse.toolCalls) {
           // Type guard: check if this is a function tool call (not custom)
           if (toolCall.type === 'function' && 'function' in toolCall) {
+            console.log('[WhatsApp AI Chat] Tool call:', toolCall.function.name);
+
             if (toolCall.function.name === 'send_vehicle_images') {
               const args = JSON.parse(toolCall.function.arguments);
               const searchQuery = args.search_query;
@@ -234,6 +236,25 @@ export class WhatsAppAIChatService {
               console.log('[WhatsApp AI Chat] 📸 AI requested vehicle images for:', searchQuery);
 
               images = await this.fetchVehicleImagesByQuery(searchQuery, context.tenantId);
+
+              if (images && images.length > 0) {
+                console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} images to send`);
+              } else {
+                console.log('[WhatsApp AI Chat] ⚠️ No images found for query:', searchQuery);
+              }
+            } else if (toolCall.function.name === 'search_vehicles') {
+              const args = JSON.parse(toolCall.function.arguments);
+              console.log('[WhatsApp AI Chat] 🔍 AI searching vehicles with criteria:', args);
+
+              const searchResults = await this.searchVehiclesByCriteria(context.tenantId, args);
+              console.log(`[WhatsApp AI Chat] Found ${searchResults.length} vehicles matching criteria`);
+
+              // Store search results in context for follow-up (like sending photos)
+              if (searchResults.length > 0) {
+                // Build vehicle names for potential photo sending
+                const vehicleNames = searchResults.map(v => `${v.make} ${v.model}`).join(' ');
+                console.log('[WhatsApp AI Chat] Vehicles found:', vehicleNames);
+              }
             } else if (toolCall.function.name === 'upload_vehicle') {
               const args = JSON.parse(toolCall.function.arguments);
 
@@ -253,8 +274,24 @@ export class WhatsAppAIChatService {
         }
       }
 
+      // Build response message
+      let responseMessage = aiResponse.content || '';
+
+      // If AI sent images but no text, add default message
+      if (images && images.length > 0 && !responseMessage) {
+        responseMessage = `Ini foto ${images.length > 1 ? 'mobil-mobil' : 'mobil'} yang tersedia 👇`;
+        console.log('[WhatsApp AI Chat] Added default image message:', responseMessage);
+      }
+
+      // If images requested but none found, add helpful message
+      if (aiResponse.toolCalls?.some(tc =>
+        tc.type === 'function' && 'function' in tc && tc.function.name === 'send_vehicle_images'
+      ) && (!images || images.length === 0)) {
+        responseMessage = responseMessage || 'Maaf, saat ini belum ada foto untuk mobil tersebut. Ada yang lain yang bisa saya bantu?';
+      }
+
       return {
-        message: aiResponse.content,
+        message: responseMessage,
         shouldEscalate,
         confidence: 0.85,
         processingTime,
@@ -308,32 +345,60 @@ export class WhatsAppAIChatService {
     config: any,
     intent: MessageIntent
   ): Promise<string> {
-    // Optimized shorter system prompt for faster AI response
+    // Optimized system prompt for fast, responsive customer service
     let systemPrompt = `Anda adalah ${config.aiName}, asisten virtual ${tenant.name} (showroom mobil bekas di ${tenant.city || "Indonesia"}).
 
-PENTING - Aturan Respons:
-1. Respons SINGKAT dan LANGSUNG (max 2-3 kalimat)
-2. Gunakan Bahasa Indonesia yang ramah
-3. Jika tidak tahu, arahkan ke staff
-4. Format untuk WhatsApp (tanpa markdown)
+PRINSIP UTAMA:
+- Respons CEPAT & SINGKAT (2-3 kalimat)
+- Bahasa Indonesia ramah, gunakan emoji
+- Format WhatsApp (tanpa markdown)
+
+ALUR RESPONS:
+
+1. PERTANYAAN MOBIL (merk/budget/tahun/transmisi/km/bbm):
+   → Jawab langsung dari inventory
+   → Sebutkan: Nama, Tahun, Harga, KM, Transmisi
+   → TAWARKAN: "Mau saya kirimkan fotonya via WA? 📸"
+
+2. KONFIRMASI FOTO (iya/ya/mau/boleh/ok/oke/yup/sip/kirim/gas/lanjut):
+   → LANGSUNG panggil tool "send_vehicle_images"
+   → Gunakan nama mobil dari chat sebelumnya
+
+3. MINTA FOTO LANGSUNG (ada foto/lihat gambar/foto dong/kirimin):
+   → LANGSUNG panggil tool "send_vehicle_images"
+
+4. TIDAK MAU FOTO / TANYA LAIN:
+   → Jawab pertanyaan dengan cepat
+   → Bantu cari mobil lain sesuai kebutuhan
+
+CONTOH:
+C: "ada Avanza matic?"
+A: "Ada kak! Avanza 2021 Matic - Rp 180jt, KM 35rb, Silver 😊 Mau saya kirimkan fotonya? 📸"
+
+C: "boleh"
+A: [panggil send_vehicle_images: "Avanza"] "Ini fotonya kak 👇"
+
+C: "budget 100-150jt ada apa?"
+A: "Di budget itu ada:\n• Brio 2019 - 125jt\n• Agya 2020 - 110jt\nMau lihat fotonya? 📸"
+
+C: "ga usah, km nya berapa?"
+A: "Brio KM 45rb, Agya KM 30rb kak 😊 Ada yang mau ditanyakan lagi?"
 `;
 
-    // Add vehicle inventory context jika relevant
-    if (
-      intent === "customer_vehicle_inquiry" ||
-      intent === "customer_price_inquiry"
-    ) {
-      const vehicles = await this.getAvailableVehicles(tenant.id);
-      if (vehicles.length > 0) {
-        systemPrompt += `\nMobil Tersedia:\n`;
-        // Limit to 5 vehicles for faster processing
-        systemPrompt += vehicles
-          .slice(0, 5)
-          .map(
-            (v) =>
-              `• ${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}`
-          )
-          .join("\n");
+    // Add vehicle inventory context
+    const vehicles = await this.getAvailableVehiclesDetailed(tenant.id);
+    if (vehicles.length > 0) {
+      systemPrompt += `\n📋 INVENTORY TERSEDIA (${vehicles.length} unit):\n`;
+      systemPrompt += vehicles
+        .slice(0, 10)
+        .map(
+          (v) =>
+            `• ${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))} | ${v.transmissionType || 'Manual'} | ${v.mileage?.toLocaleString('id-ID') || 0}km | ${v.fuelType || 'Bensin'} | ${v.color || '-'}`
+        )
+        .join("\n");
+
+      if (vehicles.length > 10) {
+        systemPrompt += `\n... dan ${vehicles.length - 10} unit lainnya`;
       }
     }
 
@@ -341,7 +406,32 @@ PENTING - Aturan Respons:
   }
 
   /**
-   * Build conversation context
+   * Get available vehicles with more details
+   */
+  private static async getAvailableVehiclesDetailed(tenantId: string) {
+    return await prisma.vehicle.findMany({
+      where: {
+        tenantId,
+        status: "AVAILABLE",
+      },
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        year: true,
+        price: true,
+        mileage: true,
+        transmissionType: true,
+        fuelType: true,
+        color: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 15,
+    });
+  }
+
+  /**
+   * Build conversation context - include enough history for AI to remember vehicle context
    */
   private static buildConversationContext(
     messageHistory: Array<{ role: "user" | "assistant"; content: string }>,
@@ -349,19 +439,19 @@ PENTING - Aturan Respons:
   ): string {
     let context = "";
 
-    // Only include last 3 messages for faster processing
-    const recentHistory = messageHistory.slice(-3);
+    // Include last 5 messages for better context (important for photo confirmations)
+    const recentHistory = messageHistory.slice(-5);
     if (recentHistory.length > 0) {
       context += "Chat sebelumnya:\n";
       recentHistory.forEach((msg) => {
         const label = msg.role === "user" ? "C" : "A";
-        // Truncate long messages
-        const truncated = msg.content.length > 100 ? msg.content.substring(0, 100) + "..." : msg.content;
+        // Keep 150 chars to preserve vehicle names for context
+        const truncated = msg.content.length > 150 ? msg.content.substring(0, 150) + "..." : msg.content;
         context += `${label}: ${truncated}\n`;
       });
     }
 
-    context += `\nPesan: ${currentMessage}\n\nBalas singkat:`;
+    context += `\nPesan sekarang: ${currentMessage}\n\nBalas (singkat, responsif):`;
 
     return context;
   }
@@ -458,50 +548,180 @@ PENTING - Aturan Respons:
     searchQuery: string,
     tenantId: string
   ): Promise<Array<{ imageUrl: string; caption?: string }> | null> {
-    console.log('[WhatsApp AI Chat] Fetching vehicles for query:', searchQuery);
+    console.log('[WhatsApp AI Chat] 📸 Fetching vehicles for query:', searchQuery);
 
     // Parse search query into individual terms
     const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(term => term.length > 0);
     console.log('[WhatsApp AI Chat] Search terms:', searchTerms);
 
-    // Query vehicles with photos
+    // Query vehicles with photos - more flexible search
     const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId,
         status: 'AVAILABLE',
         ...(searchTerms.length > 0 && {
-          OR: searchTerms.map(term => ({
-            OR: [
-              { make: { contains: term, mode: 'insensitive' } },
-              { model: { contains: term, mode: 'insensitive' } },
-            ]
-          }))
+          OR: searchTerms.flatMap(term => [
+            { make: { contains: term, mode: 'insensitive' as const } },
+            { model: { contains: term, mode: 'insensitive' as const } },
+            { variant: { contains: term, mode: 'insensitive' as const } },
+          ])
         }),
       },
       include: {
         photos: {
-          where: { isMainPhoto: true },
-          take: 1,
+          orderBy: { isMainPhoto: 'desc' },
+          take: 2, // Get main photo + 1 backup
         },
       },
       take: 3, // Max 3 vehicles to avoid spamming
     });
 
-    if (vehicles.length === 0 || !vehicles.some(v => v.photos.length > 0)) {
-      console.log('[WhatsApp AI Chat] No vehicles with photos found');
+    console.log(`[WhatsApp AI Chat] Found ${vehicles.length} vehicles matching query`);
+
+    if (vehicles.length === 0) {
+      console.log('[WhatsApp AI Chat] ❌ No vehicles found for query:', searchQuery);
       return null;
     }
 
-    // Build image array
+    // Build image array with fallback URLs
     const images = vehicles
       .filter(v => v.photos.length > 0)
-      .map(v => ({
-        imageUrl: v.photos[0].mediumUrl,
-        caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage}km • ${v.transmissionType} • ${v.color}`,
-      }));
+      .map(v => {
+        const photo = v.photos[0];
+        // Fallback: mediumUrl → largeUrl → originalUrl
+        const imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+        console.log(`[WhatsApp AI Chat] Vehicle ${v.make} ${v.model} - imageUrl: ${imageUrl}`);
+        return {
+          imageUrl,
+          caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage?.toLocaleString('id-ID') || 0}km • ${v.transmissionType || 'Manual'} • ${v.color || '-'}`,
+        };
+      })
+      .filter(img => img.imageUrl); // Filter out any without valid URL
 
-    console.log(`[WhatsApp AI Chat] Found ${images.length} vehicle images to send`);
-    return images.length > 0 ? images : null;
+    console.log(`[WhatsApp AI Chat] ✅ Prepared ${images.length} vehicle images to send`);
+
+    if (images.length === 0) {
+      console.log('[WhatsApp AI Chat] ⚠️ Vehicles found but no photos available');
+      return null;
+    }
+
+    return images;
+  }
+
+  /**
+   * Search vehicles by criteria (budget, make, transmission, year, fuel type, etc.)
+   */
+  private static async searchVehiclesByCriteria(
+    tenantId: string,
+    criteria: {
+      min_price?: number;
+      max_price?: number;
+      make?: string;
+      transmission?: string;
+      min_year?: number;
+      max_year?: number;
+      fuel_type?: string;
+      sort_by?: string;
+      limit?: number;
+    }
+  ) {
+    console.log('[WhatsApp AI Chat] 🔍 Searching vehicles with criteria:', criteria);
+
+    // Build where clause
+    const where: any = {
+      tenantId,
+      status: 'AVAILABLE',
+    };
+
+    // Price filter
+    if (criteria.min_price || criteria.max_price) {
+      where.price = {};
+      if (criteria.min_price) {
+        // Price in database is stored in cents, criteria is in IDR
+        where.price.gte = BigInt(criteria.min_price * 100);
+      }
+      if (criteria.max_price) {
+        where.price.lte = BigInt(criteria.max_price * 100);
+      }
+    }
+
+    // Make filter
+    if (criteria.make) {
+      where.make = { contains: criteria.make, mode: 'insensitive' };
+    }
+
+    // Transmission filter
+    if (criteria.transmission) {
+      const trans = criteria.transmission.toLowerCase();
+      if (trans === 'manual' || trans === 'mt') {
+        where.transmissionType = { contains: 'manual', mode: 'insensitive' };
+      } else if (trans === 'automatic' || trans === 'matic' || trans === 'at') {
+        where.OR = [
+          { transmissionType: { contains: 'automatic', mode: 'insensitive' } },
+          { transmissionType: { contains: 'matic', mode: 'insensitive' } },
+          { transmissionType: { contains: 'at', mode: 'insensitive' } },
+          { transmissionType: { contains: 'cvt', mode: 'insensitive' } },
+        ];
+      }
+    }
+
+    // Year filter
+    if (criteria.min_year || criteria.max_year) {
+      where.year = {};
+      if (criteria.min_year) {
+        where.year.gte = criteria.min_year;
+      }
+      if (criteria.max_year) {
+        where.year.lte = criteria.max_year;
+      }
+    }
+
+    // Fuel type filter
+    if (criteria.fuel_type) {
+      where.fuelType = { contains: criteria.fuel_type, mode: 'insensitive' };
+    }
+
+    // Build order by
+    let orderBy: any = { createdAt: 'desc' }; // default: newest
+    if (criteria.sort_by) {
+      switch (criteria.sort_by) {
+        case 'newest':
+          orderBy = { createdAt: 'desc' };
+          break;
+        case 'oldest':
+          orderBy = { createdAt: 'asc' };
+          break;
+        case 'price_low':
+          orderBy = { price: 'asc' };
+          break;
+        case 'price_high':
+          orderBy = { price: 'desc' };
+          break;
+        case 'mileage_low':
+          orderBy = { mileage: 'asc' };
+          break;
+      }
+    }
+
+    const vehicles = await prisma.vehicle.findMany({
+      where,
+      orderBy,
+      take: criteria.limit || 5,
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        year: true,
+        price: true,
+        mileage: true,
+        transmissionType: true,
+        fuelType: true,
+        color: true,
+      },
+    });
+
+    console.log(`[WhatsApp AI Chat] Found ${vehicles.length} vehicles matching criteria`);
+    return vehicles;
   }
 
   /**
