@@ -671,13 +671,16 @@ A: "Hai kak! 👋 Lagi cari mobil apa nih? Boleh kasih tau budget atau merk yang
       const trans = criteria.transmission.toLowerCase();
       if (trans === 'manual' || trans === 'mt') {
         where.transmissionType = { contains: 'manual', mode: 'insensitive' };
-      } else if (trans === 'automatic' || trans === 'matic' || trans === 'at') {
-        where.OR = [
-          { transmissionType: { contains: 'automatic', mode: 'insensitive' } },
-          { transmissionType: { contains: 'matic', mode: 'insensitive' } },
-          { transmissionType: { contains: 'at', mode: 'insensitive' } },
-          { transmissionType: { contains: 'cvt', mode: 'insensitive' } },
-        ];
+      } else if (trans === 'automatic' || trans === 'matic' || trans === 'at' || trans === 'cvt') {
+        // Use AND with OR for automatic variants to avoid overwriting existing OR conditions
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            { transmissionType: { contains: 'automatic', mode: 'insensitive' } },
+            { transmissionType: { contains: 'matic', mode: 'insensitive' } },
+            { transmissionType: { contains: 'cvt', mode: 'insensitive' } },
+          ],
+        });
       }
     }
 

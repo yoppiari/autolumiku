@@ -118,7 +118,7 @@ export class WhatsAppVehicleUploadService {
       if (!staff) {
         return {
           success: false,
-          message: '❌ Staff tidak ditemukan. Hubungi admin untuk mendaftarkan nomor WhatsApp Anda.',
+          message: 'Maaf kak, nomor WA kamu belum terdaftar 🙏\n\nMinta admin tambahin di: primamobil.id/dashboard/users',
           error: 'Staff not found in tenant',
         };
       }
@@ -246,18 +246,14 @@ export class WhatsAppVehicleUploadService {
         ? Math.round(aiResult.aiSuggestedPrice / 100 / 1000000)
         : priceInJuta;
 
-      let message = `✅ *Mobil Berhasil Diupload!*\n\n`;
+      let message = `Mantap kak, uploadnya berhasil! 🎉\n\n`;
       message += `🚗 *${vehicle.make} ${vehicle.model} ${vehicle.year}*\n`;
-      message += `└ Varian: ${aiResult.variant || '-'}\n`;
-      message += `└ Harga: Rp ${priceInJuta} Juta\n`;
-      message += `└ KM: ${vehicleData.mileage?.toLocaleString('id-ID') || '0'}\n`;
-      message += `└ Warna: ${vehicleData.color || '-'}\n`;
-      message += `└ Transmisi: ${vehicleData.transmission || '-'}\n`;
-      message += `└ Foto: ${processedPhotoCount} foto\n\n`;
+      message += `💰 Rp ${priceInJuta} Juta\n`;
+      message += `📍 ${vehicleData.mileage?.toLocaleString('id-ID') || '0'} km | ${vehicleData.transmission || '-'}\n`;
+      message += `🎨 ${vehicleData.color || '-'}\n`;
+      message += `📷 ${processedPhotoCount} foto\n\n`;
 
-      message += `🤖 *AI Generated:*\n`;
-      message += `└ Deskripsi SEO: ✅ (${aiResult.descriptionId.length} karakter)\n`;
-      message += `└ Confidence: ${aiResult.aiConfidence}%\n\n`;
+      message += `🤖 AI udah bikin deskripsi SEO (${aiResult.descriptionId.length} karakter) ✨\n\n`;
 
       // Add price analysis if AI suggests different price
       const aiPriceInIDR = aiResult.aiSuggestedPrice ? aiResult.aiSuggestedPrice / 100 : vehicleData.price;
@@ -265,15 +261,11 @@ export class WhatsAppVehicleUploadService {
       const priceDiffPercent = (priceDiff / vehicleData.price) * 100;
 
       if (priceDiffPercent > 10) {
-        message += `💰 *Rekomendasi Harga:*\n`;
-        message += `└ AI menyarankan: Rp ${aiPriceInJuta} Juta\n`;
-        message += `└ ${aiResult.priceAnalysis.recommendation}\n\n`;
+        message += `💡 *Saran harga:* Rp ${aiPriceInJuta} Jt\n`;
+        message += `${aiResult.priceAnalysis.recommendation}\n\n`;
       }
 
-      message += `🌐 *Lihat di Website:*\n`;
-      message += `https://primamobil.id/vehicles/${vehicle.id}\n\n`;
-      message += `📊 *Dashboard:*\n`;
-      message += `https://primamobil.id/dashboard/vehicles/${vehicle.id}`;
+      message += `🔗 Cek di website:\nprimamobil.id/vehicles/${vehicle.id}`;
 
       // 🔔 NOTIFY ALL STAFF - Upload Berhasil
       UploadNotificationService.notifyUploadSuccess(tenantId, staffPhone, {
@@ -298,27 +290,23 @@ export class WhatsAppVehicleUploadService {
     } catch (error: any) {
       console.error('[WhatsApp Vehicle Upload] ❌ Error:', error);
 
-      // Provide helpful error messages with solutions
-      let errorMessage = `❌ *Upload Gagal*\n\n`;
-      errorMessage += `🔍 *Masalah:* ${error.message}\n\n`;
-      errorMessage += `💡 *Solusi:*\n`;
+      // Provide helpful error messages with solutions - casual style
+      let errorMessage = `Waduh gagal nih kak 😅\n\n`;
+      errorMessage += `Masalah: ${error.message}\n\n`;
 
       if (error.message.includes('timeout') || error.message.includes('Timeout')) {
-        errorMessage += `• Server sedang sibuk, coba lagi dalam 1-2 menit\n`;
-        errorMessage += `• Pastikan koneksi internet stabil\n`;
+        errorMessage += `Server lagi sibuk, coba lagi 1-2 menit ya~\n`;
       } else if (error.message.includes('photo') || error.message.includes('download')) {
-        errorMessage += `• Pastikan foto tidak terlalu besar (maks 5MB)\n`;
-        errorMessage += `• Coba kirim ulang foto dengan resolusi lebih kecil\n`;
+        errorMessage += `Fotonya mungkin kegedean, coba resize dulu ya (maks 5MB)\n`;
       } else if (error.message.includes('Staff') || error.message.includes('staff')) {
-        errorMessage += `• Hubungi admin untuk mendaftarkan nomor WhatsApp Anda\n`;
-        errorMessage += `• Buka: primamobil.id/dashboard/users\n`;
+        errorMessage += `Nomor WA belum terdaftar nih kak\n`;
+        errorMessage += `Minta admin tambahin di: primamobil.id/dashboard/users\n`;
       } else {
-        errorMessage += `• Coba kirim ulang dengan format:\n`;
-        errorMessage += `  /upload [Merk Model] [Tahun] KM [km] Rp [harga]JT [Warna]\n`;
-        errorMessage += `• Contoh: /upload Brio 2015 KM 30000 Rp 120JT Hitam\n`;
+        errorMessage += `Coba kirim ulang ya kak!\n`;
+        errorMessage += `Format: "Brio 2020 120jt hitam matic km 30rb"\n`;
       }
 
-      errorMessage += `\n📞 Jika masih gagal, hubungi admin.`;
+      errorMessage += `\nKalau masih error, kabarin admin ya! 🙏`;
 
       // 🔔 NOTIFY ALL STAFF - Upload Gagal
       UploadNotificationService.notifyUploadFailed(

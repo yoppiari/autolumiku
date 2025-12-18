@@ -363,6 +363,36 @@ export class AimeowClientService {
       console.log(`[Aimeow Send Image] Sending image to ${to}`);
       console.log(`[Aimeow Send Image] Image URL: ${imageUrl}`);
       console.log(`[Aimeow Send Image] Caption: ${caption || 'none'}`);
+      console.log(`[Aimeow Send Image] Original clientId: ${clientId}`);
+
+      // Validate clientId format - same as sendMessage
+      let apiClientId = clientId;
+      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
+        console.log(`[Aimeow Send Image] ⚠️ ClientId in wrong format, fetching correct UUID...`);
+
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+            console.log(`[Aimeow Send Image] ✅ Using correct UUID: ${apiClientId}`);
+
+            // Update database
+            try {
+              await prisma.aimeowAccount.update({
+                where: { clientId },
+                data: { clientId: apiClientId },
+              });
+            } catch (dbError) {
+              console.warn(`[Aimeow Send Image] Failed to update DB:`, dbError);
+            }
+          } else {
+            throw new Error("No connected client found on Aimeow");
+          }
+        }
+      }
 
       const payload = {
         phone: to,
@@ -370,7 +400,9 @@ export class AimeowClientService {
         ...(caption && { caption }),
       };
 
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/send-image`, {
+      console.log(`[Aimeow Send Image] Using clientId: ${apiClientId}`);
+
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-image`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -410,13 +442,42 @@ export class AimeowClientService {
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       console.log(`[Aimeow Send Images] Sending ${images.length} images to ${to}`);
+      console.log(`[Aimeow Send Images] Original clientId: ${clientId}`);
+
+      // Validate clientId format - same as sendMessage
+      let apiClientId = clientId;
+      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
+        console.log(`[Aimeow Send Images] ⚠️ ClientId in wrong format, fetching correct UUID...`);
+
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+            console.log(`[Aimeow Send Images] ✅ Using correct UUID: ${apiClientId}`);
+
+            try {
+              await prisma.aimeowAccount.update({
+                where: { clientId },
+                data: { clientId: apiClientId },
+              });
+            } catch (dbError) {
+              console.warn(`[Aimeow Send Images] Failed to update DB:`, dbError);
+            }
+          } else {
+            throw new Error("No connected client found on Aimeow");
+          }
+        }
+      }
 
       const payload = {
         phone: to,
         images,
       };
 
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/send-images`, {
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
