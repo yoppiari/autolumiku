@@ -449,6 +449,151 @@ export class VehicleDataExtractorService {
       confidence: 0.7, // Lower confidence for regex extraction
     };
   }
+
+  /**
+   * Extract partial vehicle data without requiring all fields
+   * Used when staff is completing missing fields during upload flow
+   *
+   * Example inputs (completion messages):
+   * - "hitam matic km 30rb" → extracts color, transmission, mileage
+   * - "silver manual" → extracts color, transmission
+   * - "km 50000" → extracts mileage only
+   */
+  static extractPartialData(text: string): VehicleDataExtractionResult {
+    console.log('[Vehicle Data Extractor] Extracting partial data for completion:', text);
+
+    const extractedData: any = {};
+    let fieldsFound = 0;
+
+    // Extract year (4 digits) - optional
+    const yearMatch = text.match(/\b(19\d{2}|20[0-2]\d)\b/);
+    if (yearMatch) {
+      extractedData.year = parseInt(yearMatch[1]);
+      fieldsFound++;
+    }
+
+    // Extract price - optional
+    let priceMatch = text.match(/(?:Rp\.?\s*)(\d+(?:[.,]\d+)?)\s*(juta|jt|m)?/i);
+    if (!priceMatch) {
+      priceMatch = text.match(/(?:harga|price)\s*:?\s*(\d+(?:[.,]\d+)?)\s*(juta|jt|m)?/i);
+    }
+    if (!priceMatch) {
+      priceMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(juta|jt)\b/i);
+    }
+    if (priceMatch) {
+      const numStr = priceMatch[1].replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(numStr);
+      const unit = priceMatch[2]?.toLowerCase();
+
+      if (unit === 'juta' || unit === 'jt' || unit === 'm') {
+        extractedData.price = Math.round(num * 1000000);
+        fieldsFound++;
+      } else if (num > 10000000) {
+        extractedData.price = Math.round(num);
+        fieldsFound++;
+      }
+    }
+
+    // Extract mileage
+    const mileageMatch = text.match(/(?:km|kilometer|odometer|jarak)\s*:?\s*(\d+(?:[.,]\d+)?)\s*(rb|ribu|k)?/i);
+    if (mileageMatch) {
+      const numStr = mileageMatch[1].replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(numStr);
+      const unit = mileageMatch[2]?.toLowerCase();
+
+      if (unit === 'rb' || unit === 'ribu' || unit === 'k') {
+        extractedData.mileage = Math.round(num * 1000);
+      } else if (num < 1000000) {
+        extractedData.mileage = Math.round(num);
+      }
+      fieldsFound++;
+    }
+
+    // Extract transmission
+    if (/\b(matic|automatic|AT|A\/T)\b/i.test(text)) {
+      extractedData.transmission = 'Automatic';
+      fieldsFound++;
+    } else if (/\b(manual|MT|M\/T)\b/i.test(text)) {
+      extractedData.transmission = 'Manual';
+      fieldsFound++;
+    } else if (/\bCVT\b/i.test(text)) {
+      extractedData.transmission = 'CVT';
+      fieldsFound++;
+    }
+
+    // Extract color
+    const colors = [
+      'hitam', 'putih', 'silver', 'abu-abu', 'abu abu', 'merah', 'biru', 'hijau',
+      'kuning', 'coklat', 'gold', 'emas', 'orange', 'oranye', 'ungu', 'pink',
+      'cream', 'krem', 'bronze', 'grey', 'gray', 'white', 'black', 'red', 'blue',
+      'metalik', 'metallic', 'maroon', 'burgundy', 'champagne', 'titanium',
+      'dark grey', 'dark gray', 'light grey', 'light gray'
+    ];
+    for (const color of colors) {
+      if (new RegExp(`\\b${color}\\b`, 'i').test(text)) {
+        extractedData.color = color.charAt(0).toUpperCase() + color.slice(1);
+        fieldsFound++;
+        break;
+      }
+    }
+
+    // Model to make mapping
+    const modelToMake: Record<string, string> = {
+      'brio': 'Honda', 'jazz': 'Honda', 'civic': 'Honda', 'city': 'Honda',
+      'cr-v': 'Honda', 'crv': 'Honda', 'hr-v': 'Honda', 'hrv': 'Honda',
+      'accord': 'Honda', 'mobilio': 'Honda', 'br-v': 'Honda', 'brv': 'Honda',
+      'avanza': 'Toyota', 'innova': 'Toyota', 'fortuner': 'Toyota', 'rush': 'Toyota',
+      'yaris': 'Toyota', 'vios': 'Toyota', 'camry': 'Toyota', 'corolla': 'Toyota',
+      'agya': 'Toyota', 'calya': 'Toyota', 'raize': 'Toyota', 'veloz': 'Toyota',
+      'ertiga': 'Suzuki', 'ignis': 'Suzuki', 'baleno': 'Suzuki', 'xl7': 'Suzuki',
+      'swift': 'Suzuki', 'karimun': 'Suzuki', 'jimny': 'Suzuki',
+      'xenia': 'Daihatsu', 'terios': 'Daihatsu', 'sigra': 'Daihatsu', 'ayla': 'Daihatsu',
+      'rocky': 'Daihatsu', 'sirion': 'Daihatsu',
+      'pajero': 'Mitsubishi', 'xpander': 'Mitsubishi', 'outlander': 'Mitsubishi',
+      'triton': 'Mitsubishi', 'eclipse': 'Mitsubishi',
+      'livina': 'Nissan', 'serena': 'Nissan', 'terra': 'Nissan', 'navara': 'Nissan',
+      'kicks': 'Nissan', 'magnite': 'Nissan',
+    };
+
+    // Extract make and model if present
+    const brands = ['Toyota', 'Honda', 'Suzuki', 'Daihatsu', 'Mitsubishi', 'Nissan', 'Mazda', 'Wuling', 'Hyundai', 'Kia'];
+    for (const brand of brands) {
+      if (new RegExp(`\\b${brand}\\b`, 'i').test(text)) {
+        extractedData.make = brand;
+        fieldsFound++;
+        break;
+      }
+    }
+
+    const models = Object.keys(modelToMake);
+    for (const model of models) {
+      if (new RegExp(`\\b${model}\\b`, 'i').test(text)) {
+        extractedData.model = model.charAt(0).toUpperCase() + model.slice(1);
+        if (!extractedData.make) {
+          extractedData.make = modelToMake[model.toLowerCase()];
+        }
+        fieldsFound++;
+        break;
+      }
+    }
+
+    // Return success if we found at least one field
+    if (fieldsFound > 0) {
+      console.log('[Vehicle Data Extractor] ✅ Partial extraction found', fieldsFound, 'fields:', extractedData);
+      return {
+        success: true,
+        data: extractedData,
+        confidence: 0.6,
+      };
+    }
+
+    console.log('[Vehicle Data Extractor] ⚠️ No fields extracted from:', text);
+    return {
+      success: false,
+      confidence: 0,
+      error: 'Tidak dapat mengenali data. Coba ketik dengan format: "hitam matic km 30rb"',
+    };
+  }
 }
 
 export default VehicleDataExtractorService;

@@ -244,22 +244,39 @@ export class StaffCommandService {
       };
     }
 
-    // Both failed, return error
-    console.error('[Staff Command] ❌ Both AI and regex extraction failed');
+    // Both full extractions failed - try partial extraction
+    // This is used when staff is completing missing fields (e.g., "hitam matic km 30rb")
+    console.log('[Staff Command] ⚠️ Full extraction failed, trying partial extraction for completion...');
+    const partialResult = VehicleDataExtractorService.extractPartialData(textToExtract);
+
+    if (partialResult.success && partialResult.data) {
+      console.log('[Staff Command] ✅ Partial extraction successful:', partialResult.data);
+      // Return partial data - will be merged with existing context in handleUploadVehicle
+      return {
+        command: "upload",
+        params: {
+          ...partialResult.data,
+        },
+        isValid: true,
+      };
+    }
+
+    // All extraction methods failed
+    console.error('[Staff Command] ❌ All extraction methods failed');
     return {
       command: "upload",
       params: {},
       isValid: false,
       error:
-        aiResult.error || regexResult.error ||
         "❌ Gagal memproses data mobil.\n\n" +
         "Coba ketik ulang dengan lebih jelas.\n\n" +
         "*Contoh yang benar:*\n" +
-        "• Brio 2020 120jt hitam\n" +
-        "• Avanza 2019 km 50rb 140jt matic\n" +
-        "• Jazz RS 2017 165jt merah\n\n" +
-        "Minimal tulis: nama mobil, tahun, harga\n" +
-        "Contoh: Brio 2020 120jt",
+        "• Brio 2020 120jt hitam matic km 30rb\n" +
+        "• Avanza 2019 silver manual 140jt kilometer 50ribu\n\n" +
+        "*Jika melengkapi data:*\n" +
+        "• hitam matic km 30rb\n" +
+        "• silver manual\n" +
+        "• km 50000",
     };
   }
 
