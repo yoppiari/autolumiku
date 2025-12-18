@@ -6,6 +6,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
+const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const tenantSlug = searchParams.get("tenant") || "primamobil-id";
@@ -120,6 +124,91 @@ export async function GET(request: NextRequest) {
       take: 10,
     });
 
+    // 7. Check Aimeow API connection and client status
+    let aimeowApiStatus: any = { status: "UNKNOWN" };
+    if (aimeowAccount?.clientId) {
+      try {
+        // Try to fetch client status from Aimeow API
+        const clientStatusUrl = `${AIMEOW_BASE_URL}/api/v1/clients/${aimeowAccount.clientId}`;
+        console.log(`[Debug] Fetching Aimeow client status: ${clientStatusUrl}`);
+
+        const response = await fetch(clientStatusUrl, {
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          aimeowApiStatus = {
+            status: data.isConnected ? "CONNECTED" : "DISCONNECTED",
+            clientId: aimeowAccount.clientId,
+            isConnected: data.isConnected,
+            phone: data.phone,
+            hasQrCode: !!data.qrCode,
+            lastSeen: data.lastSeen,
+            rawResponse: data,
+          };
+        } else if (response.status === 404) {
+          // Client not found on Aimeow - need to reinitialize
+          aimeowApiStatus = {
+            status: "NOT_FOUND",
+            error: "Client ID not found on Aimeow server. Need to reinitialize.",
+            clientId: aimeowAccount.clientId,
+          };
+        } else {
+          aimeowApiStatus = {
+            status: "ERROR",
+            error: `HTTP ${response.status}: ${response.statusText}`,
+            clientId: aimeowAccount.clientId,
+          };
+        }
+      } catch (fetchError: any) {
+        aimeowApiStatus = {
+          status: "ERROR",
+          error: fetchError.message,
+          clientId: aimeowAccount.clientId,
+        };
+      }
+    }
+
+    // 8. Get ALL Aimeow clients to compare
+    let allAimeowClients: any[] = [];
+    try {
+      const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`, {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store',
+      });
+      if (clientsResponse.ok) {
+        allAimeowClients = await clientsResponse.json();
+      }
+    } catch (e) {
+      console.error('[Debug] Failed to fetch all clients:', e);
+    }
+
+    // 9. Get recent messages to see if webhook is receiving
+    let recentMessages: any[] = [];
+    if (aimeowAccount) {
+      recentMessages = await prisma.whatsAppMessage.findMany({
+        where: {
+          conversation: {
+            accountId: aimeowAccount.id,
+          },
+        },
+        select: {
+          id: true,
+          direction: true,
+          sender: true,
+          senderType: true,
+          content: true,
+          intent: true,
+          aimeowStatus: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      });
+    }
+
     // Build response
     const response = {
       tenant: {
@@ -171,6 +260,33 @@ export async function GET(request: NextRequest) {
         count: recentCommandLogs.length,
         logs: recentCommandLogs,
       },
+      aimeowApiStatus: {
+        ...aimeowApiStatus,
+        baseUrl: AIMEOW_BASE_URL,
+      },
+      allAimeowClients: {
+        count: allAimeowClients.length,
+        clients: allAimeowClients.map((c: any) => ({
+          id: c.id,
+          phone: c.phone,
+          isConnected: c.isConnected,
+          hasQrCode: !!c.qrCode,
+        })),
+        connectedClient: allAimeowClients.find((c: any) => c.isConnected),
+      },
+      recentMessages: {
+        count: recentMessages.length,
+        messages: recentMessages,
+        webhookWorking: recentMessages.length > 0,
+        lastMessageAt: recentMessages[0]?.createdAt || null,
+      },
+      diagnosis: generateDiagnosis(
+        aimeowAccount,
+        aiConfig,
+        aimeowApiStatus,
+        allAimeowClients,
+        recentMessages
+      ),
       testInstructions: {
         whatsappNumber: aimeowAccount?.phoneNumber || tenant.whatsappNumber || "Not configured",
         steps: [
@@ -209,4 +325,208 @@ function normalizePhone(phone: string): string {
     digits = "62" + digits.substring(1);
   }
   return digits;
+}
+
+/**
+ * Generate diagnosis based on all the checks
+ */
+function generateDiagnosis(
+  aimeowAccount: any,
+  aiConfig: any,
+  aimeowApiStatus: any,
+  allAimeowClients: any[],
+  recentMessages: any[]
+): { issues: string[]; fixes: string[]; status: string } {
+  const issues: string[] = [];
+  const fixes: string[] = [];
+
+  // Check 1: AimeowAccount exists
+  if (!aimeowAccount) {
+    issues.push("❌ AimeowAccount tidak ditemukan di database");
+    fixes.push("Pergi ke Dashboard > WhatsApp AI > Setup untuk menghubungkan WhatsApp");
+    return { issues, fixes, status: "CRITICAL" };
+  }
+
+  // Check 2: ClientId valid di Aimeow API
+  if (aimeowApiStatus.status === "NOT_FOUND") {
+    issues.push("❌ ClientId tidak ditemukan di Aimeow server");
+    fixes.push("Perlu reinitialize WhatsApp - pergi ke Dashboard > WhatsApp AI > Reconnect");
+  }
+
+  // Check 3: WhatsApp connected
+  if (aimeowApiStatus.status !== "CONNECTED" && aimeowApiStatus.status !== "NOT_FOUND") {
+    issues.push(`⚠️ WhatsApp status: ${aimeowApiStatus.status}`);
+    if (aimeowApiStatus.status === "DISCONNECTED") {
+      fixes.push("Scan QR code untuk reconnect WhatsApp");
+    }
+  }
+
+  // Check 4: ClientId mismatch - DB has different ID than what's connected
+  const connectedClient = allAimeowClients.find((c: any) => c.isConnected);
+  if (connectedClient && connectedClient.id !== aimeowAccount.clientId) {
+    issues.push(`⚠️ ClientId mismatch! DB: ${aimeowAccount.clientId}, Connected: ${connectedClient.id}`);
+    fixes.push(`Update database clientId ke: ${connectedClient.id}`);
+  }
+
+  // Check 5: AI Config exists and enabled
+  if (!aiConfig) {
+    issues.push("⚠️ AI Config tidak ditemukan (akan auto-create)");
+  } else if (!aiConfig.customerChatEnabled) {
+    issues.push("❌ customerChatEnabled = FALSE - AI tidak akan balas customer");
+    fixes.push("Enable customer chat di Dashboard > WhatsApp AI > Settings");
+  }
+
+  // Check 6: Webhook receiving messages
+  if (recentMessages.length === 0) {
+    issues.push("⚠️ Tidak ada message di database - webhook mungkin tidak terhubung");
+    fixes.push("Pastikan webhook URL sudah di-register di Aimeow");
+  } else {
+    // Check if last message is recent (within 24h)
+    const lastMsg = recentMessages[0];
+    const hoursSinceLastMsg = (Date.now() - new Date(lastMsg.createdAt).getTime()) / (1000 * 60 * 60);
+    if (hoursSinceLastMsg > 24) {
+      issues.push(`⚠️ Message terakhir ${Math.round(hoursSinceLastMsg)} jam lalu`);
+    }
+  }
+
+  // Determine overall status
+  let status = "OK";
+  if (issues.some(i => i.startsWith("❌"))) {
+    status = "CRITICAL";
+  } else if (issues.some(i => i.startsWith("⚠️"))) {
+    status = "WARNING";
+  }
+
+  if (issues.length === 0) {
+    issues.push("✅ Semua konfigurasi terlihat baik");
+  }
+
+  return { issues, fixes, status };
+}
+
+/**
+ * POST endpoint to auto-fix issues
+ * POST /api/v1/debug/whatsapp-setup?tenant=primamobil-id&action=fix-clientid
+ */
+export async function POST(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const tenantSlug = searchParams.get("tenant") || "primamobil-id";
+  const action = searchParams.get("action");
+
+  try {
+    // Get tenant
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug: tenantSlug },
+    });
+
+    if (!tenant) {
+      return NextResponse.json(
+        { error: `Tenant '${tenantSlug}' not found` },
+        { status: 404 }
+      );
+    }
+
+    // Get current account
+    const account = await prisma.aimeowAccount.findUnique({
+      where: { tenantId: tenant.id },
+    });
+
+    if (!account) {
+      return NextResponse.json(
+        { error: "AimeowAccount not found" },
+        { status: 404 }
+      );
+    }
+
+    if (action === "fix-clientid") {
+      // Get connected client from Aimeow
+      const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`, {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store',
+      });
+
+      if (!clientsResponse.ok) {
+        return NextResponse.json(
+          { error: "Failed to fetch clients from Aimeow" },
+          { status: 500 }
+        );
+      }
+
+      const clients = await clientsResponse.json();
+      const connectedClient = clients.find((c: any) => c.isConnected);
+
+      if (!connectedClient) {
+        return NextResponse.json(
+          { error: "No connected client found on Aimeow. Please scan QR code first." },
+          { status: 400 }
+        );
+      }
+
+      // Update database with correct clientId
+      const updated = await prisma.aimeowAccount.update({
+        where: { id: account.id },
+        data: {
+          clientId: connectedClient.id,
+          phoneNumber: connectedClient.phone || account.phoneNumber,
+          connectionStatus: "connected",
+          isActive: true,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "ClientId updated successfully",
+        oldClientId: account.clientId,
+        newClientId: connectedClient.id,
+        phone: connectedClient.phone,
+      });
+    }
+
+    if (action === "enable-ai") {
+      // Enable customer chat in AI config
+      const config = await prisma.whatsAppAIConfig.findUnique({
+        where: { accountId: account.id },
+      });
+
+      if (!config) {
+        // Create new config
+        await prisma.whatsAppAIConfig.create({
+          data: {
+            accountId: account.id,
+            tenantId: tenant.id,
+            aiName: "AI Assistant",
+            aiPersonality: "friendly",
+            welcomeMessage: "Halo! Ada yang bisa saya bantu?",
+            customerChatEnabled: true,
+            autoReply: true,
+            staffCommandsEnabled: true,
+          },
+        });
+      } else {
+        await prisma.whatsAppAIConfig.update({
+          where: { id: config.id },
+          data: {
+            customerChatEnabled: true,
+            autoReply: true,
+          },
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "AI customer chat enabled",
+      });
+    }
+
+    return NextResponse.json(
+      { error: "Invalid action. Use: fix-clientid, enable-ai" },
+      { status: 400 }
+    );
+  } catch (error: any) {
+    console.error("[Debug WhatsApp Fix] Error:", error);
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
 }
