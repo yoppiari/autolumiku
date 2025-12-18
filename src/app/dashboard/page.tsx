@@ -131,7 +131,9 @@ export default function ShowroomDashboardPage() {
       case 'staff_joined':
         return '/dashboard/users';
       case 'lead_created':
-        return '/dashboard/leads';
+        return activity.details?.leadId
+          ? `/dashboard/leads?id=${activity.details.leadId}`
+          : '/dashboard/leads';
       case 'sale_completed':
         return activity.details?.vehicleId
           ? `/dashboard/vehicles/${activity.details.vehicleId}`

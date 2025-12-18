@@ -73,11 +73,12 @@ export async function GET(request: NextRequest) {
     // Add lead activities
     recentLeads.forEach((lead) => {
       activities.push({
-        type: 'LEAD',
+        type: 'lead_created',
         icon: 'blue',
         message: `Lead baru dari ${lead.name}${lead.interestedIn ? ` - ${lead.interestedIn}` : ''}`,
         timestamp: lead.createdAt,
         details: {
+          leadId: lead.id,
           source: lead.source,
         },
       });
@@ -86,11 +87,12 @@ export async function GET(request: NextRequest) {
     // Add vehicle activities
     recentVehicles.forEach((vehicle) => {
       activities.push({
-        type: 'VEHICLE',
+        type: 'vehicle_added',
         icon: 'green',
         message: `Kendaraan baru ditambahkan: ${vehicle.make} ${vehicle.model} ${vehicle.year}`,
         timestamp: vehicle.createdAt,
         details: {
+          vehicleId: vehicle.id,
           displayId: vehicle.displayId,
         },
       });
@@ -99,11 +101,12 @@ export async function GET(request: NextRequest) {
     // Add user activities
     recentUsers.forEach((user) => {
       activities.push({
-        type: 'USER',
+        type: 'staff_joined',
         icon: 'purple',
         message: `Staff baru bergabung: ${user.firstName} ${user.lastName || ''}`,
         timestamp: user.createdAt,
         details: {
+          userId: user.id,
           role: user.role,
         },
       });
