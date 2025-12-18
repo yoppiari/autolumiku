@@ -21,10 +21,12 @@ export default function PlateOverlay({
   position = 'bottom-center',
   size = 'md'
 }: PlateOverlayProps) {
+  // Position the overlay where license plates typically appear on car photos
+  // For 3/4 view photos, plates are usually around 15-25% from bottom of image
   const positionClasses = {
-    'bottom-center': 'bottom-4 left-1/2 -translate-x-1/2',
-    'bottom-left': 'bottom-4 left-4',
-    'bottom-right': 'bottom-4 right-4',
+    'bottom-center': 'bottom-[18%] left-1/2 -translate-x-1/2',
+    'bottom-left': 'bottom-[18%] left-[15%]',
+    'bottom-right': 'bottom-[18%] right-[15%]',
   };
 
   const sizeClasses = {
