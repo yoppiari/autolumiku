@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
 import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/message-orchestrator.service";
 
+const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
+
 // ==================== WEBHOOK HANDLER ====================
 
 export async function POST(request: NextRequest) {
@@ -46,12 +48,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get account from clientId
-    const account = await AimeowClientService.getAccountByClientId(clientId);
+    // Get account from clientId with auto-fix for mismatch
+    let account = await AimeowClientService.getAccountByClientId(clientId);
 
+    // If not found, try auto-fix by syncing with Aimeow API
     if (!account) {
-      console.error(`[Aimeow Webhook] Account not found for clientId: ${clientId}`);
-      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+      console.warn(`[Aimeow Webhook] ⚠️ Account not found for clientId: ${clientId}`);
+      console.log(`[Aimeow Webhook] Attempting auto-fix...`);
+
+      account = await autoFixClientIdMismatch(clientId);
+
+      if (!account) {
+        console.error(`[Aimeow Webhook] ❌ Auto-fix failed. Unknown client: ${clientId}`);
+        return NextResponse.json({ error: "Account not found" }, { status: 404 });
+      }
+
+      console.log(`[Aimeow Webhook] ✅ Auto-fix successful! Account: ${account.id}`);
     }
 
     // Aimeow sends messages with { clientId, message, timestamp } structure
@@ -398,4 +410,136 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ error: "Verification failed" }, { status: 403 });
+}
+
+// ==================== AUTO-FIX CLIENT ID MISMATCH ====================
+
+/**
+ * Auto-fix clientId mismatch by syncing with Aimeow API
+ * Handles cases where webhook sends different clientId format than what's in DB
+ */
+async function autoFixClientIdMismatch(webhookClientId: string) {
+  try {
+    console.log(`[Aimeow AutoFix] Starting for clientId: ${webhookClientId}`);
+
+    // Strategy 1: Extract phone from JID format
+    if (webhookClientId.includes("@s.whatsapp.net")) {
+      const phoneNumber = webhookClientId.split(":")[0];
+      console.log(`[Aimeow AutoFix] Extracted phone: ${phoneNumber}`);
+
+      const accountByPhone = await prisma.aimeowAccount.findFirst({
+        where: {
+          OR: [
+            { phoneNumber: phoneNumber },
+            { phoneNumber: `+${phoneNumber}` },
+          ],
+        },
+        include: { aiConfig: true, tenant: true },
+      });
+
+      if (accountByPhone) {
+        console.log(`[Aimeow AutoFix] ✅ Found by phone: ${accountByPhone.id}`);
+        return accountByPhone;
+      }
+    }
+
+    // Strategy 2: Single account mode - use the only account and sync clientId
+    const allAccounts = await prisma.aimeowAccount.findMany({
+      include: { aiConfig: true, tenant: true },
+    });
+
+    if (allAccounts.length === 1) {
+      const singleAccount = allAccounts[0];
+      console.log(`[Aimeow AutoFix] Single account mode: ${singleAccount.id}`);
+
+      // Sync correct clientId from Aimeow API
+      try {
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`, {
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store',
+        });
+
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+
+          if (connectedClient && connectedClient.id !== singleAccount.clientId) {
+            console.log(`[Aimeow AutoFix] 🔄 Updating clientId: ${singleAccount.clientId} → ${connectedClient.id}`);
+
+            await prisma.aimeowAccount.update({
+              where: { id: singleAccount.id },
+              data: {
+                clientId: connectedClient.id,
+                phoneNumber: connectedClient.phone || singleAccount.phoneNumber,
+                connectionStatus: "connected",
+                isActive: true,
+              },
+            });
+
+            return await prisma.aimeowAccount.findUnique({
+              where: { id: singleAccount.id },
+              include: { aiConfig: true, tenant: true },
+            });
+          }
+        }
+      } catch (apiError) {
+        console.error(`[Aimeow AutoFix] API sync failed:`, apiError);
+      }
+
+      return singleAccount;
+    }
+
+    // Strategy 3: Multiple accounts - match by Aimeow API
+    if (allAccounts.length > 1) {
+      console.log(`[Aimeow AutoFix] Multiple accounts (${allAccounts.length}), trying API match...`);
+
+      try {
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`, {
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store',
+        });
+
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const matchingClient = clients.find((c: any) =>
+            c.id === webhookClientId || (c.phone && webhookClientId.includes(c.phone))
+          );
+
+          if (matchingClient) {
+            const accountToUpdate = allAccounts.find(
+              (a) => a.phoneNumber === matchingClient.phone ||
+                     a.clientId.includes(matchingClient.phone?.substring(0, 6) || 'xxx')
+            );
+
+            if (accountToUpdate) {
+              console.log(`[Aimeow AutoFix] 🔄 Updating account ${accountToUpdate.id}`);
+
+              await prisma.aimeowAccount.update({
+                where: { id: accountToUpdate.id },
+                data: {
+                  clientId: matchingClient.id,
+                  phoneNumber: matchingClient.phone || accountToUpdate.phoneNumber,
+                  connectionStatus: matchingClient.isConnected ? "connected" : "disconnected",
+                  isActive: matchingClient.isConnected,
+                },
+              });
+
+              return await prisma.aimeowAccount.findUnique({
+                where: { id: accountToUpdate.id },
+                include: { aiConfig: true, tenant: true },
+              });
+            }
+          }
+        }
+      } catch (apiError) {
+        console.error(`[Aimeow AutoFix] Multi-account match failed:`, apiError);
+      }
+    }
+
+    console.log(`[Aimeow AutoFix] ❌ All strategies failed`);
+    return null;
+  } catch (error) {
+    console.error(`[Aimeow AutoFix] Error:`, error);
+    return null;
+  }
 }

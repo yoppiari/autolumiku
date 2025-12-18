@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Construct webhook URL - MUST match the actual webhook handler path
+    // Construct webhook URL
     const host = request.headers.get("host") || "primamobil.id";
     const protocol = host.includes("localhost") ? "http" : "https";
-    const webhookUrl = `${protocol}://${host}/api/v1/aimeow/webhook`;
+    const webhookUrl = `${protocol}://${host}/api/v1/webhooks/aimeow`;
 
     console.log(`[Set Webhook] Client ID: ${account.clientId}`);
     console.log(`[Set Webhook] Webhook URL: ${webhookUrl}`);
