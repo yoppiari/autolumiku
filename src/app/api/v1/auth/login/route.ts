@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
     console.error('[Login] Error Stack:', error.stack);
     console.error('[Login] Error Name:', error.name);
     console.error('[Login] Error Code:', error.code);
+    console.error('[Login] Error Message:', error.message);
 
     // Provide more specific error messages
     let errorMessage = 'Internal server error';
@@ -161,7 +162,10 @@ export async function POST(request: NextRequest) {
       errorMessage = 'Database connection failed';
       console.error('[Login] DATABASE_URL might be misconfigured');
     } else if (error.name === 'PrismaClientKnownRequestError') {
-      errorMessage = 'Database query error';
+      // Show actual Prisma error for debugging
+      errorMessage = `DB Error: ${error.code} - ${error.meta?.cause || error.message}`;
+    } else if (error.name === 'PrismaClientValidationError') {
+      errorMessage = `Validation Error: ${error.message?.substring(0, 100)}`;
     } else if (error.message?.includes('bcrypt')) {
       errorMessage = 'Password verification failed';
     } else if (error.message?.includes('jwt') || error.message?.includes('token')) {
@@ -172,7 +176,13 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        // Always show details temporarily for debugging
+        debug: {
+          name: error.name,
+          code: error.code,
+          message: error.message?.substring(0, 200),
+          meta: error.meta,
+        },
       },
       { status: statusCode }
     );
