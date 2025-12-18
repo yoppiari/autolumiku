@@ -37,9 +37,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Construct webhook URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get("host")}`;
-    const webhookUrl = `${appUrl}/api/v1/webhooks/aimeow`;
+    // Construct webhook URL - MUST match the actual webhook handler path
+    const host = request.headers.get("host") || "primamobil.id";
+    const protocol = host.includes("localhost") ? "http" : "https";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`;
+    const webhookUrl = `${appUrl}/api/v1/aimeow/webhook`;
 
     // Initialize new connection
     const result = await AimeowClientService.initializeClient(tenantId, webhookUrl);

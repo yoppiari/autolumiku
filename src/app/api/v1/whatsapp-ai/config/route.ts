@@ -136,8 +136,10 @@ export async function PUT(request: NextRequest) {
 
     // Send callback URL configuration to Aimeow
     try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get("host")}` || "https://auto.lumiku.com";
-      const callbackUrl = `${appUrl}/api/v1/webhooks/aimeow`;
+      const host = request.headers.get("host") || "primamobil.id";
+      const protocol = host.includes("localhost") ? "http" : "https";
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`;
+      const callbackUrl = `${appUrl}/api/v1/aimeow/webhook`;
 
       const aimeowBaseUrl = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
 
