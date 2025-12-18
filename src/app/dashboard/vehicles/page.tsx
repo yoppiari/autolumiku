@@ -30,6 +30,7 @@ export default function VehiclesPage() {
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [error, setError] = useState<string | null>(null);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | 'ALL'>('ALL');
@@ -44,28 +45,104 @@ export default function VehiclesPage() {
     applyFilters();
   }, [vehicles, statusFilter, searchQuery, sortBy]);
 
+  /**
+   * Detect tenant from current domain
+   * Maps custom domains to tenant slugs
+   */
+  const detectTenantFromDomain = (): string | null => {
+    if (typeof window === 'undefined') return null;
+
+    const hostname = window.location.hostname;
+
+    // Custom domain mapping
+    const domainMap: Record<string, string> = {
+      'primamobil.id': 'primamobil-id',
+      'www.primamobil.id': 'primamobil-id',
+      'localhost': 'primamobil-id', // Default for development
+    };
+
+    return domainMap[hostname] || null;
+  };
+
+  /**
+   * Fetch tenant by slug and auto-fix localStorage
+   */
+  const autoFixTenant = async (slug: string): Promise<string | null> => {
+    try {
+      console.log(`[AutoFix] Attempting to fix tenant from slug: ${slug}`);
+      const response = await fetch(`/api/v1/debug/dashboard?slug=${slug}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tenant?.id) {
+          // Auto-fix localStorage
+          const userStr = localStorage.getItem('user');
+          const user = userStr ? JSON.parse(userStr) : {};
+          user.tenantId = data.tenant.id;
+          localStorage.setItem('user', JSON.stringify(user));
+          console.log(`[AutoFix] ✅ Fixed tenantId: ${data.tenant.id}`);
+          return data.tenant.id;
+        }
+      }
+    } catch (err) {
+      console.error('[AutoFix] Failed:', err);
+    }
+    return null;
+  };
+
   const fetchVehicles = async () => {
     try {
-      // TODO: Get tenantId from user session
-      const userStr = localStorage.getItem('user');
-      const tenantId = userStr
-        ? JSON.parse(userStr).tenantId
-        : null;
+      setError(null);
 
+      // Step 1: Try to get tenantId from localStorage
+      const userStr = localStorage.getItem('user');
+      let tenantId = userStr ? JSON.parse(userStr).tenantId : null;
+
+      // Step 2: If no tenantId, try auto-fix from domain
       if (!tenantId) {
-        console.warn('⚠️ No tenantId found in localStorage. Please authenticate first.');
-        console.log('💡 For development, run: devAuth.login()');
+        console.warn('⚠️ No tenantId in localStorage. Attempting auto-fix...');
+        const slug = detectTenantFromDomain();
+        if (slug) {
+          tenantId = await autoFixTenant(slug);
+        }
+      }
+
+      // Step 3: If still no tenantId, show error
+      if (!tenantId) {
+        setError('Tidak dapat mendeteksi tenant. Silakan login ulang.');
         setLoading(false);
         return;
       }
 
+      // Step 4: Fetch vehicles
       const response = await fetch(`/api/v1/vehicles?tenantId=${tenantId}`);
       if (response.ok) {
         const data = await response.json();
-        setVehicles(data.data || []);
+        const vehicleData = data.data || [];
+        setVehicles(vehicleData);
+
+        // Step 5: If vehicles empty, try auto-fix and retry once
+        if (vehicleData.length === 0) {
+          console.log('[Vehicles] Empty result, trying auto-fix...');
+          const slug = detectTenantFromDomain();
+          if (slug) {
+            const fixedTenantId = await autoFixTenant(slug);
+            if (fixedTenantId && fixedTenantId !== tenantId) {
+              // Retry with fixed tenantId
+              const retryResponse = await fetch(`/api/v1/vehicles?tenantId=${fixedTenantId}`);
+              if (retryResponse.ok) {
+                const retryData = await retryResponse.json();
+                setVehicles(retryData.data || []);
+                console.log(`[Vehicles] ✅ Retry successful: ${retryData.data?.length || 0} vehicles`);
+              }
+            }
+          }
+        }
+      } else {
+        setError('Gagal memuat data kendaraan');
       }
     } catch (error) {
       console.error('Failed to fetch vehicles:', error);
+      setError('Terjadi kesalahan saat memuat data');
     } finally {
       setLoading(false);
     }
@@ -254,8 +331,42 @@ export default function VehiclesPage() {
         </div>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+          <div className="flex items-center gap-3">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <h3 className="font-semibold text-red-800">{error}</h3>
+              <p className="text-sm text-red-600 mt-1">
+                Coba refresh halaman atau login ulang.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+            >
+              Refresh Halaman
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+              }}
+              className="px-4 py-2 bg-white border border-red-300 text-red-700 rounded-md hover:bg-red-50 text-sm"
+            >
+              Login Ulang
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Empty State */}
-      {filteredVehicles.length === 0 && !loading && (
+      {filteredVehicles.length === 0 && !loading && !error && (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
