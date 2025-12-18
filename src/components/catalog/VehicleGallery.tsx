@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import PlateOverlay from './PlateOverlay';
 
 interface VehiclePhoto {
     id: string;
@@ -16,11 +15,9 @@ interface VehicleGalleryProps {
     vehicleTitle: string;
     displayId?: string | null;
     status?: 'AVAILABLE' | 'SOLD' | 'RESERVED' | string;
-    tenantName?: string;
-    tenantLogoUrl?: string | null;
 }
 
-export default function VehicleGallery({ photos, vehicleTitle, displayId, status, tenantName, tenantLogoUrl }: VehicleGalleryProps) {
+export default function VehicleGallery({ photos, vehicleTitle, displayId, status }: VehicleGalleryProps) {
     const [selectedIndex, setSelectedIndex] = useState(0);
 
     if (!photos || photos.length === 0) {
@@ -65,13 +62,7 @@ export default function VehicleGallery({ photos, vehicleTitle, displayId, status
                     </div>
                 )}
 
-                {/* Plate Overlay - Cover license plate with tenant logo */}
-                <PlateOverlay
-                    logoUrl={tenantLogoUrl}
-                    tenantName={tenantName || 'PRIMA MOBIL'}
-                    position="bottom-center"
-                    size="lg"
-                />
+                {/* Note: License plates are now covered at upload time using AI detection */}
             </div>
 
             {/* Thumbnails */}

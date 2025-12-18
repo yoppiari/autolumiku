@@ -15,7 +15,6 @@ import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import HeroSection from '@/components/catalog/HeroSection';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
-import PlateOverlay from '@/components/catalog/PlateOverlay';
 import { Button } from '@/components/ui/button';
 import BlogCard from '@/components/catalog/BlogCard';
 import {
@@ -251,13 +250,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                               {vehicle.displayId}
                             </div>
                           )}
-                          {/* Plate Overlay - Cover license plate with tenant logo */}
-                          <PlateOverlay
-                            logoUrl={tenant.logoUrl}
-                            tenantName={tenant.name}
-                            position="bottom-center"
-                            size="md"
-                          />
+                          {/* Note: License plates are now covered at upload time using AI detection */}
                           {/* SOLD Overlay */}
                           {isSold && (
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

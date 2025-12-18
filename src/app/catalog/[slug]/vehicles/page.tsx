@@ -13,7 +13,6 @@ import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 import VehicleFilterWrapper from '@/components/catalog/VehicleFilterWrapper';
-import PlateOverlay from '@/components/catalog/PlateOverlay';
 import Pagination from '@/components/catalog/Pagination';
 import { CatalogEngineService, CatalogFilters } from '@/lib/services/catalog/catalog-engine.service';
 import { Button } from '@/components/ui/button';
@@ -166,13 +165,7 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                                                         {vehicle.displayId}
                                                     </div>
                                                 )}
-                                                {/* Plate Overlay - Cover license plate with tenant logo */}
-                                                <PlateOverlay
-                                                    logoUrl={tenant.logoUrl}
-                                                    tenantName={tenant.name}
-                                                    position="bottom-center"
-                                                    size="sm"
-                                                />
+                                                {/* Note: License plates are now covered at upload time using AI detection */}
                                                 {/* SOLD Overlay */}
                                                 {isSold && (
                                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

@@ -12,7 +12,6 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import WhatsAppContactModal from './WhatsAppContactModal';
-import PlateOverlay from './PlateOverlay';
 
 interface VehicleCardProps {
   vehicle: {
@@ -30,12 +29,10 @@ interface VehicleCardProps {
   };
   slug: string;
   tenantId?: string | null;
-  tenantName?: string;
-  tenantLogoUrl?: string | null;
   onWhatsAppClick?: (vehicle: any) => void;
 }
 
-export default function VehicleCard({ vehicle, slug, tenantId, tenantName, tenantLogoUrl, onWhatsAppClick }: VehicleCardProps) {
+export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }: VehicleCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const formatPrice = (price: bigint | number) => {
@@ -100,13 +97,7 @@ export default function VehicleCard({ vehicle, slug, tenantId, tenantName, tenan
             </div>
           )}
 
-          {/* Plate Overlay - Cover license plate with tenant logo */}
-          <PlateOverlay
-            logoUrl={tenantLogoUrl}
-            tenantName={tenantName || 'PRIMA MOBIL'}
-            position="bottom-center"
-            size="sm"
-          />
+          {/* Note: License plates are now covered at upload time using AI detection */}
 
           {/* Photo count badge - Bottom Right */}
           {photoCount > 1 && (

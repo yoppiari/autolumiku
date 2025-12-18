@@ -11,6 +11,7 @@ import { vehicleAIService } from "@/lib/ai/vehicle-ai-service";
 import { ImageProcessingService } from "@/lib/services/image-processing.service";
 import { StorageService } from "@/lib/services/storage.service";
 import { UploadNotificationService } from "./upload-notification.service";
+import { PlateDetectionService } from "@/lib/services/plate-detection.service";
 
 // ==================== TYPES ====================
 
@@ -127,6 +128,13 @@ export class WhatsAppVehicleUploadService {
       const displayId = await this.generateDisplayId();
       console.log('[WhatsApp Vehicle Upload] Generated displayId:', displayId);
 
+      // 4.1 Fetch tenant details for plate cover branding
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { name: true, logoUrl: true },
+      });
+      console.log('[WhatsApp Vehicle Upload] Tenant for branding:', tenant?.name);
+
       // 5. Create vehicle with AI-generated data
       console.log('[WhatsApp Vehicle Upload] Creating vehicle in database...');
       const vehicle = await prisma.vehicle.create({
@@ -189,8 +197,26 @@ export class WhatsAppVehicleUploadService {
 
           console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1} downloaded: ${photoBuffer.length} bytes`);
 
-          // Process photo (generate multiple sizes)
-          const processed = await ImageProcessingService.processPhoto(photoBuffer);
+          // 6.1 Detect and cover license plates with AI
+          console.log(`[WhatsApp Vehicle Upload] Detecting license plates in photo ${i + 1}...`);
+          let processedBuffer = photoBuffer;
+          let platesDetected = 0;
+
+          try {
+            const plateResult = await PlateDetectionService.processImage(photoBuffer, {
+              tenantName: tenant?.name || 'PRIMA MOBIL',
+              tenantLogoUrl: tenant?.logoUrl || undefined,
+            });
+            processedBuffer = plateResult.covered;
+            platesDetected = plateResult.platesDetected;
+            console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1}: ${platesDetected} plate(s) covered`);
+          } catch (plateError: any) {
+            console.error(`[WhatsApp Vehicle Upload] Plate detection failed for photo ${i + 1}:`, plateError.message);
+            // Continue with original photo if plate detection fails
+          }
+
+          // Process photo (generate multiple sizes) - using covered version
+          const processed = await ImageProcessingService.processPhoto(processedBuffer);
 
           // Generate filename
           const timestamp = Date.now();

@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ImageProcessingService } from '@/lib/services/image-processing.service';
 import { StorageService } from '@/lib/services/storage.service';
 import { PhotoQualityService } from '@/lib/services/photo-quality.service';
+import { PlateDetectionService } from '@/lib/services/plate-detection.service';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -42,6 +43,12 @@ export async function POST(
       );
     }
 
+    // Fetch tenant details for plate cover branding
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: vehicle.tenantId },
+      select: { name: true, logoUrl: true },
+    });
+
     // Ensure upload directory exists
     await StorageService.ensureUploadDir();
 
@@ -63,8 +70,22 @@ export async function POST(
         // Validate quality
         const quality = await PhotoQualityService.validatePhoto(buffer);
 
-        // Process image (generate all sizes)
-        const processed = await ImageProcessingService.processPhoto(buffer);
+        // Detect and cover license plates with AI
+        let processedBuffer = buffer;
+        try {
+          const plateResult = await PlateDetectionService.processImage(buffer, {
+            tenantName: tenant?.name || 'PRIMA MOBIL',
+            tenantLogoUrl: tenant?.logoUrl || undefined,
+          });
+          processedBuffer = plateResult.covered;
+          console.log(`[Photo Upload] Photo ${index + 1}: ${plateResult.platesDetected} plate(s) covered`);
+        } catch (plateError) {
+          console.error(`[Photo Upload] Plate detection failed for photo ${index + 1}:`, plateError);
+          // Continue with original photo if plate detection fails
+        }
+
+        // Process image (generate all sizes) - using covered version
+        const processed = await ImageProcessingService.processPhoto(processedBuffer);
 
         // Generate filename
         const baseFilename = ImageProcessingService.generateFilename(

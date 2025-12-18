@@ -113,8 +113,6 @@ export default async function VehicleDetailPage({ params }: PageProps) {
                 vehicleTitle={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                 displayId={vehicle.displayId}
                 status={vehicle.status}
-                tenantName={tenant.name}
-                tenantLogoUrl={tenant.logoUrl}
               />
 
               {/* Description - Desktop */}
