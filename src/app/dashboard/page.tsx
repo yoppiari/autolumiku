@@ -214,211 +214,163 @@ export default function ShowroomDashboardPage() {
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Welcome Section with Gradient - Compact */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-xl shadow-md p-4">
-        <div className="relative flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-white">
-              Selamat Datang, {user?.firstName || 'User'}! 👋
-            </h1>
-            <p className="text-blue-100 text-sm">
-              Dashboard manajemen showroom Anda
-            </p>
-          </div>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
-            <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5 animate-pulse"></span>
-            Online
-          </span>
+    <div className="space-y-3 max-h-[calc(100vh-100px)] overflow-hidden">
+      {/* Welcome Header - Minimal */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900">
+            Selamat Datang, {user?.firstName || 'User'}
+          </h1>
+          <p className="text-xs text-gray-500">Dashboard manajemen showroom</p>
         </div>
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse"></span>
+          Online
+        </span>
       </div>
 
-      {/* Stats Grid - Compact Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Stats Grid - Minimal Cards */}
+      <div className="grid grid-cols-4 gap-2">
         {statsConfig.map((stat, index) => (
           <Link
             key={index}
             href={stat.href}
-            className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100 p-3"
+            className="group bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all p-2.5"
           >
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-gray-500 truncate">
+                <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
                   {stat.title}
                 </p>
                 {loadingStats ? (
-                  <div className="h-7 w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+                  <div className="h-6 w-10 bg-gray-100 animate-pulse rounded mt-1"></div>
                 ) : (
-                  <p className="text-2xl font-bold text-gray-900 mt-0.5">
+                  <p className="text-xl font-bold text-gray-900">
                     {stat.value}
                   </p>
                 )}
+                {!loadingStats && (
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    <span className={stat.subColor}>
+                      {stat.isPercent ? `${stat.subValue >= 0 ? '+' : ''}${stat.subValue}%` : `+${stat.subValue}`}
+                    </span>
+                    {' '}{stat.subLabel}
+                  </p>
+                )}
               </div>
-              <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform`}>
-                <span className="text-lg">{stat.emoji}</span>
+              <div className="w-8 h-8 rounded-md bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                <span className="text-sm">{stat.emoji}</span>
               </div>
-            </div>
-            <div className="mt-2 flex items-center">
-              {loadingStats ? (
-                <span className="h-3 w-16 bg-gray-200 animate-pulse rounded"></span>
-              ) : (
-                <span className="text-xs">
-                  <span className={`font-semibold ${stat.subColor}`}>
-                    {stat.isPercent
-                      ? `${stat.subValue >= 0 ? '+' : ''}${stat.subValue}%`
-                      : `+${stat.subValue}`
-                    }
-                  </span>
-                  <span className="text-gray-400 ml-1">{stat.subLabel}</span>
-                </span>
-              )}
             </div>
           </Link>
         ))}
       </div>
 
-      {/* Main Content Grid - Compact */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Aktivitas Terkini - 2 columns */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                  <span>📊</span>
-                  Aktivitas Terkini
-                </h3>
-                <Link
-                  href="/dashboard/vehicles?sort=newest"
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-0.5"
-                >
-                  Lihat Semua
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
+      {/* Main Content - Two Column Layout */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Left: Activity + Quick Actions */}
+        <div className="col-span-2 space-y-3">
+          {/* Aktivitas Terkini */}
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-gray-700">Aktivitas Terkini</h3>
+              <Link href="/dashboard/vehicles?sort=newest" className="text-[10px] text-gray-500 hover:text-gray-700">
+                Lihat Semua →
+              </Link>
             </div>
-            <div className="p-3">
+            <div className="p-2">
               {loadingActivities ? (
                 <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center space-x-3 animate-pulse">
-                      <div className="w-8 h-8 bg-gray-200 rounded-lg"></div>
-                      <div className="flex-1 space-y-1.5">
-                        <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                        <div className="h-2 bg-gray-200 rounded w-1/4"></div>
-                      </div>
+                    <div key={i} className="flex items-center gap-2 animate-pulse">
+                      <div className="w-6 h-6 bg-gray-100 rounded"></div>
+                      <div className="flex-1 h-3 bg-gray-100 rounded"></div>
                     </div>
                   ))}
                 </div>
               ) : activities.length > 0 ? (
-                <div className="space-y-1">
-                  {activities.map((activity, index) => (
+                <div className="space-y-0.5">
+                  {activities.slice(0, 4).map((activity, index) => (
                     <Link
                       key={index}
                       href={getActivityLink(activity)}
-                      className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                      className="flex items-center gap-2 p-1.5 rounded hover:bg-gray-50 transition-colors group"
                     >
-                      <div className={`w-8 h-8 ${getActivityColor(activity.icon)} rounded-lg flex items-center justify-center text-white text-sm`}>
+                      <div className={`w-6 h-6 ${getActivityColor(activity.icon)} rounded flex items-center justify-center text-white text-xs`}>
                         {activity.type === 'vehicle_added' && '🚗'}
                         {activity.type === 'lead_created' && '📞'}
-                        {activity.type === 'staff_joined' && '👥'}
+                        {activity.type === 'staff_joined' && '👤'}
                         {activity.type === 'sale_completed' && '💰'}
-                        {!['vehicle_added', 'lead_created', 'staff_joined', 'sale_completed'].includes(activity.type) && '📌'}
+                        {!['vehicle_added', 'lead_created', 'staff_joined', 'sale_completed'].includes(activity.type) && '•'}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-900 truncate group-hover:text-blue-600">
+                        <p className="text-xs text-gray-700 truncate group-hover:text-gray-900">
                           {activity.message}
                         </p>
-                        <p className="text-[10px] text-gray-400">
-                          {formatRelativeTime(activity.timestamp)}
-                        </p>
                       </div>
-                      <svg className="w-3 h-3 text-gray-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                      <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                        {formatRelativeTime(activity.timestamp)}
+                      </span>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6">
-                  <span className="text-2xl">📭</span>
-                  <p className="text-gray-500 text-xs mt-2">Belum ada aktivitas</p>
-                </div>
+                <p className="text-xs text-gray-400 text-center py-4">Belum ada aktivitas</p>
               )}
+            </div>
+          </div>
+
+          {/* Quick Actions - Inline */}
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="px-3 py-2 border-b border-gray-100">
+              <h3 className="text-xs font-semibold text-gray-700">Aksi Cepat</h3>
+            </div>
+            <div className="p-2">
+              <div className="grid grid-cols-4 gap-1.5">
+                <Link
+                  href="/dashboard/vehicles/upload"
+                  className="flex flex-col items-center gap-1 p-2 rounded-md hover:bg-gray-50 transition-colors group"
+                >
+                  <div className="w-8 h-8 bg-gray-100 group-hover:bg-gray-200 rounded-md flex items-center justify-center transition-colors">
+                    <span className="text-sm">➕</span>
+                  </div>
+                  <span className="text-[10px] text-gray-600 group-hover:text-gray-900">Tambah</span>
+                </Link>
+                <Link
+                  href="/dashboard/leads"
+                  className="flex flex-col items-center gap-1 p-2 rounded-md hover:bg-gray-50 transition-colors group"
+                >
+                  <div className="w-8 h-8 bg-gray-100 group-hover:bg-gray-200 rounded-md flex items-center justify-center transition-colors">
+                    <span className="text-sm">📞</span>
+                  </div>
+                  <span className="text-[10px] text-gray-600 group-hover:text-gray-900">Leads</span>
+                </Link>
+                <Link
+                  href="/dashboard/users"
+                  className="flex flex-col items-center gap-1 p-2 rounded-md hover:bg-gray-50 transition-colors group"
+                >
+                  <div className="w-8 h-8 bg-gray-100 group-hover:bg-gray-200 rounded-md flex items-center justify-center transition-colors">
+                    <span className="text-sm">👥</span>
+                  </div>
+                  <span className="text-[10px] text-gray-600 group-hover:text-gray-900">Tim</span>
+                </Link>
+                <Link
+                  href="/dashboard/whatsapp-ai"
+                  className="flex flex-col items-center gap-1 p-2 rounded-md hover:bg-gray-50 transition-colors group"
+                >
+                  <div className="w-8 h-8 bg-gray-100 group-hover:bg-gray-200 rounded-md flex items-center justify-center transition-colors">
+                    <span className="text-sm">💬</span>
+                  </div>
+                  <span className="text-[10px] text-gray-600 group-hover:text-gray-900">WhatsApp</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Subscription Card - 1 column */}
-        <div className="lg:col-span-1">
+        {/* Right: Subscription */}
+        <div className="col-span-1">
           {!loadingSubscription && <SubscriptionCard subscription={subscription} />}
-        </div>
-      </div>
-
-      {/* Quick Actions - Compact */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            <span>⚡</span>
-            Aksi Cepat
-          </h3>
-        </div>
-        <div className="p-3">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-            <Link
-              href="/dashboard/vehicles/upload"
-              className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all"
-            >
-              <div className="w-9 h-9 bg-slate-100 group-hover:bg-white/20 rounded-lg flex items-center justify-center">
-                <span className="text-base">➕</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-gray-800 group-hover:text-white truncate">Tambah Kendaraan</p>
-                <p className="text-[10px] text-gray-400 group-hover:text-gray-300">Upload unit baru</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/leads"
-              className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all"
-            >
-              <div className="w-9 h-9 bg-slate-100 group-hover:bg-white/20 rounded-lg flex items-center justify-center">
-                <span className="text-base">📞</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-gray-800 group-hover:text-white truncate">Lihat Leads</p>
-                <p className="text-[10px] text-gray-400 group-hover:text-gray-300">Kelola customer</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/users"
-              className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all"
-            >
-              <div className="w-9 h-9 bg-slate-100 group-hover:bg-white/20 rounded-lg flex items-center justify-center">
-                <span className="text-base">👥</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-gray-800 group-hover:text-white truncate">Kelola Tim</p>
-                <p className="text-[10px] text-gray-400 group-hover:text-gray-300">Manage staff</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/whatsapp-ai"
-              className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all"
-            >
-              <div className="w-9 h-9 bg-slate-100 group-hover:bg-white/20 rounded-lg flex items-center justify-center">
-                <span className="text-base">💬</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-gray-800 group-hover:text-white truncate">WhatsApp AI</p>
-                <p className="text-[10px] text-gray-400 group-hover:text-gray-300">Setup chatbot</p>
-              </div>
-            </Link>
-          </div>
         </div>
       </div>
     </div>
