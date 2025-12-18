@@ -46,10 +46,9 @@ export default function VehiclesPage() {
   }, [vehicles, statusFilter, searchQuery, sortBy]);
 
   /**
-   * Detect tenant from current domain
-   * Maps custom domains to tenant slugs
+   * Detect tenant slug from current domain
    */
-  const detectTenantFromDomain = (): string | null => {
+  const detectSlugFromDomain = (): string | null => {
     if (typeof window === 'undefined') return null;
 
     const hostname = window.location.hostname;
@@ -58,35 +57,10 @@ export default function VehiclesPage() {
     const domainMap: Record<string, string> = {
       'primamobil.id': 'primamobil-id',
       'www.primamobil.id': 'primamobil-id',
-      'localhost': 'primamobil-id', // Default for development
+      'localhost': 'primamobil-id',
     };
 
     return domainMap[hostname] || null;
-  };
-
-  /**
-   * Fetch tenant by slug and auto-fix localStorage
-   */
-  const autoFixTenant = async (slug: string): Promise<string | null> => {
-    try {
-      console.log(`[AutoFix] Attempting to fix tenant from slug: ${slug}`);
-      const response = await fetch(`/api/v1/debug/dashboard?slug=${slug}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.tenant?.id) {
-          // Auto-fix localStorage
-          const userStr = localStorage.getItem('user');
-          const user = userStr ? JSON.parse(userStr) : {};
-          user.tenantId = data.tenant.id;
-          localStorage.setItem('user', JSON.stringify(user));
-          console.log(`[AutoFix] ✅ Fixed tenantId: ${data.tenant.id}`);
-          return data.tenant.id;
-        }
-      }
-    } catch (err) {
-      console.error('[AutoFix] Failed:', err);
-    }
-    return null;
   };
 
   const fetchVehicles = async () => {
@@ -95,49 +69,34 @@ export default function VehiclesPage() {
 
       // Step 1: Try to get tenantId from localStorage
       const userStr = localStorage.getItem('user');
-      let tenantId = userStr ? JSON.parse(userStr).tenantId : null;
+      const tenantId = userStr ? JSON.parse(userStr).tenantId : null;
 
-      // Step 2: If no tenantId, try auto-fix from domain
-      if (!tenantId) {
-        console.warn('⚠️ No tenantId in localStorage. Attempting auto-fix...');
-        const slug = detectTenantFromDomain();
-        if (slug) {
-          tenantId = await autoFixTenant(slug);
-        }
-      }
+      // Step 2: Detect slug from domain
+      const slug = detectSlugFromDomain();
 
-      // Step 3: If still no tenantId, show error
-      if (!tenantId) {
+      // Step 3: Fetch vehicles - prefer slug for reliability, fallback to tenantId
+      let response;
+      if (slug) {
+        // Use slug directly - more reliable
+        console.log(`[Vehicles] Fetching by slug: ${slug}`);
+        response = await fetch(`/api/v1/vehicles?slug=${slug}`);
+      } else if (tenantId) {
+        // Fallback to tenantId from localStorage
+        console.log(`[Vehicles] Fetching by tenantId: ${tenantId}`);
+        response = await fetch(`/api/v1/vehicles?tenantId=${tenantId}`);
+      } else {
         setError('Tidak dapat mendeteksi tenant. Silakan login ulang.');
         setLoading(false);
         return;
       }
 
-      // Step 4: Fetch vehicles
-      const response = await fetch(`/api/v1/vehicles?tenantId=${tenantId}`);
       if (response.ok) {
         const data = await response.json();
-        const vehicleData = data.data || [];
-        setVehicles(vehicleData);
-
-        // Step 5: If vehicles empty, try auto-fix and retry once
-        if (vehicleData.length === 0) {
-          console.log('[Vehicles] Empty result, trying auto-fix...');
-          const slug = detectTenantFromDomain();
-          if (slug) {
-            const fixedTenantId = await autoFixTenant(slug);
-            if (fixedTenantId && fixedTenantId !== tenantId) {
-              // Retry with fixed tenantId
-              const retryResponse = await fetch(`/api/v1/vehicles?tenantId=${fixedTenantId}`);
-              if (retryResponse.ok) {
-                const retryData = await retryResponse.json();
-                setVehicles(retryData.data || []);
-                console.log(`[Vehicles] ✅ Retry successful: ${retryData.data?.length || 0} vehicles`);
-              }
-            }
-          }
-        }
+        setVehicles(data.data || []);
+        console.log(`[Vehicles] ✅ Loaded ${data.data?.length || 0} vehicles`);
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[Vehicles] API error:', errorData);
         setError('Gagal memuat data kendaraan');
       }
     } catch (error) {

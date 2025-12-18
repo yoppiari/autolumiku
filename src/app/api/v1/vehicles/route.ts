@@ -13,14 +13,24 @@ import { prisma } from '@/lib/prisma';
  */
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Get tenantId from authenticated user session
-    // For now, get from query param (development only)
     const searchParams = request.nextUrl.searchParams;
-    const tenantId = searchParams.get('tenantId');
+    let tenantId = searchParams.get('tenantId');
+    const slug = searchParams.get('slug');
+
+    // If slug provided, lookup tenant by slug
+    if (!tenantId && slug) {
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug },
+        select: { id: true },
+      });
+      if (tenant) {
+        tenantId = tenant.id;
+      }
+    }
 
     if (!tenantId) {
       return NextResponse.json(
-        { error: 'tenantId is required' },
+        { error: 'tenantId or slug is required' },
         { status: 400 }
       );
     }
