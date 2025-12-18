@@ -170,13 +170,14 @@ export class MessageOrchestratorService {
             });
 
             // Ask for photo (vehicle will be created when photo is sent)
-            responseMessage = `✅ Data mobil diterima!\n\n` +
-              `📋 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
+            responseMessage = `Oke data masuk! 👍\n\n` +
+              `🚗 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
               `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
-              `🎨 ${result.uploadRequest.color || 'Unknown'}\n` +
-              `⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
-              `📏 ${result.uploadRequest.mileage || 0} km\n\n` +
-              `📸 *Sekarang kirim foto mobil untuk melengkapi upload.*`;
+              `🎨 ${result.uploadRequest.color || '-'} | ⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
+              `📍 ${result.uploadRequest.mileage || 0} km\n\n` +
+              `Tinggal kirim 6 foto ya kak:\n` +
+              `• Depan, belakang, samping\n` +
+              `• Dashboard, jok, bagasi`;
 
             // If photo provided with message, add it to context
             if (incoming.mediaUrl) {
@@ -191,18 +192,16 @@ export class MessageOrchestratorService {
                 },
               });
 
-              responseMessage = `✅ Data dan foto diterima!\n\n` +
-                `📋 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
+              responseMessage = `Nice! Data + 1 foto masuk! 👍\n\n` +
+                `🚗 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
                 `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
-                `🎨 ${result.uploadRequest.color || 'Unknown'}\n` +
-                `⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
-                `📏 ${result.uploadRequest.mileage || 0} km\n` +
-                `📸 1 foto\n\n` +
-                `Kirim foto lagi atau ketik "selesai" untuk upload.`;
+                `🎨 ${result.uploadRequest.color || '-'} | ⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
+                `📷 Foto: 1/6\n\n` +
+                `Kirim 5 foto lagi ya~`;
             }
           } else {
             console.log(`[Orchestrator] User is NOT staff, ignoring upload request`);
-            responseMessage = `Maaf, hanya staff yang bisa upload mobil. 😊\n\nApakah ada yang bisa saya bantu?`;
+            responseMessage = `Maaf kak, upload cuma buat staff aja 😊\n\nAda yang bisa aku bantu?`;
           }
         }
       }
@@ -376,7 +375,7 @@ export class MessageOrchestratorService {
     } catch (error: any) {
       console.error("[Message Orchestrator] Staff command error:", error);
       return {
-        message: `❌ Terjadi kesalahan saat menjalankan command: ${error.message}`,
+        message: `Waduh ada error nih 😅\n\n${error.message}\n\nCoba lagi ya kak!`,
         escalated: true,
       };
     }
@@ -425,7 +424,7 @@ export class MessageOrchestratorService {
       console.error("[Message Orchestrator] AI response error:", error);
       return {
         message:
-          "Maaf, terjadi gangguan sistem. Staff kami akan segera membantu Anda.",
+          "Maaf kak, lagi ada gangguan nih 🙏\n\nStaff kami bakal bantu sebentar lagi ya!",
         escalated: true,
       };
     }
@@ -613,17 +612,45 @@ export class MessageOrchestratorService {
 
   /**
    * Check if phone number belongs to staff
+   * Uses normalized phone comparison for flexible matching
    */
   private static async isStaffMember(phone: string, tenantId: string): Promise<boolean> {
-    const user = await prisma.user.findFirst({
+    const normalizedInput = this.normalizePhone(phone);
+    console.log(`[Orchestrator] Checking staff - input: ${phone}, normalized: ${normalizedInput}`);
+
+    // Get all users in tenant and check phone match with normalization
+    const users = await prisma.user.findMany({
       where: {
         tenantId,
-        phone,
         role: { in: ["ADMIN", "STAFF"] },
       },
+      select: { id: true, phone: true, firstName: true },
     });
 
-    return !!user;
+    for (const user of users) {
+      if (!user.phone) continue;
+      const normalizedUserPhone = this.normalizePhone(user.phone);
+      if (normalizedInput === normalizedUserPhone) {
+        console.log(`[Orchestrator] ✅ Staff match found: ${user.firstName}`);
+        return true;
+      }
+    }
+
+    console.log(`[Orchestrator] ❌ No staff match found for phone: ${phone}`);
+    return false;
+  }
+
+  /**
+   * Normalize phone number for comparison
+   * Handles various formats: +62xxx, 62xxx, 0xxx, 08xxx
+   */
+  private static normalizePhone(phone: string): string {
+    if (!phone) return "";
+    let digits = phone.replace(/\D/g, "");
+    if (digits.startsWith("0")) {
+      digits = "62" + digits.substring(1);
+    }
+    return digits;
   }
 
   /**
