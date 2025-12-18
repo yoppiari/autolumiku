@@ -118,30 +118,33 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center h-16 px-6 border-b border-gray-200">
+          {/* Logo - Clickable to Dashboard */}
+          <Link
+            href="/dashboard"
+            className="flex items-center h-16 px-6 border-b border-gray-200 hover:bg-gray-50 transition-colors group"
+          >
             <div className="flex items-center">
               {tenant?.logoUrl ? (
                 <img
                   src={tenant.logoUrl}
                   alt={tenant.name || 'Tenant Logo'}
-                  className="w-8 h-8 object-contain rounded-lg"
+                  className="w-8 h-8 object-contain rounded-lg group-hover:scale-105 transition-transform"
                 />
               ) : (
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                   <span className="text-white font-bold text-sm">
                     {tenant?.name?.[0] || 'A'}
                   </span>
                 </div>
               )}
               <div className="ml-3">
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                   {tenant?.name || 'autolumiku'}
                 </div>
                 <div className="text-xs text-gray-500">Showroom Dashboard</div>
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">

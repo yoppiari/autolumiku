@@ -25,12 +25,21 @@ interface SubscriptionCardProps {
 export default function SubscriptionCard({ subscription }: SubscriptionCardProps) {
   if (!subscription) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">Subscription</h2>
-        <div className="text-center py-8">
-          <FaExclamationTriangle className="text-yellow-500 text-4xl mx-auto mb-4" />
-          <p className="text-gray-600">No active subscription</p>
-          <p className="text-sm text-gray-500 mt-2">Please contact administrator</p>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-full">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <span className="text-xl">💳</span>
+            Subscription
+          </h2>
+        </div>
+        <div className="p-6">
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FaExclamationTriangle className="text-amber-500 text-2xl" />
+            </div>
+            <p className="text-gray-700 font-medium">No active subscription</p>
+            <p className="text-sm text-gray-500 mt-2">Please contact administrator</p>
+          </div>
         </div>
       </div>
     );
@@ -111,43 +120,43 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
   const annualPrice = subscription.pricePerMonth * 12; // Calculate annual from monthly
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold">Langganan Enterprise</h2>
-        <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor()}`}>
-          {getStatusLabel()}
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-full">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-blue-50">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <span className="text-xl">💳</span>
+            Langganan Enterprise
+          </h2>
+          <div className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 ${getStatusColor()}`}>
+            {getStatusIcon()}
+            {getStatusLabel()}
+          </div>
         </div>
       </div>
 
-      <div className="space-y-4">
-        {/* Status Icon */}
-        <div className="flex items-center justify-center py-4">
-          <div className="text-6xl">
-            {getStatusIcon()}
-          </div>
-        </div>
-
+      <div className="p-6 space-y-5">
         {/* Annual Contract Info */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
-          <p className="text-sm text-gray-600 mb-1">Kontrak Tahunan</p>
-          <p className="text-3xl font-bold text-gray-900">
+        <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-5 text-white shadow-lg">
+          <p className="text-sm text-blue-100 mb-1">Kontrak Tahunan</p>
+          <p className="text-3xl font-bold">
             Rp {annualPrice.toLocaleString('id-ID')}
-            <span className="text-sm text-gray-500 font-normal">/tahun</span>
+            <span className="text-sm text-blue-200 font-normal ml-1">/tahun</span>
           </p>
         </div>
 
         {/* Contract Period */}
-        <div className="border-t pt-4">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-lg p-3 shadow-sm">
               <p className="text-xs text-gray-500 mb-1">Mulai Kontrak</p>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-semibold text-gray-900">
                 {formatDate(subscription.currentPeriodStart)}
               </p>
             </div>
-            <div>
+            <div className="bg-white rounded-lg p-3 shadow-sm">
               <p className="text-xs text-gray-500 mb-1">Berakhir Kontrak</p>
-              <p className="text-sm font-bold text-blue-600">
+              <p className="text-sm font-semibold text-blue-600">
                 {formatDate(subscription.currentPeriodEnd)}
               </p>
             </div>
@@ -155,18 +164,18 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
 
           {/* Contract Status */}
           {days > 0 && (
-            <div className="bg-blue-50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-blue-700 font-medium">
+            <div className="mt-4 bg-white rounded-lg p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-gray-600 font-medium">
                   Sisa Kontrak
                 </p>
-                <p className="text-lg font-bold text-blue-900">
-                  {days} hari ({months} bulan)
+                <p className="text-base font-bold text-blue-600">
+                  {days} hari <span className="text-gray-400 font-normal">({months} bulan)</span>
                 </p>
               </div>
-              <div className="bg-blue-200 rounded-full h-2.5">
+              <div className="bg-gray-200 rounded-full h-2.5 overflow-hidden">
                 <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
                   style={{
                     width: `${Math.max(0, Math.min(100, (days / 365) * 100))}%`,
                   }}
@@ -176,11 +185,12 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
           )}
 
           {days <= 0 && (
-            <div className="bg-red-50 rounded-lg p-4">
-              <p className="text-sm text-red-600 font-medium">
-                ⚠️ Kontrak telah berakhir
+            <div className="mt-4 bg-red-50 rounded-lg p-4 border border-red-100">
+              <p className="text-sm text-red-600 font-semibold flex items-center gap-2">
+                <FaExclamationTriangle className="text-red-500" />
+                Kontrak telah berakhir
               </p>
-              <p className="text-xs text-red-500 mt-1">
+              <p className="text-xs text-red-500 mt-1 ml-6">
                 Hubungi administrator untuk perpanjangan
               </p>
             </div>
@@ -188,11 +198,12 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
 
           {/* Renewal Warning - 30 days before expiry */}
           {days > 0 && days <= 30 && (
-            <div className="bg-yellow-50 rounded-lg p-4 mt-2">
-              <p className="text-sm text-yellow-800 font-medium">
-                ⏰ Kontrak akan segera berakhir!
+            <div className="mt-3 bg-amber-50 rounded-lg p-4 border border-amber-100">
+              <p className="text-sm text-amber-700 font-semibold flex items-center gap-2">
+                <FaClock className="text-amber-500" />
+                Kontrak akan segera berakhir!
               </p>
-              <p className="text-xs text-yellow-700 mt-1">
+              <p className="text-xs text-amber-600 mt-1 ml-6">
                 Segera hubungi administrator untuk perpanjangan kontrak
               </p>
             </div>
@@ -200,44 +211,43 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
         </div>
 
         {/* Enterprise Features */}
-        <div className="border-t pt-4">
-          <p className="text-sm font-medium text-gray-700 mb-3">Fitur Enterprise</p>
-          <ul className="text-sm text-gray-600 space-y-2">
-            <li className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+          <p className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <span className="text-lg">✨</span>
+            Fitur Enterprise
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <FaCheckCircle className="text-green-500 text-xs flex-shrink-0" />
               <span>Unlimited kendaraan</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              <span>Analytics & reporting lengkap</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              <span>WhatsApp integration</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              <span>AI-powered blog generator</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              <span>Custom branding & domain</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              <span>Priority support 24/7</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              <span>API access</span>
-            </li>
-          </ul>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <FaCheckCircle className="text-green-500 text-xs flex-shrink-0" />
+              <span>Analytics lengkap</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <FaCheckCircle className="text-green-500 text-xs flex-shrink-0" />
+              <span>WhatsApp AI</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <FaCheckCircle className="text-green-500 text-xs flex-shrink-0" />
+              <span>AI blog generator</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <FaCheckCircle className="text-green-500 text-xs flex-shrink-0" />
+              <span>Custom domain</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <FaCheckCircle className="text-green-500 text-xs flex-shrink-0" />
+              <span>Support 24/7</span>
+            </div>
+          </div>
         </div>
 
         {/* Contact Admin */}
-        <div className="border-t pt-4">
-          <p className="text-xs text-gray-500 text-center">
-            Pertanyaan tentang langganan? Hubungi administrator platform
+        <div className="text-center py-2">
+          <p className="text-xs text-gray-400">
+            Pertanyaan? Hubungi administrator platform
           </p>
         </div>
       </div>
