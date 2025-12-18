@@ -112,6 +112,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy node_modules (including Prisma Client and puppeteer from builder which has all deps)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
+# Copy entrypoint script
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
 # Create uploads directory with correct ownership
 RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
 
@@ -125,5 +129,5 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://127.0.0.1:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
-CMD ["node", "server.js"]
+# Start application with entrypoint (runs migrations then starts server)
+CMD ["./docker-entrypoint.sh"]
