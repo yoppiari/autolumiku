@@ -408,6 +408,19 @@ A: "Hai kak! 👋 Lagi cari mobil apa nih? Boleh kasih tau budget atau merk yang
       }
     }
 
+    // Add registered staff contacts - ONLY use these, don't make up contacts!
+    const staffMembers = await this.getRegisteredStaffContacts(tenant.id);
+    if (staffMembers.length > 0) {
+      systemPrompt += `\n\n📞 KONTAK STAFF RESMI (HANYA gunakan ini, JANGAN buat-buat nomor sendiri!):\n`;
+      systemPrompt += staffMembers.map(s =>
+        `• ${s.name} (${s.role}) - ${s.phone}`
+      ).join("\n");
+      systemPrompt += `\n\n⚠️ PENTING: Kalau customer mau hubungi staff/admin, HANYA kasih nomor dari daftar di atas. JANGAN PERNAH buat-buat nomor atau nama yang tidak ada di daftar!`;
+    } else {
+      // No staff registered - tell AI to not give any contact
+      systemPrompt += `\n\n⚠️ PENTING: Belum ada staff terdaftar. Kalau customer mau hubungi langsung, bilang "Silakan chat lanjut di sini ya kak, nanti kami bantu." JANGAN buat-buat nomor telepon!`;
+    }
+
     return systemPrompt;
   }
 
@@ -434,6 +447,62 @@ A: "Hai kak! 👋 Lagi cari mobil apa nih? Boleh kasih tau budget atau merk yang
       orderBy: { createdAt: "desc" },
       take: 15,
     });
+  }
+
+  /**
+   * Get registered staff contacts for this tenant
+   * Only returns ADMIN, MANAGER, SALES roles with phone numbers
+   */
+  private static async getRegisteredStaffContacts(tenantId: string): Promise<
+    Array<{ name: string; role: string; phone: string }>
+  > {
+    const staffMembers = await prisma.user.findMany({
+      where: {
+        tenantId,
+        role: { in: ["ADMIN", "MANAGER", "SALES"] },
+        phone: { not: null },
+      },
+      select: {
+        firstName: true,
+        lastName: true,
+        role: true,
+        phone: true,
+      },
+      orderBy: [
+        { role: "asc" }, // ADMIN first, then MANAGER, then SALES
+        { firstName: "asc" },
+      ],
+    });
+
+    return staffMembers
+      .filter((s) => s.phone) // Extra filter for null phones
+      .map((s) => ({
+        name: `${s.firstName || ""} ${s.lastName || ""}`.trim() || "Staff",
+        role: s.role === "ADMIN" ? "Admin" : s.role === "MANAGER" ? "Manager" : "Sales",
+        phone: this.formatPhoneForDisplay(s.phone!),
+      }));
+  }
+
+  /**
+   * Format phone number for display (add dashes for readability)
+   */
+  private static formatPhoneForDisplay(phone: string): string {
+    // Remove non-digits
+    const digits = phone.replace(/\D/g, "");
+
+    // Format Indonesian number: 0812-3456-7890
+    if (digits.startsWith("62")) {
+      const local = digits.slice(2); // Remove country code
+      if (local.length >= 10) {
+        return `0${local.slice(0, 3)}-${local.slice(3, 7)}-${local.slice(7)}`;
+      }
+    } else if (digits.startsWith("0")) {
+      if (digits.length >= 10) {
+        return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8)}`;
+      }
+    }
+
+    return phone; // Return original if can't format
   }
 
   /**
