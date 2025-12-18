@@ -24,6 +24,7 @@ export type MessageIntent =
   | "customer_price_inquiry"
   | "customer_test_drive"
   | "customer_general_question"
+  | "staff_greeting"
   | "staff_upload_vehicle"
   | "staff_update_status"
   | "staff_check_inventory"
@@ -295,6 +296,27 @@ export class IntentClassifierService {
         isStaff: true,
         isCustomer: false,
         reason: "Matched get stats command pattern",
+      };
+    }
+
+    // Check staff greeting (halo, hai, hello, etc.)
+    // Show welcome menu with options
+    const greetingPatterns = [
+      /^(halo|hai|hello|hi|hey|hallo|hei)$/i,
+      /^(halo|hai|hello|hi|hey|hallo|hei)\s*(kak|min|admin|bos|boss)?[.!]?$/i,
+      /^(selamat\s+(pagi|siang|sore|malam))$/i,
+      /^(pagi|siang|sore|malam)$/i,
+      /^(assalamu.*alaikum|assalamualaikum)/i,
+      /^(met\s+(pagi|siang|sore|malam))/i,
+    ];
+
+    if (greetingPatterns.some((p) => p.test(message))) {
+      return {
+        intent: "staff_greeting",
+        confidence: 0.95,
+        isStaff: true,
+        isCustomer: false,
+        reason: "Staff greeting - show welcome menu",
       };
     }
 

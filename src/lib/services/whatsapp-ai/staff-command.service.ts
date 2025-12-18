@@ -43,6 +43,9 @@ export class StaffCommandService {
     console.log(`[Staff Command] Parsing command - intent: ${intent}, message: "${trimmedMessage}", hasMedia: ${hasMedia}`);
 
     switch (intent) {
+      case "staff_greeting":
+        return { command: "greeting", params: {}, isValid: true };
+
       case "staff_upload_vehicle":
         return await this.parseUploadCommand(trimmedMessage, hasMedia);
 
@@ -86,7 +89,7 @@ export class StaffCommandService {
     if (!isAuthorized) {
       return {
         success: false,
-        message: "❌ Anda tidak memiliki akses untuk command ini. Hubungi admin untuk aktivasi akses staff.",
+        message: "Maaf kak, ini fitur khusus staff aja 🙏\n\nKalau mau jadi staff, hubungi admin ya!",
       };
     }
 
@@ -94,6 +97,10 @@ export class StaffCommandService {
       let result: CommandExecutionResult;
 
       switch (intent) {
+        case "staff_greeting":
+          result = await this.handleStaffGreeting(tenantId, staffPhone);
+          break;
+
         case "staff_upload_vehicle":
           result = await this.handleUploadVehicle(
             params,
@@ -119,7 +126,7 @@ export class StaffCommandService {
         default:
           result = {
             success: false,
-            message: "❌ Command tidak dikenali. Ketik /help untuk bantuan.",
+            message: "Hmm ga paham nih 😅 Coba ketik 'halo' buat liat menu ya!",
           };
       }
 
@@ -151,7 +158,7 @@ export class StaffCommandService {
 
       return {
         success: false,
-        message: `❌ Terjadi kesalahan: ${error.message}`,
+        message: `Waduh ada error nih 😅\n\n${error.message}\n\nCoba lagi ya kak!`,
       };
     }
   }
@@ -293,7 +300,7 @@ export class StaffCommandService {
         command: "status",
         params: {},
         isValid: false,
-        error: "Format: /status [vehicle_id] [AVAILABLE|BOOKED|SOLD]",
+        error: "Formatnya: /status [ID mobil] [status baru]\n\nContoh: /status ABC123 SOLD",
       };
     }
 
@@ -305,7 +312,7 @@ export class StaffCommandService {
         command: "status",
         params: {},
         isValid: false,
-        error: `Status tidak valid. Gunakan: ${validStatuses.join(", ")}`,
+        error: `Status "${status}" ga valid kak\n\nPilihan: AVAILABLE, BOOKED, SOLD, DELETED`,
       };
     }
 
@@ -425,26 +432,26 @@ export class StaffCommandService {
 
     let askMessage = "";
     if (missingLabels.length > 0) {
-      // Build helpful message
-      askMessage = `⚠️ *Data Belum Lengkap*\n\n`;
-      askMessage += `Yang kurang: *${missingLabels.join(", ")}*\n\n`;
+      // Build helpful message - casual style
+      askMessage = `Eh masih kurang nih datanya 😊\n\n`;
+      askMessage += `Yang belum: *${missingLabels.join(", ")}*\n\n`;
 
       // Show what we already have
       const received: string[] = [];
-      if (vehicleData?.make) received.push(`Merk: ${vehicleData.make}`);
-      if (vehicleData?.model) received.push(`Model: ${vehicleData.model}`);
-      if (vehicleData?.year) received.push(`Tahun: ${vehicleData.year}`);
-      if (vehicleData?.price) received.push(`Harga: Rp ${this.formatPrice(vehicleData.price)}`);
-      if (vehicleData?.color && vehicleData?.color !== "Unknown") received.push(`Warna: ${vehicleData.color}`);
-      if (vehicleData?.transmission && vehicleData?.transmission !== "Unknown") received.push(`Transmisi: ${vehicleData.transmission}`);
-      if (vehicleData?.mileage || vehicleData?.mileage === 0) received.push(`KM: ${this.formatNumber(vehicleData.mileage)}`);
+      if (vehicleData?.make) received.push(`✓ ${vehicleData.make}`);
+      if (vehicleData?.model) received.push(`✓ ${vehicleData.model}`);
+      if (vehicleData?.year) received.push(`✓ ${vehicleData.year}`);
+      if (vehicleData?.price) received.push(`✓ Rp ${this.formatPrice(vehicleData.price)}`);
+      if (vehicleData?.color && vehicleData?.color !== "Unknown") received.push(`✓ ${vehicleData.color}`);
+      if (vehicleData?.transmission && vehicleData?.transmission !== "Unknown") received.push(`✓ ${vehicleData.transmission}`);
+      if (vehicleData?.mileage || vehicleData?.mileage === 0) received.push(`✓ ${this.formatNumber(vehicleData.mileage)} km`);
 
       if (received.length > 0) {
-        askMessage += `✅ Sudah diterima:\n${received.map(r => `• ${r}`).join("\n")}\n\n`;
+        askMessage += `Udah dapet:\n${received.join("\n")}\n\n`;
       }
 
       // Give examples based on what's missing
-      askMessage += `📝 *Lengkapi dengan balas seperti ini:*\n`;
+      askMessage += `Tinggal tambahin:\n`;
 
       const examples: string[] = [];
       if (missingFields.includes("color")) examples.push("hitam");
@@ -455,7 +462,7 @@ export class StaffCommandService {
       if (missingFields.includes("model")) examples.push("Brio");
 
       askMessage += `"${examples.join(" ")}"\n\n`;
-      askMessage += `💡 Format bebas, yang penting lengkap!`;
+      askMessage += `Bebas mau format gimana, yang penting lengkap ya! 👍`;
     }
 
     return { missingFields, askMessage, hasMinimumData };
@@ -565,22 +572,21 @@ export class StaffCommandService {
         const photosRemaining = MIN_PHOTOS_NEEDED - photos.length;
 
         // Build message with data summary and photo requirements
-        let message = `✅ Data dasar sudah lengkap!\n\n` +
-          `📋 ${mergedData.make} ${mergedData.model} ${mergedData.year}\n` +
-          `💰 Rp ${this.formatPrice(mergedData.price)}\n\n`;
+        let message = `Mantap! Data udah oke nih 👍\n\n` +
+          `🚗 ${mergedData.make} ${mergedData.model} ${mergedData.year}\n` +
+          `💰 ${this.formatPrice(mergedData.price)}\n\n`;
 
         if (missingFields.length > 0) {
-          message += `ℹ️ Opsional: ${missingFields.join(", ")}\n\n`;
+          message += `Opsional: ${missingFields.join(", ")}\n\n`;
         }
 
         if (photos.length > 0) {
-          message += `📷 Foto: ${photos.length}/${MIN_PHOTOS_NEEDED} (perlu ${photosRemaining} lagi)\n\n`;
+          message += `📷 Foto: ${photos.length}/6 (kurang ${photosRemaining} lagi)\n\n`;
         }
 
-        message += `📸 *Kirim ${photosRemaining} foto mobil (WAJIB)*\n\n` +
-          `*Foto yang diperlukan (6 foto):*\n` +
-          `• Eksterior: depan, belakang, samping\n` +
-          `• Interior: dashboard, jok, bagasi`;
+        message += `Tinggal kirim ${photosRemaining} foto lagi ya!\n` +
+          `• Depan, belakang, samping\n` +
+          `• Dashboard, jok, bagasi`;
 
         return {
           success: true,
@@ -616,18 +622,14 @@ export class StaffCommandService {
       return {
         success: true,
         message:
-          "📸 *Upload Mobil*\n\n" +
-          "Cara upload sangat mudah!\n\n" +
-          "*Langkah 1:* Kirim 6 foto mobil\n" +
-          "• Eksterior: depan, belakang, samping\n" +
-          "• Interior: dashboard, jok, bagasi\n\n" +
-          "*Langkah 2:* Ketik info mobil (format bebas)\n" +
-          "Yang penting ada: *Model, Tahun, Harga, Warna, Transmisi, KM*\n\n" +
-          "Contoh:\n" +
-          "• \"Brio 2020 120jt hitam matic km 30rb\"\n" +
-          "• \"avanza silver 2019 manual 140jt kilometer 50ribu\"\n" +
-          "• \"jazz rs merah 2018 at harga 165jt km 45000\"\n\n" +
-          "💡 Format bebas, yang penting lengkap!",
+          `Oke siap upload! 📸\n\n` +
+          `Caranya gampang:\n\n` +
+          `1️⃣ Kirim 6 foto\n` +
+          `   • Depan, belakang, samping\n` +
+          `   • Dashboard, jok, bagasi\n\n` +
+          `2️⃣ Ketik info mobilnya\n` +
+          `   Contoh: "Brio 2020 120jt hitam matic km 30rb"\n\n` +
+          `Langsung kirim aja fotonya! 👇`,
       };
     }
 
@@ -644,7 +646,7 @@ export class StaffCommandService {
       if (photos.length >= MAX_PHOTOS) {
         return {
           success: false,
-          message: `❌ Maksimal ${MAX_PHOTOS} foto per kendaraan. Kirim detail mobil untuk melanjutkan upload.`,
+          message: `Udah cukup ${MAX_PHOTOS} foto kak 📷 Sekarang ketik aja info mobilnya~`,
         };
       }
 
@@ -666,25 +668,20 @@ export class StaffCommandService {
       const photoRemaining = MIN_PHOTOS - photos.length;
       let photoGuide = "";
       if (photoRemaining > 0) {
-        photoGuide = `\n📷 Kirim ${photoRemaining} foto lagi untuk melengkapi.\n\n` +
-          "*Foto yang diperlukan (6 foto):*\n" +
-          "• Depan, belakang, samping kiri/kanan\n" +
-          "• Dashboard, jok, bagasi\n";
+        photoGuide = `\nKirim ${photoRemaining} foto lagi ya~\n` +
+          `• Depan, belakang, samping\n` +
+          `• Dashboard, jok, bagasi\n`;
       } else {
-        photoGuide = "\n✅ Jumlah foto sudah cukup!\n";
+        photoGuide = "\nFoto udah cukup nih! ✅\n";
       }
 
       return {
         success: true,
         message:
-          `✅ Foto ${photos.length}/${MIN_PHOTOS} diterima!` +
+          `Oke foto ${photos.length}/6 masuk! 📸` +
           photoGuide +
-          "\n📝 *Sekarang ketik info mobilnya:*\n" +
-          "Yang penting ada: Model, Tahun, Harga, Warna, Transmisi, KM\n\n" +
-          "*Contoh (format bebas):*\n" +
-          "• \"Brio 2020 120jt hitam matic km 30rb\"\n" +
-          "• \"avanza silver 2019 manual 140jt km 50ribu\"\n\n" +
-          "💡 Ketik seperti chat biasa!",
+          `\nSekarang ketik info mobilnya:\n` +
+          `Contoh: "Brio 2020 120jt hitam matic km 30rb"`,
       };
     }
 
@@ -737,12 +734,10 @@ export class StaffCommandService {
           return {
             success: true,
             message:
-              `✅ Foto ${photos.length}/${MIN_PHOTOS} diterima!\n` +
-              `✅ Data mobil sudah lengkap!\n\n` +
-              `📷 *Kirim ${photoRemaining} foto lagi*\n\n` +
-              `*Foto yang diperlukan (6 foto):*\n` +
-              `• Eksterior: depan, belakang, samping\n` +
-              `• Interior: dashboard, jok, bagasi`,
+              `Nice! Foto ${photos.length}/6 + data lengkap! 👍\n\n` +
+              `Tinggal kirim ${photoRemaining} foto lagi:\n` +
+              `• Depan, belakang, samping\n` +
+              `• Dashboard, jok, bagasi`,
           };
         }
 
@@ -787,16 +782,16 @@ export class StaffCommandService {
 
         // Build response showing what we received and what's missing
         const photoRemaining = MIN_PHOTOS - photos.length;
-        let receivedInfo = `✅ Foto ${photos.length}/${MIN_PHOTOS} diterima!`;
+        let receivedInfo = `Oke foto ${photos.length}/6 masuk!`;
         if (photoRemaining > 0) {
-          receivedInfo += ` (perlu ${photoRemaining} lagi)\n\n`;
+          receivedInfo += ` (kurang ${photoRemaining})\n\n`;
         } else {
           receivedInfo += ` ✅\n\n`;
         }
-        if (mergedData.make) receivedInfo += `✓ Merk: ${mergedData.make}\n`;
-        if (mergedData.model) receivedInfo += `✓ Model: ${mergedData.model}\n`;
-        if (mergedData.year) receivedInfo += `✓ Tahun: ${mergedData.year}\n`;
-        if (mergedData.price) receivedInfo += `✓ Harga: Rp ${this.formatPrice(mergedData.price)}\n`;
+        if (mergedData.make) receivedInfo += `✓ ${mergedData.make}\n`;
+        if (mergedData.model) receivedInfo += `✓ ${mergedData.model}\n`;
+        if (mergedData.year) receivedInfo += `✓ ${mergedData.year}\n`;
+        if (mergedData.price) receivedInfo += `✓ ${this.formatPrice(mergedData.price)}\n`;
 
         return {
           success: true,
@@ -818,26 +813,21 @@ export class StaffCommandService {
 
       // Build photo status message
       const photoRemaining = MIN_PHOTOS - photos.length;
-      let photoStatus = `✅ Foto ${photos.length}/${MIN_PHOTOS} diterima!`;
+      let photoStatus = `Oke foto ${photos.length}/6 masuk! 📸`;
       if (photoRemaining > 0) {
-        photoStatus += `\n📷 Kirim ${photoRemaining} foto lagi.\n\n` +
-          "*Foto yang diperlukan (6 foto):*\n" +
-          "• Eksterior: depan, belakang, samping\n" +
-          "• Interior: dashboard, jok, bagasi\n";
+        photoStatus += `\nKirim ${photoRemaining} foto lagi ya~\n` +
+          `• Depan, belakang, samping\n` +
+          `• Dashboard, jok, bagasi\n`;
       } else {
-        photoStatus += " ✅\n";
+        photoStatus += ` Foto cukup! ✅\n`;
       }
 
       return {
         success: true,
         message:
           photoStatus +
-          "\n📝 *Sekarang ketik info mobilnya:*\n" +
-          "Yang penting ada: Model, Tahun, Harga, Warna, Transmisi, KM\n\n" +
-          "*Contoh (format bebas):*\n" +
-          "• \"Brio 2020 120jt hitam matic km 30rb\"\n" +
-          "• \"avanza silver 2019 manual 140jt km 50ribu\"\n\n" +
-          "💡 Ketik seperti chat biasa!",
+          `\nSekarang ketik info mobilnya:\n` +
+          `Contoh: "Brio 2020 120jt hitam matic km 30rb"`,
       };
     }
 
@@ -873,7 +863,7 @@ export class StaffCommandService {
       if (mergedData.year < 1980 || mergedData.year > currentYear + 1) {
         return {
           success: false,
-          message: `❌ Tahun tidak valid. Harus antara 1980-${currentYear + 1}`,
+          message: `Hmm tahunnya kayaknya salah deh 🤔\nHarus antara 1980-${currentYear + 1} ya kak`,
         };
       }
     }
@@ -882,7 +872,7 @@ export class StaffCommandService {
       if (mergedData.price <= 0 || mergedData.price > 100000000000) {
         return {
           success: false,
-          message: "❌ Harga tidak valid. Harus antara 0-100 miliar",
+          message: "Harganya kayaknya salah deh 🤔\nCek lagi ya, harus di range 0-100 miliar",
         };
       }
     }
@@ -890,7 +880,7 @@ export class StaffCommandService {
     if (mergedData.mileage && (mergedData.mileage < 0 || mergedData.mileage > 1000000)) {
       return {
         success: false,
-        message: "❌ Kilometer tidak valid. Harus antara 0-1,000,000 km",
+        message: "KM nya kayaknya salah deh 🤔\nHarus antara 0-1.000.000 km ya",
       };
     }
 
@@ -923,7 +913,7 @@ export class StaffCommandService {
 
       let message = "";
       if (receivedInfo) {
-        message = `📋 *Data yang sudah diterima:*\n${receivedInfo}\n`;
+        message = `Oke dapet nih:\n${receivedInfo}\n`;
       }
       message += askMessage;
 
@@ -987,18 +977,16 @@ export class StaffCommandService {
     return {
       success: true,
       message:
-        `✅ Data mobil diterima!\n\n` +
-        `📋 ${vehicleData.make} ${vehicleData.model} ${vehicleData.year}\n` +
-        `💰 Harga: Rp ${this.formatPrice(vehicleData.price)}\n` +
-        `🔧 Transmisi: ${vehicleData.transmission}\n` +
-        `🎨 Warna: ${vehicleData.color}\n` +
-        `📍 KM: ${this.formatNumber(vehicleData.mileage)}\n\n` +
+        `Oke data masuk! 👍\n\n` +
+        `🚗 ${vehicleData.make} ${vehicleData.model} ${vehicleData.year}\n` +
+        `💰 Rp ${this.formatPrice(vehicleData.price)}\n` +
+        `🔧 ${vehicleData.transmission} | 🎨 ${vehicleData.color}\n` +
+        `📍 ${this.formatNumber(vehicleData.mileage)} km\n\n` +
         optionalMissing +
         photoStatus +
-        `📸 *Kirim ${photosNeeded > 0 ? photosNeeded : MIN_PHOTOS_REQ} foto mobil (WAJIB)*\n\n` +
-        `*Foto yang diperlukan (6 foto):*\n` +
-        `• Eksterior: depan, belakang, samping\n` +
-        `• Interior: dashboard, jok, bagasi`,
+        `Tinggal kirim ${photosNeeded > 0 ? photosNeeded : MIN_PHOTOS_REQ} foto ya:\n` +
+        `• Depan, belakang, samping\n` +
+        `• Dashboard, jok, bagasi`,
     };
   }
 
@@ -1085,7 +1073,7 @@ export class StaffCommandService {
     if (!vehicle) {
       return {
         success: false,
-        message: `❌ Mobil dengan ID ${vehicleId} tidak ditemukan.`,
+        message: `Ga nemu mobilnya nih kak 🤔\nID: ${vehicleId}\n\nCoba cek lagi ID nya ya!`,
       };
     }
 
@@ -1094,7 +1082,7 @@ export class StaffCommandService {
     if (!validStatuses.includes(status)) {
       return {
         success: false,
-        message: `❌ Status tidak valid: ${status}. Gunakan: ${validStatuses.join(", ")}`,
+        message: `Status "${status}" ga valid kak 🤔\n\nPilihan: AVAILABLE, BOOKED, SOLD, DELETED`,
       };
     }
 
@@ -1121,8 +1109,64 @@ export class StaffCommandService {
 
     return {
       success: true,
-      message: `✅ Status mobil berhasil diupdate!\n\n📋 ${vehicle.make} ${vehicle.model} ${vehicle.year}\n- ID: ${vehicle.displayId || vehicle.id}\n- Status: ${vehicle.status} → ${status}`,
+      message: `Siap! Status ${vehicle.make} ${vehicle.model} udah diupdate ke ${status} ✅`,
       vehicleId: vehicle.id,
+    };
+  }
+
+  /**
+   * Handle staff greeting - show welcome menu
+   */
+  private static async handleStaffGreeting(
+    tenantId: string,
+    staffPhone: string
+  ): Promise<CommandExecutionResult> {
+    // Get staff name
+    const normalizedPhone = this.normalizePhone(staffPhone);
+    const staff = await prisma.user.findFirst({
+      where: { tenantId },
+      select: { firstName: true, phone: true },
+    });
+
+    let staffName = "kak";
+    if (staff) {
+      // Find the matching staff by normalized phone
+      const users = await prisma.user.findMany({
+        where: { tenantId },
+        select: { firstName: true, phone: true },
+      });
+
+      for (const user of users) {
+        if (user.phone && this.normalizePhone(user.phone) === normalizedPhone) {
+          staffName = user.firstName || "kak";
+          break;
+        }
+      }
+    }
+
+    // Get quick stats
+    const availableCount = await prisma.vehicle.count({
+      where: { tenantId, status: "AVAILABLE" },
+    });
+
+    const message =
+      `Hai ${staffName}! 👋\n\n` +
+      `Sekarang ada ${availableCount} unit ready di showroom.\n\n` +
+      `Mau ngapain nih?\n\n` +
+      `📸 *Upload Mobil Baru*\n` +
+      `→ Langsung kirim aja fotonya (min 6 foto)\n` +
+      `→ Terus ketik info: "Brio 2020 120jt hitam matic km 30rb"\n\n` +
+      `📋 *Cek Stok*\n` +
+      `→ Ketik: stok / inventory\n\n` +
+      `📊 *Lihat Stats*\n` +
+      `→ Ketik: stats / laporan\n\n` +
+      `🔄 *Update Status Mobil*\n` +
+      `→ Ketik: status [ID] sold/booked\n\n` +
+      `Langsung ketik aja ya! 😊`;
+
+    return {
+      success: true,
+      message,
     };
   }
 
@@ -1157,7 +1201,9 @@ export class StaffCommandService {
     if (vehicles.length === 0) {
       return {
         success: true,
-        message: `📊 Tidak ada mobil ditemukan${filter ? ` untuk filter: ${filter}` : ""}.`,
+        message: filter
+          ? `Hmm ga ada mobil nih buat "${filter}" 🤔`
+          : `Stok masih kosong nih kak 📦`,
       };
     }
 
@@ -1170,26 +1216,25 @@ export class StaffCommandService {
       {} as Record<string, number>
     );
 
-    let message = `📊 *Inventory Summary*${filter ? ` (Filter: ${filter})` : ""}\n\n`;
-    message += `Total: ${vehicles.length} unit\n\n`;
+    let message = `📊 *Stok Showroom*${filter ? ` (${filter})` : ""}\n\n`;
+    message += `Total ada ${vehicles.length} unit 🚗\n\n`;
 
     // Status breakdown
-    message += `*Status:*\n`;
     Object.entries(byStatus).forEach(([status, count]) => {
-      message += `- ${status}: ${count} unit\n`;
+      const emoji = status === "AVAILABLE" ? "✅" : status === "BOOKED" ? "🔒" : status === "SOLD" ? "💰" : "🗑️";
+      message += `${emoji} ${status}: ${count}\n`;
     });
 
     // List vehicles (max 10)
-    message += `\n*Daftar Mobil (${Math.min(vehicles.length, 10)} teratas):*\n`;
+    message += `\n*${Math.min(vehicles.length, 10)} teratas:*\n`;
     vehicles.slice(0, 10).forEach((v, idx) => {
-      message += `\n${idx + 1}. ${v.make} ${v.model} ${v.year}\n`;
-      message += `   ID: ${v.displayId || v.id}\n`;
-      message += `   Harga: Rp ${this.formatPrice(Number(v.price))}\n`;
-      message += `   Status: ${v.status}\n`;
+      const statusEmoji = v.status === "AVAILABLE" ? "✅" : v.status === "BOOKED" ? "🔒" : v.status === "SOLD" ? "💰" : "";
+      message += `\n${idx + 1}. ${v.make} ${v.model} ${v.year} ${statusEmoji}\n`;
+      message += `   Rp ${this.formatPrice(Number(v.price))} • ID: ${v.displayId || v.id.slice(-6)}\n`;
     });
 
     if (vehicles.length > 10) {
-      message += `\n... dan ${vehicles.length - 10} mobil lainnya`;
+      message += `\n... +${vehicles.length - 10} lagi`;
     }
 
     return {
@@ -1250,20 +1295,22 @@ export class StaffCommandService {
       _count: true,
     });
 
-    let message = `📈 *Statistics (${period === "today" ? "Hari Ini" : period === "week" ? "7 Hari Terakhir" : "Bulan Ini"})*\n\n`;
+    const periodLabel = period === "today" ? "Hari Ini" : period === "week" ? "Minggu Ini" : "Bulan Ini";
+    let message = `📈 *Stats ${periodLabel}*\n\n`;
 
-    message += `*Vehicles:*\n`;
-    message += `- Total: ${totalVehicles} unit\n`;
-    message += `- Baru: ${newVehicles} unit\n\n`;
+    message += `🚗 *Kendaraan*\n`;
+    message += `Total: ${totalVehicles} unit\n`;
+    message += `Baru masuk: ${newVehicles} unit\n\n`;
 
-    message += `*Status Breakdown:*\n`;
+    message += `*Per Status:*\n`;
     vehiclesByStatus.forEach((s) => {
-      message += `- ${s.status}: ${s._count} unit\n`;
+      const emoji = s.status === "AVAILABLE" ? "✅" : s.status === "BOOKED" ? "🔒" : s.status === "SOLD" ? "💰" : "🗑️";
+      message += `${emoji} ${s.status}: ${s._count}\n`;
     });
 
-    message += `\n*Leads:*\n`;
-    message += `- Total: ${totalLeads}\n`;
-    message += `- Baru: ${newLeads}\n`;
+    message += `\n👥 *Leads*\n`;
+    message += `Total: ${totalLeads}\n`;
+    message += `Baru: ${newLeads} 🔥`;
 
     return {
       success: true,
