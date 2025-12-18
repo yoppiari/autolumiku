@@ -258,8 +258,8 @@ export default function ShowroomDashboardPage() {
                   </p>
                 )}
               </div>
-              <div className="w-8 h-8 rounded-md bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
-                <span className="text-sm">{stat.emoji}</span>
+              <div className="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                <span className="text-2xl">{stat.emoji}</span>
               </div>
             </div>
           </Link>
@@ -325,43 +325,43 @@ export default function ShowroomDashboardPage() {
             <div className="px-3 py-2 border-b border-gray-100">
               <h3 className="text-xs font-semibold text-gray-700">Aksi Cepat</h3>
             </div>
-            <div className="p-2">
-              <div className="grid grid-cols-4 gap-1.5">
+            <div className="p-3">
+              <div className="grid grid-cols-4 gap-3">
                 <Link
                   href="/dashboard/vehicles/upload"
-                  className="flex flex-col items-center gap-1 p-2 rounded-md hover:bg-gray-50 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
                 >
-                  <div className="w-8 h-8 bg-gray-100 group-hover:bg-gray-200 rounded-md flex items-center justify-center transition-colors">
-                    <span className="text-sm">➕</span>
+                  <div className="w-14 h-14 bg-blue-50 group-hover:bg-blue-100 rounded-xl flex items-center justify-center transition-colors">
+                    <span className="text-3xl">➕</span>
                   </div>
-                  <span className="text-[10px] text-gray-600 group-hover:text-gray-900">Tambah</span>
+                  <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900">Tambah</span>
                 </Link>
                 <Link
                   href="/dashboard/leads"
-                  className="flex flex-col items-center gap-1 p-2 rounded-md hover:bg-gray-50 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
                 >
-                  <div className="w-8 h-8 bg-gray-100 group-hover:bg-gray-200 rounded-md flex items-center justify-center transition-colors">
-                    <span className="text-sm">📞</span>
+                  <div className="w-14 h-14 bg-red-50 group-hover:bg-red-100 rounded-xl flex items-center justify-center transition-colors">
+                    <span className="text-3xl">📞</span>
                   </div>
-                  <span className="text-[10px] text-gray-600 group-hover:text-gray-900">Leads</span>
+                  <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900">Leads</span>
                 </Link>
                 <Link
                   href="/dashboard/users"
-                  className="flex flex-col items-center gap-1 p-2 rounded-md hover:bg-gray-50 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
                 >
-                  <div className="w-8 h-8 bg-gray-100 group-hover:bg-gray-200 rounded-md flex items-center justify-center transition-colors">
-                    <span className="text-sm">👥</span>
+                  <div className="w-14 h-14 bg-purple-50 group-hover:bg-purple-100 rounded-xl flex items-center justify-center transition-colors">
+                    <span className="text-3xl">👥</span>
                   </div>
-                  <span className="text-[10px] text-gray-600 group-hover:text-gray-900">Tim</span>
+                  <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900">Tim</span>
                 </Link>
                 <Link
                   href="/dashboard/whatsapp-ai"
-                  className="flex flex-col items-center gap-1 p-2 rounded-md hover:bg-gray-50 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
                 >
-                  <div className="w-8 h-8 bg-gray-100 group-hover:bg-gray-200 rounded-md flex items-center justify-center transition-colors">
-                    <span className="text-sm">💬</span>
+                  <div className="w-14 h-14 bg-green-50 group-hover:bg-green-100 rounded-xl flex items-center justify-center transition-colors">
+                    <span className="text-3xl">💬</span>
                   </div>
-                  <span className="text-[10px] text-gray-600 group-hover:text-gray-900">WhatsApp</span>
+                  <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900">WhatsApp</span>
                 </Link>
               </div>
             </div>
