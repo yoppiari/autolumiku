@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
+import PlateOverlay from './PlateOverlay';
 
 interface VehiclePhoto {
     id: string;
@@ -15,9 +16,11 @@ interface VehicleGalleryProps {
     vehicleTitle: string;
     displayId?: string | null;
     status?: 'AVAILABLE' | 'SOLD' | 'RESERVED' | string;
+    tenantName?: string;
+    tenantLogoUrl?: string | null;
 }
 
-export default function VehicleGallery({ photos, vehicleTitle, displayId, status }: VehicleGalleryProps) {
+export default function VehicleGallery({ photos, vehicleTitle, displayId, status, tenantName, tenantLogoUrl }: VehicleGalleryProps) {
     const [selectedIndex, setSelectedIndex] = useState(0);
 
     if (!photos || photos.length === 0) {
@@ -57,10 +60,18 @@ export default function VehicleGallery({ photos, vehicleTitle, displayId, status
 
                 {/* Vehicle ID Badge - Bottom Left */}
                 {displayId && (
-                    <div className="absolute bottom-3 left-3 bg-blue-600 text-white text-sm font-bold px-3 py-1.5 rounded shadow-lg">
+                    <div className="absolute bottom-3 left-3 bg-blue-600 text-white text-sm font-bold px-3 py-1.5 rounded shadow-lg z-20">
                         {displayId}
                     </div>
                 )}
+
+                {/* Plate Overlay - Cover license plate with tenant logo */}
+                <PlateOverlay
+                    logoUrl={tenantLogoUrl}
+                    tenantName={tenantName || 'PRIMA MOBIL'}
+                    position="bottom-center"
+                    size="lg"
+                />
             </div>
 
             {/* Thumbnails */}

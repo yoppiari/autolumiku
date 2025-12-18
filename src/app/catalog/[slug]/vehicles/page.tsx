@@ -13,6 +13,7 @@ import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
 import VehicleFilterWrapper from '@/components/catalog/VehicleFilterWrapper';
+import PlateOverlay from '@/components/catalog/PlateOverlay';
 import Pagination from '@/components/catalog/Pagination';
 import { CatalogEngineService, CatalogFilters } from '@/lib/services/catalog/catalog-engine.service';
 import { Button } from '@/components/ui/button';
@@ -159,6 +160,19 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                                                         Ready
                                                     </div>
                                                 )}
+                                                {/* Vehicle ID Badge - Bottom Left */}
+                                                {vehicle.displayId && (
+                                                    <div className="absolute bottom-3 left-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg z-20">
+                                                        {vehicle.displayId}
+                                                    </div>
+                                                )}
+                                                {/* Plate Overlay - Cover license plate with tenant logo */}
+                                                <PlateOverlay
+                                                    logoUrl={tenant.logoUrl}
+                                                    tenantName={tenant.name}
+                                                    position="bottom-center"
+                                                    size="sm"
+                                                />
                                                 {/* SOLD Overlay */}
                                                 {isSold && (
                                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

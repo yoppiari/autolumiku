@@ -15,6 +15,7 @@ import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import HeroSection from '@/components/catalog/HeroSection';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
+import PlateOverlay from '@/components/catalog/PlateOverlay';
 import { Button } from '@/components/ui/button';
 import BlogCard from '@/components/catalog/BlogCard';
 import {
@@ -246,10 +247,17 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                           )}
                           {/* Vehicle ID Badge - Bottom Left */}
                           {vehicle.displayId && (
-                            <div className="absolute bottom-3 left-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
+                            <div className="absolute bottom-3 left-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg z-20">
                               {vehicle.displayId}
                             </div>
                           )}
+                          {/* Plate Overlay - Cover license plate with tenant logo */}
+                          <PlateOverlay
+                            logoUrl={tenant.logoUrl}
+                            tenantName={tenant.name}
+                            position="bottom-center"
+                            size="md"
+                          />
                           {/* SOLD Overlay */}
                           {isSold && (
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
