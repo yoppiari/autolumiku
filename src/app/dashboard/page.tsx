@@ -214,138 +214,113 @@ export default function ShowroomDashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Section with Gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-2xl shadow-lg p-6 sm:p-8">
-        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]"></div>
-        <div className="relative">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                Selamat Datang, {user?.firstName || 'User'}! 👋
-              </h1>
-              <p className="text-blue-100 mt-2">
-                Dashboard manajemen showroom Anda
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-white/20 text-white backdrop-blur-sm">
-                <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
-                Online
-              </span>
-            </div>
+    <div className="space-y-4">
+      {/* Welcome Section with Gradient - Compact */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-xl shadow-md p-4">
+        <div className="relative flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-white">
+              Selamat Datang, {user?.firstName || 'User'}! 👋
+            </h1>
+            <p className="text-blue-100 text-sm">
+              Dashboard manajemen showroom Anda
+            </p>
           </div>
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
+            <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5 animate-pulse"></span>
+            Online
+          </span>
         </div>
-        {/* Decorative Elements */}
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
-        <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
       </div>
 
-      {/* Stats Grid - Clickable Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* Stats Grid - Compact Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {statsConfig.map((stat, index) => (
           <Link
             key={index}
             href={stat.href}
-            className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-transparent"
+            className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100 p-3"
           >
-            {/* Gradient Border on Hover */}
-            <div className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`}></div>
-
-            {/* Card Content */}
-            <div className="relative bg-white m-[2px] rounded-2xl p-5 sm:p-6 group-hover:bg-gray-50/80 transition-colors">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-500 group-hover:text-gray-600">
-                    {stat.title}
-                  </p>
-                  {loadingStats ? (
-                    <div className="h-10 w-16 bg-gray-200 animate-pulse rounded mt-2"></div>
-                  ) : (
-                    <p className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 group-hover:text-gray-800">
-                      {stat.value}
-                    </p>
-                  )}
-                </div>
-
-                {/* Icon with Gradient Background */}
-                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <span className="text-2xl sm:text-3xl">{stat.emoji}</span>
-                </div>
-              </div>
-
-              {/* Sub Info */}
-              <div className="mt-4 flex items-center">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-gray-500 truncate">
+                  {stat.title}
+                </p>
                 {loadingStats ? (
-                  <span className="h-4 w-24 bg-gray-200 animate-pulse rounded"></span>
+                  <div className="h-7 w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
                 ) : (
-                  <span className="text-sm">
-                    <span className={`font-semibold ${stat.subColor}`}>
-                      {stat.isPercent
-                        ? `${stat.subValue >= 0 ? '+' : ''}${stat.subValue}%`
-                        : `+${stat.subValue}`
-                      }
-                    </span>
-                    <span className="text-gray-500 ml-1">{stat.subLabel}</span>
-                  </span>
+                  <p className="text-2xl font-bold text-gray-900 mt-0.5">
+                    {stat.value}
+                  </p>
                 )}
               </div>
-
-              {/* Hover Arrow */}
-              <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
+              <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform`}>
+                <span className="text-lg">{stat.emoji}</span>
               </div>
+            </div>
+            <div className="mt-2 flex items-center">
+              {loadingStats ? (
+                <span className="h-3 w-16 bg-gray-200 animate-pulse rounded"></span>
+              ) : (
+                <span className="text-xs">
+                  <span className={`font-semibold ${stat.subColor}`}>
+                    {stat.isPercent
+                      ? `${stat.subValue >= 0 ? '+' : ''}${stat.subValue}%`
+                      : `+${stat.subValue}`
+                    }
+                  </span>
+                  <span className="text-gray-400 ml-1">{stat.subLabel}</span>
+                </span>
+              )}
             </div>
           </Link>
         ))}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Content Grid - Compact */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Aktivitas Terkini - 2 columns */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <span className="text-xl">📊</span>
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                  <span>📊</span>
                   Aktivitas Terkini
                 </h3>
                 <Link
                   href="/dashboard/vehicles?sort=newest"
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 hover:gap-2 transition-all"
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-0.5"
                 >
                   Lihat Semua
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </Link>
               </div>
             </div>
-            <div className="p-6">
+            <div className="p-3">
               {loadingActivities ? (
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="flex items-start space-x-4 animate-pulse">
-                      <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center space-x-3 animate-pulse">
+                      <div className="w-8 h-8 bg-gray-200 rounded-lg"></div>
+                      <div className="flex-1 space-y-1.5">
+                        <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                        <div className="h-2 bg-gray-200 rounded w-1/4"></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : activities.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {activities.map((activity, index) => (
                     <Link
                       key={index}
                       href={getActivityLink(activity)}
-                      className="flex items-start space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                      className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group"
                     >
-                      <div className={`w-10 h-10 ${getActivityColor(activity.icon)} rounded-xl flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform`}>
+                      <div className={`w-8 h-8 ${getActivityColor(activity.icon)} rounded-lg flex items-center justify-center text-white text-sm`}>
                         {activity.type === 'vehicle_added' && '🚗'}
                         {activity.type === 'lead_created' && '📞'}
                         {activity.type === 'staff_joined' && '👥'}
@@ -353,28 +328,23 @@ export default function ShowroomDashboardPage() {
                         {!['vehicle_added', 'lead_created', 'staff_joined', 'sale_completed'].includes(activity.type) && '📌'}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                        <p className="text-xs font-medium text-gray-900 truncate group-hover:text-blue-600">
                           {activity.message}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-[10px] text-gray-400">
                           {formatRelativeTime(activity.timestamp)}
                         </p>
                       </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
-                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
+                      <svg className="w-3 h-3 text-gray-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl">📭</span>
-                  </div>
-                  <p className="text-gray-500 text-sm">Belum ada aktivitas terkini</p>
-                  <p className="text-gray-400 text-xs mt-1">Aktivitas akan muncul di sini</p>
+                <div className="text-center py-6">
+                  <span className="text-2xl">📭</span>
+                  <p className="text-gray-500 text-xs mt-2">Belum ada aktivitas</p>
                 </div>
               )}
             </div>
@@ -387,65 +357,65 @@ export default function ShowroomDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span className="text-xl">⚡</span>
+      {/* Quick Actions - Compact */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+            <span>⚡</span>
             Aksi Cepat
           </h3>
         </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
             <Link
               href="/dashboard/vehicles/upload"
-              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all duration-300 hover:shadow-md"
+              className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all"
             >
-              <div className="w-12 h-12 bg-slate-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
-                <span className="text-2xl">➕</span>
+              <div className="w-9 h-9 bg-slate-100 group-hover:bg-white/20 rounded-lg flex items-center justify-center">
+                <span className="text-base">➕</span>
               </div>
-              <div>
-                <p className="font-semibold text-gray-800 group-hover:text-white transition-colors">Tambah Kendaraan</p>
-                <p className="text-gray-500 group-hover:text-gray-300 text-sm transition-colors">Upload unit baru</p>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-gray-800 group-hover:text-white truncate">Tambah Kendaraan</p>
+                <p className="text-[10px] text-gray-400 group-hover:text-gray-300">Upload unit baru</p>
               </div>
             </Link>
 
             <Link
               href="/dashboard/leads"
-              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all duration-300 hover:shadow-md"
+              className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all"
             >
-              <div className="w-12 h-12 bg-slate-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
-                <span className="text-2xl">📞</span>
+              <div className="w-9 h-9 bg-slate-100 group-hover:bg-white/20 rounded-lg flex items-center justify-center">
+                <span className="text-base">📞</span>
               </div>
-              <div>
-                <p className="font-semibold text-gray-800 group-hover:text-white transition-colors">Lihat Leads</p>
-                <p className="text-gray-500 group-hover:text-gray-300 text-sm transition-colors">Kelola customer</p>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-gray-800 group-hover:text-white truncate">Lihat Leads</p>
+                <p className="text-[10px] text-gray-400 group-hover:text-gray-300">Kelola customer</p>
               </div>
             </Link>
 
             <Link
               href="/dashboard/users"
-              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all duration-300 hover:shadow-md"
+              className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all"
             >
-              <div className="w-12 h-12 bg-slate-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
-                <span className="text-2xl">👥</span>
+              <div className="w-9 h-9 bg-slate-100 group-hover:bg-white/20 rounded-lg flex items-center justify-center">
+                <span className="text-base">👥</span>
               </div>
-              <div>
-                <p className="font-semibold text-gray-800 group-hover:text-white transition-colors">Kelola Tim</p>
-                <p className="text-gray-500 group-hover:text-gray-300 text-sm transition-colors">Manage staff</p>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-gray-800 group-hover:text-white truncate">Kelola Tim</p>
+                <p className="text-[10px] text-gray-400 group-hover:text-gray-300">Manage staff</p>
               </div>
             </Link>
 
             <Link
               href="/dashboard/whatsapp-ai"
-              className="group relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all duration-300 hover:shadow-md"
+              className="group flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 hover:bg-slate-700 hover:border-slate-700 transition-all"
             >
-              <div className="w-12 h-12 bg-slate-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
-                <span className="text-2xl">💬</span>
+              <div className="w-9 h-9 bg-slate-100 group-hover:bg-white/20 rounded-lg flex items-center justify-center">
+                <span className="text-base">💬</span>
               </div>
-              <div>
-                <p className="font-semibold text-gray-800 group-hover:text-white transition-colors">WhatsApp AI</p>
-                <p className="text-gray-500 group-hover:text-gray-300 text-sm transition-colors">Setup chatbot</p>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-gray-800 group-hover:text-white truncate">WhatsApp AI</p>
+                <p className="text-[10px] text-gray-400 group-hover:text-gray-300">Setup chatbot</p>
               </div>
             </Link>
           </div>
