@@ -129,13 +129,25 @@ async function handleIncomingMessage(
 
   // Normalize from field for LID format support (declared outside try for catch block access)
   // LID format: "10020343271578:17@lid" -> preserve as "10020343271578@lid"
+  // Raw LID (no suffix): "10020343271578" -> add @lid suffix!
   // Phone JID: "6281235108908:17@s.whatsapp.net" -> extract "6281235108908"
+
+  // Helper to check if a number looks like an LID (not a phone number)
+  const isLikelyLID = (num: string): boolean => {
+    const cleanNum = num.split(":")[0].split("@")[0];
+    return (
+      cleanNum.length >= 14 &&
+      (cleanNum.startsWith("100") || cleanNum.startsWith("101") || cleanNum.startsWith("102")) &&
+      !cleanNum.startsWith("62")
+    );
+  };
+
   let from = rawFrom || "";
   if (rawFrom) {
     if (rawFrom.includes("@lid")) {
       const lidPart = rawFrom.split(":")[0];
       from = `${lidPart}@lid`;
-      console.log(`[Aimeow Webhook] 🔗 LID format: ${rawFrom} -> ${from}`);
+      console.log(`[Aimeow Webhook] 🔗 LID with suffix: ${rawFrom} -> ${from}`);
     } else if (rawFrom.includes("@s.whatsapp.net")) {
       from = rawFrom.split("@")[0].split(":")[0];
       console.log(`[Aimeow Webhook] 📞 Phone JID: ${rawFrom} -> ${from}`);
@@ -143,6 +155,16 @@ async function handleIncomingMessage(
       const [userPart, domain] = rawFrom.split("@");
       from = `${userPart.split(":")[0]}@${domain}`;
       console.log(`[Aimeow Webhook] ❓ Unknown JID: ${rawFrom} -> ${from}`);
+    } else {
+      // No @ symbol - check if it looks like an LID and add @lid suffix
+      const cleanNum = rawFrom.split(":")[0];
+      if (isLikelyLID(cleanNum)) {
+        from = `${cleanNum}@lid`;
+        console.log(`[Aimeow Webhook] 🔗 LID detected (adding @lid): ${rawFrom} -> ${from}`);
+      } else {
+        from = cleanNum;
+        console.log(`[Aimeow Webhook] 📱 Phone number: ${rawFrom} -> ${from}`);
+      }
     }
   }
 

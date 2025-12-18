@@ -90,35 +90,58 @@ export async function POST(request: NextRequest) {
       // Aimeow sends different formats:
       // 1. Phone JID: "6281235108908:17@s.whatsapp.net" -> extract "6281235108908"
       // 2. LID JID: "10020343271578:17@lid" -> preserve as "10020343271578@lid"
+      // 3. Raw LID (no suffix): "10020343271578" -> add @lid suffix!
       //
       // LIDs (Linked IDs) are internal WhatsApp IDs for business accounts/linked devices
-      // They MUST be preserved with @lid suffix for replies to work!
+      // They MUST have @lid suffix for replies to work!
       let normalizedFrom = message.from;
 
-      // Log all possible sources for debugging
+      // Log for debugging
       console.log("[Aimeow Webhook] 📱 FROM FIELD:", message.from);
+
+      // Helper to check if a number looks like an LID (not a phone number)
+      // LIDs typically start with "100", "101", etc. and are longer than phone numbers
+      // Indonesian phones: 62xxx (12-13 digits starting with 62)
+      // LIDs: typically 14+ digits starting with 100/101
+      const isLikelyLID = (num: string): boolean => {
+        const cleanNum = num.split(":")[0].split("@")[0];
+        return (
+          cleanNum.length >= 14 &&
+          (cleanNum.startsWith("100") || cleanNum.startsWith("101") || cleanNum.startsWith("102")) &&
+          !cleanNum.startsWith("62")
+        );
+      };
 
       // Check if this is an LID format (contains @lid)
       if (message.from.includes("@lid")) {
-        // LID format: preserve the @lid suffix, just remove device part
+        // LID format with suffix: preserve it, just remove device part
         // "10020343271578:17@lid" -> "10020343271578@lid"
         const lidPart = message.from.split(":")[0];
         normalizedFrom = `${lidPart}@lid`;
-        console.log(`[Aimeow Webhook] 🔗 LID format detected: ${message.from} -> ${normalizedFrom}`);
+        console.log(`[Aimeow Webhook] 🔗 LID with suffix: ${message.from} -> ${normalizedFrom}`);
       } else if (message.from.includes("@s.whatsapp.net")) {
         // Phone JID format: extract just the phone number
         // "6281235108908:17@s.whatsapp.net" -> "6281235108908"
         normalizedFrom = message.from.split("@")[0].split(":")[0];
-        console.log(`[Aimeow Webhook] 📞 Phone JID format: ${message.from} -> ${normalizedFrom}`);
+        console.log(`[Aimeow Webhook] 📞 Phone JID: ${message.from} -> ${normalizedFrom}`);
       } else if (message.from.includes("@")) {
         // Unknown JID format - try to preserve domain
         const [userPart, domain] = message.from.split("@");
         const cleanUser = userPart.split(":")[0];
         normalizedFrom = `${cleanUser}@${domain}`;
-        console.log(`[Aimeow Webhook] ❓ Unknown JID format: ${message.from} -> ${normalizedFrom}`);
+        console.log(`[Aimeow Webhook] ❓ Unknown JID: ${message.from} -> ${normalizedFrom}`);
       } else {
-        // No @ symbol - might be just phone number
-        console.log(`[Aimeow Webhook] 📱 Raw phone format: ${normalizedFrom}`);
+        // No @ symbol - check if it looks like an LID and add @lid suffix
+        const cleanNum = message.from.split(":")[0];
+        if (isLikelyLID(cleanNum)) {
+          // This looks like an LID without suffix - ADD @lid!
+          normalizedFrom = `${cleanNum}@lid`;
+          console.log(`[Aimeow Webhook] 🔗 LID detected (adding @lid): ${message.from} -> ${normalizedFrom}`);
+        } else {
+          // Regular phone number
+          normalizedFrom = cleanNum;
+          console.log(`[Aimeow Webhook] 📱 Phone number: ${message.from} -> ${normalizedFrom}`);
+        }
       }
 
       // Extract message text and media based on message type
