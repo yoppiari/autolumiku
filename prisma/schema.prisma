@@ -62,6 +62,7 @@ model Tenant {
   auditLogs              AuditLog[]
   securityEvents         SecurityEvent[]
   vehicles               Vehicle[]
+  showrooms              Showroom[] // Multi-branch support
   competitorVehicles     CompetitorVehicle[]
   competitorPriceHistory CompetitorPriceHistory[]
   apiKeys                ApiKey[]
@@ -116,12 +117,51 @@ model User {
   auditLogs       AuditLog[]
   securityEvents  SecurityEvent[]
   teamMemberships TeamMember[]
+  showroom        Showroom?       @relation("ShowroomStaff", fields: [showroomId], references: [id])
+  uploadedVehicles Vehicle[]      @relation("VehicleCreator")
+
+  // Showroom assignment
+  showroomId String?
 
   @@index([email])
   @@index([tenantId])
   @@index([emailVerificationToken])
   @@index([passwordResetToken])
+  @@index([showroomId])
   @@map("users")
+}
+
+// Showroom / Branch for multi-location support
+model Showroom {
+  id        String  @id @default(uuid())
+  tenantId  String
+  code      String  // Internal code: "PM-001", "PM-BKS"
+  name      String  // Display name: "Prima Mobil Pusat", "Prima Mobil Cabang Bekasi"
+
+  // Location
+  address   String?
+  city      String?
+  province  String?
+  phone     String?
+  whatsappNumber String?
+
+  // Status
+  isActive  Boolean @default(true)
+  isMain    Boolean @default(false) // Main/headquarters showroom
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  staff     User[]    @relation("ShowroomStaff")
+  vehicles  Vehicle[] @relation("VehicleShowroom")
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("showrooms")
 }
 
 model Session {
@@ -662,14 +702,19 @@ model Vehicle {
   isFeatured   Boolean  @default(false)
   displayOrder Int      @default(0)
 
+  // Showroom / Branch assignment
+  showroomId String? // Which showroom/branch this vehicle belongs to
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  createdBy String? // Optional: vehicle can be created via AI without user context
+  createdBy String? // User ID who uploaded/created this vehicle
   updatedBy String?
 
   // Relations
   tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  showroom        Showroom?        @relation("VehicleShowroom", fields: [showroomId], references: [id])
+  creator         User?            @relation("VehicleCreator", fields: [createdBy], references: [id])
   photos          VehiclePhoto[]
   history         VehicleHistory[]
   views           VehicleView[]
@@ -681,6 +726,8 @@ model Vehicle {
   @@index([price])
   @@index([publishedAt])
   @@index([isFeatured])
+  @@index([showroomId])
+  @@index([createdBy])
   @@map("vehicles")
 }
 
