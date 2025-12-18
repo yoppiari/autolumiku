@@ -86,14 +86,39 @@ export async function POST(request: NextRequest) {
       ];
       console.log("[Aimeow Webhook] 🔍 ALL POSSIBLE PHONE FIELDS:", possiblePhoneFields);
 
-      // IMPORTANT: Normalize phone number from JID format
-      // Aimeow sends: "6281235108908:17@s.whatsapp.net" or "212270269395003@s.whatsapp.net"
-      // We need: "6281235108908"
+      // IMPORTANT: Normalize phone/JID for reply
+      // Aimeow sends different formats:
+      // 1. Phone JID: "6281235108908:17@s.whatsapp.net" -> extract "6281235108908"
+      // 2. LID JID: "10020343271578:17@lid" -> preserve as "10020343271578@lid"
+      //
+      // LIDs (Linked IDs) are internal WhatsApp IDs for business accounts/linked devices
+      // They MUST be preserved with @lid suffix for replies to work!
       let normalizedFrom = message.from;
-      if (normalizedFrom.includes("@")) {
-        // Extract phone number from JID format
-        normalizedFrom = normalizedFrom.split("@")[0].split(":")[0];
-        console.log(`[Aimeow Webhook] Normalized phone: ${message.from} -> ${normalizedFrom}`);
+
+      // Log all possible sources for debugging
+      console.log("[Aimeow Webhook] 📱 FROM FIELD:", message.from);
+
+      // Check if this is an LID format (contains @lid)
+      if (message.from.includes("@lid")) {
+        // LID format: preserve the @lid suffix, just remove device part
+        // "10020343271578:17@lid" -> "10020343271578@lid"
+        const lidPart = message.from.split(":")[0];
+        normalizedFrom = `${lidPart}@lid`;
+        console.log(`[Aimeow Webhook] 🔗 LID format detected: ${message.from} -> ${normalizedFrom}`);
+      } else if (message.from.includes("@s.whatsapp.net")) {
+        // Phone JID format: extract just the phone number
+        // "6281235108908:17@s.whatsapp.net" -> "6281235108908"
+        normalizedFrom = message.from.split("@")[0].split(":")[0];
+        console.log(`[Aimeow Webhook] 📞 Phone JID format: ${message.from} -> ${normalizedFrom}`);
+      } else if (message.from.includes("@")) {
+        // Unknown JID format - try to preserve domain
+        const [userPart, domain] = message.from.split("@");
+        const cleanUser = userPart.split(":")[0];
+        normalizedFrom = `${cleanUser}@${domain}`;
+        console.log(`[Aimeow Webhook] ❓ Unknown JID format: ${message.from} -> ${normalizedFrom}`);
+      } else {
+        // No @ symbol - might be just phone number
+        console.log(`[Aimeow Webhook] 📱 Raw phone format: ${normalizedFrom}`);
       }
 
       // Extract message text and media based on message type

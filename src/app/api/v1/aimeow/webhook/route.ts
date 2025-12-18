@@ -121,11 +121,30 @@ async function handleIncomingMessage(
   payload: AimeowWebhookPayload,
   account: any
 ) {
-  const from = payload.data.from;
+  const rawFrom = payload.data.from;
   const messageText = payload.data.message || payload.data.text || "";
   const mediaUrl = payload.data.mediaUrl;
   const mediaType = payload.data.mediaType;
   const messageId = payload.data.messageId || `msg_${Date.now()}`;
+
+  // Normalize from field for LID format support (declared outside try for catch block access)
+  // LID format: "10020343271578:17@lid" -> preserve as "10020343271578@lid"
+  // Phone JID: "6281235108908:17@s.whatsapp.net" -> extract "6281235108908"
+  let from = rawFrom || "";
+  if (rawFrom) {
+    if (rawFrom.includes("@lid")) {
+      const lidPart = rawFrom.split(":")[0];
+      from = `${lidPart}@lid`;
+      console.log(`[Aimeow Webhook] 🔗 LID format: ${rawFrom} -> ${from}`);
+    } else if (rawFrom.includes("@s.whatsapp.net")) {
+      from = rawFrom.split("@")[0].split(":")[0];
+      console.log(`[Aimeow Webhook] 📞 Phone JID: ${rawFrom} -> ${from}`);
+    } else if (rawFrom.includes("@")) {
+      const [userPart, domain] = rawFrom.split("@");
+      from = `${userPart.split(":")[0]}@${domain}`;
+      console.log(`[Aimeow Webhook] ❓ Unknown JID: ${rawFrom} -> ${from}`);
+    }
+  }
 
   try {
     // Validate sender - from is required
