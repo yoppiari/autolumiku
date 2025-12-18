@@ -108,15 +108,32 @@ async function handleIncomingMessage(
   payload: AimeowWebhookPayload,
   account: any
 ) {
-  try {
-    const messageText = payload.data.message || payload.data.text || "";
-    const from = payload.data.from;
-    const messageId = payload.data.messageId || `msg_${Date.now()}`;
+  const from = payload.data.from;
+  const messageText = payload.data.message || payload.data.text || "";
+  const mediaUrl = payload.data.mediaUrl;
+  const mediaType = payload.data.mediaType;
+  const messageId = payload.data.messageId || `msg_${Date.now()}`;
 
-    if (!from || !messageText) {
-      console.warn("[Aimeow Webhook] Missing required message data");
+  try {
+    // Validate sender - from is required
+    if (!from) {
+      console.warn("[Aimeow Webhook] Missing 'from' field in message");
       return;
     }
+
+    // Allow photo-only messages (for staff upload flow)
+    // messageText can be empty if mediaUrl exists
+    if (!messageText && !mediaUrl) {
+      console.warn("[Aimeow Webhook] Empty message (no text, no media)");
+      return;
+    }
+
+    console.log("[Aimeow Webhook] Processing message:", {
+      from,
+      messageText: messageText.substring(0, 50),
+      hasMedia: !!mediaUrl,
+      mediaType,
+    });
 
     // Process message via MessageOrchestrator
     const result = await MessageOrchestratorService.processIncomingMessage({
@@ -124,18 +141,53 @@ async function handleIncomingMessage(
       tenantId: account.tenantId,
       from,
       message: messageText,
-      mediaUrl: payload.data.mediaUrl,
-      mediaType: payload.data.mediaType,
+      mediaUrl,
+      mediaType,
       messageId,
     });
 
     console.log("[Aimeow Webhook] Message processed:", {
+      success: result.success,
       conversationId: result.conversationId,
       intent: result.intent,
       escalated: result.escalated,
     });
-  } catch (error) {
-    console.error("[Aimeow Webhook] Error processing message:", error);
+
+    // If processing failed, send error response to user
+    if (!result.success) {
+      console.error("[Aimeow Webhook] ❌ Processing failed:", result.error);
+
+      // Send helpful error message to user
+      await AimeowClientService.sendMessage({
+        clientId: account.clientId,
+        to: from,
+        message:
+          "Maaf, terjadi gangguan sementara. 🙏\n\n" +
+          "Silakan coba lagi dalam beberapa saat atau ketik:\n" +
+          "• \"halo\" untuk memulai chat\n" +
+          "• \"mobil\" untuk lihat daftar mobil\n\n" +
+          "Terima kasih atas kesabarannya! 😊",
+      });
+    }
+  } catch (error: any) {
+    console.error("[Aimeow Webhook] ❌ Error processing message:", error.message);
+
+    // Try to send error response to user (only if we have sender info)
+    if (from) {
+      try {
+        await AimeowClientService.sendMessage({
+          clientId: account.clientId,
+          to: from,
+          message:
+            "Maaf, sistem sedang mengalami kendala. 🙏\n\n" +
+            "Staff kami akan segera membantu Anda.\n" +
+            "Silakan coba lagi nanti atau hubungi kami langsung.\n\n" +
+            "Terima kasih! 😊",
+        });
+      } catch (sendError) {
+        console.error("[Aimeow Webhook] Failed to send error message:", sendError);
+      }
+    }
   }
 }
 
