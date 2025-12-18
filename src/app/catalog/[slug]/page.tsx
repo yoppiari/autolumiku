@@ -244,6 +244,12 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                               Ready
                             </div>
                           )}
+                          {/* Vehicle ID Badge - Bottom Left */}
+                          {vehicle.displayId && (
+                            <div className="absolute bottom-3 left-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
+                              {vehicle.displayId}
+                            </div>
+                          )}
                           {/* SOLD Overlay */}
                           {isSold && (
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

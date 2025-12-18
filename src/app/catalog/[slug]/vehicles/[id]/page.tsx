@@ -111,6 +111,8 @@ export default async function VehicleDetailPage({ params }: PageProps) {
               <VehicleGallery
                 photos={vehicle.photos}
                 vehicleTitle={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                displayId={vehicle.displayId}
+                status={vehicle.status}
               />
 
               {/* Description - Desktop */}

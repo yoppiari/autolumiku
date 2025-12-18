@@ -83,7 +83,21 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
               </svg>
             </div>
           )}
-          {/* Photo count badge */}
+
+          {/* Status badge - Top Left */}
+          <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1 shadow">
+            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+            Ready
+          </div>
+
+          {/* Vehicle ID badge - Bottom Left */}
+          {vehicle.displayId && (
+            <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow">
+              {vehicle.displayId}
+            </div>
+          )}
+
+          {/* Photo count badge - Bottom Right */}
           {photoCount > 1 && (
             <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

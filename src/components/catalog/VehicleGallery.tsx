@@ -13,9 +13,11 @@ interface VehiclePhoto {
 interface VehicleGalleryProps {
     photos: VehiclePhoto[];
     vehicleTitle: string;
+    displayId?: string | null;
+    status?: 'AVAILABLE' | 'SOLD' | 'RESERVED' | string;
 }
 
-export default function VehicleGallery({ photos, vehicleTitle }: VehicleGalleryProps) {
+export default function VehicleGallery({ photos, vehicleTitle, displayId, status }: VehicleGalleryProps) {
     const [selectedIndex, setSelectedIndex] = useState(0);
 
     if (!photos || photos.length === 0) {
@@ -27,6 +29,8 @@ export default function VehicleGallery({ photos, vehicleTitle }: VehicleGalleryP
     }
 
     const mainPhoto = photos[selectedIndex];
+    const isAvailable = status === 'AVAILABLE';
+    const isSold = status === 'SOLD';
 
     return (
         <div className="space-y-4">
@@ -35,8 +39,28 @@ export default function VehicleGallery({ photos, vehicleTitle }: VehicleGalleryP
                 <img
                     src={mainPhoto.originalUrl}
                     alt={`${vehicleTitle} - View ${selectedIndex + 1}`}
-                    className="w-full h-full object-cover"
+                    className={cn("w-full h-full object-cover", isSold && "grayscale")}
                 />
+
+                {/* Status Badge - Top Left */}
+                {status && (
+                    <div className={cn(
+                        "absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg",
+                        isAvailable && "bg-green-500 text-white",
+                        isSold && "bg-red-600 text-white",
+                        !isAvailable && !isSold && "bg-yellow-500 text-white"
+                    )}>
+                        {isAvailable && <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>}
+                        {isAvailable ? 'Ready' : isSold ? 'SOLD' : 'Reserved'}
+                    </div>
+                )}
+
+                {/* Vehicle ID Badge - Bottom Left */}
+                {displayId && (
+                    <div className="absolute bottom-3 left-3 bg-blue-600 text-white text-sm font-bold px-3 py-1.5 rounded shadow-lg">
+                        {displayId}
+                    </div>
+                )}
             </div>
 
             {/* Thumbnails */}
