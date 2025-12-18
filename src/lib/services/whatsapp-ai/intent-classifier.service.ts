@@ -82,15 +82,30 @@ const CUSTOMER_PATTERNS = {
     /\b(toyota|honda|suzuki|daihatsu|mitsubishi|nissan|mazda|bmw|mercy|audi)\b/i,
     /\b(avanza|xenia|brio|jazz|ertiga|terios|rush|innova|fortuner|pajero)\b/i,
     /\b(ready|tersedia|ada|punya|jual)\b.*\b(mobil|unit)\b/i,
+    /\b(budget|anggaran)\b.*\b(\d+)\b/i, // budget queries
+    /\b(terbaru|terlama|newest|oldest)\b/i, // newest/oldest queries
+    /\b(matic|manual|automatic|mt|at)\b/i, // transmission queries
+    /\b(bensin|diesel|solar|hybrid|electric)\b/i, // fuel type queries
   ],
   price_inquiry: [
     /\b(harga|price|berapa|biaya|cost)\b/i,
     /\b(kredit|cash|dp|cicilan|angsuran)\b/i,
     /\b(diskon|promo|potongan)\b/i,
+    /\b(range|kisaran|sekitar)\b.*\b(\d+)\s*(jt|juta|rb|ribu)/i, // price range
   ],
   test_drive: [
     /\b(test\s*drive|tes\s*drive|coba|uji\s*coba)\b/i,
     /\b(lihat|survey|datang)\b.*\b(showroom|lokasi)\b/i,
+  ],
+  photo_request: [
+    /\b(foto|gambar|picture|image|photo)\b/i,
+    /\b(lihat|liat|kirimin|kirim|send)\b.*\b(foto|gambar)\b/i,
+    /\b(ada\s+foto|punya\s+foto)\b/i,
+  ],
+  photo_confirmation: [
+    /^(iya|ya|yup|yap|ok|oke|okay|boleh|mau|sip|siap|bisa|gas|let'?s?\s*go|kirim|send)$/i,
+    /^(iya\s+boleh|ya\s+boleh|boleh\s+dong|mau\s+dong|oke\s+kirim|ya\s+kirim)$/i,
+    /^(tolong|please)\s*(kirim|send)/i,
   ],
 };
 
@@ -295,6 +310,31 @@ export class IntentClassifierService {
     let maxConfidence = 0;
     let detectedIntent: MessageIntent = "customer_general_question";
     let reason = "Default customer inquiry";
+
+    // Check photo confirmation FIRST (highest priority for short responses)
+    // This catches "iya", "mau", "boleh" etc. after being offered photos
+    if (CUSTOMER_PATTERNS.photo_confirmation.some((p) => p.test(message.trim()))) {
+      console.log('[Intent Classifier] 📸 Photo confirmation detected:', message);
+      return {
+        intent: "customer_vehicle_inquiry", // Route to AI to handle photo sending
+        confidence: 0.95,
+        isStaff: false,
+        isCustomer: true,
+        reason: "Photo confirmation detected - customer wants photos",
+      };
+    }
+
+    // Check photo request
+    if (CUSTOMER_PATTERNS.photo_request.some((p) => p.test(message))) {
+      console.log('[Intent Classifier] 📷 Photo request detected:', message);
+      return {
+        intent: "customer_vehicle_inquiry", // Route to AI to handle photo sending
+        confidence: 0.9,
+        isStaff: false,
+        isCustomer: true,
+        reason: "Photo request detected - customer asking for photos",
+      };
+    }
 
     // Check greeting
     if (CUSTOMER_PATTERNS.greeting.some((p) => p.test(message))) {

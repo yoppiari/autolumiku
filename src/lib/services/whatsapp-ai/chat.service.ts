@@ -584,12 +584,22 @@ A: "Brio KM 45rb, Agya KM 30rb kak 😊 Ada yang mau ditanyakan lagi?"
     }
 
     // Build image array with fallback URLs
+    // Convert relative URLs to full URLs for Aimeow
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+
     const images = vehicles
       .filter(v => v.photos.length > 0)
       .map(v => {
         const photo = v.photos[0];
         // Fallback: mediumUrl → largeUrl → originalUrl
-        const imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+        let imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+
+        // Convert relative URL to full URL
+        if (imageUrl && imageUrl.startsWith('/')) {
+          imageUrl = `${baseUrl}${imageUrl}`;
+          console.log(`[WhatsApp AI Chat] Converted relative URL to: ${imageUrl}`);
+        }
+
         console.log(`[WhatsApp AI Chat] Vehicle ${v.make} ${v.model} - imageUrl: ${imageUrl}`);
         return {
           imageUrl,

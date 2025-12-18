@@ -467,7 +467,7 @@ export class MessageOrchestratorService {
       console.log(`[Orchestrator sendResponse] Active: ${account.isActive}`);
 
       // Send text message via Aimeow
-      let result: any;
+      let result: any = { success: true, messageId: null };
       if (message) {
         console.log(`[Orchestrator sendResponse] Calling AimeowClientService.sendMessage...`);
         result = await AimeowClientService.sendMessage({
@@ -484,14 +484,19 @@ export class MessageOrchestratorService {
         }
 
         console.log(`[Orchestrator sendResponse] ✅ Text message sent SUCCESS!`);
+      } else {
+        console.log(`[Orchestrator sendResponse] No text message to send`);
       }
 
       // Send images if provided
+      let imagesSent = false;
       if (images && images.length > 0) {
-        console.log(`[Orchestrator sendResponse] Sending ${images.length} images...`);
+        console.log(`[Orchestrator sendResponse] 📸 Sending ${images.length} images...`);
+        console.log(`[Orchestrator sendResponse] Image URLs:`, images.map(i => i.imageUrl));
 
         if (images.length === 1) {
           // Send single image
+          console.log(`[Orchestrator sendResponse] Sending single image: ${images[0].imageUrl}`);
           const imageResult = await AimeowClientService.sendImage(
             account.clientId,
             to,
@@ -503,20 +508,40 @@ export class MessageOrchestratorService {
             console.error(`[Orchestrator sendResponse] ❌ Image send FAILED: ${imageResult.error}`);
           } else {
             console.log(`[Orchestrator sendResponse] ✅ Image sent SUCCESS!`);
+            imagesSent = true;
+            if (!result.messageId) result.messageId = imageResult.messageId;
           }
         } else {
-          // Send multiple images
-          const imagesResult = await AimeowClientService.sendImages(
-            account.clientId,
-            to,
-            images
-          );
+          // Send multiple images one by one for better reliability
+          console.log(`[Orchestrator sendResponse] Sending ${images.length} images one by one...`);
+          for (let i = 0; i < images.length; i++) {
+            const img = images[i];
+            console.log(`[Orchestrator sendResponse] Sending image ${i + 1}/${images.length}: ${img.imageUrl}`);
 
-          if (!imagesResult.success) {
-            console.error(`[Orchestrator sendResponse] ❌ Images send FAILED: ${imagesResult.error}`);
-          } else {
-            console.log(`[Orchestrator sendResponse] ✅ ${images.length} images sent SUCCESS!`);
+            const imageResult = await AimeowClientService.sendImage(
+              account.clientId,
+              to,
+              img.imageUrl,
+              img.caption
+            );
+
+            if (!imageResult.success) {
+              console.error(`[Orchestrator sendResponse] ❌ Image ${i + 1} send FAILED: ${imageResult.error}`);
+            } else {
+              console.log(`[Orchestrator sendResponse] ✅ Image ${i + 1} sent SUCCESS!`);
+              imagesSent = true;
+              if (!result.messageId) result.messageId = imageResult.messageId;
+            }
+
+            // Small delay between images to avoid rate limiting
+            if (i < images.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
           }
+        }
+
+        if (imagesSent) {
+          console.log(`[Orchestrator sendResponse] ✅ All images sent successfully!`);
         }
       }
 
@@ -527,6 +552,7 @@ export class MessageOrchestratorService {
 
       if (conversation) {
         console.log(`[Orchestrator sendResponse] Saving outbound message to database...`);
+        const contentToSave = message || (imagesSent ? `[${images?.length || 0} foto dikirim]` : '');
         const savedMsg = await prisma.whatsAppMessage.create({
           data: {
             conversationId,
@@ -534,10 +560,10 @@ export class MessageOrchestratorService {
             direction: "outbound",
             sender: account.phoneNumber || "AI",
             senderType: "ai",
-            content: message,
+            content: contentToSave,
             intent,
             aiResponse: true,
-            aimeowMessageId: result.messageId,
+            aimeowMessageId: result?.messageId || `msg_${Date.now()}`,
             aimeowStatus: "sent",
           },
         });
