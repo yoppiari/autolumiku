@@ -6,11 +6,22 @@ import { getUserPermissions } from '@/lib/auth/middleware';
 
 export async function POST(request: NextRequest) {
   console.log('[Login] Starting login request - HIT');
-  console.log('[Login] Request headers:', JSON.stringify(Object.fromEntries(request.headers)));
+
+  let body: any;
   try {
-    const body = await request.json();
-    const { email, password } = body;
-    console.log(`[Login] Attempting login for email: ${email}`);
+    body = await request.json();
+  } catch (parseError) {
+    console.error('[Login] Failed to parse request body:', parseError);
+    return NextResponse.json(
+      { success: false, error: 'Invalid request body' },
+      { status: 400 }
+    );
+  }
+
+  const { email, password } = body;
+  console.log(`[Login] Attempting login for email: ${email}`);
+
+  try {
 
     // Validate input
     if (!email || !password) {
@@ -135,9 +146,35 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[Login] Critical Error:', error);
     console.error('[Login] Error Stack:', error.stack);
+    console.error('[Login] Error Name:', error.name);
+    console.error('[Login] Error Code:', error.code);
+
+    // Provide more specific error messages
+    let errorMessage = 'Internal server error';
+    let statusCode = 500;
+
+    if (error.code === 'P2002') {
+      errorMessage = 'Database constraint error';
+    } else if (error.code === 'P2025') {
+      errorMessage = 'Record not found';
+    } else if (error.name === 'PrismaClientInitializationError') {
+      errorMessage = 'Database connection failed';
+      console.error('[Login] DATABASE_URL might be misconfigured');
+    } else if (error.name === 'PrismaClientKnownRequestError') {
+      errorMessage = 'Database query error';
+    } else if (error.message?.includes('bcrypt')) {
+      errorMessage = 'Password verification failed';
+    } else if (error.message?.includes('jwt') || error.message?.includes('token')) {
+      errorMessage = 'Token generation failed';
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
+      {
+        success: false,
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      },
+      { status: statusCode }
     );
   }
 }
