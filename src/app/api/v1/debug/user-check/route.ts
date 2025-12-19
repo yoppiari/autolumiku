@@ -194,5 +194,36 @@ export async function GET(request: NextRequest) {
     result.migrations = { error: err.message };
   }
 
+  // Test 9: Check vehicle IDs for duplicates
+  try {
+    const vehicles = await prisma.$queryRaw<any[]>`
+      SELECT id, "displayId", make, model, year, status, "tenantId"
+      FROM vehicles
+      ORDER BY "createdAt" DESC
+    `;
+
+    const uuids = vehicles.map(v => v.id);
+    const displayIds = vehicles.map(v => v.displayId).filter((d: any) => d);
+    const uniqueUuids = [...new Set(uuids)];
+    const uniqueDisplayIds = [...new Set(displayIds)];
+
+    result.vehicleCheck = {
+      total: vehicles.length,
+      vehicles: vehicles.map((v, i) => ({
+        no: i + 1,
+        displayId: v.displayId || 'NO-ID',
+        name: `${v.make} ${v.model} ${v.year}`,
+        status: v.status,
+      })),
+      uuidDuplicates: uuids.length !== uniqueUuids.length,
+      displayIdDuplicates: displayIds.length !== uniqueDisplayIds.length,
+      summary: uuids.length === uniqueUuids.length && displayIds.length === uniqueDisplayIds.length
+        ? 'OK: All IDs unique'
+        : 'WARNING: Duplicates found!',
+    };
+  } catch (err: any) {
+    result.vehicleCheck = { error: err.message };
+  }
+
   return NextResponse.json(result);
 }
