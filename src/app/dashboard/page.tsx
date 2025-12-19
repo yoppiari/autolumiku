@@ -218,10 +218,10 @@ export default function ShowroomDashboardPage() {
       {/* Welcome Header - Minimal */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900">
             Selamat Datang, {user?.firstName || 'User'}
           </h1>
-          <p className="text-xs text-gray-500">Dashboard manajemen showroom</p>
+          <p className="text-sm text-gray-500">Dashboard manajemen showroom</p>
         </div>
         <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse"></span>
@@ -271,9 +271,9 @@ export default function ShowroomDashboardPage() {
         {/* Left: Activity */}
         <div className="col-span-2">
           <div className="bg-white rounded-lg border border-gray-200 h-full">
-            <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-gray-700">Aktivitas Terkini</h3>
-              <Link href="/dashboard/vehicles?sort=newest" className="text-[10px] text-gray-500 hover:text-gray-700">
+            <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-800">Aktivitas Terkini</h3>
+              <Link href="/dashboard/vehicles?sort=newest" className="text-xs text-gray-500 hover:text-gray-700">
                 Lihat Semua →
               </Link>
             </div>
@@ -328,46 +328,46 @@ export default function ShowroomDashboardPage() {
 
       {/* Quick Actions - Full Width */}
       <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-4 py-2.5 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700">Aksi Cepat</h3>
+        <div className="px-4 py-3 border-b border-gray-100">
+          <h3 className="text-lg font-bold text-gray-800">Aksi Cepat</h3>
         </div>
         <div className="p-4">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-3">
             <Link
-              href="/dashboard/vehicles/upload"
-              className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-blue-50 transition-colors group border border-transparent hover:border-blue-200"
+              href="/dashboard/vehicles"
+              className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all group border border-slate-200 hover:border-slate-300 hover:shadow-md"
             >
-              <div className="w-16 h-16 bg-blue-100 group-hover:bg-blue-200 rounded-2xl flex items-center justify-center transition-colors shadow-sm">
-                <span className="text-4xl">🚗</span>
+              <div className="w-10 h-10 bg-slate-600 group-hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors shadow-sm">
+                <span className="text-xl">🚗</span>
               </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">Tambah Kendaraan</span>
+              <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">Manajemen Kendaraan</span>
             </Link>
             <Link
               href="/dashboard/leads"
-              className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-orange-50 transition-colors group border border-transparent hover:border-orange-200"
+              className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all group border border-slate-200 hover:border-slate-300 hover:shadow-md"
             >
-              <div className="w-16 h-16 bg-orange-100 group-hover:bg-orange-200 rounded-2xl flex items-center justify-center transition-colors shadow-sm">
-                <span className="text-4xl">📞</span>
+              <div className="w-10 h-10 bg-slate-600 group-hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors shadow-sm">
+                <span className="text-xl">📞</span>
               </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-orange-700">Manajemen Leads</span>
+              <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">Manajemen Leads</span>
             </Link>
             <Link
               href="/dashboard/users"
-              className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-purple-50 transition-colors group border border-transparent hover:border-purple-200"
+              className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all group border border-slate-200 hover:border-slate-300 hover:shadow-md"
             >
-              <div className="w-16 h-16 bg-purple-100 group-hover:bg-purple-200 rounded-2xl flex items-center justify-center transition-colors shadow-sm">
-                <span className="text-4xl">👥</span>
+              <div className="w-10 h-10 bg-slate-600 group-hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors shadow-sm">
+                <span className="text-xl">👥</span>
               </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-purple-700">Manajemen Tim</span>
+              <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">Manajemen Tim</span>
             </Link>
             <Link
               href="/dashboard/whatsapp-ai"
-              className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-green-50 transition-colors group border border-transparent hover:border-green-200"
+              className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all group border border-slate-200 hover:border-slate-300 hover:shadow-md"
             >
-              <div className="w-16 h-16 bg-green-100 group-hover:bg-green-200 rounded-2xl flex items-center justify-center transition-colors shadow-sm">
-                <span className="text-4xl">💬</span>
+              <div className="w-10 h-10 bg-slate-600 group-hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors shadow-sm">
+                <span className="text-xl">💬</span>
               </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">WhatsApp AI</span>
+              <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">AI WhatsApp Automation</span>
             </Link>
           </div>
         </div>
