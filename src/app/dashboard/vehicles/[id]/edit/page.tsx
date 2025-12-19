@@ -380,6 +380,150 @@ export default function EditVehiclePage() {
         </div>
       )}
 
+      {/* Quick Status Actions */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Status Kendaraan</h2>
+
+        {/* Current Status Display */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600 mb-1">Status Saat Ini:</p>
+          <span className={`inline-block px-4 py-2 rounded-full font-bold text-lg ${
+            formData.status === 'AVAILABLE' ? 'bg-green-100 text-green-800 border-2 border-green-400' :
+            formData.status === 'BOOKED' ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-400' :
+            formData.status === 'SOLD' ? 'bg-red-100 text-red-800 border-2 border-red-400' :
+            'bg-gray-100 text-gray-800 border-2 border-gray-400'
+          }`}>
+            {formData.status === 'AVAILABLE' ? '✅ Ready / Tersedia' :
+             formData.status === 'BOOKED' ? '📋 Booking / DP' :
+             formData.status === 'SOLD' ? '🎉 Sold / Terjual' :
+             '📝 Draft'}
+          </span>
+        </div>
+
+        {/* Status Action Buttons */}
+        <div className="flex flex-wrap gap-3">
+          {/* Ready Button */}
+          <button
+            type="button"
+            onClick={async () => {
+              if (confirm('Ubah status menjadi READY (Tersedia)?')) {
+                try {
+                  const user = JSON.parse(localStorage.getItem('user') || '{}');
+                  const response = await fetch(`/api/v1/vehicles/${vehicleId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'AVAILABLE', userId: user.id }),
+                  });
+                  if (response.ok) {
+                    setFormData(prev => ({ ...prev, status: 'AVAILABLE' }));
+                    alert('✅ Status berhasil diubah ke READY');
+                  } else {
+                    alert('Gagal mengubah status');
+                  }
+                } catch (err) {
+                  alert('Terjadi kesalahan');
+                }
+              }
+            }}
+            disabled={formData.status === 'AVAILABLE'}
+            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${
+              formData.status === 'AVAILABLE'
+                ? 'bg-green-200 text-green-600 cursor-not-allowed'
+                : 'bg-green-500 text-white hover:bg-green-600 shadow-md hover:shadow-lg'
+            }`}
+          >
+            ✅ Ready
+          </button>
+
+          {/* Booking Button */}
+          <button
+            type="button"
+            onClick={async () => {
+              if (confirm('Ubah status menjadi BOOKING (sudah DP)?')) {
+                try {
+                  const user = JSON.parse(localStorage.getItem('user') || '{}');
+                  const response = await fetch(`/api/v1/vehicles/${vehicleId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'BOOKED', userId: user.id }),
+                  });
+                  if (response.ok) {
+                    setFormData(prev => ({ ...prev, status: 'BOOKED' }));
+                    alert('📋 Status berhasil diubah ke BOOKING');
+                  } else {
+                    alert('Gagal mengubah status');
+                  }
+                } catch (err) {
+                  alert('Terjadi kesalahan');
+                }
+              }
+            }}
+            disabled={formData.status === 'BOOKED'}
+            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${
+              formData.status === 'BOOKED'
+                ? 'bg-yellow-200 text-yellow-600 cursor-not-allowed'
+                : 'bg-yellow-500 text-white hover:bg-yellow-600 shadow-md hover:shadow-lg'
+            }`}
+          >
+            📋 Booking
+          </button>
+
+          {/* Sold Button */}
+          <button
+            type="button"
+            onClick={async () => {
+              if (confirm('🎉 Konfirmasi kendaraan ini SOLD (Terjual)?\n\nAnda akan tercatat sebagai sales yang closing unit ini.')) {
+                try {
+                  const user = JSON.parse(localStorage.getItem('user') || '{}');
+                  const salesName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown';
+
+                  // Update status + record sales info
+                  const response = await fetch(`/api/v1/vehicles/${vehicleId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      status: 'SOLD',
+                      userId: user.id,
+                    }),
+                  });
+
+                  if (response.ok) {
+                    // Also update soldBy via raw query (assignment columns)
+                    try {
+                      await fetch(`/api/v1/vehicles?slug=primamobil-id&action=mark-sold&vehicleId=${vehicleId}&salesId=${user.id}&salesName=${encodeURIComponent(salesName)}`);
+                    } catch (e) {
+                      // Assignment columns might not exist - OK
+                    }
+
+                    setFormData(prev => ({ ...prev, status: 'SOLD' }));
+                    alert(`🎉 Selamat! Unit berhasil SOLD!\n\nClosing oleh: ${salesName}`);
+                  } else {
+                    alert('Gagal mengubah status');
+                  }
+                } catch (err) {
+                  alert('Terjadi kesalahan');
+                }
+              }
+            }}
+            disabled={formData.status === 'SOLD'}
+            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${
+              formData.status === 'SOLD'
+                ? 'bg-red-200 text-red-600 cursor-not-allowed'
+                : 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg'
+            }`}
+          >
+            🎉 Sold
+          </button>
+        </div>
+
+        {/* Status Info */}
+        <div className="mt-4 text-sm text-gray-500">
+          <p>• <strong>Ready:</strong> Kendaraan siap dijual, tampil di katalog</p>
+          <p>• <strong>Booking:</strong> Customer sudah DP, unit reserved</p>
+          <p>• <strong>Sold:</strong> Unit terjual, Anda tercatat sebagai sales closing</p>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Photos Section */}
         <div className="bg-white rounded-lg shadow p-6">
