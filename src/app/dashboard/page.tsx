@@ -277,17 +277,17 @@ export default function ShowroomDashboardPage() {
       </div>
 
       {/* Main Content - Activity & Subscription Row - FLEX GROW */}
-      <div className="grid grid-cols-3 gap-2 flex-1 min-h-0">
+      <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 overflow-hidden">
         {/* Left: Activity */}
-        <div className="col-span-2">
-          <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col">
+        <div className="col-span-2 min-h-0 overflow-hidden">
+          <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col overflow-hidden">
             <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <h3 className="text-base font-semibold text-gray-800">Aktivitas Terkini</h3>
               <Link href="/dashboard/vehicles?sort=newest" className="text-xs text-gray-500 hover:text-gray-700">
                 Lihat Semua →
               </Link>
             </div>
-            <div className="p-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <div className="p-2 flex-1 min-h-0 overflow-y-auto" style={{ maxHeight: 'calc(100% - 40px)' }}>
               {loadingActivities ? (
                 <div className="space-y-2">
                   {[1, 2, 3, 4, 5].map((i) => (
