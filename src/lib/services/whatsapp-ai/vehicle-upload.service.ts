@@ -179,6 +179,23 @@ export class WhatsAppVehicleUploadService {
 
       console.log('[WhatsApp Vehicle Upload] ✅ Vehicle created:', vehicle.id);
 
+      // 5.5. Auto-assign vehicle to the uploader (sales person)
+      // This tracks who is responsible for selling this vehicle
+      try {
+        const staffName = `${staff.firstName} ${staff.lastName}`.trim();
+        await prisma.$executeRaw`
+          UPDATE vehicles
+          SET "assignedSalesId" = ${staff.id},
+              "assignedSalesName" = ${staffName},
+              "assignedAt" = NOW()
+          WHERE id = ${vehicle.id}
+        `;
+        console.log(`[WhatsApp Vehicle Upload] ✅ Auto-assigned to: ${staffName}`);
+      } catch (assignErr) {
+        // Assignment columns might not exist yet - this is OK
+        console.log('[WhatsApp Vehicle Upload] ⚠️ Auto-assign skipped (columns may not exist)');
+      }
+
       // 6. Download, process, and save photos from WhatsApp media URLs
       console.log('[WhatsApp Vehicle Upload] Processing vehicle photos...');
       let processedPhotoCount = 0;

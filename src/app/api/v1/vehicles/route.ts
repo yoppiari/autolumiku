@@ -64,11 +64,40 @@ export async function GET(request: NextRequest) {
       prisma.vehicle.count({ where }),
     ]);
 
+    // Get sales assignment info (might not exist in Prisma schema)
+    let salesAssignments: Record<string, any> = {};
+    try {
+      const assignments = await prisma.$queryRaw<any[]>`
+        SELECT id, "assignedSalesId", "assignedSalesName", "assignedAt", "soldBy", "soldByName", "soldAt"
+        FROM vehicles
+        WHERE "tenantId" = ${tenantId}
+      `;
+      assignments.forEach(a => {
+        salesAssignments[a.id] = {
+          assignedSalesId: a.assignedSalesId,
+          assignedSalesName: a.assignedSalesName,
+          assignedAt: a.assignedAt,
+          soldBy: a.soldBy,
+          soldByName: a.soldByName,
+          soldAt: a.soldAt,
+        };
+      });
+    } catch (e) {
+      // Assignment columns might not exist yet - this is OK
+    }
+
     // Convert BigInt to number for JSON serialization
     const vehiclesResponse = vehicles.map(vehicle => ({
       ...vehicle,
       price: Number(vehicle.price),
       aiSuggestedPrice: vehicle.aiSuggestedPrice ? Number(vehicle.aiSuggestedPrice) : null,
+      // Add sales assignment info
+      assignedSalesId: salesAssignments[vehicle.id]?.assignedSalesId || null,
+      assignedSalesName: salesAssignments[vehicle.id]?.assignedSalesName || null,
+      assignedAt: salesAssignments[vehicle.id]?.assignedAt || null,
+      soldBy: salesAssignments[vehicle.id]?.soldBy || null,
+      soldByName: salesAssignments[vehicle.id]?.soldByName || null,
+      soldAt: salesAssignments[vehicle.id]?.soldAt || null,
     }));
 
     return NextResponse.json({
