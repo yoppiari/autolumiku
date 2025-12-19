@@ -183,36 +183,36 @@ export default function VehiclesPage() {
   }
 
   return (
-    <div className="p-4 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-3xl font-bold text-gray-900">Manajemen Kendaraan</h1>
+    <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden -mt-2">
+      {/* Header - Gradient like Dashboard */}
+      <div className="flex justify-between items-center bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-5 py-3 mb-3 flex-shrink-0 shadow-lg">
+        <h1 className="text-xl font-bold text-white">Manajemen Kendaraan</h1>
         <Link
           href="/dashboard/vehicles/upload"
-          className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-sm"
+          className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 flex items-center gap-2 shadow-md transition-all"
         >
           <span className="text-lg">+</span>
           Upload Kendaraan Baru
         </Link>
       </div>
 
-      {/* Stats Badges - Elegant Pills */}
-      <div className="flex gap-3 mb-4 flex-shrink-0">
-        <div className="px-6 py-3 bg-white border-2 border-gray-300 rounded-full shadow-sm">
-          <span className="text-xl font-bold text-gray-800">{stats.total}</span>
-          <span className="ml-2 text-gray-600 font-medium">Total</span>
+      {/* Stats Badges - Compact Pills */}
+      <div className="flex gap-2 mb-3 flex-shrink-0">
+        <div className="px-4 py-2 bg-white border-2 border-gray-300 rounded-full shadow-sm">
+          <span className="text-lg font-bold text-gray-800">{stats.total}</span>
+          <span className="ml-1.5 text-sm text-gray-600 font-medium">Total</span>
         </div>
-        <div className="px-6 py-3 bg-green-50 border-2 border-green-400 rounded-full shadow-sm">
-          <span className="text-xl font-bold text-green-600">{stats.available}</span>
-          <span className="ml-2 text-green-700 font-medium">Tersedia</span>
+        <div className="px-4 py-2 bg-green-50 border-2 border-green-400 rounded-full shadow-sm">
+          <span className="text-lg font-bold text-green-600">{stats.available}</span>
+          <span className="ml-1.5 text-sm text-green-700 font-medium">Tersedia</span>
         </div>
-        <div className="px-6 py-3 bg-yellow-50 border-2 border-yellow-400 rounded-full shadow-sm">
-          <span className="text-xl font-bold text-yellow-600">{stats.booked}</span>
-          <span className="ml-2 text-yellow-700 font-medium">Booking</span>
+        <div className="px-4 py-2 bg-yellow-50 border-2 border-yellow-400 rounded-full shadow-sm">
+          <span className="text-lg font-bold text-yellow-600">{stats.booked}</span>
+          <span className="ml-1.5 text-sm text-yellow-700 font-medium">Booking</span>
         </div>
-        <div className="px-6 py-3 bg-red-50 border-2 border-red-400 rounded-full shadow-sm">
-          <span className="text-xl font-bold text-red-600">{stats.sold}</span>
-          <span className="ml-2 text-red-700 font-medium">Terjual</span>
+        <div className="px-4 py-2 bg-red-50 border-2 border-red-400 rounded-full shadow-sm">
+          <span className="text-lg font-bold text-red-600">{stats.sold}</span>
+          <span className="ml-1.5 text-sm text-red-700 font-medium">Terjual</span>
         </div>
       </div>
 
