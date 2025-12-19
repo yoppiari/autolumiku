@@ -83,7 +83,7 @@ export default function ShowroomDashboardPage() {
 
   const loadRecentActivities = async (tenantId: string) => {
     try {
-      const response = await fetch(`/api/v1/dashboard/activities?tenantId=${tenantId}&limit=5`);
+      const response = await fetch(`/api/v1/dashboard/activities?tenantId=${tenantId}&limit=20`);
       if (response.ok) {
         const data = await response.json();
         setActivities(data.data.activities || []);
@@ -287,19 +287,19 @@ export default function ShowroomDashboardPage() {
                 Lihat Semua →
               </Link>
             </div>
-            <div className="p-2 flex-1 overflow-auto">
+            <div className="p-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
               {loadingActivities ? (
-                <div className="space-y-1">
-                  {[1, 2, 3].map((i) => (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
                     <div key={i} className="flex items-center gap-2 animate-pulse">
-                      <div className="w-5 h-5 bg-gray-100 rounded"></div>
-                      <div className="flex-1 h-2.5 bg-gray-100 rounded"></div>
+                      <div className="w-8 h-8 bg-gray-100 rounded-lg"></div>
+                      <div className="flex-1 h-4 bg-gray-100 rounded"></div>
                     </div>
                   ))}
                 </div>
               ) : activities.length > 0 ? (
                 <div className="space-y-1">
-                  {activities.slice(0, 6).map((activity, index) => (
+                  {activities.map((activity, index) => (
                     <Link
                       key={index}
                       href={getActivityLink(activity)}
