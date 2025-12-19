@@ -117,14 +117,17 @@ model User {
   auditLogs       AuditLog[]
   securityEvents  SecurityEvent[]
   teamMemberships TeamMember[]
+  showroom        Showroom?       @relation("ShowroomStaff", fields: [showroomId], references: [id])
   uploadedVehicles Vehicle[]      @relation("VehicleCreator")
 
-  // Note: showroomId temporarily removed - migration not yet applied to production
+  // Showroom assignment
+  showroomId String?
 
   @@index([email])
   @@index([tenantId])
   @@index([emailVerificationToken])
   @@index([passwordResetToken])
+  @@index([showroomId])
   @@map("users")
 }
 
@@ -152,7 +155,7 @@ model Showroom {
 
   // Relations
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  // staff relation temporarily removed - waiting for migration
+  staff     User[]    @relation("ShowroomStaff")
   vehicles  Vehicle[] @relation("VehicleShowroom")
 
   @@unique([tenantId, code])
