@@ -8,6 +8,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { VehicleStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
+// Reserved route names that should not be treated as vehicle IDs
+const RESERVED_ROUTES = ['update-ids', 'ai-identify', 'search', 'bulk'];
+
+/**
+ * Check if ID is a valid UUID format
+ */
+function isValidUUID(id: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+}
+
 /**
  * GET /api/v1/vehicles/[id]
  * Get single vehicle by ID
@@ -18,6 +29,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
+    // Skip reserved routes - let Next.js handle them
+    if (RESERVED_ROUTES.includes(id)) {
+      return NextResponse.json(
+        { error: 'Invalid route', message: 'This endpoint requires a vehicle ID' },
+        { status: 400 }
+      );
+    }
+
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: 'Invalid vehicle ID format', message: 'ID must be a valid UUID' },
+        { status: 400 }
+      );
+    }
 
     const vehicle = await prisma.vehicle.findUnique({
       where: { id },
@@ -69,6 +96,14 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+
+    // Skip reserved routes
+    if (RESERVED_ROUTES.includes(id) || !isValidUUID(id)) {
+      return NextResponse.json(
+        { error: 'Invalid vehicle ID format' },
+        { status: 400 }
+      );
+    }
 
     let body;
     try {
@@ -206,6 +241,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // Skip reserved routes
+    if (RESERVED_ROUTES.includes(id) || !isValidUUID(id)) {
+      return NextResponse.json(
+        { error: 'Invalid vehicle ID format' },
+        { status: 400 }
+      );
+    }
 
     // Check if vehicle exists
     const existingVehicle = await prisma.vehicle.findUnique({
