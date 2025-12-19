@@ -186,7 +186,7 @@ export default function VehiclesPage() {
     <div className="p-4 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Manajemen Kendaraan</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Manajemen Kendaraan</h1>
         <Link
           href="/dashboard/vehicles/upload"
           className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-sm"
