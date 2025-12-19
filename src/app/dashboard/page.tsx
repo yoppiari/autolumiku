@@ -214,28 +214,33 @@ export default function ShowroomDashboardPage() {
   ];
 
   return (
-    <div className="space-y-3 max-h-[calc(100vh-100px)] overflow-hidden">
-      {/* Welcome Header - Minimal */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-3 max-h-[calc(100vh-100px)] overflow-hidden -mt-2">
+      {/* Welcome Header - Elegant Rich Modern */}
+      <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-5 py-4 shadow-lg">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Selamat Datang, {user?.firstName || 'User'}
+          <h1 className="text-2xl font-bold text-white">
+            Selamat Datang di Prima Mobil
           </h1>
-          <p className="text-sm text-gray-500">Dashboard manajemen showroom</p>
+          <p className="text-sm text-slate-300">Dashboard manajemen showroom</p>
         </div>
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse"></span>
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+          <span className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></span>
           Online
         </span>
       </div>
 
-      {/* Stats Grid - Minimal Cards */}
+      {/* Stats Grid - Cards with Colored Icons */}
       <div className="grid grid-cols-4 gap-2">
         {statsConfig.map((stat, index) => (
           <Link
             key={index}
             href={stat.href}
-            className="group bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all p-2.5"
+            className={`group bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all p-3 ${
+              index === 0 ? 'hover:border-blue-400 hover:bg-blue-50/50' :
+              index === 1 ? 'hover:border-red-400 hover:bg-red-50/50' :
+              index === 2 ? 'hover:border-violet-400 hover:bg-violet-50/50' :
+              'hover:border-amber-400 hover:bg-amber-50/50'
+            }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
@@ -258,8 +263,13 @@ export default function ShowroomDashboardPage() {
                   </p>
                 )}
               </div>
-              <div className="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
-                <span className="text-2xl">{stat.emoji}</span>
+              <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all shadow-sm ${
+                index === 0 ? 'bg-blue-100 group-hover:bg-blue-500 border-2 border-blue-200 group-hover:border-blue-500' :
+                index === 1 ? 'bg-red-100 group-hover:bg-red-500 border-2 border-red-200 group-hover:border-red-500' :
+                index === 2 ? 'bg-violet-100 group-hover:bg-violet-500 border-2 border-violet-200 group-hover:border-violet-500' :
+                'bg-amber-100 group-hover:bg-amber-500 border-2 border-amber-200 group-hover:border-amber-500'
+              }`}>
+                <span className="text-3xl group-hover:scale-110 transition-transform">{stat.emoji}</span>
               </div>
             </div>
           </Link>
@@ -335,39 +345,39 @@ export default function ShowroomDashboardPage() {
           <div className="grid grid-cols-4 gap-3">
             <Link
               href="/dashboard/vehicles"
-              className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all group border border-slate-200 hover:border-slate-300 hover:shadow-md"
+              className="flex items-center gap-3 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all group border-2 border-blue-200 hover:border-blue-400 hover:shadow-md"
             >
-              <div className="w-10 h-10 bg-slate-600 group-hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors shadow-sm">
-                <span className="text-xl">🚗</span>
+              <div className="w-11 h-11 bg-blue-100 group-hover:bg-blue-200 rounded-xl flex items-center justify-center transition-colors border border-blue-300">
+                <span className="text-2xl">🚗</span>
               </div>
-              <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">Manajemen Kendaraan</span>
+              <span className="text-sm font-semibold text-blue-800 group-hover:text-blue-900">Manajemen Kendaraan</span>
             </Link>
             <Link
               href="/dashboard/leads"
-              className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all group border border-slate-200 hover:border-slate-300 hover:shadow-md"
+              className="flex items-center gap-3 p-4 rounded-xl bg-red-50 hover:bg-red-100 transition-all group border-2 border-red-200 hover:border-red-400 hover:shadow-md"
             >
-              <div className="w-10 h-10 bg-slate-600 group-hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors shadow-sm">
-                <span className="text-xl">📞</span>
+              <div className="w-11 h-11 bg-red-100 group-hover:bg-red-200 rounded-xl flex items-center justify-center transition-colors border border-red-300">
+                <span className="text-2xl">📞</span>
               </div>
-              <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">Manajemen Leads</span>
+              <span className="text-sm font-semibold text-red-800 group-hover:text-red-900">Manajemen Leads</span>
             </Link>
             <Link
               href="/dashboard/users"
-              className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all group border border-slate-200 hover:border-slate-300 hover:shadow-md"
+              className="flex items-center gap-3 p-4 rounded-xl bg-violet-50 hover:bg-violet-100 transition-all group border-2 border-violet-200 hover:border-violet-400 hover:shadow-md"
             >
-              <div className="w-10 h-10 bg-slate-600 group-hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors shadow-sm">
-                <span className="text-xl">👥</span>
+              <div className="w-11 h-11 bg-violet-100 group-hover:bg-violet-200 rounded-xl flex items-center justify-center transition-colors border border-violet-300">
+                <span className="text-2xl">👥</span>
               </div>
-              <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">Manajemen Tim</span>
+              <span className="text-sm font-semibold text-violet-800 group-hover:text-violet-900">Manajemen Tim</span>
             </Link>
             <Link
               href="/dashboard/whatsapp-ai"
-              className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all group border border-slate-200 hover:border-slate-300 hover:shadow-md"
+              className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-all group border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-md"
             >
-              <div className="w-10 h-10 bg-slate-600 group-hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors shadow-sm">
-                <span className="text-xl">💬</span>
+              <div className="w-11 h-11 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center transition-colors border border-emerald-300">
+                <span className="text-2xl">💬</span>
               </div>
-              <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">AI WhatsApp Automation</span>
+              <span className="text-sm font-semibold text-emerald-800 group-hover:text-emerald-900">AI WhatsApp Automation</span>
             </Link>
           </div>
         </div>
