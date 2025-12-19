@@ -110,6 +110,46 @@ export async function GET(request: NextRequest) {
     results.fixes.push({ column: 'vehicles.showroomId', status: 'error', error: err.message });
   }
 
+  // Fix 4: Add sales assignment columns to vehicles table
+  const assignmentColumns = [
+    { name: 'assignedSalesId', type: 'TEXT' },
+    { name: 'assignedSalesName', type: 'TEXT' },
+    { name: 'assignedAt', type: 'TIMESTAMP(3)' },
+    { name: 'soldBy', type: 'TEXT' },
+    { name: 'soldByName', type: 'TEXT' },
+    { name: 'soldAt', type: 'TIMESTAMP(3)' },
+  ];
+
+  for (const col of assignmentColumns) {
+    try {
+      const checkCol = await prisma.$queryRaw<any[]>`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'vehicles' AND column_name = ${col.name}
+      `;
+
+      if (checkCol.length === 0) {
+        await prisma.$executeRawUnsafe(
+          `ALTER TABLE "vehicles" ADD COLUMN "${col.name}" ${col.type}`
+        );
+        results.fixes.push({ column: `vehicles.${col.name}`, status: 'added' });
+      } else {
+        results.fixes.push({ column: `vehicles.${col.name}`, status: 'already exists' });
+      }
+    } catch (err: any) {
+      results.fixes.push({ column: `vehicles.${col.name}`, status: 'error', error: err.message });
+    }
+  }
+
+  // Add index for assignedSalesId
+  try {
+    await prisma.$executeRaw`
+      CREATE INDEX IF NOT EXISTS "vehicles_assignedSalesId_idx" ON "vehicles"("assignedSalesId")
+    `;
+    results.fixes.push({ index: 'vehicles_assignedSalesId_idx', status: 'ok' });
+  } catch (err: any) {
+    results.fixes.push({ index: 'vehicles_assignedSalesId_idx', status: 'error', error: err.message });
+  }
+
   // Test 1: Verify user query works (same as login)
   try {
     const testUser = await prisma.user.findFirst({
