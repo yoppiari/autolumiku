@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // Check for duplicate UUIDs
     const uuids = vehicles.map(v => v.id);
-    const uniqueUuids = [...new Set(uuids)];
+    const uniqueUuids = Array.from(new Set(uuids));
     results.uuidCheck = {
       total: uuids.length,
       unique: uniqueUuids.length,
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     // Check for duplicate displayIds
     const displayIds = vehicles.map(v => v.displayId).filter(d => d);
-    const uniqueDisplayIds = [...new Set(displayIds)];
+    const uniqueDisplayIds = Array.from(new Set(displayIds));
     results.displayIdCheck = {
       total: displayIds.length,
       unique: uniqueDisplayIds.length,

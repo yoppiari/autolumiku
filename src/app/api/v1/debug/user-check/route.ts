@@ -204,8 +204,8 @@ export async function GET(request: NextRequest) {
 
     const uuids = vehicles.map(v => v.id);
     const displayIds = vehicles.map(v => v.displayId).filter((d: any) => d);
-    const uniqueUuids = [...new Set(uuids)];
-    const uniqueDisplayIds = [...new Set(displayIds)];
+    const uniqueUuids = Array.from(new Set(uuids));
+    const uniqueDisplayIds = Array.from(new Set(displayIds));
 
     result.vehicleCheck = {
       total: vehicles.length,
