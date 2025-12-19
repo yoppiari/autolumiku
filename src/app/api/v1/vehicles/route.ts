@@ -95,10 +95,72 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Generate next displayId for vehicle
+ * Get tenant code from tenant data
  */
-async function generateDisplayId(): Promise<string> {
-  // Get the highest existing displayId
+function getTenantCode(tenant: { slug: string; name: string }): string {
+  const mapping: Record<string, string> = {
+    'primamobil-id': 'PM',
+    'primamobil': 'PM',
+    'prima-mobil': 'PM',
+  };
+
+  if (mapping[tenant.slug]) {
+    return mapping[tenant.slug];
+  }
+
+  // Generate from slug: take first letter of each word
+  const words = tenant.slug.replace(/-/g, ' ').split(' ');
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return tenant.slug.substring(0, 2).toUpperCase();
+}
+
+/**
+ * Generate next displayId for vehicle
+ * New format: {TENANT}-{SHOWROOM}-{SEQUENCE}
+ * Example: PM-PST-001
+ */
+async function generateDisplayId(tenantId: string, showroomCode?: string): Promise<string> {
+  // Get tenant info
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { slug: true, name: true },
+  });
+
+  if (!tenant) {
+    // Fallback to old format
+    return generateLegacyDisplayId();
+  }
+
+  const tenantCode = getTenantCode(tenant);
+  const srCode = showroomCode || 'PST'; // Default to "Pusat" (main)
+
+  // Get the highest existing displayId for this tenant+showroom
+  const prefix = `${tenantCode}-${srCode}-`;
+
+  const vehicles = await prisma.$queryRaw<any[]>`
+    SELECT "displayId" FROM vehicles
+    WHERE "displayId" LIKE ${prefix + '%'}
+    ORDER BY "displayId" DESC
+    LIMIT 1
+  `;
+
+  let nextNumber = 1;
+  if (vehicles.length > 0 && vehicles[0].displayId) {
+    const match = vehicles[0].displayId.match(/-(\d+)$/);
+    if (match) {
+      nextNumber = parseInt(match[1], 10) + 1;
+    }
+  }
+
+  return `${prefix}${String(nextNumber).padStart(3, '0')}`;
+}
+
+/**
+ * Legacy displayId format for backwards compatibility
+ */
+async function generateLegacyDisplayId(): Promise<string> {
   const lastVehicle = await prisma.vehicle.findFirst({
     where: {
       displayId: {
@@ -153,8 +215,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate display ID
-    const displayId = await generateDisplayId();
+    // Generate display ID with showroom code
+    // Format: PM-PST-001 (Prima Mobil - Pusat - 001)
+    const showroomCode = vehicleData.showroomCode || 'PST';
+    const displayId = await generateDisplayId(tenantId, showroomCode);
 
     // Create vehicle
     const vehicle = await prisma.vehicle.create({
