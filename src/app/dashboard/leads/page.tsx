@@ -246,157 +246,144 @@ export default function LeadsDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 space-y-2 h-[calc(100vh-80px)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Manajemen Leads</h1>
-          <p className="text-gray-600 mt-1">Kelola leads dari WhatsApp dan website</p>
+          <h1 className="text-xl font-bold text-gray-900">Manajemen Leads</h1>
+          <p className="text-xs text-gray-600">Kelola leads dari WhatsApp dan website</p>
         </div>
 
-        <div className="flex space-x-4">
-          <Link
-            href="/dashboard/leads/whatsapp-settings"
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            ⚙️ WhatsApp Settings
-          </Link>
-        </div>
+        <Link
+          href="/dashboard/leads/whatsapp-settings"
+          className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          ⚙️ WhatsApp Settings
+        </Link>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Leads</h3>
-          <div className="text-3xl font-bold text-blue-600">{stats.total}</div>
+      <div className="grid grid-cols-4 gap-2 flex-shrink-0">
+        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-xs font-semibold text-gray-600">Total Leads</h3>
+          <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Lead Baru</h3>
-          <div className="text-3xl font-bold text-blue-600">{stats.new}</div>
+        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-xs font-semibold text-gray-600">Lead Baru</h3>
+          <div className="text-2xl font-bold text-blue-600">{stats.new}</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Tertarik</h3>
-          <div className="text-3xl font-bold text-purple-600">{stats.interested}</div>
+        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-xs font-semibold text-gray-600">Tertarik</h3>
+          <div className="text-2xl font-bold text-purple-600">{stats.interested}</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Konversi</h3>
-          <div className="text-3xl font-bold text-green-600">{stats.converted}</div>
-          <div className="text-sm text-gray-600 mt-1">{stats.conversionRate}% rate</div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Cari Leads</label>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Cari berdasarkan nama, telepon, atau kendaraan..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Semua Status</option>
-              <option value="new">Baru</option>
-              <option value="contacted">Dihubungi</option>
-              <option value="interested">Tertarik</option>
-              <option value="not_interested">Tidak Tertarik</option>
-              <option value="converted">Konversi</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sumber</label>
-            <select
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Semua Sumber</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="website">Website</option>
-              <option value="phone">Telepon</option>
-            </select>
-          </div>
+        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-xs font-semibold text-gray-600">Konversi</h3>
+          <div className="text-2xl font-bold text-green-600">{stats.converted}</div>
+          <div className="text-[10px] text-gray-500">{stats.conversionRate}% rate</div>
         </div>
       </div>
 
-      {/* WhatsApp Settings Summary */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">WhatsApp Settings</h2>
-          <Link
-            href="/dashboard/leads/whatsapp-settings"
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-          >
-            Kelola Settings →
-          </Link>
+      {/* Filters & WhatsApp Settings - Combined Row */}
+      <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+        {/* Filters */}
+        <div className="col-span-2 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <label className="block text-[10px] font-medium text-gray-600 mb-1">Cari Leads</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Nama, telepon, kendaraan..."
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-medium text-gray-600 mb-1">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Semua</option>
+                <option value="new">Baru</option>
+                <option value="contacted">Dihubungi</option>
+                <option value="interested">Tertarik</option>
+                <option value="not_interested">Tidak Tertarik</option>
+                <option value="converted">Konversi</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-medium text-gray-600 mb-1">Sumber</label>
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Semua</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="website">Website</option>
+                <option value="phone">Telepon</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* WhatsApp Settings Summary - Compact */}
+        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-xs font-semibold text-gray-700">WhatsApp</h2>
+            <Link href="/dashboard/leads/whatsapp-settings" className="text-[10px] text-blue-600 hover:text-blue-800">
+              Settings →
+            </Link>
+          </div>
           {whatsappSettings.map((setting) => (
-            <div key={setting.id} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-gray-900">{setting.tenantName}</h3>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                  setting.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {setting.isActive ? 'Aktif' : 'Tidak Aktif'}
-                </span>
+            <div key={setting.id} className="text-[11px] text-gray-600">
+              <div className="flex items-center gap-1">
+                <span className={`w-1.5 h-1.5 rounded-full ${setting.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                <span className="font-medium">{setting.phoneNumber || 'Belum setup'}</span>
               </div>
-              <div className="text-sm text-gray-600">
-                <p><strong>Nomor:</strong> {setting.phoneNumber}</p>
-                <p><strong>Auto Reply:</strong> {setting.autoReply ? 'Aktif' : 'Tidak Aktif'}</p>
-                <p><strong>Jam Kerja:</strong> {setting.workingHours.start} - {setting.workingHours.end}</p>
+              <div className="text-[10px] text-gray-500">
+                {setting.workingHours.start} - {setting.workingHours.end}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Leads Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Leads Table - Scrollable */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 min-h-0 flex flex-col">
+        <div className="overflow-auto flex-1">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 sticky top-0">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
                   Kendaraan
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
                   Budget
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
                   Urgensi
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
                   Sumber
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tenant
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
                   Tanggal
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
                   Aksi
                 </th>
               </tr>
@@ -404,40 +391,35 @@ export default function LeadsDashboard() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-xs font-medium text-gray-900">
                         {lead.customerName}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-[11px] text-gray-500">
                         {getSourceIcon(lead.source)} {lead.phone}
                       </div>
-                      {lead.email && (
-                        <div className="text-xs text-gray-400">
-                          {lead.email}
-                        </div>
-                      )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
                     {lead.vehicleInterest || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
                     {lead.budget || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUrgencyColor(lead.urgency)}`}>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${getUrgencyColor(lead.urgency)}`}>
                       {lead.urgency.toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {getSourceIcon(lead.source)} {lead.source.toUpperCase()}
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
+                    {getSourceIcon(lead.source)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <select
                       value={lead.status}
                       onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                      className={`text-xs font-medium rounded-full border-0 bg-transparent ${getStatusBadgeColor(lead.status)}`}
+                      className={`text-[10px] font-medium rounded border-0 bg-transparent px-1 py-0.5 ${getStatusBadgeColor(lead.status)}`}
                     >
                       <option value="new">BARU</option>
                       <option value="contacted">DIHUBUNGI</option>
@@ -446,24 +428,21 @@ export default function LeadsDashboard() {
                       <option value="converted">KONVERSI</option>
                     </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {lead.tenantName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-2 whitespace-nowrap text-[11px] text-gray-500">
                     {formatDate(lead.createdAt)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <div className="flex space-x-1">
                       <button
                         onClick={() => window.open(`https://wa.me/${lead.whatsappNumber.replace(/[^\d]/g, '')}`, '_blank')}
-                        className="text-green-600 hover:text-green-900"
+                        className="text-green-600 hover:text-green-900 text-sm"
                         title="Kirim WhatsApp"
                       >
                         📱
                       </button>
                       <button
                         onClick={() => console.log('View details:', lead.id)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-blue-600 hover:text-blue-900 text-sm"
                         title="Lihat Detail"
                       >
                         👁️
@@ -475,14 +454,13 @@ export default function LeadsDashboard() {
             </tbody>
           </table>
         </div>
+        {filteredLeads.length === 0 && (
+          <div className="text-center py-6">
+            <div className="text-gray-500 text-sm">Tidak ada leads yang ditemukan</div>
+            <p className="text-gray-400 text-xs mt-1">Coba ubah filter atau tunggu leads baru</p>
+          </div>
+        )}
       </div>
-
-      {filteredLeads.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-gray-500 text-lg">Tidak ada leads yang ditemukan</div>
-          <p className="text-gray-400 mt-2">Coba ubah filter atau tunggu leads baru dari WhatsApp</p>
-        </div>
-      )}
     </div>
   );
 }
