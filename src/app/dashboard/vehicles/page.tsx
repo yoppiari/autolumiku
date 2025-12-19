@@ -183,28 +183,37 @@ export default function VehiclesPage() {
   }
 
   return (
-    <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
-      {/* Header - Compact */}
-      <div className="flex justify-between items-center mb-3 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold text-gray-900">Kendaraan</h1>
-          {/* Inline Stats */}
-          <div className="flex gap-2 text-xs">
-            <span className="px-2 py-1 bg-gray-100 rounded">{stats.total} Total</span>
-            <span className="px-2 py-1 bg-green-100 text-green-700 rounded">{stats.available} Tersedia</span>
-            <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">{stats.booked} Booking</span>
-            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">{stats.sold} Terjual</span>
-          </div>
-        </div>
+    <div className="p-4 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+        <h1 className="text-2xl font-bold text-gray-900">Manajemen Kendaraan</h1>
         <Link
           href="/dashboard/vehicles/upload"
-          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center gap-1"
+          className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-sm"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Upload
+          <span className="text-lg">+</span>
+          Upload Kendaraan Baru
         </Link>
+      </div>
+
+      {/* Stats Badges - Elegant Pills */}
+      <div className="flex gap-3 mb-4 flex-shrink-0">
+        <div className="px-6 py-3 bg-white border-2 border-gray-300 rounded-full shadow-sm">
+          <span className="text-xl font-bold text-gray-800">{stats.total}</span>
+          <span className="ml-2 text-gray-600 font-medium">Total</span>
+        </div>
+        <div className="px-6 py-3 bg-green-50 border-2 border-green-400 rounded-full shadow-sm">
+          <span className="text-xl font-bold text-green-600">{stats.available}</span>
+          <span className="ml-2 text-green-700 font-medium">Tersedia</span>
+        </div>
+        <div className="px-6 py-3 bg-yellow-50 border-2 border-yellow-400 rounded-full shadow-sm">
+          <span className="text-xl font-bold text-yellow-600">{stats.booked}</span>
+          <span className="ml-2 text-yellow-700 font-medium">Booking</span>
+        </div>
+        <div className="px-6 py-3 bg-red-50 border-2 border-red-400 rounded-full shadow-sm">
+          <span className="text-xl font-bold text-red-600">{stats.sold}</span>
+          <span className="ml-2 text-red-700 font-medium">Terjual</span>
+        </div>
       </div>
 
       {/* Filters - Compact */}
