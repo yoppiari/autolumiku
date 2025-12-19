@@ -173,296 +173,222 @@ export default function VehiclesPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
+      <div className="p-4 flex items-center justify-center h-[calc(100vh-64px)]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading vehicles...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-3 text-gray-600 text-sm">Loading vehicles...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Manajemen Kendaraan</h1>
-            <p className="text-gray-600">Kelola inventory kendaraan showroom Anda</p>
+    <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
+      {/* Header - Compact */}
+      <div className="flex justify-between items-center mb-3 flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-bold text-gray-900">Kendaraan</h1>
+          {/* Inline Stats */}
+          <div className="flex gap-2 text-xs">
+            <span className="px-2 py-1 bg-gray-100 rounded">{stats.total} Total</span>
+            <span className="px-2 py-1 bg-green-100 text-green-700 rounded">{stats.available} Tersedia</span>
+            <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">{stats.booked} Booking</span>
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">{stats.sold} Terjual</span>
           </div>
-          <Link
-            href="/dashboard/vehicles/upload"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Upload Kendaraan Baru
-          </Link>
         </div>
+        <Link
+          href="/dashboard/vehicles/upload"
+          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Upload
+        </Link>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Total</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Draft</p>
-          <p className="text-2xl font-bold text-gray-500">{stats.draft}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Tersedia</p>
-          <p className="text-2xl font-bold text-green-600">{stats.available}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Booking</p>
-          <p className="text-2xl font-bold text-yellow-600">{stats.booked}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Terjual</p>
-          <p className="text-2xl font-bold text-blue-600">{stats.sold}</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Filters - Compact */}
+      <div className="bg-white rounded-lg shadow p-2 mb-3 flex-shrink-0">
+        <div className="flex items-center gap-2">
           {/* Search */}
-          <div className="md:col-span-2">
-            <input
-              type="text"
-              placeholder="Cari make, model, tahun, variant..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Cari make, model, tahun, variant..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
 
           {/* Status Filter */}
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="DRAFT">Draft</option>
-              <option value="AVAILABLE">Tersedia</option>
-              <option value="BOOKED">Booking</option>
-              <option value="SOLD">Terjual</option>
-            </select>
-          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
+            className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="ALL">Semua Status</option>
+            <option value="DRAFT">Draft</option>
+            <option value="AVAILABLE">Tersedia</option>
+            <option value="BOOKED">Booking</option>
+            <option value="SOLD">Terjual</option>
+          </select>
 
           {/* Sort */}
-          <div className="flex gap-2">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'date' | 'price')}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="date">Terbaru</option>
-              <option value="price">Harga</option>
-            </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'date' | 'price')}
+            className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="date">Terbaru</option>
+            <option value="price">Harga</option>
+          </select>
 
-            {/* View Toggle */}
-            <div className="flex border border-gray-300 rounded-md overflow-hidden">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-3 py-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z" />
-                </svg>
-              </button>
-            </div>
+          {/* View Toggle */}
+          <div className="flex border border-gray-300 rounded overflow-hidden">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-2 py-1.5 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-2 py-1.5 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
-          <div className="flex items-center gap-3">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div>
-              <h3 className="font-semibold text-red-800">{error}</h3>
-              <p className="text-sm text-red-600 mt-1">
-                Coba refresh halaman atau login ulang.
-              </p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className="text-sm text-red-800">{error}</span>
             </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
-            >
-              Refresh Halaman
-            </button>
-            <button
-              onClick={() => {
-                localStorage.removeItem('user');
-                window.location.href = '/login';
-              }}
-              className="px-4 py-2 bg-white border border-red-300 text-red-700 rounded-md hover:bg-red-50 text-sm"
-            >
-              Login Ulang
-            </button>
+            <div className="flex gap-2">
+              <button onClick={() => window.location.reload()} className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">Refresh</button>
+              <button onClick={() => { localStorage.removeItem('user'); window.location.href = '/login'; }} className="px-3 py-1 border border-red-300 text-red-700 rounded text-xs hover:bg-red-50">Login Ulang</button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Empty State */}
       {filteredVehicles.length === 0 && !loading && !error && (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada kendaraan</h3>
-          <p className="text-gray-500 mb-4">
-            {searchQuery || statusFilter !== 'ALL'
-              ? 'Tidak ada kendaraan yang sesuai filter'
-              : 'Mulai dengan upload kendaraan pertama Anda'}
-          </p>
-          <Link
-            href="/dashboard/vehicles/upload"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Upload Kendaraan Baru
-          </Link>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <h3 className="text-base font-medium text-gray-900 mb-1">Belum ada kendaraan</h3>
+            <p className="text-sm text-gray-500 mb-3">
+              {searchQuery || statusFilter !== 'ALL' ? 'Tidak ada yang sesuai filter' : 'Upload kendaraan pertama Anda'}
+            </p>
+            <Link href="/dashboard/vehicles/upload" className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+              Upload Kendaraan
+            </Link>
+          </div>
         </div>
       )}
 
-      {/* Vehicle Grid/List */}
+      {/* Vehicle Grid/List - Scrollable */}
       {filteredVehicles.length > 0 && (
-        <div className={
-          viewMode === 'grid'
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-            : 'space-y-4'
-        }>
-          {filteredVehicles.map((vehicle) => (
-            <div
-              key={vehicle.id}
-              className={`bg-white rounded-lg shadow hover:shadow-lg transition-shadow ${
-                viewMode === 'list' ? 'flex gap-4' : ''
-              }`}
-            >
-              {/* Image */}
-              <div className={`relative ${viewMode === 'list' ? 'w-48 flex-shrink-0' : ''}`}>
-                {vehicle.photos && vehicle.photos.length > 0 ? (
-                  <img
-                    src={vehicle.photos[0].thumbnailUrl || vehicle.photos[0].originalUrl}
-                    alt={`${vehicle.make} ${vehicle.model}`}
-                    className={`w-full object-cover ${
-                      viewMode === 'grid' ? 'h-48 rounded-t-lg' : 'h-full rounded-l-lg'
-                    } ${vehicle.status === 'SOLD' ? 'grayscale' : ''}`}
-                    onError={(e) => {
-                      // Fallback to placeholder if image fails to load
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      if (target.nextElementSibling) {
-                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                      }
-                    }}
-                  />
-                ) : null}
-                {/* Placeholder (always rendered, hidden if image exists) */}
-                <div
-                  className={`bg-gray-200 flex flex-col items-center justify-center ${
-                    viewMode === 'grid' ? 'h-48 rounded-t-lg' : 'h-full rounded-l-lg'
-                  }`}
-                  style={{ display: vehicle.photos && vehicle.photos.length > 0 ? 'none' : 'flex' }}
-                >
-                  <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-xs text-gray-500">No Photo</span>
-                </div>
-                {/* SOLD Overlay */}
-                {vehicle.status === 'SOLD' && (
-                  <div className={`absolute inset-0 bg-black/40 flex items-center justify-center ${
-                    viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'
-                  }`}>
-                    <span className="text-white text-lg font-bold tracking-wider rotate-[-15deg] bg-red-600 px-3 py-1 rounded">TERJUAL</span>
+        <div className="flex-1 overflow-y-auto">
+          <div className={
+            viewMode === 'grid'
+              ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'
+              : 'space-y-2'
+          }>
+            {filteredVehicles.map((vehicle) => (
+              <div
+                key={vehicle.id}
+                className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow ${
+                  viewMode === 'list' ? 'flex gap-3' : ''
+                }`}
+              >
+                {/* Image - Compact */}
+                <div className={`relative ${viewMode === 'list' ? 'w-32 flex-shrink-0' : ''}`}>
+                  {vehicle.photos && vehicle.photos.length > 0 ? (
+                    <img
+                      src={vehicle.photos[0].thumbnailUrl || vehicle.photos[0].originalUrl}
+                      alt={`${vehicle.make} ${vehicle.model}`}
+                      className={`w-full object-cover ${
+                        viewMode === 'grid' ? 'h-32 rounded-t-lg' : 'h-24 rounded-l-lg'
+                      } ${vehicle.status === 'SOLD' ? 'grayscale' : ''}`}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) {
+                          (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`bg-gray-200 flex flex-col items-center justify-center ${
+                      viewMode === 'grid' ? 'h-32 rounded-t-lg' : 'h-24 rounded-l-lg'
+                    }`}
+                    style={{ display: vehicle.photos && vehicle.photos.length > 0 ? 'none' : 'flex' }}
+                  >
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                   </div>
-                )}
-              </div>
+                  {vehicle.status === 'SOLD' && (
+                    <div className={`absolute inset-0 bg-black/40 flex items-center justify-center ${viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'}`}>
+                      <span className="text-white text-xs font-bold rotate-[-15deg] bg-red-600 px-2 py-0.5 rounded">TERJUAL</span>
+                    </div>
+                  )}
+                </div>
 
-              {/* Content */}
-              <div className="p-4 flex-1">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-gray-900">
-                      {vehicle.make} {vehicle.model}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
-                        {vehicle.displayId || `ID: ${vehicle.id.slice(0, 8)}...`}
-                      </p>
-                      {vehicle.licensePlate && (
-                        <p className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                          🔒 {vehicle.licensePlate}
-                        </p>
-                      )}
+                {/* Content - Compact */}
+                <div className="p-2 flex-1">
+                  <div className="flex justify-between items-start gap-1">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm text-gray-900 truncate">
+                        {vehicle.make} {vehicle.model}
+                      </h3>
+                      <span className={`inline-block px-1.5 py-0.5 text-[10px] font-medium rounded mt-0.5 ${getStatusColor(vehicle.status)}`}>
+                        {getStatusLabel(vehicle.status)}
+                      </span>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(vehicle.status)}`}>
-                    {getStatusLabel(vehicle.status)}
-                  </span>
-                </div>
 
-                <p className="text-sm text-gray-600 mb-2">
-                  {vehicle.year} {vehicle.variant && `• ${vehicle.variant}`}
-                </p>
+                  <p className="text-xs font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded inline-block mt-1">
+                    {vehicle.displayId || vehicle.id.slice(0, 8)}
+                  </p>
 
-                <p className="text-xl font-bold text-blue-600 mb-3">
-                  {formatPrice(vehicle.price)}
-                </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {vehicle.year} • {vehicle.variant || vehicle.transmissionType}
+                  </p>
 
-                <div className="flex flex-wrap gap-2 text-xs text-gray-600 mb-3">
-                  {vehicle.mileage && (
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      {vehicle.mileage.toLocaleString()} km
-                    </span>
-                  )}
-                  {vehicle.transmissionType && (
-                    <span>• {vehicle.transmissionType}</span>
-                  )}
-                  {vehicle.fuelType && (
-                    <span>• {vehicle.fuelType}</span>
-                  )}
-                  {vehicle.color && (
-                    <span>• {vehicle.color}</span>
-                  )}
-                </div>
+                  <p className="text-sm font-bold text-blue-600 mt-1">
+                    {formatPrice(vehicle.price)}
+                  </p>
 
-                {/* Actions */}
-                <div className="flex gap-2">
+                  <div className="text-[10px] text-gray-500 mt-1">
+                    {vehicle.mileage?.toLocaleString()} km • {vehicle.color}
+                  </div>
+
                   <Link
                     href={`/dashboard/vehicles/${vehicle.id}/edit`}
-                    className="flex-1 px-3 py-1.5 text-sm text-center bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="block w-full mt-2 px-2 py-1 text-xs text-center bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     Edit
                   </Link>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>

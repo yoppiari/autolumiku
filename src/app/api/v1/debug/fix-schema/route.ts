@@ -150,6 +150,78 @@ export async function GET(request: NextRequest) {
     results.fixes.push({ index: 'vehicles_assignedSalesId_idx', status: 'error', error: err.message });
   }
 
+  // Fix 5: Update existing vehicle displayIds to new format (PM-PST-XXX)
+  try {
+    // Get all vehicles with old VH-XXX format
+    const oldVehicles = await prisma.$queryRaw<any[]>`
+      SELECT id, "displayId", "tenantId"
+      FROM vehicles
+      WHERE "displayId" LIKE 'VH-%'
+      ORDER BY "createdAt" ASC
+    `;
+
+    if (oldVehicles.length > 0) {
+      // Get tenant info for code mapping
+      const tenants = await prisma.$queryRaw<any[]>`
+        SELECT id, slug, name FROM tenants
+      `;
+      const tenantMap: Record<string, string> = {};
+      tenants.forEach((t: any) => {
+        // Map tenant slug to code
+        if (t.slug?.includes('primamobil')) {
+          tenantMap[t.id] = 'PM';
+        } else {
+          tenantMap[t.id] = t.slug?.substring(0, 2).toUpperCase() || 'XX';
+        }
+      });
+
+      // Track next sequence per tenant-showroom
+      const sequences: Record<string, number> = {};
+      const updates: any[] = [];
+
+      for (const vehicle of oldVehicles) {
+        const tenantCode = tenantMap[vehicle.tenantId] || 'XX';
+        const showroomCode = 'PST'; // Default to Pusat
+        const key = `${tenantCode}-${showroomCode}`;
+
+        if (!sequences[key]) {
+          // Get max existing sequence for this prefix
+          const existing = await prisma.$queryRaw<any[]>`
+            SELECT "displayId" FROM vehicles
+            WHERE "displayId" LIKE ${key + '-%'}
+            ORDER BY "displayId" DESC
+            LIMIT 1
+          `;
+          if (existing.length > 0 && existing[0].displayId) {
+            const match = existing[0].displayId.match(/-(\\d+)$/);
+            sequences[key] = match ? parseInt(match[1], 10) : 0;
+          } else {
+            sequences[key] = 0;
+          }
+        }
+
+        sequences[key]++;
+        const newDisplayId = `${key}-${String(sequences[key]).padStart(3, '0')}`;
+
+        await prisma.$executeRaw`
+          UPDATE vehicles SET "displayId" = ${newDisplayId} WHERE id = ${vehicle.id}
+        `;
+        updates.push({ oldId: vehicle.displayId, newId: newDisplayId });
+      }
+
+      results.fixes.push({
+        task: 'updateDisplayIds',
+        status: 'updated',
+        count: updates.length,
+        updates: updates,
+      });
+    } else {
+      results.fixes.push({ task: 'updateDisplayIds', status: 'no_old_format_found' });
+    }
+  } catch (err: any) {
+    results.fixes.push({ task: 'updateDisplayIds', status: 'error', error: err.message });
+  }
+
   // Test 1: Verify user query works (same as login)
   try {
     const testUser = await prisma.user.findFirst({
