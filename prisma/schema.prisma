@@ -117,17 +117,13 @@ model User {
   auditLogs       AuditLog[]
   securityEvents  SecurityEvent[]
   teamMemberships TeamMember[]
-  showroom        Showroom?       @relation("ShowroomStaff", fields: [showroomId], references: [id])
+  // showroom relation temporarily disabled - will be enabled after fix-schema
   uploadedVehicles Vehicle[]      @relation("VehicleCreator")
-
-  // Showroom assignment
-  showroomId String?
 
   @@index([email])
   @@index([tenantId])
   @@index([emailVerificationToken])
   @@index([passwordResetToken])
-  @@index([showroomId])
   @@map("users")
 }
 
@@ -155,8 +151,7 @@ model Showroom {
 
   // Relations
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  staff     User[]    @relation("ShowroomStaff")
-  vehicles  Vehicle[] @relation("VehicleShowroom")
+  // staff and vehicles relations temporarily disabled - will be enabled after fix-schema
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -702,8 +697,7 @@ model Vehicle {
   isFeatured   Boolean  @default(false)
   displayOrder Int      @default(0)
 
-  // Showroom / Branch assignment
-  showroomId String? // Which showroom/branch this vehicle belongs to
+  // Note: showroomId temporarily disabled - will be added via fix-schema endpoint
 
   // Metadata
   createdAt DateTime @default(now())
@@ -713,7 +707,7 @@ model Vehicle {
 
   // Relations
   tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  showroom        Showroom?        @relation("VehicleShowroom", fields: [showroomId], references: [id])
+  // showroom relation temporarily disabled
   creator         User?            @relation("VehicleCreator", fields: [createdBy], references: [id])
   photos          VehiclePhoto[]
   history         VehicleHistory[]
@@ -726,7 +720,6 @@ model Vehicle {
   @@index([price])
   @@index([publishedAt])
   @@index([isFeatured])
-  @@index([showroomId])
   @@index([createdBy])
   @@map("vehicles")
 }

@@ -124,7 +124,6 @@ export async function GET(request: NextRequest) {
         emailVerified: true,
         failedLoginAttempts: true,
         lockedUntil: true,
-        showroomId: true,
       },
     });
     results.tests.prismaUserQuery = {
