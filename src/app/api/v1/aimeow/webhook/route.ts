@@ -32,14 +32,24 @@ interface AimeowWebhookPayload {
     body?: string;              // Another alternative for message body
     caption?: string;           // Media caption
 
-    // Media
+    // Media - check multiple possible field names
     mediaUrl?: string;
     mediaType?: string;
     mimetype?: string;          // Alternative media type field
+    media?: string;             // Alternative media URL field
+    imageUrl?: string;          // Another alternative
+    image?: string;             // Yet another alternative
+    url?: string;               // Generic URL field
+    file?: string;              // File URL
+    fileUrl?: string;           // File URL alternative
 
     // Message metadata
     messageId?: string;
     id?: string;                // Alternative message ID field
+
+    // Message type
+    type?: string;              // Message type (text, image, video, etc.)
+    messageType?: string;       // Alternative message type field
 
     // Status/connection events
     status?: string;
@@ -139,10 +149,27 @@ async function handleIncomingMessage(
   account: any
 ) {
   const rawFrom = payload.data.from;
+
+  // CRITICAL DEBUG: Log the FULL payload to see exactly what Aimeow sends
+  console.log(`[Aimeow Webhook] 🔍 FULL PAYLOAD:`, JSON.stringify(payload, null, 2));
+
   // IMPORTANT: When photo is sent with caption, the text is in "caption" field, not "message"!
   const messageText = payload.data.message || payload.data.text || payload.data.body || payload.data.caption || "";
-  const mediaUrl = payload.data.mediaUrl;
-  const mediaType = payload.data.mediaType || payload.data.mimetype;
+
+  // Check ALL possible media URL fields - Aimeow might use different field names
+  const mediaUrl = payload.data.mediaUrl
+    || payload.data.media
+    || payload.data.imageUrl
+    || payload.data.image
+    || payload.data.url
+    || payload.data.file
+    || payload.data.fileUrl;
+
+  // Check media type from multiple sources
+  const mediaType = payload.data.mediaType
+    || payload.data.mimetype
+    || payload.data.type
+    || payload.data.messageType;
 
   // Debug log to see exactly what we're receiving
   console.log(`[Aimeow Webhook] 📝 Message fields:`, {
@@ -150,9 +177,22 @@ async function handleIncomingMessage(
     text: payload.data.text,
     body: payload.data.body,
     caption: payload.data.caption,
-    mediaUrl: payload.data.mediaUrl,
-    mediaType: payload.data.mediaType,
   });
+  console.log(`[Aimeow Webhook] 📸 Media fields:`, {
+    mediaUrl: payload.data.mediaUrl,
+    media: payload.data.media,
+    imageUrl: payload.data.imageUrl,
+    image: payload.data.image,
+    url: payload.data.url,
+    file: payload.data.file,
+    fileUrl: payload.data.fileUrl,
+    mediaType: payload.data.mediaType,
+    mimetype: payload.data.mimetype,
+    type: payload.data.type,
+    messageType: payload.data.messageType,
+  });
+  console.log(`[Aimeow Webhook] ✅ Resolved: messageText="${messageText?.substring(0, 50)}", mediaUrl=${mediaUrl ? 'YES' : 'NO'}, mediaType=${mediaType}`);
+
   const messageId = payload.data.messageId || payload.data.id || `msg_${Date.now()}`;
 
   // IMPORTANT: AIMEOW might provide actual phone number in various fields
