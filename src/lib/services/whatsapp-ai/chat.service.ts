@@ -624,6 +624,7 @@ A: "Hai kak! 👋 Lagi cari mobil apa nih? Boleh kasih tau budget atau merk yang
     tenantId: string
   ): Promise<Array<{ imageUrl: string; caption?: string }> | null> {
     console.log('[WhatsApp AI Chat] 📸 Fetching vehicles for query:', searchQuery);
+    console.log('[WhatsApp AI Chat] Tenant ID:', tenantId);
 
     // Parse search query into individual terms
     const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(term => term.length > 0);
@@ -655,35 +656,96 @@ A: "Hai kak! 👋 Lagi cari mobil apa nih? Boleh kasih tau budget atau merk yang
 
     if (vehicles.length === 0) {
       console.log('[WhatsApp AI Chat] ❌ No vehicles found for query:', searchQuery);
-      return null;
+
+      // Try a broader search if specific search failed - get ANY available vehicles
+      console.log('[WhatsApp AI Chat] 🔄 Trying broader search for any available vehicles...');
+      const anyVehicles = await prisma.vehicle.findMany({
+        where: {
+          tenantId,
+          status: 'AVAILABLE',
+        },
+        include: {
+          photos: {
+            orderBy: { isMainPhoto: 'desc' },
+            take: 2,
+          },
+        },
+        take: 3,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (anyVehicles.length === 0) {
+        console.log('[WhatsApp AI Chat] ❌ No vehicles available at all');
+        return null;
+      }
+
+      console.log(`[WhatsApp AI Chat] Found ${anyVehicles.length} vehicles in broader search`);
+      return this.buildImageArray(anyVehicles);
     }
 
+    return this.buildImageArray(vehicles);
+  }
+
+  /**
+   * Build image array from vehicles with proper URL handling
+   */
+  private static buildImageArray(vehicles: any[]): Array<{ imageUrl: string; caption?: string }> | null {
     // Build image array with fallback URLs
     // Convert relative URLs to full URLs for Aimeow
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+    console.log(`[WhatsApp AI Chat] Base URL for images: ${baseUrl}`);
 
-    const images = vehicles
-      .filter(v => v.photos.length > 0)
-      .map(v => {
-        const photo = v.photos[0];
-        // Fallback: mediumUrl → largeUrl → originalUrl
-        let imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+    const images: Array<{ imageUrl: string; caption?: string }> = [];
 
-        // Convert relative URL to full URL
-        if (imageUrl && imageUrl.startsWith('/')) {
-          imageUrl = `${baseUrl}${imageUrl}`;
-          console.log(`[WhatsApp AI Chat] Converted relative URL to: ${imageUrl}`);
-        }
+    for (const v of vehicles) {
+      console.log(`[WhatsApp AI Chat] Processing vehicle: ${v.make} ${v.model} ${v.year}`);
+      console.log(`[WhatsApp AI Chat] Photos count: ${v.photos?.length || 0}`);
 
-        console.log(`[WhatsApp AI Chat] Vehicle ${v.make} ${v.model} - imageUrl: ${imageUrl}`);
-        return {
-          imageUrl,
-          caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage?.toLocaleString('id-ID') || 0}km • ${v.transmissionType || 'Manual'} • ${v.color || '-'}`,
-        };
-      })
-      .filter(img => img.imageUrl); // Filter out any without valid URL
+      if (!v.photos || v.photos.length === 0) {
+        console.log(`[WhatsApp AI Chat] ⚠️ No photos for ${v.make} ${v.model}`);
+        continue;
+      }
+
+      const photo = v.photos[0];
+      console.log(`[WhatsApp AI Chat] Photo data:`, {
+        id: photo.id,
+        originalUrl: photo.originalUrl?.substring(0, 100),
+        mediumUrl: photo.mediumUrl?.substring(0, 100),
+        largeUrl: photo.largeUrl?.substring(0, 100),
+      });
+
+      // Fallback: mediumUrl → largeUrl → originalUrl
+      let imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+
+      if (!imageUrl) {
+        console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for ${v.make} ${v.model} photo`);
+        continue;
+      }
+
+      // Convert relative URL to full URL
+      if (imageUrl.startsWith('/')) {
+        imageUrl = `${baseUrl}${imageUrl}`;
+        console.log(`[WhatsApp AI Chat] Converted relative URL to: ${imageUrl}`);
+      }
+
+      // Ensure URL is properly encoded (handle spaces, special chars)
+      try {
+        const url = new URL(imageUrl);
+        imageUrl = url.toString();
+      } catch (e) {
+        console.log(`[WhatsApp AI Chat] ⚠️ Invalid URL format, using as-is: ${imageUrl}`);
+      }
+
+      console.log(`[WhatsApp AI Chat] ✅ Final imageUrl: ${imageUrl}`);
+
+      images.push({
+        imageUrl,
+        caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage?.toLocaleString('id-ID') || 0}km • ${v.transmissionType || 'Manual'} • ${v.color || '-'}`,
+      });
+    }
 
     console.log(`[WhatsApp AI Chat] ✅ Prepared ${images.length} vehicle images to send`);
+    console.log(`[WhatsApp AI Chat] Image URLs:`, images.map(i => i.imageUrl));
 
     if (images.length === 0) {
       console.log('[WhatsApp AI Chat] ⚠️ Vehicles found but no photos available');

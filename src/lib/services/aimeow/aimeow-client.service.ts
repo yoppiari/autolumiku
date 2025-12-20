@@ -393,6 +393,7 @@ export class AimeowClientService {
 
   /**
    * Send single image via WhatsApp
+   * Uses the same /send-images endpoint as sendMessage for consistency
    */
   static async sendImage(
     clientId: string,
@@ -401,10 +402,16 @@ export class AimeowClientService {
     caption?: string
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      console.log(`[Aimeow Send Image] Sending image to ${to}`);
+      console.log(`[Aimeow Send Image] 📸 Sending image to ${to}`);
       console.log(`[Aimeow Send Image] Image URL: ${imageUrl}`);
       console.log(`[Aimeow Send Image] Caption: ${caption || 'none'}`);
       console.log(`[Aimeow Send Image] Original clientId: ${clientId}`);
+
+      // Validate image URL
+      if (!imageUrl || imageUrl.trim() === '') {
+        console.error(`[Aimeow Send Image] ❌ Invalid image URL: empty or null`);
+        return { success: false, error: 'Image URL is empty' };
+      }
 
       // Validate clientId format - same as sendMessage
       let apiClientId = clientId;
@@ -435,15 +442,24 @@ export class AimeowClientService {
         }
       }
 
-      const payload = {
+      // Build payload - try multiple field names for compatibility
+      // Some Aimeow versions expect 'url', others 'imageUrl', others 'image'
+      const payload: Record<string, any> = {
         phone: to,
-        imageUrl,
-        ...(caption && { caption }),
+        url: imageUrl,        // Primary field for /send-image endpoint
+        imageUrl: imageUrl,   // Alternative field name
+        image: imageUrl,      // Another alternative
       };
 
-      console.log(`[Aimeow Send Image] Using clientId: ${apiClientId}`);
+      if (caption) {
+        payload.caption = caption;
+      }
 
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-image`, {
+      console.log(`[Aimeow Send Image] Using clientId: ${apiClientId}`);
+      console.log(`[Aimeow Send Image] Payload:`, JSON.stringify(payload, null, 2));
+
+      // Try /send-image endpoint first
+      let response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-image`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -451,21 +467,42 @@ export class AimeowClientService {
         body: JSON.stringify(payload),
       });
 
+      // If /send-image fails, try /send-images with array format
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[Aimeow Send Image] Error: ${errorText}`);
-        throw new Error(`Failed to send image: ${response.statusText}`);
+        console.log(`[Aimeow Send Image] /send-image failed (${response.status}): ${errorText}`);
+        console.log(`[Aimeow Send Image] Trying /send-images endpoint instead...`);
+
+        const imagesPayload = {
+          phone: to,
+          images: [imageUrl],
+          ...(caption && { caption }),
+        };
+
+        response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(imagesPayload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Aimeow Send Image] ❌ Both endpoints failed: ${errorText}`);
+        throw new Error(`Failed to send image: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log(`[Aimeow Send Image] Success:`, data);
+      console.log(`[Aimeow Send Image] ✅ Success:`, data);
 
       return {
         success: true,
-        messageId: data.messageId || `img_${Date.now()}`,
+        messageId: data.messageId || data.id || `img_${Date.now()}`,
       };
     } catch (error: any) {
-      console.error(`[Aimeow Send Image] Error:`, error);
+      console.error(`[Aimeow Send Image] ❌ Error:`, error);
       return {
         success: false,
         error: error.message,
