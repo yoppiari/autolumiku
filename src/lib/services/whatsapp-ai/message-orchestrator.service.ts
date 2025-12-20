@@ -231,6 +231,11 @@ export class MessageOrchestratorService {
             // Get current contextData to preserve existing fields like verifiedStaffPhone, linkedLIDs
             const currentContext = (conversation.contextData as Record<string, any>) || {};
 
+            // IMPORTANT: Get the ACTUAL staff phone from User table for LID mapping
+            // This is critical when AI detects staff upload - we need to set verifiedStaffPhone here too!
+            const actualStaffPhone = await this.getStaffPhoneFromUser(incoming.from, incoming.tenantId);
+            const isLID = incoming.from.includes("@lid");
+
             // Store vehicle data in conversation context
             await prisma.whatsAppConversation.update({
               where: { id: conversation.id },
@@ -240,6 +245,11 @@ export class MessageOrchestratorService {
                 conversationType: "staff",
                 contextData: {
                   ...currentContext, // Preserve existing fields
+                  // CRITICAL: Set verifiedStaffPhone here so LID lookup works on next message!
+                  verifiedStaffPhone: actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from),
+                  linkedLIDs: isLID
+                    ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
+                    : currentContext.linkedLIDs,
                   uploadStep: incoming.mediaUrl ? "has_photo_and_data" : "has_data_awaiting_photo",
                   vehicleData: result.uploadRequest,
                   photos: incoming.mediaUrl ? [incoming.mediaUrl] : [],
@@ -264,6 +274,11 @@ export class MessageOrchestratorService {
                 data: {
                   contextData: {
                     ...currentContext, // Preserve existing fields
+                    // CRITICAL: Must include verifiedStaffPhone & linkedLIDs here too!
+                    verifiedStaffPhone: actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from),
+                    linkedLIDs: isLID
+                      ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
+                      : currentContext.linkedLIDs,
                     uploadStep: "has_photo_and_data",
                     vehicleData: result.uploadRequest,
                     photos: [incoming.mediaUrl],

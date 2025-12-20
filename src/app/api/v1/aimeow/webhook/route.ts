@@ -139,9 +139,20 @@ async function handleIncomingMessage(
   account: any
 ) {
   const rawFrom = payload.data.from;
-  const messageText = payload.data.message || payload.data.text || payload.data.body || "";
+  // IMPORTANT: When photo is sent with caption, the text is in "caption" field, not "message"!
+  const messageText = payload.data.message || payload.data.text || payload.data.body || payload.data.caption || "";
   const mediaUrl = payload.data.mediaUrl;
   const mediaType = payload.data.mediaType || payload.data.mimetype;
+
+  // Debug log to see exactly what we're receiving
+  console.log(`[Aimeow Webhook] 📝 Message fields:`, {
+    message: payload.data.message,
+    text: payload.data.text,
+    body: payload.data.body,
+    caption: payload.data.caption,
+    mediaUrl: payload.data.mediaUrl,
+    mediaType: payload.data.mediaType,
+  });
   const messageId = payload.data.messageId || payload.data.id || `msg_${Date.now()}`;
 
   // IMPORTANT: AIMEOW might provide actual phone number in various fields
