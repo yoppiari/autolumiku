@@ -85,6 +85,28 @@ export class MessageOrchestratorService {
           hasMedia
         );
         console.log(`[Orchestrator] Intent classified: ${classification.intent}, isStaff: ${classification.isStaff}, isCustomer: ${classification.isCustomer}`);
+
+        // IMPORTANT: If conversation is already marked as staff, trust that status
+        // This handles cases where phone format changes (e.g., LID vs regular phone)
+        if (conversation.isStaff && !classification.isStaff) {
+          console.log(`[Orchestrator] ⚠️ Conversation is staff but classifier said customer - trusting conversation status`);
+          classification.isStaff = true;
+          classification.isCustomer = false;
+
+          // Re-classify intent as staff command if applicable
+          if (classification.intent.startsWith("customer_")) {
+            // Check if message matches any staff command patterns
+            const msg = incoming.message.toLowerCase();
+            if (/upload|tambah|input|masukin/i.test(msg) || hasMedia) {
+              classification.intent = "staff_upload_vehicle";
+              classification.reason = "Reclassified as staff upload (conversation is staff)";
+            } else {
+              classification.intent = "staff_greeting";
+              classification.reason = "Reclassified as staff greeting (conversation is staff)";
+            }
+            console.log(`[Orchestrator] Reclassified intent to: ${classification.intent}`);
+          }
+        }
       }
 
       // Update message with intent
@@ -294,7 +316,21 @@ export class MessageOrchestratorService {
   }
 
   /**
+   * Normalize phone number for comparison
+   */
+  private static normalizePhoneForLookup(phone: string): string {
+    if (!phone) return "";
+    // Handle LID format - return as is for LID-specific lookup
+    if (phone.includes("@lid")) return phone;
+    // Remove all non-digit characters and normalize Indonesian format
+    let digits = phone.replace(/\D/g, "");
+    if (digits.startsWith("0")) digits = "62" + digits.substring(1);
+    return digits;
+  }
+
+  /**
    * Get or create conversation
+   * Enhanced to handle phone/LID format variations
    */
   private static async getOrCreateConversation(
     accountId: string,
@@ -303,7 +339,10 @@ export class MessageOrchestratorService {
   ) {
     console.log(`[Orchestrator] Getting/creating conversation - accountId: ${accountId}, tenantId: ${tenantId}, phone: ${customerPhone}`);
 
-    // Try to find active conversation
+    const normalizedPhone = this.normalizePhoneForLookup(customerPhone);
+    const isLID = customerPhone.includes("@lid");
+
+    // Try to find active conversation by exact phone match first
     let conversation = await prisma.whatsAppConversation.findFirst({
       where: {
         accountId,
@@ -312,6 +351,71 @@ export class MessageOrchestratorService {
       },
       orderBy: { lastMessageAt: "desc" },
     });
+
+    // If not found and this is an LID, try to find conversation with matching verified phone
+    if (!conversation && isLID) {
+      console.log(`[Orchestrator] LID detected, searching for linked conversation...`);
+      // Search for any staff conversation that might have this LID linked
+      const allActiveConvos = await prisma.whatsAppConversation.findMany({
+        where: {
+          accountId,
+          status: "active",
+          isStaff: true,
+        },
+        orderBy: { lastMessageAt: "desc" },
+        take: 10,
+      });
+
+      // Check if any conversation has this LID or phone linked
+      for (const conv of allActiveConvos) {
+        const contextData = conv.contextData as Record<string, any> | null;
+        if (contextData?.verifiedStaffPhone) {
+          // Check if verified phone matches or LID matches
+          const verifiedPhone = this.normalizePhoneForLookup(contextData.verifiedStaffPhone);
+          if (verifiedPhone === normalizedPhone || contextData.linkedLID === customerPhone) {
+            console.log(`[Orchestrator] ✅ Found linked staff conversation: ${conv.id}`);
+            conversation = conv;
+            // Update the conversation with the new LID for future lookups
+            await prisma.whatsAppConversation.update({
+              where: { id: conv.id },
+              data: {
+                contextData: {
+                  ...contextData,
+                  linkedLID: customerPhone,
+                },
+              },
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    // If not found and this is a phone number, try to find conversation with matching LID
+    if (!conversation && !isLID) {
+      console.log(`[Orchestrator] Phone detected, searching for LID-linked conversation...`);
+      const allActiveConvos = await prisma.whatsAppConversation.findMany({
+        where: {
+          accountId,
+          status: "active",
+          customerPhone: { contains: "@lid" },
+        },
+        orderBy: { lastMessageAt: "desc" },
+        take: 10,
+      });
+
+      for (const conv of allActiveConvos) {
+        const contextData = conv.contextData as Record<string, any> | null;
+        if (contextData?.verifiedStaffPhone) {
+          const verifiedPhone = this.normalizePhoneForLookup(contextData.verifiedStaffPhone);
+          if (verifiedPhone === normalizedPhone) {
+            console.log(`[Orchestrator] ✅ Found LID conversation linked to this phone: ${conv.id}`);
+            conversation = conv;
+            break;
+          }
+        }
+      }
+    }
 
     // Create new conversation if not found
     if (!conversation) {
@@ -328,7 +432,7 @@ export class MessageOrchestratorService {
       });
       console.log(`[Orchestrator] Created conversation: ${conversation.id}`);
     } else {
-      console.log(`[Orchestrator] Found existing conversation: ${conversation.id}`);
+      console.log(`[Orchestrator] Found existing conversation: ${conversation.id}, isStaff: ${conversation.isStaff}, state: ${conversation.conversationState}`);
     }
 
     return conversation;
