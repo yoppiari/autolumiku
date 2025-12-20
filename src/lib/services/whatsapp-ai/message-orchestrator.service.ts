@@ -127,20 +127,30 @@ export class MessageOrchestratorService {
         // Get current contextData to preserve existing data
         const currentContext = (conversation.contextData as Record<string, any>) || {};
 
+        // IMPORTANT: Get the ACTUAL staff phone from User table, not the incoming phone
+        // This is critical for LID format handling - we need the real phone for linking
+        const actualStaffPhone = await this.getStaffPhoneFromUser(incoming.from, incoming.tenantId);
+        const isLID = incoming.from.includes("@lid");
+
         await prisma.whatsAppConversation.update({
           where: { id: conversation.id },
           data: {
             isStaff: true,
             conversationType: "staff",
-            // Store the verified staff phone for LID-to-phone mapping
+            // Store the ACTUAL staff phone for LID-to-phone mapping
             contextData: {
               ...currentContext,
-              verifiedStaffPhone: incoming.from,
+              // Always use the real phone number from User table, not the LID format
+              verifiedStaffPhone: actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from),
               verifiedAt: new Date().toISOString(),
+              // Track all LIDs that have been used by this staff
+              linkedLIDs: isLID
+                ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
+                : currentContext.linkedLIDs,
             },
           },
         });
-        console.log(`[Orchestrator] Stored verified staff phone: ${incoming.from}`);
+        console.log(`[Orchestrator] Stored verified staff phone: ${actualStaffPhone || incoming.from}, isLID: ${isLID}`);
       }
 
       // 4. Route based on intent
@@ -218,6 +228,9 @@ export class MessageOrchestratorService {
           if (isStaff) {
             console.log(`[Orchestrator] User is staff, initiating upload flow...`);
 
+            // Get current contextData to preserve existing fields like verifiedStaffPhone, linkedLIDs
+            const currentContext = (conversation.contextData as Record<string, any>) || {};
+
             // Store vehicle data in conversation context
             await prisma.whatsAppConversation.update({
               where: { id: conversation.id },
@@ -226,6 +239,7 @@ export class MessageOrchestratorService {
                 isStaff: true,
                 conversationType: "staff",
                 contextData: {
+                  ...currentContext, // Preserve existing fields
                   uploadStep: incoming.mediaUrl ? "has_photo_and_data" : "has_data_awaiting_photo",
                   vehicleData: result.uploadRequest,
                   photos: incoming.mediaUrl ? [incoming.mediaUrl] : [],
@@ -249,6 +263,7 @@ export class MessageOrchestratorService {
                 where: { id: conversation.id },
                 data: {
                   contextData: {
+                    ...currentContext, // Preserve existing fields
                     uploadStep: "has_photo_and_data",
                     vehicleData: result.uploadRequest,
                     photos: [incoming.mediaUrl],
@@ -366,30 +381,67 @@ export class MessageOrchestratorService {
           isStaff: true,
         },
         orderBy: { lastMessageAt: "desc" },
-        take: 10,
+        take: 20, // Check more conversations for better LID matching
       });
 
-      // Check if any conversation has this LID or phone linked
+      // Check if any conversation has this LID in linkedLIDs array
       for (const conv of allActiveConvos) {
         const contextData = conv.contextData as Record<string, any> | null;
-        if (contextData?.verifiedStaffPhone) {
-          // Check if verified phone matches or LID matches
-          const verifiedPhone = this.normalizePhoneForLookup(contextData.verifiedStaffPhone);
-          if (verifiedPhone === normalizedPhone || contextData.linkedLID === customerPhone) {
-            console.log(`[Orchestrator] ✅ Found linked staff conversation: ${conv.id}`);
-            conversation = conv;
-            // Update the conversation with the new LID for future lookups
-            await prisma.whatsAppConversation.update({
-              where: { id: conv.id },
-              data: {
-                contextData: {
-                  ...contextData,
-                  linkedLID: customerPhone,
-                },
+
+        // Check if this LID is in the linkedLIDs array
+        if (contextData?.linkedLIDs?.includes(customerPhone)) {
+          console.log(`[Orchestrator] ✅ Found conversation with this LID in linkedLIDs: ${conv.id}`);
+          conversation = conv;
+          break;
+        }
+
+        // Legacy check for old linkedLID field (single value)
+        if (contextData?.linkedLID === customerPhone) {
+          console.log(`[Orchestrator] ✅ Found conversation with legacy linkedLID: ${conv.id}`);
+          conversation = conv;
+          // Migrate to new linkedLIDs array format
+          await prisma.whatsAppConversation.update({
+            where: { id: conv.id },
+            data: {
+              contextData: {
+                ...contextData,
+                linkedLIDs: [customerPhone],
+                linkedLID: undefined, // Remove legacy field
               },
-            });
-            break;
-          }
+            },
+          });
+          break;
+        }
+      }
+
+      // If still not found, check if we can link this LID to an existing staff conversation
+      // by matching the most recent active staff conversation for this account
+      if (!conversation) {
+        console.log(`[Orchestrator] Checking for recent staff conversation to link LID to...`);
+        // Get the most recent staff conversation (within last 24 hours)
+        const recentStaffConvo = allActiveConvos.find(conv => {
+          const contextData = conv.contextData as Record<string, any> | null;
+          const lastMessageAt = conv.lastMessageAt;
+          const isRecent = lastMessageAt && (Date.now() - new Date(lastMessageAt).getTime() < 24 * 60 * 60 * 1000);
+          // Must have a verified staff phone (not LID) to be linkable
+          return isRecent && contextData?.verifiedStaffPhone && !contextData.verifiedStaffPhone.includes("@lid");
+        });
+
+        if (recentStaffConvo) {
+          console.log(`[Orchestrator] ✅ Found recent staff conversation to link: ${recentStaffConvo.id}`);
+          conversation = recentStaffConvo;
+          const contextData = (recentStaffConvo.contextData as Record<string, any>) || {};
+          // Add this LID to the linkedLIDs array
+          await prisma.whatsAppConversation.update({
+            where: { id: recentStaffConvo.id },
+            data: {
+              contextData: {
+                ...contextData,
+                linkedLIDs: Array.from(new Set([...(contextData.linkedLIDs || []), customerPhone])),
+              },
+            },
+          });
+          console.log(`[Orchestrator] Linked LID ${customerPhone} to conversation`);
         }
       }
     }
@@ -397,22 +449,24 @@ export class MessageOrchestratorService {
     // If not found and this is a phone number, try to find conversation with matching LID
     if (!conversation && !isLID) {
       console.log(`[Orchestrator] Phone detected, searching for LID-linked conversation...`);
-      const allActiveConvos = await prisma.whatsAppConversation.findMany({
+      // First, search for staff conversations that have this phone as verifiedStaffPhone
+      const allStaffConvos = await prisma.whatsAppConversation.findMany({
         where: {
           accountId,
           status: "active",
-          customerPhone: { contains: "@lid" },
+          isStaff: true,
         },
         orderBy: { lastMessageAt: "desc" },
-        take: 10,
+        take: 20,
       });
 
-      for (const conv of allActiveConvos) {
+      for (const conv of allStaffConvos) {
         const contextData = conv.contextData as Record<string, any> | null;
         if (contextData?.verifiedStaffPhone) {
+          // Normalize both for comparison
           const verifiedPhone = this.normalizePhoneForLookup(contextData.verifiedStaffPhone);
           if (verifiedPhone === normalizedPhone) {
-            console.log(`[Orchestrator] ✅ Found LID conversation linked to this phone: ${conv.id}`);
+            console.log(`[Orchestrator] ✅ Found staff conversation with matching verifiedStaffPhone: ${conv.id}`);
             conversation = conv;
             break;
           }
@@ -830,6 +884,41 @@ export class MessageOrchestratorService {
 
       // Don't throw - message saved but not sent, can retry later
     }
+  }
+
+  /**
+   * Get the actual staff phone from User table
+   * This resolves LID format issues by looking up the real phone number
+   */
+  private static async getStaffPhoneFromUser(phone: string, tenantId: string): Promise<string | null> {
+    // If this is an LID format, we can't match it directly - return null
+    if (phone.includes("@lid")) {
+      console.log(`[Orchestrator] getStaffPhoneFromUser: LID format detected, cannot lookup directly`);
+      return null;
+    }
+
+    const normalizedInput = this.normalizePhone(phone);
+
+    // Get all users in tenant with staff roles
+    const users = await prisma.user.findMany({
+      where: {
+        tenantId,
+        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
+      },
+      select: { id: true, phone: true },
+    });
+
+    for (const user of users) {
+      if (!user.phone) continue;
+      const normalizedUserPhone = this.normalizePhone(user.phone);
+      if (normalizedInput === normalizedUserPhone) {
+        console.log(`[Orchestrator] getStaffPhoneFromUser: Found actual phone: ${user.phone}`);
+        return user.phone;
+      }
+    }
+
+    console.log(`[Orchestrator] getStaffPhoneFromUser: No staff match found for ${phone}`);
+    return null;
   }
 
   /**

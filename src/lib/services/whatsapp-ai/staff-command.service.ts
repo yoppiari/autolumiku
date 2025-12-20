@@ -856,6 +856,7 @@ export class StaffCommandService {
       await prisma.whatsAppConversation.update({
         where: { id: conversationId },
         data: {
+          conversationState: "upload_vehicle", // IMPORTANT: Keep state for multi-step flow
           contextData: {
             ...contextData,
             uploadStep: "has_photo_awaiting_data",
