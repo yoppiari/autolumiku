@@ -15,45 +15,36 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [user, setUser] = useState<any>(null);
   const [tenant, setTenant] = useState<any>(null);
 
-  // Read user from localStorage
+  // Read user from localStorage - redirect to login if not authenticated
   React.useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
+    const authToken = localStorage.getItem('authToken');
 
-        // Check if user has tenantId (showroom user)
-        if (!userData.tenantId) {
-          // Not a showroom user, redirect to admin login
-          window.location.href = '/admin/login';
-          return;
-        }
+    // Check if both user data and auth token exist
+    if (!storedUser || !authToken) {
+      console.log('[Dashboard] No auth data found, redirecting to login');
+      window.location.href = '/login';
+      return;
+    }
 
-        setUser(userData);
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-        window.location.href = '/login';
+    try {
+      const userData = JSON.parse(storedUser);
+
+      // Check if user has tenantId (showroom user)
+      if (!userData.tenantId) {
+        // Not a showroom user, redirect to admin login
+        console.log('[Dashboard] User has no tenantId, redirecting to admin login');
+        window.location.href = '/admin/login';
+        return;
       }
-    } else {
-      // Development mode: auto-inject mock user
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 [Dev Mode] Auto-injecting mock authentication...');
-        const mockUser = {
-          id: 'dev-user-123',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // Showroom Jakarta Premium
-          name: 'Dev User',
-          email: 'dev@showroom.com',
-          role: 'admin',
-          _isMock: true
-        };
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        setUser(mockUser);
-        console.log('✅ [Dev Mode] Mock user authenticated:', mockUser);
-        console.log('💡 To switch tenant, run: localStorage.setItem("user", JSON.stringify({...JSON.parse(localStorage.getItem("user")), tenantId: "NEW_TENANT_ID"}))');
-      } else {
-        // No user data, redirect to login (production)
-        window.location.href = '/login';
-      }
+
+      // Valid showroom user
+      setUser(userData);
+    } catch (e) {
+      console.error('[Dashboard] Error parsing user data:', e);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
   }, []);
 
@@ -85,6 +76,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     window.location.href = '/login';
   };

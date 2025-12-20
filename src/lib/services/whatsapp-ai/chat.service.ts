@@ -346,7 +346,7 @@ export class WhatsAppAIChatService {
     intent: MessageIntent
   ): Promise<string> {
     // Friendly & casual system prompt - like chatting with a friend
-    let systemPrompt = `Kamu adalah ${config.aiName}, teman ngobrol dari ${tenant.name} (showroom mobil bekas di ${tenant.city || "Indonesia"}).
+    let systemPrompt = `Kamu adalah ${config.aiName}, seorang staff yang bekerja di ${tenant.name} (showroom mobil bekas di ${tenant.city || "Indonesia"}).
 
 GAYA BICARA:
 - Santai & friendly kayak ngobrol sama temen
@@ -718,15 +718,14 @@ A: "Hai kak! 👋 Lagi cari mobil apa nih? Boleh kasih tau budget atau merk yang
       status: 'AVAILABLE',
     };
 
-    // Price filter
+    // Price filter (price in DB is already in Rupiah, not cents)
     if (criteria.min_price || criteria.max_price) {
       where.price = {};
       if (criteria.min_price) {
-        // Price in database is stored in cents, criteria is in IDR
-        where.price.gte = BigInt(criteria.min_price * 100);
+        where.price.gte = BigInt(criteria.min_price);
       }
       if (criteria.max_price) {
-        where.price.lte = BigInt(criteria.max_price * 100);
+        where.price.lte = BigInt(criteria.max_price);
       }
     }
 

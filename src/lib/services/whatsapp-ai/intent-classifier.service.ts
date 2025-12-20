@@ -29,6 +29,7 @@ export type MessageIntent =
   | "staff_update_status"
   | "staff_check_inventory"
   | "staff_get_stats"
+  | "staff_verify_identity"
   | "unknown";
 
 export interface IntentClassificationResult {
@@ -56,6 +57,11 @@ const STAFF_COMMAND_PATTERNS = {
     /^input\s+(mobil|unit|kendaraan)/i,
     /^masukin\s+(mobil|unit|kendaraan)/i,  // masukin mobil
     /^tambah\s+data\s+(mobil|unit)/i,      // tambah data mobil
+  ],
+  verify_staff: [
+    /^\/verify\s+/i,                 // /verify 081234567890
+    /^verify\s+/i,                   // verify 081234567890
+    /^verifikasi\s+/i,               // verifikasi 081234567890
   ],
   update_status: [
     /^\/status/i,
@@ -138,6 +144,19 @@ export class IntentClassifierService {
     const normalizedMessage = (message || "").trim();
     console.log(`[Intent Classifier] Message: "${normalizedMessage}", hasMedia: ${hasMedia}`);
 
+    // 0. Check for /verify command FIRST - this allows LID users to verify themselves
+    // Must be checked before isStaff check because unverified LID users need to use this
+    if (STAFF_COMMAND_PATTERNS.verify_staff.some((p) => p.test(normalizedMessage))) {
+      console.log(`[Intent Classifier] 🔐 Verify command detected from: ${senderPhone}`);
+      return {
+        intent: "staff_verify_identity",
+        confidence: 0.95,
+        isStaff: false, // Will be set to true after verification
+        isCustomer: false,
+        reason: "Staff identity verification request",
+      };
+    }
+
     // Check if sender is staff
     const isStaff = await this.isStaffMember(senderPhone, tenantId);
     console.log(`[Intent Classifier] Is staff: ${isStaff}`);
@@ -181,9 +200,22 @@ export class IntentClassifierService {
   /**
    * Normalize phone number for comparison
    * Handles various formats: +62xxx, 62xxx, 0xxx, 08xxx
+   * Also handles LID format (linked devices) by extracting phone if available
    */
   private static normalizePhone(phone: string): string {
     if (!phone) return "";
+
+    // Detect LID format (e.g., "10020343271578@lid" or "10020343271578:45@lid")
+    // LID format cannot be normalized to phone - return special marker
+    if (phone.includes("@lid")) {
+      return `LID:${phone}`;
+    }
+
+    // Handle JID format (e.g., "6281234567890@s.whatsapp.net")
+    if (phone.includes("@")) {
+      phone = phone.split("@")[0];
+    }
+
     // Remove all non-digit characters
     let digits = phone.replace(/\D/g, "");
     // Convert Indonesian formats to standard 62xxx
@@ -195,10 +227,18 @@ export class IntentClassifierService {
   }
 
   /**
+   * Check if phone/ID is in LID format (linked device)
+   */
+  private static isLidFormat(phone: string): boolean {
+    return phone.includes("@lid");
+  }
+
+  /**
    * Check if phone number belongs to staff
    * Updated to use User table directly (staff management centralized)
    * Now with flexible phone number matching
    * Only considers ADMIN, MANAGER, SALES, STAFF roles as staff
+   * UPDATED: Also handles LID format by checking conversation history
    */
   private static async isStaffMember(
     phoneNumber: string,
@@ -207,6 +247,67 @@ export class IntentClassifierService {
     const normalizedInput = this.normalizePhone(phoneNumber);
     console.log(`[Intent Classifier] Checking staff - input: ${phoneNumber}, normalized: ${normalizedInput}, tenantId: ${tenantId}`);
 
+    // Handle LID format (linked devices like WA Web/Desktop)
+    if (this.isLidFormat(phoneNumber)) {
+      console.log(`[Intent Classifier] ⚠️ LID format detected: ${phoneNumber}`);
+
+      // Check if this LID has been previously used in a staff conversation
+      const existingConversation = await prisma.whatsAppConversation.findFirst({
+        where: {
+          tenantId,
+          customerPhone: phoneNumber,
+          isStaff: true,
+        },
+        select: { id: true, isStaff: true },
+      });
+
+      if (existingConversation?.isStaff) {
+        console.log(`[Intent Classifier] ✅ LID previously verified as staff (conv: ${existingConversation.id})`);
+        return true;
+      }
+
+      // If not previously verified, check if there's a staff mapping in contextData
+      const conversationWithMapping = await prisma.whatsAppConversation.findFirst({
+        where: {
+          tenantId,
+          customerPhone: phoneNumber,
+        },
+        select: { id: true, contextData: true },
+      });
+
+      // Check contextData for staffPhone mapping
+      const contextData = conversationWithMapping?.contextData as Record<string, any> | null;
+      if (contextData?.verifiedStaffPhone) {
+        // Verify the mapped phone number is actually staff
+        const mappedPhoneNormalized = this.normalizePhone(contextData.verifiedStaffPhone);
+        const staffCheck = await this.checkPhoneIsStaff(mappedPhoneNormalized, tenantId);
+        if (staffCheck) {
+          console.log(`[Intent Classifier] ✅ LID mapped to verified staff phone: ${contextData.verifiedStaffPhone}`);
+          // Update conversation to mark as staff
+          await prisma.whatsAppConversation.update({
+            where: { id: conversationWithMapping!.id },
+            data: { isStaff: true, conversationType: "staff" },
+          });
+          return true;
+        }
+      }
+
+      console.log(`[Intent Classifier] ❌ LID not verified as staff - treating as customer`);
+      console.log(`[Intent Classifier] 💡 TIP: Staff should first send a message from main phone, or use /verify command`);
+      return false;
+    }
+
+    // Standard phone number check
+    return this.checkPhoneIsStaff(normalizedInput, tenantId);
+  }
+
+  /**
+   * Check if a normalized phone number belongs to staff
+   */
+  private static async checkPhoneIsStaff(
+    normalizedPhone: string,
+    tenantId: string
+  ): Promise<boolean> {
     // Get staff users in tenant (only specific roles)
     const users = await prisma.user.findMany({
       where: {
@@ -218,11 +319,20 @@ export class IntentClassifierService {
 
     console.log(`[Intent Classifier] Found ${users.length} staff users in tenant`);
 
+    // Warn about staff without phone numbers (they can't be detected via WhatsApp)
+    const staffWithoutPhone = users.filter(u => !u.phone);
+    if (staffWithoutPhone.length > 0) {
+      console.warn(`[Intent Classifier] ⚠️ ${staffWithoutPhone.length} staff member(s) have no phone - cannot detect via WhatsApp:`);
+      staffWithoutPhone.forEach(u => {
+        console.warn(`[Intent Classifier]   - ${u.firstName} (${u.role})`);
+      });
+    }
+
     for (const user of users) {
       if (!user.phone) continue;
       const normalizedUserPhone = this.normalizePhone(user.phone);
-      console.log(`[Intent Classifier] Comparing: ${normalizedInput} vs ${normalizedUserPhone} (${user.firstName} - ${user.role})`);
-      if (normalizedInput === normalizedUserPhone) {
+      console.log(`[Intent Classifier] Comparing: ${normalizedPhone} vs ${normalizedUserPhone} (${user.firstName} - ${user.role})`);
+      if (normalizedPhone === normalizedUserPhone) {
         console.log(`[Intent Classifier] ✅ Staff match found: ${user.firstName} (${user.role})`);
         return true;
       }

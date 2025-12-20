@@ -77,6 +77,49 @@ export class WhatsAppVehicleUploadService {
   }
 
   /**
+   * Check for duplicate vehicle (same make/model/year uploaded within last 5 minutes)
+   * Prevents race condition where staff accidentally uploads same vehicle twice
+   */
+  private static async checkDuplicateVehicle(
+    tenantId: string,
+    make: string,
+    model: string,
+    year: number
+  ): Promise<{ isDuplicate: boolean; existingVehicle?: { id: string; displayId: string } }> {
+    const DUPLICATE_WINDOW_MINUTES = 5;
+    const cutoffTime = new Date(Date.now() - DUPLICATE_WINDOW_MINUTES * 60 * 1000);
+
+    console.log(`[WhatsApp Vehicle Upload] Checking for duplicates: ${make} ${model} ${year}`);
+    console.log(`[WhatsApp Vehicle Upload] Cutoff time: ${cutoffTime.toISOString()}`);
+
+    const existingVehicle = await prisma.vehicle.findFirst({
+      where: {
+        tenantId,
+        make: { equals: make, mode: 'insensitive' },
+        model: { contains: model.split(' ')[0], mode: 'insensitive' }, // Match base model
+        year,
+        createdAt: { gte: cutoffTime },
+      },
+      select: { id: true, displayId: true, make: true, model: true, year: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingVehicle) {
+      console.log(`[WhatsApp Vehicle Upload] ⚠️ Found duplicate: ${existingVehicle.displayId}`);
+      return {
+        isDuplicate: true,
+        existingVehicle: {
+          id: existingVehicle.id,
+          displayId: existingVehicle.displayId || existingVehicle.id,
+        },
+      };
+    }
+
+    console.log(`[WhatsApp Vehicle Upload] ✅ No duplicate found`);
+    return { isDuplicate: false };
+  }
+
+  /**
    * Create vehicle from WhatsApp with AI-powered SEO description
    *
    * @param vehicleData - Extracted vehicle data from natural language
@@ -97,6 +140,27 @@ export class WhatsAppVehicleUploadService {
     console.log('[WhatsApp Vehicle Upload] Tenant:', tenantId);
 
     try {
+      // 0. Check for duplicate vehicle (same make/model/year within last 5 minutes)
+      const duplicateCheck = await this.checkDuplicateVehicle(
+        tenantId,
+        vehicleData.make,
+        vehicleData.model,
+        vehicleData.year
+      );
+
+      if (duplicateCheck.isDuplicate) {
+        console.warn('[WhatsApp Vehicle Upload] ⚠️ Duplicate vehicle detected!');
+        console.warn('[WhatsApp Vehicle Upload] Existing vehicle:', duplicateCheck.existingVehicle);
+        return {
+          success: false,
+          message:
+            `⚠️ Mobil ini sepertinya baru aja diupload!\n\n` +
+            `${vehicleData.make} ${vehicleData.model} ${vehicleData.year}\n` +
+            `ID: ${duplicateCheck.existingVehicle?.displayId}\n\n` +
+            `Cek dulu di dashboard ya kak, mungkin sudah ada.`,
+          error: 'Duplicate vehicle detected',
+        };
+      }
       // 1. Format vehicle data into natural language description for AI
       const userDescription = this.formatVehicleDescription(vehicleData);
       console.log('[WhatsApp Vehicle Upload] Formatted description:', userDescription);

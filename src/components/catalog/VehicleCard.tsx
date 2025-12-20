@@ -26,6 +26,9 @@ interface VehicleCardProps {
     transmissionType: string | null;
     fuelType: string | null;
     photos: { thumbnailUrl: string; originalUrl: string }[];
+    // Sales info for direct contact
+    salesPhone?: string | null;
+    salesName?: string | null;
   };
   slug: string;
   tenantId?: string | null;
@@ -208,6 +211,8 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
             model: vehicle.model,
             year: vehicle.year,
             price: Number(vehicle.price), // Convert BigInt to number
+            salesPhone: vehicle.salesPhone || null,
+            salesName: vehicle.salesName || null,
           }}
           tenantId={tenantId}
         />

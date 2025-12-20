@@ -16,6 +16,9 @@ interface WhatsAppContactModalProps {
     model: string;
     year: number;
     price: number;
+    // Sales info for direct contact
+    salesPhone?: string | null;
+    salesName?: string | null;
   };
   tenantId: string;
 }
@@ -61,9 +64,12 @@ export default function WhatsAppContactModal({
 
       const tenantData = await tenantResponse.json();
 
+      // Use vehicle's salesPhone if available, otherwise fall back to tenant's whatsappNumber
+      const humanPhone = vehicle.salesPhone || (tenantData.success ? tenantData.data.whatsappNumber : null);
+
       setWhatsappConfig({
         aiPhoneNumber: aiData.success && aiData.data.isConnected ? aiData.data.phoneNumber : null,
-        humanPhoneNumber: tenantData.success ? tenantData.data.whatsappNumber : null,
+        humanPhoneNumber: humanPhone,
         aiEnabled: aiData.success && aiData.data.isConnected,
       });
     } catch (error) {
@@ -87,8 +93,12 @@ export default function WhatsAppContactModal({
     // Generate WhatsApp message
     // FIX: Use consistent price formatting (price is stored in rupiah, not cents)
     const formattedPrice = new Intl.NumberFormat('id-ID').format(vehicle.price);
+    // Include sales name in greeting if contacting human and name is available
+    const greeting = type === 'human' && vehicle.salesName
+      ? `Halo ${vehicle.salesName}!`
+      : `Halo!`;
     const message = encodeURIComponent(
-      `Halo! Saya tertarik dengan mobil:\n\n` +
+      `${greeting} Saya tertarik dengan mobil:\n\n` +
       `${vehicle.year} ${vehicle.make} ${vehicle.model}\n` +
       `Harga: Rp ${formattedPrice}\n\n` +
       `Boleh minta info lebih lanjut?`
@@ -223,8 +233,14 @@ export default function WhatsAppContactModal({
                       <span className="text-2xl">👨‍💼</span>
                     </div>
                     <div className="ml-4 text-left flex-1">
-                      <h3 className="font-bold text-gray-900 mb-1">Sales Staff</h3>
-                      <p className="text-sm text-gray-600 mb-2">Chat langsung dengan staff kami</p>
+                      <h3 className="font-bold text-gray-900 mb-1">
+                        {vehicle.salesName ? vehicle.salesName : 'Sales Staff'}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {vehicle.salesName
+                          ? `Chat langsung dengan ${vehicle.salesName}`
+                          : 'Chat langsung dengan staff kami'}
+                      </p>
                       <div className="flex flex-wrap gap-2 text-xs">
                         <span className="flex items-center text-blue-600">
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">

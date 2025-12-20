@@ -98,15 +98,25 @@ export class MessageOrchestratorService {
       });
       console.log(`[Orchestrator] Message updated with intent: ${classification.intent}`);
 
-      // Update conversation type
+      // Update conversation type and store verified staff phone for LID mapping
       if (classification.isStaff) {
+        // Get current contextData to preserve existing data
+        const currentContext = (conversation.contextData as Record<string, any>) || {};
+
         await prisma.whatsAppConversation.update({
           where: { id: conversation.id },
           data: {
             isStaff: true,
             conversationType: "staff",
+            // Store the verified staff phone for LID-to-phone mapping
+            contextData: {
+              ...currentContext,
+              verifiedStaffPhone: incoming.from,
+              verifiedAt: new Date().toISOString(),
+            },
           },
         });
+        console.log(`[Orchestrator] Stored verified staff phone: ${incoming.from}`);
       }
 
       // 4. Route based on intent
@@ -114,7 +124,36 @@ export class MessageOrchestratorService {
       let escalated = false;
       let responseImages: Array<{ imageUrl: string; caption?: string }> | undefined;
 
-      if (classification.isStaff) {
+      // Handle /verify command specially - allows LID users to verify themselves
+      if (classification.intent === "staff_verify_identity") {
+        console.log(`[Orchestrator] Routing to staff verify handler`);
+        const result = await this.handleStaffVerify(
+          conversation,
+          incoming.message,
+          incoming.from,
+          incoming.tenantId
+        );
+        responseMessage = result.message;
+        escalated = result.escalated;
+
+        // If verification successful, update conversation to staff
+        if (result.verified) {
+          await prisma.whatsAppConversation.update({
+            where: { id: conversation.id },
+            data: {
+              isStaff: true,
+              conversationType: "staff",
+              contextData: {
+                ...((conversation.contextData as Record<string, any>) || {}),
+                verifiedStaffPhone: result.verifiedPhone,
+                verifiedAt: new Date().toISOString(),
+                verifiedVia: "verify_command",
+              },
+            },
+          });
+        }
+        console.log(`[Orchestrator] Verify result: ${responseMessage?.substring(0, 50)}...`);
+      } else if (classification.isStaff) {
         // Handle staff command
         console.log(`[Orchestrator] Routing to staff command handler`);
         const result = await this.handleStaffCommand(
@@ -431,6 +470,82 @@ export class MessageOrchestratorService {
   }
 
   /**
+   * Handle staff verify command
+   * Allows LID users to verify their staff identity using their phone number
+   * Format: /verify 081234567890
+   */
+  private static async handleStaffVerify(
+    conversation: any,
+    message: string,
+    senderPhone: string,
+    tenantId: string
+  ): Promise<{ message: string; escalated: boolean; verified: boolean; verifiedPhone?: string }> {
+    try {
+      console.log(`[Orchestrator] handleStaffVerify - message: "${message}", sender: ${senderPhone}`);
+
+      // Extract phone number from message
+      const phoneMatch = message.match(/(?:\/verify|verify|verifikasi)\s+(\+?[\d\s-]+)/i);
+      if (!phoneMatch) {
+        return {
+          message: "❌ Format salah!\n\nCara pakai:\n/verify 081234567890\n\nGanti dengan nomor HP staff kamu ya 📱",
+          escalated: false,
+          verified: false,
+        };
+      }
+
+      const claimedPhone = phoneMatch[1].replace(/[\s-]/g, "");
+      console.log(`[Orchestrator] Claimed phone: ${claimedPhone}`);
+
+      // Normalize the claimed phone
+      const normalizedClaimed = this.normalizePhone(claimedPhone);
+
+      // Check if this phone belongs to a staff member
+      const staffUsers = await prisma.user.findMany({
+        where: {
+          tenantId,
+          role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
+        },
+        select: { id: true, phone: true, firstName: true, role: true },
+      });
+
+      let matchedStaff = null;
+      for (const user of staffUsers) {
+        if (!user.phone) continue;
+        const normalizedUserPhone = this.normalizePhone(user.phone);
+        if (normalizedClaimed === normalizedUserPhone) {
+          matchedStaff = user;
+          break;
+        }
+      }
+
+      if (!matchedStaff) {
+        console.log(`[Orchestrator] ❌ Phone ${claimedPhone} not found in staff list`);
+        return {
+          message: "❌ Nomor tidak terdaftar sebagai staff.\n\nPastikan nomor HP benar atau hubungi admin untuk menambahkan nomor kamu 📱",
+          escalated: false,
+          verified: false,
+        };
+      }
+
+      console.log(`[Orchestrator] ✅ Verified as staff: ${matchedStaff.firstName} (${matchedStaff.role})`);
+
+      return {
+        message: `✅ Verifikasi berhasil!\n\nHalo ${matchedStaff.firstName} 👋\nKamu sudah terverifikasi sebagai ${matchedStaff.role}.\n\nSekarang kamu bisa pakai semua fitur staff!\nKetik 'halo' untuk melihat menu.`,
+        escalated: false,
+        verified: true,
+        verifiedPhone: claimedPhone,
+      };
+    } catch (error: any) {
+      console.error("[Orchestrator] Staff verify error:", error);
+      return {
+        message: "❌ Terjadi kesalahan saat verifikasi.\n\nCoba lagi ya kak!",
+        escalated: true,
+        verified: false,
+      };
+    }
+  }
+
+  /**
    * Send response via Aimeow
    */
   private static async sendResponse(
@@ -613,25 +728,26 @@ export class MessageOrchestratorService {
   /**
    * Check if phone number belongs to staff
    * Uses normalized phone comparison for flexible matching
+   * Includes: ADMIN, MANAGER, SALES, STAFF roles
    */
   private static async isStaffMember(phone: string, tenantId: string): Promise<boolean> {
     const normalizedInput = this.normalizePhone(phone);
     console.log(`[Orchestrator] Checking staff - input: ${phone}, normalized: ${normalizedInput}`);
 
-    // Get all users in tenant and check phone match with normalization
+    // Get all users in tenant with staff roles and check phone match with normalization
     const users = await prisma.user.findMany({
       where: {
         tenantId,
-        role: { in: ["ADMIN", "STAFF"] },
+        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
       },
-      select: { id: true, phone: true, firstName: true },
+      select: { id: true, phone: true, firstName: true, role: true },
     });
 
     for (const user of users) {
       if (!user.phone) continue;
       const normalizedUserPhone = this.normalizePhone(user.phone);
       if (normalizedInput === normalizedUserPhone) {
-        console.log(`[Orchestrator] ✅ Staff match found: ${user.firstName}`);
+        console.log(`[Orchestrator] ✅ Staff match found: ${user.firstName} (${user.role})`);
         return true;
       }
     }

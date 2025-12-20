@@ -251,12 +251,53 @@ export class AimeowClientService {
   }
 
   /**
-   * Send WhatsApp message via Aimeow
+   * Send WhatsApp message via Aimeow with retry logic
+   * Retries up to 3 times with exponential backoff (1s, 3s, 9s)
    */
   static async sendMessage(params: AimeowSendMessageParams): Promise<AimeowMessageResponse> {
+    const MAX_RETRIES = 3;
+    const BACKOFF_MULTIPLIER = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      const result = await this.sendMessageAttempt(params, attempt);
+
+      if (result.success) {
+        return result;
+      }
+
+      lastError = new Error(result.error || 'Unknown error');
+
+      // Don't retry for certain errors
+      if (result.error?.includes('No connected client')) {
+        console.error(`[Aimeow Send] ❌ WhatsApp disconnected - not retrying`);
+        return result;
+      }
+
+      if (attempt < MAX_RETRIES) {
+        const backoffMs = Math.pow(BACKOFF_MULTIPLIER, attempt - 1) * 1000;
+        console.log(`[Aimeow Send] ⏳ Retry ${attempt}/${MAX_RETRIES} in ${backoffMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+      }
+    }
+
+    console.error(`[Aimeow Send] ❌ All ${MAX_RETRIES} attempts failed`);
+    return {
+      success: false,
+      error: lastError?.message || 'All retry attempts failed',
+    };
+  }
+
+  /**
+   * Internal: Single send message attempt
+   */
+  private static async sendMessageAttempt(
+    params: AimeowSendMessageParams,
+    attempt: number
+  ): Promise<AimeowMessageResponse> {
     const timestamp = new Date().toISOString();
     console.log("=".repeat(80));
-    console.log(`[Aimeow Send] ${timestamp} - SENDING MESSAGE`);
+    console.log(`[Aimeow Send] ${timestamp} - SENDING MESSAGE (Attempt ${attempt})`);
     console.log(`[Aimeow Send] Original Client ID: ${params.clientId}`);
     console.log(`[Aimeow Send] To: ${params.to}`);
     console.log(`[Aimeow Send] Message: ${params.message.substring(0, 100)}`);

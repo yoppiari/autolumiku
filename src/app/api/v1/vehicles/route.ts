@@ -1,11 +1,14 @@
 /**
  * GET /api/v1/vehicles - List vehicles
  * POST /api/v1/vehicles - Create vehicle
+ *
+ * Protected: Requires authentication
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { VehicleStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { authenticateRequest } from '@/lib/auth/middleware';
 
 /**
  * GET /api/v1/vehicles
@@ -14,11 +17,31 @@ import { prisma } from '@/lib/prisma';
  * Special action: ?action=update-ids&slug=xxx - Update VH-XXX to PM-PST-XXX format
  */
 export async function GET(request: NextRequest) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const action = searchParams.get('action');
     let tenantId = searchParams.get('tenantId');
     const slug = searchParams.get('slug');
+
+    // Tenant validation: non-super_admin can only access their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin') {
+      if (tenantId && tenantId !== auth.user.tenantId) {
+        return NextResponse.json(
+          { error: 'Forbidden - Cannot access vehicles from other tenant' },
+          { status: 403 }
+        );
+      }
+      tenantId = auth.user.tenantId;
+    }
 
     // If slug provided, lookup tenant by slug
     if (!tenantId && slug) {
@@ -228,15 +251,40 @@ async function generateLegacyDisplayId(): Promise<string> {
  * Create new vehicle
  */
 export async function POST(request: NextRequest) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Check permission - admin, manager, and sales can create vehicles
+  if (!['admin', 'super_admin', 'manager', 'staff', 'sales'].includes(auth.user.role.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Forbidden - No permission to create vehicles' },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await request.json();
 
-    // TODO: Get tenantId and userId from authenticated user session
-    const { tenantId, userId, ...vehicleData } = body;
+    // Use authenticated user's tenantId and userId
+    let { tenantId, userId, ...vehicleData } = body;
 
-    if (!tenantId || !userId) {
+    // Tenant validation: non-super_admin can only create in their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin') {
+      tenantId = auth.user.tenantId;
+    }
+
+    // Use authenticated user ID as creator
+    userId = auth.user.id;
+
+    if (!tenantId) {
       return NextResponse.json(
-        { error: 'tenantId and userId are required' },
+        { error: 'tenantId is required' },
         { status: 400 }
       );
     }

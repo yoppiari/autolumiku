@@ -2,11 +2,14 @@
  * GET /api/v1/vehicles/[id] - Get single vehicle
  * PUT /api/v1/vehicles/[id] - Update vehicle
  * DELETE /api/v1/vehicles/[id] - Delete vehicle
+ *
+ * Protected: Requires authentication
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { VehicleStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { authenticateRequest } from '@/lib/auth/middleware';
 
 // Reserved route names that should not be treated as vehicle IDs
 const RESERVED_ROUTES = ['update-ids', 'ai-identify', 'search', 'bulk'];
@@ -27,6 +30,15 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
   try {
     const { id } = await params;
 
@@ -62,6 +74,14 @@ export async function GET(
       );
     }
 
+    // Tenant validation: non-super_admin can only view vehicles from their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin' && vehicle.tenantId !== auth.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Forbidden - Cannot access vehicles from other tenant' },
+        { status: 403 }
+      );
+    }
+
     // Convert BigInt to number for JSON serialization
     const vehicleResponse = {
       ...vehicle,
@@ -94,6 +114,23 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Check permission - admin, manager, and sales can update vehicles
+  if (!['admin', 'super_admin', 'manager', 'staff', 'sales'].includes(auth.user.role.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Forbidden - No permission to update vehicles' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { id } = await params;
 
@@ -118,7 +155,6 @@ export async function PUT(
 
     console.log('[Vehicle Update] Request body:', JSON.stringify(body, null, 2));
 
-    // TODO: Get userId from authenticated user session
     const { userId, ...updateData } = body;
 
     // Check if vehicle exists
@@ -130,6 +166,14 @@ export async function PUT(
       return NextResponse.json(
         { error: 'Vehicle not found' },
         { status: 404 }
+      );
+    }
+
+    // Tenant validation: non-super_admin can only update vehicles from their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin' && existingVehicle.tenantId !== auth.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Forbidden - Cannot update vehicles from other tenant' },
+        { status: 403 }
       );
     }
 
@@ -185,8 +229,8 @@ export async function PUT(
     if (updateData.isFeatured !== undefined) dataToUpdate.isFeatured = updateData.isFeatured;
     if (updateData.displayOrder !== undefined) dataToUpdate.displayOrder = updateData.displayOrder;
 
-    // Metadata
-    if (userId) dataToUpdate.updatedBy = userId;
+    // Metadata - use authenticated user ID
+    dataToUpdate.updatedBy = auth.user.id;
 
     // Update vehicle
     const vehicle = await prisma.vehicle.update({
@@ -239,6 +283,23 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Check permission - only admin and manager can delete vehicles
+  if (!['admin', 'super_admin', 'manager'].includes(auth.user.role.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Forbidden - Admin or Manager access required to delete vehicles' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { id } = await params;
 
@@ -262,11 +323,20 @@ export async function DELETE(
       );
     }
 
+    // Tenant validation: non-super_admin can only delete vehicles from their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin' && existingVehicle.tenantId !== auth.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Forbidden - Cannot delete vehicles from other tenant' },
+        { status: 403 }
+      );
+    }
+
     // Soft delete by setting status to DELETED
     const vehicle = await prisma.vehicle.update({
       where: { id },
       data: {
         status: VehicleStatus.DELETED,
+        updatedBy: auth.user.id,
       },
     });
 

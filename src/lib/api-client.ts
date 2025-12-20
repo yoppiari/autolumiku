@@ -52,10 +52,28 @@ export async function apiClient<T = any>(
     // Handle 401 Unauthorized - redirect to login
     if (response.status === 401) {
       if (typeof window !== 'undefined') {
+        // Check if user is showroom user (has tenantId) or admin
+        const storedUser = localStorage.getItem('user');
+        let redirectPath = '/login'; // Default for showroom users
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser);
+            if (!user.tenantId || user.role === 'super_admin') {
+              redirectPath = '/admin/login';
+            }
+          } catch {}
+        }
+
         localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-        window.location.href = '/admin/login';
+        window.location.href = `${redirectPath}?error=session_expired`;
       }
+    }
+
+    // Handle 403 Forbidden
+    if (response.status === 403) {
+      console.error('[API] Forbidden - no permission');
     }
 
     return data;

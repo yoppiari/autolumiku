@@ -3,15 +3,27 @@
  * GET /api/v1/users/[id] - Get user by ID
  * PUT /api/v1/users/[id] - Update user
  * DELETE /api/v1/users/[id] - Delete user
+ *
+ * Protected: Requires authentication + admin role
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { authenticateRequest } from '@/lib/auth/middleware';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
   try {
     const { id } = await params;
 
@@ -24,6 +36,7 @@ export async function GET(
         lastName: true,
         phone: true,
         role: true,
+        tenantId: true,
         emailVerified: true,
         lastLoginAt: true,
         createdAt: true,
@@ -35,6 +48,14 @@ export async function GET(
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
+      );
+    }
+
+    // Tenant validation: non-super_admin can only view users from their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin' && user.tenantId !== auth.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Forbidden - Cannot access users from other tenant' },
+        { status: 403 }
       );
     }
 
@@ -55,6 +76,23 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Check permission - only admin and super_admin can update users
+  if (!['admin', 'super_admin'].includes(auth.user.role.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Forbidden - Admin access required to update users' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -77,6 +115,14 @@ export async function PUT(
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
+      );
+    }
+
+    // Tenant validation: non-super_admin can only update users from their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin' && currentUser.tenantId !== auth.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Forbidden - Cannot update users from other tenant' },
+        { status: 403 }
       );
     }
 
@@ -168,8 +214,46 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Check permission - only admin and super_admin can delete users
+  if (!['admin', 'super_admin'].includes(auth.user.role.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Forbidden - Admin access required to delete users' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { id } = await params;
+
+    // Get user to check tenant
+    const userToDelete = await prisma.user.findUnique({
+      where: { id },
+      select: { tenantId: true },
+    });
+
+    if (!userToDelete) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Tenant validation: non-super_admin can only delete users from their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin' && userToDelete.tenantId !== auth.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Forbidden - Cannot delete users from other tenant' },
+        { status: 403 }
+      );
+    }
 
     // Delete related WhatsApp staff auth first (if exists)
     await prisma.staffWhatsAppAuth.deleteMany({

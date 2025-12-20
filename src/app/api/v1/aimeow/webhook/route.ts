@@ -17,16 +17,33 @@ interface AimeowWebhookPayload {
   event: "message" | "status" | "qr" | "connected" | "disconnected";
   timestamp: string;
   data: {
-    from?: string;
+    // Sender identification - multiple possible fields
+    from?: string;              // Could be LID or phone JID
+    phoneNumber?: string;       // Actual phone number (if provided)
+    participant?: string;       // Actual sender (especially in groups or linked devices)
+    sender?: string;            // Alternative sender field
+    remoteJid?: string;         // Remote JID of the chat
+    pushName?: string;          // Contact display name
+
+    // Message content
     to?: string;
     message?: string;
-    text?: string; // Alternative field
+    text?: string;              // Alternative field
+    body?: string;              // Another alternative for message body
+    caption?: string;           // Media caption
+
+    // Media
     mediaUrl?: string;
     mediaType?: string;
+    mimetype?: string;          // Alternative media type field
+
+    // Message metadata
     messageId?: string;
+    id?: string;                // Alternative message ID field
+
+    // Status/connection events
     status?: string;
     qrCode?: string;
-    phoneNumber?: string;
   };
 }
 
@@ -122,10 +139,27 @@ async function handleIncomingMessage(
   account: any
 ) {
   const rawFrom = payload.data.from;
-  const messageText = payload.data.message || payload.data.text || "";
+  const messageText = payload.data.message || payload.data.text || payload.data.body || "";
   const mediaUrl = payload.data.mediaUrl;
-  const mediaType = payload.data.mediaType;
-  const messageId = payload.data.messageId || `msg_${Date.now()}`;
+  const mediaType = payload.data.mediaType || payload.data.mimetype;
+  const messageId = payload.data.messageId || payload.data.id || `msg_${Date.now()}`;
+
+  // IMPORTANT: AIMEOW might provide actual phone number in various fields
+  // This handles WhatsApp Web/Desktop where the actual phone is separate from LID
+  // Check multiple possible fields where phone number could be provided
+  const providedPhoneNumber = payload.data.phoneNumber
+    || payload.data.participant
+    || payload.data.sender;
+
+  // Log all sender-related fields for debugging
+  console.log(`[Aimeow Webhook] 📋 Sender fields:`, {
+    from: payload.data.from,
+    phoneNumber: payload.data.phoneNumber,
+    participant: payload.data.participant,
+    sender: payload.data.sender,
+    remoteJid: payload.data.remoteJid,
+    pushName: payload.data.pushName,
+  });
 
   // Normalize from field for LID format support (declared outside try for catch block access)
   // LID format: "10020343271578:17@lid" -> preserve as "10020343271578@lid"
@@ -142,9 +176,20 @@ async function handleIncomingMessage(
     );
   };
 
+  // Helper to normalize phone number
+  const normalizePhone = (phone: string): string => {
+    if (!phone) return "";
+    let digits = phone.replace(/\D/g, "");
+    if (digits.startsWith("0")) digits = "62" + digits.substring(1);
+    return digits;
+  };
+
   let from = rawFrom || "";
+  let isFromLID = false;
+
   if (rawFrom) {
     if (rawFrom.includes("@lid")) {
+      isFromLID = true;
       const lidPart = rawFrom.split(":")[0];
       from = `${lidPart}@lid`;
       console.log(`[Aimeow Webhook] 🔗 LID with suffix: ${rawFrom} -> ${from}`);
@@ -159,6 +204,7 @@ async function handleIncomingMessage(
       // No @ symbol - check if it looks like an LID and add @lid suffix
       const cleanNum = rawFrom.split(":")[0];
       if (isLikelyLID(cleanNum)) {
+        isFromLID = true;
         from = `${cleanNum}@lid`;
         console.log(`[Aimeow Webhook] 🔗 LID detected (adding @lid): ${rawFrom} -> ${from}`);
       } else {
@@ -166,6 +212,24 @@ async function handleIncomingMessage(
         console.log(`[Aimeow Webhook] 📱 Phone number: ${rawFrom} -> ${from}`);
       }
     }
+  }
+
+  // KEY FIX: If message is from LID but we have phoneNumber, use the phone number!
+  // This handles WhatsApp Web/Desktop where AIMEOW provides both LID and actual phone
+  if (isFromLID && providedPhoneNumber) {
+    const normalizedPhone = normalizePhone(providedPhoneNumber);
+    if (normalizedPhone && normalizedPhone.startsWith("62")) {
+      console.log(`[Aimeow Webhook] 🎯 LID resolved to phone! LID: ${from} -> Phone: ${normalizedPhone}`);
+      console.log(`[Aimeow Webhook] ✅ Using phone number for staff detection (WhatsApp Web/Desktop user)`);
+      from = normalizedPhone;
+      isFromLID = false; // Now we have the actual phone, not LID
+    }
+  }
+
+  // Log if LID couldn't be resolved
+  if (isFromLID) {
+    console.log(`[Aimeow Webhook] ⚠️ LID without phone mapping: ${from}`);
+    console.log(`[Aimeow Webhook] 💡 If this is staff, they can use /verify command`);
   }
 
   try {

@@ -124,11 +124,20 @@ export default function VehiclesPage() {
   };
 
   const handleWhatsAppClick = (vehicle: any) => {
-    const message = `Halo, saya tertarik dengan ${vehicle.year} ${vehicle.make} ${vehicle.model}${
+    const message = `Halo${vehicle.salesName ? ` ${vehicle.salesName}` : ''}, saya tertarik dengan ${vehicle.year} ${vehicle.make} ${vehicle.model}${
       vehicle.variant ? ` ${vehicle.variant}` : ''
     } (ID: ${vehicle.displayId || vehicle.id.slice(0, 8)})`;
 
-    const phoneNumber = tenant?.whatsappNumber?.replace(/[^0-9]/g, '') || '6281234567890';
+    // Use sales phone (vehicle uploader) if available, otherwise fallback to tenant WhatsApp
+    let phoneNumber = vehicle.salesPhone?.replace(/[^0-9]/g, '') ||
+                      tenant?.whatsappNumber?.replace(/[^0-9]/g, '') ||
+                      '6281234567890';
+
+    // Ensure phone number starts with country code
+    if (phoneNumber.startsWith('0')) {
+      phoneNumber = '62' + phoneNumber.slice(1);
+    }
+
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };

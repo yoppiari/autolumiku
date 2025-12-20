@@ -2,18 +2,50 @@
  * User Management API
  * GET /api/v1/users - List users with filtering
  * POST /api/v1/users - Create new user
+ *
+ * Protected: Requires authentication + admin role
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { authenticateRequest, type AuthResult } from '@/lib/auth/middleware';
 
 export async function GET(request: NextRequest) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Check permission - only admin and super_admin can view users
+  if (!['admin', 'super_admin', 'manager'].includes(auth.user.role.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Forbidden - Admin access required' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId');
+    let tenantId = searchParams.get('tenantId');
     const role = searchParams.get('role');
     const search = searchParams.get('search');
+
+    // Tenant validation: non-super_admin can only access their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin') {
+      // Force tenantId to be the authenticated user's tenant
+      if (tenantId && tenantId !== auth.user.tenantId) {
+        return NextResponse.json(
+          { error: 'Forbidden - Cannot access other tenant data' },
+          { status: 403 }
+        );
+      }
+      tenantId = auth.user.tenantId;
+    }
 
     if (!tenantId) {
       return NextResponse.json(
@@ -87,9 +119,37 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Check permission - only admin and super_admin can create users
+  if (!['admin', 'super_admin'].includes(auth.user.role.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Forbidden - Admin access required to create users' },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await request.json();
-    const { tenantId, email, firstName, lastName, phone, role } = body;
+    let { tenantId, email, firstName, lastName, phone, role } = body;
+
+    // Tenant validation: non-super_admin can only create users in their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin') {
+      if (tenantId && tenantId !== auth.user.tenantId) {
+        return NextResponse.json(
+          { error: 'Forbidden - Cannot create users in other tenant' },
+          { status: 403 }
+        );
+      }
+      tenantId = auth.user.tenantId;
+    }
 
     if (!tenantId || !email || !firstName || !role) {
       return NextResponse.json(

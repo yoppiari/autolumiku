@@ -27,6 +27,9 @@ export interface CatalogVehicle {
     displayOrder: number;
   }[];
   createdAt: Date;
+  // Sales info for WhatsApp contact
+  salesPhone: string | null;
+  salesName: string | null;
 }
 
 export interface CatalogFilters {
@@ -183,6 +186,14 @@ export class CatalogEngineService {
             displayOrder: true,
           },
         },
+        // Include creator (sales person who uploaded)
+        creator: {
+          select: {
+            phone: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
 
@@ -218,9 +229,13 @@ export class CatalogEngineService {
     };
 
     // Convert BigInt to number for JSON serialization
+    // Include sales phone from creator (uploader)
     const serializedVehicles = vehicles.map((v) => ({
       ...v,
       price: Number(v.price),
+      salesPhone: v.creator?.phone || null,
+      salesName: v.creator ? `${v.creator.firstName} ${v.creator.lastName}`.trim() : null,
+      creator: undefined, // Don't expose full creator object
     }));
 
     return {
@@ -275,6 +290,14 @@ export class CatalogEngineService {
             displayOrder: true,
           },
         },
+        // Include creator (sales person who uploaded)
+        creator: {
+          select: {
+            phone: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
 
@@ -283,6 +306,8 @@ export class CatalogEngineService {
     return {
       ...vehicle,
       price: Number(vehicle.price),
+      salesPhone: vehicle.creator?.phone || null,
+      salesName: vehicle.creator ? `${vehicle.creator.firstName} ${vehicle.creator.lastName}`.trim() : null,
     };
   }
 
@@ -325,12 +350,22 @@ export class CatalogEngineService {
             displayOrder: true,
           },
         },
+        // Include creator (sales person who uploaded)
+        creator: {
+          select: {
+            phone: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
 
     return vehicles.map((v) => ({
       ...v,
       price: Number(v.price),
+      salesPhone: v.creator?.phone || null,
+      salesName: v.creator ? `${v.creator.firstName} ${v.creator.lastName}`.trim() : null,
     }));
   }
 }
