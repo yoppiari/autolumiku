@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { api } from '@/lib/api-client';
 
 type VehicleStatus = 'DRAFT' | 'AVAILABLE' | 'BOOKED' | 'SOLD' | 'DELETED';
 type ViewMode = 'grid' | 'list';
@@ -74,30 +75,29 @@ export default function VehiclesPage() {
       // Step 2: Detect slug from domain
       const slug = detectSlugFromDomain();
 
-      // Step 3: Fetch vehicles - prefer slug for reliability, fallback to tenantId
-      let response;
+      // Step 3: Build URL
+      let url = '/api/v1/vehicles';
       if (slug) {
-        // Use slug directly - more reliable
         console.log(`[Vehicles] Fetching by slug: ${slug}`);
-        response = await fetch(`/api/v1/vehicles?slug=${slug}`);
+        url = `/api/v1/vehicles?slug=${slug}`;
       } else if (tenantId) {
-        // Fallback to tenantId from localStorage
         console.log(`[Vehicles] Fetching by tenantId: ${tenantId}`);
-        response = await fetch(`/api/v1/vehicles?tenantId=${tenantId}`);
+        url = `/api/v1/vehicles?tenantId=${tenantId}`;
       } else {
         setError('Tidak dapat mendeteksi tenant. Silakan login ulang.');
         setLoading(false);
         return;
       }
 
-      if (response.ok) {
-        const data = await response.json();
-        setVehicles(data.data || []);
-        console.log(`[Vehicles] ✅ Loaded ${data.data?.length || 0} vehicles`);
+      // Use api client which handles auth headers
+      const result = await api.get(url);
+
+      if (result.success) {
+        setVehicles(result.data || []);
+        console.log(`[Vehicles] ✅ Loaded ${result.data?.length || 0} vehicles`);
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('[Vehicles] API error:', errorData);
-        setError('Gagal memuat data kendaraan');
+        console.error('[Vehicles] API error:', result.error);
+        setError(result.error || 'Gagal memuat data kendaraan');
       }
     } catch (error) {
       console.error('Failed to fetch vehicles:', error);
