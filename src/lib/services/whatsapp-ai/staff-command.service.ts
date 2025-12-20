@@ -194,8 +194,19 @@ export class StaffCommandService {
     }
 
     // Simple format: Initialize multi-step upload flow
-    // Staff sends /upload, then we ask for photo first
-    if (message.toLowerCase().trim() === "/upload") {
+    // Staff sends /upload or "mau upload" etc., then we ask for photo first
+    const initPatterns = [
+      /^\/upload$/i,
+      /^upload$/i,
+      /^mau\s+upload\b/i,
+      /^ingin\s+upload\b/i,
+      /^mo\s+upload\b/i,
+      /^pengen\s+upload\b/i,
+    ];
+
+    const trimmedLower = message.toLowerCase().trim();
+    if (initPatterns.some(p => p.test(trimmedLower))) {
+      console.log(`[Staff Command] Upload init detected: "${message}"`);
       return {
         command: "upload_init",
         params: { step: "init" },
@@ -607,17 +618,59 @@ export class StaffCommandService {
 
     // === STEP 1: Initialize upload flow ===
     if (params.step === "init") {
+      // Check if there are recent photos in the conversation (last 10 minutes)
+      // This handles the case where staff sends photos BEFORE saying "mau upload"
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+      const recentPhotos = await prisma.whatsAppMessage.findMany({
+        where: {
+          conversationId,
+          direction: "inbound",
+          mediaType: "image",
+          createdAt: { gte: tenMinutesAgo },
+        },
+        orderBy: { createdAt: "asc" },
+        select: { mediaUrl: true },
+      });
+
+      const existingPhotos = recentPhotos
+        .filter(m => m.mediaUrl)
+        .map(m => m.mediaUrl as string);
+
+      console.log(`[Upload Flow] Found ${existingPhotos.length} recent photos to include`);
+
       await prisma.whatsAppConversation.update({
         where: { id: conversationId },
         data: {
           conversationState: "upload_vehicle",
           contextData: {
-            uploadStep: "awaiting_photo",
-            photos: [],
+            uploadStep: existingPhotos.length > 0 ? "has_photo_awaiting_data" : "awaiting_photo",
+            photos: existingPhotos,
             vehicleData: null,
           },
         },
       });
+
+      // Build response based on whether we already have photos
+      if (existingPhotos.length > 0) {
+        const MIN_PHOTOS = 6;
+        const photosNeeded = Math.max(0, MIN_PHOTOS - existingPhotos.length);
+
+        let message = `Oke siap upload! 📸\n\n`;
+        message += `✅ Foto ${existingPhotos.length}/6 udah masuk!\n\n`;
+
+        if (photosNeeded > 0) {
+          message += `Kirim ${photosNeeded} foto lagi ya:\n`;
+          message += `• Depan, belakang, samping\n`;
+          message += `• Dashboard, jok, bagasi\n\n`;
+        } else {
+          message += `Foto udah cukup! ✅\n\n`;
+        }
+
+        message += `Sekarang ketik info mobilnya:\n`;
+        message += `Contoh: "Brio 2020 120jt hitam matic km 30rb"`;
+
+        return { success: true, message };
+      }
 
       return {
         success: true,

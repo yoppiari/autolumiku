@@ -47,8 +47,15 @@ const STAFF_COMMAND_PATTERNS = {
   upload_vehicle: [
     /^\/upload/i,                    // /upload ...
     /^upload\s+/i,                   // upload Brio..., upload mobil...
+    /^upload$/i,                     // standalone "upload"
+    /^mau\s+upload\b/i,              // mau upload, mau upload dong
+    /^ingin\s+upload\b/i,            // ingin upload
+    /^mo\s+upload\b/i,               // mo upload (informal)
+    /^pengen\s+upload\b/i,           // pengen upload (informal)
     /^tambah\s+(mobil|unit|kendaraan)/i,
     /^input\s+(mobil|unit|kendaraan)/i,
+    /^masukin\s+(mobil|unit|kendaraan)/i,  // masukin mobil
+    /^tambah\s+data\s+(mobil|unit)/i,      // tambah data mobil
   ],
   update_status: [
     /^\/status/i,
@@ -191,6 +198,7 @@ export class IntentClassifierService {
    * Check if phone number belongs to staff
    * Updated to use User table directly (staff management centralized)
    * Now with flexible phone number matching
+   * Only considers ADMIN, MANAGER, SALES, STAFF roles as staff
    */
   private static async isStaffMember(
     phoneNumber: string,
@@ -199,20 +207,23 @@ export class IntentClassifierService {
     const normalizedInput = this.normalizePhone(phoneNumber);
     console.log(`[Intent Classifier] Checking staff - input: ${phoneNumber}, normalized: ${normalizedInput}, tenantId: ${tenantId}`);
 
-    // Get all users in tenant and check phone match with normalization
+    // Get staff users in tenant (only specific roles)
     const users = await prisma.user.findMany({
-      where: { tenantId },
-      select: { id: true, phone: true, firstName: true },
+      where: {
+        tenantId,
+        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
+      },
+      select: { id: true, phone: true, firstName: true, role: true },
     });
 
-    console.log(`[Intent Classifier] Found ${users.length} users in tenant`);
+    console.log(`[Intent Classifier] Found ${users.length} staff users in tenant`);
 
     for (const user of users) {
       if (!user.phone) continue;
       const normalizedUserPhone = this.normalizePhone(user.phone);
-      console.log(`[Intent Classifier] Comparing: ${normalizedInput} vs ${normalizedUserPhone} (${user.firstName})`);
+      console.log(`[Intent Classifier] Comparing: ${normalizedInput} vs ${normalizedUserPhone} (${user.firstName} - ${user.role})`);
       if (normalizedInput === normalizedUserPhone) {
-        console.log(`[Intent Classifier] ✅ Staff match found: ${user.firstName}`);
+        console.log(`[Intent Classifier] ✅ Staff match found: ${user.firstName} (${user.role})`);
         return true;
       }
     }
