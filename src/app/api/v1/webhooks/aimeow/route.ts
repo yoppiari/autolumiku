@@ -177,6 +177,10 @@ export async function POST(request: NextRequest) {
       console.log("  - message.media?.url:", message.media?.url);
       console.log("  - message.imageMessage:", message.imageMessage);
       console.log("  - message.imageMessage?.url:", message.imageMessage?.url);
+      console.log("  - message.downloadUrl:", message.downloadUrl);
+      console.log("  - message.file:", message.file);
+      console.log("  - message.fileUrl:", message.fileUrl);
+      console.log("[Aimeow Webhook] 🔑 ALL message keys:", Object.keys(message));
 
       if (message.type === "text") {
         messageText = message.text || "";
@@ -184,19 +188,41 @@ export async function POST(request: NextRequest) {
         // Image message - extract caption as text and media URL
         messageText = message.caption || message.text || "";
 
-        // Try multiple possible field names for media URL
+        // COMPREHENSIVE: Try ALL possible field names for media URL
+        // Some WhatsApp libraries use different field names
         mediaUrl = message.mediaUrl
           || message.url
           || message.imageUrl
+          || message.downloadUrl
+          || message.fileUrl
+          || message.file
           || message.image?.url
           || message.media?.url
           || message.imageMessage?.url
+          || message.imageMessage?.directPath
+          || message.directPath
           || message.image
           || message.media;
 
+        // Handle array format (album photos)
+        if (Array.isArray(mediaUrl)) {
+          console.log(`[Aimeow Webhook] 📸 Media is array with ${mediaUrl.length} items`);
+          mediaUrl = mediaUrl[0];
+        }
+
         // If mediaUrl is an object, try to extract url from it
         if (mediaUrl && typeof mediaUrl === 'object') {
-          mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.src || undefined;
+          mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.src || mediaUrl.directPath || undefined;
+        }
+
+        // Check nested structures
+        if (!mediaUrl && message.message?.imageMessage?.url) {
+          mediaUrl = message.message.imageMessage.url;
+          console.log(`[Aimeow Webhook] 📸 Found in message.message.imageMessage.url`);
+        }
+        if (!mediaUrl && message.mediaData?.url) {
+          mediaUrl = message.mediaData.url;
+          console.log(`[Aimeow Webhook] 📸 Found in message.mediaData.url`);
         }
 
         mediaType = "image";
@@ -208,6 +234,7 @@ export async function POST(request: NextRequest) {
         if (!mediaUrl) {
           console.error(`[Aimeow Webhook] ⚠️ WARNING: Image message has no mediaUrl!`);
           console.error(`[Aimeow Webhook] Full message object:`, JSON.stringify(message, null, 2));
+          // Still continue processing - the message will be saved and photo can be linked later
         }
       } else if (message.type === "video") {
         messageText = message.caption || message.text || "";
@@ -238,13 +265,29 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      await handleIncomingMessage(account, {
-        from: normalizedFrom,
-        message: messageText,
-        mediaUrl: mediaUrl,
-        mediaType: mediaType,
-        messageId: message.id,
-      });
+      try {
+        await handleIncomingMessage(account, {
+          from: normalizedFrom,
+          message: messageText,
+          mediaUrl: mediaUrl,
+          mediaType: mediaType,
+          messageId: message.id,
+        });
+      } catch (handleError: any) {
+        console.error("[Aimeow Webhook] ❌ Error in handleIncomingMessage:", handleError.message);
+
+        // IMPORTANT: Always send feedback to user when error occurs
+        try {
+          const { AimeowClientService } = await import("@/lib/services/aimeow/aimeow-client.service");
+          await AimeowClientService.sendMessage({
+            clientId: account.clientId,
+            to: normalizedFrom,
+            message: `Maaf kak, ada gangguan sementara 🙏\n\nError: ${handleError.message}\n\nCoba lagi beberapa saat ya!`,
+          });
+        } catch (sendError) {
+          console.error("[Aimeow Webhook] Failed to send error feedback:", sendError);
+        }
+      }
       return NextResponse.json({ success: true });
     }
 

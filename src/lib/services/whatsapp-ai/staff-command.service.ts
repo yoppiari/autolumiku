@@ -621,22 +621,37 @@ export class StaffCommandService {
       // Check if there are recent photos in the conversation (last 10 minutes)
       // This handles the case where staff sends photos BEFORE saying "mau upload"
       const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+
+      // IMPROVED: Search for photos more broadly - check mediaUrl OR mediaType
+      // Sometimes mediaType might not be set even when mediaUrl exists
       const recentPhotos = await prisma.whatsAppMessage.findMany({
         where: {
           conversationId,
           direction: "inbound",
-          mediaType: "image",
           createdAt: { gte: tenMinutesAgo },
+          OR: [
+            { mediaType: "image" },
+            { mediaType: { contains: "image" } },
+            { mediaUrl: { not: null } },
+            { mediaUrl: { not: "" } },
+          ],
         },
         orderBy: { createdAt: "asc" },
-        select: { mediaUrl: true },
+        select: { mediaUrl: true, mediaType: true, content: true },
       });
 
+      console.log(`[Upload Flow] Found ${recentPhotos.length} potential photo messages`);
+      console.log(`[Upload Flow] Photo messages:`, recentPhotos.map(p => ({
+        hasMediaUrl: !!p.mediaUrl,
+        mediaType: p.mediaType,
+        contentPreview: p.content?.substring(0, 30),
+      })));
+
       const existingPhotos = recentPhotos
-        .filter(m => m.mediaUrl)
+        .filter(m => m.mediaUrl && m.mediaUrl.startsWith('http'))
         .map(m => m.mediaUrl as string);
 
-      console.log(`[Upload Flow] Found ${existingPhotos.length} recent photos to include`);
+      console.log(`[Upload Flow] Found ${existingPhotos.length} valid photo URLs to include`);
 
       await prisma.whatsAppConversation.update({
         where: { id: conversationId },
@@ -905,11 +920,57 @@ export class StaffCommandService {
 
     console.log(`[Upload Flow] Step 3 - Merged vehicle data:`, mergedData);
 
+    // IMPORTANT FIX: When receiving vehicle data, also check for recent photos in DB
+    // This handles the case where photos were sent WITH caption but mediaUrl wasn't captured
+    // Or photos came as separate webhook calls before the data message
+    let photos = contextData.photos || [];
+
+    if (photos.length === 0) {
+      console.log(`[Upload Flow] No photos in context, checking DB for recent photos...`);
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+      const recentPhotoMessages = await prisma.whatsAppMessage.findMany({
+        where: {
+          conversationId,
+          direction: "inbound",
+          createdAt: { gte: tenMinutesAgo },
+          OR: [
+            { mediaType: "image" },
+            { mediaType: { contains: "image" } },
+            { mediaUrl: { not: null } },
+          ],
+        },
+        orderBy: { createdAt: "asc" },
+        select: { mediaUrl: true },
+      });
+
+      const foundPhotos = recentPhotoMessages
+        .filter(m => m.mediaUrl && m.mediaUrl.startsWith('http'))
+        .map(m => m.mediaUrl as string);
+
+      if (foundPhotos.length > 0) {
+        console.log(`[Upload Flow] ✅ Found ${foundPhotos.length} photos from DB!`);
+        photos = foundPhotos;
+
+        // Update context with found photos
+        await prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: {
+            contextData: {
+              ...contextData,
+              photos,
+            },
+          },
+        });
+      } else {
+        console.log(`[Upload Flow] No photos found in DB either`);
+      }
+    }
+
     // Check what's missing
     const { missingFields, askMessage, hasMinimumData } = this.checkMissingFields(mergedData);
 
-    // Get photos from context
-    const photos = contextData.photos || [];
+    // Photos already retrieved above (including DB fallback)
+    console.log(`[Upload Flow] Current photos count: ${photos.length}`);
 
     // Validate data integrity for fields that exist
     if (mergedData.year) {

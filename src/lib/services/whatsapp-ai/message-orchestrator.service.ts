@@ -64,9 +64,24 @@ export class MessageOrchestratorService {
 
       // 3. Check conversation state for multi-step flows
       let classification;
+      const hasMedia = !!(incoming.mediaUrl && (incoming.mediaType === 'image' || incoming.mediaType?.includes('image')));
+
+      // Log media detection for debugging
+      console.log(`[Orchestrator] Media detection:`, {
+        mediaUrl: incoming.mediaUrl ? 'YES' : 'NO',
+        mediaType: incoming.mediaType,
+        hasMedia,
+      });
+
       if (conversation.conversationState === "upload_vehicle") {
         // Staff is in middle of vehicle upload flow
-        console.log(`[Orchestrator] Conversation in upload_vehicle state, treating message as vehicle data`);
+        console.log(`[Orchestrator] Conversation in upload_vehicle state, treating message as vehicle data/photo`);
+
+        // IMPORTANT: If this is a photo, make sure it's treated as photo for upload
+        if (hasMedia) {
+          console.log(`[Orchestrator] ✅ Photo detected in upload flow!`);
+        }
+
         classification = {
           intent: "staff_upload_vehicle" as MessageIntent,
           confidence: 1.0,
@@ -77,7 +92,6 @@ export class MessageOrchestratorService {
         // Normal intent classification
         // Pass hasMedia flag to help detect vehicle uploads with photos
         // IMPORTANT: Pass conversation.isStaff to avoid redundant DB queries and fix LID format issues
-        const hasMedia = !!(incoming.mediaUrl && incoming.mediaType === 'image');
         console.log(`[Orchestrator] Classifying intent for message: ${incoming.message}, hasMedia: ${hasMedia}, conversationIsStaff: ${conversation.isStaff}`);
         classification = await IntentClassifierService.classify(
           incoming.message,
