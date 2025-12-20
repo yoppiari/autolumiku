@@ -157,7 +157,8 @@ async function handleIncomingMessage(
   const messageText = payload.data.message || payload.data.text || payload.data.body || payload.data.caption || "";
 
   // Check ALL possible media URL fields - Aimeow might use different field names
-  const mediaUrl = payload.data.mediaUrl
+  // IMPORTANT: Handle both string and array formats for media
+  let mediaUrl = payload.data.mediaUrl
     || payload.data.media
     || payload.data.imageUrl
     || payload.data.image
@@ -165,11 +166,42 @@ async function handleIncomingMessage(
     || payload.data.file
     || payload.data.fileUrl;
 
+  // Handle case where media is an array (album/multiple photos)
+  if (Array.isArray(mediaUrl)) {
+    console.log(`[Aimeow Webhook] 📸 Media is array with ${mediaUrl.length} items`);
+    mediaUrl = mediaUrl[0]; // Use first photo for now
+  }
+
+  // Check for nested media object structures
+  const payloadAny = payload.data as any;
+  if (!mediaUrl && payloadAny.mediaData?.url) {
+    mediaUrl = payloadAny.mediaData.url;
+    console.log(`[Aimeow Webhook] 📸 Found mediaUrl in mediaData.url`);
+  }
+  if (!mediaUrl && payloadAny.message?.imageMessage?.url) {
+    mediaUrl = payloadAny.message.imageMessage.url;
+    console.log(`[Aimeow Webhook] 📸 Found mediaUrl in message.imageMessage.url`);
+  }
+  if (!mediaUrl && payloadAny.downloadUrl) {
+    mediaUrl = payloadAny.downloadUrl;
+    console.log(`[Aimeow Webhook] 📸 Found mediaUrl in downloadUrl`);
+  }
+
   // Check media type from multiple sources
-  const mediaType = payload.data.mediaType
+  let mediaType = payload.data.mediaType
     || payload.data.mimetype
     || payload.data.type
     || payload.data.messageType;
+
+  // Infer media type from URL if not explicitly provided
+  if (!mediaType && mediaUrl) {
+    if (typeof mediaUrl === 'string') {
+      if (mediaUrl.includes('image') || /\.(jpg|jpeg|png|gif|webp)/i.test(mediaUrl)) {
+        mediaType = 'image';
+        console.log(`[Aimeow Webhook] 📸 Inferred mediaType as 'image' from URL`);
+      }
+    }
+  }
 
   // Debug log to see exactly what we're receiving
   console.log(`[Aimeow Webhook] 📝 Message fields:`, {
@@ -191,7 +223,22 @@ async function handleIncomingMessage(
     type: payload.data.type,
     messageType: payload.data.messageType,
   });
-  console.log(`[Aimeow Webhook] ✅ Resolved: messageText="${messageText?.substring(0, 50)}", mediaUrl=${mediaUrl ? 'YES' : 'NO'}, mediaType=${mediaType}`);
+
+  // Log additional fields that might contain media info
+  console.log(`[Aimeow Webhook] 📸 Additional media fields:`, {
+    hasMedia: payloadAny.hasMedia,
+    isMedia: payloadAny.isMedia,
+    mediaData: payloadAny.mediaData,
+    downloadUrl: payloadAny.downloadUrl,
+    directPath: payloadAny.directPath,
+    imageMessage: payloadAny.message?.imageMessage ? 'EXISTS' : undefined,
+    quotedMsg: payloadAny.quotedMsg ? 'EXISTS' : undefined,
+  });
+
+  // CRITICAL: Log ALL keys in payload.data to find the correct field
+  console.log(`[Aimeow Webhook] 🔑 ALL payload.data keys:`, Object.keys(payload.data));
+
+  console.log(`[Aimeow Webhook] ✅ Resolved: messageText="${messageText?.substring(0, 50)}", mediaUrl=${mediaUrl ? 'YES: ' + String(mediaUrl).substring(0, 50) : 'NO'}, mediaType=${mediaType}`);
 
   const messageId = payload.data.messageId || payload.data.id || `msg_${Date.now()}`;
 
