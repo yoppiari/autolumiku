@@ -261,25 +261,63 @@ export class WhatsAppVehicleUploadService {
       }
 
       // 6. Download, process, and save photos from WhatsApp media URLs
-      console.log('[WhatsApp Vehicle Upload] Processing vehicle photos...');
+      // Step 6.1: Download all photos in parallel for better performance
+      console.log(`[WhatsApp Vehicle Upload] 📥 Downloading ${photoUrls.length} photos in parallel...`);
+      const downloadStartTime = Date.now();
+
+      const downloadPromises = photoUrls.map((url, i) =>
+        this.downloadPhoto(url).then(buffer => ({
+          index: i,
+          url,
+          buffer,
+          success: buffer !== null,
+        }))
+      );
+
+      const downloadResults = await Promise.all(downloadPromises);
+      const downloadTime = Date.now() - downloadStartTime;
+
+      const successfulDownloads = downloadResults.filter(r => r.success);
+      const failedDownloads = downloadResults.filter(r => !r.success);
+
+      console.log(`[WhatsApp Vehicle Upload] 📥 Downloads completed in ${downloadTime}ms`);
+      console.log(`[WhatsApp Vehicle Upload] ✅ Successful: ${successfulDownloads.length}, ❌ Failed: ${failedDownloads.length}`);
+
+      if (failedDownloads.length > 0) {
+        console.warn(`[WhatsApp Vehicle Upload] Failed URLs:`, failedDownloads.map(f => f.url));
+      }
+
+      // Validate we have at least 1 photo to proceed
+      if (successfulDownloads.length === 0) {
+        // Delete the vehicle we just created since we have no photos
+        await prisma.vehicle.delete({ where: { id: vehicle.id } });
+        console.error(`[WhatsApp Vehicle Upload] ❌ No photos could be downloaded!`);
+
+        return {
+          success: false,
+          message:
+            `❌ Waduh, fotonya gagal didownload semua nih 😅\n\n` +
+            `Kemungkinan:\n` +
+            `• Link foto sudah expired\n` +
+            `• Koneksi internet terputus\n\n` +
+            `Coba kirim ulang fotonya ya kak! 📸`,
+          error: 'All photo downloads failed',
+        };
+      }
+
+      // Step 6.2: Process each successfully downloaded photo
+      console.log(`[WhatsApp Vehicle Upload] 🔄 Processing ${successfulDownloads.length} photos...`);
       let processedPhotoCount = 0;
+      const failedProcessing: number[] = [];
 
-      for (let i = 0; i < photoUrls.length; i++) {
+      for (const download of successfulDownloads) {
+        const i = download.index;
+        const photoBuffer = download.buffer!;
+
         try {
-          console.log(`[WhatsApp Vehicle Upload] Downloading photo ${i + 1}/${photoUrls.length}: ${photoUrls[i]}`);
+          console.log(`[WhatsApp Vehicle Upload] Processing photo ${i + 1}/${photoUrls.length}: ${photoBuffer.length} bytes`);
 
-          // Download photo from WhatsApp URL
-          const photoBuffer = await this.downloadPhoto(photoUrls[i]);
-
-          if (!photoBuffer) {
-            console.error(`[WhatsApp Vehicle Upload] Failed to download photo ${i + 1}`);
-            continue;
-          }
-
-          console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1} downloaded: ${photoBuffer.length} bytes`);
-
-          // 6.1 Detect and cover license plates with AI
-          console.log(`[WhatsApp Vehicle Upload] Detecting license plates in photo ${i + 1}...`);
+          // 6.2.1 Detect and cover license plates with AI
           let processedBuffer = photoBuffer;
           let platesDetected = 0;
 
@@ -290,7 +328,9 @@ export class WhatsAppVehicleUploadService {
             });
             processedBuffer = plateResult.covered;
             platesDetected = plateResult.platesDetected;
-            console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1}: ${platesDetected} plate(s) covered`);
+            if (platesDetected > 0) {
+              console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1}: ${platesDetected} plate(s) covered`);
+            }
           } catch (plateError: any) {
             console.error(`[WhatsApp Vehicle Upload] Plate detection failed for photo ${i + 1}:`, plateError.message);
             // Continue with original photo if plate detection fails
@@ -332,19 +372,38 @@ export class WhatsAppVehicleUploadService {
               mimeType: processed.metadata.mimeType,
               width: processed.metadata.width,
               height: processed.metadata.height,
-              isMainPhoto: i === 0,  // First photo is main
-              displayOrder: i,
+              isMainPhoto: processedPhotoCount === 0,  // First successfully processed photo is main
+              displayOrder: processedPhotoCount,
             },
           });
 
           processedPhotoCount++;
         } catch (photoError: any) {
           console.error(`[WhatsApp Vehicle Upload] Error processing photo ${i + 1}:`, photoError.message);
+          failedProcessing.push(i + 1);
           // Continue with next photo
         }
       }
 
       console.log('[WhatsApp Vehicle Upload] ✅ Processed', processedPhotoCount, 'of', photoUrls.length, 'photos');
+
+      // Validate minimum photos were successfully processed
+      const MIN_PHOTOS_REQUIRED = 1; // At least 1 photo must succeed
+      if (processedPhotoCount < MIN_PHOTOS_REQUIRED) {
+        // Delete the vehicle since we don't have enough photos
+        await prisma.vehicle.delete({ where: { id: vehicle.id } });
+        console.error(`[WhatsApp Vehicle Upload] ❌ Not enough photos processed: ${processedPhotoCount}/${MIN_PHOTOS_REQUIRED}`);
+
+        return {
+          success: false,
+          message:
+            `❌ Waduh, foto gagal diproses nih 😅\n\n` +
+            `Download berhasil ${successfulDownloads.length}, tapi gagal proses semua.\n\n` +
+            `Coba kirim ulang fotonya ya kak! 📸\n` +
+            `Pastikan ukuran foto tidak terlalu besar (maks 10MB).`,
+          error: 'Photo processing failed',
+        };
+      }
 
       // 7. Format success message
       const priceInJuta = Math.round(vehicleData.price / 1000000);
@@ -358,7 +417,14 @@ export class WhatsAppVehicleUploadService {
       message += `💰 Rp ${priceInJuta} Juta\n`;
       message += `📍 ${vehicleData.mileage?.toLocaleString('id-ID') || '0'} km | ${vehicleData.transmission || '-'}\n`;
       message += `🎨 ${vehicleData.color || '-'}\n`;
-      message += `📷 ${processedPhotoCount} foto\n\n`;
+
+      // Show photo upload status with details
+      if (failedDownloads.length > 0 || failedProcessing.length > 0) {
+        const totalFailed = failedDownloads.length + failedProcessing.length;
+        message += `📷 ${processedPhotoCount}/${photoUrls.length} foto (${totalFailed} gagal)\n\n`;
+      } else {
+        message += `📷 ${processedPhotoCount} foto ✅\n\n`;
+      }
 
       message += `🤖 AI udah bikin deskripsi SEO (${aiResult.descriptionId.length} karakter) ✨\n\n`;
 
@@ -455,29 +521,78 @@ export class WhatsAppVehicleUploadService {
   }
 
   /**
-   * Download photo from WhatsApp media URL
+   * Download photo from WhatsApp media URL with retry logic
+   * @param url - Media URL to download
+   * @param maxRetries - Maximum number of retry attempts (default: 3)
+   * @param timeoutMs - Timeout per attempt in milliseconds (default: 15000ms)
    */
-  private static async downloadPhoto(url: string): Promise<Buffer | null> {
-    try {
-      console.log(`[WhatsApp Vehicle Upload] Downloading from: ${url}`);
+  private static async downloadPhoto(
+    url: string,
+    maxRetries: number = 3,
+    timeoutMs: number = 15000
+  ): Promise<Buffer | null> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[WhatsApp Vehicle Upload] Downloading (attempt ${attempt}/${maxRetries}): ${url}`);
 
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-      });
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      if (!response.ok) {
-        console.error(`[WhatsApp Vehicle Upload] Download failed: ${response.status} ${response.statusText}`);
-        return null;
+        try {
+          const response = await fetch(url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            console.error(`[WhatsApp Vehicle Upload] Download failed: ${response.status} ${response.statusText}`);
+            if (attempt < maxRetries) {
+              console.log(`[WhatsApp Vehicle Upload] Retrying in 1s...`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              continue;
+            }
+            return null;
+          }
+
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+
+          // Validate buffer is not empty and is a valid image
+          if (buffer.length < 1000) {
+            console.error(`[WhatsApp Vehicle Upload] Downloaded file too small: ${buffer.length} bytes`);
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              continue;
+            }
+            return null;
+          }
+
+          console.log(`[WhatsApp Vehicle Upload] ✅ Download success: ${buffer.length} bytes`);
+          return buffer;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.error(`[WhatsApp Vehicle Upload] Download timeout (${timeoutMs}ms)`);
+        } else {
+          console.error(`[WhatsApp Vehicle Upload] Download error:`, error.message);
+        }
+
+        if (attempt < maxRetries) {
+          console.log(`[WhatsApp Vehicle Upload] Retrying in 1s...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
-
-      const arrayBuffer = await response.arrayBuffer();
-      return Buffer.from(arrayBuffer);
-    } catch (error: any) {
-      console.error(`[WhatsApp Vehicle Upload] Download error:`, error.message);
-      return null;
     }
+
+    console.error(`[WhatsApp Vehicle Upload] ❌ All ${maxRetries} download attempts failed for: ${url}`);
+    return null;
   }
 
   /**
