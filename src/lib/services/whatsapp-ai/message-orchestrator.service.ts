@@ -76,13 +76,15 @@ export class MessageOrchestratorService {
       } else {
         // Normal intent classification
         // Pass hasMedia flag to help detect vehicle uploads with photos
+        // IMPORTANT: Pass conversation.isStaff to avoid redundant DB queries and fix LID format issues
         const hasMedia = !!(incoming.mediaUrl && incoming.mediaType === 'image');
-        console.log(`[Orchestrator] Classifying intent for message: ${incoming.message}, hasMedia: ${hasMedia}`);
+        console.log(`[Orchestrator] Classifying intent for message: ${incoming.message}, hasMedia: ${hasMedia}, conversationIsStaff: ${conversation.isStaff}`);
         classification = await IntentClassifierService.classify(
           incoming.message,
           incoming.from,
           incoming.tenantId,
-          hasMedia
+          hasMedia,
+          conversation.isStaff // Pass conversation staff status to avoid redundant check
         );
         console.log(`[Orchestrator] Intent classified: ${classification.intent}, isStaff: ${classification.isStaff}, isCustomer: ${classification.isCustomer}`);
 
@@ -209,8 +211,9 @@ export class MessageOrchestratorService {
         if (result.uploadRequest) {
           console.log(`[Orchestrator] 🚗 AI detected upload request:`, result.uploadRequest);
 
-          // Verify this is from staff
-          const isStaff = await this.isStaffMember(incoming.from, incoming.tenantId);
+          // FIXED: Trust conversation.isStaff status instead of re-checking with phone
+          // This fixes LID format issues where phone format changes between messages
+          const isStaff = conversation.isStaff || await this.isStaffMember(incoming.from, incoming.tenantId);
 
           if (isStaff) {
             console.log(`[Orchestrator] User is staff, initiating upload flow...`);

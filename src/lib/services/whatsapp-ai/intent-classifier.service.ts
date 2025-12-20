@@ -133,16 +133,18 @@ export class IntentClassifierService {
   /**
    * Classify intent dari WhatsApp message
    * @param hasMedia - Optional flag to indicate if message has media (photo)
+   * @param conversationIsStaff - Optional flag from conversation to skip redundant staff check
    */
   static async classify(
     message: string,
     senderPhone: string,
     tenantId: string,
-    hasMedia: boolean = false
+    hasMedia: boolean = false,
+    conversationIsStaff: boolean = false
   ): Promise<IntentClassificationResult> {
     // Normalize message
     const normalizedMessage = (message || "").trim();
-    console.log(`[Intent Classifier] Message: "${normalizedMessage}", hasMedia: ${hasMedia}`);
+    console.log(`[Intent Classifier] Message: "${normalizedMessage}", hasMedia: ${hasMedia}, conversationIsStaff: ${conversationIsStaff}`);
 
     // 0. Check for /verify command FIRST - this allows LID users to verify themselves
     // Must be checked before isStaff check because unverified LID users need to use this
@@ -158,8 +160,10 @@ export class IntentClassifierService {
     }
 
     // Check if sender is staff
-    const isStaff = await this.isStaffMember(senderPhone, tenantId);
-    console.log(`[Intent Classifier] Is staff: ${isStaff}`);
+    // IMPORTANT: Trust conversationIsStaff flag to avoid redundant DB queries
+    // This also fixes LID format issues where phone matching fails
+    const isStaff = conversationIsStaff || await this.isStaffMember(senderPhone, tenantId);
+    console.log(`[Intent Classifier] Is staff: ${isStaff} (from conversation: ${conversationIsStaff})`);
 
     // 1. If staff, check for commands
     if (isStaff) {
