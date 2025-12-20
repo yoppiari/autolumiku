@@ -303,6 +303,25 @@ async function handleIncomingMessage(
     // Allow photo-only messages (for staff upload flow)
     // messageText can be empty if mediaUrl exists
     if (!messageText && !mediaUrl) {
+      // Check if this might be an image without proper mediaUrl
+      const mightBeImage = payload.data.type === 'image'
+        || payload.data.messageType === 'image'
+        || mediaType?.includes('image')
+        || payload.data.mimetype?.includes('image');
+
+      if (mightBeImage) {
+        console.warn("[Aimeow Webhook] ⚠️ Image message detected but no mediaUrl!");
+        console.warn("[Aimeow Webhook] Full payload.data:", JSON.stringify(payload.data, null, 2));
+
+        // Send helpful message to user
+        await AimeowClientService.sendMessage({
+          clientId: account.clientId,
+          to: from,
+          message: `📸 Foto diterima tapi belum bisa diproses.\n\nKetik dulu info mobilnya:\n"Brio 2020 120jt hitam matic km 30rb"\n\nNanti fotonya bisa dikirim setelah data masuk ya!`,
+        });
+        return;
+      }
+
       console.warn("[Aimeow Webhook] Empty message (no text, no media)");
       return;
     }
@@ -314,16 +333,57 @@ async function handleIncomingMessage(
       mediaType,
     });
 
-    // Process message via MessageOrchestrator
-    const result = await MessageOrchestratorService.processIncomingMessage({
-      accountId: account.id,
-      tenantId: account.tenantId,
-      from,
-      message: messageText,
-      mediaUrl,
-      mediaType,
-      messageId,
-    });
+    // QUICK CHECK: If this is a photo without mediaUrl, Aimeow might need special handling
+    // Some WhatsApp APIs require downloading media separately using mediaId
+    if (!mediaUrl && (payload.data.type === 'image' || payload.data.messageType === 'image' || mediaType?.includes('image'))) {
+      console.log(`[Aimeow Webhook] ⚠️ Image detected but no mediaUrl! Checking for mediaId...`);
+      console.log(`[Aimeow Webhook] Full data for debugging:`, JSON.stringify(payload.data, null, 2));
+
+      // Send acknowledgment that we received the image but can't process it yet
+      await AimeowClientService.sendMessage({
+        clientId: account.clientId,
+        to: from,
+        message: `📸 Foto diterima! Tapi sistem belum bisa memproses foto ini.\n\nCoba kirim foto satu per satu dengan cara:\n1. Tap foto di galeri\n2. Kirim tanpa caption dulu\n\nAtau ketik info mobilnya dulu: "Brio 2020 120jt hitam matic km 30rb"`,
+      });
+      return;
+    }
+
+    // Process message via MessageOrchestrator with timeout
+    console.log("[Aimeow Webhook] 🚀 Starting orchestrator processing...");
+    const startTime = Date.now();
+
+    let result;
+    try {
+      // Add timeout wrapper (30 seconds max)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Processing timeout after 30s')), 30000)
+      );
+
+      const processingPromise = MessageOrchestratorService.processIncomingMessage({
+        accountId: account.id,
+        tenantId: account.tenantId,
+        from,
+        message: messageText,
+        mediaUrl,
+        mediaType,
+        messageId,
+      });
+
+      result = await Promise.race([processingPromise, timeoutPromise]) as any;
+    } catch (timeoutError: any) {
+      console.error(`[Aimeow Webhook] ⏰ Processing timed out:`, timeoutError.message);
+
+      // Send timeout message to user
+      await AimeowClientService.sendMessage({
+        clientId: account.clientId,
+        to: from,
+        message: `Maaf kak, prosesnya lama banget nih 😅\n\nCoba lagi ya atau ketik "halo" untuk mulai ulang.`,
+      });
+      return;
+    }
+
+    const processingTime = Date.now() - startTime;
+    console.log(`[Aimeow Webhook] ⏱️ Processing took ${processingTime}ms`);
 
     console.log("[Aimeow Webhook] Message processed:", {
       success: result.success,
