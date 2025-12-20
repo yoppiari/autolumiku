@@ -184,8 +184,18 @@ async function handleIncomingMessage(
     return digits;
   };
 
-  let from = rawFrom || "";
+  // IMPORTANT: Use providedPhoneNumber as fallback if rawFrom is empty
+  // This handles cases where Aimeow sends phone in phoneNumber/sender field instead of from
+  let from = rawFrom || providedPhoneNumber || "";
   let isFromLID = false;
+
+  // Log the actual from value being used
+  if (!rawFrom && providedPhoneNumber) {
+    console.log(`[Aimeow Webhook] ⚠️ No 'from' field, using phoneNumber fallback: ${providedPhoneNumber}`);
+    // Normalize the providedPhoneNumber
+    from = normalizePhone(providedPhoneNumber);
+    console.log(`[Aimeow Webhook] 📱 Normalized fallback phone: ${from}`);
+  }
 
   if (rawFrom) {
     if (rawFrom.includes("@lid")) {

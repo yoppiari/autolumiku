@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FaSearch, FaPlus, FaEdit, FaTrash, FaUserCircle } from 'react-icons/fa';
+import { api } from '@/lib/api-client';
 
 interface User {
   id: string;
@@ -60,13 +61,12 @@ export default function UsersPage() {
   const loadUsers = async (tid: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/v1/users?tenantId=${tid}`);
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.data.users || []);
-        setStats(data.data.stats || { total: 0, byStatus: {}, byRole: {} });
+      const response = await api.get(`/api/v1/users?tenantId=${tid}`);
+      if (response.success) {
+        setUsers(response.data?.users || []);
+        setStats(response.data?.stats || { total: 0, byStatus: {}, byRole: {} });
       } else {
-        console.error('Failed to load users');
+        console.error('Failed to load users:', response.error);
       }
     } catch (error) {
       console.error('Error loading users:', error);
@@ -103,25 +103,19 @@ export default function UsersPage() {
     setFormLoading(true);
 
     try {
-      const response = await fetch('/api/v1/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          tenantId,
-        }),
+      const response = await api.post('/api/v1/users', {
+        ...formData,
+        tenantId,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.success) {
         // Reload users list
         await loadUsers(tenantId);
         // Reset form and close modal
         setFormData({ email: '', firstName: '', lastName: '', phone: '', role: 'SALES' });
         setShowCreateModal(false);
       } else {
-        setFormError(data.error || 'Failed to create user');
+        setFormError(response.error || 'Failed to create user');
       }
     } catch (error) {
       setFormError('An error occurred while creating user');
@@ -152,20 +146,14 @@ export default function UsersPage() {
     setFormLoading(true);
 
     try {
-      const response = await fetch(`/api/v1/users/${editingUser.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone,
-          role: formData.role,
-        }),
+      const response = await api.put(`/api/v1/users/${editingUser.id}`, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        role: formData.role,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.success) {
         // Reload users list
         await loadUsers(tenantId);
         // Reset form and close modal
@@ -173,7 +161,7 @@ export default function UsersPage() {
         setEditingUser(null);
         setShowEditModal(false);
       } else {
-        setFormError(data.error || 'Failed to update user');
+        setFormError(response.error || 'Failed to update user');
       }
     } catch (error) {
       setFormError('An error occurred while updating user');
@@ -189,16 +177,13 @@ export default function UsersPage() {
     }
 
     try {
-      const response = await fetch(`/api/v1/users/${userId}`, {
-        method: 'DELETE',
-      });
+      const response = await api.delete(`/api/v1/users/${userId}`);
 
-      if (response.ok) {
+      if (response.success) {
         // Reload users list
         await loadUsers(tenantId);
       } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to delete user');
+        alert(response.error || 'Failed to delete user');
       }
     } catch (error) {
       alert('An error occurred while deleting user');

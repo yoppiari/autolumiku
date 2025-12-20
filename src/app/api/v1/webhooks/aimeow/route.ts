@@ -86,6 +86,23 @@ export async function POST(request: NextRequest) {
       ];
       console.log("[Aimeow Webhook] 🔍 ALL POSSIBLE PHONE FIELDS:", possiblePhoneFields);
 
+      // IMPORTANT FIX: Use first available phone field as fallback
+      // Aimeow may send phone in different fields depending on message type/source
+      const rawFrom = message.from
+        || message.sender
+        || message.participant
+        || message.remoteJid
+        || message.key?.remoteJid
+        || message.key?.participant;
+
+      if (!rawFrom) {
+        console.error("[Aimeow Webhook] ❌ No phone/from field found in any possible location!");
+        console.error("[Aimeow Webhook] Full message object:", JSON.stringify(message, null, 2));
+        return NextResponse.json({ success: false, error: "No sender phone found" }, { status: 400 });
+      }
+
+      console.log("[Aimeow Webhook] 📱 Using from field:", rawFrom);
+
       // IMPORTANT: Normalize phone/JID for reply
       // Aimeow sends different formats:
       // 1. Phone JID: "6281235108908:17@s.whatsapp.net" -> extract "6281235108908"
@@ -94,10 +111,10 @@ export async function POST(request: NextRequest) {
       //
       // LIDs (Linked IDs) are internal WhatsApp IDs for business accounts/linked devices
       // They MUST have @lid suffix for replies to work!
-      let normalizedFrom = message.from;
+      let normalizedFrom = rawFrom;
 
       // Log for debugging
-      console.log("[Aimeow Webhook] 📱 FROM FIELD:", message.from);
+      console.log("[Aimeow Webhook] 📱 RAW FROM FIELD:", rawFrom);
 
       // Helper to check if a number looks like an LID (not a phone number)
       // LIDs typically start with "100", "101", etc. and are longer than phone numbers
@@ -113,34 +130,34 @@ export async function POST(request: NextRequest) {
       };
 
       // Check if this is an LID format (contains @lid)
-      if (message.from.includes("@lid")) {
+      if (rawFrom.includes("@lid")) {
         // LID format with suffix: preserve it, just remove device part
         // "10020343271578:17@lid" -> "10020343271578@lid"
-        const lidPart = message.from.split(":")[0];
+        const lidPart = rawFrom.split(":")[0];
         normalizedFrom = `${lidPart}@lid`;
-        console.log(`[Aimeow Webhook] 🔗 LID with suffix: ${message.from} -> ${normalizedFrom}`);
-      } else if (message.from.includes("@s.whatsapp.net")) {
+        console.log(`[Aimeow Webhook] 🔗 LID with suffix: ${rawFrom} -> ${normalizedFrom}`);
+      } else if (rawFrom.includes("@s.whatsapp.net")) {
         // Phone JID format: extract just the phone number
         // "6281235108908:17@s.whatsapp.net" -> "6281235108908"
-        normalizedFrom = message.from.split("@")[0].split(":")[0];
-        console.log(`[Aimeow Webhook] 📞 Phone JID: ${message.from} -> ${normalizedFrom}`);
-      } else if (message.from.includes("@")) {
+        normalizedFrom = rawFrom.split("@")[0].split(":")[0];
+        console.log(`[Aimeow Webhook] 📞 Phone JID: ${rawFrom} -> ${normalizedFrom}`);
+      } else if (rawFrom.includes("@")) {
         // Unknown JID format - try to preserve domain
-        const [userPart, domain] = message.from.split("@");
+        const [userPart, domain] = rawFrom.split("@");
         const cleanUser = userPart.split(":")[0];
         normalizedFrom = `${cleanUser}@${domain}`;
-        console.log(`[Aimeow Webhook] ❓ Unknown JID: ${message.from} -> ${normalizedFrom}`);
+        console.log(`[Aimeow Webhook] ❓ Unknown JID: ${rawFrom} -> ${normalizedFrom}`);
       } else {
         // No @ symbol - check if it looks like an LID and add @lid suffix
-        const cleanNum = message.from.split(":")[0];
+        const cleanNum = rawFrom.split(":")[0];
         if (isLikelyLID(cleanNum)) {
           // This looks like an LID without suffix - ADD @lid!
           normalizedFrom = `${cleanNum}@lid`;
-          console.log(`[Aimeow Webhook] 🔗 LID detected (adding @lid): ${message.from} -> ${normalizedFrom}`);
+          console.log(`[Aimeow Webhook] 🔗 LID detected (adding @lid): ${rawFrom} -> ${normalizedFrom}`);
         } else {
           // Regular phone number
           normalizedFrom = cleanNum;
-          console.log(`[Aimeow Webhook] 📱 Phone number: ${message.from} -> ${normalizedFrom}`);
+          console.log(`[Aimeow Webhook] 📱 Phone number: ${rawFrom} -> ${normalizedFrom}`);
         }
       }
 
