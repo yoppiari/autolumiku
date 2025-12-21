@@ -171,6 +171,40 @@ export default function VehiclesPage() {
     sold: vehicles.filter(v => v.status === 'SOLD').length,
   };
 
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const handleDelete = async (vehicle: Vehicle) => {
+    const confirmMsg = `Hapus ${vehicle.make} ${vehicle.model} (${vehicle.displayId || vehicle.id.slice(0, 8)})?\n\nTindakan ini akan menghapus kendaraan secara permanen.`;
+
+    if (!confirm(confirmMsg)) return;
+
+    setDeleting(vehicle.id);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/v1/vehicles/${vehicle.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+
+      if (response.ok) {
+        // Remove from local state
+        setVehicles(prev => prev.filter(v => v.id !== vehicle.id));
+        alert(`✅ ${vehicle.make} ${vehicle.model} berhasil dihapus`);
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(`Gagal menghapus: ${data.error || data.message || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Terjadi kesalahan saat menghapus');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-4 flex items-center justify-center h-[calc(100vh-64px)]">
@@ -388,12 +422,31 @@ export default function VehiclesPage() {
                     {vehicle.mileage?.toLocaleString()} km • {vehicle.color}
                   </div>
 
-                  <Link
-                    href={`/dashboard/vehicles/${vehicle.id}/edit`}
-                    className="block w-full mt-2 px-2 py-1 text-xs text-center bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Edit
-                  </Link>
+                  <div className="flex gap-1 mt-2">
+                    <Link
+                      href={`/dashboard/vehicles/${vehicle.id}/edit`}
+                      className="flex-1 px-2 py-1 text-xs text-center bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(vehicle)}
+                      disabled={deleting === vehicle.id}
+                      className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed"
+                      title="Hapus kendaraan"
+                    >
+                      {deleting === vehicle.id ? (
+                        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
