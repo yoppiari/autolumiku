@@ -208,26 +208,26 @@ export default function BlogListPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-3 flex justify-between items-center flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Blog Management</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold">Blog Management</h1>
+          <p className="text-gray-600 text-sm">
             Kelola artikel blog SEO-optimized untuk showroom Anda
           </p>
         </div>
         <button
           onClick={() => router.push('/dashboard/blog/generate')}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center gap-2"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center gap-2 text-sm"
         >
           🤖 Generate New Post
         </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white rounded-lg shadow-sm p-3 mb-3 flex-shrink-0 border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {/* Search */}
           <div className="md:col-span-2">
             <input
@@ -235,7 +235,7 @@ export default function BlogListPage() {
               placeholder="🔍 Cari judul atau konten..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -244,7 +244,7 @@ export default function BlogListPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as BlogStatus | 'ALL')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="ALL">Semua Status</option>
               <option value="DRAFT">Draft</option>
@@ -259,7 +259,7 @@ export default function BlogListPage() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value as BlogCategory | 'ALL')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="ALL">Semua Kategori</option>
               {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
@@ -272,14 +272,14 @@ export default function BlogListPage() {
         </div>
 
         {/* View Mode Toggle */}
-        <div className="mt-4 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
+        <div className="mt-2 flex justify-between items-center">
+          <div className="text-xs text-gray-600">
             Menampilkan {filteredPosts.length} dari {pagination.total} artikel
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setViewMode('table')}
-              className={`px-4 py-2 rounded-lg ${
+              className={`px-3 py-1.5 text-sm rounded-lg ${
                 viewMode === 'table'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -289,7 +289,7 @@ export default function BlogListPage() {
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-4 py-2 rounded-lg ${
+              className={`px-3 py-1.5 text-sm rounded-lg ${
                 viewMode === 'grid'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -301,299 +301,300 @@ export default function BlogListPage() {
         </div>
       </div>
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat blog posts...</p>
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-red-700">{error}</p>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!isLoading && filteredPosts.length === 0 && (
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <div className="text-6xl mb-4">📝</div>
-          <h3 className="text-xl font-semibold mb-2">Belum ada artikel</h3>
-          <p className="text-gray-600 mb-6">
-            {searchQuery
-              ? 'Tidak ada artikel yang sesuai dengan pencarian Anda'
-              : 'Mulai buat artikel pertama Anda dengan AI'}
-          </p>
-          {!searchQuery && (
-            <button
-              onClick={() => router.push('/dashboard/blog/generate')}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-            >
-              🤖 Generate Blog Post
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Table View */}
-      {!isLoading && filteredPosts.length > 0 && viewMode === 'table' && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Artikel
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Kategori
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    SEO
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Views
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tanggal
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredPosts.map((post) => (
-                  <tr key={post.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="max-w-md">
-                        <div className="font-semibold text-gray-900 mb-1">
-                          {post.title}
-                        </div>
-                        <div className="text-sm text-gray-600 line-clamp-2">
-                          {post.excerpt}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {post.wordCount ?? 0} kata • {post.authorName}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                        {CATEGORY_LABELS[post.category]}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs rounded ${STATUS_COLORS[post.status]}`}
-                      >
-                        {post.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`font-semibold ${getSEOScoreColor(post.seoScore)}`}
-                      >
-                        {post.seoScore}/100
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                      {post.views.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {formatDate(post.publishedAt || post.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end gap-2">
-                        {post.status === 'DRAFT' && (
-                          <button
-                            onClick={() => handlePublish(post.id)}
-                            className="text-green-600 hover:text-green-900"
-                            title="Publish"
-                          >
-                            ✅
-                          </button>
-                        )}
-                        <button
-                          onClick={() =>
-                            router.push(`/dashboard/blog/${post.id}/edit`)
-                          }
-                          className="text-blue-600 hover:text-blue-900"
-                          title="Edit"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
-                          className="text-purple-600 hover:text-purple-900"
-                          title="Preview"
-                        >
-                          👁️
-                        </button>
-                        <button
-                          onClick={() => handleDelete(post.id, post.title)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-auto">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-gray-200">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
+            <p className="text-gray-600 text-sm">Memuat blog posts...</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Grid View */}
-      {!isLoading && filteredPosts.length > 0 && viewMode === 'grid' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPosts.map((post) => (
-            <div key={post.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              {/* Featured Image Placeholder */}
-              <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <div className="text-white text-6xl">
-                  {post.featuredImage ? (
-                    <img
-                      src={post.featuredImage}
-                      alt={post.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    '📝'
-                  )}
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && filteredPosts.length === 0 && (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-gray-200">
+            <div className="text-5xl mb-3">📝</div>
+            <h3 className="text-lg font-semibold mb-1">Belum ada artikel</h3>
+            <p className="text-gray-600 mb-4 text-sm">
+              {searchQuery
+                ? 'Tidak ada artikel yang sesuai dengan pencarian Anda'
+                : 'Mulai buat artikel pertama Anda dengan AI'}
+            </p>
+            {!searchQuery && (
+              <button
+                onClick={() => router.push('/dashboard/blog/generate')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm"
+              >
+                🤖 Generate Blog Post
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Table View */}
+        {!isLoading && filteredPosts.length > 0 && viewMode === 'table' && (
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Artikel
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Kategori
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      SEO
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Views
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tanggal
+                    </th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredPosts.map((post) => (
+                    <tr key={post.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-2">
+                        <div className="max-w-md">
+                          <div className="font-semibold text-gray-900 text-sm">
+                            {post.title}
+                          </div>
+                          <div className="text-xs text-gray-600 line-clamp-1">
+                            {post.excerpt}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {post.wordCount ?? 0} kata • {post.authorName}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
+                          {CATEGORY_LABELS[post.category]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-0.5 text-xs rounded ${STATUS_COLORS[post.status]}`}
+                        >
+                          {post.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <span
+                          className={`font-semibold text-sm ${getSEOScoreColor(post.seoScore)}`}
+                        >
+                          {post.seoScore}/100
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap text-gray-600 text-sm">
+                        {post.views.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-600">
+                        {formatDate(post.publishedAt || post.createdAt)}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end gap-2">
+                          {post.status === 'DRAFT' && (
+                            <button
+                              onClick={() => handlePublish(post.id)}
+                              className="text-green-600 hover:text-green-900"
+                              title="Publish"
+                            >
+                              ✅
+                            </button>
+                          )}
+                          <button
+                            onClick={() =>
+                              router.push(`/dashboard/blog/${post.id}/edit`)
+                            }
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
+                            className="text-purple-600 hover:text-purple-900"
+                            title="Preview"
+                          >
+                            👁️
+                          </button>
+                          <button
+                            onClick={() => handleDelete(post.id, post.title)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Grid View */}
+        {!isLoading && filteredPosts.length > 0 && viewMode === 'grid' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredPosts.map((post) => (
+              <div key={post.id} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+                {/* Featured Image Placeholder */}
+                <div className="h-32 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <div className="text-white text-4xl">
+                    {post.featuredImage ? (
+                      <img
+                        src={post.featuredImage}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      '📝'
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Content */}
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                    {CATEGORY_LABELS[post.category]}
-                  </span>
-                  <span
-                    className={`px-2 py-1 text-xs rounded ${STATUS_COLORS[post.status]}`}
-                  >
-                    {post.status}
-                  </span>
-                </div>
+                {/* Content */}
+                <div className="p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
+                      {CATEGORY_LABELS[post.category]}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 text-xs rounded ${STATUS_COLORS[post.status]}`}
+                    >
+                      {post.status}
+                    </span>
+                  </div>
 
-                <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                  {post.title}
-                </h3>
+                  <h3 className="font-semibold text-sm mb-1 line-clamp-2">
+                    {post.title}
+                  </h3>
 
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                  {post.excerpt}
-                </p>
+                  <p className="text-xs text-gray-600 mb-2 line-clamp-1">
+                    {post.excerpt}
+                  </p>
 
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                  <div>
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
                     <span className={`font-semibold ${getSEOScoreColor(post.seoScore)}`}>
                       SEO: {post.seoScore}/100
                     </span>
+                    <span>{post.views} views</span>
                   </div>
-                  <div>{post.views} views</div>
-                </div>
 
-                <div className="text-xs text-gray-500 mb-3">
-                  {post.wordCount ?? 0} kata • {formatDate(post.publishedAt || post.createdAt)}
-                </div>
+                  <div className="text-xs text-gray-500 mb-2">
+                    {post.wordCount ?? 0} kata • {formatDate(post.publishedAt || post.createdAt)}
+                  </div>
 
-                {/* Actions */}
-                <div className="flex gap-2 pt-3 border-t">
-                  {post.status === 'DRAFT' && (
+                  {/* Actions */}
+                  <div className="flex gap-1 pt-2 border-t">
+                    {post.status === 'DRAFT' && (
+                      <button
+                        onClick={() => handlePublish(post.id)}
+                        className="flex-1 px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                      >
+                        Publish
+                      </button>
+                    )}
                     <button
-                      onClick={() => handlePublish(post.id)}
-                      className="flex-1 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                      onClick={() => router.push(`/dashboard/blog/${post.id}/edit`)}
+                      className="flex-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
                     >
-                      Publish
+                      Edit
                     </button>
-                  )}
-                  <button
-                    onClick={() => router.push(`/dashboard/blog/${post.id}/edit`)}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
-                    className="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
-                  >
-                    👁️
-                  </button>
-                  <button
-                    onClick={() => handleDelete(post.id, post.title)}
-                    className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
-                  >
-                    🗑️
-                  </button>
+                    <button
+                      onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
+                      className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs"
+                    >
+                      👁️
+                    </button>
+                    <button
+                      onClick={() => handleDelete(post.id, post.title)}
+                      className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {!isLoading && filteredPosts.length > 0 && pagination.totalPages > 1 && (
-        <div className="mt-6 flex justify-center items-center gap-2">
-          <button
-            onClick={() =>
-              setPagination({ ...pagination, page: Math.max(1, pagination.page - 1) })
-            }
-            disabled={pagination.page === 1}
-            className={`px-4 py-2 rounded-lg ${
-              pagination.page === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-            }`}
-          >
-            ← Previous
-          </button>
-
-          <div className="flex gap-2">
-            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
-              (pageNum) => (
-                <button
-                  key={pageNum}
-                  onClick={() => setPagination({ ...pagination, page: pageNum })}
-                  className={`px-4 py-2 rounded-lg ${
-                    pageNum === pagination.page
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              )
-            )}
+            ))}
           </div>
+        )}
 
-          <button
-            onClick={() =>
-              setPagination({
-                ...pagination,
-                page: Math.min(pagination.totalPages, pagination.page + 1),
-              })
-            }
-            disabled={pagination.page === pagination.totalPages}
-            className={`px-4 py-2 rounded-lg ${
-              pagination.page === pagination.totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-            }`}
-          >
-            Next →
-          </button>
-        </div>
-      )}
+        {/* Pagination */}
+        {!isLoading && filteredPosts.length > 0 && pagination.totalPages > 1 && (
+          <div className="mt-3 flex justify-center items-center gap-2">
+            <button
+              onClick={() =>
+                setPagination({ ...pagination, page: Math.max(1, pagination.page - 1) })
+              }
+              disabled={pagination.page === 1}
+              className={`px-3 py-1.5 text-sm rounded-lg ${
+                pagination.page === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              }`}
+            >
+              ← Prev
+            </button>
+
+            <div className="flex gap-1">
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
+                (pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPagination({ ...pagination, page: pageNum })}
+                    className={`px-3 py-1.5 text-sm rounded-lg ${
+                      pageNum === pagination.page
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              )}
+            </div>
+
+            <button
+              onClick={() =>
+                setPagination({
+                  ...pagination,
+                  page: Math.min(pagination.totalPages, pagination.page + 1),
+                })
+              }
+              disabled={pagination.page === pagination.totalPages}
+              className={`px-3 py-1.5 text-sm rounded-lg ${
+                pagination.page === pagination.totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              }`}
+            >
+              Next →
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
