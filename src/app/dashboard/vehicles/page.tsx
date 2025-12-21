@@ -46,6 +46,63 @@ export default function VehiclesPage() {
     applyFilters();
   }, [vehicles, statusFilter, searchQuery, sortBy]);
 
+  // Auto-fix vehicle IDs when vehicles are loaded
+  useEffect(() => {
+    const fixVehicleIds = async () => {
+      if (vehicles.length === 0) return;
+
+      // Filter active vehicles only
+      const activeVehicles = vehicles.filter(v => v.status !== 'DELETED');
+      if (activeVehicles.length === 0) return;
+
+      // Sort by createdAt to find the first vehicle
+      const sorted = [...activeVehicles].sort((a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
+      const firstVehicle = sorted[0];
+      if (!firstVehicle?.displayId) return;
+
+      // Check if first ID is not 001
+      const match = firstVehicle.displayId.match(/-(\d+)$/);
+      if (!match) return;
+
+      const firstSeq = parseInt(match[1], 10);
+      if (firstSeq <= 1) return; // Already correct
+
+      // Need to fix IDs
+      setResequenceStatus('🔄 Memperbaiki urutan ID kendaraan...');
+
+      const slug = detectSlugFromDomain();
+      if (!slug) return;
+
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/v1/vehicles?action=resequence-ids&slug=${slug}`, {
+          headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          },
+        });
+
+        const result = await response.json();
+        console.log('[Vehicles] Resequence result:', result);
+
+        if (response.ok && result.success) {
+          setResequenceStatus('✅ ID berhasil diperbaiki! Memuat ulang...');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          console.error('[Vehicles] Resequence failed:', result);
+          setResequenceStatus(null);
+        }
+      } catch (err) {
+        console.error('[Vehicles] Resequence error:', err);
+        setResequenceStatus(null);
+      }
+    };
+
+    fixVehicleIds();
+  }, [vehicles]);
+
   /**
    * Detect tenant slug from current domain
    */
@@ -66,63 +123,6 @@ export default function VehiclesPage() {
 
   // State for resequence status
   const [resequenceStatus, setResequenceStatus] = useState<string | null>(null);
-
-  /**
-   * Auto-resequence IDs if they're out of order (e.g., starts from 003 instead of 001)
-   * This runs automatically on page load and fixes IDs without any user intervention
-   */
-  const autoResequenceIfNeeded = async (vehicleList: Vehicle[], slug: string) => {
-    // Filter active vehicles
-    const activeVehicles = vehicleList.filter(v => v.status !== 'DELETED');
-    if (activeVehicles.length === 0) return false;
-
-    // Check if first vehicle ID doesn't start from 001
-    const sortedVehicles = [...activeVehicles].sort((a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-    const firstVehicle = sortedVehicles[0];
-
-    if (!firstVehicle?.displayId) return false;
-
-    // Extract sequence number from displayId (e.g., PM-PST-003 -> 3)
-    const match = firstVehicle.displayId.match(/-(\d+)$/);
-    if (!match) return false;
-
-    const firstSequence = parseInt(match[1], 10);
-
-    // If first vehicle is not 001, trigger resequence
-    if (firstSequence > 1) {
-      setResequenceStatus('🔄 Memperbaiki urutan ID kendaraan...');
-
-      try {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/v1/vehicles?action=resequence-ids&slug=${slug}`, {
-          headers: {
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-          },
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.updates?.length > 0) {
-            setResequenceStatus('✅ ID kendaraan berhasil diperbaiki!');
-            // Reload page to show new IDs
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-            return true;
-          }
-        }
-      } catch (err) {
-        console.error('[Vehicles] Auto-resequence failed:', err);
-      }
-
-      // Clear status after 3 seconds if no reload
-      setTimeout(() => setResequenceStatus(null), 3000);
-    }
-
-    return false;
-  };
 
   const fetchVehicles = async () => {
     try {
@@ -153,24 +153,8 @@ export default function VehiclesPage() {
       const result = await api.get(url);
 
       if (result.success) {
-        const vehicleData = result.data || [];
-
-        // Auto-resequence if IDs are out of order (one-time fix)
-        if (slug && vehicleData.length > 0) {
-          const needsReload = await autoResequenceIfNeeded(vehicleData, slug);
-          if (needsReload) {
-            // Reload to get updated IDs
-            const reloadResult = await api.get(url);
-            if (reloadResult.success) {
-              setVehicles(reloadResult.data || []);
-              console.log(`[Vehicles] ✅ Reloaded ${reloadResult.data?.length || 0} vehicles with new IDs`);
-              return;
-            }
-          }
-        }
-
-        setVehicles(vehicleData);
-        console.log(`[Vehicles] ✅ Loaded ${vehicleData.length} vehicles`);
+        setVehicles(result.data || []);
+        console.log(`[Vehicles] ✅ Loaded ${result.data?.length || 0} vehicles`);
       } else {
         console.error('[Vehicles] API error:', result.error);
         setError(result.error || 'Gagal memuat data kendaraan');
