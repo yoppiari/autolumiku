@@ -77,9 +77,13 @@ const STAFF_COMMAND_PATTERNS = {
     /^stock$/i,                   // "stock" alone
     /^inventory$/i,               // "inventory" alone
     /^cek\s*stok/i,               // "cek stok" or "cekstok"
-    /^lihat\s+(inventory|stok)/i, // "lihat inventory" or "lihat stok"
+    /^check\s*stok/i,             // "check stok" (English spelling)
+    /^(mau|pengen|ingin)\s*(cek|check|lihat)\s*stok/i, // "mau cek stok", "pengen lihat stok"
+    /^lihat\s+(inventory|stok|stock)/i, // "lihat inventory" or "lihat stok"
     /^daftar\s+mobil/i,
     /^(list|daftar)\s+(unit|mobil|kendaraan)/i,
+    /^berapa\s+(stok|stock|unit)/i, // "berapa stok", "berapa unit"
+    /^ada\s+berapa\s+(unit|mobil)/i, // "ada berapa unit"
   ],
   get_stats: [
     /^\/stats/i,

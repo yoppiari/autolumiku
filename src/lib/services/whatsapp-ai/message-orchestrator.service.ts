@@ -164,18 +164,18 @@ export class MessageOrchestratorService {
           classification.isStaff = true;
           classification.isCustomer = false;
 
-          // Re-classify intent as staff command if applicable
+          // Re-classify intent as staff command ONLY if it matches specific patterns
+          // Otherwise, let AI handle naturally (don't force greeting menu)
           if (classification.intent.startsWith("customer_")) {
-            // Check if message matches any staff command patterns
             const msg = incoming.message.toLowerCase();
             if (/upload|tambah|input|masukin/i.test(msg) || hasMedia) {
               classification.intent = "staff_upload_vehicle";
               classification.reason = "Reclassified as staff upload (conversation is staff)";
-            } else {
-              classification.intent = "staff_greeting";
-              classification.reason = "Reclassified as staff greeting (conversation is staff)";
+              console.log(`[Orchestrator] Reclassified intent to: ${classification.intent}`);
             }
-            console.log(`[Orchestrator] Reclassified intent to: ${classification.intent}`);
+            // NOTE: Don't force staff_greeting for all other messages!
+            // Let the original customer_* intent be handled by AI for natural conversation
+            // Staff can still ask questions and get helpful AI responses
           }
         }
       }
@@ -256,8 +256,8 @@ export class MessageOrchestratorService {
           });
         }
         console.log(`[Orchestrator] Verify result: ${responseMessage?.substring(0, 50)}...`);
-      } else if (classification.isStaff) {
-        // Handle staff command
+      } else if (classification.isStaff && classification.intent.startsWith("staff_")) {
+        // Handle staff command (only for staff_* intents)
         console.log(`[Orchestrator] Routing to staff command handler`);
         const result = await this.handleStaffCommand(
           conversation,
@@ -270,6 +270,18 @@ export class MessageOrchestratorService {
         responseMessage = result.message;
         escalated = result.escalated;
         console.log(`[Orchestrator] Staff command result: ${responseMessage?.substring(0, 50)}...`);
+      } else if (classification.isStaff && classification.intent.startsWith("customer_")) {
+        // Staff asking general questions - route to AI for natural response
+        console.log(`[Orchestrator] Staff with customer intent - routing to AI for natural response`);
+        const result = await this.handleCustomerInquiry(
+          conversation,
+          classification.intent,
+          incoming.message
+        );
+        responseMessage = result.message;
+        escalated = result.escalated;
+        responseImages = result.images;
+        console.log(`[Orchestrator] AI response for staff: ${responseMessage?.substring(0, 50)}...`);
       } else {
         // Handle customer inquiry dengan AI
         console.log(`[Orchestrator] Routing to AI customer inquiry handler`);
