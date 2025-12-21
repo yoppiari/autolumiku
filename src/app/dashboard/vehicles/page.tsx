@@ -64,6 +64,52 @@ export default function VehiclesPage() {
     return domainMap[hostname] || null;
   };
 
+  /**
+   * Auto-resequence IDs if they're out of order (e.g., starts from 003 instead of 001)
+   */
+  const autoResequenceIfNeeded = async (vehicleList: Vehicle[], slug: string) => {
+    // Filter active vehicles
+    const activeVehicles = vehicleList.filter(v => v.status !== 'DELETED');
+    if (activeVehicles.length === 0) return false;
+
+    // Check if first vehicle ID doesn't start from 001
+    const firstVehicle = activeVehicles.sort((a, b) =>
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )[0];
+
+    if (!firstVehicle?.displayId) return false;
+
+    // Extract sequence number from displayId (e.g., PM-PST-003 -> 3)
+    const match = firstVehicle.displayId.match(/-(\d+)$/);
+    if (!match) return false;
+
+    const firstSequence = parseInt(match[1], 10);
+
+    // If first vehicle is not 001, trigger resequence
+    if (firstSequence > 1) {
+      console.log(`[Vehicles] 🔄 Auto-resequencing: First ID is ${firstVehicle.displayId}, should be 001`);
+
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/v1/vehicles?action=resequence-ids&slug=${slug}`, {
+          headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('[Vehicles] ✅ Auto-resequence completed:', result);
+          return true; // Signal to reload
+        }
+      } catch (err) {
+        console.error('[Vehicles] Auto-resequence failed:', err);
+      }
+    }
+
+    return false;
+  };
+
   const fetchVehicles = async () => {
     try {
       setError(null);
@@ -93,8 +139,24 @@ export default function VehiclesPage() {
       const result = await api.get(url);
 
       if (result.success) {
-        setVehicles(result.data || []);
-        console.log(`[Vehicles] ✅ Loaded ${result.data?.length || 0} vehicles`);
+        const vehicleData = result.data || [];
+
+        // Auto-resequence if IDs are out of order (one-time fix)
+        if (slug && vehicleData.length > 0) {
+          const needsReload = await autoResequenceIfNeeded(vehicleData, slug);
+          if (needsReload) {
+            // Reload to get updated IDs
+            const reloadResult = await api.get(url);
+            if (reloadResult.success) {
+              setVehicles(reloadResult.data || []);
+              console.log(`[Vehicles] ✅ Reloaded ${reloadResult.data?.length || 0} vehicles with new IDs`);
+              return;
+            }
+          }
+        }
+
+        setVehicles(vehicleData);
+        console.log(`[Vehicles] ✅ Loaded ${vehicleData.length} vehicles`);
       } else {
         console.error('[Vehicles] API error:', result.error);
         setError(result.error || 'Gagal memuat data kendaraan');
