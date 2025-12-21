@@ -74,15 +74,10 @@ export default function EditVehiclePage() {
     status: 'DRAFT' as VehicleStatus,
   });
 
-  useEffect(() => {
-    if (vehicleId) {
-      fetchVehicle();
-    }
-  }, [vehicleId]);
-
-  // Helper to get auth headers
+  // Helper to get auth headers - defined before useEffect
   const getAuthHeaders = () => {
     const token = localStorage.getItem('authToken');
+    console.log('[Edit Page] Auth token exists:', !!token);
     return {
       'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),
@@ -90,13 +85,21 @@ export default function EditVehiclePage() {
   };
 
   const fetchVehicle = async () => {
+    console.log('[Edit Page] Fetching vehicle:', vehicleId);
     try {
+      const headers = getAuthHeaders();
+      console.log('[Edit Page] Request headers:', Object.keys(headers));
+
       const response = await fetch(`/api/v1/vehicles/${vehicleId}`, {
-        headers: getAuthHeaders(),
+        headers,
       });
+
+      console.log('[Edit Page] Response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
         const v = data.data;
+        console.log('[Edit Page] Vehicle loaded:', v?.make, v?.model);
         setVehicle(v);
 
         // Populate form
@@ -118,12 +121,15 @@ export default function EditVehiclePage() {
         });
       } else {
         const errorData = await response.json().catch(() => ({}));
+        console.error('[Edit Page] API Error:', response.status, errorData);
         const errorMessage = errorData.error || errorData.message || 'Gagal memuat data kendaraan';
 
         // Check for token expiry and redirect to login
         if (errorMessage.toLowerCase().includes('token') ||
             errorMessage.toLowerCase().includes('unauthorized') ||
-            errorMessage.toLowerCase().includes('expired')) {
+            errorMessage.toLowerCase().includes('expired') ||
+            response.status === 401) {
+          console.log('[Edit Page] Token expired, redirecting to login');
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
           alert('Sesi login Anda telah berakhir. Silakan login kembali.');
@@ -134,12 +140,18 @@ export default function EditVehiclePage() {
         setError(errorMessage);
       }
     } catch (err) {
-      console.error('Failed to fetch vehicle:', err);
-      setError('Gagal memuat data kendaraan');
+      console.error('[Edit Page] Fetch error:', err);
+      setError('Gagal memuat data kendaraan - koneksi error');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (vehicleId) {
+      fetchVehicle();
+    }
+  }, [vehicleId]);
 
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
