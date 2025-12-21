@@ -63,13 +63,22 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     return notFound();
   }
 
+  // 3. Get AI WhatsApp number (preferred) or fallback to tenant.whatsappNumber
+  const aimeowAccount = await prisma.aimeowAccount.findUnique({
+    where: { tenantId: tenant.id },
+    select: { phoneNumber: true, isActive: true },
+  });
+  const aiWhatsappNumber = aimeowAccount?.isActive && aimeowAccount?.phoneNumber
+    ? aimeowAccount.phoneNumber
+    : tenant.whatsappNumber;
+
   const formatPrice = (price: number) => {
     const rupiah = price / 100;
     return `Rp ${rupiah.toLocaleString('id-ID')}`;
   };
 
   // WhatsApp Message Construction
-  const whatsappNumber = tenant.whatsappNumber?.replace(/[^0-9]/g, '') || '';
+  const whatsappNumber = aiWhatsappNumber?.replace(/[^0-9]/g, '') || '';
   const message = `Halo, saya tertarik dengan ${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.variant ? ` ${vehicle.variant}` : ''
     } (ID: ${vehicle.displayId || vehicle.id.slice(0, 8)}). Bisa info lebih lanjut?`;
   const whatsappUrl = whatsappNumber

@@ -50,6 +50,15 @@ export default async function ShowroomHomePage() {
     );
   }
 
+  // Get AI WhatsApp number (preferred) or fallback to tenant.whatsappNumber
+  const aimeowAccount = await prisma.aimeowAccount.findUnique({
+    where: { tenantId },
+    select: { phoneNumber: true, isActive: true },
+  });
+  const aiWhatsappNumber = aimeowAccount?.isActive && aimeowAccount?.phoneNumber
+    ? aimeowAccount.phoneNumber
+    : tenant.whatsappNumber;
+
   // Fetch featured vehicles (6 latest)
   const featuredVehicles = await prisma.vehicle.findMany({
     where: {
@@ -314,7 +323,7 @@ export default async function ShowroomHomePage() {
               Hubungi kami sekarang untuk konsultasi dan penawaran terbaik
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              {tenant.whatsappNumber && (
+              {aiWhatsappNumber && (
                 <Button
                   asChild
                   size="lg"
@@ -322,7 +331,7 @@ export default async function ShowroomHomePage() {
                   className="hover:opacity-90"
                 >
                   <a
-                    href={`https://wa.me/${tenant.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                    href={`https://wa.me/${aiWhatsappNumber.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

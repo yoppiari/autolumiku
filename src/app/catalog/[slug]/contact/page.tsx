@@ -33,6 +33,15 @@ export default async function ContactPage({ params }: { params: { slug: string }
     );
   }
 
+  // Get AI WhatsApp number (preferred) or fallback to tenant.whatsappNumber
+  const aimeowAccount = await prisma.aimeowAccount.findUnique({
+    where: { tenantId: tenant.id },
+    select: { phoneNumber: true, isActive: true },
+  });
+  const aiWhatsappNumber = aimeowAccount?.isActive && aimeowAccount?.phoneNumber
+    ? aimeowAccount.phoneNumber
+    : tenant.whatsappNumber;
+
   const fullAddress = [tenant.address, tenant.city, tenant.province]
     .filter(Boolean)
     .join(', ');
@@ -53,7 +62,7 @@ export default async function ContactPage({ params }: { params: { slug: string }
             slug: tenant.slug,
           }}
           phoneNumber={tenant.phoneNumber || undefined}
-          whatsappNumber={tenant.whatsappNumber || undefined}
+          whatsappNumber={aiWhatsappNumber || undefined}
           slug={tenant.slug}
           isCustomDomain={isCustomDomain}
         />
@@ -96,7 +105,7 @@ export default async function ContactPage({ params }: { params: { slug: string }
                         </div>
                       )}
 
-                      {tenant.whatsappNumber && (
+                      {aiWhatsappNumber && (
                         <div className="flex items-start gap-4">
                           <div className="bg-green-500/10 p-3 rounded-full text-green-500">
                             <FaWhatsapp className="w-5 h-5" />
@@ -104,7 +113,7 @@ export default async function ContactPage({ params }: { params: { slug: string }
                           <div>
                             <h3 className="font-bold text-foreground mb-1">WhatsApp</h3>
                             <a
-                              href={`https://wa.me/${tenant.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                              href={`https://wa.me/${aiWhatsappNumber.replace(/[^0-9]/g, '')}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-muted-foreground hover:text-green-500 transition-colors block"

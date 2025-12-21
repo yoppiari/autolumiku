@@ -113,6 +113,15 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
       }),
     ]);
 
+    // Get AI WhatsApp number (preferred) or fallback to tenant.whatsappNumber
+    const aimeowAccount = await prisma.aimeowAccount.findUnique({
+      where: { tenantId },
+      select: { phoneNumber: true, isActive: true },
+    });
+    const aiWhatsappNumber = aimeowAccount?.isActive && aimeowAccount?.phoneNumber
+      ? aimeowAccount.phoneNumber
+      : tenant.whatsappNumber;
+
     const formatPrice = (price: bigint | number) => {
       const priceNumber = typeof price === 'bigint' ? Number(price) : price;
       const rupiah = priceNumber / 100;
@@ -146,7 +155,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
             }}
             vehicleCount={totalVehicles}
             phoneNumber={tenant.phoneNumber || undefined}
-            whatsappNumber={tenant.whatsappNumber || undefined}
+            whatsappNumber={aiWhatsappNumber || undefined}
             slug={tenant.slug}
             isCustomDomain={isCustomDomain}
           />
@@ -209,7 +218,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                   {featuredVehicles.map((vehicle) => {
                     const mainPhoto = vehicle.photos[0];
                     const photoUrl = mainPhoto?.thumbnailUrl || mainPhoto?.originalUrl;
-                    const waNumber = tenant.whatsappNumber?.replace(/[^0-9]/g, '') || '';
+                    const waNumber = aiWhatsappNumber?.replace(/[^0-9]/g, '') || '';
                     const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${vehicle.make} ${vehicle.model} ${vehicle.year} (${formatPrice(vehicle.price)}). Apakah unit masih tersedia?`);
                     const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
                     const isSold = vehicle.status === 'SOLD';
@@ -334,14 +343,14 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                   Hubungi kami sekarang untuk konsultasi dan penawaran terbaik
                 </p>
                 <div className="flex flex-wrap justify-center gap-4">
-                  {tenant.whatsappNumber && (
+                  {aiWhatsappNumber && (
                     <Button
                       asChild
                       size="lg"
                       className="bg-black hover:bg-black/80 text-white border-none transition-colors duration-300"
                     >
                       <a
-                        href={`https://wa.me/${tenant.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                        href={`https://wa.me/${aiWhatsappNumber.replace(/[^0-9]/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

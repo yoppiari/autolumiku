@@ -71,6 +71,15 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
     const result = await CatalogEngineService.getVehicles(tenantId, filters);
     const { vehicles, totalPages, total, filters: filterOptions } = result;
 
+    // 4. Get AI WhatsApp number (preferred) or fallback to tenant.whatsappNumber
+    const aimeowAccount = await prisma.aimeowAccount.findUnique({
+        where: { tenantId },
+        select: { phoneNumber: true, isActive: true },
+    });
+    const aiWhatsappNumber = aimeowAccount?.isActive && aimeowAccount?.phoneNumber
+        ? aimeowAccount.phoneNumber
+        : tenant.whatsappNumber;
+
     const formatPrice = (price: bigint | number) => {
         const numPrice = typeof price === 'bigint' ? Number(price) : price;
         const rupiah = numPrice / 100;
@@ -123,7 +132,7 @@ export default async function VehiclesPage({ params, searchParams }: PageProps) 
                                 {vehicles.map((vehicle) => {
                                     const mainPhoto = vehicle.photos[0];
                                     const photoUrl = mainPhoto?.thumbnailUrl || mainPhoto?.originalUrl;
-                                    const waNumber = tenant.whatsappNumber?.replace(/[^0-9]/g, '') || '';
+                                    const waNumber = aiWhatsappNumber?.replace(/[^0-9]/g, '') || '';
                                     const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${vehicle.make} ${vehicle.model} ${vehicle.year} (${formatPrice(vehicle.price)}). Apakah unit masih tersedia?`);
                                     const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
 
