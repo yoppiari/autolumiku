@@ -698,30 +698,71 @@ export default function VehiclesPage() {
               </button>
             </div>
 
+            <p className="text-xs text-gray-500 mb-2">
+              Drag foto untuk mengatur urutan. Klik foto untuk menjadikan foto utama.
+            </p>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {photos.map((photo, index) => (
                 <div
                   key={photo.id}
-                  className="relative aspect-square group"
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragEnter={() => handleDragEnter(index)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => e.preventDefault()}
+                  className={`relative aspect-square group cursor-move ${
+                    draggedIndex === index ? 'opacity-50 scale-95' : ''
+                  } transition-all duration-150`}
                 >
                   <img
                     src={photo.preview}
                     alt={`Preview ${index + 1}`}
-                    className="w-full h-full object-cover rounded-lg"
+                    className="w-full h-full object-cover rounded-lg border-2 border-transparent hover:border-blue-400"
+                    onClick={() => handleSetMainPhoto(index)}
                   />
+                  {/* Main Photo Badge */}
                   {index === 0 && (
-                    <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-1.5 py-0.5 rounded">
+                    <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-1.5 py-0.5 rounded font-medium">
                       Utama
                     </div>
                   )}
+                  {/* Photo Number */}
+                  {index > 0 && (
+                    <div className="absolute bottom-1 left-1 bg-gray-800/70 text-white text-xs px-1.5 py-0.5 rounded">
+                      {index + 1}
+                    </div>
+                  )}
+                  {/* Set as Main Button (on hover for non-main photos) */}
+                  {index > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSetMainPhoto(index);
+                      }}
+                      className="absolute bottom-1 right-1 bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Jadikan Foto Utama"
+                    >
+                      ★
+                    </button>
+                  )}
+                  {/* Remove Button */}
                   <button
-                    onClick={() => handleRemovePhoto(photo.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemovePhoto(photo.id);
+                    }}
                     className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
+                  {/* Drag Handle Indicator */}
+                  <div className="absolute top-1 left-1 bg-gray-800/50 text-white rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"/>
+                    </svg>
+                  </div>
                 </div>
               ))}
             </div>
