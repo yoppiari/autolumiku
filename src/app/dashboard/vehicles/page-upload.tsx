@@ -72,7 +72,7 @@ export default function VehiclesPage() {
   // Form state for editing AI results
   const [editedData, setEditedData] = useState<Partial<VehicleAIResult>>({});
 
-  const MAX_PHOTOS = 15;
+  const MAX_PHOTOS = 50;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
   useEffect(() => {
@@ -721,7 +721,7 @@ export default function VehiclesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span className="font-semibold">Pilih Galeri</span>
-            <span className="text-xs opacity-80">Max 15 foto</span>
+            <span className="text-xs opacity-80">Max {MAX_PHOTOS} foto</span>
           </button>
           <input
             ref={fileInputRef}
