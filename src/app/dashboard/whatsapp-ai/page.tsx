@@ -1,6 +1,6 @@
 /**
  * WhatsApp AI Dashboard - Overview Page
- * Clean, simplified UI dengan single CTA per section
+ * Compact layout fit to screen at 100% zoom
  */
 
 'use client';
@@ -119,7 +119,6 @@ export default function WhatsAppAIDashboard() {
   const handleToggleAI = async () => {
     if (!aiConfig || !tenantId) return;
 
-    // Optimistically update UI
     setAiConfig({
       ...aiConfig,
       customerChatEnabled: !aiConfig.customerChatEnabled,
@@ -136,7 +135,6 @@ export default function WhatsAppAIDashboard() {
       });
 
       if (!response.ok) {
-        // Revert on error
         setAiConfig({
           ...aiConfig,
           customerChatEnabled: aiConfig.customerChatEnabled,
@@ -144,7 +142,6 @@ export default function WhatsAppAIDashboard() {
         console.error('Failed to toggle AI');
       }
     } catch (error) {
-      // Revert on error
       setAiConfig({
         ...aiConfig,
         customerChatEnabled: aiConfig.customerChatEnabled,
@@ -162,79 +159,68 @@ export default function WhatsAppAIDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header - Simple, no buttons */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">WhatsApp AI Automation</h1>
-        <p className="text-gray-600 mt-1">Asisten virtual 24/7 untuk customer dan staff operations</p>
+    <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="mb-3 flex-shrink-0">
+        <h1 className="text-2xl font-bold text-gray-900">WhatsApp AI Automation</h1>
+        <p className="text-gray-600 text-sm">Asisten virtual 24/7 untuk customer dan staff operations</p>
       </div>
 
-      {/* Connection Status - Single CTA */}
-      <div className={`p-6 rounded-xl shadow-sm border-2 ${
+      {/* Connection Status - Compact */}
+      <div className={`p-4 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${
         status.isConnected
           ? 'bg-green-50 border-green-300'
           : 'bg-yellow-50 border-yellow-300'
       }`}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+          <div className="flex items-center space-x-3">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
               status.isConnected ? 'bg-green-100' : 'bg-yellow-100'
             }`}>
-              <span className="text-3xl">
+              <span className="text-2xl">
                 {status.isConnected ? '✅' : '⚠️'}
               </span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-gray-900">
                 {status.isConnected ? 'WhatsApp Connected' : 'Setup Required'}
               </h2>
               {status.isConnected ? (
-                <div className="text-sm text-gray-700 mt-1 space-y-1">
-                  <p className="flex items-center">
-                    <span className="font-medium mr-2">Phone:</span>
-                    <span className="font-mono">{status.phoneNumber}</span>
-                  </p>
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">Phone:</span> {status.phoneNumber}
                   {status.lastConnectedAt && (
-                    <p className="text-gray-600">
+                    <span className="ml-2 text-gray-500">
                       Connected {new Date(status.lastConnectedAt).toLocaleString('id-ID')}
-                    </p>
+                    </span>
                   )}
-                </div>
+                </p>
               ) : (
-                <p className="text-sm text-gray-700 mt-1">
+                <p className="text-sm text-gray-700">
                   Connect your WhatsApp Business account to activate AI assistant
                 </p>
               )}
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            {/* AI Auto-Answer Toggle */}
+          <div className="flex items-center space-x-3">
             {status.isConnected && aiConfig && (
-              <div className="flex flex-col items-end">
-                <button
-                  onClick={handleToggleAI}
-                  className={`relative inline-flex items-center px-6 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all ${
-                    aiConfig.customerChatEnabled
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                      : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-                  }`}
-                >
-                  <span className="text-2xl mr-2">🤖</span>
-                  <span>
-                    {aiConfig.customerChatEnabled ? 'AI Auto-Answer: ON' : 'AI Auto-Answer: OFF'}
-                  </span>
-                </button>
-                <p className="text-xs text-gray-600 mt-2">
-                  {aiConfig.customerChatEnabled
-                    ? 'AI will respond to customer messages automatically'
-                    : 'AI responses are disabled - manual replies only'}
-                </p>
-              </div>
+              <button
+                onClick={handleToggleAI}
+                className={`relative inline-flex items-center px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm ${
+                  aiConfig.customerChatEnabled
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                }`}
+              >
+                <span className="text-lg mr-2">🤖</span>
+                <span>
+                  {aiConfig.customerChatEnabled ? 'AI Auto-Answer: ON' : 'AI Auto-Answer: OFF'}
+                </span>
+              </button>
             )}
             {!status.isConnected && (
               <Link
                 href="/dashboard/whatsapp-ai/setup"
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md hover:shadow-lg"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md text-sm"
               >
                 Setup WhatsApp →
               </Link>
@@ -243,182 +229,186 @@ export default function WhatsAppAIDashboard() {
         </div>
       </div>
 
-      {/* Stats Overview - Only show when connected */}
-      {status.isConnected && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-500">Conversations</h3>
-              <span className="text-2xl">💬</span>
-            </div>
-            <div className="text-3xl font-bold text-blue-600">{stats.total}</div>
-            <p className="text-xs text-gray-500 mt-1">{stats.active} active now</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-500">Today Messages</h3>
-              <span className="text-2xl">📨</span>
-            </div>
-            <div className="text-3xl font-bold text-purple-600">{status.todayMessages}</div>
-            <p className="text-xs text-gray-500 mt-1">
-              {stats.customerChats} customers · {stats.staffCommands} staff
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-500">AI Automation</h3>
-              <span className="text-2xl">🤖</span>
-            </div>
-            <div className="text-3xl font-bold text-green-600">{status.aiResponseRate}%</div>
-            <p className="text-xs text-gray-500 mt-1">
-              {stats.escalated} escalated to human
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-500">Response Time</h3>
-              <span className="text-2xl">⚡</span>
-            </div>
-            <div className="text-3xl font-bold text-orange-600">
-              {formatResponseTime(stats.avgResponseTime)}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {stats.aiAccuracy}% accuracy
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Main Navigation Cards - Primary actions */}
-      {status.isConnected && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link
-            href="/dashboard/whatsapp-ai/conversations"
-            className="group bg-white p-6 rounded-xl shadow-sm border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all"
-          >
-            <div className="text-4xl mb-3">💬</div>
-            <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors">
-              Conversations
-            </h3>
-            <p className="text-sm text-gray-600">
-              Monitor customer chats and staff commands in real-time
-            </p>
-            <div className="mt-4 text-blue-600 text-sm font-medium group-hover:translate-x-1 transition-transform inline-block">
-              View all →
-            </div>
-          </Link>
-
-          <Link
-            href="/dashboard/whatsapp-ai/analytics"
-            className="group bg-white p-6 rounded-xl shadow-sm border-2 border-gray-200 hover:border-purple-400 hover:shadow-lg transition-all"
-          >
-            <div className="text-4xl mb-3">📊</div>
-            <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-purple-600 transition-colors">
-              Analytics
-            </h3>
-            <p className="text-sm text-gray-600">
-              AI performance metrics and conversation insights
-            </p>
-            <div className="mt-4 text-purple-600 text-sm font-medium group-hover:translate-x-1 transition-transform inline-block">
-              View reports →
-            </div>
-          </Link>
-
-          <Link
-            href="/dashboard/whatsapp-ai/config"
-            className="group bg-white p-6 rounded-xl shadow-sm border-2 border-gray-200 hover:border-orange-400 hover:shadow-lg transition-all"
-          >
-            <div className="text-4xl mb-3">⚙️</div>
-            <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-orange-600 transition-colors">
-              Configuration
-            </h3>
-            <p className="text-sm text-gray-600">
-              AI personality, business hours, and feature settings
-            </p>
-            <div className="mt-4 text-orange-600 text-sm font-medium group-hover:translate-x-1 transition-transform inline-block">
-              Configure →
-            </div>
-          </Link>
-        </div>
-      )}
-
-      {/* Setup Guide - Only show when NOT connected */}
-      {!status.isConnected && (
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Setup Guide</h2>
-          <div className="space-y-6">
-            <div className="flex items-start">
-              <div className="w-10 h-10 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-bold mr-4 flex-shrink-0 text-lg">
-                1
+      {/* Main Content - Scrollable if needed */}
+      <div className="flex-1 overflow-auto">
+        {/* Stats Overview - Compact */}
+        {status.isConnected && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-500">Conversations</h3>
+                <span className="text-xl">💬</span>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 text-lg mb-1">Connect WhatsApp</h3>
-                <p className="text-gray-600">Scan QR code dengan WhatsApp Business account Anda</p>
-              </div>
+              <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+              <p className="text-xs text-gray-500">{stats.active} active now</p>
             </div>
 
-            <div className="flex items-start">
-              <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold mr-4 flex-shrink-0 text-lg">
-                2
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-500">Today Messages</h3>
+                <span className="text-xl">📨</span>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 text-lg mb-1">Configure AI</h3>
-                <p className="text-gray-600">Customize AI name, personality, and welcome message</p>
-              </div>
+              <div className="text-2xl font-bold text-purple-600">{status.todayMessages}</div>
+              <p className="text-xs text-gray-500">
+                {stats.customerChats} customers · {stats.staffCommands} staff
+              </p>
             </div>
 
-            <div className="flex items-start">
-              <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold mr-4 flex-shrink-0 text-lg">
-                3
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-500">AI Automation</h3>
+                <span className="text-xl">🤖</span>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 text-lg mb-1">Add Staff</h3>
-                <p className="text-gray-600">Grant staff access for vehicle upload via WhatsApp</p>
-              </div>
+              <div className="text-2xl font-bold text-green-600">{status.aiResponseRate}%</div>
+              <p className="text-xs text-gray-500">
+                {stats.escalated} escalated to human
+              </p>
             </div>
 
-            <div className="flex items-start">
-              <div className="w-10 h-10 bg-orange-100 text-orange-700 rounded-full flex items-center justify-center font-bold mr-4 flex-shrink-0 text-lg">
-                4
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-500">Response Time</h3>
+                <span className="text-xl">⚡</span>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 text-lg mb-1">Go Live! 🚀</h3>
-                <p className="text-gray-600">Your AI assistant is ready to serve customers 24/7</p>
+              <div className="text-2xl font-bold text-orange-600">
+                {formatResponseTime(stats.avgResponseTime)}
               </div>
+              <p className="text-xs text-gray-500">
+                {stats.aiAccuracy}% accuracy
+              </p>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Value Proposition */}
-      <div className="bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-8 rounded-xl border-2 border-green-200">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Why WhatsApp AI?</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white/70 backdrop-blur p-4 rounded-lg">
-            <div className="text-3xl mb-2">🚀</div>
-            <h3 className="font-semibold text-gray-900 mb-1">Instant Response</h3>
-            <p className="text-sm text-gray-600">Answer customer inquiries 24/7 without delay</p>
+        {/* Navigation Cards - Compact */}
+        {status.isConnected && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <Link
+              href="/dashboard/whatsapp-ai/conversations"
+              className="group bg-white p-4 rounded-xl shadow-sm border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">💬</div>
+                <div>
+                  <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    Conversations
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    Monitor customer chats and staff commands in real-time
+                  </p>
+                </div>
+              </div>
+              <div className="mt-2 text-blue-600 text-xs font-medium">
+                View all →
+              </div>
+            </Link>
+
+            <Link
+              href="/dashboard/whatsapp-ai/analytics"
+              className="group bg-white p-4 rounded-xl shadow-sm border-2 border-gray-200 hover:border-purple-400 hover:shadow-lg transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">📊</div>
+                <div>
+                  <h3 className="font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
+                    Analytics
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    AI performance metrics and conversation insights
+                  </p>
+                </div>
+              </div>
+              <div className="mt-2 text-purple-600 text-xs font-medium">
+                View reports →
+              </div>
+            </Link>
+
+            <Link
+              href="/dashboard/whatsapp-ai/config"
+              className="group bg-white p-4 rounded-xl shadow-sm border-2 border-gray-200 hover:border-orange-400 hover:shadow-lg transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">⚙️</div>
+                <div>
+                  <h3 className="font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
+                    Configuration
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    AI personality, business hours, and feature settings
+                  </p>
+                </div>
+              </div>
+              <div className="mt-2 text-orange-600 text-xs font-medium">
+                Configure →
+              </div>
+            </Link>
           </div>
+        )}
 
-          <div className="bg-white/70 backdrop-blur p-4 rounded-lg">
-            <div className="text-3xl mb-2">📈</div>
-            <h3 className="font-semibold text-gray-900 mb-1">Higher Conversion</h3>
-            <p className="text-sm text-gray-600">+5% lead conversion with faster responses</p>
+        {/* Setup Guide - Only when NOT connected */}
+        {!status.isConnected && (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-3">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Setup Guide</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">1</div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm">Connect WhatsApp</h3>
+                  <p className="text-xs text-gray-600">Scan QR code</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">2</div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm">Configure AI</h3>
+                  <p className="text-xs text-gray-600">Customize personality</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">3</div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm">Add Staff</h3>
+                  <p className="text-xs text-gray-600">Grant access</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-orange-100 text-orange-700 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">4</div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm">Go Live! 🚀</h3>
+                  <p className="text-xs text-gray-600">Ready 24/7</p>
+                </div>
+              </div>
+            </div>
           </div>
+        )}
 
-          <div className="bg-white/70 backdrop-blur p-4 rounded-lg">
-            <div className="text-3xl mb-2">⏰</div>
-            <h3 className="font-semibold text-gray-900 mb-1">Save Time</h3>
-            <p className="text-sm text-gray-600">2+ hours saved per staff member daily</p>
-          </div>
+        {/* Value Proposition - Compact */}
+        <div className="bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-4 rounded-xl border border-green-200">
+          <h2 className="text-sm font-bold text-gray-900 mb-3">Why WhatsApp AI?</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white/70 backdrop-blur p-3 rounded-lg">
+              <div className="text-2xl mb-1">🚀</div>
+              <h3 className="font-semibold text-gray-900 text-sm">Instant Response</h3>
+              <p className="text-xs text-gray-600">Answer customer inquiries 24/7 without delay</p>
+            </div>
 
-          <div className="bg-white/70 backdrop-blur p-4 rounded-lg">
-            <div className="text-3xl mb-2">💰</div>
-            <h3 className="font-semibold text-gray-900 mb-1">Boost Revenue</h3>
-            <p className="text-sm text-gray-600">Up to Rp 50M additional monthly revenue</p>
+            <div className="bg-white/70 backdrop-blur p-3 rounded-lg">
+              <div className="text-2xl mb-1">📈</div>
+              <h3 className="font-semibold text-gray-900 text-sm">Higher Conversion</h3>
+              <p className="text-xs text-gray-600">+5% lead conversion with faster responses</p>
+            </div>
+
+            <div className="bg-white/70 backdrop-blur p-3 rounded-lg">
+              <div className="text-2xl mb-1">⏰</div>
+              <h3 className="font-semibold text-gray-900 text-sm">Save Time</h3>
+              <p className="text-xs text-gray-600">2+ hours saved per staff member daily</p>
+            </div>
+
+            <div className="bg-white/70 backdrop-blur p-3 rounded-lg">
+              <div className="text-2xl mb-1">💰</div>
+              <h3 className="font-semibold text-gray-900 text-sm">Boost Revenue</h3>
+              <p className="text-xs text-gray-600">Up to Rp 50M additional monthly revenue</p>
+            </div>
           </div>
         </div>
       </div>
