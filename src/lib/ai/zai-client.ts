@@ -36,12 +36,14 @@ export class ZAIClient {
 
   /**
    * Generate text completion using GLM-4.6 with reasoning disabled
+   * @param includeTools - Whether to include function calling tools (default: true for chat, false for JSON generation)
    */
   async generateText(params: {
     systemPrompt: string;
     userPrompt: string;
     temperature?: number;
     maxTokens?: number;
+    includeTools?: boolean; // Set to false for JSON generation tasks
   }) {
     console.log('[ZAI Client] 🚀 Starting generateText call...');
     console.log('[ZAI Client] Model:', this.textModel);
@@ -69,8 +71,11 @@ export class ZAIClient {
         thinking: {
           type: "disabled"
         },
-        // Add tools for vehicle operations
-        tools: [
+      };
+
+      // Only add tools for chat interactions (WhatsApp AI), not for JSON generation tasks
+      if (params.includeTools !== false) {
+        requestParams.tools = [
           {
             type: "function",
             function: {
@@ -181,9 +186,9 @@ export class ZAIClient {
               }
             }
           }
-        ],
-        tool_choice: "auto"
-      };
+        ];
+        requestParams.tool_choice = "auto";
+      }
 
       // Only add temperature and max_tokens if explicitly provided
       if (params.temperature !== undefined) {

@@ -183,6 +183,7 @@ export class VehicleAIService {
         systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
         userPrompt: prompt,
         temperature,
+        includeTools: false, // Disable function calling for JSON generation
       });
 
       // Check if response was truncated
@@ -312,6 +313,7 @@ Response format (JSON):
       userPrompt: prompt,
       temperature: 0.8,
       maxTokens: 1500,
+      includeTools: false, // Disable function calling for JSON generation
     });
 
     return this.getClient().parseJSON<{ descriptionId: string }>(
@@ -357,6 +359,7 @@ Response format (JSON):
       userPrompt: prompt,
       temperature: 0.5,
       maxTokens: 1500,
+      includeTools: false, // Disable function calling for JSON generation
     });
 
     return this.getClient().parseJSON(response.content);
