@@ -64,47 +64,76 @@ export default function VehiclesPage() {
     return domainMap[hostname] || null;
   };
 
+  // State for resequence status
+  const [resequenceStatus, setResequenceStatus] = useState<string | null>(null);
+
   /**
    * Auto-resequence IDs if they're out of order (e.g., starts from 003 instead of 001)
    */
   const autoResequenceIfNeeded = async (vehicleList: Vehicle[], slug: string) => {
     // Filter active vehicles
     const activeVehicles = vehicleList.filter(v => v.status !== 'DELETED');
-    if (activeVehicles.length === 0) return false;
+    if (activeVehicles.length === 0) {
+      console.log('[Vehicles] No active vehicles to resequence');
+      return false;
+    }
 
     // Check if first vehicle ID doesn't start from 001
-    const firstVehicle = activeVehicles.sort((a, b) =>
+    const sortedVehicles = [...activeVehicles].sort((a, b) =>
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    )[0];
+    );
+    const firstVehicle = sortedVehicles[0];
 
-    if (!firstVehicle?.displayId) return false;
+    console.log('[Vehicles] First vehicle by createdAt:', firstVehicle?.displayId, firstVehicle?.make, firstVehicle?.model);
+
+    if (!firstVehicle?.displayId) {
+      console.log('[Vehicles] First vehicle has no displayId');
+      return false;
+    }
 
     // Extract sequence number from displayId (e.g., PM-PST-003 -> 3)
     const match = firstVehicle.displayId.match(/-(\d+)$/);
-    if (!match) return false;
+    if (!match) {
+      console.log('[Vehicles] Could not extract sequence from displayId:', firstVehicle.displayId);
+      return false;
+    }
 
     const firstSequence = parseInt(match[1], 10);
+    console.log('[Vehicles] First sequence number:', firstSequence);
 
     // If first vehicle is not 001, trigger resequence
     if (firstSequence > 1) {
+      setResequenceStatus('Memperbaiki urutan ID...');
       console.log(`[Vehicles] 🔄 Auto-resequencing: First ID is ${firstVehicle.displayId}, should be 001`);
 
       try {
         const token = localStorage.getItem('authToken');
+        console.log('[Vehicles] Calling resequence API with slug:', slug);
+
         const response = await fetch(`/api/v1/vehicles?action=resequence-ids&slug=${slug}`, {
           headers: {
             ...(token && { 'Authorization': `Bearer ${token}` }),
           },
         });
 
+        console.log('[Vehicles] Resequence response status:', response.status);
+
         if (response.ok) {
           const result = await response.json();
           console.log('[Vehicles] ✅ Auto-resequence completed:', result);
+          setResequenceStatus('✅ ID berhasil diperbaiki! Memuat ulang...');
           return true; // Signal to reload
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('[Vehicles] Resequence API error:', response.status, errorData);
+          setResequenceStatus(`❌ Gagal: ${errorData.error || response.status}`);
         }
       } catch (err) {
         console.error('[Vehicles] Auto-resequence failed:', err);
+        setResequenceStatus(`❌ Error: ${err instanceof Error ? err.message : 'Unknown'}`);
       }
+    } else {
+      console.log('[Vehicles] IDs already in correct order (starts from 001)');
     }
 
     return false;
@@ -376,6 +405,29 @@ export default function VehiclesPage() {
           </div>
         </div>
       </div>
+
+      {/* Resequence Status */}
+      {resequenceStatus && (
+        <div className={`mb-3 p-3 rounded-lg flex-shrink-0 ${
+          resequenceStatus.includes('✅') ? 'bg-green-50 border border-green-200' :
+          resequenceStatus.includes('❌') ? 'bg-red-50 border border-red-200' :
+          'bg-blue-50 border border-blue-200'
+        }`}>
+          <div className="flex items-center gap-2">
+            {!resequenceStatus.includes('✅') && !resequenceStatus.includes('❌') && (
+              <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            )}
+            <span className={`text-sm font-medium ${
+              resequenceStatus.includes('✅') ? 'text-green-800' :
+              resequenceStatus.includes('❌') ? 'text-red-800' :
+              'text-blue-800'
+            }`}>{resequenceStatus}</span>
+          </div>
+        </div>
+      )}
 
       {/* Error State */}
       {error && (
