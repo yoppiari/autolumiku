@@ -40,6 +40,9 @@ export async function PUT(
       });
     }
 
+    // Get current displayOrder of the photo to be set as main
+    const currentOrder = photo.displayOrder;
+
     // Use transaction to ensure atomicity
     await prisma.$transaction([
       // Unset previous main photo
@@ -52,10 +55,24 @@ export async function PUT(
           isMainPhoto: false,
         },
       }),
-      // Set new main photo
+      // Shift all photos with displayOrder < currentOrder up by 1
+      // This makes room for the new main photo at position 0
+      prisma.vehiclePhoto.updateMany({
+        where: {
+          vehicleId,
+          displayOrder: { lt: currentOrder },
+        },
+        data: {
+          displayOrder: { increment: 1 },
+        },
+      }),
+      // Set new main photo with displayOrder 0
       prisma.vehiclePhoto.update({
         where: { id: photoId },
-        data: { isMainPhoto: true },
+        data: {
+          isMainPhoto: true,
+          displayOrder: 0,
+        },
       }),
     ]);
 

@@ -53,6 +53,8 @@ export default function EditVehiclePage() {
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [draggedExistingIndex, setDraggedExistingIndex] = useState<number | null>(null);
+  const [savingPhotoOrder, setSavingPhotoOrder] = useState(false);
   const MAX_PHOTOS = 50;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -254,6 +256,65 @@ export default function EditVehiclePage() {
 
   const handleDragEnd = () => {
     setDraggedIndex(null);
+  };
+
+  // Existing photos drag handlers
+  const handleExistingDragStart = (index: number) => {
+    setDraggedExistingIndex(index);
+  };
+
+  const handleExistingDragEnter = (index: number) => {
+    if (draggedExistingIndex === null || draggedExistingIndex === index || !vehicle) return;
+
+    const newPhotos = [...vehicle.photos];
+    const draggedPhoto = newPhotos[draggedExistingIndex];
+
+    // Remove from old position
+    newPhotos.splice(draggedExistingIndex, 1);
+    // Insert at new position
+    newPhotos.splice(index, 0, draggedPhoto);
+
+    // Update local state immediately for visual feedback
+    setVehicle({ ...vehicle, photos: newPhotos });
+    setDraggedExistingIndex(index);
+  };
+
+  const handleExistingDragEnd = async () => {
+    setDraggedExistingIndex(null);
+
+    if (!vehicle || vehicle.photos.length === 0) return;
+
+    // Save new order to server
+    setSavingPhotoOrder(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const photoOrder = vehicle.photos.map((photo, index) => ({
+        photoId: photo.id,
+        displayOrder: index,
+      }));
+
+      const response = await fetch(`/api/v1/vehicles/${vehicleId}/photos/reorder`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ photos: photoOrder }),
+      });
+
+      if (response.ok) {
+        console.log('✅ Photo order saved');
+      } else {
+        console.error('Failed to save photo order');
+        // Reload to get correct order
+        fetchVehicle();
+      }
+    } catch (err) {
+      console.error('Error saving photo order:', err);
+      fetchVehicle();
+    } finally {
+      setSavingPhotoOrder(false);
+    }
   };
 
   // Set as main photo (move to first position)
@@ -577,16 +638,42 @@ export default function EditVehiclePage() {
           {/* Existing Photos */}
           {existingPhotosCount > 0 && (
             <div className="mb-6">
-              <p className="text-sm font-medium text-gray-700 mb-3">
-                Foto Saat Ini ({existingPhotosCount})
-                <span className="ml-2 text-xs text-gray-500">• Klik foto untuk manage</span>
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-gray-700">
+                  Foto Saat Ini ({existingPhotosCount})
+                  <span className="ml-2 text-xs text-gray-500">• Drag foto untuk mengubah urutan</span>
+                </p>
+                {savingPhotoOrder && (
+                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Menyimpan urutan...
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {vehicle?.photos.map((photo: any, index: number) => (
                   <div
                     key={photo.id}
-                    className="relative group cursor-pointer transition-all hover:scale-105"
+                    draggable
+                    onDragStart={() => handleExistingDragStart(index)}
+                    onDragEnter={() => handleExistingDragEnter(index)}
+                    onDragEnd={handleExistingDragEnd}
+                    onDragOver={(e) => e.preventDefault()}
+                    className={`relative group cursor-move transition-all hover:scale-105 ${
+                      draggedExistingIndex === index ? 'opacity-50 scale-95' : ''
+                    }`}
                   >
+                    {/* Drag Handle */}
+                    <div className="absolute top-1 left-1 bg-gray-800 bg-opacity-75 text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 3h2v2H9V3zm4 0h2v2h-2V3zM9 7h2v2H9V7zm4 0h2v2h-2V7zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2z" />
+                      </svg>
+                      <span className="text-xs font-semibold">#{index + 1}</span>
+                    </div>
+
                     {/* Photo Image */}
                     <img
                       src={photo.thumbnailUrl || photo.originalUrl}
@@ -594,16 +681,16 @@ export default function EditVehiclePage() {
                       className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 group-hover:border-blue-400"
                     />
 
-                    {/* Main Photo Badge */}
-                    {photo.isMainPhoto && (
-                      <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold flex items-center gap-1">
+                    {/* Main Photo Badge - First photo is always main */}
+                    {index === 0 && (
+                      <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold flex items-center gap-1">
                         ⭐ Utama
                       </div>
                     )}
 
                     {/* Quality Score Badge */}
                     {photo.qualityScore && (
-                      <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded font-semibold ${
+                      <div className={`absolute bottom-1 right-1 text-xs px-2 py-1 rounded font-semibold ${
                         photo.validationStatus === 'VALID' ? 'bg-green-100 text-green-800' :
                         photo.validationStatus === 'LOW_QUALITY' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-red-100 text-red-800'
@@ -612,15 +699,10 @@ export default function EditVehiclePage() {
                       </div>
                     )}
 
-                    {/* Photo Number */}
-                    <div className="absolute bottom-2 left-2 bg-gray-800 bg-opacity-75 text-white text-xs px-2 py-0.5 rounded">
-                      #{index + 1}
-                    </div>
-
                     {/* Action Buttons (show on hover) */}
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded-lg transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      {/* Set as Main Button */}
-                      {!photo.isMainPhoto && (
+                      {/* Set as Main Button - only show if not first photo */}
+                      {index !== 0 && (
                         <button
                           type="button"
                           onClick={async () => {
