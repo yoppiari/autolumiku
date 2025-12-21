@@ -721,8 +721,10 @@ A: "Selamat datang di ${tenant.name}! Kami siap membantu Anda menemukan kendaraa
         largeUrl: photo.largeUrl?.substring(0, 100),
       });
 
-      // Fallback: mediumUrl → largeUrl → originalUrl
-      let imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+      // Prioritize JPG (originalUrl) for better WhatsApp mobile compatibility
+      // WebP format (medium/large) may not display on some mobile devices
+      // Fallback: originalUrl (JPG) → largeUrl → mediumUrl
+      let imageUrl = photo.originalUrl || photo.largeUrl || photo.mediumUrl;
 
       if (!imageUrl) {
         console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for ${v.make} ${v.model} photo`);

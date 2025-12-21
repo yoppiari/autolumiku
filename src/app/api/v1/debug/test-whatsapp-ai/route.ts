@@ -223,7 +223,8 @@ export async function GET(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://primamobil.id";
     const photoUrls = vehiclesWithPhotos.slice(0, 3).map(v => {
       const photo = v.photos[0];
-      let url = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+      // Prioritize JPG (originalUrl) for better WhatsApp mobile compatibility
+      let url = photo.originalUrl || photo.largeUrl || photo.mediumUrl;
       const isRelative = url?.startsWith("/");
 
       return {

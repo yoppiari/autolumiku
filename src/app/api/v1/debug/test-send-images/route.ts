@@ -107,7 +107,8 @@ export async function POST(request: NextRequest) {
       .filter((v) => v.photos.length > 0)
       .map((v) => {
         const photo = v.photos[0];
-        const imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+        // Prioritize JPG (originalUrl) for better WhatsApp mobile compatibility
+        const imageUrl = photo.originalUrl || photo.largeUrl || photo.mediumUrl;
         return {
           vehicleId: v.id,
           vehicleName: `${v.make} ${v.model} ${v.year}`,
