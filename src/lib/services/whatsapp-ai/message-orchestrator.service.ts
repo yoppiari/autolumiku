@@ -273,10 +273,14 @@ export class MessageOrchestratorService {
       } else if (classification.isStaff && classification.intent.startsWith("customer_")) {
         // Staff asking general questions - route to AI for natural response
         console.log(`[Orchestrator] Staff with customer intent - routing to AI for natural response`);
+        // Get staff info for context
+        const staffInfo = await this.getStaffInfo(incoming.from, incoming.tenantId);
         const result = await this.handleCustomerInquiry(
           conversation,
           classification.intent,
-          incoming.message
+          incoming.message,
+          true, // isStaff
+          staffInfo || undefined
         );
         responseMessage = result.message;
         escalated = result.escalated;
@@ -285,10 +289,15 @@ export class MessageOrchestratorService {
       } else {
         // Handle customer inquiry dengan AI
         console.log(`[Orchestrator] Routing to AI customer inquiry handler`);
+        // Check if this is actually a staff (from conversation or classification)
+        const isActuallyStaff = conversation.isStaff || classification.isStaff;
+        const staffInfo = isActuallyStaff ? await this.getStaffInfo(incoming.from, incoming.tenantId) : null;
         const result = await this.handleCustomerInquiry(
           conversation,
           classification.intent,
-          incoming.message
+          incoming.message,
+          isActuallyStaff,
+          staffInfo || undefined
         );
         responseMessage = result.message;
         escalated = result.escalated;
@@ -683,7 +692,9 @@ export class MessageOrchestratorService {
   private static async handleCustomerInquiry(
     conversation: any,
     intent: MessageIntent,
-    message: string
+    message: string,
+    isStaff: boolean = false,
+    staffInfo?: { name: string; role: string; phone: string }
   ): Promise<{
     message: string;
     escalated: boolean;
@@ -697,7 +708,7 @@ export class MessageOrchestratorService {
         5
       );
 
-      // Generate AI response
+      // Generate AI response with staff info context
       const aiResponse = await WhatsAppAIChatService.generateResponse(
         {
           tenantId: conversation.tenantId,
@@ -706,6 +717,8 @@ export class MessageOrchestratorService {
           customerName: conversation.customerName,
           intent,
           messageHistory,
+          isStaff,
+          staffInfo,
         },
         message
       );
@@ -1014,6 +1027,52 @@ export class MessageOrchestratorService {
     }
 
     console.log(`[Orchestrator] getStaffPhoneFromUser: No staff match found for ${phone}`);
+    return null;
+  }
+
+  /**
+   * Get full staff info (name, role, phone) for a phone number
+   */
+  private static async getStaffInfo(phone: string, tenantId: string): Promise<{ name: string; role: string; phone: string } | null> {
+    // Handle LID format - check conversation context for verified phone
+    if (phone.includes("@lid")) {
+      const conversation = await prisma.whatsAppConversation.findFirst({
+        where: { tenantId, customerPhone: phone, isStaff: true },
+        select: { contextData: true },
+      });
+      const contextData = conversation?.contextData as Record<string, any> | null;
+      if (contextData?.verifiedStaffPhone) {
+        return this.getStaffInfo(contextData.verifiedStaffPhone, tenantId);
+      }
+      return null;
+    }
+
+    const normalizedInput = this.normalizePhone(phone);
+
+    // Get all users in tenant with staff roles
+    const users = await prisma.user.findMany({
+      where: {
+        tenantId,
+        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
+      },
+      select: { id: true, phone: true, firstName: true, lastName: true, role: true },
+    });
+
+    for (const user of users) {
+      if (!user.phone) continue;
+      const normalizedUserPhone = this.normalizePhone(user.phone);
+      if (normalizedInput === normalizedUserPhone) {
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        console.log(`[Orchestrator] getStaffInfo: Found staff: ${fullName} (${user.role})`);
+        return {
+          name: fullName || "Staff",
+          role: user.role,
+          phone: user.phone,
+        };
+      }
+    }
+
+    console.log(`[Orchestrator] getStaffInfo: No staff match found for ${phone}`);
     return null;
   }
 

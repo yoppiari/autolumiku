@@ -20,6 +20,12 @@ export interface ChatContext {
     role: "user" | "assistant";
     content: string;
   }>;
+  isStaff?: boolean;
+  staffInfo?: {
+    name: string;
+    role: string;
+    phone: string;
+  };
 }
 
 export interface ChatResponse {
@@ -132,14 +138,20 @@ export class WhatsAppAIChatService {
         };
       }
 
-      // Build system prompt
+      // Build system prompt with sender info
       console.log(`[WhatsApp AI Chat] Building system prompt for tenant: ${account.tenant.name}`);
+      const senderInfo = {
+        isStaff: context.isStaff || false,
+        staffInfo: context.staffInfo,
+        customerPhone: context.customerPhone,
+      };
       const systemPrompt = await this.buildSystemPrompt(
         account.tenant,
         config,
-        context.intent
+        context.intent,
+        senderInfo
       );
-      console.log(`[WhatsApp AI Chat] System prompt built (${systemPrompt.length} chars)`);
+      console.log(`[WhatsApp AI Chat] System prompt built (${systemPrompt.length} chars), isStaff: ${senderInfo.isStaff}`);
 
       // Build context dengan conversation history
       console.log(`[WhatsApp AI Chat] Building conversation context with ${context.messageHistory.length} history messages`);
@@ -344,7 +356,8 @@ export class WhatsAppAIChatService {
   private static async buildSystemPrompt(
     tenant: any,
     config: any,
-    intent: MessageIntent
+    intent: MessageIntent,
+    senderInfo?: { isStaff: boolean; staffInfo?: { name: string; role: string; phone: string }; customerPhone: string }
   ): Promise<string> {
     // Professional, formal, friendly and helpful personality
     let systemPrompt = `Kamu adalah ${config.aiName}, asisten virtual profesional dari ${tenant.name} (showroom mobil bekas di ${tenant.city || "Indonesia"}).
@@ -426,6 +439,26 @@ A: "Selamat datang di ${tenant.name}! Kami siap membantu Anda menemukan kendaraa
     } else {
       // No staff registered - tell AI to not give any contact
       systemPrompt += `\n\n⚠️ PENTING: Belum ada staff terdaftar. Kalau customer mau hubungi langsung, bilang "Silakan lanjutkan percakapan di sini, tim kami akan membantu Anda." JANGAN buat-buat nomor telepon!`;
+    }
+
+    // Add sender identity information
+    if (senderInfo) {
+      systemPrompt += `\n\n👤 INFORMASI PENGIRIM PESAN INI:`;
+      if (senderInfo.isStaff && senderInfo.staffInfo) {
+        systemPrompt += `
+- Status: ✅ STAFF TERDAFTAR
+- Nama: ${senderInfo.staffInfo.name}
+- Role: ${senderInfo.staffInfo.role}
+- No HP: ${senderInfo.staffInfo.phone}
+
+Jika pengirim bertanya "siapa saya?" atau "kamu tahu saya?", JAWAB bahwa mereka adalah staff terdaftar dengan nama dan role di atas.`;
+      } else {
+        systemPrompt += `
+- Status: Customer/Pengunjung
+- No HP: ${senderInfo.customerPhone}
+
+Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang belum terdaftar di sistem.`;
+      }
     }
 
     return systemPrompt;
