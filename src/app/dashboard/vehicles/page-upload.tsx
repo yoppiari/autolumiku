@@ -272,7 +272,20 @@ export default function VehiclesPage() {
       setEditedData(result.data);
       setStep('review');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
+
+      // Check for token expiry and redirect to login
+      if (errorMessage.toLowerCase().includes('token') ||
+          errorMessage.toLowerCase().includes('unauthorized') ||
+          errorMessage.toLowerCase().includes('expired')) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        alert('Sesi login Anda telah berakhir. Silakan login kembali.');
+        router.push('/login');
+        return;
+      }
+
+      setError(errorMessage);
       setStep('input');
     } finally {
       setIsGenerating(false);
@@ -386,8 +399,21 @@ export default function VehiclesPage() {
       alert(message);
       router.push('/dashboard/vehicles');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menyimpan');
+      const errorMessage = err instanceof Error ? err.message : 'Gagal menyimpan';
       console.error('Save error:', err);
+
+      // Check for token expiry and redirect to login
+      if (errorMessage.toLowerCase().includes('token') ||
+          errorMessage.toLowerCase().includes('unauthorized') ||
+          errorMessage.toLowerCase().includes('expired')) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        alert('Sesi login Anda telah berakhir. Silakan login kembali.');
+        router.push('/login');
+        return;
+      }
+
+      setError(errorMessage);
     } finally {
       setIsSaving(false);
     }
