@@ -72,9 +72,14 @@ const STAFF_COMMAND_PATTERNS = {
   check_inventory: [
     /^\/inventory/i,
     /^\/stock/i,
-    /^cek\s+stok/i,
-    /^lihat\s+inventory/i,
+    /^\/stok/i,
+    /^stok$/i,                    // "stok" alone
+    /^stock$/i,                   // "stock" alone
+    /^inventory$/i,               // "inventory" alone
+    /^cek\s*stok/i,               // "cek stok" or "cekstok"
+    /^lihat\s+(inventory|stok)/i, // "lihat inventory" or "lihat stok"
     /^daftar\s+mobil/i,
+    /^(list|daftar)\s+(unit|mobil|kendaraan)/i,
   ],
   get_stats: [
     /^\/stats/i,
@@ -87,9 +92,10 @@ const STAFF_COMMAND_PATTERNS = {
 // Customer inquiry patterns
 const CUSTOMER_PATTERNS = {
   greeting: [
-    /^(halo|helo|hai|hello|hi|hey|hallo|hei|pagi|siang|sore|malam)/i,
+    /^(halo|helo|hai|hello|hi|hey|hallo|hei|haloha|halohaa?|pagi|siang|sore|malam)/i,
     /^assalam/i,
     /selamat\s+(pagi|siang|sore|malam)/i,
+    /^(yo|yoo|woi|woii|hoi|hoii)$/i,
   ],
   vehicle_inquiry: [
     /\b(mobil|motor|kendaraan|unit)\b/i,
@@ -427,12 +433,13 @@ export class IntentClassifierService {
     // Check staff greeting (halo, hai, hello, etc.)
     // Show welcome menu with options
     const greetingPatterns = [
-      /^(halo|helo|hai|hello|hi|hey|hallo|hei)$/i,
-      /^(halo|helo|hai|hello|hi|hey|hallo|hei)\s*(kak|min|admin|bos|boss)?[.!?]?$/i,
+      /^(halo|helo|hai|hello|hi|hey|hallo|hei|haloha|halohaa?)$/i,
+      /^(halo|helo|hai|hello|hi|hey|hallo|hei|haloha)\s*(kak|min|admin|bos|boss)?[.!?]?$/i,
       /^(selamat\s+(pagi|siang|sore|malam))$/i,
       /^(pagi|siang|sore|malam)$/i,
       /^(assalamu.*alaikum|assalamualaikum)/i,
       /^(met\s+(pagi|siang|sore|malam))/i,
+      /^(yo|yoo|woi|woii|hoi|hoii)$/i,             // informal greetings
     ];
 
     if (greetingPatterns.some((p) => p.test(message))) {

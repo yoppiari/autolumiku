@@ -75,25 +75,26 @@ export class MessageOrchestratorService {
 
       // Greeting patterns to check before forcing upload_vehicle state
       const greetingPatterns = [
-        /^(halo|helo|hai|hello|hi|hey|hallo|hei)$/i,
-        /^(halo|helo|hai|hello|hi|hey|hallo|hei)\s*(kak|min|admin|bos|boss)?[.!?]?$/i,
+        /^(halo|helo|hai|hello|hi|hey|hallo|hei|haloha|halohaa?)$/i,
+        /^(halo|helo|hai|hello|hi|hey|hallo|hei|haloha)\s*(kak|min|admin|bos|boss)?[.!?]?$/i,
         /^(selamat\s+(pagi|siang|sore|malam))$/i,
         /^(pagi|siang|sore|malam)$/i,
         /^(assalamu.*alaikum|assalamualaikum)/i,
         /^(met\s+(pagi|siang|sore|malam))/i,
+        /^(yo|yoo|woi|woii|hoi|hoii)$/i,             // informal greetings
       ];
 
-      // Escape patterns - questions/commands that should NOT be treated as vehicle data
+      // Escape patterns - specific questions that should reset upload flow
+      // NOTE: Removed /\?$/ as it was too broad and matched valid vehicle data questions
       const escapePatterns = [
-        /^(kamu|anda|lu|lo)\s*(siapa|apa)/i,        // kamu siapa, anda siapa
-        /^(siapa)\s*(kamu|anda|ini|lu|lo)/i,        // siapa kamu, siapa ini
-        /^(ini)\s*(siapa|apa)/i,                     // ini siapa, ini apa
-        /^(apa)\s*(ini|itu|kabar)/i,                 // apa ini, apa itu, apa kabar
-        /^(gimana|bagaimana|caranya)/i,              // gimana, bagaimana, caranya
-        /^(tolong|help|bantu)/i,                     // tolong, help, bantu
-        /^(menu|fitur|bisa\s+apa)/i,                 // menu, fitur, bisa apa
+        /^(kamu|anda|lu|lo)\s*(siapa|apa)\??$/i,     // kamu siapa?, anda siapa?
+        /^(siapa)\s*(kamu|anda|ini|lu|lo)\??$/i,    // siapa kamu?, siapa ini?
+        /^(ini)\s*(siapa|apa)\??$/i,                 // ini siapa?, ini apa?
+        /^(apa)\s*(ini|itu|kabar)\??$/i,             // apa ini?, apa kabar?
+        /^(gimana|bagaimana)\s*\??$/i,               // gimana?, bagaimana?
+        /^(tolong|help)\s*$/i,                       // tolong, help (alone)
+        /^(menu|fitur)$/i,                           // menu, fitur (alone)
         /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
-        /\?$/,                                        // any question (ends with ?)
       ];
 
       const normalizedMessage = (incoming.message || "").trim();
