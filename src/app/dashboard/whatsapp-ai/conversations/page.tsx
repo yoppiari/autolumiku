@@ -127,6 +127,51 @@ export default function ConversationsPage() {
     return date.toLocaleDateString('id-ID');
   };
 
+  // Format WhatsApp JID to readable phone number
+  const formatPhoneNumber = (phone: string): string => {
+    if (!phone) return '-';
+
+    // Remove @lid, @s.whatsapp.net, or other WhatsApp suffixes
+    let cleaned = phone.split('@')[0];
+
+    // Remove any device suffix (e.g., :123)
+    cleaned = cleaned.split(':')[0];
+
+    // If it's a LID (linked ID), show as is with marker
+    if (phone.includes('@lid')) {
+      return `WA: ${cleaned.slice(-8)}...`;
+    }
+
+    // Extract phone number - remove any non-digits
+    const digits = cleaned.replace(/\D/g, '');
+
+    // If starts with 62 (Indonesia), format nicely
+    if (digits.startsWith('62') && digits.length >= 10) {
+      const localNumber = digits.substring(2);
+      // Format: +62 812 3456 7890
+      if (localNumber.length >= 9) {
+        const p1 = localNumber.substring(0, 3);
+        const p2 = localNumber.substring(3, 7);
+        const p3 = localNumber.substring(7);
+        return `+62 ${p1} ${p2} ${p3}`.trim();
+      }
+      return `+62 ${localNumber}`;
+    }
+
+    // If starts with other country codes, show with +
+    if (digits.length >= 10) {
+      return `+${digits}`;
+    }
+
+    // Fallback - show last 10 digits with formatting
+    if (digits.length > 10) {
+      const last10 = digits.slice(-10);
+      return `...${last10.substring(0, 3)} ${last10.substring(3, 7)} ${last10.substring(7)}`;
+    }
+
+    return digits || phone;
+  };
+
   const getIntentBadgeColor = (intent?: string) => {
     if (!intent) return 'bg-gray-100 text-gray-800';
     if (intent.startsWith('customer')) return 'bg-blue-100 text-blue-800';
@@ -236,9 +281,9 @@ export default function ConversationsPage() {
                       </div>
                       <div>
                         <h3 className="font-medium text-gray-900">
-                          {conv.customerName || conv.customerPhone}
+                          {conv.customerName || formatPhoneNumber(conv.customerPhone)}
                         </h3>
-                        <p className="text-xs text-gray-500">{conv.customerPhone}</p>
+                        <p className="text-xs text-gray-500">{formatPhoneNumber(conv.customerPhone)}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -279,10 +324,10 @@ export default function ConversationsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">
-                      {selectedConversation.customerName || selectedConversation.customerPhone}
+                      {selectedConversation.customerName || formatPhoneNumber(selectedConversation.customerPhone)}
                     </h2>
                     <p className="text-sm text-gray-500">
-                      {selectedConversation.customerPhone} •{' '}
+                      {formatPhoneNumber(selectedConversation.customerPhone)} •{' '}
                       {selectedConversation.isStaff ? 'Staff' : 'Customer'}
                     </p>
                   </div>
