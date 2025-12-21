@@ -30,10 +30,33 @@ export default async function BlogPage({ params }: { params: { slug: string } })
     const { slug } = params;
     const headersList = headers();
     const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
+    const tenantDomain = headersList.get('x-tenant-domain');
 
-    const tenant = await prisma.tenant.findUnique({
+    // 1. Fetch Tenant - try multiple lookup strategies
+    let tenant = await prisma.tenant.findUnique({
         where: { slug },
     });
+
+    // Fallback 1: Try without -id suffix (e.g., primamobil-id -> primamobil)
+    if (!tenant && slug.endsWith('-id')) {
+        const slugWithoutId = slug.replace(/-id$/, '');
+        tenant = await prisma.tenant.findUnique({
+            where: { slug: slugWithoutId },
+        });
+    }
+
+    // Fallback 2: Try by domain for custom domains
+    if (!tenant && isCustomDomain && tenantDomain) {
+        tenant = await prisma.tenant.findFirst({
+            where: {
+                OR: [
+                    { domain: tenantDomain },
+                    { domain: `www.${tenantDomain}` },
+                    { domain: tenantDomain.replace('www.', '') },
+                ],
+            },
+        });
+    }
 
     if (!tenant) {
         return (

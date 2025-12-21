@@ -19,19 +19,31 @@ export interface TenantBranding {
 export class BrandingService {
   /**
    * Get tenant branding by slug or domain
+   * Supports fallback lookup: if slug ends with -id (e.g., primamobil-id),
+   * also tries without the suffix (primamobil)
    */
   static async getBrandingBySlugOrDomain(
     slugOrDomain: string
-  ): Promise<TenantBranding | null> {
+  ): Promise<(TenantBranding & { tenantId: string }) | null> {
+    // Build OR conditions with fallback for -id suffix
+    const orConditions: any[] = [
+      { slug: slugOrDomain },
+      { domain: slugOrDomain },
+    ];
+
+    // Fallback: if slug ends with -id, also try without it
+    if (slugOrDomain.endsWith('-id')) {
+      const slugWithoutId = slugOrDomain.replace(/-id$/, '');
+      orConditions.push({ slug: slugWithoutId });
+    }
+
     const tenant = await prisma.tenant.findFirst({
       where: {
-        OR: [
-          { slug: slugOrDomain },
-          { domain: slugOrDomain },
-        ],
+        OR: orConditions,
         status: 'active',
       },
       select: {
+        id: true,
         name: true,
         slug: true,
         logoUrl: true,
@@ -43,7 +55,12 @@ export class BrandingService {
       },
     });
 
-    return tenant;
+    if (!tenant) return null;
+
+    return {
+      ...tenant,
+      tenantId: tenant.id,
+    };
   }
 
   /**
@@ -61,16 +78,27 @@ export class BrandingService {
 
   /**
    * Get tenant ID by slug or domain
+   * Supports fallback lookup: if slug ends with -id (e.g., primamobil-id),
+   * also tries without the suffix (primamobil)
    */
   static async getTenantIdBySlugOrDomain(
     slugOrDomain: string
   ): Promise<string | null> {
+    // Build OR conditions with fallback for -id suffix
+    const orConditions: any[] = [
+      { slug: slugOrDomain },
+      { domain: slugOrDomain },
+    ];
+
+    // Fallback: if slug ends with -id, also try without it
+    if (slugOrDomain.endsWith('-id')) {
+      const slugWithoutId = slugOrDomain.replace(/-id$/, '');
+      orConditions.push({ slug: slugWithoutId });
+    }
+
     const tenant = await prisma.tenant.findFirst({
       where: {
-        OR: [
-          { slug: slugOrDomain },
-          { domain: slugOrDomain },
-        ],
+        OR: orConditions,
         status: 'active',
       },
       select: {
