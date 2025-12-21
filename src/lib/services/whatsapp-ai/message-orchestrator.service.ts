@@ -73,8 +73,20 @@ export class MessageOrchestratorService {
         hasMedia,
       });
 
-      if (conversation.conversationState === "upload_vehicle") {
-        // Staff is in middle of vehicle upload flow
+      // Greeting patterns to check before forcing upload_vehicle state
+      const greetingPatterns = [
+        /^(halo|hai|hello|hi|hey|hallo|hei)$/i,
+        /^(halo|hai|hello|hi|hey|hallo|hei)\s*(kak|min|admin|bos|boss)?[.!]?$/i,
+        /^(selamat\s+(pagi|siang|sore|malam))$/i,
+        /^(pagi|siang|sore|malam)$/i,
+        /^(assalamu.*alaikum|assalamualaikum)/i,
+        /^(met\s+(pagi|siang|sore|malam))/i,
+      ];
+      const normalizedMessage = (incoming.message || "").trim();
+      const isGreeting = greetingPatterns.some(p => p.test(normalizedMessage));
+
+      if (conversation.conversationState === "upload_vehicle" && !isGreeting && !normalizedMessage.toLowerCase().includes("batal")) {
+        // Staff is in middle of vehicle upload flow (and NOT sending a greeting or cancel)
         console.log(`[Orchestrator] Conversation in upload_vehicle state, treating message as vehicle data/photo`);
 
         // IMPORTANT: If this is a photo, make sure it's treated as photo for upload
@@ -87,6 +99,33 @@ export class MessageOrchestratorService {
           confidence: 1.0,
           isStaff: true,
           isCustomer: false,
+        };
+      } else if (conversation.conversationState === "upload_vehicle" && (isGreeting || normalizedMessage.toLowerCase().includes("batal"))) {
+        // User sent greeting or "batal" while in upload flow - reset conversation state
+        console.log(`[Orchestrator] 🔄 Greeting/cancel detected in upload flow, resetting conversation state`);
+
+        await prisma.whatsAppConversation.update({
+          where: { id: conversation.id },
+          data: {
+            conversationState: null,
+            contextData: {
+              ...((conversation.contextData as Record<string, any>) || {}),
+              // Clear upload-related data
+              vehicleData: null,
+              photos: null,
+              uploadStep: null,
+              photoRequestAttempts: null,
+            },
+          },
+        });
+
+        // Classify as staff greeting
+        classification = {
+          intent: "staff_greeting" as MessageIntent,
+          confidence: 0.95,
+          isStaff: conversation.isStaff || false,
+          isCustomer: !conversation.isStaff,
+          reason: "Greeting detected, reset upload flow",
         };
       } else {
         // Normal intent classification
