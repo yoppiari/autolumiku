@@ -34,19 +34,9 @@ export async function GET(request: NextRequest) {
     let tenantId = searchParams.get('tenantId');
     const slug = searchParams.get('slug');
 
-    // Tenant validation: non-super_admin can only access their own tenant
-    if (auth.user.role.toLowerCase() !== 'super_admin') {
-      if (tenantId && tenantId !== auth.user.tenantId) {
-        return NextResponse.json(
-          { error: 'Forbidden - Cannot access vehicles from other tenant' },
-          { status: 403 }
-        );
-      }
-      tenantId = auth.user.tenantId;
-    }
-
-    // If slug provided, lookup tenant by slug
-    if (!tenantId && slug) {
+    // If slug provided, lookup tenant by slug (do this FIRST before tenant validation)
+    // This allows actions like resequence-ids to work for non-super_admin users
+    if (slug) {
       // Try exact match first, then try without -id suffix
       let tenant = await prisma.tenant.findUnique({
         where: { slug },
@@ -63,6 +53,14 @@ export async function GET(request: NextRequest) {
       }
 
       if (tenant) {
+        // Verify user has access to this tenant
+        if (auth.user.role.toLowerCase() !== 'super_admin' && tenant.id !== auth.user.tenantId) {
+          return NextResponse.json(
+            { error: 'Forbidden - Cannot access vehicles from other tenant' },
+            { status: 403 }
+          );
+        }
+
         tenantId = tenant.id;
 
         // Handle update-ids action
@@ -74,6 +72,19 @@ export async function GET(request: NextRequest) {
         if (action === 'resequence-ids') {
           return await resequenceVehicleIds(tenant);
         }
+      }
+    }
+
+    // Tenant validation: non-super_admin can only access their own tenant
+    if (auth.user.role.toLowerCase() !== 'super_admin') {
+      if (tenantId && tenantId !== auth.user.tenantId) {
+        return NextResponse.json(
+          { error: 'Forbidden - Cannot access vehicles from other tenant' },
+          { status: 403 }
+        );
+      }
+      if (!tenantId) {
+        tenantId = auth.user.tenantId;
       }
     }
 
