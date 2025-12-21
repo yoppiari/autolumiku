@@ -69,11 +69,21 @@ export async function POST(request: NextRequest) {
     // Aimeow sends messages with { clientId, message, timestamp } structure
     // Handle incoming message if message field exists
     if (message) {
-      // DEBUG: Log ALL fields in message object to find correct phone field
-      console.log("[Aimeow Webhook] 🔍 FULL MESSAGE OBJECT:");
+      // ========== CRITICAL DEBUG: Log EVERYTHING to find mediaUrl ==========
+      console.log("=".repeat(80));
+      console.log("[Aimeow Webhook] 🔍🔍🔍 FULL MESSAGE OBJECT (RAW):");
       console.log(JSON.stringify(message, null, 2));
       console.log("[Aimeow Webhook] Message keys:", Object.keys(message));
       console.log("[Aimeow Webhook] Message type:", message.type);
+
+      // Log EVERY field individually to find where mediaUrl might be
+      for (const key of Object.keys(message)) {
+        const value = message[key];
+        const valueType = typeof value;
+        const valuePreview = valueType === 'object' ? JSON.stringify(value)?.substring(0, 200) : String(value)?.substring(0, 200);
+        console.log(`[Aimeow Webhook] 📋 message.${key} (${valueType}): ${valuePreview}`);
+      }
+      console.log("=".repeat(80));
 
       // Check all possible phone number fields
       const possiblePhoneFields = [
@@ -234,6 +244,41 @@ export async function POST(request: NextRequest) {
         if (!mediaUrl) {
           console.error(`[Aimeow Webhook] ⚠️ WARNING: Image message has no mediaUrl!`);
           console.error(`[Aimeow Webhook] Full message object:`, JSON.stringify(message, null, 2));
+
+          // TRY: Download media from Aimeow using mediaId or message.id
+          const mediaId = message.mediaId || message.id || message.key?.id;
+          if (mediaId && clientId) {
+            console.log(`[Aimeow Webhook] 🔄 Attempting to download media using mediaId: ${mediaId}`);
+            try {
+              const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
+              const downloadResponse = await fetch(
+                `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/download-media/${mediaId}`,
+                { method: 'GET' }
+              );
+
+              if (downloadResponse.ok) {
+                const downloadData = await downloadResponse.json();
+                mediaUrl = downloadData.url || downloadData.mediaUrl || downloadData.downloadUrl;
+                console.log(`[Aimeow Webhook] ✅ Got mediaUrl from download endpoint: ${mediaUrl}`);
+              } else {
+                console.error(`[Aimeow Webhook] ❌ Download media failed: ${downloadResponse.status}`);
+
+                // Try alternative endpoint
+                const altResponse = await fetch(
+                  `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/media/${mediaId}`,
+                  { method: 'GET' }
+                );
+                if (altResponse.ok) {
+                  const altData = await altResponse.json();
+                  mediaUrl = altData.url || altData.mediaUrl || altData.downloadUrl;
+                  console.log(`[Aimeow Webhook] ✅ Got mediaUrl from alt endpoint: ${mediaUrl}`);
+                }
+              }
+            } catch (downloadError: any) {
+              console.error(`[Aimeow Webhook] ❌ Error downloading media:`, downloadError.message);
+            }
+          }
+
           // Still continue processing - the message will be saved and photo can be linked later
         }
       } else if (message.type === "video") {
