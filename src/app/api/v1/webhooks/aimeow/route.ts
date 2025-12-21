@@ -248,31 +248,14 @@ export async function POST(request: NextRequest) {
           // TRY: Download media from Aimeow using mediaId or message.id
           const mediaId = message.mediaId || message.id || message.key?.id;
           if (mediaId && clientId) {
-            console.log(`[Aimeow Webhook] 🔄 Attempting to download media using mediaId: ${mediaId}`);
+            console.log(`[Aimeow Webhook] 🔄 Attempting to download media using AimeowClientService.downloadMedia`);
             try {
-              const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
-              const downloadResponse = await fetch(
-                `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/download-media/${mediaId}`,
-                { method: 'GET' }
-              );
-
-              if (downloadResponse.ok) {
-                const downloadData = await downloadResponse.json();
-                mediaUrl = downloadData.url || downloadData.mediaUrl || downloadData.downloadUrl;
-                console.log(`[Aimeow Webhook] ✅ Got mediaUrl from download endpoint: ${mediaUrl}`);
+              const downloadResult = await AimeowClientService.downloadMedia(clientId, mediaId);
+              if (downloadResult.success && downloadResult.mediaUrl) {
+                mediaUrl = downloadResult.mediaUrl;
+                console.log(`[Aimeow Webhook] ✅ Got mediaUrl from AimeowClientService: ${mediaUrl}`);
               } else {
-                console.error(`[Aimeow Webhook] ❌ Download media failed: ${downloadResponse.status}`);
-
-                // Try alternative endpoint
-                const altResponse = await fetch(
-                  `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/media/${mediaId}`,
-                  { method: 'GET' }
-                );
-                if (altResponse.ok) {
-                  const altData = await altResponse.json();
-                  mediaUrl = altData.url || altData.mediaUrl || altData.downloadUrl;
-                  console.log(`[Aimeow Webhook] ✅ Got mediaUrl from alt endpoint: ${mediaUrl}`);
-                }
+                console.error(`[Aimeow Webhook] ❌ AimeowClientService.downloadMedia failed: ${downloadResult.error}`);
               }
             } catch (downloadError: any) {
               console.error(`[Aimeow Webhook] ❌ Error downloading media:`, downloadError.message);

@@ -910,6 +910,78 @@ export class AimeowClientService {
       };
     }
   }
+
+  /**
+   * Download media from Aimeow using message ID
+   * Tries multiple endpoint formats to get the media URL
+   */
+  static async downloadMedia(
+    clientId: string,
+    mediaId: string
+  ): Promise<{ success: boolean; mediaUrl?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Download] Downloading media: ${mediaId} for client: ${clientId}`);
+
+      // Get correct client UUID format
+      let apiClientId = clientId;
+      if (clientId.includes("@") || !clientId.includes("-")) {
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+          }
+        }
+      }
+
+      // Try multiple endpoint formats
+      const endpoints = [
+        `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/messages/${mediaId}/media`,
+        `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/media/${mediaId}`,
+        `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/download-media/${mediaId}`,
+        `${AIMEOW_BASE_URL}/api/v1/media/${mediaId}`,
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`[Aimeow Download] Trying: ${endpoint}`);
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+          });
+
+          if (response.ok) {
+            const contentType = response.headers.get('content-type');
+
+            // If response is JSON, extract URL from it
+            if (contentType?.includes('application/json')) {
+              const data = await response.json();
+              const mediaUrl = data.url || data.mediaUrl || data.downloadUrl || data.link;
+              if (mediaUrl) {
+                console.log(`[Aimeow Download] ✅ Got URL from JSON: ${mediaUrl}`);
+                return { success: true, mediaUrl };
+              }
+            }
+
+            // If response is binary (image), the endpoint IS the media URL
+            if (contentType?.includes('image') || contentType?.includes('octet-stream')) {
+              console.log(`[Aimeow Download] ✅ Endpoint returns binary, using as URL: ${endpoint}`);
+              return { success: true, mediaUrl: endpoint };
+            }
+          }
+        } catch (endpointError) {
+          console.log(`[Aimeow Download] Endpoint failed: ${endpoint}`);
+        }
+      }
+
+      console.error(`[Aimeow Download] ❌ All endpoints failed for mediaId: ${mediaId}`);
+      return { success: false, error: 'All download endpoints failed' };
+    } catch (error: any) {
+      console.error(`[Aimeow Download] ❌ Error:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 export default AimeowClientService;
