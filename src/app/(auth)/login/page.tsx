@@ -46,11 +46,12 @@ function LoginForm() {
         const response = await fetch('/api/public/tenant-info');
         if (response.ok) {
           const data = await response.json();
+          console.log('[Login] Tenant info response:', data);
           if (data.branding || data.tenant) {
             setBranding({
-              name: data.branding?.showroomName || data.tenant?.name || 'AutoLumiKu',
+              name: data.branding?.name || data.tenant?.name || 'AutoLumiKu',
               logoUrl: data.branding?.logoUrl || data.tenant?.logoUrl,
-              primaryColor: data.branding?.primaryColor,
+              primaryColor: data.branding?.primaryColor || data.tenant?.primaryColor,
             });
           }
         }
