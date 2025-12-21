@@ -110,8 +110,14 @@ export default function VehiclesPage() {
   const applyFilters = () => {
     let filtered = [...vehicles];
 
-    // Status filter
-    if (statusFilter !== 'ALL') {
+    // ALWAYS hide DELETED vehicles unless explicitly filtering for them
+    // Deleted vehicles are test/removed vehicles that shouldn't appear in normal view
+    if (statusFilter !== 'DELETED') {
+      filtered = filtered.filter(v => v.status !== 'DELETED');
+    }
+
+    // Status filter (for non-deleted statuses)
+    if (statusFilter !== 'ALL' && statusFilter !== 'DELETED') {
       filtered = filtered.filter(v => v.status === statusFilter);
     }
 
@@ -163,12 +169,14 @@ export default function VehiclesPage() {
     }
   };
 
+  // Stats should NOT count DELETED vehicles (test/removed vehicles)
+  const activeVehicles = vehicles.filter(v => v.status !== 'DELETED');
   const stats = {
-    total: vehicles.length,
-    draft: vehicles.filter(v => v.status === 'DRAFT').length,
-    available: vehicles.filter(v => v.status === 'AVAILABLE').length,
-    booked: vehicles.filter(v => v.status === 'BOOKED').length,
-    sold: vehicles.filter(v => v.status === 'SOLD').length,
+    total: activeVehicles.length,
+    draft: activeVehicles.filter(v => v.status === 'DRAFT').length,
+    available: activeVehicles.filter(v => v.status === 'AVAILABLE').length,
+    booked: activeVehicles.filter(v => v.status === 'BOOKED').length,
+    sold: activeVehicles.filter(v => v.status === 'SOLD').length,
   };
 
   const [deleting, setDeleting] = useState<string | null>(null);
