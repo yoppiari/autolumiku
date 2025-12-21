@@ -566,7 +566,7 @@ export class StaffCommandService {
       }
 
       // Minimum data complete - check photos (need minimum 6)
-      const MIN_PHOTOS_NEEDED = 6;
+      const MIN_PHOTOS_NEEDED = 1; // Reduced from 6 to prevent stuck loops
       if (photos.length < MIN_PHOTOS_NEEDED) {
         await prisma.whatsAppConversation.update({
           where: { id: conversationId },
@@ -667,7 +667,7 @@ export class StaffCommandService {
 
       // Build response based on whether we already have photos
       if (existingPhotos.length > 0) {
-        const MIN_PHOTOS = 6;
+        const MIN_PHOTOS = 1; // Reduced from 6 to prevent stuck loops
         const photosNeeded = Math.max(0, MIN_PHOTOS - existingPhotos.length);
 
         let message = `Oke siap upload! 📸\n\n`;
@@ -702,7 +702,7 @@ export class StaffCommandService {
     }
 
     // === STEP 1b: Photo sent without caption ===
-    const MIN_PHOTOS = 6;  // Minimum 6 photos required (interior + exterior)
+    const MIN_PHOTOS = 1;  // Reduced from 6 to prevent stuck loops - can add more via dashboard
     const MAX_PHOTOS = 15;
 
     if (params.step === "photo_only" && mediaUrl) {
@@ -1049,11 +1049,23 @@ export class StaffCommandService {
       transmission: mergedData.transmission || "Manual",
     };
 
-    // Check if we have enough photos (minimum 6)
-    const MIN_PHOTOS_REQ = 6;
-    if (photos.length >= MIN_PHOTOS_REQ) {
-      // We have both complete data and enough photos! Create vehicle now
-      console.log(`[Upload Flow] Complete data + ${photos.length} photos. Creating vehicle...`);
+    // Check if we have enough photos (minimum 1)
+    const MIN_PHOTOS_REQ = 1; // Reduced from 6 to prevent stuck loops
+
+    // Track photo request attempts to prevent infinite loops
+    const photoRequestAttempts = (contextData.photoRequestAttempts || 0) + 1;
+    console.log(`[Upload Flow] Photo request attempt: ${photoRequestAttempts}, photos: ${photos.length}`);
+
+    // FORCE CREATE if:
+    // 1. At least 1 photo, OR
+    // 2. Already asked for photos 2+ times (prevent stuck loop)
+    if (photos.length >= MIN_PHOTOS_REQ || photoRequestAttempts >= 2) {
+      if (photos.length === 0) {
+        console.log(`[Upload Flow] ⚠️ No photos after ${photoRequestAttempts} attempts. Creating vehicle without photos - add via dashboard`);
+      } else {
+        console.log(`[Upload Flow] Complete data + ${photos.length} photos. Creating vehicle...`);
+      }
+
       return await this.createVehicleWithPhotos(
         vehicleData,
         photos,
@@ -1063,7 +1075,7 @@ export class StaffCommandService {
       );
     }
 
-    // We have complete data but need more photos
+    // We have complete data but need photos - first time asking
     await prisma.whatsAppConversation.update({
       where: { id: conversationId },
       data: {
@@ -1073,6 +1085,7 @@ export class StaffCommandService {
           uploadStep: "has_data_awaiting_photo",
           vehicleData,
           photos,
+          photoRequestAttempts, // Track attempts to prevent loop
         },
       },
     });

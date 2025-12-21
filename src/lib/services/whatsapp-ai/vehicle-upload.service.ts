@@ -261,148 +261,126 @@ export class WhatsAppVehicleUploadService {
       }
 
       // 6. Download, process, and save photos from WhatsApp media URLs
-      // Step 6.1: Download all photos in parallel for better performance
-      console.log(`[WhatsApp Vehicle Upload] 📥 Downloading ${photoUrls.length} photos in parallel...`);
-      const downloadStartTime = Date.now();
-
-      const downloadPromises = photoUrls.map((url, i) =>
-        this.downloadPhoto(url).then(buffer => ({
-          index: i,
-          url,
-          buffer,
-          success: buffer !== null,
-        }))
-      );
-
-      const downloadResults = await Promise.all(downloadPromises);
-      const downloadTime = Date.now() - downloadStartTime;
-
-      const successfulDownloads = downloadResults.filter(r => r.success);
-      const failedDownloads = downloadResults.filter(r => !r.success);
-
-      console.log(`[WhatsApp Vehicle Upload] 📥 Downloads completed in ${downloadTime}ms`);
-      console.log(`[WhatsApp Vehicle Upload] ✅ Successful: ${successfulDownloads.length}, ❌ Failed: ${failedDownloads.length}`);
-
-      if (failedDownloads.length > 0) {
-        console.warn(`[WhatsApp Vehicle Upload] Failed URLs:`, failedDownloads.map(f => f.url));
-      }
-
-      // Validate we have at least 1 photo to proceed
-      if (successfulDownloads.length === 0) {
-        // Delete the vehicle we just created since we have no photos
-        await prisma.vehicle.delete({ where: { id: vehicle.id } });
-        console.error(`[WhatsApp Vehicle Upload] ❌ No photos could be downloaded!`);
-
-        return {
-          success: false,
-          message:
-            `❌ Waduh, fotonya gagal didownload semua nih 😅\n\n` +
-            `Kemungkinan:\n` +
-            `• Link foto sudah expired\n` +
-            `• Koneksi internet terputus\n\n` +
-            `Coba kirim ulang fotonya ya kak! 📸`,
-          error: 'All photo downloads failed',
-        };
-      }
-
-      // Step 6.2: Process each successfully downloaded photo
-      console.log(`[WhatsApp Vehicle Upload] 🔄 Processing ${successfulDownloads.length} photos...`);
       let processedPhotoCount = 0;
       const failedProcessing: number[] = [];
+      let failedDownloads: { index: number; url: string }[] = [];
 
-      for (const download of successfulDownloads) {
-        const i = download.index;
-        const photoBuffer = download.buffer!;
+      // Handle case where no photos were provided (create vehicle without photos)
+      if (photoUrls.length === 0) {
+        console.log(`[WhatsApp Vehicle Upload] ⚠️ No photos provided - creating vehicle without photos`);
+        console.log(`[WhatsApp Vehicle Upload] 💡 Photos can be added later via dashboard`);
+      } else {
+        // Step 6.1: Download all photos in parallel for better performance
+        console.log(`[WhatsApp Vehicle Upload] 📥 Downloading ${photoUrls.length} photos in parallel...`);
+        const downloadStartTime = Date.now();
 
-        try {
-          console.log(`[WhatsApp Vehicle Upload] Processing photo ${i + 1}/${photoUrls.length}: ${photoBuffer.length} bytes`);
+        const downloadPromises = photoUrls.map((url, i) =>
+          this.downloadPhoto(url).then(buffer => ({
+            index: i,
+            url,
+            buffer,
+            success: buffer !== null,
+          }))
+        );
 
-          // 6.2.1 Detect and cover license plates with AI
-          let processedBuffer = photoBuffer;
-          let platesDetected = 0;
+        const downloadResults = await Promise.all(downloadPromises);
+        const downloadTime = Date.now() - downloadStartTime;
 
-          try {
-            const plateResult = await PlateDetectionService.processImage(photoBuffer, {
-              tenantName: tenant?.name || 'PRIMA MOBIL',
-              tenantLogoUrl: tenant?.logoUrl || undefined,
-            });
-            processedBuffer = plateResult.covered;
-            platesDetected = plateResult.platesDetected;
-            if (platesDetected > 0) {
-              console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1}: ${platesDetected} plate(s) covered`);
+        const successfulDownloads = downloadResults.filter(r => r.success);
+        failedDownloads = downloadResults.filter(r => !r.success);
+
+        console.log(`[WhatsApp Vehicle Upload] 📥 Downloads completed in ${downloadTime}ms`);
+        console.log(`[WhatsApp Vehicle Upload] ✅ Successful: ${successfulDownloads.length}, ❌ Failed: ${failedDownloads.length}`);
+
+        if (failedDownloads.length > 0) {
+          console.warn(`[WhatsApp Vehicle Upload] Failed URLs:`, failedDownloads.map(f => f.url));
+        }
+
+        // If no photos could be downloaded, continue without photos (don't delete vehicle)
+        if (successfulDownloads.length === 0) {
+          console.warn(`[WhatsApp Vehicle Upload] ⚠️ All photo downloads failed - continuing without photos`);
+          console.log(`[WhatsApp Vehicle Upload] 💡 Photos can be added later via dashboard`);
+        } else {
+          // Step 6.2: Process each successfully downloaded photo
+          console.log(`[WhatsApp Vehicle Upload] 🔄 Processing ${successfulDownloads.length} photos...`);
+
+          for (const download of successfulDownloads) {
+            const i = download.index;
+            const photoBuffer = download.buffer!;
+
+            try {
+              console.log(`[WhatsApp Vehicle Upload] Processing photo ${i + 1}/${photoUrls.length}: ${photoBuffer.length} bytes`);
+
+              // 6.2.1 Detect and cover license plates with AI
+              let processedBuffer = photoBuffer;
+              let platesDetected = 0;
+
+              try {
+                const plateResult = await PlateDetectionService.processImage(photoBuffer, {
+                  tenantName: tenant?.name || 'PRIMA MOBIL',
+                  tenantLogoUrl: tenant?.logoUrl || undefined,
+                });
+                processedBuffer = plateResult.covered;
+                platesDetected = plateResult.platesDetected;
+                if (platesDetected > 0) {
+                  console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1}: ${platesDetected} plate(s) covered`);
+                }
+              } catch (plateError: any) {
+                console.error(`[WhatsApp Vehicle Upload] Plate detection failed for photo ${i + 1}:`, plateError.message);
+                // Continue with original photo if plate detection fails
+              }
+
+              // Process photo (generate multiple sizes) - using covered version
+              const processed = await ImageProcessingService.processPhoto(processedBuffer);
+
+              // Generate filename
+              const timestamp = Date.now();
+              const baseFilename = `${vehicle.make.toLowerCase()}-${vehicle.model.toLowerCase()}-${timestamp}-${i + 1}`;
+
+              // Upload all sizes to storage
+              const uploadResult = await StorageService.uploadMultipleSize(
+                {
+                  original: processed.original,
+                  large: processed.large,
+                  medium: processed.medium,
+                  thumbnail: processed.thumbnail,
+                },
+                vehicle.id,
+                baseFilename
+              );
+
+              console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1} saved:`, uploadResult);
+
+              // Create photo record in database
+              await prisma.vehiclePhoto.create({
+                data: {
+                  vehicleId: vehicle.id,
+                  tenantId,
+                  storageKey: uploadResult.storageKey,
+                  originalUrl: uploadResult.originalUrl,
+                  thumbnailUrl: uploadResult.thumbnailUrl,
+                  mediumUrl: uploadResult.mediumUrl,
+                  largeUrl: uploadResult.largeUrl,
+                  filename: `${baseFilename}-original.jpg`,
+                  fileSize: photoBuffer.length,
+                  mimeType: processed.metadata.mimeType,
+                  width: processed.metadata.width,
+                  height: processed.metadata.height,
+                  isMainPhoto: processedPhotoCount === 0,  // First successfully processed photo is main
+                  displayOrder: processedPhotoCount,
+                },
+              });
+
+              processedPhotoCount++;
+            } catch (photoError: any) {
+              console.error(`[WhatsApp Vehicle Upload] Error processing photo ${i + 1}:`, photoError.message);
+              failedProcessing.push(i + 1);
+              // Continue with next photo
             }
-          } catch (plateError: any) {
-            console.error(`[WhatsApp Vehicle Upload] Plate detection failed for photo ${i + 1}:`, plateError.message);
-            // Continue with original photo if plate detection fails
           }
 
-          // Process photo (generate multiple sizes) - using covered version
-          const processed = await ImageProcessingService.processPhoto(processedBuffer);
-
-          // Generate filename
-          const timestamp = Date.now();
-          const baseFilename = `${vehicle.make.toLowerCase()}-${vehicle.model.toLowerCase()}-${timestamp}-${i + 1}`;
-
-          // Upload all sizes to storage
-          const uploadResult = await StorageService.uploadMultipleSize(
-            {
-              original: processed.original,
-              large: processed.large,
-              medium: processed.medium,
-              thumbnail: processed.thumbnail,
-            },
-            vehicle.id,
-            baseFilename
-          );
-
-          console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1} saved:`, uploadResult);
-
-          // Create photo record in database
-          await prisma.vehiclePhoto.create({
-            data: {
-              vehicleId: vehicle.id,
-              tenantId,
-              storageKey: uploadResult.storageKey,
-              originalUrl: uploadResult.originalUrl,
-              thumbnailUrl: uploadResult.thumbnailUrl,
-              mediumUrl: uploadResult.mediumUrl,
-              largeUrl: uploadResult.largeUrl,
-              filename: `${baseFilename}-original.jpg`,
-              fileSize: photoBuffer.length,
-              mimeType: processed.metadata.mimeType,
-              width: processed.metadata.width,
-              height: processed.metadata.height,
-              isMainPhoto: processedPhotoCount === 0,  // First successfully processed photo is main
-              displayOrder: processedPhotoCount,
-            },
-          });
-
-          processedPhotoCount++;
-        } catch (photoError: any) {
-          console.error(`[WhatsApp Vehicle Upload] Error processing photo ${i + 1}:`, photoError.message);
-          failedProcessing.push(i + 1);
-          // Continue with next photo
+          console.log('[WhatsApp Vehicle Upload] ✅ Processed', processedPhotoCount, 'of', photoUrls.length, 'photos');
         }
-      }
-
-      console.log('[WhatsApp Vehicle Upload] ✅ Processed', processedPhotoCount, 'of', photoUrls.length, 'photos');
-
-      // Validate minimum photos were successfully processed
-      const MIN_PHOTOS_REQUIRED = 1; // At least 1 photo must succeed
-      if (processedPhotoCount < MIN_PHOTOS_REQUIRED) {
-        // Delete the vehicle since we don't have enough photos
-        await prisma.vehicle.delete({ where: { id: vehicle.id } });
-        console.error(`[WhatsApp Vehicle Upload] ❌ Not enough photos processed: ${processedPhotoCount}/${MIN_PHOTOS_REQUIRED}`);
-
-        return {
-          success: false,
-          message:
-            `❌ Waduh, foto gagal diproses nih 😅\n\n` +
-            `Download berhasil ${successfulDownloads.length}, tapi gagal proses semua.\n\n` +
-            `Coba kirim ulang fotonya ya kak! 📸\n` +
-            `Pastikan ukuran foto tidak terlalu besar (maks 10MB).`,
-          error: 'Photo processing failed',
-        };
       }
 
       // 7. Format success message
@@ -419,7 +397,9 @@ export class WhatsAppVehicleUploadService {
       message += `🎨 ${vehicleData.color || '-'}\n`;
 
       // Show photo upload status with details
-      if (failedDownloads.length > 0 || failedProcessing.length > 0) {
+      if (processedPhotoCount === 0) {
+        message += `📷 Belum ada foto - tambah via dashboard ya!\n\n`;
+      } else if (failedDownloads.length > 0 || failedProcessing.length > 0) {
         const totalFailed = failedDownloads.length + failedProcessing.length;
         message += `📷 ${processedPhotoCount}/${photoUrls.length} foto (${totalFailed} gagal)\n\n`;
       } else {
