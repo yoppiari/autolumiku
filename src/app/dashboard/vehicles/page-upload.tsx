@@ -862,9 +862,6 @@ export default function VehiclesPage() {
             rows={3}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
           />
-          <p className="mt-2 text-xs text-gray-500">
-            Tip: Nama file foto akan otomatis digunakan sebagai deskripsi jika kosong
-          </p>
         </div>
 
         {error && (
@@ -873,55 +870,44 @@ export default function VehiclesPage() {
           </div>
         )}
 
-        {/* Status indicator - AI will auto-generate when ready */}
-        <div className="mt-4 p-4 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
-          <div className="flex items-center gap-3">
-            {/* Checklist */}
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-700 mb-2">
-                AI akan otomatis menganalisis setelah:
-              </p>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm">
-                  {photos.length > 0 ? (
-                    <span className="text-green-600">✓</span>
-                  ) : (
-                    <span className="text-gray-400">○</span>
-                  )}
-                  <span className={photos.length > 0 ? 'text-green-700' : 'text-gray-500'}>
-                    Upload foto ({photos.length} foto)
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  {userDescription.trim() ? (
-                    <span className="text-green-600">✓</span>
-                  ) : (
-                    <span className="text-gray-400">○</span>
-                  )}
-                  <span className={userDescription.trim() ? 'text-green-700' : 'text-gray-500'}>
-                    Isi deskripsi kendaraan
-                  </span>
-                </div>
-              </div>
-            </div>
+        {/* Auto-generate checkbox and Generate button */}
+        <div className="mt-4 p-4 rounded-xl border border-gray-200 bg-gray-50">
+          <p className="text-xs text-gray-500 mb-2">
+            Tip: Nama file foto akan otomatis digunakan sebagai deskripsi jika kosong
+          </p>
 
-            {/* Status icon */}
-            <div className="flex-shrink-0">
-              {photos.length > 0 && userDescription.trim() ? (
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              )}
-            </div>
-          </div>
+          <label className="flex items-center gap-2 mb-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!hasTriggeredGenerate}
+              onChange={(e) => setHasTriggeredGenerate(!e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">Auto-generate AI setelah upload foto</span>
+          </label>
+
+          {/* Manual Generate Button */}
+          <button
+            onClick={() => handleGenerate()}
+            disabled={isGenerating || !photos.length || !userDescription.trim()}
+            className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-colors ${
+              isGenerating || !photos.length || !userDescription.trim()
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+            }`}
+          >
+            {isGenerating ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Generating...
+              </span>
+            ) : (
+              'Generate dengan AI'
+            )}
+          </button>
         </div>
       </div>
 
