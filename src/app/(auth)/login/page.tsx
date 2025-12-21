@@ -5,22 +5,52 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
+interface TenantBranding {
+  name: string;
+  logoUrl?: string;
+  primaryColor?: string;
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [branding, setBranding] = useState<TenantBranding | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
+  // Fetch tenant branding on mount
+  useEffect(() => {
+    const fetchBranding = async () => {
+      try {
+        const response = await fetch('/api/public/tenant-info');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.branding || data.tenant) {
+            setBranding({
+              name: data.branding?.showroomName || data.tenant?.name || 'AutoLumiKu',
+              logoUrl: data.branding?.logoUrl || data.tenant?.logoUrl,
+              primaryColor: data.branding?.primaryColor,
+            });
+          }
+        }
+      } catch (err) {
+        console.log('Using default branding');
+      }
+    };
+    fetchBranding();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +99,23 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="text-4xl font-bold text-blue-600">AutoLumiKu</div>
+            {branding?.logoUrl ? (
+              <Image
+                src={branding.logoUrl}
+                alt={branding.name}
+                width={200}
+                height={60}
+                className="h-14 w-auto object-contain"
+                priority
+              />
+            ) : (
+              <div
+                className="text-4xl font-bold"
+                style={{ color: branding?.primaryColor || '#2563eb' }}
+              >
+                {branding?.name || 'AutoLumiKu'}
+              </div>
+            )}
           </div>
           <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
           <CardDescription className="text-center">
