@@ -67,7 +67,7 @@ export default function VehiclesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [aiResult, setAIResult] = useState<VehicleAIResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hasGeneratedOnce, setHasGeneratedOnce] = useState(false);
+  const [hasTriggeredGenerate, setHasTriggeredGenerate] = useState(false);
 
   // Form state for editing AI results
   const [editedData, setEditedData] = useState<Partial<VehicleAIResult>>({});
@@ -81,6 +81,27 @@ export default function VehiclesPage() {
       setUser(JSON.parse(storedUser));
     }
   }, []);
+
+  // Auto-generate AI when both photos AND description are ready (only once)
+  useEffect(() => {
+    // Only trigger if:
+    // 1. We have photos
+    // 2. We have description
+    // 3. Haven't triggered yet
+    // 4. Not currently generating
+    // 5. Still on input step
+    if (
+      photos.length > 0 &&
+      userDescription.trim() &&
+      !hasTriggeredGenerate &&
+      !isGenerating &&
+      step === 'input'
+    ) {
+      console.log('[Upload] Auto-triggering AI generation...');
+      setHasTriggeredGenerate(true);
+      handleGenerate();
+    }
+  }, [photos.length, userDescription, hasTriggeredGenerate, isGenerating, step]);
 
   // Helper to get auth headers
   const getAuthHeaders = () => {
@@ -247,7 +268,6 @@ export default function VehiclesPage() {
     setIsGenerating(true);
     setError(null);
     setStep('generating');
-    setHasGeneratedOnce(true);
 
     try {
       // Text-based AI identification only (vision removed)
@@ -853,25 +873,56 @@ export default function VehiclesPage() {
           </div>
         )}
 
-        {/* Generate Button */}
-        <button
-          onClick={() => handleGenerate()}
-          disabled={isGenerating || !userDescription.trim() || photos.length === 0}
-          className="w-full px-6 py-4 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-blue-800 transition-colors"
-        >
-          {isGenerating ? 'Generating...' : 'Generate dengan AI'}
-        </button>
+        {/* Status indicator - AI will auto-generate when ready */}
+        <div className="mt-4 p-4 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
+          <div className="flex items-center gap-3">
+            {/* Checklist */}
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-700 mb-2">
+                AI akan otomatis menganalisis setelah:
+              </p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm">
+                  {photos.length > 0 ? (
+                    <span className="text-green-600">✓</span>
+                  ) : (
+                    <span className="text-gray-400">○</span>
+                  )}
+                  <span className={photos.length > 0 ? 'text-green-700' : 'text-gray-500'}>
+                    Upload foto ({photos.length} foto)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  {userDescription.trim() ? (
+                    <span className="text-green-600">✓</span>
+                  ) : (
+                    <span className="text-gray-400">○</span>
+                  )}
+                  <span className={userDescription.trim() ? 'text-green-700' : 'text-gray-500'}>
+                    Isi deskripsi kendaraan
+                  </span>
+                </div>
+              </div>
+            </div>
 
-        {/* Requirements hint */}
-        {(!userDescription.trim() || photos.length === 0) && (
-          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800 font-medium">Untuk generate AI, lengkapi:</p>
-            <ul className="mt-1 text-sm text-yellow-700 list-disc list-inside">
-              {photos.length === 0 && <li>Upload minimal 1 foto kendaraan</li>}
-              {!userDescription.trim() && <li>Isi deskripsi kendaraan (merk, model, tahun, KM, harga)</li>}
-            </ul>
+            {/* Status icon */}
+            <div className="flex-shrink-0">
+              {photos.length > 0 && userDescription.trim() ? (
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Quick Examples */}
