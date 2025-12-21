@@ -14,7 +14,9 @@ import { authenticateRequest } from '@/lib/auth/middleware';
  * GET /api/v1/vehicles
  * List vehicles for tenant
  *
- * Special action: ?action=update-ids&slug=xxx - Update VH-XXX to PM-PST-XXX format
+ * Special actions:
+ * - ?action=update-ids&slug=xxx - Update VH-XXX to PM-PST-XXX format
+ * - ?action=resequence-ids&slug=xxx - Resequence displayIds for ACTIVE vehicles only (excludes DELETED)
  */
 export async function GET(request: NextRequest) {
   // Authenticate request
@@ -45,16 +47,32 @@ export async function GET(request: NextRequest) {
 
     // If slug provided, lookup tenant by slug
     if (!tenantId && slug) {
-      const tenant = await prisma.tenant.findUnique({
+      // Try exact match first, then try without -id suffix
+      let tenant = await prisma.tenant.findUnique({
         where: { slug },
         select: { id: true, slug: true, name: true },
       });
+
+      // Fallback: try without -id suffix (e.g., primamobil-id -> primamobil)
+      if (!tenant && slug.endsWith('-id')) {
+        const slugWithoutId = slug.replace(/-id$/, '');
+        tenant = await prisma.tenant.findUnique({
+          where: { slug: slugWithoutId },
+          select: { id: true, slug: true, name: true },
+        });
+      }
+
       if (tenant) {
         tenantId = tenant.id;
 
         // Handle update-ids action
         if (action === 'update-ids') {
           return await updateVehicleIds(tenant);
+        }
+
+        // Handle resequence-ids action - renumber ACTIVE vehicles starting from 001
+        if (action === 'resequence-ids') {
+          return await resequenceVehicleIds(tenant);
         }
       }
     }
@@ -197,11 +215,13 @@ async function generateDisplayId(tenantId: string, showroomCode?: string): Promi
   const srCode = showroomCode || 'PST'; // Default to "Pusat" (main)
 
   // Get the highest existing displayId for this tenant+showroom
+  // IMPORTANT: Exclude DELETED vehicles so test/removed vehicles don't affect the sequence
   const prefix = `${tenantCode}-${srCode}-`;
 
   const vehicles = await prisma.$queryRaw<any[]>`
     SELECT "displayId" FROM vehicles
     WHERE "displayId" LIKE ${prefix + '%'}
+    AND status != 'DELETED'
     ORDER BY "displayId" DESC
     LIMIT 1
   `;
@@ -453,6 +473,83 @@ async function updateVehicleIds(tenant: { id: string; slug: string; name: string
 
     results.success = true;
     results.message = `Updated ${results.updates.length} vehicle IDs to new format`;
+
+  } catch (err: any) {
+    results.success = false;
+    results.error = err.message;
+  }
+
+  return NextResponse.json(results);
+}
+
+/**
+ * Resequence vehicle display IDs for ACTIVE vehicles only
+ * This excludes DELETED vehicles so IDs can be reused
+ * Use case: After deleting test vehicles, renumber actual vehicles starting from 001
+ */
+async function resequenceVehicleIds(tenant: { id: string; slug: string; name: string }) {
+  const results: any = {
+    timestamp: new Date().toISOString(),
+    tenant: tenant.slug,
+    tenantId: tenant.id,
+    updates: [],
+  };
+
+  try {
+    // Determine tenant code
+    let tenantCode = 'XX';
+    if (tenant.slug.includes('primamobil')) {
+      tenantCode = 'PM';
+    } else {
+      tenantCode = tenant.slug.substring(0, 2).toUpperCase();
+    }
+    results.tenantCode = tenantCode;
+
+    const showroomCode = 'PST';
+    const prefix = `${tenantCode}-${showroomCode}-`;
+
+    // Get all ACTIVE vehicles (non-DELETED) ordered by createdAt
+    const vehicles = await prisma.vehicle.findMany({
+      where: {
+        tenantId: tenant.id,
+        status: { not: 'DELETED' },
+      },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, displayId: true, make: true, model: true, createdAt: true },
+    });
+
+    results.activeVehiclesFound = vehicles.length;
+
+    if (vehicles.length === 0) {
+      results.message = 'No active vehicles found to resequence.';
+      results.success = true;
+      return NextResponse.json(results);
+    }
+
+    // Resequence starting from 001
+    let sequence = 1;
+    for (const vehicle of vehicles) {
+      const newDisplayId = `${prefix}${String(sequence).padStart(3, '0')}`;
+
+      // Only update if displayId is different
+      if (vehicle.displayId !== newDisplayId) {
+        await prisma.vehicle.update({
+          where: { id: vehicle.id },
+          data: { displayId: newDisplayId },
+        });
+
+        results.updates.push({
+          vehicle: `${vehicle.make} ${vehicle.model}`,
+          oldId: vehicle.displayId,
+          newId: newDisplayId,
+        });
+      }
+
+      sequence++;
+    }
+
+    results.success = true;
+    results.message = `Resequenced ${results.updates.length} vehicle IDs. Active vehicles now numbered from ${prefix}001 to ${prefix}${String(vehicles.length).padStart(3, '0')}`;
 
   } catch (err: any) {
     results.success = false;
