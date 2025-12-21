@@ -1365,6 +1365,9 @@ export class StaffCommandService {
       message += `\n... +${vehicles.length - 10} lagi`;
     }
 
+    // Offer to show photos
+    message += `\n\n📸 Mau lihat fotonya? Ketik nama mobil (misal: "foto avanza")`;
+
     return {
       success: true,
       message,
