@@ -264,7 +264,7 @@ export default function VehiclesPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate');
+        throw new Error(errorData.error || errorData.message || 'Failed to generate');
       }
 
       const result = await response.json();
@@ -282,6 +282,16 @@ export default function VehiclesPage() {
   const handleSave = async (status: 'DRAFT' | 'AVAILABLE') => {
     if (!aiResult || !user) {
       setError('Data tidak lengkap. Silakan generate ulang.');
+      return;
+    }
+
+    if (!user.tenantId) {
+      setError('User tidak memiliki tenant. Silakan login ulang.');
+      return;
+    }
+
+    if (!editedData.make || !editedData.model || !editedData.year || !editedData.price) {
+      setError('Data kendaraan tidak lengkap. Pastikan Merk, Model, Tahun, dan Harga terisi.');
       return;
     }
 
@@ -334,7 +344,7 @@ export default function VehiclesPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save vehicle');
+        throw new Error(errorData.error || errorData.message || 'Failed to save vehicle');
       }
 
       const vehicleResult = await response.json();
