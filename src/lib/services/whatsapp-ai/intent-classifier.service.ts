@@ -44,6 +44,7 @@ export interface IntentClassificationResult {
 // ==================== CONSTANTS ====================
 
 // Staff command patterns (case-insensitive)
+// NOTE: "/" prefix is OPTIONAL - commands work with or without it
 const STAFF_COMMAND_PATTERNS = {
   upload_vehicle: [
     /^\/upload/i,                    // /upload ...
@@ -57,6 +58,8 @@ const STAFF_COMMAND_PATTERNS = {
     /^input\s+(mobil|unit|kendaraan)/i,
     /^masukin\s+(mobil|unit|kendaraan)/i,  // masukin mobil
     /^tambah\s+data\s+(mobil|unit)/i,      // tambah data mobil
+    /^upload\s+(kendaraan|mobil|unit)/i,   // upload kendaraan, upload mobil
+    /^upload\s+(kendaraan|mobil|unit)\s+baru/i, // upload kendaraan baru, upload unit baru
   ],
   verify_staff: [
     /^\/verify\s+/i,                 // /verify 081234567890
@@ -64,32 +67,35 @@ const STAFF_COMMAND_PATTERNS = {
     /^verifikasi\s+/i,               // verifikasi 081234567890
   ],
   update_status: [
-    /^\/status/i,
-    /^update\s+status/i,
-    /^ubah\s+status/i,
-    /^ganti\s+status/i,
+    /^\/status\s+/i,                 // /status PM-PST-001 SOLD
+    /^status\s+\S+\s+(AVAILABLE|BOOKED|SOLD|DELETED)/i, // status PM-PST-001 SOLD (without /)
+    /^update\s+status/i,             // update status
+    /^ubah\s+status/i,               // ubah status
+    /^ganti\s+status/i,              // ganti status
   ],
   check_inventory: [
-    /^\/inventory/i,
-    /^\/stock/i,
-    /^\/stok/i,
-    /^stok$/i,                    // "stok" alone
-    /^stock$/i,                   // "stock" alone
-    /^inventory$/i,               // "inventory" alone
-    /^cek\s*stok/i,               // "cek stok" or "cekstok"
-    /^check\s*stok/i,             // "check stok" (English spelling)
+    /^\/inventory/i,                 // /inventory
+    /^\/stock/i,                     // /stock
+    /^\/stok/i,                      // /stok
+    /^inventory\b/i,                 // inventory, inventory AVAILABLE
+    /^stok\b/i,                      // stok, stok AVAILABLE
+    /^stock\b/i,                     // stock, stock AVAILABLE
+    /^cek\s*stok/i,                  // "cek stok" or "cekstok"
+    /^check\s*stok/i,                // "check stok" (English spelling)
     /^(mau|pengen|ingin)\s*(cek|check|lihat)\s*stok/i, // "mau cek stok", "pengen lihat stok"
     /^lihat\s+(inventory|stok|stock)/i, // "lihat inventory" or "lihat stok"
     /^daftar\s+mobil/i,
     /^(list|daftar)\s+(unit|mobil|kendaraan)/i,
-    /^berapa\s+(stok|stock|unit)/i, // "berapa stok", "berapa unit"
+    /^berapa\s+(stok|stock|unit)/i,  // "berapa stok", "berapa unit"
     /^ada\s+berapa\s+(unit|mobil)/i, // "ada berapa unit"
   ],
   get_stats: [
-    /^\/stats/i,
-    /^\/report/i,
-    /^laporan/i,
-    /^statistik/i,
+    /^\/stats/i,                     // /stats
+    /^\/report/i,                    // /report
+    /^stats\b/i,                     // stats, stats today, stats week
+    /^laporan/i,                     // laporan
+    /^statistik/i,                   // statistik
+    /^report\b/i,                    // report, report today
   ],
 };
 

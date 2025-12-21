@@ -299,19 +299,25 @@ export class StaffCommandService {
   }
 
   /**
-   * Parse /status command
-   * Format: /status [vehicle_id] [new_status]
-   * Example: /status 12345 SOLD
+   * Parse status command (with or without "/" prefix)
+   * Format: status [vehicle_id] [new_status]
+   * Example: status PM-PST-001 SOLD, /status 12345 SOLD
    */
   private static parseStatusUpdateCommand(message: string): CommandParseResult {
-    const parts = message.split(/\s+/).filter((p) => p);
+    // Remove "/" prefix if present
+    let cleanMessage = message;
+    if (cleanMessage.startsWith('/')) {
+      cleanMessage = cleanMessage.substring(1);
+    }
+
+    const parts = cleanMessage.split(/\s+/).filter((p) => p);
 
     if (parts.length < 3) {
       return {
         command: "status",
         params: {},
         isValid: false,
-        error: "Formatnya: /status [ID mobil] [status baru]\n\nContoh: /status ABC123 SOLD",
+        error: "Formatnya: status [ID mobil] [status baru]\n\nContoh: status PM-PST-001 SOLD",
       };
     }
 
@@ -338,12 +344,18 @@ export class StaffCommandService {
   }
 
   /**
-   * Parse /inventory command
-   * Format: /inventory [filter?]
-   * Example: /inventory, /inventory AVAILABLE, /inventory Toyota
+   * Parse inventory command (with or without "/" prefix)
+   * Format: inventory [filter?]
+   * Example: inventory, inventory AVAILABLE, inventory Toyota
    */
   private static parseInventoryCommand(message: string): CommandParseResult {
-    const parts = message.split(/\s+/).filter((p) => p);
+    // Remove "/" prefix if present
+    let cleanMessage = message;
+    if (cleanMessage.startsWith('/')) {
+      cleanMessage = cleanMessage.substring(1);
+    }
+
+    const parts = cleanMessage.split(/\s+/).filter((p) => p);
     const filter = parts.length > 1 ? parts[1] : null;
 
     return {
@@ -354,12 +366,18 @@ export class StaffCommandService {
   }
 
   /**
-   * Parse /stats command
-   * Format: /stats [period?]
-   * Example: /stats, /stats today, /stats week, /stats month
+   * Parse stats command (with or without "/" prefix)
+   * Format: stats [period?]
+   * Example: stats, stats today, stats week, stats month
    */
   private static parseStatsCommand(message: string): CommandParseResult {
-    const parts = message.split(/\s+/).filter((p) => p);
+    // Remove "/" prefix if present
+    let cleanMessage = message;
+    if (cleanMessage.startsWith('/')) {
+      cleanMessage = cleanMessage.substring(1);
+    }
+
+    const parts = cleanMessage.split(/\s+/).filter((p) => p);
     const period = parts.length > 1 ? parts[1].toLowerCase() : "today";
 
     return {
@@ -1301,20 +1319,24 @@ export class StaffCommandService {
       greeting = `Selamat datang, ${staffName}!`;
     }
 
-    // Build professional staff menu
+    // Build professional staff menu - user-friendly format without "/" prefix
     const message =
       `${greeting}\n\n` +
       `Saat ini terdapat *${availableCount} unit* kendaraan tersedia di ${tenantName}.\n\n` +
       `*Layanan yang tersedia:*\n\n` +
       `📸 *Upload Kendaraan Baru*\n` +
-      `   Kirimkan foto kendaraan (minimal 6 foto)\n` +
-      `   Kemudian ketik data: "Brio 2020 120jt hitam matic km 30rb"\n\n` +
+      `   Ketik: upload\n` +
+      `   Lalu kirim foto + info mobil\n` +
+      `   Contoh: "upload Brio 2020 120jt hitam matic km 30rb"\n\n` +
       `📋 *Cek Stok Kendaraan*\n` +
-      `   Ketik: stok / inventory\n\n` +
-      `📊 *Lihat Laporan*\n` +
-      `   Ketik: stats / laporan\n\n` +
+      `   Ketik: inventory atau stok\n` +
+      `   Filter: inventory AVAILABLE\n\n` +
+      `📊 *Lihat Statistik*\n` +
+      `   Ketik: stats atau laporan\n` +
+      `   Period: stats today / stats week / stats month\n\n` +
       `🔄 *Update Status Kendaraan*\n` +
-      `   Ketik: status [ID] sold/booked\n\n` +
+      `   Ketik: status [ID] [STATUS]\n` +
+      `   Contoh: status PM-PST-001 SOLD\n\n` +
       `Silakan ketik perintah yang diinginkan. Kami siap membantu!`;
 
     return {

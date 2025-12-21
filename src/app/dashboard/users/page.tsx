@@ -470,13 +470,13 @@ export default function UsersPage() {
                   <div className="flex items-start">
                     <span className="text-lg mr-2 flex-shrink-0">📸</span>
                     <div className="flex-1 min-w-0 overflow-auto max-h-28">
-                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">/upload - Upload Mobil (AI-Powered 🤖)</h4>
-                      <p className="text-xs text-gray-600 mb-1">Upload mobil dengan natural language - AI otomatis memproses!</p>
+                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">upload - Upload Mobil (AI-Powered 🤖)</h4>
+                      <p className="text-xs text-gray-600 mb-1">Ketik upload + foto + info mobil</p>
                       <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto">
-                        /upload Toyota Avanza tahun 2020 harga 150 juta km 50rb hitam manual
+                        upload Avanza 2020 150jt hitam matic km 50rb
                       </code>
                       <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto mt-0.5">
-                        /upload Avanza 2020 hitam matic 150jt km 50ribu
+                        upload Brio 2021 140jt silver AT km 30rb
                       </code>
                     </div>
                   </div>
@@ -487,10 +487,10 @@ export default function UsersPage() {
                   <div className="flex items-start">
                     <span className="text-lg mr-2 flex-shrink-0">🔄</span>
                     <div className="flex-1 min-w-0 overflow-auto max-h-28">
-                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">/status - Update Status</h4>
-                      <p className="text-xs text-gray-600 mb-1">Update status mobil (AVAILABLE, BOOKED, SOLD)</p>
+                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">status - Update Status</h4>
+                      <p className="text-xs text-gray-600 mb-1">Update status: AVAILABLE, BOOKED, SOLD</p>
                       <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto">
-                        /status 12345 SOLD
+                        status PM-PST-001 SOLD
                       </code>
                     </div>
                   </div>
@@ -501,10 +501,10 @@ export default function UsersPage() {
                   <div className="flex items-start">
                     <span className="text-lg mr-2 flex-shrink-0">📊</span>
                     <div className="flex-1 min-w-0 overflow-auto max-h-28">
-                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">/inventory - Cek Stok</h4>
-                      <p className="text-xs text-gray-600 mb-1">Lihat daftar mobil dan filter by status/brand</p>
+                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">inventory - Cek Stok</h4>
+                      <p className="text-xs text-gray-600 mb-1">Lihat daftar mobil, filter by status/brand</p>
                       <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto">
-                        /inventory AVAILABLE
+                        inventory AVAILABLE
                       </code>
                     </div>
                   </div>
@@ -515,10 +515,10 @@ export default function UsersPage() {
                   <div className="flex items-start">
                     <span className="text-lg mr-2 flex-shrink-0">📈</span>
                     <div className="flex-1 min-w-0 overflow-auto max-h-28">
-                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">/stats - Statistik</h4>
+                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">stats - Statistik</h4>
                       <p className="text-xs text-gray-600 mb-1">Lihat statistik penjualan dan leads</p>
                       <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto">
-                        /stats today
+                        stats today
                       </code>
                     </div>
                   </div>
