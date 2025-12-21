@@ -158,7 +158,7 @@ export class StaffCommandService {
 
       return {
         success: false,
-        message: `Waduh ada error nih 😅\n\n${error.message}\n\nCoba lagi ya kak!`,
+        message: `Mohon maaf, terjadi kesalahan:\n\n${error.message}\n\nSilakan coba lagi.`,
       };
     }
   }
@@ -978,7 +978,7 @@ export class StaffCommandService {
       if (mergedData.year < 1980 || mergedData.year > currentYear + 1) {
         return {
           success: false,
-          message: `Hmm tahunnya kayaknya salah deh 🤔\nHarus antara 1980-${currentYear + 1} ya kak`,
+          message: `Mohon maaf, tahun kendaraan tidak valid.\nTahun harus antara 1980-${currentYear + 1}.`,
         };
       }
     }
@@ -1201,7 +1201,7 @@ export class StaffCommandService {
     if (!vehicle) {
       return {
         success: false,
-        message: `Ga nemu mobilnya nih kak 🤔\nID: ${vehicleId}\n\nCoba cek lagi ID nya ya!`,
+        message: `Kendaraan tidak ditemukan.\nID: ${vehicleId}\n\nMohon periksa kembali ID kendaraan.`,
       };
     }
 
@@ -1243,7 +1243,7 @@ export class StaffCommandService {
   }
 
   /**
-   * Handle staff greeting - show welcome menu
+   * Handle staff greeting - show welcome menu with config-based welcome message
    */
   private static async handleStaffGreeting(
     tenantId: string,
@@ -1256,7 +1256,7 @@ export class StaffCommandService {
       select: { firstName: true, phone: true },
     });
 
-    let staffName = "kak";
+    let staffName = "Bapak/Ibu";
     if (staff) {
       // Find the matching staff by normalized phone
       const users = await prisma.user.findMany({
@@ -1266,31 +1266,56 @@ export class StaffCommandService {
 
       for (const user of users) {
         if (user.phone && this.normalizePhone(user.phone) === normalizedPhone) {
-          staffName = user.firstName || "kak";
+          staffName = user.firstName || "Bapak/Ibu";
           break;
         }
       }
     }
+
+    // Get AI config for welcome message
+    const aimeowAccount = await prisma.aimeowAccount.findUnique({
+      where: { tenantId },
+      include: {
+        aiConfig: true,
+        tenant: true,
+      },
+    });
 
     // Get quick stats
     const availableCount = await prisma.vehicle.count({
       where: { tenantId, status: "AVAILABLE" },
     });
 
+    // Build greeting from config or use default professional greeting
+    let greeting = "";
+    const tenantName = aimeowAccount?.tenant?.name || "Showroom";
+
+    if (aimeowAccount?.aiConfig?.welcomeMessage) {
+      // Use welcome message from config, replace placeholders
+      greeting = aimeowAccount.aiConfig.welcomeMessage
+        .replace(/\{name\}/gi, staffName)
+        .replace(/\{tenant\}/gi, tenantName)
+        .replace(/\{showroom\}/gi, tenantName);
+    } else {
+      // Default professional greeting
+      greeting = `Selamat datang, ${staffName}!`;
+    }
+
+    // Build professional staff menu
     const message =
-      `Hai ${staffName}! 👋\n\n` +
-      `Sekarang ada ${availableCount} unit ready di showroom.\n\n` +
-      `Mau ngapain nih?\n\n` +
-      `📸 *Upload Mobil Baru*\n` +
-      `→ Langsung kirim aja fotonya (min 6 foto)\n` +
-      `→ Terus ketik info: "Brio 2020 120jt hitam matic km 30rb"\n\n` +
-      `📋 *Cek Stok*\n` +
-      `→ Ketik: stok / inventory\n\n` +
-      `📊 *Lihat Stats*\n` +
-      `→ Ketik: stats / laporan\n\n` +
-      `🔄 *Update Status Mobil*\n` +
-      `→ Ketik: status [ID] sold/booked\n\n` +
-      `Langsung ketik aja ya! 😊`;
+      `${greeting}\n\n` +
+      `Saat ini terdapat *${availableCount} unit* kendaraan tersedia di ${tenantName}.\n\n` +
+      `*Layanan yang tersedia:*\n\n` +
+      `📸 *Upload Kendaraan Baru*\n` +
+      `   Kirimkan foto kendaraan (minimal 6 foto)\n` +
+      `   Kemudian ketik data: "Brio 2020 120jt hitam matic km 30rb"\n\n` +
+      `📋 *Cek Stok Kendaraan*\n` +
+      `   Ketik: stok / inventory\n\n` +
+      `📊 *Lihat Laporan*\n` +
+      `   Ketik: stats / laporan\n\n` +
+      `🔄 *Update Status Kendaraan*\n` +
+      `   Ketik: status [ID] sold/booked\n\n` +
+      `Silakan ketik perintah yang diinginkan. Kami siap membantu!`;
 
     return {
       success: true,
@@ -1330,8 +1355,8 @@ export class StaffCommandService {
       return {
         success: true,
         message: filter
-          ? `Hmm ga ada mobil nih buat "${filter}" 🤔`
-          : `Stok masih kosong nih kak 📦`,
+          ? `Tidak ditemukan kendaraan untuk filter "${filter}".`
+          : `Belum ada kendaraan dalam stok.`,
       };
     }
 

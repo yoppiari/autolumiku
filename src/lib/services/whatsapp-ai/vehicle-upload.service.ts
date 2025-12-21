@@ -154,10 +154,10 @@ export class WhatsAppVehicleUploadService {
         return {
           success: false,
           message:
-            `⚠️ Mobil ini sepertinya baru aja diupload!\n\n` +
+            `⚠️ Kendaraan ini kemungkinan sudah terdaftar!\n\n` +
             `${vehicleData.make} ${vehicleData.model} ${vehicleData.year}\n` +
             `ID: ${duplicateCheck.existingVehicle?.displayId}\n\n` +
-            `Cek dulu di dashboard ya kak, mungkin sudah ada.`,
+            `Mohon periksa di dashboard untuk memastikan.`,
           error: 'Duplicate vehicle detected',
         };
       }
@@ -183,7 +183,7 @@ export class WhatsAppVehicleUploadService {
       if (!staff) {
         return {
           success: false,
-          message: 'Maaf kak, nomor WA kamu belum terdaftar 🙏\n\nMinta admin tambahin di: primamobil.id/dashboard/users',
+          message: 'Mohon maaf, nomor WhatsApp Anda belum terdaftar.\n\nSilakan hubungi admin untuk pendaftaran di: primamobil.id/dashboard/users',
           error: 'Staff not found in tenant',
         };
       }
@@ -443,23 +443,23 @@ export class WhatsAppVehicleUploadService {
     } catch (error: any) {
       console.error('[WhatsApp Vehicle Upload] ❌ Error:', error);
 
-      // Provide helpful error messages with solutions - casual style
-      let errorMessage = `Waduh gagal nih kak 😅\n\n`;
-      errorMessage += `Masalah: ${error.message}\n\n`;
+      // Provide helpful error messages with solutions - professional style
+      let errorMessage = `Mohon maaf, proses upload gagal.\n\n`;
+      errorMessage += `Detail: ${error.message}\n\n`;
 
       if (error.message.includes('timeout') || error.message.includes('Timeout')) {
-        errorMessage += `Server lagi sibuk, coba lagi 1-2 menit ya~\n`;
+        errorMessage += `Server sedang sibuk. Silakan coba kembali dalam 1-2 menit.\n`;
       } else if (error.message.includes('photo') || error.message.includes('download')) {
-        errorMessage += `Fotonya mungkin kegedean, coba resize dulu ya (maks 5MB)\n`;
+        errorMessage += `Ukuran foto terlalu besar. Mohon resize terlebih dahulu (maksimal 5MB).\n`;
       } else if (error.message.includes('Staff') || error.message.includes('staff')) {
-        errorMessage += `Nomor WA belum terdaftar nih kak\n`;
-        errorMessage += `Minta admin tambahin di: primamobil.id/dashboard/users\n`;
+        errorMessage += `Nomor WhatsApp belum terdaftar.\n`;
+        errorMessage += `Silakan hubungi admin: primamobil.id/dashboard/users\n`;
       } else {
-        errorMessage += `Coba kirim ulang ya kak!\n`;
+        errorMessage += `Silakan coba kirim ulang.\n`;
         errorMessage += `Format: "Brio 2020 120jt hitam matic km 30rb"\n`;
       }
 
-      errorMessage += `\nKalau masih error, kabarin admin ya! 🙏`;
+      errorMessage += `\nJika masalah berlanjut, silakan hubungi admin.`;
 
       // 🔔 NOTIFY ALL STAFF - Upload Gagal
       UploadNotificationService.notifyUploadFailed(

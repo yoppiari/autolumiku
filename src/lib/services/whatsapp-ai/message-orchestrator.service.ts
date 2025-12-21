@@ -344,7 +344,7 @@ export class MessageOrchestratorService {
               `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
               `🎨 ${result.uploadRequest.color || '-'} | ⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
               `📍 ${result.uploadRequest.mileage || 0} km\n\n` +
-              `Tinggal kirim 6 foto ya kak:\n` +
+              `Silakan kirimkan 6 foto kendaraan:\n` +
               `• Depan, belakang, samping\n` +
               `• Dashboard, jok, bagasi`;
 
@@ -671,7 +671,7 @@ export class MessageOrchestratorService {
     } catch (error: any) {
       console.error("[Message Orchestrator] Staff command error:", error);
       return {
-        message: `Waduh ada error nih 😅\n\n${error.message}\n\nCoba lagi ya kak!`,
+        message: `Mohon maaf, terjadi kesalahan:\n\n${error.message}\n\nSilakan coba lagi.`,
         escalated: true,
       };
     }
@@ -720,7 +720,7 @@ export class MessageOrchestratorService {
       console.error("[Message Orchestrator] AI response error:", error);
       return {
         message:
-          "Maaf kak, lagi ada gangguan nih 🙏\n\nStaff kami bakal bantu sebentar lagi ya!",
+          "Mohon maaf, saat ini terjadi kendala teknis.\n\nTim kami akan segera menghubungi Anda. Terima kasih atas kesabaran Bapak/Ibu.",
         escalated: true,
       };
     }
@@ -795,7 +795,7 @@ export class MessageOrchestratorService {
     } catch (error: any) {
       console.error("[Orchestrator] Staff verify error:", error);
       return {
-        message: "❌ Terjadi kesalahan saat verifikasi.\n\nCoba lagi ya kak!",
+        message: "❌ Terjadi kesalahan saat verifikasi.\n\nSilakan coba lagi.",
         escalated: true,
         verified: false,
       };
