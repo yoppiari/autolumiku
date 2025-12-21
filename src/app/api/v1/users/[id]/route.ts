@@ -11,6 +11,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 
+/**
+ * Normalize phone number to consistent format (62xxx)
+ * Handles: +62xxx, 62xxx, 0xxx, 08xxx, with spaces/dashes
+ */
+function normalizePhoneNumber(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+
+  // Remove all non-digit characters (spaces, dashes, parentheses, +)
+  let digits = phone.replace(/\D/g, '');
+
+  // Convert Indonesian formats to standard 62xxx
+  if (digits.startsWith('0')) {
+    digits = '62' + digits.substring(1);
+  }
+
+  // Handle case where someone enters just 8xxx (missing country code)
+  if (digits.startsWith('8') && digits.length >= 9 && digits.length <= 12) {
+    digits = '62' + digits;
+  }
+
+  // Validate: should be 10-15 digits starting with 62
+  if (!digits.startsWith('62') || digits.length < 10 || digits.length > 15) {
+    console.warn(`[Users API] Invalid phone format after normalization: ${phone} → ${digits}`);
+    return digits; // Return as-is for non-Indonesian numbers
+  }
+
+  return digits;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -98,6 +127,12 @@ export async function PUT(
     const body = await request.json();
     const { firstName, lastName, phone, role } = body;
 
+    // Normalize phone number for consistent format
+    const normalizedPhone = normalizePhoneNumber(phone);
+    if (phone && normalizedPhone) {
+      console.log(`[Users API] Phone normalized: "${phone}" → "${normalizedPhone}"`);
+    }
+
     if (!firstName || !role) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -132,7 +167,7 @@ export async function PUT(
       data: {
         firstName,
         lastName: lastName || '',
-        phone: phone || null,
+        phone: normalizedPhone,
         role: role.toUpperCase(),
       },
       select: {
@@ -154,14 +189,14 @@ export async function PUT(
       where: { userId: id },
     });
 
-    if (phone) {
+    if (normalizedPhone) {
       // Phone provided - create or update staff auth
       if (existingStaffAuth) {
         // Update existing
         await prisma.staffWhatsAppAuth.update({
           where: { id: existingStaffAuth.id },
           data: {
-            phoneNumber: phone,
+            phoneNumber: normalizedPhone,
             role: role.toLowerCase(),
             canViewAnalytics: role.toUpperCase() === 'ADMIN',
           },
@@ -179,7 +214,7 @@ export async function PUT(
           data: {
             tenantId: currentUser.tenantId,
             userId: id,
-            phoneNumber: phone,
+            phoneNumber: normalizedPhone,
             role: role.toLowerCase(),
             isActive: true,
             canUploadVehicle: true,

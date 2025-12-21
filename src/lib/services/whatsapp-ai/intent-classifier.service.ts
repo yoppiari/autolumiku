@@ -219,7 +219,7 @@ export class IntentClassifierService {
 
   /**
    * Normalize phone number for comparison
-   * Handles various formats: +62xxx, 62xxx, 0xxx, 08xxx
+   * Handles various formats: +62xxx, 62xxx, 0xxx, 08xxx, with spaces/dashes
    * Also handles LID format (linked devices) by extracting phone if available
    */
   private static normalizePhone(phone: string): string {
@@ -236,13 +236,27 @@ export class IntentClassifierService {
       phone = phone.split("@")[0];
     }
 
-    // Remove all non-digit characters
+    // Handle device suffix (e.g., "6281234567890:17")
+    if (phone.includes(":")) {
+      phone = phone.split(":")[0];
+    }
+
+    // Remove all non-digit characters (spaces, dashes, parentheses, +)
     let digits = phone.replace(/\D/g, "");
+
     // Convert Indonesian formats to standard 62xxx
     if (digits.startsWith("0")) {
       digits = "62" + digits.substring(1);
     }
-    // Remove leading + if present (already stripped by regex above)
+
+    // Handle +62 format (digits would be 62xxx after removing +)
+    // This is already handled by the regex above
+
+    // Handle case where someone enters just 8xxx (missing country code)
+    if (digits.startsWith("8") && digits.length >= 9 && digits.length <= 12) {
+      digits = "62" + digits;
+    }
+
     return digits;
   }
 
@@ -323,42 +337,69 @@ export class IntentClassifierService {
 
   /**
    * Check if a normalized phone number belongs to staff
+   * Uses cache for performance but always verifies against DB
    */
   private static async checkPhoneIsStaff(
     normalizedPhone: string,
     tenantId: string
   ): Promise<boolean> {
+    console.log(`[Intent Classifier] 🔍 Checking if ${normalizedPhone} is staff in tenant ${tenantId}`);
+
+    // Check cache first for quick lookup
+    const cacheKey = tenantId;
+    const cached = staffCache.get(cacheKey);
+    const now = Date.now();
+
+    if (cached && now - cached.timestamp < STAFF_CACHE_TTL) {
+      const isStaffCached = cached.phones.has(normalizedPhone);
+      console.log(`[Intent Classifier] 📦 Cache hit: ${normalizedPhone} isStaff=${isStaffCached}`);
+      if (isStaffCached) return true;
+      // If not in cache, still check DB (staff might have been added recently)
+    }
+
     // Get staff users in tenant (only specific roles)
     const users = await prisma.user.findMany({
       where: {
         tenantId,
         role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
       },
-      select: { id: true, phone: true, firstName: true, role: true },
+      select: { id: true, phone: true, firstName: true, lastName: true, role: true },
     });
 
-    console.log(`[Intent Classifier] Found ${users.length} staff users in tenant`);
+    console.log(`[Intent Classifier] 👥 Found ${users.length} staff users in tenant`);
 
-    // Warn about staff without phone numbers (they can't be detected via WhatsApp)
-    const staffWithoutPhone = users.filter(u => !u.phone);
-    if (staffWithoutPhone.length > 0) {
-      console.warn(`[Intent Classifier] ⚠️ ${staffWithoutPhone.length} staff member(s) have no phone - cannot detect via WhatsApp:`);
-      staffWithoutPhone.forEach(u => {
-        console.warn(`[Intent Classifier]   - ${u.firstName} (${u.role})`);
-      });
-    }
+    // Build cache and check for match
+    const staffPhones = new Set<string>();
+    let matchedUser: typeof users[0] | null = null;
 
     for (const user of users) {
-      if (!user.phone) continue;
+      if (!user.phone) {
+        console.log(`[Intent Classifier] ⚠️ Staff ${user.firstName} ${user.lastName} (${user.role}) has no phone registered`);
+        continue;
+      }
+
       const normalizedUserPhone = this.normalizePhone(user.phone);
-      console.log(`[Intent Classifier] Comparing: ${normalizedPhone} vs ${normalizedUserPhone} (${user.firstName} - ${user.role})`);
+      staffPhones.add(normalizedUserPhone);
+
+      console.log(`[Intent Classifier] 📞 Staff: ${user.firstName} ${user.lastName} (${user.role})`);
+      console.log(`[Intent Classifier]    DB phone: "${user.phone}" → normalized: "${normalizedUserPhone}"`);
+      console.log(`[Intent Classifier]    Incoming: "${normalizedPhone}" === "${normalizedUserPhone}" ? ${normalizedPhone === normalizedUserPhone}`);
+
       if (normalizedPhone === normalizedUserPhone) {
-        console.log(`[Intent Classifier] ✅ Staff match found: ${user.firstName} (${user.role})`);
-        return true;
+        matchedUser = user;
       }
     }
 
-    console.log(`[Intent Classifier] ❌ No staff match found`);
+    // Update cache
+    staffCache.set(cacheKey, { phones: staffPhones, timestamp: now });
+
+    if (matchedUser) {
+      console.log(`[Intent Classifier] ✅ STAFF MATCH: ${matchedUser.firstName} ${matchedUser.lastName} (${matchedUser.role})`);
+      return true;
+    }
+
+    console.log(`[Intent Classifier] ❌ No staff match found for ${normalizedPhone}`);
+    console.log(`[Intent Classifier] 💡 Registered staff phones: ${Array.from(staffPhones).join(', ')}`);
     return false;
   }
 

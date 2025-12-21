@@ -11,6 +11,35 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authenticateRequest, type AuthResult } from '@/lib/auth/middleware';
 
+/**
+ * Normalize phone number to consistent format (62xxx)
+ * Handles: +62xxx, 62xxx, 0xxx, 08xxx, with spaces/dashes
+ */
+function normalizePhoneNumber(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+
+  // Remove all non-digit characters (spaces, dashes, parentheses, +)
+  let digits = phone.replace(/\D/g, '');
+
+  // Convert Indonesian formats to standard 62xxx
+  if (digits.startsWith('0')) {
+    digits = '62' + digits.substring(1);
+  }
+
+  // Handle case where someone enters just 8xxx (missing country code)
+  if (digits.startsWith('8') && digits.length >= 9 && digits.length <= 12) {
+    digits = '62' + digits;
+  }
+
+  // Validate: should be 10-15 digits starting with 62
+  if (!digits.startsWith('62') || digits.length < 10 || digits.length > 15) {
+    console.warn(`[Users API] Invalid phone format after normalization: ${phone} → ${digits}`);
+    return digits; // Return as-is for non-Indonesian numbers
+  }
+
+  return digits;
+}
+
 export async function GET(request: NextRequest) {
   // Authenticate request
   const auth = await authenticateRequest(request);
@@ -140,6 +169,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     let { tenantId, email, firstName, lastName, phone, role } = body;
 
+    // Normalize phone number for consistent format
+    const normalizedPhone = normalizePhoneNumber(phone);
+    if (phone && normalizedPhone) {
+      console.log(`[Users API] Phone normalized: "${phone}" → "${normalizedPhone}"`);
+    }
+
     // Tenant validation: non-super_admin can only create users in their own tenant
     if (auth.user.role.toLowerCase() !== 'super_admin') {
       if (tenantId && tenantId !== auth.user.tenantId) {
@@ -178,7 +213,7 @@ export async function POST(request: NextRequest) {
         email,
         firstName,
         lastName: lastName || '',
-        phone: phone || null,
+        phone: normalizedPhone,
         role: role.toUpperCase(),
         passwordHash: await bcrypt.hash('temporary_password', 10), // In production: generate random password
         emailVerified: false,
@@ -196,12 +231,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Auto-create WhatsApp staff auth if phone is provided
-    if (phone) {
+    if (normalizedPhone) {
       await prisma.staffWhatsAppAuth.create({
         data: {
           tenantId,
           userId: user.id,
-          phoneNumber: phone,
+          phoneNumber: normalizedPhone,
           role: role.toLowerCase(),
           isActive: true,
           canUploadVehicle: true,
