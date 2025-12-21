@@ -80,9 +80,20 @@ export default function EditVehiclePage() {
     }
   }, [vehicleId]);
 
+  // Helper to get auth headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    };
+  };
+
   const fetchVehicle = async () => {
     try {
-      const response = await fetch(`/api/v1/vehicles/${vehicleId}`);
+      const response = await fetch(`/api/v1/vehicles/${vehicleId}`, {
+        headers: getAuthHeaders(),
+      });
       if (response.ok) {
         const data = await response.json();
         const v = data.data;
@@ -106,7 +117,21 @@ export default function EditVehiclePage() {
           status: v.status || 'DRAFT',
         });
       } else {
-        setError('Gagal memuat data kendaraan');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || errorData.message || 'Gagal memuat data kendaraan';
+
+        // Check for token expiry and redirect to login
+        if (errorMessage.toLowerCase().includes('token') ||
+            errorMessage.toLowerCase().includes('unauthorized') ||
+            errorMessage.toLowerCase().includes('expired')) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          alert('Sesi login Anda telah berakhir. Silakan login kembali.');
+          router.push('/login');
+          return;
+        }
+
+        setError(errorMessage);
       }
     } catch (err) {
       console.error('Failed to fetch vehicle:', err);
@@ -260,9 +285,7 @@ export default function EditVehiclePage() {
 
       const response = await fetch(`/api/v1/vehicles/${vehicleId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(updateData),
       });
 
@@ -285,9 +308,7 @@ export default function EditVehiclePage() {
           try {
             const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: getAuthHeaders(),
               body: JSON.stringify({ photos: photoData }),
             });
 
@@ -409,9 +430,13 @@ export default function EditVehiclePage() {
               if (confirm('Ubah status menjadi READY (Tersedia)?')) {
                 try {
                   const user = JSON.parse(localStorage.getItem('user') || '{}');
+                  const token = localStorage.getItem('authToken');
                   const response = await fetch(`/api/v1/vehicles/${vehicleId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(token && { 'Authorization': `Bearer ${token}` }),
+                    },
                     body: JSON.stringify({ status: 'AVAILABLE', userId: user.id }),
                   });
                   if (response.ok) {
@@ -442,9 +467,13 @@ export default function EditVehiclePage() {
               if (confirm('Ubah status menjadi BOOKING (sudah DP)?')) {
                 try {
                   const user = JSON.parse(localStorage.getItem('user') || '{}');
+                  const token = localStorage.getItem('authToken');
                   const response = await fetch(`/api/v1/vehicles/${vehicleId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(token && { 'Authorization': `Bearer ${token}` }),
+                    },
                     body: JSON.stringify({ status: 'BOOKED', userId: user.id }),
                   });
                   if (response.ok) {
@@ -478,9 +507,13 @@ export default function EditVehiclePage() {
                   const salesName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown';
 
                   // Update status + record sales info
+                  const token = localStorage.getItem('authToken');
                   const response = await fetch(`/api/v1/vehicles/${vehicleId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(token && { 'Authorization': `Bearer ${token}` }),
+                    },
                     body: JSON.stringify({
                       status: 'SOLD',
                       userId: user.id,
@@ -581,8 +614,12 @@ export default function EditVehiclePage() {
                           onClick={async () => {
                             if (confirm('Jadikan foto ini sebagai foto utama?')) {
                               try {
+                                const token = localStorage.getItem('authToken');
                                 const response = await fetch(`/api/v1/vehicles/${vehicleId}/photos/${photo.id}/main`, {
                                   method: 'PUT',
+                                  headers: {
+                                    ...(token && { 'Authorization': `Bearer ${token}` }),
+                                  },
                                 });
                                 if (response.ok) {
                                   fetchVehicle();
@@ -609,8 +646,12 @@ export default function EditVehiclePage() {
                         onClick={async () => {
                           if (confirm('Hapus foto ini? Tindakan ini tidak dapat dibatalkan.')) {
                             try {
+                              const token = localStorage.getItem('authToken');
                               const response = await fetch(`/api/v1/vehicles/${vehicleId}/photos/${photo.id}`, {
                                 method: 'DELETE',
+                                headers: {
+                                  ...(token && { 'Authorization': `Bearer ${token}` }),
+                                },
                               });
                               if (response.ok) {
                                 fetchVehicle();
