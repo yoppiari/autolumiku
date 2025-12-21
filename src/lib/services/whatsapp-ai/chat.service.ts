@@ -594,9 +594,13 @@ Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang be
 
   /**
    * Format price to Indonesian format
+   * Note: Database stores prices in IDR cents (Rp 250jt = 25000000000)
+   * So we divide by 100 to get the actual Rupiah value
    */
   private static formatPrice(price: number): string {
-    return new Intl.NumberFormat("id-ID").format(price);
+    // Convert from cents to Rupiah
+    const priceInRupiah = Math.round(price / 100);
+    return new Intl.NumberFormat("id-ID").format(priceInRupiah);
   }
 
   /**
