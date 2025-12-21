@@ -66,57 +66,15 @@ export default function VehiclesPage() {
 
   // State for resequence status
   const [resequenceStatus, setResequenceStatus] = useState<string | null>(null);
-  const [isResequencing, setIsResequencing] = useState(false);
-
-  // Manual resequence trigger
-  const handleManualResequence = async () => {
-    const slug = detectSlugFromDomain();
-    if (!slug) {
-      alert('Tidak dapat mendeteksi tenant');
-      return;
-    }
-
-    setIsResequencing(true);
-    setResequenceStatus('Memperbaiki urutan ID...');
-
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/v1/vehicles?action=resequence-ids&slug=${slug}`, {
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      });
-
-      const result = await response.json();
-      console.log('[Vehicles] Manual resequence result:', result);
-
-      if (response.ok && result.success) {
-        setResequenceStatus(`✅ ${result.message}`);
-        // Reload vehicles after successful resequence
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        setResequenceStatus(`❌ Gagal: ${result.error || 'Unknown error'}`);
-      }
-    } catch (err) {
-      console.error('[Vehicles] Manual resequence error:', err);
-      setResequenceStatus(`❌ Error: ${err instanceof Error ? err.message : 'Unknown'}`);
-    } finally {
-      setIsResequencing(false);
-    }
-  };
 
   /**
    * Auto-resequence IDs if they're out of order (e.g., starts from 003 instead of 001)
+   * This runs automatically on page load and fixes IDs without any user intervention
    */
   const autoResequenceIfNeeded = async (vehicleList: Vehicle[], slug: string) => {
     // Filter active vehicles
     const activeVehicles = vehicleList.filter(v => v.status !== 'DELETED');
-    if (activeVehicles.length === 0) {
-      console.log('[Vehicles] No active vehicles to resequence');
-      return false;
-    }
+    if (activeVehicles.length === 0) return false;
 
     // Check if first vehicle ID doesn't start from 001
     const sortedVehicles = [...activeVehicles].sort((a, b) =>
@@ -124,56 +82,43 @@ export default function VehiclesPage() {
     );
     const firstVehicle = sortedVehicles[0];
 
-    console.log('[Vehicles] First vehicle by createdAt:', firstVehicle?.displayId, firstVehicle?.make, firstVehicle?.model);
-
-    if (!firstVehicle?.displayId) {
-      console.log('[Vehicles] First vehicle has no displayId');
-      return false;
-    }
+    if (!firstVehicle?.displayId) return false;
 
     // Extract sequence number from displayId (e.g., PM-PST-003 -> 3)
     const match = firstVehicle.displayId.match(/-(\d+)$/);
-    if (!match) {
-      console.log('[Vehicles] Could not extract sequence from displayId:', firstVehicle.displayId);
-      return false;
-    }
+    if (!match) return false;
 
     const firstSequence = parseInt(match[1], 10);
-    console.log('[Vehicles] First sequence number:', firstSequence);
 
     // If first vehicle is not 001, trigger resequence
     if (firstSequence > 1) {
-      setResequenceStatus('Memperbaiki urutan ID...');
-      console.log(`[Vehicles] 🔄 Auto-resequencing: First ID is ${firstVehicle.displayId}, should be 001`);
+      setResequenceStatus('🔄 Memperbaiki urutan ID kendaraan...');
 
       try {
         const token = localStorage.getItem('authToken');
-        console.log('[Vehicles] Calling resequence API with slug:', slug);
-
         const response = await fetch(`/api/v1/vehicles?action=resequence-ids&slug=${slug}`, {
           headers: {
             ...(token && { 'Authorization': `Bearer ${token}` }),
           },
         });
 
-        console.log('[Vehicles] Resequence response status:', response.status);
-
         if (response.ok) {
           const result = await response.json();
-          console.log('[Vehicles] ✅ Auto-resequence completed:', result);
-          setResequenceStatus('✅ ID berhasil diperbaiki! Memuat ulang...');
-          return true; // Signal to reload
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('[Vehicles] Resequence API error:', response.status, errorData);
-          setResequenceStatus(`❌ Gagal: ${errorData.error || response.status}`);
+          if (result.success && result.updates?.length > 0) {
+            setResequenceStatus('✅ ID kendaraan berhasil diperbaiki!');
+            // Reload page to show new IDs
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+            return true;
+          }
         }
       } catch (err) {
         console.error('[Vehicles] Auto-resequence failed:', err);
-        setResequenceStatus(`❌ Error: ${err instanceof Error ? err.message : 'Unknown'}`);
       }
-    } else {
-      console.log('[Vehicles] IDs already in correct order (starts from 001)');
+
+      // Clear status after 3 seconds if no reload
+      setTimeout(() => setResequenceStatus(null), 3000);
     }
 
     return false;
@@ -360,44 +305,13 @@ export default function VehiclesPage() {
       {/* Header - Gradient like Dashboard */}
       <div className="flex justify-between items-center bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-5 py-3 mb-3 flex-shrink-0 shadow-lg">
         <h1 className="text-xl font-bold text-white">Manajemen Kendaraan</h1>
-        <div className="flex items-center gap-2">
-          {/* Fix ID Button - Shows if first vehicle ID > 001 */}
-          {filteredVehicles.length > 0 && (() => {
-            const sorted = [...filteredVehicles].sort((a, b) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-            );
-            const firstId = sorted[0]?.displayId;
-            const match = firstId?.match(/-(\d+)$/);
-            const seq = match ? parseInt(match[1], 10) : 1;
-            return seq > 1;
-          })() && (
-            <button
-              onClick={handleManualResequence}
-              disabled={isResequencing}
-              className="px-3 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 disabled:bg-amber-300 flex items-center gap-1 shadow-md transition-all"
-              title="Perbaiki urutan ID mulai dari 001"
-            >
-              {isResequencing ? (
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              )}
-              Fix ID
-            </button>
-          )}
-          <Link
-            href="/dashboard/vehicles/upload"
-            className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 flex items-center gap-2 shadow-md transition-all"
-          >
-            <span className="text-lg">+</span>
-            Upload Kendaraan Baru
-          </Link>
-        </div>
+        <Link
+          href="/dashboard/vehicles/upload"
+          className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 flex items-center gap-2 shadow-md transition-all"
+        >
+          <span className="text-lg">+</span>
+          Upload Kendaraan Baru
+        </Link>
       </div>
 
       {/* Stats Badges - Compact Pills */}
