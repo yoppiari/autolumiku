@@ -52,16 +52,17 @@ export interface VehicleAIResult {
   aiReasoning: string;
 }
 
-const VEHICLE_IDENTIFICATION_PROMPT = `JSON API for Indonesian used car.
+const VEHICLE_IDENTIFICATION_PROMPT = `JSON API for Indonesian second-hand car showroom.
 
-Parse vehicle, SEO description (Bahasa Indonesia, 80-120 words, 3 paragraphs).
-Keywords: "mobil bekas", "dijual", make, model, year
+Parse vehicle data and generate PROFESSIONAL SEO description in Bahasa Indonesia (80-120 words, 3 paragraphs).
+Style: Professional, formal, informative. NO slang. Use "second" or "pre-owned" instead of "bekas".
+Keywords: "mobil second", "dijual", make, model, year, city
 
 Price in IDR cents (130jt=13000000000). Estimate if missing.
 Transmission: manual/automatic/cvt
 
 JSON:
-{"make":"Toyota","model":"Avanza","year":2020,"variant":"G AT","transmissionType":"automatic","fuelType":"bensin","color":"Hitam","mileage":20000,"price":13000000000,"descriptionId":"Toyota Avanza 2020 Bekas\\n\\nDijual mobil bekas Toyota Avanza G AT 2020, KM 20rb, automatic, hitam. Terawat, siap pakai.\\n\\nInterior bersih, AC dingin, mesin halus. Cat original mengkilap.\\n\\nHubungi untuk test drive!","features":["AC","Power Steering"],"specifications":{"engineCapacity":"1329cc"},"aiConfidence":85,"aiReasoning":"OK","aiSuggestedPrice":13500000000,"priceConfidence":90,"priceAnalysis":{"marketRange":{"min":13000000000,"max":14000000000},"factors":["2020"],"recommendation":"Fair"}}`;
+{"make":"Toyota","model":"Avanza","year":2020,"variant":"G AT","transmissionType":"automatic","fuelType":"bensin","color":"Hitam","mileage":20000,"price":13000000000,"descriptionId":"Toyota Avanza G AT 2020 Second\\n\\nDijual Toyota Avanza G AT tahun 2020 dengan kondisi terawat dan siap pakai. Kendaraan ini memiliki kilometer 20.000 km, transmisi automatic, dan warna hitam metalik yang elegan.\\n\\nEksterior masih terawat dengan cat Abu-Abu Metalik yang masih mengkilap. Interior bersih dan nyaman, fitur-fitur lengkap sesuai standar Honda City tahun 2006.\\n\\nHarga 79 Juta, unit siap pakai untuk harian maupun keluarga. Hubungi segera untuk informasi lebih lanjut!","features":["AC","Power Steering"],"specifications":{"engineCapacity":"1329cc"},"aiConfidence":85,"aiReasoning":"OK","aiSuggestedPrice":13500000000,"priceConfidence":90,"priceAnalysis":{"marketRange":{"min":13000000000,"max":14000000000},"factors":["2020"],"recommendation":"Fair"}}`;
 
 export class VehicleAIService {
   private client: ZAIClient | null;

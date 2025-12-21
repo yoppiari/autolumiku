@@ -64,6 +64,7 @@ export default function VehiclesPage() {
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [aiResult, setAIResult] = useState<VehicleAIResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [autoGenerate, setAutoGenerate] = useState(true);
@@ -80,6 +81,15 @@ export default function VehiclesPage() {
       setUser(JSON.parse(storedUser));
     }
   }, []);
+
+  // Helper to get auth headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    };
+  };
 
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -246,7 +256,7 @@ export default function VehiclesPage() {
       // Text-based AI identification only (vision removed)
       const response = await fetch('/api/v1/vehicles/ai-identify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           userDescription: description,
         }),
@@ -270,7 +280,13 @@ export default function VehiclesPage() {
   };
 
   const handleSave = async (status: 'DRAFT' | 'AVAILABLE') => {
-    if (!aiResult || !user) return;
+    if (!aiResult || !user) {
+      setError('Data tidak lengkap. Silakan generate ulang.');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
 
     try {
       // Format data to match Vehicle schema
@@ -312,7 +328,7 @@ export default function VehiclesPage() {
 
       const response = await fetch('/api/v1/vehicles', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(vehicleData),
       });
 
@@ -335,7 +351,7 @@ export default function VehiclesPage() {
         try {
           const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ photos: photosData }),
           });
 
@@ -362,6 +378,8 @@ export default function VehiclesPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menyimpan');
       console.error('Save error:', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -576,26 +594,36 @@ export default function VehiclesPage() {
           </div>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        )}
+
         {/* Action Buttons - Fixed at bottom on mobile */}
         <div className="mt-6 flex flex-col sm:flex-row justify-between gap-3 sticky bottom-0 bg-gray-50 py-4 -mx-4 px-4 sm:static sm:bg-transparent sm:py-0 sm:mx-0 sm:px-0">
           <button
             onClick={() => setStep('input')}
-            className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 order-3 sm:order-1"
+            disabled={isSaving}
+            className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 order-3 sm:order-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Kembali Edit
           </button>
           <div className="flex gap-3 order-1 sm:order-2">
             <button
               onClick={() => handleSave('DRAFT')}
-              className="flex-1 sm:flex-none px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700"
+              disabled={isSaving}
+              className="flex-1 sm:flex-none px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Simpan Draft
+              {isSaving ? 'Menyimpan...' : 'Simpan Draft'}
             </button>
             <button
               onClick={() => handleSave('AVAILABLE')}
-              className="flex-1 sm:flex-none px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              disabled={isSaving}
+              className="flex-1 sm:flex-none px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Publish
+              {isSaving ? 'Menyimpan...' : 'Publish'}
             </button>
           </div>
         </div>
