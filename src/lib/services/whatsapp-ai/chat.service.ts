@@ -399,7 +399,7 @@ A: "Hai kak! 👋 Lagi cari mobil apa nih? Boleh kasih tau budget atau merk yang
         .slice(0, 10)
         .map(
           (v) =>
-            `• ${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price) / 100)} | ${v.transmissionType || 'Manual'} | ${v.mileage?.toLocaleString('id-ID') || 0}km | ${v.fuelType || 'Bensin'} | ${v.color || '-'}`
+            `• ${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))} | ${v.transmissionType || 'Manual'} | ${v.mileage?.toLocaleString('id-ID') || 0}km | ${v.fuelType || 'Bensin'} | ${v.color || '-'}`
         )
         .join("\n");
 
@@ -740,7 +740,7 @@ A: "Hai kak! 👋 Lagi cari mobil apa nih? Boleh kasih tau budget atau merk yang
 
       images.push({
         imageUrl,
-        caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price) / 100)}\n${v.mileage?.toLocaleString('id-ID') || 0}km • ${v.transmissionType || 'Manual'} • ${v.color || '-'}`,
+        caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage?.toLocaleString('id-ID') || 0}km • ${v.transmissionType || 'Manual'} • ${v.color || '-'}`,
       });
     }
 

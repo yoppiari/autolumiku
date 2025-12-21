@@ -1358,8 +1358,7 @@ export class StaffCommandService {
     vehicles.slice(0, 10).forEach((v, idx) => {
       const statusEmoji = v.status === "AVAILABLE" ? "✅" : v.status === "BOOKED" ? "🔒" : v.status === "SOLD" ? "💰" : "";
       message += `\n${idx + 1}. ${v.make} ${v.model} ${v.year} ${statusEmoji}\n`;
-      // Price in DB is stored in cents, convert to rupiah (divide by 100)
-      message += `   Rp ${this.formatPrice(Number(v.price) / 100)} • ID: ${v.displayId || v.id.slice(-6)}\n`;
+      message += `   Rp ${this.formatPrice(Number(v.price))} • ID: ${v.displayId || v.id.slice(-6)}\n`;
     });
 
     if (vehicles.length > 10) {
@@ -1530,8 +1529,7 @@ export class StaffCommandService {
   }
 
   /**
-   * Format price (expects price in rupiah, NOT cents)
-   * For database values stored in cents, convert first: price / 100
+   * Format price in rupiah to Indonesian format
    */
   private static formatPrice(price: number): string {
     return new Intl.NumberFormat("id-ID").format(price);
