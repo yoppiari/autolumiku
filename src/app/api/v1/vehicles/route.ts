@@ -519,7 +519,18 @@ async function resequenceVehicleIds(tenant: { id: string; slug: string; name: st
     const showroomCode = 'PST';
     const prefix = `${tenantCode}-${showroomCode}-`;
 
-    // Get all ACTIVE vehicles (non-DELETED) ordered by createdAt
+    // Step 1: Clear displayId from DELETED vehicles to avoid conflicts
+    const deletedUpdate = await prisma.vehicle.updateMany({
+      where: {
+        tenantId: tenant.id,
+        status: 'DELETED',
+        displayId: { not: null },
+      },
+      data: { displayId: null },
+    });
+    results.deletedCleared = deletedUpdate.count;
+
+    // Step 2: Get all ACTIVE vehicles (non-DELETED) ordered by createdAt
     const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId: tenant.id,
@@ -537,24 +548,30 @@ async function resequenceVehicleIds(tenant: { id: string; slug: string; name: st
       return NextResponse.json(results);
     }
 
-    // Resequence starting from 001
+    // Step 3: First pass - set all to temporary IDs to avoid conflicts
+    const tempPrefix = `TEMP-${Date.now()}-`;
+    for (let i = 0; i < vehicles.length; i++) {
+      await prisma.vehicle.update({
+        where: { id: vehicles[i].id },
+        data: { displayId: `${tempPrefix}${i}` },
+      });
+    }
+
+    // Step 4: Second pass - set final sequential IDs
     let sequence = 1;
     for (const vehicle of vehicles) {
       const newDisplayId = `${prefix}${String(sequence).padStart(3, '0')}`;
 
-      // Only update if displayId is different
-      if (vehicle.displayId !== newDisplayId) {
-        await prisma.vehicle.update({
-          where: { id: vehicle.id },
-          data: { displayId: newDisplayId },
-        });
+      await prisma.vehicle.update({
+        where: { id: vehicle.id },
+        data: { displayId: newDisplayId },
+      });
 
-        results.updates.push({
-          vehicle: `${vehicle.make} ${vehicle.model}`,
-          oldId: vehicle.displayId,
-          newId: newDisplayId,
-        });
-      }
+      results.updates.push({
+        vehicle: `${vehicle.make} ${vehicle.model}`,
+        oldId: vehicle.displayId,
+        newId: newDisplayId,
+      });
 
       sequence++;
     }
