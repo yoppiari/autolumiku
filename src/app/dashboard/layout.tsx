@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import DashboardErrorBoundary from '@/components/dashboard/ErrorBoundary';
+
+// Auto sign-out timeout in milliseconds (60 minutes)
+const INACTIVITY_TIMEOUT = 60 * 60 * 1000;
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -14,6 +17,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [tenant, setTenant] = useState<any>(null);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Read user from localStorage - redirect to login if not authenticated
   React.useEffect(() => {
@@ -74,12 +78,51 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [tenant]);
 
-  const handleLogout = () => {
+  // Handle logout - with optional session expired flag
+  const handleLogout = useCallback((sessionExpired = false) => {
+    // Clear inactivity timer
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    window.location.href = '/login';
-  };
+    window.location.href = sessionExpired ? '/login?error=session_expired' : '/login';
+  }, []);
+
+  // Reset inactivity timer on user activity
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    inactivityTimerRef.current = setTimeout(() => {
+      console.log('[Dashboard] Session expired due to inactivity');
+      handleLogout(true);
+    }, INACTIVITY_TIMEOUT);
+  }, [handleLogout]);
+
+  // Set up activity tracking for auto sign-out
+  React.useEffect(() => {
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+
+    // Start the timer
+    resetInactivityTimer();
+
+    // Add event listeners for user activity
+    activityEvents.forEach(event => {
+      document.addEventListener(event, resetInactivityTimer, { passive: true });
+    });
+
+    // Cleanup on unmount
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, resetInactivityTimer);
+      });
+    };
+  }, [resetInactivityTimer]);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
@@ -183,7 +226,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => handleLogout(false)}
               className="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               Keluar
