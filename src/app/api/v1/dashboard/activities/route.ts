@@ -37,9 +37,12 @@ export async function GET(request: NextRequest) {
         take: 5,
       }),
 
-      // Recent vehicles
+      // Recent vehicles (exclude DELETED)
       prisma.vehicle.findMany({
-        where: { tenantId },
+        where: {
+          tenantId,
+          status: { not: 'DELETED' },
+        },
         select: {
           id: true,
           displayId: true,
