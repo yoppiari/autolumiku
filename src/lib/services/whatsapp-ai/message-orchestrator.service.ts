@@ -75,18 +75,33 @@ export class MessageOrchestratorService {
 
       // Greeting patterns to check before forcing upload_vehicle state
       const greetingPatterns = [
-        /^(halo|hai|hello|hi|hey|hallo|hei)$/i,
-        /^(halo|hai|hello|hi|hey|hallo|hei)\s*(kak|min|admin|bos|boss)?[.!]?$/i,
+        /^(halo|helo|hai|hello|hi|hey|hallo|hei)$/i,
+        /^(halo|helo|hai|hello|hi|hey|hallo|hei)\s*(kak|min|admin|bos|boss)?[.!?]?$/i,
         /^(selamat\s+(pagi|siang|sore|malam))$/i,
         /^(pagi|siang|sore|malam)$/i,
         /^(assalamu.*alaikum|assalamualaikum)/i,
         /^(met\s+(pagi|siang|sore|malam))/i,
       ];
+
+      // Escape patterns - questions/commands that should NOT be treated as vehicle data
+      const escapePatterns = [
+        /^(kamu|anda|lu|lo)\s*(siapa|apa)/i,        // kamu siapa, anda siapa
+        /^(siapa)\s*(kamu|anda|ini|lu|lo)/i,        // siapa kamu, siapa ini
+        /^(ini)\s*(siapa|apa)/i,                     // ini siapa, ini apa
+        /^(apa)\s*(ini|itu|kabar)/i,                 // apa ini, apa itu, apa kabar
+        /^(gimana|bagaimana|caranya)/i,              // gimana, bagaimana, caranya
+        /^(tolong|help|bantu)/i,                     // tolong, help, bantu
+        /^(menu|fitur|bisa\s+apa)/i,                 // menu, fitur, bisa apa
+        /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
+        /\?$/,                                        // any question (ends with ?)
+      ];
+
       const normalizedMessage = (incoming.message || "").trim();
       const isGreeting = greetingPatterns.some(p => p.test(normalizedMessage));
+      const isEscapeMessage = escapePatterns.some(p => p.test(normalizedMessage));
 
-      if (conversation.conversationState === "upload_vehicle" && !isGreeting && !normalizedMessage.toLowerCase().includes("batal")) {
-        // Staff is in middle of vehicle upload flow (and NOT sending a greeting or cancel)
+      if (conversation.conversationState === "upload_vehicle" && !isGreeting && !isEscapeMessage && !normalizedMessage.toLowerCase().includes("batal")) {
+        // Staff is in middle of vehicle upload flow (and NOT sending a greeting, question, or cancel)
         console.log(`[Orchestrator] Conversation in upload_vehicle state, treating message as vehicle data/photo`);
 
         // IMPORTANT: If this is a photo, make sure it's treated as photo for upload
@@ -100,9 +115,9 @@ export class MessageOrchestratorService {
           isStaff: true,
           isCustomer: false,
         };
-      } else if (conversation.conversationState === "upload_vehicle" && (isGreeting || normalizedMessage.toLowerCase().includes("batal"))) {
-        // User sent greeting or "batal" while in upload flow - reset conversation state
-        console.log(`[Orchestrator] 🔄 Greeting/cancel detected in upload flow, resetting conversation state`);
+      } else if (conversation.conversationState === "upload_vehicle" && (isGreeting || isEscapeMessage || normalizedMessage.toLowerCase().includes("batal"))) {
+        // User sent greeting, question, or "batal" while in upload flow - reset conversation state
+        console.log(`[Orchestrator] 🔄 Greeting/question/cancel detected in upload flow, resetting conversation state`);
 
         await prisma.whatsAppConversation.update({
           where: { id: conversation.id },

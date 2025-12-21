@@ -87,7 +87,7 @@ const STAFF_COMMAND_PATTERNS = {
 // Customer inquiry patterns
 const CUSTOMER_PATTERNS = {
   greeting: [
-    /^(halo|hai|hello|hi|pagi|siang|sore|malam)/i,
+    /^(halo|helo|hai|hello|hi|hey|hallo|hei|pagi|siang|sore|malam)/i,
     /^assalam/i,
     /selamat\s+(pagi|siang|sore|malam)/i,
   ],
@@ -427,8 +427,8 @@ export class IntentClassifierService {
     // Check staff greeting (halo, hai, hello, etc.)
     // Show welcome menu with options
     const greetingPatterns = [
-      /^(halo|hai|hello|hi|hey|hallo|hei)$/i,
-      /^(halo|hai|hello|hi|hey|hallo|hei)\s*(kak|min|admin|bos|boss)?[.!]?$/i,
+      /^(halo|helo|hai|hello|hi|hey|hallo|hei)$/i,
+      /^(halo|helo|hai|hello|hi|hey|hallo|hei)\s*(kak|min|admin|bos|boss)?[.!?]?$/i,
       /^(selamat\s+(pagi|siang|sore|malam))$/i,
       /^(pagi|siang|sore|malam)$/i,
       /^(assalamu.*alaikum|assalamualaikum)/i,
