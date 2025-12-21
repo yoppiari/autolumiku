@@ -67,7 +67,7 @@ export default function VehiclesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [aiResult, setAIResult] = useState<VehicleAIResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [autoGenerate, setAutoGenerate] = useState(true);
+  const [hasGeneratedOnce, setHasGeneratedOnce] = useState(false);
 
   // Form state for editing AI results
   const [editedData, setEditedData] = useState<Partial<VehicleAIResult>>({});
@@ -154,16 +154,7 @@ export default function VehiclesPage() {
     if (!userDescription.trim() && extractedDescriptions.length > 0) {
       setUserDescription(extractedDescriptions[0]);
     }
-
-    // Auto-generate if enabled and we have description
-    if (autoGenerate && newPhotos.length > 0) {
-      const desc = extractedDescriptions[0] || userDescription;
-      if (desc.trim()) {
-        setTimeout(() => {
-          handleGenerate(desc);
-        }, 500);
-      }
-    }
+    // Note: AI generation is now manual only - user must click "Generate dengan AI" button
   };
 
   // Handle drag and drop
@@ -244,13 +235,19 @@ export default function VehiclesPage() {
     const description = descriptionOverride || userDescription;
 
     if (!description.trim()) {
-      setError('Mohon masukkan deskripsi kendaraan atau upload foto dengan nama file yang informatif');
+      setError('Mohon masukkan deskripsi kendaraan terlebih dahulu');
+      return;
+    }
+
+    if (photos.length === 0) {
+      setError('Mohon upload minimal 1 foto kendaraan terlebih dahulu');
       return;
     }
 
     setIsGenerating(true);
     setError(null);
     setStep('generating');
+    setHasGeneratedOnce(true);
 
     try {
       // Text-based AI identification only (vision removed)
@@ -850,20 +847,6 @@ export default function VehiclesPage() {
           </p>
         </div>
 
-        {/* Auto Generate Toggle */}
-        <div className="mb-4 flex items-center">
-          <input
-            type="checkbox"
-            id="autoGenerate"
-            checked={autoGenerate}
-            onChange={(e) => setAutoGenerate(e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="autoGenerate" className="ml-2 text-sm text-gray-700">
-            Auto-generate AI setelah upload foto
-          </label>
-        </div>
-
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-sm text-red-800">{error}</p>
@@ -873,11 +856,22 @@ export default function VehiclesPage() {
         {/* Generate Button */}
         <button
           onClick={() => handleGenerate()}
-          disabled={isGenerating || (!userDescription.trim() && photos.length === 0)}
+          disabled={isGenerating || !userDescription.trim() || photos.length === 0}
           className="w-full px-6 py-4 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-blue-800 transition-colors"
         >
           {isGenerating ? 'Generating...' : 'Generate dengan AI'}
         </button>
+
+        {/* Requirements hint */}
+        {(!userDescription.trim() || photos.length === 0) && (
+          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 font-medium">Untuk generate AI, lengkapi:</p>
+            <ul className="mt-1 text-sm text-yellow-700 list-disc list-inside">
+              {photos.length === 0 && <li>Upload minimal 1 foto kendaraan</li>}
+              {!userDescription.trim() && <li>Isi deskripsi kendaraan (merk, model, tahun, KM, harga)</li>}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Quick Examples */}
