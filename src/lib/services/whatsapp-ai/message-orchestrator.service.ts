@@ -1034,20 +1034,26 @@ export class MessageOrchestratorService {
    * Get full staff info (name, role, phone) for a phone number
    */
   private static async getStaffInfo(phone: string, tenantId: string): Promise<{ name: string; role: string; phone: string } | null> {
+    console.log(`[Orchestrator] getStaffInfo: Looking up phone="${phone}" in tenant=${tenantId}`);
+
     // Handle LID format - check conversation context for verified phone
     if (phone.includes("@lid")) {
+      console.log(`[Orchestrator] getStaffInfo: LID format detected, checking conversation context`);
       const conversation = await prisma.whatsAppConversation.findFirst({
         where: { tenantId, customerPhone: phone, isStaff: true },
         select: { contextData: true },
       });
       const contextData = conversation?.contextData as Record<string, any> | null;
       if (contextData?.verifiedStaffPhone) {
+        console.log(`[Orchestrator] getStaffInfo: Found verified phone in context: ${contextData.verifiedStaffPhone}`);
         return this.getStaffInfo(contextData.verifiedStaffPhone, tenantId);
       }
+      console.log(`[Orchestrator] getStaffInfo: No verified phone in LID conversation context`);
       return null;
     }
 
     const normalizedInput = this.normalizePhone(phone);
+    console.log(`[Orchestrator] getStaffInfo: Normalized input: "${normalizedInput}"`);
 
     // Get all users in tenant with staff roles
     const users = await prisma.user.findMany({
@@ -1058,12 +1064,19 @@ export class MessageOrchestratorService {
       select: { id: true, phone: true, firstName: true, lastName: true, role: true },
     });
 
+    console.log(`[Orchestrator] getStaffInfo: Found ${users.length} staff users in tenant`);
+
     for (const user of users) {
-      if (!user.phone) continue;
+      if (!user.phone) {
+        console.log(`[Orchestrator] getStaffInfo: User ${user.firstName} has no phone`);
+        continue;
+      }
       const normalizedUserPhone = this.normalizePhone(user.phone);
+      console.log(`[Orchestrator] getStaffInfo: Comparing "${normalizedInput}" with user ${user.firstName} phone="${user.phone}" normalized="${normalizedUserPhone}"`);
+
       if (normalizedInput === normalizedUserPhone) {
         const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-        console.log(`[Orchestrator] getStaffInfo: Found staff: ${fullName} (${user.role})`);
+        console.log(`[Orchestrator] getStaffInfo: ✅ MATCH! Found staff: ${fullName} (${user.role})`);
         return {
           name: fullName || "Staff",
           role: user.role,
@@ -1072,7 +1085,7 @@ export class MessageOrchestratorService {
       }
     }
 
-    console.log(`[Orchestrator] getStaffInfo: No staff match found for ${phone}`);
+    console.log(`[Orchestrator] getStaffInfo: ❌ No staff match found for ${phone} (normalized: ${normalizedInput})`);
     return null;
   }
 
@@ -1113,10 +1126,30 @@ export class MessageOrchestratorService {
    */
   private static normalizePhone(phone: string): string {
     if (!phone) return "";
+
+    // Handle JID format (e.g., "6281234567890@s.whatsapp.net")
+    if (phone.includes("@")) {
+      phone = phone.split("@")[0];
+    }
+
+    // Handle device suffix (e.g., "6281234567890:17")
+    if (phone.includes(":")) {
+      phone = phone.split(":")[0];
+    }
+
+    // Remove all non-digit characters
     let digits = phone.replace(/\D/g, "");
+
+    // Convert Indonesian formats to standard 62xxx
     if (digits.startsWith("0")) {
       digits = "62" + digits.substring(1);
     }
+
+    // Handle case where someone enters just 8xxx (missing country code)
+    if (digits.startsWith("8") && digits.length >= 9 && digits.length <= 12) {
+      digits = "62" + digits;
+    }
+
     return digits;
   }
 
