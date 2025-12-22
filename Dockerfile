@@ -4,6 +4,18 @@
 # Stage 1: Builder
 FROM node:20-alpine AS builder
 
+# Build arguments for Next.js (NEXT_PUBLIC_* are embedded at build time)
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_URL
+ARG DATABASE_URL
+ARG NODE_ENV=production
+
+# Convert ARGs to ENVs for build process
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV DATABASE_URL=$DATABASE_URL
+ENV NODE_ENV=$NODE_ENV
+
 # Install Chromium for Puppeteer (needed for scrapers during build)
 RUN apk add --no-cache \
     chromium \
@@ -37,7 +49,6 @@ COPY . .
 
 # Set environment for build
 ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
 
 # Build Next.js application
 RUN npm run build
