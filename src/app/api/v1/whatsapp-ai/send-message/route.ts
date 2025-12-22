@@ -1,7 +1,7 @@
 /**
  * WhatsApp AI - Send Manual Message
  * POST /api/v1/whatsapp-ai/send-message
- * Kirim pesan manual dari dashboard ke customer (text atau image)
+ * Kirim pesan manual dari dashboard ke customer (text, image, atau document)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +11,7 @@ import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tenantId, conversationId, to, message, imageUrl, caption } = body;
+    const { tenantId, conversationId, to, message, imageUrl, documentUrl, filename, caption } = body;
 
     // Validate required fields
     if (!tenantId || !to) {
@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Must have either message or imageUrl
-    if (!message && !imageUrl) {
+    // Must have either message, imageUrl, or documentUrl
+    if (!message && !imageUrl && !documentUrl) {
       return NextResponse.json(
-        { success: false, error: "Must provide either message or imageUrl" },
+        { success: false, error: "Must provide either message, imageUrl, or documentUrl" },
         { status: 400 }
       );
     }
@@ -43,9 +43,21 @@ export async function POST(request: NextRequest) {
 
     let result;
     let contentToSave = message || '';
+    let messageType = 'text';
 
-    // Send image or text message
-    if (imageUrl) {
+    // Send document, image, or text message
+    if (documentUrl) {
+      // Send document with optional caption
+      result = await AimeowClientService.sendDocument(
+        account.clientId,
+        to,
+        documentUrl,
+        filename,
+        caption || message || ''
+      );
+      contentToSave = caption || message || `[Document: ${filename || 'file'}]`;
+      messageType = 'document';
+    } else if (imageUrl) {
       // Send image with optional caption
       result = await AimeowClientService.sendImage(
         account.clientId,
@@ -54,6 +66,7 @@ export async function POST(request: NextRequest) {
         caption || message || ''
       );
       contentToSave = caption || message || '[Image]';
+      messageType = 'image';
     } else {
       // Send text message
       result = await AimeowClientService.sendMessage({
@@ -94,9 +107,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const successMessages: Record<string, string> = {
+      document: "Document sent successfully",
+      image: "Image sent successfully",
+      text: "Message sent successfully",
+    };
+
     return NextResponse.json({
       success: true,
-      message: imageUrl ? "Image sent successfully" : "Message sent successfully",
+      message: successMessages[messageType] || "Message sent successfully",
       messageId: result.messageId,
     });
   } catch (error: any) {

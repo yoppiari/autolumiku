@@ -71,9 +71,16 @@ export default function ConversationsPage() {
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [documentUploadMode, setDocumentUploadMode] = useState<'file' | 'url'>('file');
+  const [selectedDocument, setSelectedDocument] = useState<File | null>(null);
+  const [documentUrlInput, setDocumentUrlInput] = useState('');
+  const [documentCaptionInput, setDocumentCaptionInput] = useState('');
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const attachmentMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
 
   // Load conversations
   useEffect(() => {
@@ -255,7 +262,7 @@ export default function ConversationsPage() {
         setShowImageUrlModal(true);
         break;
       case 'dokumen':
-        alert('Fitur kirim dokumen akan segera hadir!\n\nUntuk sementara, upload dokumen ke Google Drive/Dropbox lalu kirim linknya via pesan teks.');
+        setShowDocumentModal(true);
         break;
       case 'kontak':
         // Send sales contact info from real tenant/team data
@@ -405,6 +412,130 @@ export default function ConversationsPage() {
     } finally {
       setIsSending(false);
       setIsUploading(false);
+      setUploadProgress('');
+    }
+  };
+
+  // Handle document file selection
+  const handleDocumentSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type by extension
+      const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
+      const extension = file.name.toLowerCase().match(/\.[^.]+$/)?.[0] || '';
+      if (!allowedExtensions.includes(extension)) {
+        alert('Tipe file tidak valid. Hanya PDF, Word, Excel, dan PowerPoint yang diperbolehkan.');
+        return;
+      }
+      // Validate file size (max 25MB)
+      if (file.size > 25 * 1024 * 1024) {
+        alert('File terlalu besar. Maksimal 25MB.');
+        return;
+      }
+      setSelectedDocument(file);
+    }
+  };
+
+  // Send document (either by file upload or URL)
+  const handleSendDocument = async () => {
+    if (!selectedConversation || isSending || isUploadingDocument) return;
+
+    // Validate based on mode
+    if (documentUploadMode === 'url' && !documentUrlInput.trim()) {
+      alert('Masukkan URL dokumen');
+      return;
+    }
+    if (documentUploadMode === 'file' && !selectedDocument) {
+      alert('Pilih file dokumen');
+      return;
+    }
+
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return;
+    const parsedUser = JSON.parse(storedUser);
+
+    let finalDocumentUrl = documentUrlInput;
+    let filename = '';
+
+    // If file mode, upload first
+    if (documentUploadMode === 'file' && selectedDocument) {
+      setIsUploadingDocument(true);
+      setUploadProgress('Mengupload dokumen...');
+      filename = selectedDocument.name;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedDocument);
+        formData.append('tenantId', parsedUser.tenantId);
+
+        const uploadResponse = await fetch('/api/v1/whatsapp-ai/upload-document', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadData = await uploadResponse.json();
+        if (!uploadData.success) {
+          alert('Gagal upload dokumen: ' + (uploadData.error || 'Unknown error'));
+          setIsUploadingDocument(false);
+          setUploadProgress('');
+          return;
+        }
+
+        finalDocumentUrl = uploadData.data.url;
+        filename = uploadData.data.filename;
+        setUploadProgress('Mengirim dokumen...');
+      } catch (error) {
+        console.error('Error uploading document:', error);
+        alert('Gagal upload dokumen');
+        setIsUploadingDocument(false);
+        setUploadProgress('');
+        return;
+      }
+    } else {
+      // For URL mode, extract filename from URL
+      try {
+        const urlPath = new URL(documentUrlInput).pathname;
+        filename = urlPath.split('/').pop() || 'document';
+      } catch {
+        filename = 'document';
+      }
+    }
+
+    setIsSending(true);
+    try {
+      const response = await fetch('/api/v1/whatsapp-ai/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: parsedUser.tenantId,
+          conversationId: selectedConversation.id,
+          to: selectedConversation.customerPhone,
+          documentUrl: finalDocumentUrl,
+          filename: filename,
+          caption: documentCaptionInput || '',
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Reset all states
+        setDocumentUrlInput('');
+        setDocumentCaptionInput('');
+        setSelectedDocument(null);
+        setShowDocumentModal(false);
+        if (documentInputRef.current) {
+          documentInputRef.current.value = '';
+        }
+        loadMessages(selectedConversation.id);
+      } else {
+        alert('Gagal mengirim dokumen: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error sending document:', error);
+      alert('Gagal mengirim dokumen');
+    } finally {
+      setIsSending(false);
+      setIsUploadingDocument(false);
       setUploadProgress('');
     }
   };
@@ -837,12 +968,21 @@ export default function ConversationsPage() {
         </div>
       </div>
 
-      {/* Hidden file input */}
+      {/* Hidden file input for images */}
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileSelect}
         accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+      />
+
+      {/* Hidden file input for documents */}
+      <input
+        type="file"
+        ref={documentInputRef}
+        onChange={handleDocumentSelect}
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
         className="hidden"
       />
 
@@ -1102,6 +1242,168 @@ export default function ConversationsPage() {
                 className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Upload Modal */}
+      {showDocumentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">📄 Kirim Dokumen</h3>
+
+            {/* Mode Tabs */}
+            <div className="flex mb-4 border-b border-gray-200">
+              <button
+                onClick={() => setDocumentUploadMode('file')}
+                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+                  documentUploadMode === 'file'
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                📱 Upload File
+              </button>
+              <button
+                onClick={() => setDocumentUploadMode('url')}
+                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+                  documentUploadMode === 'url'
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                🔗 Paste URL
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* File Upload Mode */}
+              {documentUploadMode === 'file' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pilih Dokumen *
+                  </label>
+                  <div
+                    onClick={() => documentInputRef.current?.click()}
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
+                  >
+                    {selectedDocument ? (
+                      <div className="space-y-2">
+                        <div className="text-4xl">
+                          {selectedDocument.name.endsWith('.pdf') ? '📕' :
+                           selectedDocument.name.match(/\.docx?$/) ? '📘' :
+                           selectedDocument.name.match(/\.xlsx?$/) ? '📗' :
+                           selectedDocument.name.match(/\.pptx?$/) ? '📙' : '📄'}
+                        </div>
+                        <p className="text-sm font-medium text-gray-900 truncate px-2">{selectedDocument.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {(selectedDocument.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDocument(null);
+                            if (documentInputRef.current) {
+                              documentInputRef.current.value = '';
+                            }
+                          }}
+                          className="text-xs text-red-500 hover:text-red-700"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="text-4xl">📤</div>
+                        <p className="text-sm text-gray-600">
+                          Klik untuk memilih dokumen
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          PDF, Word, Excel, PowerPoint (maks 25MB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Bisa dari smartphone, laptop, atau penyimpanan lokal
+                  </p>
+                </div>
+              )}
+
+              {/* URL Mode */}
+              {documentUploadMode === 'url' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    URL Dokumen *
+                  </label>
+                  <input
+                    type="url"
+                    value={documentUrlInput}
+                    onChange={(e) => setDocumentUrlInput(e.target.value)}
+                    placeholder="https://drive.google.com/file/..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Paste URL dokumen dari Google Drive, Dropbox, atau website lain
+                  </p>
+                </div>
+              )}
+
+              {/* Caption - shared for both modes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Keterangan (opsional)
+                </label>
+                <input
+                  type="text"
+                  value={documentCaptionInput}
+                  onChange={(e) => setDocumentCaptionInput(e.target.value)}
+                  placeholder="Keterangan dokumen..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Progress indicator */}
+            {(isUploadingDocument || isSending) && uploadProgress && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                  <span className="text-sm text-blue-700">{uploadProgress}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowDocumentModal(false);
+                  setDocumentUrlInput('');
+                  setDocumentCaptionInput('');
+                  setSelectedDocument(null);
+                  setUploadProgress('');
+                  if (documentInputRef.current) {
+                    documentInputRef.current.value = '';
+                  }
+                }}
+                disabled={isUploadingDocument || isSending}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSendDocument}
+                disabled={
+                  (documentUploadMode === 'file' && !selectedDocument) ||
+                  (documentUploadMode === 'url' && !documentUrlInput.trim()) ||
+                  isSending ||
+                  isUploadingDocument
+                }
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUploadingDocument ? 'Mengupload...' : isSending ? 'Mengirim...' : 'Kirim Dokumen'}
               </button>
             </div>
           </div>

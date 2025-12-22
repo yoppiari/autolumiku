@@ -511,6 +511,132 @@ export class AimeowClientService {
   }
 
   /**
+   * Send document via WhatsApp (PDF, Word, Excel, PowerPoint)
+   */
+  static async sendDocument(
+    clientId: string,
+    to: string,
+    documentUrl: string,
+    filename?: string,
+    caption?: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Send Document] 📄 Sending document to ${to}`);
+      console.log(`[Aimeow Send Document] Document URL: ${documentUrl}`);
+      console.log(`[Aimeow Send Document] Filename: ${filename || 'auto'}`);
+      console.log(`[Aimeow Send Document] Caption: ${caption || 'none'}`);
+
+      // Validate document URL
+      if (!documentUrl || documentUrl.trim() === '') {
+        console.error(`[Aimeow Send Document] ❌ Invalid document URL: empty or null`);
+        return { success: false, error: 'Document URL is empty' };
+      }
+
+      // Validate clientId format - same as sendImage
+      let apiClientId = clientId;
+      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
+        console.log(`[Aimeow Send Document] ⚠️ ClientId in wrong format, fetching correct UUID...`);
+
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+            console.log(`[Aimeow Send Document] ✅ Using correct UUID: ${apiClientId}`);
+          } else {
+            throw new Error("No connected client found on Aimeow");
+          }
+        }
+      }
+
+      // Build payload for document sending
+      const payload: Record<string, any> = {
+        phone: to,
+        url: documentUrl,
+        documentUrl: documentUrl,
+        file: documentUrl,
+        mediaType: 'document',
+      };
+
+      if (filename) {
+        payload.filename = filename;
+        payload.fileName = filename;
+      }
+
+      if (caption) {
+        payload.caption = caption;
+      }
+
+      console.log(`[Aimeow Send Document] Using clientId: ${apiClientId}`);
+      console.log(`[Aimeow Send Document] Payload:`, JSON.stringify(payload, null, 2));
+
+      // Try /send-file endpoint first (common for documents)
+      let response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-file`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      // If /send-file fails, try /send-document
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log(`[Aimeow Send Document] /send-file failed (${response.status}): ${errorText}`);
+        console.log(`[Aimeow Send Document] Trying /send-document endpoint...`);
+
+        response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-document`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      // If still fails, try /send-media with mediaType
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log(`[Aimeow Send Document] /send-document failed (${response.status}): ${errorText}`);
+        console.log(`[Aimeow Send Document] Trying /send-media endpoint...`);
+
+        response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-media`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...payload,
+            mediaType: 'document',
+          }),
+        });
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Aimeow Send Document] ❌ All endpoints failed: ${errorText}`);
+        throw new Error(`Failed to send document: ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log(`[Aimeow Send Document] ✅ Success:`, data);
+
+      return {
+        success: true,
+        messageId: data.messageId || data.id || `doc_${Date.now()}`,
+      };
+    } catch (error: any) {
+      console.error(`[Aimeow Send Document] ❌ Error:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
    * Send multiple images via WhatsApp
    */
   static async sendImages(
