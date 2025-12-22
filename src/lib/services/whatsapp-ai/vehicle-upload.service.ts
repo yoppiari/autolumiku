@@ -13,6 +13,9 @@ import { StorageService } from "@/lib/services/storage.service";
 import { UploadNotificationService } from "./upload-notification.service";
 import { PlateDetectionService } from "@/lib/services/plate-detection.service";
 
+// In-memory lock to prevent race condition on concurrent vehicle creation
+const uploadLocks = new Map<string, number>();
+const LOCK_TIMEOUT_MS = 30000; // 30 seconds
 // ==================== TYPES ====================
 
 export interface WhatsAppVehicleData {
@@ -139,6 +142,25 @@ export class WhatsAppVehicleUploadService {
     console.log('[WhatsApp Vehicle Upload] Data:', vehicleData);
     console.log('[WhatsApp Vehicle Upload] Photos:', photoUrls.length);
     console.log('[WhatsApp Vehicle Upload] Tenant:', tenantId);
+
+    // Create lock key to prevent race condition
+    const lockKey = `${tenantId}-${vehicleData.make}-${vehicleData.model}-${vehicleData.year}`.toLowerCase();
+    const now = Date.now();
+
+    // Check if there's an active lock (another upload in progress)
+    const existingLock = uploadLocks.get(lockKey);
+    if (existingLock && (now - existingLock) < LOCK_TIMEOUT_MS) {
+      console.warn(`[WhatsApp Vehicle Upload] ⚠️ LOCK: Another upload in progress for ${lockKey}`);
+      return {
+        success: false,
+        message: '⏳ Upload sedang diproses, mohon tunggu sebentar...',
+        error: 'Upload already in progress',
+      };
+    }
+
+    // Set lock
+    uploadLocks.set(lockKey, now);
+    console.log(`[WhatsApp Vehicle Upload] 🔒 Lock acquired: ${lockKey}`);
 
     try {
       // 0. Check for duplicate vehicle (same make/model/year within last 5 minutes)
@@ -474,6 +496,10 @@ export class WhatsAppVehicleUploadService {
         message: errorMessage,
         error: error.message,
       };
+    } finally {
+      // Release lock
+      uploadLocks.delete(lockKey);
+      console.log(`[WhatsApp Vehicle Upload] 🔓 Lock released: ${lockKey}`);
     }
   }
 
