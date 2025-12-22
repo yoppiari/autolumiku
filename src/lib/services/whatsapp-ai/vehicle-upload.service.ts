@@ -616,11 +616,11 @@ export class WhatsAppVehicleUploadService {
     const prefix = `${tenantCode}-${showroomCode}-`;
 
     // Get the highest existing displayId for this tenant pattern
-    // IMPORTANT: Exclude DELETED vehicles so removed vehicles don't affect the sequence
+    // IMPORTANT: Include ALL vehicles (even DELETED) because displayId has unique constraint
+    // If we exclude DELETED, we might generate an ID that conflicts with a deleted vehicle
     const vehicles = await prisma.$queryRaw<{ displayId: string }[]>`
       SELECT "displayId" FROM vehicles
       WHERE "displayId" LIKE ${prefix + '%'}
-      AND status != 'DELETED'
       ORDER BY "displayId" DESC
       LIMIT 1
     `;

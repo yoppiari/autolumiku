@@ -1405,7 +1405,7 @@ export class StaffCommandService {
     vehicles.slice(0, 10).forEach((v, idx) => {
       const statusEmoji = v.status === "AVAILABLE" ? "✅" : v.status === "BOOKED" ? "🔒" : v.status === "SOLD" ? "💰" : "";
       message += `\n${idx + 1}. ${v.make} ${v.model} ${v.year} ${statusEmoji}\n`;
-      message += `   Rp ${this.formatPrice(Number(v.price))} • ID: ${v.displayId || v.id.slice(-6)}\n`;
+      message += `   Rp ${this.formatPrice(Number(v.price), true)} • ID: ${v.displayId || v.id.slice(-6)}\n`;
     });
 
     if (vehicles.length > 10) {
@@ -1580,12 +1580,15 @@ export class StaffCommandService {
 
   /**
    * Format price in rupiah to Indonesian format
+   * @param price - The price value
+   * @param fromDatabase - If true, price is in cents (from DB). If false, price is in full IDR (from user input)
+   *
    * Note: Database stores prices in IDR cents (Rp 250jt = 25000000000)
-   * So we divide by 100 to get the actual Rupiah value
+   * But during upload flow, price is still in full IDR (e.g., 135000000 for 135 juta)
    */
-  private static formatPrice(price: number): string {
-    // Convert from cents to Rupiah
-    const priceInRupiah = Math.round(price / 100);
+  private static formatPrice(price: number, fromDatabase: boolean = false): string {
+    // Only divide by 100 if price is from database (stored in cents)
+    const priceInRupiah = fromDatabase ? Math.round(price / 100) : price;
     return new Intl.NumberFormat("id-ID").format(priceInRupiah);
   }
 
