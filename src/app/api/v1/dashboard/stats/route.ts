@@ -47,10 +47,11 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Vehicles added this month
+      // Vehicles added this month (exclude DELETED)
       prisma.vehicle.count({
         where: {
           tenantId,
+          status: { not: 'DELETED' },
           createdAt: {
             gte: firstDayOfMonth,
             lte: lastDayOfMonth,

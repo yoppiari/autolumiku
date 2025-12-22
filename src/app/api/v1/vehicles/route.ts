@@ -102,9 +102,13 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build where clause
+    // By default, exclude DELETED vehicles unless explicitly requested
     const where: any = { tenantId };
     if (status) {
       where.status = status;
+    } else {
+      // Default: show all except DELETED
+      where.status = { not: 'DELETED' };
     }
 
     // Get vehicles with pagination
@@ -250,6 +254,7 @@ async function generateDisplayId(tenantId: string, showroomCode?: string): Promi
 
 /**
  * Legacy displayId format for backwards compatibility
+ * IMPORTANT: Excludes DELETED vehicles so deleted vehicles don't affect sequence
  */
 async function generateLegacyDisplayId(): Promise<string> {
   const lastVehicle = await prisma.vehicle.findFirst({
@@ -257,6 +262,7 @@ async function generateLegacyDisplayId(): Promise<string> {
       displayId: {
         startsWith: 'VH-',
       },
+      status: { not: 'DELETED' }, // Exclude deleted vehicles
     },
     orderBy: {
       displayId: 'desc',
