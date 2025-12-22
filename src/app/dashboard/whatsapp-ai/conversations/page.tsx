@@ -47,7 +47,6 @@ interface TeamMember {
   lastName?: string;
   role: string;
   phone?: string;
-  whatsappNumber?: string;
   email?: string;
 }
 
@@ -117,10 +116,15 @@ export default function ConversationsPage() {
         const parsedUser = JSON.parse(storedUser);
         const tenantId = parsedUser.tenantId;
 
+        // Get auth token for authenticated API calls
+        const authToken = localStorage.getItem('authToken');
+
         // Fetch tenant info and team members in parallel
         const [tenantResponse, teamResponse] = await Promise.all([
           fetch(`/api/v1/tenants/${tenantId}`),
-          fetch(`/api/admin/users?tenantId=${tenantId}`),
+          fetch(`/api/v1/users?tenantId=${tenantId}`, {
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          }),
         ]);
 
         if (tenantResponse.ok) {
@@ -139,17 +143,18 @@ export default function ConversationsPage() {
 
         if (teamResponse.ok) {
           const teamData = await teamResponse.json();
-          if (teamData.success && teamData.data) {
-            // Filter to get sales/admin staff with contact info
-            const members = teamData.data
-              .filter((m: any) => m.phone || m.whatsappNumber)
+          // API returns { success: true, data: { users: [...], stats: {...} } }
+          const usersList = teamData.data?.users || teamData.data || [];
+          if (teamData.success && usersList.length > 0) {
+            // Filter to get staff with phone contact info
+            const members = usersList
+              .filter((m: any) => m.phone)
               .map((m: any) => ({
                 id: m.id,
                 firstName: m.firstName || '',
                 lastName: m.lastName || '',
                 role: m.role || '',
                 phone: m.phone || '',
-                whatsappNumber: m.whatsappNumber || '',
                 email: m.email || '',
               }));
             setTeamMembers(members);
@@ -265,8 +270,10 @@ export default function ConversationsPage() {
             .map((m) => {
               const name = `${m.firstName} ${m.lastName || ''}`.trim();
               const role = m.role?.replace('_', ' ') || '';
-              const wa = m.whatsappNumber || m.phone || '';
-              return `• ${name}${role ? ` (${role})` : ''}: ${wa}`;
+              // Format phone: add + prefix if starts with 62
+              const phone = m.phone || '';
+              const formattedPhone = phone.startsWith('62') ? `+${phone}` : phone;
+              return `• ${name}${role ? ` (${role})` : ''}: ${formattedPhone}`;
             })
             .join('\n');
         } else {
