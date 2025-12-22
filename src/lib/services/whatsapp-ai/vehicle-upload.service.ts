@@ -615,25 +615,65 @@ export class WhatsAppVehicleUploadService {
     const showroomCode = 'PST'; // Default to "Pusat" (main)
     const prefix = `${tenantCode}-${showroomCode}-`;
 
-    // Get the highest existing displayId for this tenant pattern
-    // IMPORTANT: Include ALL vehicles (even DELETED) because displayId has unique constraint
-    // If we exclude DELETED, we might generate an ID that conflicts with a deleted vehicle
-    const vehicles = await prisma.$queryRaw<{ displayId: string }[]>`
+    // Get the highest existing displayId among NON-DELETED vehicles
+    // Deleted vehicles should not "use up" IDs - they will be renamed if conflicting
+    const activeVehicles = await prisma.$queryRaw<{ displayId: string }[]>`
       SELECT "displayId" FROM vehicles
       WHERE "displayId" LIKE ${prefix + '%'}
+      AND status != 'DELETED'
       ORDER BY "displayId" DESC
       LIMIT 1
     `;
 
     let nextNumber = 1;
-    if (vehicles.length > 0 && vehicles[0].displayId) {
-      const match = vehicles[0].displayId.match(/-(\d+)$/);
+    if (activeVehicles.length > 0 && activeVehicles[0].displayId) {
+      const match = activeVehicles[0].displayId.match(/-(\d+)$/);
       if (match) {
         nextNumber = parseInt(match[1], 10) + 1;
       }
     }
 
     const displayId = `${prefix}${String(nextNumber).padStart(3, '0')}`;
+
+    // Check if this displayId exists (might be a DELETED vehicle)
+    const existingVehicle = await prisma.vehicle.findFirst({
+      where: { displayId },
+      select: { id: true, status: true, displayId: true },
+    });
+
+    if (existingVehicle) {
+      if (existingVehicle.status === 'DELETED') {
+        // Rename the deleted vehicle to PM-DEL-XXX format
+        const delPrefix = `${tenantCode}-DEL-`;
+        const deletedVehicles = await prisma.$queryRaw<{ displayId: string }[]>`
+          SELECT "displayId" FROM vehicles
+          WHERE "displayId" LIKE ${delPrefix + '%'}
+          ORDER BY "displayId" DESC
+          LIMIT 1
+        `;
+
+        let delNumber = 1;
+        if (deletedVehicles.length > 0 && deletedVehicles[0].displayId) {
+          const match = deletedVehicles[0].displayId.match(/-(\d+)$/);
+          if (match) {
+            delNumber = parseInt(match[1], 10) + 1;
+          }
+        }
+
+        const newDeletedId = `${delPrefix}${String(delNumber).padStart(3, '0')}`;
+        console.log(`[WhatsApp Vehicle Upload] Renaming deleted vehicle ${displayId} to ${newDeletedId}`);
+
+        await prisma.vehicle.update({
+          where: { id: existingVehicle.id },
+          data: { displayId: newDeletedId },
+        });
+      } else {
+        // Active vehicle with same ID - increment and try again
+        console.warn(`[WhatsApp Vehicle Upload] ID conflict with active vehicle, incrementing...`);
+        return this.generateDisplayId(tenantId);
+      }
+    }
+
     console.log(`[WhatsApp Vehicle Upload] Generated displayId: ${displayId} (tenant: ${tenant.slug})`);
     return displayId;
   }
