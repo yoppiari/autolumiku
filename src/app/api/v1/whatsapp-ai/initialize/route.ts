@@ -23,18 +23,16 @@ export async function POST(request: NextRequest) {
     const existingAccount = await AimeowClientService.getAccountByTenant(tenantId);
 
     if (existingAccount && existingAccount.isActive) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "WhatsApp already connected for this tenant",
-          data: {
-            clientId: existingAccount.clientId,
-            phoneNumber: existingAccount.phoneNumber,
-            isConnected: true,
-          },
+      // Return 200 with isConnected flag - frontend will redirect to already_connected step
+      return NextResponse.json({
+        success: true,
+        message: "WhatsApp already connected",
+        data: {
+          clientId: existingAccount.clientId,
+          phoneNumber: existingAccount.phoneNumber,
+          isConnected: true,
         },
-        { status: 400 }
-      );
+      });
     }
 
     // Construct webhook URL
