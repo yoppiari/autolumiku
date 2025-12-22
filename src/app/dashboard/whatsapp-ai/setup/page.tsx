@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 
-type SetupStep = 'init' | 'qr' | 'connecting' | 'success' | 'error';
+type SetupStep = 'init' | 'qr' | 'connecting' | 'success' | 'already_connected' | 'error';
 
 export default function WhatsAppSetupPage() {
   const router = useRouter();
@@ -57,6 +57,15 @@ export default function WhatsAppSetupPage() {
       });
 
       const data = await response.json();
+
+      // Handle "already connected" case as SUCCESS, not error
+      if (data.data?.isConnected) {
+        console.log('WhatsApp already connected!');
+        setPhoneNumber(data.data.phoneNumber || '');
+        setClientId(data.data.clientId || '');
+        setStep('already_connected');
+        return;
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to initialize WhatsApp connection');
@@ -180,18 +189,18 @@ export default function WhatsAppSetupPage() {
             <span className="ml-2 text-sm font-medium">Initialize</span>
           </div>
           <div className="w-16 h-1 bg-gray-200"></div>
-          <div className={`flex items-center ${step === 'success' ? 'text-green-600' : step === 'qr' || step === 'connecting' ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 'success' ? 'bg-green-100' : step === 'qr' || step === 'connecting' ? 'bg-blue-100' : 'bg-gray-100'
+          <div className={`flex items-center ${step === 'success' || step === 'already_connected' ? 'text-green-600' : step === 'qr' || step === 'connecting' ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 'success' || step === 'already_connected' ? 'bg-green-100' : step === 'qr' || step === 'connecting' ? 'bg-blue-100' : 'bg-gray-100'
               }`}>
-              {step === 'success' ? '✓' : '2'}
+              {step === 'success' || step === 'already_connected' ? '✓' : '2'}
             </div>
             <span className="ml-2 text-sm font-medium">Connect</span>
           </div>
           <div className="w-16 h-1 bg-gray-200"></div>
-          <div className={`flex items-center ${step === 'success' ? 'text-green-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 'success' ? 'bg-green-100' : 'bg-gray-100'
+          <div className={`flex items-center ${step === 'success' || step === 'already_connected' ? 'text-green-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 'success' || step === 'already_connected' ? 'bg-green-100' : 'bg-gray-100'
               }`}>
-              {step === 'success' ? '✓' : '3'}
+              {step === 'success' || step === 'already_connected' ? '✓' : '3'}
             </div>
             <span className="ml-2 text-sm font-medium">Done</span>
           </div>
@@ -301,6 +310,43 @@ export default function WhatsAppSetupPage() {
             >
               Configure AI Now →
             </button>
+          </div>
+        )}
+
+        {/* Already Connected Step */}
+        {step === 'already_connected' && (
+          <div className="text-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-4xl">✅</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">WhatsApp Sudah Terhubung!</h2>
+            <p className="text-gray-600 mb-2">
+              WhatsApp Business Anda sudah aktif dan terhubung
+            </p>
+            {phoneNumber && (
+              <p className="text-lg font-medium text-green-600 mb-6">
+                📱 {phoneNumber}
+              </p>
+            )}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 max-w-md mx-auto">
+              <p className="text-sm text-green-800">
+                Tidak perlu setup ulang. Silakan lanjut ke konfigurasi atau dashboard.
+              </p>
+            </div>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => router.push('/dashboard/whatsapp-ai/config')}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                Buka Konfigurasi →
+              </button>
+              <button
+                onClick={() => router.push('/dashboard/whatsapp-ai')}
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                Dashboard
+              </button>
+            </div>
           </div>
         )}
 
