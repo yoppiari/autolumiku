@@ -193,6 +193,110 @@ export class MessageOrchestratorService {
           responseMessage: statusMessage,
           escalated: false,
         };
+      } else if (conversation.conversationState === "add_photo_to_vehicle" && hasMedia && incoming.mediaUrl) {
+        // 📷 PHOTO ADDITION FLOW: Vehicle was created without photos, now adding photos
+        console.log(`[Orchestrator] 📷 Photo received for existing vehicle - adding to vehicle`);
+
+        const contextData = (conversation.contextData as Record<string, any>) || {};
+        const vehicleId = contextData.vehicleId;
+        const vehicleName = contextData.vehicleName || 'kendaraan';
+        const photosAdded = contextData.photosAdded || 0;
+
+        if (!vehicleId) {
+          console.error(`[Orchestrator] ❌ No vehicleId in context for add_photo_to_vehicle state`);
+          return {
+            success: false,
+            conversationId: conversation.id,
+            intent: "staff_upload_vehicle" as MessageIntent,
+            responseMessage: "Maaf, terjadi kesalahan. Silakan upload ulang kendaraan.",
+            escalated: false,
+          };
+        }
+
+        try {
+          // Add photo to vehicle using the photo upload API
+          const result = await this.addPhotoToVehicle(vehicleId, incoming.mediaUrl, incoming.tenantId);
+
+          if (result.success) {
+            const newPhotosAdded = photosAdded + 1;
+
+            // Update context with new photo count
+            await prisma.whatsAppConversation.update({
+              where: { id: conversation.id },
+              data: {
+                contextData: {
+                  ...contextData,
+                  photosAdded: newPhotosAdded,
+                },
+              },
+            });
+
+            return {
+              success: true,
+              conversationId: conversation.id,
+              intent: "staff_upload_vehicle" as MessageIntent,
+              responseMessage: `📷 Foto ${newPhotosAdded} berhasil ditambahkan ke ${vehicleName}! ✅\n\n` +
+                `Kirim foto lagi atau ketik "selesai" untuk mengakhiri.`,
+              escalated: false,
+            };
+          } else {
+            return {
+              success: false,
+              conversationId: conversation.id,
+              intent: "staff_upload_vehicle" as MessageIntent,
+              responseMessage: `❌ Gagal menambah foto: ${result.error}\n\nCoba kirim ulang fotonya.`,
+              escalated: false,
+            };
+          }
+        } catch (error: any) {
+          console.error(`[Orchestrator] Error adding photo:`, error);
+          return {
+            success: false,
+            conversationId: conversation.id,
+            intent: "staff_upload_vehicle" as MessageIntent,
+            responseMessage: `❌ Gagal menambah foto. Coba kirim ulang.`,
+            escalated: false,
+          };
+        }
+      } else if (conversation.conversationState === "add_photo_to_vehicle" && !hasMedia) {
+        // User sent text message in add_photo state
+        const contextData = (conversation.contextData as Record<string, any>) || {};
+        const vehicleName = contextData.vehicleName || 'kendaraan';
+        const photosAdded = contextData.photosAdded || 0;
+
+        // Check if user wants to finish
+        const finishPatterns = [/^(selesai|done|cukup|udah|sudah|beres|ok|oke)$/i];
+        const wantsToFinish = finishPatterns.some(p => p.test(normalizedMessage));
+
+        if (wantsToFinish) {
+          // Clear state
+          await prisma.whatsAppConversation.update({
+            where: { id: conversation.id },
+            data: {
+              conversationState: null,
+              contextData: {},
+            },
+          });
+
+          return {
+            success: true,
+            conversationId: conversation.id,
+            intent: "staff_upload_vehicle" as MessageIntent,
+            responseMessage: `✅ Selesai! ${photosAdded} foto sudah ditambahkan ke ${vehicleName}.\n\nAda yang lain yang bisa dibantu?`,
+            escalated: false,
+          };
+        }
+
+        // Prompt user to send photo
+        return {
+          success: true,
+          conversationId: conversation.id,
+          intent: "staff_upload_vehicle" as MessageIntent,
+          responseMessage: `📷 Silakan kirim foto untuk ${vehicleName}.\n\n` +
+            `Foto sudah ditambahkan: ${photosAdded}\n` +
+            `Ketik "selesai" jika sudah cukup.`,
+          escalated: false,
+        };
       } else {
         // Normal intent classification
         // Pass hasMedia flag to help detect vehicle uploads with photos
@@ -1212,6 +1316,128 @@ export class MessageOrchestratorService {
     // Convert from cents to Rupiah
     const priceInRupiah = Math.round(price / 100);
     return new Intl.NumberFormat("id-ID").format(priceInRupiah);
+  }
+
+  /**
+   * Add a photo to an existing vehicle from WhatsApp media URL
+   * Downloads the photo, processes it, and attaches to vehicle
+   */
+  private static async addPhotoToVehicle(
+    vehicleId: string,
+    mediaUrl: string,
+    tenantId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`[Orchestrator] Adding photo to vehicle ${vehicleId} from ${mediaUrl}`);
+
+      // Import required services
+      const { ImageProcessingService } = await import('@/lib/services/image-processing.service');
+      const { StorageService } = await import('@/lib/services/storage.service');
+      const { PlateDetectionService } = await import('@/lib/services/plate-detection.service');
+
+      // Get vehicle details
+      const vehicle = await prisma.vehicle.findUnique({
+        where: { id: vehicleId },
+        select: { id: true, make: true, model: true, tenantId: true },
+      });
+
+      if (!vehicle) {
+        return { success: false, error: 'Vehicle not found' };
+      }
+
+      // Get tenant for plate cover branding
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: vehicle.tenantId },
+        select: { name: true, logoUrl: true },
+      });
+
+      // Download photo from WhatsApp URL
+      console.log(`[Orchestrator] Downloading photo from ${mediaUrl}`);
+      const photoResponse = await fetch(mediaUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+
+      if (!photoResponse.ok) {
+        return { success: false, error: `Failed to download photo: ${photoResponse.status}` };
+      }
+
+      const arrayBuffer = await photoResponse.arrayBuffer();
+      const photoBuffer = Buffer.from(new Uint8Array(arrayBuffer));
+      console.log(`[Orchestrator] Downloaded ${photoBuffer.length} bytes`);
+
+      // Detect and cover license plates
+      let processedBuffer: Buffer = photoBuffer;
+      try {
+        const plateResult = await PlateDetectionService.processImage(photoBuffer, {
+          tenantName: tenant?.name || 'PRIMA MOBIL',
+          tenantLogoUrl: tenant?.logoUrl || undefined,
+        });
+        processedBuffer = plateResult.covered;
+        if (plateResult.platesDetected > 0) {
+          console.log(`[Orchestrator] Covered ${plateResult.platesDetected} plate(s)`);
+        }
+      } catch (plateError: any) {
+        console.warn(`[Orchestrator] Plate detection failed:`, plateError.message);
+      }
+
+      // Process photo (generate multiple sizes)
+      const processed = await ImageProcessingService.processPhoto(processedBuffer);
+
+      // Generate filename
+      const timestamp = Date.now();
+      const baseFilename = `${vehicle.make.toLowerCase()}-${vehicle.model.toLowerCase()}-${timestamp}`;
+
+      // Ensure upload directory exists
+      await StorageService.ensureUploadDir();
+
+      // Upload all sizes to storage
+      const uploadResult = await StorageService.uploadMultipleSize(
+        {
+          original: processed.original,
+          large: processed.large,
+          medium: processed.medium,
+          thumbnail: processed.thumbnail,
+        },
+        vehicle.id,
+        baseFilename
+      );
+
+      // Get the next display order
+      const lastPhoto = await prisma.vehiclePhoto.findFirst({
+        where: { vehicleId },
+        orderBy: { displayOrder: 'desc' },
+        select: { displayOrder: true },
+      });
+      const nextDisplayOrder = lastPhoto ? lastPhoto.displayOrder + 1 : 1;
+
+      // Create database record
+      await prisma.vehiclePhoto.create({
+        data: {
+          vehicleId: vehicle.id,
+          tenantId: vehicle.tenantId,
+          storageKey: uploadResult.storageKey,
+          originalUrl: uploadResult.originalUrl,
+          largeUrl: uploadResult.largeUrl,
+          mediumUrl: uploadResult.mediumUrl,
+          thumbnailUrl: uploadResult.thumbnailUrl,
+          filename: `${baseFilename}.jpg`,
+          fileSize: photoBuffer.length,
+          mimeType: 'image/jpeg',
+          width: processed.metadata?.width || 0,
+          height: processed.metadata?.height || 0,
+          displayOrder: nextDisplayOrder,
+        },
+      });
+
+      console.log(`[Orchestrator] ✅ Photo added successfully (order: ${nextDisplayOrder})`);
+      return { success: true };
+
+    } catch (error: any) {
+      console.error(`[Orchestrator] Error adding photo:`, error);
+      return { success: false, error: error.message };
+    }
   }
 }
 

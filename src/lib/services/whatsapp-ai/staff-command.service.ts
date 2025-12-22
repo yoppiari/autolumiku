@@ -1174,16 +1174,33 @@ export class StaffCommandService {
       };
     }
 
-    // Clear conversation state after successful upload
-    await prisma.whatsAppConversation.update({
-      where: { id: conversationId },
-      data: {
-        conversationState: null,
-        contextData: Prisma.DbNull,
-      },
-    });
-
     console.log(`[Upload Flow] ✅ Vehicle created successfully: ${uploadResult.vehicleId}`);
+
+    // Check if vehicle was created WITHOUT photos
+    // If so, keep state for adding photos later
+    if (photos.length === 0) {
+      console.log(`[Upload Flow] 📷 Vehicle created without photos, setting state for photo addition`);
+      await prisma.whatsAppConversation.update({
+        where: { id: conversationId },
+        data: {
+          conversationState: "add_photo_to_vehicle",
+          contextData: {
+            vehicleId: uploadResult.vehicleId,
+            vehicleName: `${vehicleData.make} ${vehicleData.model} ${vehicleData.year}`,
+            photosAdded: 0,
+          },
+        },
+      });
+    } else {
+      // Clear conversation state after successful upload with photos
+      await prisma.whatsAppConversation.update({
+        where: { id: conversationId },
+        data: {
+          conversationState: null,
+          contextData: Prisma.DbNull,
+        },
+      });
+    }
 
     // Add link to dashboard in message
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
