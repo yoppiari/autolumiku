@@ -398,7 +398,7 @@ export class WhatsAppVehicleUploadService {
 
       // Show photo upload status with details
       if (processedPhotoCount === 0) {
-        message += `📷 Belum ada foto - tambah via dashboard ya!\n\n`;
+        message += `📷 Belum ada foto - kirim foto sekarang!\n\n`;
       } else if (failedDownloads.length > 0 || failedProcessing.length > 0) {
         const totalFailed = failedDownloads.length + failedProcessing.length;
         message += `📷 ${processedPhotoCount}/${photoUrls.length} foto (${totalFailed} gagal)\n\n`;

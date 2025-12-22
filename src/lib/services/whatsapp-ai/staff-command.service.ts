@@ -1206,11 +1206,17 @@ export class StaffCommandService {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
     const vehicleUrl = `${baseUrl}/dashboard/vehicles/${uploadResult.vehicleId}`;
 
+    // Build final message
+    let finalMessage = uploadResult.message + `\n\n🔗 *Link:*\n${vehicleUrl}`;
+
+    // If no photos, add prompt to send photos now
+    if (photos.length === 0) {
+      finalMessage += `\n\n📸 *Kirim foto sekarang* untuk ditambahkan ke kendaraan ini.\nKetik "selesai" jika sudah cukup.`;
+    }
+
     return {
       success: true,
-      message:
-        uploadResult.message +
-        `\n\n🔗 *Link:*\n${vehicleUrl}`,
+      message: finalMessage,
       vehicleId: uploadResult.vehicleId,
     };
   }
