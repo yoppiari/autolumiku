@@ -12,6 +12,7 @@ import { AimeowClientService } from "../aimeow/aimeow-client.service";
 import { IntentClassifierService, MessageIntent } from "./intent-classifier.service";
 import { WhatsAppAIChatService } from "./chat.service";
 import { StaffCommandService } from "./staff-command.service";
+import { AIHealthMonitorService } from "./ai-health-monitor.service";
 
 // ==================== TYPES ====================
 
@@ -62,7 +63,11 @@ export class MessageOrchestratorService {
         incoming
       );
 
-      // 3. Check conversation state for multi-step flows
+      // 3. Check AI health status before processing customer messages
+      const aiHealth = await AIHealthMonitorService.canProcessAI(incoming.tenantId);
+      console.log(`[Orchestrator] AI Health: canProcess=${aiHealth.canProcess}, status=${aiHealth.status}`);
+
+      // 4. Check conversation state for multi-step flows
       let classification;
       // Detect media if EITHER:
       // 1. mediaUrl exists (can process the photo), OR
@@ -638,23 +643,39 @@ export class MessageOrchestratorService {
       } else {
         // Handle customer inquiry dengan AI
         console.log(`[Orchestrator] Routing to AI customer inquiry handler`);
+
         // Check if this is actually a staff (from conversation or classification)
         const isActuallyStaff = conversation.isStaff || classification.isStaff;
-        const staffInfo = isActuallyStaff ? await this.getStaffInfo(incoming.from, incoming.tenantId) : null;
-        const result = await this.handleCustomerInquiry(
-          conversation,
-          classification.intent,
-          incoming.message,
-          isActuallyStaff,
-          staffInfo || undefined
-        );
-        responseMessage = result.message;
-        escalated = result.escalated;
-        responseImages = result.images;
-        console.log(`[Orchestrator] AI response generated: ${responseMessage?.substring(0, 50)}...`);
-        if (responseImages) {
-          console.log(`[Orchestrator] AI also generated ${responseImages.length} images to send`);
-        }
+
+        // Check AI health - if AI is disabled, send fallback message for non-staff
+        if (!aiHealth.canProcess && !isActuallyStaff) {
+          console.log(`[Orchestrator] AI disabled (${aiHealth.status}), sending fallback message`);
+          responseMessage = this.getAIDisabledFallbackMessage(aiHealth.status, aiHealth.reason);
+          escalated = true; // Mark as escalated so staff knows to check manually
+        } else {
+          // AI is healthy or user is staff - proceed with AI processing
+          const staffInfo = isActuallyStaff ? await this.getStaffInfo(incoming.from, incoming.tenantId) : null;
+
+          try {
+            const result = await this.handleCustomerInquiry(
+              conversation,
+              classification.intent,
+              incoming.message,
+              isActuallyStaff,
+              staffInfo || undefined
+            );
+            responseMessage = result.message;
+            escalated = result.escalated;
+            responseImages = result.images;
+            console.log(`[Orchestrator] AI response generated: ${responseMessage?.substring(0, 50)}...`);
+            if (responseImages) {
+              console.log(`[Orchestrator] AI also generated ${responseImages.length} images to send`);
+            }
+
+            // Track AI success (only for customer messages)
+            if (!isActuallyStaff && !result.escalated) {
+              await AIHealthMonitorService.trackSuccess(incoming.tenantId);
+            }
 
         // Check if AI detected an upload request
         if (result.uploadRequest) {
@@ -735,6 +756,16 @@ export class MessageOrchestratorService {
           } else {
             console.log(`[Orchestrator] User is NOT staff, ignoring upload request`);
             responseMessage = `Maaf kak, upload cuma buat staff aja 😊\n\nAda yang bisa aku bantu?`;
+          }
+        }
+          } catch (aiError: any) {
+            // Track AI error for health monitoring
+            console.error(`[Orchestrator] AI error caught:`, aiError.message);
+            await AIHealthMonitorService.trackError(incoming.tenantId, aiError.message);
+
+            // Send fallback message to customer
+            responseMessage = this.getAIDisabledFallbackMessage("error", aiError.message);
+            escalated = true;
           }
         }
       }
@@ -835,8 +866,10 @@ export class MessageOrchestratorService {
           isStaff: true,
         },
         orderBy: { lastMessageAt: "desc" },
-        take: 20, // Check more conversations for better LID matching
+        take: 50, // Check more conversations for better LID matching
       });
+
+      console.log(`[Orchestrator] Found ${allActiveConvos.length} active staff conversations to check`);
 
       // Check if any conversation has this LID in linkedLIDs array
       for (const conv of allActiveConvos) {
@@ -868,10 +901,39 @@ export class MessageOrchestratorService {
         }
       }
 
-      // If still not found, check if we can link this LID to an existing staff conversation
-      // by matching the most recent active staff conversation for this account
+      // PRIORITY 1: Find conversation with active upload state (add_photo_to_vehicle or upload_vehicle)
+      // This is critical for multi-step flows where photo comes from LID after data came from regular phone
       if (!conversation) {
-        console.log(`[Orchestrator] Checking for recent staff conversation to link LID to...`);
+        console.log(`[Orchestrator] Checking for conversation with active upload state...`);
+        const uploadStateConvo = allActiveConvos.find(conv => {
+          const state = conv.conversationState;
+          const lastMessageAt = conv.lastMessageAt;
+          // Must be recent (within 2 hours - photos usually come quickly after data)
+          const isRecent = lastMessageAt && (Date.now() - new Date(lastMessageAt).getTime() < 2 * 60 * 60 * 1000);
+          return isRecent && (state === "add_photo_to_vehicle" || state === "upload_vehicle");
+        });
+
+        if (uploadStateConvo) {
+          console.log(`[Orchestrator] ✅ Found conversation with upload state: ${uploadStateConvo.id} (state: ${uploadStateConvo.conversationState})`);
+          conversation = uploadStateConvo;
+          const contextData = (uploadStateConvo.contextData as Record<string, any>) || {};
+          // Link this LID to the conversation
+          await prisma.whatsAppConversation.update({
+            where: { id: uploadStateConvo.id },
+            data: {
+              contextData: {
+                ...contextData,
+                linkedLIDs: Array.from(new Set([...(contextData.linkedLIDs || []), customerPhone])),
+              },
+            },
+          });
+          console.log(`[Orchestrator] Linked LID ${customerPhone} to upload state conversation`);
+        }
+      }
+
+      // PRIORITY 2: Find conversation with verifiedStaffPhone (recent)
+      if (!conversation) {
+        console.log(`[Orchestrator] Checking for recent staff conversation with verifiedStaffPhone...`);
         // Get the most recent staff conversation (within last 24 hours)
         const recentStaffConvo = allActiveConvos.find(conv => {
           const contextData = conv.contextData as Record<string, any> | null;
@@ -896,6 +958,34 @@ export class MessageOrchestratorService {
             },
           });
           console.log(`[Orchestrator] Linked LID ${customerPhone} to conversation`);
+        }
+      }
+
+      // PRIORITY 3: Find ANY recent staff conversation for this account (fallback)
+      if (!conversation) {
+        console.log(`[Orchestrator] Fallback: Checking for any recent staff conversation...`);
+        const anyRecentStaffConvo = allActiveConvos.find(conv => {
+          const lastMessageAt = conv.lastMessageAt;
+          // Must be very recent (within 30 minutes) for fallback linking
+          const isVeryRecent = lastMessageAt && (Date.now() - new Date(lastMessageAt).getTime() < 30 * 60 * 1000);
+          return isVeryRecent;
+        });
+
+        if (anyRecentStaffConvo) {
+          console.log(`[Orchestrator] ✅ Found very recent staff conversation (fallback): ${anyRecentStaffConvo.id}`);
+          conversation = anyRecentStaffConvo;
+          const contextData = (anyRecentStaffConvo.contextData as Record<string, any>) || {};
+          // Add this LID to the linkedLIDs array
+          await prisma.whatsAppConversation.update({
+            where: { id: anyRecentStaffConvo.id },
+            data: {
+              contextData: {
+                ...contextData,
+                linkedLIDs: Array.from(new Set([...(contextData.linkedLIDs || []), customerPhone])),
+              },
+            },
+          });
+          console.log(`[Orchestrator] Linked LID ${customerPhone} to conversation (fallback)`);
         }
       }
     }
@@ -1511,6 +1601,29 @@ export class MessageOrchestratorService {
     // Convert from cents to Rupiah
     const priceInRupiah = Math.round(price / 100);
     return new Intl.NumberFormat("id-ID").format(priceInRupiah);
+  }
+
+  /**
+   * Get fallback message when AI is disabled or has errors
+   * Used to inform customers that AI is temporarily unavailable
+   */
+  private static getAIDisabledFallbackMessage(status: string, reason?: string): string {
+    if (status === "disabled") {
+      return (
+        `Halo! 👋\n\n` +
+        `Mohon maaf, saat ini AI kami sedang dalam pemeliharaan.\n\n` +
+        `Tim kami akan segera membalas pesan Anda.\n` +
+        `Terima kasih atas kesabaran Bapak/Ibu. 🙏`
+      );
+    }
+
+    // For error/degraded status
+    return (
+      `Halo! 👋\n\n` +
+      `Mohon maaf, saat ini kami sedang mengalami kendala teknis.\n\n` +
+      `Tim kami akan segera menghubungi Anda.\n` +
+      `Terima kasih atas kesabaran Bapak/Ibu. 🙏`
+    );
   }
 
   /**
