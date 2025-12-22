@@ -593,17 +593,22 @@ export class WhatsAppVehicleUploadService {
       return this.generateLegacyDisplayId();
     }
 
-    // Generate tenant code from slug or name
-    // primamobil-id → PM, prima-mobil → PM, primamobil → PM
-    let tenantCode = 'PM'; // Default
-    if (tenant.slug) {
-      // Remove -id suffix if present, then take first letters of each word
-      const cleanSlug = tenant.slug.replace(/-id$/, '').replace(/-/g, ' ');
-      const words = cleanSlug.split(' ').filter(w => w.length > 0);
+    // Generate tenant code from slug
+    // Use hardcoded mapping for known tenants, then fallback to auto-generation
+    const tenantCodeMapping: Record<string, string> = {
+      'primamobil-id': 'PM',
+      'primamobil': 'PM',
+      'prima-mobil': 'PM',
+    };
+
+    let tenantCode = tenantCodeMapping[tenant.slug];
+    if (!tenantCode) {
+      // Fallback: Generate from slug - take first letter of each word
+      const words = tenant.slug.replace(/-/g, ' ').split(' ').filter(w => w.length > 0);
       if (words.length >= 2) {
         tenantCode = (words[0][0] + words[1][0]).toUpperCase();
-      } else if (words.length === 1 && words[0].length >= 2) {
-        tenantCode = words[0].substring(0, 2).toUpperCase();
+      } else {
+        tenantCode = tenant.slug.substring(0, 2).toUpperCase();
       }
     }
 
