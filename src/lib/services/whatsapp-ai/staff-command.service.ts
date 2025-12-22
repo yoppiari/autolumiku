@@ -747,6 +747,73 @@ export class StaffCommandService {
 
       photos.push(mediaUrl);
 
+      // === FIX: Check if vehicleData already exists in context ===
+      const existingVehicleData = contextData.vehicleData;
+      if (existingVehicleData) {
+        console.log(`[Upload Flow] Found existing vehicleData in context, checking if complete...`);
+        const { hasMinimumData, askMessage } = this.checkMissingFields(existingVehicleData);
+
+        if (hasMinimumData && photos.length >= MIN_PHOTOS) {
+          // We have complete data + enough photos! Create vehicle now
+          console.log(`[Upload Flow] ✅ Complete data + ${photos.length} photos! Creating vehicle...`);
+          return await this.createVehicleWithPhotos(
+            existingVehicleData,
+            photos,
+            tenantId,
+            staffPhone,
+            conversationId
+          );
+        }
+
+        // Has data but need more photos or data incomplete
+        const photoRemainingForData = MIN_PHOTOS - photos.length;
+        if (hasMinimumData && photoRemainingForData > 0) {
+          // Data complete, just need more photos
+          await prisma.whatsAppConversation.update({
+            where: { id: conversationId },
+            data: {
+              conversationState: "upload_vehicle",
+              contextData: {
+                ...contextData,
+                uploadStep: "has_data_awaiting_photo",
+                vehicleData: existingVehicleData,
+                photos,
+              },
+            },
+          });
+
+          return {
+            success: true,
+            message:
+              `Oke foto ${photos.length}/6 masuk! 📸\n\n` +
+              `Data ${existingVehicleData.make || ''} ${existingVehicleData.model || ''} ${existingVehicleData.year || ''} udah lengkap ✅\n\n` +
+              `Kirim ${photoRemainingForData} foto lagi ya:\n` +
+              `• Depan, belakang, samping\n` +
+              `• Dashboard, jok, bagasi`,
+          };
+        }
+
+        // Data exists but incomplete - update context and ask for missing data
+        await prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: {
+            conversationState: "upload_vehicle",
+            contextData: {
+              ...contextData,
+              uploadStep: "awaiting_completion",
+              vehicleData: existingVehicleData,
+              photos,
+            },
+          },
+        });
+
+        return {
+          success: true,
+          message: `Oke foto ${photos.length}/6 masuk! 📸\n\n${askMessage}`,
+        };
+      }
+      // === END FIX ===
+
       await prisma.whatsAppConversation.update({
         where: { id: conversationId },
         data: {
