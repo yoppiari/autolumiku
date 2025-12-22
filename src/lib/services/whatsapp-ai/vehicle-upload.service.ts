@@ -86,7 +86,8 @@ export class WhatsAppVehicleUploadService {
     model: string,
     year: number
   ): Promise<{ isDuplicate: boolean; existingVehicle?: { id: string; displayId: string } }> {
-    const DUPLICATE_WINDOW_MINUTES = 5;
+    // Increased window to 10 minutes to catch more duplicates
+    const DUPLICATE_WINDOW_MINUTES = 10;
     const cutoffTime = new Date(Date.now() - DUPLICATE_WINDOW_MINUTES * 60 * 1000);
 
     console.log(`[WhatsApp Vehicle Upload] Checking for duplicates: ${make} ${model} ${year}`);
