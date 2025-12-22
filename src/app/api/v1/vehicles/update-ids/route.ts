@@ -1,14 +1,73 @@
 /**
  * Update Vehicle Display IDs to new format
  * GET /api/v1/vehicles/update-ids?tenant=primamobil-id
+ * GET /api/v1/vehicles/update-ids?fix=PR-PST-001&newId=PM-PST-006
  *
  * Converts VH-XXX to PM-PST-XXX format
+ * Or fixes a specific displayId with ?fix=OLD_ID&newId=NEW_ID
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
+  // Quick fix for specific displayId
+  const fixOldId = request.nextUrl.searchParams.get('fix');
+  const fixNewId = request.nextUrl.searchParams.get('newId');
+
+  if (fixOldId && fixNewId) {
+    try {
+      // Find vehicle with old displayId
+      const vehicle = await prisma.vehicle.findFirst({
+        where: { displayId: fixOldId },
+        select: { id: true, displayId: true, make: true, model: true, year: true },
+      });
+
+      if (!vehicle) {
+        return NextResponse.json({
+          success: false,
+          error: `Vehicle with displayId "${fixOldId}" not found`,
+        }, { status: 404 });
+      }
+
+      // Check if new displayId already exists
+      const existing = await prisma.vehicle.findFirst({
+        where: { displayId: fixNewId },
+      });
+
+      if (existing) {
+        return NextResponse.json({
+          success: false,
+          error: `displayId "${fixNewId}" already exists`,
+        }, { status: 400 });
+      }
+
+      // Update displayId
+      await prisma.vehicle.update({
+        where: { id: vehicle.id },
+        data: { displayId: fixNewId },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Updated displayId from "${fixOldId}" to "${fixNewId}"`,
+        vehicle: {
+          id: vehicle.id,
+          oldDisplayId: fixOldId,
+          newDisplayId: fixNewId,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+        },
+      });
+    } catch (err: any) {
+      return NextResponse.json({
+        success: false,
+        error: err.message,
+      }, { status: 500 });
+    }
+  }
+
   const tenantSlug = request.nextUrl.searchParams.get('tenant') || 'primamobil-id';
 
   const results: any = {
