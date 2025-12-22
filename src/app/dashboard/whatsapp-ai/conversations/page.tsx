@@ -44,8 +44,12 @@ export default function ConversationsPage() {
   const [messageInput, setMessageInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [showImageUrlModal, setShowImageUrlModal] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [imageCaptionInput, setImageCaptionInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const attachmentMenuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load conversations
   useEffect(() => {
@@ -158,8 +162,71 @@ export default function ConversationsPage() {
   // Handle attachment selection
   const handleAttachment = (type: string) => {
     setShowAttachmentMenu(false);
-    // TODO: Implement attachment handling
-    alert(`Fitur ${type} akan segera hadir!`);
+
+    switch (type) {
+      case 'foto':
+        // Show modal to enter image URL
+        setShowImageUrlModal(true);
+        break;
+      case 'dokumen':
+        alert('Fitur kirim dokumen akan segera hadir!\n\nUntuk sementara, upload dokumen ke Google Drive/Dropbox lalu kirim linknya via pesan teks.');
+        break;
+      case 'kontak':
+        // Send sales contact info
+        const contactMsg = `📞 *Kontak Sales Prima Mobil*\n\nHubungi kami di:\n📱 WhatsApp: 0812-3456-7890\n📧 Email: sales@primamobil.id\n📍 Alamat: Jl. Raya No. 123, Jakarta`;
+        setMessageInput(contactMsg);
+        break;
+      case 'acara':
+        const eventMsg = `🎉 *Info Acara Prima Mobil*\n\nKami sedang tidak ada acara khusus saat ini.\n\nNantikan promo dan event menarik dari kami!\n\n📱 Follow Instagram: @primamobil`;
+        setMessageInput(eventMsg);
+        break;
+      case 'emoji':
+        // Quick emoji palette
+        const emojis = '👍 👏 🙏 😊 🚗 ✅ ❌ 📱 💰 🎉';
+        setMessageInput((prev) => prev + ' ' + emojis.split(' ')[Math.floor(Math.random() * 10)]);
+        break;
+      default:
+        alert(`Fitur ${type} akan segera hadir!`);
+    }
+  };
+
+  // Send image by URL
+  const handleSendImage = async () => {
+    if (!imageUrlInput.trim() || !selectedConversation || isSending) return;
+
+    setIsSending(true);
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsedUser = JSON.parse(storedUser);
+
+      const response = await fetch('/api/v1/whatsapp-ai/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: parsedUser.tenantId,
+          conversationId: selectedConversation.id,
+          to: selectedConversation.customerPhone,
+          imageUrl: imageUrlInput,
+          caption: imageCaptionInput || '',
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setImageUrlInput('');
+        setImageCaptionInput('');
+        setShowImageUrlModal(false);
+        loadMessages(selectedConversation.id);
+      } else {
+        alert('Gagal mengirim foto: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error sending image:', error);
+      alert('Gagal mengirim foto');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   // Filter conversations
@@ -589,6 +656,63 @@ export default function ConversationsPage() {
           )}
         </div>
       </div>
+
+      {/* Image URL Modal */}
+      {showImageUrlModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">📷 Kirim Foto via URL</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  URL Gambar *
+                </label>
+                <input
+                  type="url"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Paste URL gambar dari website atau cloud storage
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Caption (opsional)
+                </label>
+                <input
+                  type="text"
+                  value={imageCaptionInput}
+                  onChange={(e) => setImageCaptionInput(e.target.value)}
+                  placeholder="Keterangan gambar..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowImageUrlModal(false);
+                  setImageUrlInput('');
+                  setImageCaptionInput('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSendImage}
+                disabled={!imageUrlInput.trim() || isSending}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                {isSending ? 'Mengirim...' : 'Kirim Foto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

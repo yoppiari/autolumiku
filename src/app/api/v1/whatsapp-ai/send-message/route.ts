@@ -1,7 +1,7 @@
 /**
  * WhatsApp AI - Send Manual Message
  * POST /api/v1/whatsapp-ai/send-message
- * Kirim pesan manual dari dashboard ke customer
+ * Kirim pesan manual dari dashboard ke customer (text atau image)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,12 +11,20 @@ import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tenantId, conversationId, to, message } = body;
+    const { tenantId, conversationId, to, message, imageUrl, caption } = body;
 
     // Validate required fields
-    if (!tenantId || !to || !message) {
+    if (!tenantId || !to) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields: tenantId, to, message" },
+        { success: false, error: "Missing required fields: tenantId, to" },
+        { status: 400 }
+      );
+    }
+
+    // Must have either message or imageUrl
+    if (!message && !imageUrl) {
+      return NextResponse.json(
+        { success: false, error: "Must provide either message or imageUrl" },
         { status: 400 }
       );
     }
@@ -33,12 +41,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send message via Aimeow
-    const result = await AimeowClientService.sendMessage({
-      clientId: account.clientId,
-      to,
-      message,
-    });
+    let result;
+    let contentToSave = message || '';
+
+    // Send image or text message
+    if (imageUrl) {
+      // Send image with optional caption
+      result = await AimeowClientService.sendImage(
+        account.clientId,
+        to,
+        imageUrl,
+        caption || message || ''
+      );
+      contentToSave = caption || message || '[Image]';
+    } else {
+      // Send text message
+      result = await AimeowClientService.sendMessage({
+        clientId: account.clientId,
+        to,
+        message,
+      });
+    }
 
     if (!result.success) {
       return NextResponse.json(
@@ -56,7 +79,7 @@ export async function POST(request: NextRequest) {
           direction: "outbound",
           sender: "Admin",
           senderType: "human",
-          content: message,
+          content: contentToSave,
           intent: "manual_reply",
           aiResponse: false,
           aimeowMessageId: result.messageId || `msg_${Date.now()}`,
@@ -73,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Message sent successfully",
+      message: imageUrl ? "Image sent successfully" : "Message sent successfully",
       messageId: result.messageId,
     });
   } catch (error: any) {
