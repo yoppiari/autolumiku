@@ -33,6 +33,24 @@ interface Message {
   createdAt: string;
 }
 
+interface TenantInfo {
+  name: string;
+  address?: string;
+  phoneNumber?: string;
+  whatsappNumber?: string;
+  email?: string;
+}
+
+interface TeamMember {
+  id: string;
+  firstName: string;
+  lastName?: string;
+  role: string;
+  phone?: string;
+  whatsappNumber?: string;
+  email?: string;
+}
+
 export default function ConversationsPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -51,6 +69,9 @@ export default function ConversationsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
+  const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const attachmentMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +105,62 @@ export default function ConversationsPage() {
     };
 
     loadConversations();
+  }, []);
+
+  // Load tenant info and team members for contact info
+  useEffect(() => {
+    const loadTenantAndTeam = async () => {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+
+        const parsedUser = JSON.parse(storedUser);
+        const tenantId = parsedUser.tenantId;
+
+        // Fetch tenant info and team members in parallel
+        const [tenantResponse, teamResponse] = await Promise.all([
+          fetch(`/api/v1/tenants/${tenantId}`),
+          fetch(`/api/admin/users?tenantId=${tenantId}`),
+        ]);
+
+        if (tenantResponse.ok) {
+          const tenantData = await tenantResponse.json();
+          const tenant = tenantData.data || tenantData.tenant;
+          if (tenant) {
+            setTenantInfo({
+              name: tenant.name || '',
+              address: tenant.address || '',
+              phoneNumber: tenant.phoneNumber || '',
+              whatsappNumber: tenant.whatsappNumber || '',
+              email: tenant.email || '',
+            });
+          }
+        }
+
+        if (teamResponse.ok) {
+          const teamData = await teamResponse.json();
+          if (teamData.success && teamData.data) {
+            // Filter to get sales/admin staff with contact info
+            const members = teamData.data
+              .filter((m: any) => m.phone || m.whatsappNumber)
+              .map((m: any) => ({
+                id: m.id,
+                firstName: m.firstName || '',
+                lastName: m.lastName || '',
+                role: m.role || '',
+                phone: m.phone || '',
+                whatsappNumber: m.whatsappNumber || '',
+                email: m.email || '',
+              }));
+            setTeamMembers(members);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading tenant/team data:', error);
+      }
+    };
+
+    loadTenantAndTeam();
   }, []);
 
   // Load messages for selected conversation
@@ -176,18 +253,38 @@ export default function ConversationsPage() {
         alert('Fitur kirim dokumen akan segera hadir!\n\nUntuk sementara, upload dokumen ke Google Drive/Dropbox lalu kirim linknya via pesan teks.');
         break;
       case 'kontak':
-        // Send sales contact info
-        const contactMsg = `📞 *Kontak Sales Prima Mobil*\n\nHubungi kami di:\n📱 WhatsApp: 0812-3456-7890\n📧 Email: sales@primamobil.id\n📍 Alamat: Jl. Raya No. 123, Jakarta`;
+        // Send sales contact info from real tenant/team data
+        const tenantName = tenantInfo?.name || 'Showroom';
+        const address = tenantInfo?.address || '-';
+
+        // Build contact list from team members
+        let contactList = '';
+        if (teamMembers.length > 0) {
+          contactList = teamMembers
+            .slice(0, 5) // Max 5 contacts
+            .map((m) => {
+              const name = `${m.firstName} ${m.lastName || ''}`.trim();
+              const role = m.role?.replace('_', ' ') || '';
+              const wa = m.whatsappNumber || m.phone || '';
+              return `• ${name}${role ? ` (${role})` : ''}: ${wa}`;
+            })
+            .join('\n');
+        } else {
+          // Fallback to tenant contact
+          contactList = tenantInfo?.whatsappNumber || tenantInfo?.phoneNumber || '-';
+        }
+
+        const contactMsg = `📞 *Kontak Sales ${tenantName}*\n\nHubungi kami di:\n${contactList}\n\n📍 Alamat: ${address}`;
         setMessageInput(contactMsg);
         break;
       case 'acara':
-        const eventMsg = `🎉 *Info Acara Prima Mobil*\n\nKami sedang tidak ada acara khusus saat ini.\n\nNantikan promo dan event menarik dari kami!\n\n📱 Follow Instagram: @primamobil`;
+        const eventTenantName = tenantInfo?.name || 'Showroom';
+        const eventMsg = `🎉 *Info Acara ${eventTenantName}*\n\nKami sedang tidak ada acara khusus saat ini.\n\nNantikan promo dan event menarik dari kami!`;
         setMessageInput(eventMsg);
         break;
       case 'emoji':
-        // Quick emoji palette
-        const emojis = '👍 👏 🙏 😊 🚗 ✅ ❌ 📱 💰 🎉';
-        setMessageInput((prev) => prev + ' ' + emojis.split(' ')[Math.floor(Math.random() * 10)]);
+        // Show emoji picker modal
+        setShowEmojiPicker(true);
         break;
       default:
         alert(`Fitur ${type} akan segera hadir!`);
@@ -893,6 +990,111 @@ export default function ConversationsPage() {
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUploading ? 'Mengupload...' : isSending ? 'Mengirim...' : 'Kirim Foto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Emoji Picker Modal */}
+      {showEmojiPicker && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-4 w-full max-w-sm mx-4">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-semibold">😊 Pilih Emoji</h3>
+              <button
+                onClick={() => setShowEmojiPicker(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Emoji Categories */}
+            <div className="space-y-3">
+              {/* Smileys */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Ekspresi</p>
+                <div className="flex flex-wrap gap-2">
+                  {['😊', '😄', '😁', '🤗', '😍', '🥰', '😎', '🤩', '😇', '🙂', '😉', '😋'].map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        setMessageInput((prev) => prev + emoji);
+                        setShowEmojiPicker(false);
+                      }}
+                      className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gestures */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Gestur</p>
+                <div className="flex flex-wrap gap-2">
+                  {['👍', '👏', '🙏', '🤝', '💪', '✌️', '👌', '🤞', '👋', '🙌', '💯', '⭐'].map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        setMessageInput((prev) => prev + emoji);
+                        setShowEmojiPicker(false);
+                      }}
+                      className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Objects - Cars & Business */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Mobil & Bisnis</p>
+                <div className="flex flex-wrap gap-2">
+                  {['🚗', '🚙', '🚕', '🏎️', '🚘', '💰', '💵', '💳', '📱', '📞', '✅', '❌'].map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        setMessageInput((prev) => prev + emoji);
+                        setShowEmojiPicker(false);
+                      }}
+                      className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Celebration */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Perayaan</p>
+                <div className="flex flex-wrap gap-2">
+                  {['🎉', '🎊', '🥳', '🎁', '🏆', '🔥', '💥', '✨', '🌟', '❤️', '💖', '💝'].map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        setMessageInput((prev) => prev + emoji);
+                        setShowEmojiPicker(false);
+                      }}
+                      className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-gray-200">
+              <button
+                onClick={() => setShowEmojiPicker(false)}
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
+              >
+                Tutup
               </button>
             </div>
           </div>
