@@ -415,6 +415,7 @@ export class WhatsAppVehicleUploadService {
 
       let message = `Mantap kak, uploadnya berhasil! 🎉\n\n`;
       message += `🚗 *${vehicle.make} ${vehicle.model} ${vehicle.year}*\n`;
+      message += `🏷️ ID: *${displayId}*\n`;
       message += `💰 Rp ${priceInJuta} Juta\n`;
       message += `📍 ${vehicleData.mileage?.toLocaleString('id-ID') || '0'} km | ${vehicleData.transmission || '-'}\n`;
       message += `🎨 ${vehicleData.color || '-'}\n`;
