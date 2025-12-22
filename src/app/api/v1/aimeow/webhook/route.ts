@@ -350,27 +350,34 @@ async function handleIncomingMessage(
     // Allow photo-only messages (for staff upload flow)
     // messageText can be empty if mediaUrl exists
     if (!messageText && !mediaUrl) {
-      // Check if this might be an image without proper mediaUrl
-      const mightBeImage = payload.data.type === 'image'
+      // Check if this might be an image/album without proper mediaUrl
+      const mightBeMedia = payload.data.type === 'image'
+        || payload.data.type === 'album'
+        || payload.data.type === 'media'
+        || payload.data.type === 'document'
         || payload.data.messageType === 'image'
+        || payload.data.messageType === 'album'
+        || payload.data.messageType === 'media'
+        || payload.data.messageType === 'imageMessage'
         || mediaType?.includes('image')
-        || payload.data.mimetype?.includes('image');
+        || payload.data.mimetype?.includes('image')
+        || (payload.data as any).hasMedia === true
+        || (payload.data as any).isMedia === true;
 
-      if (mightBeImage) {
-        console.warn("[Aimeow Webhook] ⚠️ Image message detected but no mediaUrl!");
+      if (mightBeMedia) {
+        console.warn("[Aimeow Webhook] ⚠️ Media message detected but no mediaUrl!");
         console.warn("[Aimeow Webhook] Full payload.data:", JSON.stringify(payload.data, null, 2));
 
-        // Send helpful message to user
-        await AimeowClientService.sendMessage({
-          clientId: account.clientId,
-          to: from,
-          message: `📸 Foto diterima tapi belum bisa diproses.\n\nKetik dulu info mobilnya:\n"Brio 2020 120jt hitam matic km 30rb"\n\nNanti fotonya bisa dikirim setelah data masuk ya!`,
-        });
+        // Instead of returning early, set mediaType and continue processing
+        // The orchestrator will handle the "photo detected but not downloadable" case
+        mediaType = 'image';
+        console.log("[Aimeow Webhook] Setting mediaType='image' and continuing processing...");
+      } else {
+        console.warn("[Aimeow Webhook] Empty message (no text, no media)");
+        console.warn("[Aimeow Webhook] payload.data.type:", payload.data.type);
+        console.warn("[Aimeow Webhook] payload.data.messageType:", payload.data.messageType);
         return;
       }
-
-      console.warn("[Aimeow Webhook] Empty message (no text, no media)");
-      return;
     }
 
     console.log("[Aimeow Webhook] Processing message:", {
@@ -380,9 +387,18 @@ async function handleIncomingMessage(
       mediaType,
     });
 
-    // IMPORTANT FIX: If image detected but no mediaUrl, try to download it via AIMEOW API
+    // IMPORTANT FIX: If media detected but no mediaUrl, try to download it via AIMEOW API
     // Instead of returning early, we should try to get the media URL and save the message
-    if (!mediaUrl && (payload.data.type === 'image' || payload.data.messageType === 'image' || mediaType?.includes('image'))) {
+    const isMediaMessage = payload.data.type === 'image'
+      || payload.data.type === 'album'
+      || payload.data.type === 'media'
+      || payload.data.messageType === 'image'
+      || payload.data.messageType === 'album'
+      || payload.data.messageType === 'imageMessage'
+      || mediaType?.includes('image')
+      || (payload.data as any).hasMedia === true;
+
+    if (!mediaUrl && isMediaMessage) {
       console.log(`[Aimeow Webhook] ⚠️ Image detected but no mediaUrl! Attempting to download...`);
       console.log(`[Aimeow Webhook] Full data for debugging:`, JSON.stringify(payload.data, null, 2));
 
