@@ -64,13 +64,19 @@ export class MessageOrchestratorService {
 
       // 3. Check conversation state for multi-step flows
       let classification;
-      const hasMedia = !!(incoming.mediaUrl && (incoming.mediaType === 'image' || incoming.mediaType?.includes('image')));
+      // Detect media if EITHER:
+      // 1. mediaUrl exists (can process the photo), OR
+      // 2. mediaType indicates an image (photo detected but might not be downloadable)
+      const isMediaTypeImage = incoming.mediaType === 'image' || incoming.mediaType?.includes('image');
+      const hasMedia = !!(incoming.mediaUrl || isMediaTypeImage);
+      const hasDownloadableMedia = !!(incoming.mediaUrl && isMediaTypeImage);
 
       // Log media detection for debugging
       console.log(`[Orchestrator] Media detection:`, {
         mediaUrl: incoming.mediaUrl ? 'YES' : 'NO',
         mediaType: incoming.mediaType,
         hasMedia,
+        hasDownloadableMedia,
       });
 
       // Greeting patterns to check before forcing upload_vehicle state
@@ -258,6 +264,19 @@ export class MessageOrchestratorService {
             escalated: false,
           };
         }
+      } else if (conversation.conversationState === "add_photo_to_vehicle" && hasMedia && !incoming.mediaUrl) {
+        // Photo detected but not downloadable - inform user
+        console.log(`[Orchestrator] ⚠️ Photo detected but no mediaUrl available in add_photo_to_vehicle state`);
+        const contextData = (conversation.contextData as Record<string, any>) || {};
+        const vehicleName = contextData.vehicleName || 'kendaraan';
+
+        return {
+          success: true,
+          conversationId: conversation.id,
+          intent: "staff_upload_vehicle" as MessageIntent,
+          responseMessage: `📸 Foto diterima tapi belum bisa diproses.\n\nCoba kirim ulang fotonya ya untuk ${vehicleName}! 🙏`,
+          escalated: false,
+        };
       } else if (conversation.conversationState === "add_photo_to_vehicle" && !hasMedia) {
         // User sent text message in add_photo state
         const contextData = (conversation.contextData as Record<string, any>) || {};

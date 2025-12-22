@@ -723,6 +723,15 @@ export class StaffCommandService {
     const MIN_PHOTOS = 1;  // Reduced from 6 to prevent stuck loops - can add more via dashboard
     const MAX_PHOTOS = 15;
 
+    // Handle case where photo was detected but not downloadable
+    if (params.step === "photo_only" && !mediaUrl) {
+      console.log(`[Upload Flow] ⚠️ Photo detected but no mediaUrl available`);
+      return {
+        success: true,
+        message: `📸 Foto diterima tapi belum bisa diproses.\n\nCoba kirim ulang fotonya ya! 🙏`,
+      };
+    }
+
     if (params.step === "photo_only" && mediaUrl) {
       console.log(`[Upload Flow] Photo only received (no caption): ${mediaUrl}`);
 
