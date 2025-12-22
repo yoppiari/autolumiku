@@ -1,24 +1,7 @@
 # AutoLumiku - Production Dockerfile
 # Multi-stage build for optimized image size
 
-# Stage 1: Dependencies
-FROM node:18-alpine AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install dependencies
-# Note: Using npm install instead of npm ci since package-lock.json is gitignored
-RUN npm install --production --no-audit && \
-    npm cache clean --force
-
-# Generate Prisma Client
-RUN npx prisma generate
-
-# Stage 2: Builder
+# Stage 1: Builder
 FROM node:18-alpine AS builder
 
 # Install Chromium for Puppeteer (needed for scrapers during build)
@@ -41,9 +24,9 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install ALL dependencies (including dev deps needed for build)
-# IMPORTANT: Temporarily unset NODE_ENV to ensure devDependencies are installed
-# Coolify injects NODE_ENV=production as build arg, which causes npm to skip devDeps
-RUN NODE_ENV=development npm install --no-audit && \
+# IMPORTANT: Use --include=dev to force install devDependencies
+# Coolify injects NODE_ENV=production which causes npm to skip devDeps by default
+RUN npm install --include=dev --no-audit && \
     npm cache clean --force
 
 # Generate Prisma Client
@@ -66,7 +49,7 @@ RUN cd /app/.next/static/chunks/app/catalog && \
       ln -s "[slug]" "%5Bslug%5D"; \
     fi
 
-# Stage 3: Runner (Production)
+# Stage 2: Runner (Production)
 FROM node:18-alpine AS runner
 
 # Install runtime dependencies
