@@ -162,20 +162,88 @@ export class MessageOrchestratorService {
           reason: "Greeting detected, reset upload flow",
         };
       } else if (conversation.conversationState === "upload_vehicle" && isConfirmationMessage) {
-        // User sent confirmation message like "sudah kirim" during upload flow
-        // Provide helpful status instead of trying to parse as vehicle data
+        // User sent confirmation message like "sudah kirim" or "selesai" during upload flow
         console.log(`[Orchestrator] 📝 Confirmation message detected in upload flow: "${normalizedMessage}"`);
 
         const contextData = (conversation.contextData as Record<string, any>) || {};
         const photosCollected = contextData.photos?.length || 0;
         const vehicleData = contextData.vehicleData;
 
+        // Check if user wants to finish/complete the upload
+        const finishPatterns = [/^(selesai|done|cukup|udah|sudah|beres)$/i];
+        const wantsToFinish = finishPatterns.some(p => p.test(normalizedMessage));
+
+        // If user wants to finish AND we have vehicle data, create vehicle without photos
+        if (wantsToFinish && vehicleData) {
+          console.log(`[Orchestrator] 🚗 User wants to finish upload - creating vehicle without photos`);
+
+          // Import and call the vehicle upload service
+          const { WhatsAppVehicleUploadService } = await import('./vehicle-upload.service');
+
+          try {
+            const uploadResult = await WhatsAppVehicleUploadService.createVehicle(
+              {
+                make: vehicleData.make,
+                model: vehicleData.model,
+                year: vehicleData.year,
+                price: vehicleData.price,
+                mileage: vehicleData.mileage || 0,
+                color: vehicleData.color || 'Unknown',
+                transmission: vehicleData.transmission || 'Manual',
+              },
+              photosCollected > 0 ? contextData.photos : [],
+              incoming.tenantId,
+              incoming.from
+            );
+
+            // Clear conversation state
+            await prisma.whatsAppConversation.update({
+              where: { id: conversation.id },
+              data: {
+                conversationState: null,
+                contextData: {},
+              },
+            });
+
+            if (uploadResult.success) {
+              const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+              const vehicleUrl = `${baseUrl}/dashboard/vehicles/${uploadResult.vehicleId}`;
+
+              return {
+                success: true,
+                conversationId: conversation.id,
+                intent: "staff_upload_vehicle" as MessageIntent,
+                responseMessage: uploadResult.message + `\n\n🔗 *Link:*\n${vehicleUrl}`,
+                escalated: false,
+              };
+            } else {
+              return {
+                success: false,
+                conversationId: conversation.id,
+                intent: "staff_upload_vehicle" as MessageIntent,
+                responseMessage: `❌ Gagal upload: ${uploadResult.message}`,
+                escalated: true,
+              };
+            }
+          } catch (error: any) {
+            console.error(`[Orchestrator] Error creating vehicle:`, error);
+            return {
+              success: false,
+              conversationId: conversation.id,
+              intent: "staff_upload_vehicle" as MessageIntent,
+              responseMessage: `❌ Terjadi kesalahan: ${error.message}`,
+              escalated: true,
+            };
+          }
+        }
+
+        // Otherwise, provide status update
         let statusMessage = "";
         if (photosCollected > 0 && vehicleData) {
           statusMessage = `✅ Data sudah lengkap!\n\n` +
             `📷 ${photosCollected} foto\n` +
             `🚗 ${vehicleData.make || ''} ${vehicleData.model || ''} ${vehicleData.year || ''}\n\n` +
-            `Sedang diproses... Mohon tunggu sebentar ya! 🔄`;
+            `Ketik "selesai" untuk upload tanpa foto tambahan.`;
         } else if (photosCollected > 0) {
           statusMessage = `📷 ${photosCollected} foto sudah masuk!\n\n` +
             `Tinggal kirim data mobilnya ya:\n` +
@@ -183,15 +251,13 @@ export class MessageOrchestratorService {
         } else if (vehicleData) {
           statusMessage = `🚗 Data mobil sudah masuk!\n\n` +
             `${vehicleData.make || ''} ${vehicleData.model || ''} ${vehicleData.year || ''}\n\n` +
-            `Tinggal kirim 6 foto ya 📸`;
+            `Kirim foto atau ketik "selesai" untuk upload tanpa foto.`;
         } else {
           statusMessage = `📝 Belum ada data yang masuk.\n\n` +
             `Silakan kirim foto + detail mobil ya!\n` +
             `Contoh: upload Brio 2020 120jt hitam matic`;
         }
 
-        // Return ProcessingResult with status message
-        // The message will be sent by the webhook handler
         return {
           success: true,
           conversationId: conversation.id,
