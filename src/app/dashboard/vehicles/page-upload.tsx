@@ -779,8 +779,11 @@ export default function VehiclesPage() {
               </button>
             </div>
 
-            <p className="text-xs text-gray-500 mb-2">
-              Drag foto untuk mengatur urutan. Klik foto untuk menjadikan foto utama.
+            <p className="text-xs text-gray-500 mb-2 hidden sm:block">
+              💡 Drag foto untuk mengatur urutan. Foto pertama akan jadi foto utama.
+            </p>
+            <p className="text-xs text-gray-500 mb-2 sm:hidden">
+              💡 Gunakan tombol ↑↓ untuk mengatur urutan. Foto pertama akan jadi foto utama.
             </p>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {photos.map((photo, index) => (
@@ -801,16 +804,62 @@ export default function VehiclesPage() {
                     className="w-full h-full object-cover rounded-lg border-2 border-transparent hover:border-blue-400"
                     onClick={() => handleSetMainPhoto(index)}
                   />
-                  {/* Main Photo Badge */}
+                  {/* Main Photo Badge - Desktop */}
                   {index === 0 && (
-                    <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-1.5 py-0.5 rounded font-medium">
-                      Utama
+                    <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                      <span className="hidden sm:inline">★</span> MAIN
                     </div>
                   )}
-                  {/* Photo Number */}
+                  {/* Photo Number with Mobile Reorder - Non-main photos */}
                   {index > 0 && (
-                    <div className="absolute bottom-1 left-1 bg-gray-800/70 text-white text-xs px-1.5 py-0.5 rounded">
-                      {index + 1}
+                    <div className="absolute bottom-1 left-1 flex items-center gap-1">
+                      {/* Drag handle icon - Desktop only */}
+                      <div className="hidden sm:flex bg-gray-800/70 text-white text-xs px-1 py-0.5 rounded items-center gap-0.5">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"/>
+                        </svg>
+                        #{index + 1}
+                      </div>
+                      {/* Mobile reorder buttons */}
+                      <div className="flex sm:hidden gap-0.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (index === 0) return;
+                            const newPhotos = [...photos];
+                            [newPhotos[index - 1], newPhotos[index]] = [newPhotos[index], newPhotos[index - 1]];
+                            setPhotos(newPhotos);
+                          }}
+                          disabled={index === 0}
+                          className={`p-1 rounded ${index === 0 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
+                          title="Pindah ke atas"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (index === photos.length - 1) return;
+                            const newPhotos = [...photos];
+                            [newPhotos[index], newPhotos[index + 1]] = [newPhotos[index + 1], newPhotos[index]];
+                            setPhotos(newPhotos);
+                          }}
+                          disabled={index === photos.length - 1}
+                          className={`p-1 rounded ${index === photos.length - 1 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
+                          title="Pindah ke bawah"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        <span className="bg-green-600 text-white text-xs px-1 py-0.5 rounded font-medium">
+                          Baru #{index + 1}
+                        </span>
+                      </div>
                     </div>
                   )}
                   {/* Set as Main Button (on hover for non-main photos) */}
@@ -838,11 +887,9 @@ export default function VehiclesPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
-                  {/* Drag Handle Indicator */}
-                  <div className="absolute top-1 left-1 bg-gray-800/50 text-white rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"/>
-                    </svg>
+                  {/* Photo Number Badge - Top left for all photos on mobile */}
+                  <div className="absolute top-1 left-1 sm:hidden bg-gray-900/70 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                    #{index + 1}
                   </div>
                 </div>
               ))}
