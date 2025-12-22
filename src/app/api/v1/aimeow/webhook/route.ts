@@ -187,6 +187,15 @@ async function handleIncomingMessage(
     console.log(`[Aimeow Webhook] 📸 Found mediaUrl in downloadUrl`);
   }
 
+  // IMPORTANT: Aimeow might send file_id instead of direct URL
+  // In that case, construct the download URL using the files endpoint
+  const fileId = payloadAny.fileId || payloadAny.file_id || payloadAny.mediaId || payloadAny.media_id;
+  if (!mediaUrl && fileId && payload.clientId) {
+    // Construct download URL from file ID
+    mediaUrl = `${AIMEOW_BASE_URL}/files/${payload.clientId}/${fileId}`;
+    console.log(`[Aimeow Webhook] 📸 Constructed mediaUrl from fileId: ${mediaUrl}`);
+  }
+
   // Check media type from multiple sources
   let mediaType = payload.data.mediaType
     || payload.data.mimetype
@@ -201,6 +210,14 @@ async function handleIncomingMessage(
         console.log(`[Aimeow Webhook] 📸 Inferred mediaType as 'image' from URL`);
       }
     }
+  }
+
+  // Check for mediaKey (WhatsApp encryption key) which indicates there's media
+  const mediaKey = payloadAny.mediaKey || payloadAny.message?.imageMessage?.mediaKey;
+  if (!mediaUrl && mediaKey) {
+    console.log(`[Aimeow Webhook] 📸 Found mediaKey but no URL - media exists but needs download`);
+    // Mark as image type even without URL
+    mediaType = mediaType || 'image';
   }
 
   // Debug log to see exactly what we're receiving
@@ -231,6 +248,9 @@ async function handleIncomingMessage(
     mediaData: payloadAny.mediaData,
     downloadUrl: payloadAny.downloadUrl,
     directPath: payloadAny.directPath,
+    fileId: payloadAny.fileId || payloadAny.file_id,
+    mediaId: payloadAny.mediaId || payloadAny.media_id,
+    mediaKey: payloadAny.mediaKey ? 'EXISTS' : undefined,
     imageMessage: payloadAny.message?.imageMessage ? 'EXISTS' : undefined,
     quotedMsg: payloadAny.quotedMsg ? 'EXISTS' : undefined,
   });

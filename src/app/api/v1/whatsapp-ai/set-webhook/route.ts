@@ -42,8 +42,40 @@ export async function POST(request: NextRequest) {
     // Get Aimeow base URL
     const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
 
-    // Try to set webhook via Aimeow API
+    // Try to set webhook via Aimeow API - TRY BOTH endpoints
+    let globalConfigSuccess = false;
+    let clientWebhookSuccess = false;
+
+    // 1. Try global /config endpoint (per Aimeow Swagger docs)
     try {
+      console.log(`[Set Webhook] Trying global /config endpoint...`);
+      const configResponse = await fetch(
+        `${AIMEOW_BASE_URL}/config`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            callbackUrl: webhookUrl,  // Aimeow uses 'callbackUrl' not 'webhookUrl'
+          }),
+        }
+      );
+
+      const configData = await configResponse.json().catch(() => ({}));
+      console.log(`[Set Webhook] /config Response (${configResponse.status}):`, configData);
+
+      if (configResponse.ok) {
+        globalConfigSuccess = true;
+        console.log(`[Set Webhook] ✅ Global callback URL set successfully`);
+      }
+    } catch (configError: any) {
+      console.warn(`[Set Webhook] /config Error:`, configError.message);
+    }
+
+    // 2. Also try per-client /webhook endpoint as fallback
+    try {
+      console.log(`[Set Webhook] Trying per-client /webhook endpoint...`);
       const aimeowResponse = await fetch(
         `${AIMEOW_BASE_URL}/api/v1/clients/${account.clientId}/webhook`,
         {
@@ -53,25 +85,24 @@ export async function POST(request: NextRequest) {
           },
           body: JSON.stringify({
             webhookUrl,
+            callbackUrl: webhookUrl,  // Try both field names
           }),
         }
       );
 
       const aimeowData = await aimeowResponse.json().catch(() => ({}));
+      console.log(`[Set Webhook] /clients/.../webhook Response (${aimeowResponse.status}):`, aimeowData);
 
-      console.log(`[Set Webhook] Aimeow API Response:`, aimeowData);
-
-      if (!aimeowResponse.ok) {
-        console.warn(
-          `[Set Webhook] Aimeow API returned ${aimeowResponse.status}: ${JSON.stringify(aimeowData)}`
-        );
-        // Continue anyway - update local DB
-      } else {
-        console.log(`[Set Webhook] Successfully registered with Aimeow`);
+      if (aimeowResponse.ok) {
+        clientWebhookSuccess = true;
+        console.log(`[Set Webhook] ✅ Per-client webhook set successfully`);
       }
     } catch (aimeowError: any) {
-      console.error(`[Set Webhook] Aimeow API Error:`, aimeowError.message);
-      // Continue anyway - update local DB
+      console.warn(`[Set Webhook] /clients/.../webhook Error:`, aimeowError.message);
+    }
+
+    if (!globalConfigSuccess && !clientWebhookSuccess) {
+      console.warn(`[Set Webhook] ⚠️ Both Aimeow endpoints failed - webhook may need manual configuration`);
     }
 
     // Update database regardless
@@ -90,7 +121,11 @@ export async function POST(request: NextRequest) {
       data: {
         clientId: account.clientId,
         webhookUrl,
-        note: "Webhook URL saved to database. Aimeow may need to be configured manually if API call failed.",
+        globalConfigSuccess,
+        clientWebhookSuccess,
+        note: globalConfigSuccess || clientWebhookSuccess
+          ? "Webhook URL configured on Aimeow successfully"
+          : "Webhook URL saved to database. Aimeow may need manual configuration via meow.lumiku.com",
       },
     });
   } catch (error: any) {
