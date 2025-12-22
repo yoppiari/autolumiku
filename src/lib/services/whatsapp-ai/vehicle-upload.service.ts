@@ -188,8 +188,8 @@ export class WhatsAppVehicleUploadService {
         };
       }
 
-      // 4. Generate display ID
-      const displayId = await this.generateDisplayId();
+      // 4. Generate display ID (tenant-specific format like PM-PST-001)
+      const displayId = await this.generateDisplayId(tenantId);
       console.log('[WhatsApp Vehicle Upload] Generated displayId:', displayId);
 
       // 4.1 Fetch tenant details for plate cover branding
@@ -576,9 +576,67 @@ export class WhatsAppVehicleUploadService {
   }
 
   /**
-   * Generate next display ID (VH-001, VH-002, etc)
+   * Generate next display ID with tenant-specific format
+   * Format: {TENANT}-{SHOWROOM}-{SEQUENCE}
+   * Example: PM-PST-001 (Prima Mobil - Pusat - 001)
    */
-  private static async generateDisplayId(): Promise<string> {
+  private static async generateDisplayId(tenantId: string): Promise<string> {
+    // Get tenant info for code generation
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { slug: true, name: true },
+    });
+
+    if (!tenant) {
+      // Fallback to legacy VH-XXX format if tenant not found
+      console.warn('[WhatsApp Vehicle Upload] Tenant not found, using legacy VH-XXX format');
+      return this.generateLegacyDisplayId();
+    }
+
+    // Generate tenant code from slug or name
+    // primamobil-id → PM, prima-mobil → PM, primamobil → PM
+    let tenantCode = 'PM'; // Default
+    if (tenant.slug) {
+      // Remove -id suffix if present, then take first letters of each word
+      const cleanSlug = tenant.slug.replace(/-id$/, '').replace(/-/g, ' ');
+      const words = cleanSlug.split(' ').filter(w => w.length > 0);
+      if (words.length >= 2) {
+        tenantCode = (words[0][0] + words[1][0]).toUpperCase();
+      } else if (words.length === 1 && words[0].length >= 2) {
+        tenantCode = words[0].substring(0, 2).toUpperCase();
+      }
+    }
+
+    const showroomCode = 'PST'; // Default to "Pusat" (main)
+    const prefix = `${tenantCode}-${showroomCode}-`;
+
+    // Get the highest existing displayId for this tenant pattern
+    // IMPORTANT: Exclude DELETED vehicles so removed vehicles don't affect the sequence
+    const vehicles = await prisma.$queryRaw<{ displayId: string }[]>`
+      SELECT "displayId" FROM vehicles
+      WHERE "displayId" LIKE ${prefix + '%'}
+      AND status != 'DELETED'
+      ORDER BY "displayId" DESC
+      LIMIT 1
+    `;
+
+    let nextNumber = 1;
+    if (vehicles.length > 0 && vehicles[0].displayId) {
+      const match = vehicles[0].displayId.match(/-(\d+)$/);
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+
+    const displayId = `${prefix}${String(nextNumber).padStart(3, '0')}`;
+    console.log(`[WhatsApp Vehicle Upload] Generated displayId: ${displayId} (tenant: ${tenant.slug})`);
+    return displayId;
+  }
+
+  /**
+   * Legacy displayId format for backwards compatibility
+   */
+  private static async generateLegacyDisplayId(): Promise<string> {
     const lastVehicle = await prisma.vehicle.findFirst({
       where: {
         displayId: {
