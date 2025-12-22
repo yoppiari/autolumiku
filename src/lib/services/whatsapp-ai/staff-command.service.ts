@@ -1379,9 +1379,13 @@ export class StaffCommandService {
       if (["AVAILABLE", "BOOKED", "SOLD", "DELETED"].includes(upperFilter)) {
         whereClause.status = upperFilter;
       } else {
-        // Filter by make
+        // Filter by make - also exclude DELETED by default
         whereClause.make = { contains: filter, mode: "insensitive" as const };
+        whereClause.status = { not: "DELETED" };
       }
+    } else {
+      // By default, exclude DELETED vehicles from inventory list
+      whereClause.status = { not: "DELETED" };
     }
 
     const vehicles = await prisma.vehicle.findMany({
