@@ -699,7 +699,69 @@ export default function EditVehiclePage() {
                       </div>
                     )}
 
-                    {/* Action Buttons (show on hover) */}
+                    {/* Mobile Reorder Buttons - Always visible on mobile */}
+                    <div className="absolute bottom-1 left-1 flex gap-1 sm:hidden z-20">
+                      {/* Move Up Button */}
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (index === 0 || !vehicle) return;
+                          const newPhotos = [...vehicle.photos];
+                          [newPhotos[index - 1], newPhotos[index]] = [newPhotos[index], newPhotos[index - 1]];
+                          setVehicle({ ...vehicle, photos: newPhotos });
+                          // Save to server
+                          setSavingPhotoOrder(true);
+                          try {
+                            const token = localStorage.getItem('authToken');
+                            await fetch(`/api/v1/vehicles/${vehicleId}/photos/reorder`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json', ...(token && { 'Authorization': `Bearer ${token}` }) },
+                              body: JSON.stringify({ photos: newPhotos.map((p, i) => ({ photoId: p.id, displayOrder: i })) }),
+                            });
+                          } catch (err) { console.error(err); }
+                          setSavingPhotoOrder(false);
+                        }}
+                        className={`p-1.5 rounded-full shadow-lg ${index === 0 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
+                        title="Pindah ke atas"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </button>
+                      {/* Move Down Button */}
+                      <button
+                        type="button"
+                        disabled={index === (vehicle?.photos.length || 0) - 1}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!vehicle || index === vehicle.photos.length - 1) return;
+                          const newPhotos = [...vehicle.photos];
+                          [newPhotos[index], newPhotos[index + 1]] = [newPhotos[index + 1], newPhotos[index]];
+                          setVehicle({ ...vehicle, photos: newPhotos });
+                          // Save to server
+                          setSavingPhotoOrder(true);
+                          try {
+                            const token = localStorage.getItem('authToken');
+                            await fetch(`/api/v1/vehicles/${vehicleId}/photos/reorder`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json', ...(token && { 'Authorization': `Bearer ${token}` }) },
+                              body: JSON.stringify({ photos: newPhotos.map((p, i) => ({ photoId: p.id, displayOrder: i })) }),
+                            });
+                          } catch (err) { console.error(err); }
+                          setSavingPhotoOrder(false);
+                        }}
+                        className={`p-1.5 rounded-full shadow-lg ${index === (vehicle?.photos.length || 0) - 1 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
+                        title="Pindah ke bawah"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Action Buttons (show on hover - desktop) */}
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded-lg transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                       {/* Set as Main Button - only show if not first photo */}
                       {index !== 0 && (
