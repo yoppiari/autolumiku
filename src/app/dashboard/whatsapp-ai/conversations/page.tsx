@@ -47,6 +47,10 @@ export default function ConversationsPage() {
   const [showImageUrlModal, setShowImageUrlModal] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [imageCaptionInput, setImageCaptionInput] = useState('');
+  const [imageUploadMode, setImageUploadMode] = useState<'file' | 'url'>('file');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const attachmentMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -190,16 +194,81 @@ export default function ConversationsPage() {
     }
   };
 
-  // Send image by URL
+  // Handle file selection from input
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Tipe file tidak valid. Hanya JPEG, PNG, WebP, dan GIF yang diperbolehkan.');
+        return;
+      }
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File terlalu besar. Maksimal 10MB.');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  // Send image (either by file upload or URL)
   const handleSendImage = async () => {
-    if (!imageUrlInput.trim() || !selectedConversation || isSending) return;
+    if (!selectedConversation || isSending || isUploading) return;
+
+    // Validate based on mode
+    if (imageUploadMode === 'url' && !imageUrlInput.trim()) {
+      alert('Masukkan URL gambar');
+      return;
+    }
+    if (imageUploadMode === 'file' && !selectedFile) {
+      alert('Pilih file gambar');
+      return;
+    }
+
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return;
+    const parsedUser = JSON.parse(storedUser);
+
+    let finalImageUrl = imageUrlInput;
+
+    // If file mode, upload first
+    if (imageUploadMode === 'file' && selectedFile) {
+      setIsUploading(true);
+      setUploadProgress('Mengupload gambar...');
+
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('tenantId', parsedUser.tenantId);
+
+        const uploadResponse = await fetch('/api/v1/whatsapp-ai/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadData = await uploadResponse.json();
+        if (!uploadData.success) {
+          alert('Gagal upload gambar: ' + (uploadData.error || 'Unknown error'));
+          setIsUploading(false);
+          setUploadProgress('');
+          return;
+        }
+
+        finalImageUrl = uploadData.data.url;
+        setUploadProgress('Mengirim gambar...');
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        alert('Gagal upload gambar');
+        setIsUploading(false);
+        setUploadProgress('');
+        return;
+      }
+    }
 
     setIsSending(true);
     try {
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) return;
-      const parsedUser = JSON.parse(storedUser);
-
       const response = await fetch('/api/v1/whatsapp-ai/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -207,16 +276,21 @@ export default function ConversationsPage() {
           tenantId: parsedUser.tenantId,
           conversationId: selectedConversation.id,
           to: selectedConversation.customerPhone,
-          imageUrl: imageUrlInput,
+          imageUrl: finalImageUrl,
           caption: imageCaptionInput || '',
         }),
       });
 
       const data = await response.json();
       if (data.success) {
+        // Reset all states
         setImageUrlInput('');
         setImageCaptionInput('');
+        setSelectedFile(null);
         setShowImageUrlModal(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
         loadMessages(selectedConversation.id);
       } else {
         alert('Gagal mengirim foto: ' + (data.error || 'Unknown error'));
@@ -226,6 +300,8 @@ export default function ConversationsPage() {
       alert('Gagal mengirim foto');
     } finally {
       setIsSending(false);
+      setIsUploading(false);
+      setUploadProgress('');
     }
   };
 
@@ -657,27 +733,114 @@ export default function ConversationsPage() {
         </div>
       </div>
 
-      {/* Image URL Modal */}
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+      />
+
+      {/* Image Upload Modal */}
       {showImageUrlModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">📷 Kirim Foto via URL</h3>
+            <h3 className="text-lg font-semibold mb-4">📷 Kirim Foto</h3>
+
+            {/* Mode Tabs */}
+            <div className="flex mb-4 border-b border-gray-200">
+              <button
+                onClick={() => setImageUploadMode('file')}
+                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+                  imageUploadMode === 'file'
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                📱 Upload File
+              </button>
+              <button
+                onClick={() => setImageUploadMode('url')}
+                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+                  imageUploadMode === 'url'
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                🔗 Paste URL
+              </button>
+            </div>
+
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  URL Gambar *
-                </label>
-                <input
-                  type="url"
-                  value={imageUrlInput}
-                  onChange={(e) => setImageUrlInput(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Paste URL gambar dari website atau cloud storage
-                </p>
-              </div>
+              {/* File Upload Mode */}
+              {imageUploadMode === 'file' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pilih Gambar *
+                  </label>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
+                  >
+                    {selectedFile ? (
+                      <div className="space-y-2">
+                        <div className="text-4xl">🖼️</div>
+                        <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFile(null);
+                            if (fileInputRef.current) {
+                              fileInputRef.current.value = '';
+                            }
+                          }}
+                          className="text-xs text-red-500 hover:text-red-700"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="text-4xl">📤</div>
+                        <p className="text-sm text-gray-600">
+                          Klik untuk memilih gambar
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          JPG, PNG, WebP, GIF (maks 10MB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Bisa dari smartphone, laptop, atau penyimpanan lokal
+                  </p>
+                </div>
+              )}
+
+              {/* URL Mode */}
+              {imageUploadMode === 'url' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    URL Gambar *
+                  </label>
+                  <input
+                    type="url"
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Paste URL gambar dari Google Drive, Dropbox, atau website lain
+                  </p>
+                </div>
+              )}
+
+              {/* Caption - shared for both modes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Caption (opsional)
@@ -691,23 +854,45 @@ export default function ConversationsPage() {
                 />
               </div>
             </div>
+
+            {/* Progress indicator */}
+            {(isUploading || isSending) && uploadProgress && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                  <span className="text-sm text-blue-700">{uploadProgress}</span>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => {
                   setShowImageUrlModal(false);
                   setImageUrlInput('');
                   setImageCaptionInput('');
+                  setSelectedFile(null);
+                  setUploadProgress('');
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                disabled={isUploading || isSending}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
               >
                 Batal
               </button>
               <button
                 onClick={handleSendImage}
-                disabled={!imageUrlInput.trim() || isSending}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                disabled={
+                  (imageUploadMode === 'file' && !selectedFile) ||
+                  (imageUploadMode === 'url' && !imageUrlInput.trim()) ||
+                  isSending ||
+                  isUploading
+                }
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSending ? 'Mengirim...' : 'Kirim Foto'}
+                {isUploading ? 'Mengupload...' : isSending ? 'Mengirim...' : 'Kirim Foto'}
               </button>
             </div>
           </div>
