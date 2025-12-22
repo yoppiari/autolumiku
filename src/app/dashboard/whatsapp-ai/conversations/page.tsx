@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
 interface Conversation {
@@ -41,6 +41,11 @@ export default function ConversationsPage() {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'customer' | 'staff' | 'escalated'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [messageInput, setMessageInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const attachmentMenuRef = useRef<HTMLDivElement>(null);
 
   // Load conversations
   useEffect(() => {
@@ -95,6 +100,66 @@ export default function ConversationsPage() {
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation);
     loadMessages(conversation.id);
+  };
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Close attachment menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (attachmentMenuRef.current && !attachmentMenuRef.current.contains(event.target as Node)) {
+        setShowAttachmentMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Send manual message
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedConversation || isSending) return;
+
+    setIsSending(true);
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsedUser = JSON.parse(storedUser);
+
+      const response = await fetch('/api/v1/whatsapp-ai/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: parsedUser.tenantId,
+          conversationId: selectedConversation.id,
+          to: selectedConversation.customerPhone,
+          message: messageInput,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessageInput('');
+        // Reload messages
+        loadMessages(selectedConversation.id);
+      } else {
+        alert('Gagal mengirim pesan: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Gagal mengirim pesan');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Handle attachment selection
+  const handleAttachment = (type: string) => {
+    setShowAttachmentMenu(false);
+    // TODO: Implement attachment handling
+    alert(`Fitur ${type} akan segera hadir!`);
   };
 
   // Filter conversations
@@ -346,7 +411,7 @@ export default function ConversationsPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#e5ddd5]">
                 {isLoadingMessages ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
@@ -356,57 +421,153 @@ export default function ConversationsPage() {
                     <p>No messages yet</p>
                   </div>
                 ) : (
-                  messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'}`}
-                    >
+                  <>
+                    {messages.map((msg) => (
                       <div
-                        className={`max-w-md rounded-lg p-3 ${
-                          msg.direction === 'inbound'
-                            ? 'bg-gray-100 text-gray-900'
-                            : msg.aiResponse
-                            ? 'bg-green-500 text-white'
-                            : 'bg-blue-500 text-white'
-                        }`}
+                        key={msg.id}
+                        className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'}`}
                       >
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span className="text-xs font-medium">
-                            {msg.senderType === 'ai' ? '🤖 AI' : msg.sender}
-                          </span>
-                          {msg.intent && (
-                            <span className="text-xs opacity-75">• {msg.intent}</span>
+                        <div
+                          className={`max-w-[70%] rounded-lg p-3 shadow-sm ${
+                            msg.direction === 'inbound'
+                              ? 'bg-white text-gray-900 rounded-tl-none'
+                              : msg.aiResponse
+                              ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none'
+                              : 'bg-[#d9fdd3] text-gray-900 rounded-tr-none'
+                          }`}
+                        >
+                          {msg.direction === 'inbound' && (
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-xs font-semibold text-green-700">
+                                {msg.senderType === 'staff' ? '👨‍💼 Staff' : '👤 Customer'}
+                              </span>
+                              {msg.intent && (
+                                <span className="text-xs text-gray-500">• {msg.intent}</span>
+                              )}
+                            </div>
                           )}
+                          {msg.direction === 'outbound' && (
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-xs font-semibold text-blue-700">
+                                {msg.senderType === 'ai' ? '🤖 AI Bot' : '👨‍💼 Admin'}
+                              </span>
+                            </div>
+                          )}
+                          <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                          <div className="flex items-center justify-end mt-1 space-x-1">
+                            <span className="text-[10px] text-gray-500">
+                              {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {msg.direction === 'outbound' && (
+                              <span className="text-blue-500 text-xs">✓✓</span>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        <p className="text-xs opacity-75 mt-1">
-                          {new Date(msg.createdAt).toLocaleTimeString('id-ID')}
-                        </p>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </>
                 )}
               </div>
 
-              {/* Message Input (Optional - untuk manual reply) */}
-              <div className="p-4 border-t border-gray-200 bg-gray-50">
+              {/* Message Input */}
+              <div className="p-3 border-t border-gray-200 bg-[#f0f2f5]">
                 <div className="flex items-center space-x-2">
+                  {/* Attachment Button */}
+                  <div className="relative" ref={attachmentMenuRef}>
+                    <button
+                      onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors"
+                      title="Lampiran"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+
+                    {/* Attachment Menu */}
+                    {showAttachmentMenu && (
+                      <div className="absolute bottom-12 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[200px] z-50">
+                        <button
+                          onClick={() => handleAttachment('dokumen')}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3"
+                        >
+                          <span className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">📄</span>
+                          <div>
+                            <p className="text-sm font-medium">Dokumen</p>
+                            <p className="text-xs text-gray-500">PDF, Word, Excel</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleAttachment('foto')}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3"
+                        >
+                          <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">📷</span>
+                          <div>
+                            <p className="text-sm font-medium">Foto</p>
+                            <p className="text-xs text-gray-500">JPG, PNG, GIF</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleAttachment('kontak')}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3"
+                        >
+                          <span className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">👤</span>
+                          <div>
+                            <p className="text-sm font-medium">Kontak</p>
+                            <p className="text-xs text-gray-500">Kirim kontak sales</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleAttachment('acara')}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3"
+                        >
+                          <span className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">📅</span>
+                          <div>
+                            <p className="text-sm font-medium">Acara</p>
+                            <p className="text-xs text-gray-500">Info acara showroom</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleAttachment('emoji')}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3"
+                        >
+                          <span className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">😊</span>
+                          <div>
+                            <p className="text-sm font-medium">Stiker & Emoji</p>
+                            <p className="text-xs text-gray-500">Emotikon</p>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Message Input */}
                   <input
                     type="text"
-                    placeholder="Type a message (manual reply)..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    disabled
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Ketik pesan..."
+                    className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
+
+                  {/* Send Button */}
                   <button
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                    disabled
+                    onClick={handleSendMessage}
+                    disabled={!messageInput.trim() || isSending}
+                    className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Kirim"
                   >
-                    Send
+                    {isSending ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                      </svg>
+                    )}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Manual reply feature coming soon. AI handles responses automatically.
-                </p>
               </div>
             </>
           ) : (
