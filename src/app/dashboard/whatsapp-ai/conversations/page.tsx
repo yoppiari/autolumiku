@@ -253,33 +253,37 @@ export default function ConversationsPage() {
   }
 
   return (
-    <div className="p-6 h-screen flex flex-col">
-      {/* Header */}
-      <div className="mb-6">
-        <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-          ← Back to WhatsApp AI Dashboard
-        </Link>
-        <h1 className="text-3xl font-bold text-gray-900">Conversations</h1>
-        <p className="text-gray-600 mt-1">Monitor customer chats dan staff commands</p>
+    <div className="p-4 h-screen flex flex-col overflow-hidden">
+      {/* Header - Compact */}
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-sm">
+              ← Back
+            </Link>
+            <h1 className="text-xl font-bold text-gray-900">Conversations</h1>
+          </div>
+          <p className="text-gray-500 text-xs mt-0.5">Monitor customer chats dan staff commands</p>
+        </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 grid grid-cols-12 gap-6 overflow-hidden">
+      <div className="flex-1 grid grid-cols-12 gap-4 overflow-hidden min-h-0">
         {/* Conversations List */}
-        <div className="col-span-4 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-          {/* Filters */}
-          <div className="p-4 border-b border-gray-200">
+        <div className="col-span-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+          {/* Filters - Compact */}
+          <div className="p-3 border-b border-gray-200">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by phone or name..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent mb-3"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2"
             />
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-1">
               <button
                 onClick={() => setFilterType('all')}
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   filterType === 'all'
                     ? 'bg-green-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -289,7 +293,7 @@ export default function ConversationsPage() {
               </button>
               <button
                 onClick={() => setFilterType('customer')}
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   filterType === 'customer'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -299,7 +303,7 @@ export default function ConversationsPage() {
               </button>
               <button
                 onClick={() => setFilterType('staff')}
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   filterType === 'staff'
                     ? 'bg-green-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -309,7 +313,7 @@ export default function ConversationsPage() {
               </button>
               <button
                 onClick={() => setFilterType('escalated')}
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   filterType === 'escalated'
                     ? 'bg-red-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -323,7 +327,7 @@ export default function ConversationsPage() {
           {/* Conversation List */}
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-4 text-center text-gray-500 text-sm">
                 <p>No conversations found</p>
               </div>
             ) : (
@@ -331,48 +335,47 @@ export default function ConversationsPage() {
                 <div
                   key={conv.id}
                   onClick={() => handleSelectConversation(conv)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+                  className={`px-3 py-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
                     selectedConversation?.id === conv.id ? 'bg-green-50' : ''
                   }`}
                 >
-                  <div className="flex items-start justify-between mb-1">
-                    <div className="flex items-center">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center min-w-0">
                       <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 flex-shrink-0 ${
                           conv.isStaff ? 'bg-green-100' : 'bg-blue-100'
                         }`}
                       >
-                        <span className="text-lg">{conv.isStaff ? '👨‍💼' : '👤'}</span>
+                        <span className="text-sm">{conv.isStaff ? '👨‍💼' : '👤'}</span>
                       </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">
+                      <div className="min-w-0">
+                        <h3 className="font-medium text-gray-900 text-sm truncate">
                           {conv.customerName || formatPhoneNumber(conv.customerPhone)}
                         </h3>
-                        <p className="text-xs text-gray-500">{formatPhoneNumber(conv.customerPhone)}</p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span
+                            className={`inline-block px-1.5 py-0 rounded text-[10px] font-medium ${getIntentBadgeColor(
+                              conv.lastIntent
+                            )}`}
+                          >
+                            {conv.lastIntent?.replace('customer_', '').replace('staff_', '') || '?'}
+                          </span>
+                          {conv.escalatedTo && (
+                            <span className="inline-block px-1.5 py-0 bg-red-100 text-red-800 rounded text-[10px] font-medium">
+                              Esc
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">{formatTime(conv.lastMessageAt)}</p>
+                    <div className="text-right flex-shrink-0 ml-2">
+                      <p className="text-[10px] text-gray-500">{formatTime(conv.lastMessageAt)}</p>
                       {conv.unreadCount > 0 && (
-                        <span className="inline-block mt-1 px-2 py-0.5 bg-green-600 text-white text-xs rounded-full">
+                        <span className="inline-block mt-0.5 px-1.5 py-0 bg-green-600 text-white text-[10px] rounded-full">
                           {conv.unreadCount}
                         </span>
                       )}
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getIntentBadgeColor(
-                        conv.lastIntent
-                      )}`}
-                    >
-                      {conv.lastIntent || 'unknown'}
-                    </span>
-                    {conv.escalatedTo && (
-                      <span className="inline-block px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs font-medium">
-                        Escalated
-                      </span>
-                    )}
                   </div>
                 </div>
               ))
@@ -381,24 +384,30 @@ export default function ConversationsPage() {
         </div>
 
         {/* Message Thread */}
-        <div className="col-span-8 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+        <div className="col-span-8 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
           {selectedConversation ? (
             <>
-              {/* Conversation Header */}
-              <div className="p-4 border-b border-gray-200">
+              {/* Conversation Header - Compact */}
+              <div className="px-3 py-2 border-b border-gray-200 bg-[#f0f2f5]">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      {selectedConversation.customerName || formatPhoneNumber(selectedConversation.customerPhone)}
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      {formatPhoneNumber(selectedConversation.customerPhone)} •{' '}
-                      {selectedConversation.isStaff ? 'Staff' : 'Customer'}
-                    </p>
+                  <div className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                      selectedConversation.isStaff ? 'bg-green-100' : 'bg-blue-100'
+                    }`}>
+                      <span className="text-sm">{selectedConversation.isStaff ? '👨‍💼' : '👤'}</span>
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-semibold text-gray-900">
+                        {selectedConversation.customerName || formatPhoneNumber(selectedConversation.customerPhone)}
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        {selectedConversation.isStaff ? 'Staff' : 'Customer'}
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                         selectedConversation.status === 'active'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
@@ -411,13 +420,13 @@ export default function ConversationsPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#e5ddd5]">
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[#e5ddd5]">
                 {isLoadingMessages ? (
                   <div className="flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="text-center text-gray-500 py-8">
+                  <div className="text-center text-gray-500 py-4 text-sm">
                     <p>No messages yet</p>
                   </div>
                 ) : (
@@ -428,7 +437,7 @@ export default function ConversationsPage() {
                         className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'}`}
                       >
                         <div
-                          className={`max-w-[70%] rounded-lg p-3 shadow-sm ${
+                          className={`max-w-[75%] rounded-lg px-2.5 py-1.5 shadow-sm ${
                             msg.direction === 'inbound'
                               ? 'bg-white text-gray-900 rounded-tl-none'
                               : msg.aiResponse
@@ -437,29 +446,29 @@ export default function ConversationsPage() {
                           }`}
                         >
                           {msg.direction === 'inbound' && (
-                            <div className="flex items-center space-x-2 mb-1">
-                              <span className="text-xs font-semibold text-green-700">
-                                {msg.senderType === 'staff' ? '👨‍💼 Staff' : '👤 Customer'}
+                            <div className="flex items-center space-x-1 mb-0.5">
+                              <span className="text-[10px] font-semibold text-green-700">
+                                {msg.senderType === 'staff' ? '👨‍💼' : '👤'}
                               </span>
                               {msg.intent && (
-                                <span className="text-xs text-gray-500">• {msg.intent}</span>
+                                <span className="text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
                               )}
                             </div>
                           )}
                           {msg.direction === 'outbound' && (
-                            <div className="flex items-center space-x-2 mb-1">
-                              <span className="text-xs font-semibold text-blue-700">
-                                {msg.senderType === 'ai' ? '🤖 AI Bot' : '👨‍💼 Admin'}
+                            <div className="flex items-center space-x-1 mb-0.5">
+                              <span className="text-[10px] font-semibold text-blue-700">
+                                {msg.senderType === 'ai' ? '🤖' : '👨‍💼'}
                               </span>
                             </div>
                           )}
-                          <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                          <div className="flex items-center justify-end mt-1 space-x-1">
-                            <span className="text-[10px] text-gray-500">
+                          <p className="text-xs whitespace-pre-wrap break-words">{msg.content}</p>
+                          <div className="flex items-center justify-end mt-0.5 space-x-1">
+                            <span className="text-[9px] text-gray-500">
                               {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             {msg.direction === 'outbound' && (
-                              <span className="text-blue-500 text-xs">✓✓</span>
+                              <span className="text-blue-500 text-[10px]">✓✓</span>
                             )}
                           </div>
                         </div>
@@ -470,17 +479,17 @@ export default function ConversationsPage() {
                 )}
               </div>
 
-              {/* Message Input */}
-              <div className="p-3 border-t border-gray-200 bg-[#f0f2f5]">
+              {/* Message Input - Compact */}
+              <div className="px-2 py-2 border-t border-gray-200 bg-[#f0f2f5]">
                 <div className="flex items-center space-x-2">
                   {/* Attachment Button */}
                   <div className="relative" ref={attachmentMenuRef}>
                     <button
                       onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors"
+                      className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors"
                       title="Lampiran"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
@@ -549,20 +558,20 @@ export default function ConversationsPage() {
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Ketik pesan..."
-                    className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="flex-1 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
 
                   {/* Send Button */}
                   <button
                     onClick={handleSendMessage}
                     disabled={!messageInput.trim() || isSending}
-                    className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1.5 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Kirim"
                   >
                     {isSending ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                       </svg>
                     )}
@@ -571,10 +580,10 @@ export default function ConversationsPage() {
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="flex items-center justify-center h-full text-gray-400">
               <div className="text-center">
-                <p className="text-lg mb-2">💬</p>
-                <p>Select a conversation to view messages</p>
+                <p className="text-2xl mb-1">💬</p>
+                <p className="text-sm">Select a conversation</p>
               </div>
             </div>
           )}
