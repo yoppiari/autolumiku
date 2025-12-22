@@ -37,6 +37,16 @@ interface AIConfig {
   staffCommandsEnabled: boolean;
 }
 
+interface AIHealthState {
+  enabled: boolean;
+  status: 'active' | 'degraded' | 'error' | 'disabled';
+  errorCount: number;
+  lastError?: string;
+  lastErrorAt?: string;
+  canProcess: boolean;
+  statusMessage?: string;
+}
+
 export default function WhatsAppAIDashboard() {
   const [status, setStatus] = useState<WhatsAppStatus>({
     isConnected: false,
@@ -55,7 +65,9 @@ export default function WhatsAppAIDashboard() {
     aiAccuracy: 0,
   });
   const [aiConfig, setAiConfig] = useState<AIConfig | null>(null);
+  const [aiHealth, setAiHealth] = useState<AIHealthState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTogglingAI, setIsTogglingAI] = useState(false);
   const [tenantId, setTenantId] = useState<string>('');
 
   useEffect(() => {
@@ -74,10 +86,11 @@ export default function WhatsAppAIDashboard() {
         const currentTenantId = parsedUser.tenantId;
         setTenantId(currentTenantId);
 
-        const [statusResponse, statsResponse, configResponse] = await Promise.all([
+        const [statusResponse, statsResponse, configResponse, healthResponse] = await Promise.all([
           fetch(`/api/v1/whatsapp-ai/status?tenantId=${currentTenantId}`),
           fetch(`/api/v1/whatsapp-ai/stats?tenantId=${currentTenantId}`),
           fetch(`/api/v1/whatsapp-ai/config?tenantId=${currentTenantId}`),
+          fetch(`/api/v1/whatsapp-ai/ai-health?tenantId=${currentTenantId}`),
         ]);
 
         if (statusResponse.ok) {
@@ -100,6 +113,13 @@ export default function WhatsAppAIDashboard() {
             setAiConfig(configData.data);
           }
         }
+
+        if (healthResponse.ok) {
+          const healthData = await healthResponse.json();
+          if (healthData.success) {
+            setAiHealth(healthData.data);
+          }
+        }
       } catch (error) {
         console.error('Error loading WhatsApp AI data:', error);
       } finally {
@@ -117,36 +137,54 @@ export default function WhatsAppAIDashboard() {
   };
 
   const handleToggleAI = async () => {
-    if (!aiConfig || !tenantId) return;
+    if (!tenantId) return;
 
-    setAiConfig({
-      ...aiConfig,
-      customerChatEnabled: !aiConfig.customerChatEnabled,
-    });
+    const newEnabled = aiHealth ? !aiHealth.enabled : true;
+    setIsTogglingAI(true);
 
     try {
-      const response = await fetch('/api/v1/whatsapp-ai-config', {
-        method: 'PUT',
+      const response = await fetch('/api/v1/whatsapp-ai/ai-health', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tenantId,
-          customerChatEnabled: !aiConfig.customerChatEnabled,
+          enabled: newEnabled,
+          reason: newEnabled ? 'Diaktifkan manual dari dashboard' : 'Dinonaktifkan manual dari dashboard',
         }),
       });
 
-      if (!response.ok) {
-        setAiConfig({
-          ...aiConfig,
-          customerChatEnabled: aiConfig.customerChatEnabled,
-        });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAiHealth(prev => prev ? { ...prev, ...data.data, canProcess: newEnabled } : data.data);
+        }
+      } else {
         console.error('Failed to toggle AI');
       }
     } catch (error) {
-      setAiConfig({
-        ...aiConfig,
-        customerChatEnabled: aiConfig.customerChatEnabled,
-      });
       console.error('Error toggling AI:', error);
+    } finally {
+      setIsTogglingAI(false);
+    }
+  };
+
+  const getAIStatusColor = (status?: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500';
+      case 'degraded': return 'bg-yellow-500';
+      case 'error': return 'bg-red-500';
+      case 'disabled': return 'bg-gray-500';
+      default: return 'bg-gray-400';
+    }
+  };
+
+  const getAIStatusText = (status?: string) => {
+    switch (status) {
+      case 'active': return 'AI Aktif';
+      case 'degraded': return 'AI Terganggu';
+      case 'error': return 'AI Error';
+      case 'disabled': return 'AI Nonaktif';
+      default: return 'Tidak Diketahui';
     }
   };
 
@@ -202,20 +240,39 @@ export default function WhatsAppAIDashboard() {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            {status.isConnected && aiConfig && (
-              <button
-                onClick={handleToggleAI}
-                className={`relative inline-flex items-center px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm ${
-                  aiConfig.customerChatEnabled
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                    : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-                }`}
-              >
-                <span className="text-lg mr-2">🤖</span>
-                <span>
-                  {aiConfig.customerChatEnabled ? 'AI Auto-Answer: ON' : 'AI Auto-Answer: OFF'}
-                </span>
-              </button>
+            {status.isConnected && (
+              <div className="flex items-center space-x-3">
+                {/* AI Health Status Badge */}
+                {aiHealth && (
+                  <div className={`flex items-center px-3 py-1.5 rounded-full text-white text-xs font-medium ${getAIStatusColor(aiHealth.status)}`}>
+                    <span className={`w-2 h-2 rounded-full mr-2 ${aiHealth.status === 'active' ? 'animate-pulse bg-white' : 'bg-white/60'}`}></span>
+                    {getAIStatusText(aiHealth.status)}
+                    {aiHealth.errorCount > 0 && aiHealth.status !== 'active' && (
+                      <span className="ml-1">({aiHealth.errorCount} error)</span>
+                    )}
+                  </div>
+                )}
+
+                {/* AI Toggle Button */}
+                <button
+                  onClick={handleToggleAI}
+                  disabled={isTogglingAI}
+                  className={`relative inline-flex items-center px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm ${
+                    aiHealth?.enabled
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                      : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                  } ${isTogglingAI ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isTogglingAI ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  ) : (
+                    <span className="text-lg mr-2">🤖</span>
+                  )}
+                  <span>
+                    {aiHealth?.enabled ? 'AI: ON' : 'AI: OFF'}
+                  </span>
+                </button>
+              </div>
             )}
             {!status.isConnected && (
               <Link
@@ -231,6 +288,63 @@ export default function WhatsAppAIDashboard() {
 
       {/* Main Content - Scrollable if needed */}
       <div className="flex-1 overflow-auto">
+        {/* AI Health Alert - Show when not active */}
+        {status.isConnected && aiHealth && aiHealth.status !== 'active' && (
+          <div className={`p-4 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${
+            aiHealth.status === 'disabled' ? 'bg-gray-50 border-gray-300' :
+            aiHealth.status === 'degraded' ? 'bg-yellow-50 border-yellow-300' :
+            'bg-red-50 border-red-300'
+          }`}>
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  aiHealth.status === 'disabled' ? 'bg-gray-100' :
+                  aiHealth.status === 'degraded' ? 'bg-yellow-100' :
+                  'bg-red-100'
+                }`}>
+                  <span className="text-xl">
+                    {aiHealth.status === 'disabled' ? '⏸️' :
+                     aiHealth.status === 'degraded' ? '⚠️' : '❌'}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">
+                    {aiHealth.status === 'disabled' ? 'AI Dinonaktifkan' :
+                     aiHealth.status === 'degraded' ? 'AI Mengalami Gangguan' :
+                     'AI Dalam Kondisi Error'}
+                  </h3>
+                  <p className="text-sm text-gray-700">
+                    {aiHealth.statusMessage ||
+                     (aiHealth.status === 'disabled' ? 'AI dinonaktifkan secara manual' :
+                      `${aiHealth.errorCount} error berturut-turut terdeteksi`)}
+                  </p>
+                  {aiHealth.lastError && (
+                    <p className="text-xs text-gray-500 mt-1 truncate max-w-md">
+                      Last error: {aiHealth.lastError.substring(0, 100)}...
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleToggleAI}
+                disabled={isTogglingAI}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  aiHealth.enabled
+                    ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                } ${isTogglingAI ? 'opacity-50' : ''}`}
+              >
+                {isTogglingAI ? 'Loading...' : (aiHealth.enabled ? 'Nonaktifkan' : 'Aktifkan AI')}
+              </button>
+            </div>
+            {aiHealth.status !== 'disabled' && (
+              <p className="text-xs text-gray-600 mt-2 ml-13">
+                💡 AI akan otomatis aktif kembali setelah 3 pesan berhasil diproses.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Stats Overview - Compact */}
         {status.isConnected && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
