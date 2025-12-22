@@ -380,19 +380,36 @@ async function handleIncomingMessage(
       mediaType,
     });
 
-    // QUICK CHECK: If this is a photo without mediaUrl, Aimeow might need special handling
-    // Some WhatsApp APIs require downloading media separately using mediaId
+    // IMPORTANT FIX: If image detected but no mediaUrl, try to download it via AIMEOW API
+    // Instead of returning early, we should try to get the media URL and save the message
     if (!mediaUrl && (payload.data.type === 'image' || payload.data.messageType === 'image' || mediaType?.includes('image'))) {
-      console.log(`[Aimeow Webhook] ⚠️ Image detected but no mediaUrl! Checking for mediaId...`);
+      console.log(`[Aimeow Webhook] ⚠️ Image detected but no mediaUrl! Attempting to download...`);
       console.log(`[Aimeow Webhook] Full data for debugging:`, JSON.stringify(payload.data, null, 2));
 
-      // Send acknowledgment that we received the image but can't process it yet
-      await AimeowClientService.sendMessage({
-        clientId: account.clientId,
-        to: from,
-        message: `📸 Foto diterima! Tapi sistem belum bisa memproses foto ini.\n\nCoba kirim foto satu per satu dengan cara:\n1. Tap foto di galeri\n2. Kirim tanpa caption dulu\n\nAtau ketik info mobilnya dulu: "Brio 2020 120jt hitam matic km 30rb"`,
-      });
-      return;
+      // Try to download media using AIMEOW API
+      const mediaId = (payload.data as any).mediaId || (payload.data as any).id || messageId;
+      if (mediaId && account.clientId) {
+        try {
+          console.log(`[Aimeow Webhook] 🔄 Attempting to download media using mediaId: ${mediaId}`);
+          const downloadResult = await AimeowClientService.downloadMedia(account.clientId, mediaId);
+          if (downloadResult.success && downloadResult.mediaUrl) {
+            mediaUrl = downloadResult.mediaUrl;
+            mediaType = 'image';
+            console.log(`[Aimeow Webhook] ✅ Got mediaUrl from download: ${mediaUrl}`);
+          } else {
+            console.error(`[Aimeow Webhook] ❌ Download failed: ${downloadResult.error}`);
+          }
+        } catch (downloadError: any) {
+          console.error(`[Aimeow Webhook] ❌ Error downloading media:`, downloadError.message);
+        }
+      }
+
+      // If still no mediaUrl after download attempt, continue anyway with mediaType set
+      // The message will be saved to DB (important for tracking) even without downloadable URL
+      if (!mediaUrl) {
+        console.log(`[Aimeow Webhook] ⚠️ Could not get mediaUrl, but will save message with mediaType='image'`);
+        mediaType = 'image'; // Mark as image so it can be identified later
+      }
     }
 
     // Process message via MessageOrchestrator with timeout
