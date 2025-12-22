@@ -208,30 +208,62 @@ export class MessageOrchestratorService {
             if (uploadResult.success) {
               const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
               const vehicleUrl = `${baseUrl}/dashboard/vehicles/${uploadResult.vehicleId}`;
+              const successMessage = uploadResult.message + `\n\n🔗 *Link Dashboard:*\n${vehicleUrl}`;
+
+              // IMPORTANT: Send response before returning (early return skips sendResponse at end)
+              await this.sendResponse(
+                incoming.accountId,
+                incoming.from,
+                successMessage,
+                conversation.id,
+                "staff_upload_vehicle" as MessageIntent
+              );
 
               return {
                 success: true,
                 conversationId: conversation.id,
                 intent: "staff_upload_vehicle" as MessageIntent,
-                responseMessage: uploadResult.message + `\n\n🔗 *Link:*\n${vehicleUrl}`,
+                responseMessage: successMessage,
                 escalated: false,
               };
             } else {
+              const errorMessage = `❌ Gagal upload: ${uploadResult.message}`;
+
+              // Send error response
+              await this.sendResponse(
+                incoming.accountId,
+                incoming.from,
+                errorMessage,
+                conversation.id,
+                "staff_upload_vehicle" as MessageIntent
+              );
+
               return {
                 success: false,
                 conversationId: conversation.id,
                 intent: "staff_upload_vehicle" as MessageIntent,
-                responseMessage: `❌ Gagal upload: ${uploadResult.message}`,
+                responseMessage: errorMessage,
                 escalated: true,
               };
             }
           } catch (error: any) {
             console.error(`[Orchestrator] Error creating vehicle:`, error);
+            const errorMessage = `❌ Terjadi kesalahan: ${error.message}`;
+
+            // Send error response
+            await this.sendResponse(
+              incoming.accountId,
+              incoming.from,
+              errorMessage,
+              conversation.id,
+              "staff_upload_vehicle" as MessageIntent
+            );
+
             return {
               success: false,
               conversationId: conversation.id,
               intent: "staff_upload_vehicle" as MessageIntent,
-              responseMessage: `❌ Terjadi kesalahan: ${error.message}`,
+              responseMessage: errorMessage,
               escalated: true,
             };
           }
@@ -258,6 +290,15 @@ export class MessageOrchestratorService {
             `Contoh: upload Brio 2020 120jt hitam matic`;
         }
 
+        // Send status update before returning
+        await this.sendResponse(
+          incoming.accountId,
+          incoming.from,
+          statusMessage,
+          conversation.id,
+          "staff_upload_vehicle" as MessageIntent
+        );
+
         return {
           success: true,
           conversationId: conversation.id,
@@ -276,11 +317,21 @@ export class MessageOrchestratorService {
 
         if (!vehicleId) {
           console.error(`[Orchestrator] ❌ No vehicleId in context for add_photo_to_vehicle state`);
+          const errorMsg = "Maaf, terjadi kesalahan. Silakan upload ulang kendaraan.";
+
+          await this.sendResponse(
+            incoming.accountId,
+            incoming.from,
+            errorMsg,
+            conversation.id,
+            "staff_upload_vehicle" as MessageIntent
+          );
+
           return {
             success: false,
             conversationId: conversation.id,
             intent: "staff_upload_vehicle" as MessageIntent,
-            responseMessage: "Maaf, terjadi kesalahan. Silakan upload ulang kendaraan.",
+            responseMessage: errorMsg,
             escalated: false,
           };
         }
@@ -303,30 +354,60 @@ export class MessageOrchestratorService {
               },
             });
 
+            const successMsg = `📷 Foto ${newPhotosAdded} berhasil ditambahkan ke ${vehicleName}! ✅\n\n` +
+              `Kirim foto lagi atau ketik "selesai" untuk mengakhiri.`;
+
+            await this.sendResponse(
+              incoming.accountId,
+              incoming.from,
+              successMsg,
+              conversation.id,
+              "staff_upload_vehicle" as MessageIntent
+            );
+
             return {
               success: true,
               conversationId: conversation.id,
               intent: "staff_upload_vehicle" as MessageIntent,
-              responseMessage: `📷 Foto ${newPhotosAdded} berhasil ditambahkan ke ${vehicleName}! ✅\n\n` +
-                `Kirim foto lagi atau ketik "selesai" untuk mengakhiri.`,
+              responseMessage: successMsg,
               escalated: false,
             };
           } else {
+            const errorMsg = `❌ Gagal menambah foto: ${result.error}\n\nCoba kirim ulang fotonya.`;
+
+            await this.sendResponse(
+              incoming.accountId,
+              incoming.from,
+              errorMsg,
+              conversation.id,
+              "staff_upload_vehicle" as MessageIntent
+            );
+
             return {
               success: false,
               conversationId: conversation.id,
               intent: "staff_upload_vehicle" as MessageIntent,
-              responseMessage: `❌ Gagal menambah foto: ${result.error}\n\nCoba kirim ulang fotonya.`,
+              responseMessage: errorMsg,
               escalated: false,
             };
           }
         } catch (error: any) {
           console.error(`[Orchestrator] Error adding photo:`, error);
+          const errorMsg = `❌ Gagal menambah foto. Coba kirim ulang.`;
+
+          await this.sendResponse(
+            incoming.accountId,
+            incoming.from,
+            errorMsg,
+            conversation.id,
+            "staff_upload_vehicle" as MessageIntent
+          );
+
           return {
             success: false,
             conversationId: conversation.id,
             intent: "staff_upload_vehicle" as MessageIntent,
-            responseMessage: `❌ Gagal menambah foto. Coba kirim ulang.`,
+            responseMessage: errorMsg,
             escalated: false,
           };
         }
@@ -335,12 +416,21 @@ export class MessageOrchestratorService {
         console.log(`[Orchestrator] ⚠️ Photo detected but no mediaUrl available in add_photo_to_vehicle state`);
         const contextData = (conversation.contextData as Record<string, any>) || {};
         const vehicleName = contextData.vehicleName || 'kendaraan';
+        const retryMsg = `📸 Foto diterima tapi belum bisa diproses.\n\nCoba kirim ulang fotonya ya untuk ${vehicleName}! 🙏`;
+
+        await this.sendResponse(
+          incoming.accountId,
+          incoming.from,
+          retryMsg,
+          conversation.id,
+          "staff_upload_vehicle" as MessageIntent
+        );
 
         return {
           success: true,
           conversationId: conversation.id,
           intent: "staff_upload_vehicle" as MessageIntent,
-          responseMessage: `📸 Foto diterima tapi belum bisa diproses.\n\nCoba kirim ulang fotonya ya untuk ${vehicleName}! 🙏`,
+          responseMessage: retryMsg,
           escalated: false,
         };
       } else if (conversation.conversationState === "add_photo_to_vehicle" && !hasMedia) {
@@ -363,23 +453,43 @@ export class MessageOrchestratorService {
             },
           });
 
+          const doneMsg = `✅ Selesai! ${photosAdded} foto sudah ditambahkan ke ${vehicleName}.\n\nAda yang lain yang bisa dibantu?`;
+
+          await this.sendResponse(
+            incoming.accountId,
+            incoming.from,
+            doneMsg,
+            conversation.id,
+            "staff_upload_vehicle" as MessageIntent
+          );
+
           return {
             success: true,
             conversationId: conversation.id,
             intent: "staff_upload_vehicle" as MessageIntent,
-            responseMessage: `✅ Selesai! ${photosAdded} foto sudah ditambahkan ke ${vehicleName}.\n\nAda yang lain yang bisa dibantu?`,
+            responseMessage: doneMsg,
             escalated: false,
           };
         }
 
         // Prompt user to send photo
+        const promptMsg = `📷 Silakan kirim foto untuk ${vehicleName}.\n\n` +
+          `Foto sudah ditambahkan: ${photosAdded}\n` +
+          `Ketik "selesai" jika sudah cukup.`;
+
+        await this.sendResponse(
+          incoming.accountId,
+          incoming.from,
+          promptMsg,
+          conversation.id,
+          "staff_upload_vehicle" as MessageIntent
+        );
+
         return {
           success: true,
           conversationId: conversation.id,
           intent: "staff_upload_vehicle" as MessageIntent,
-          responseMessage: `📷 Silakan kirim foto untuk ${vehicleName}.\n\n` +
-            `Foto sudah ditambahkan: ${photosAdded}\n` +
-            `Ketik "selesai" jika sudah cukup.`,
+          responseMessage: promptMsg,
           escalated: false,
         };
       } else {
