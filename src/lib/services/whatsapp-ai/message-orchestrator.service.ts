@@ -97,11 +97,23 @@ export class MessageOrchestratorService {
         /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
       ];
 
+      // Confirmation patterns - user confirming they sent photos/data (should be acknowledged, not parsed as vehicle data)
+      const confirmationPatterns = [
+        /sudah\s*(saya\s*)?(kirim|upload|send)/i,    // sudah kirim, sudah saya kirim, sudah upload
+        /foto\s*(sudah|udah)\s*(di)?(kirim|upload|send)/i,  // foto sudah dikirim, foto udah kirim
+        /(mohon|tolong)\s*(di)?\s*proses/i,          // mohon diproses, tolong proses
+        /^(proses|process)\s*(ya|dong)?$/i,          // proses, proses ya
+        /apakah.*diinfo.*update/i,                   // apakah saya akan diinfo update
+        /kapan\s*(selesai|jadi)/i,                   // kapan selesai, kapan jadi
+        /^(ok|oke|siap|done|selesai)\s*(ya)?$/i,     // ok, oke, siap, done
+      ];
+
       const normalizedMessage = (incoming.message || "").trim();
       const isGreeting = greetingPatterns.some(p => p.test(normalizedMessage));
       const isEscapeMessage = escapePatterns.some(p => p.test(normalizedMessage));
+      const isConfirmationMessage = confirmationPatterns.some(p => p.test(normalizedMessage));
 
-      if (conversation.conversationState === "upload_vehicle" && !isGreeting && !isEscapeMessage && !normalizedMessage.toLowerCase().includes("batal")) {
+      if (conversation.conversationState === "upload_vehicle" && !isGreeting && !isEscapeMessage && !isConfirmationMessage && !normalizedMessage.toLowerCase().includes("batal")) {
         // Staff is in middle of vehicle upload flow (and NOT sending a greeting, question, or cancel)
         console.log(`[Orchestrator] Conversation in upload_vehicle state, treating message as vehicle data/photo`);
 
@@ -142,6 +154,44 @@ export class MessageOrchestratorService {
           isStaff: conversation.isStaff || false,
           isCustomer: !conversation.isStaff,
           reason: "Greeting detected, reset upload flow",
+        };
+      } else if (conversation.conversationState === "upload_vehicle" && isConfirmationMessage) {
+        // User sent confirmation message like "sudah kirim" during upload flow
+        // Provide helpful status instead of trying to parse as vehicle data
+        console.log(`[Orchestrator] 📝 Confirmation message detected in upload flow: "${normalizedMessage}"`);
+
+        const contextData = (conversation.contextData as Record<string, any>) || {};
+        const photosCollected = contextData.photos?.length || 0;
+        const vehicleData = contextData.vehicleData;
+
+        let statusMessage = "";
+        if (photosCollected > 0 && vehicleData) {
+          statusMessage = `✅ Data sudah lengkap!\n\n` +
+            `📷 ${photosCollected} foto\n` +
+            `🚗 ${vehicleData.make || ''} ${vehicleData.model || ''} ${vehicleData.year || ''}\n\n` +
+            `Sedang diproses... Mohon tunggu sebentar ya! 🔄`;
+        } else if (photosCollected > 0) {
+          statusMessage = `📷 ${photosCollected} foto sudah masuk!\n\n` +
+            `Tinggal kirim data mobilnya ya:\n` +
+            `Contoh: Brio 2020 120jt hitam matic`;
+        } else if (vehicleData) {
+          statusMessage = `🚗 Data mobil sudah masuk!\n\n` +
+            `${vehicleData.make || ''} ${vehicleData.model || ''} ${vehicleData.year || ''}\n\n` +
+            `Tinggal kirim 6 foto ya 📸`;
+        } else {
+          statusMessage = `📝 Belum ada data yang masuk.\n\n` +
+            `Silakan kirim foto + detail mobil ya!\n` +
+            `Contoh: upload Brio 2020 120jt hitam matic`;
+        }
+
+        // Return ProcessingResult with status message
+        // The message will be sent by the webhook handler
+        return {
+          success: true,
+          conversationId: conversation.id,
+          intent: "staff_upload_vehicle" as MessageIntent,
+          responseMessage: statusMessage,
+          escalated: false,
         };
       } else {
         // Normal intent classification
