@@ -2,7 +2,7 @@
 # Multi-stage build for optimized image size
 
 # Stage 1: Builder
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Install Chromium for Puppeteer (needed for scrapers during build)
 RUN apk add --no-cache \
@@ -50,7 +50,7 @@ RUN cd /app/.next/static/chunks/app/catalog && \
     fi
 
 # Stage 2: Runner (Production)
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 
 # Install runtime dependencies
 RUN apk add --no-cache \
