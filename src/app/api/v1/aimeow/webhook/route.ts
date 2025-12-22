@@ -285,13 +285,68 @@ async function handleIncomingMessage(
   // Phone JID: "6281235108908:17@s.whatsapp.net" -> extract "6281235108908"
 
   // Helper to check if a number looks like an LID (not a phone number)
+  // LIDs are WhatsApp internal identifiers that don't contain actual phone numbers
+  // Examples: 10020343271578, 74556840628233, 212270269395003, 353xxx, etc.
   const isLikelyLID = (num: string): boolean => {
-    const cleanNum = num.split(":")[0].split("@")[0];
-    return (
-      cleanNum.length >= 14 &&
-      (cleanNum.startsWith("100") || cleanNum.startsWith("101") || cleanNum.startsWith("102")) &&
-      !cleanNum.startsWith("62")
-    );
+    const cleanNum = num.split(":")[0].split("@")[0].replace(/\D/g, "");
+
+    // If empty or too short, not a LID (but also not a valid phone)
+    if (!cleanNum || cleanNum.length < 8) return false;
+
+    // Pattern 1: Numbers starting with 100/101/102 (known LID prefixes) that are long
+    if (cleanNum.length >= 14 &&
+        (cleanNum.startsWith("100") || cleanNum.startsWith("101") || cleanNum.startsWith("102"))) {
+      return true;
+    }
+
+    // Pattern 2: Numbers that are WAY too long to be phone numbers (16+ digits)
+    // Max valid phone is ~15 digits (country code + 12 digit number)
+    if (cleanNum.length >= 16) {
+      return true;
+    }
+
+    // Pattern 3: Numbers 14-15 digits that don't start with valid country code
+    // Valid phone patterns:
+    // - Indonesia: 62xxx (11-14 digits total)
+    // - Malaysia: 60xxx (11-13 digits total)
+    // - Singapore: 65xxx (10-11 digits total)
+    // - International: 1xxx (US), 44xxx (UK), 91xxx (India), etc.
+    if (cleanNum.length >= 14) {
+      // Known valid prefixes for long numbers (country codes)
+      const validLongPrefixes = ["62", "60", "65", "1", "44", "91", "86", "81", "82", "84", "66", "63"];
+      const startsWithValid = validLongPrefixes.some(p => cleanNum.startsWith(p));
+
+      // If doesn't start with a valid country code and is long, likely a LID
+      if (!startsWithValid) {
+        return true;
+      }
+
+      // Special check: even with valid prefix, if too long it's a LID
+      // Indonesia max: 62 + 12 digits = 14 digits
+      // Most countries: 15 digits max
+      if (cleanNum.startsWith("62") && cleanNum.length > 14) return true;
+      if (cleanNum.startsWith("60") && cleanNum.length > 13) return true;
+      if (cleanNum.startsWith("65") && cleanNum.length > 11) return true;
+    }
+
+    // Pattern 4: Specific LID patterns seen in logs
+    // Numbers like 74xxx, 212xxx, 353xxx that are too long for those country codes
+    const suspiciousLIDPatterns = [
+      { prefix: "7", maxLen: 12 },   // Russia/Kazakhstan: max ~12 digits
+      { prefix: "212", maxLen: 12 }, // Morocco: max ~12 digits
+      { prefix: "353", maxLen: 12 }, // Ireland: max ~12 digits
+      { prefix: "43", maxLen: 13 },  // Austria: max ~13 digits
+      { prefix: "33", maxLen: 12 },  // France: max ~12 digits
+      { prefix: "34", maxLen: 12 },  // Spain: max ~12 digits
+    ];
+
+    for (const pattern of suspiciousLIDPatterns) {
+      if (cleanNum.startsWith(pattern.prefix) && cleanNum.length > pattern.maxLen) {
+        return true;
+      }
+    }
+
+    return false;
   };
 
   // Helper to normalize phone number
