@@ -282,6 +282,9 @@ export class UploadNotificationService {
         `• ${c.fieldLabel}: ${c.oldValue} → ${c.newValue}`
       ).join("\n");
 
+      // Format editor phone for display
+      const displayPhone = editorPhone.replace(/^62/, '0').replace(/@.*$/, '');
+
       const message =
         `🔔 NOTIFIKASI REVISI DATA\n` +
         `━━━━━━━━━━━━━\n\n` +
@@ -291,7 +294,7 @@ export class UploadNotificationService {
         `ID: ${editData.displayId || editData.vehicleId}\n\n` +
         `📝 Perubahan:\n${changeLines}\n\n` +
         `👤 Diubah oleh:\n` +
-        `${editorName || editorPhone}\n\n` +
+        `${editorName || 'Staff'} (${displayPhone})\n\n` +
         `🕐 Waktu: ${timeStr}\n\n` +
         `🌐 Website:\n${baseUrl}/vehicles/${editData.vehicleId}\n\n` +
         `📊 Dashboard:\n${baseUrl}/dashboard/vehicles/${editData.vehicleId}`;
