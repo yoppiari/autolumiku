@@ -287,87 +287,88 @@ export default function VehiclesPage() {
   return (
     <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden -mt-2">
       {/* Header - Gradient like Dashboard */}
-      <div className="flex justify-between items-center bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-5 py-3 mb-3 flex-shrink-0 shadow-lg">
-        <h1 className="text-xl font-bold text-white">Manajemen Kendaraan</h1>
+      <div className="flex justify-between items-center bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-3 md:px-5 py-3 mb-3 flex-shrink-0 shadow-lg ml-10 md:ml-0">
+        <h1 className="text-base md:text-xl font-bold text-white">Manajemen Kendaraan</h1>
         <Link
           href="/dashboard/vehicles/upload"
-          className="px-4 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 flex items-center gap-2 shadow-md transition-all"
+          className="px-2 md:px-4 py-1.5 md:py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 flex items-center gap-1 md:gap-2 shadow-md transition-all text-xs md:text-base whitespace-nowrap"
         >
-          <span className="text-lg">+</span>
-          Upload Kendaraan Baru
+          <span className="text-base md:text-lg">+</span>
+          <span className="hidden md:inline">Upload Kendaraan Baru</span>
+          <span className="md:hidden">Upload</span>
         </Link>
       </div>
 
-      {/* Stats Badges - Compact Pills */}
-      <div className="flex gap-2 mb-3 flex-shrink-0">
-        <div className="px-4 py-2 bg-white border-2 border-gray-300 rounded-full shadow-sm">
-          <span className="text-lg font-bold text-gray-800">{stats.total}</span>
-          <span className="ml-1.5 text-sm text-gray-600 font-medium">Total</span>
+      {/* Stats Badges - Compact Pills, scrollable on mobile */}
+      <div className="flex gap-1.5 md:gap-2 mb-3 flex-shrink-0 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-white border-2 border-gray-300 rounded-full shadow-sm flex-shrink-0">
+          <span className="text-sm md:text-lg font-bold text-gray-800">{stats.total}</span>
+          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-gray-600 font-medium">Total</span>
         </div>
-        <div className="px-4 py-2 bg-green-50 border-2 border-green-400 rounded-full shadow-sm">
-          <span className="text-lg font-bold text-green-600">{stats.available}</span>
-          <span className="ml-1.5 text-sm text-green-700 font-medium">Tersedia</span>
+        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-green-50 border-2 border-green-400 rounded-full shadow-sm flex-shrink-0">
+          <span className="text-sm md:text-lg font-bold text-green-600">{stats.available}</span>
+          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-green-700 font-medium">Tersedia</span>
         </div>
-        <div className="px-4 py-2 bg-yellow-50 border-2 border-yellow-400 rounded-full shadow-sm">
-          <span className="text-lg font-bold text-yellow-600">{stats.booked}</span>
-          <span className="ml-1.5 text-sm text-yellow-700 font-medium">Booking</span>
+        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-yellow-50 border-2 border-yellow-400 rounded-full shadow-sm flex-shrink-0">
+          <span className="text-sm md:text-lg font-bold text-yellow-600">{stats.booked}</span>
+          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-yellow-700 font-medium">Booking</span>
         </div>
-        <div className="px-4 py-2 bg-red-50 border-2 border-red-400 rounded-full shadow-sm">
-          <span className="text-lg font-bold text-red-600">{stats.sold}</span>
-          <span className="ml-1.5 text-sm text-red-700 font-medium">Terjual</span>
+        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-red-50 border-2 border-red-400 rounded-full shadow-sm flex-shrink-0">
+          <span className="text-sm md:text-lg font-bold text-red-600">{stats.sold}</span>
+          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-red-700 font-medium">Terjual</span>
         </div>
       </div>
 
-      {/* Filters - Compact */}
+      {/* Filters - Compact, responsive */}
       <div className="bg-white rounded-lg shadow p-2 mb-3 flex-shrink-0">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-1.5 md:gap-2">
           {/* Search */}
           <input
             type="text"
-            placeholder="Cari make, model, tahun, variant..."
+            placeholder="Cari mobil..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 min-w-[120px] px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
 
           {/* Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
-            className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            className="px-1.5 md:px-2 py-1.5 text-xs md:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 min-w-[70px] md:min-w-[110px]"
           >
-            <option value="ALL">Semua Status</option>
+            <option value="ALL">Semua</option>
             <option value="DRAFT">Draft</option>
             <option value="AVAILABLE">Tersedia</option>
             <option value="BOOKED">Booking</option>
             <option value="SOLD">Terjual</option>
           </select>
 
-          {/* Sort */}
+          {/* Sort - hidden on mobile to save space */}
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'date' | 'price')}
-            className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            className="hidden md:block px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
           >
             <option value="date">Terbaru</option>
             <option value="price">Harga</option>
           </select>
 
           {/* View Toggle */}
-          <div className="flex border border-gray-300 rounded overflow-hidden">
+          <div className="flex border border-gray-300 rounded overflow-hidden flex-shrink-0">
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-2 py-1.5 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-1.5 md:px-2 py-1.5 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
               </svg>
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-2 py-1.5 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-1.5 md:px-2 py-1.5 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z" />
               </svg>
             </button>
