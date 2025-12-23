@@ -465,6 +465,7 @@ export class VehicleEditService {
 
   /**
    * Check if staff is authorized to edit this vehicle
+   * All registered staff can edit any vehicle from the same tenant
    */
   private static async checkAuthorization(
     vehicle: any,
@@ -480,26 +481,10 @@ export class VehicleEditService {
       };
     }
 
-    const role = staff.role.toUpperCase();
     const staffName = `${staff.firstName || ""} ${staff.lastName || ""}`.trim();
 
-    // Admin/Manager can edit any vehicle
-    if (["ADMIN", "SUPER_ADMIN", "MANAGER"].includes(role)) {
-      return { authorized: true, message: "", staffId: staff.id, staffName };
-    }
-
-    // Sales/Staff can only edit their own uploads
-    if (vehicle.createdBy === staff.id) {
-      return { authorized: true, message: "", staffId: staff.id, staffName };
-    }
-
-    return {
-      authorized: false,
-      message:
-        `Anda tidak memiliki izin untuk mengedit kendaraan ini.\n\n` +
-        `Kendaraan ${vehicle.displayId || vehicle.id} diupload oleh staff lain.\n` +
-        `Hubungi Admin/Manager untuk mengedit.`,
-    };
+    // All registered staff can edit any vehicle from the same tenant
+    return { authorized: true, message: "", staffId: staff.id, staffName };
   }
 
   /**
