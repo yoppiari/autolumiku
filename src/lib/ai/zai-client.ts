@@ -185,6 +185,36 @@ export class ZAIClient {
                 required: ["make", "model", "year", "price"]
               }
             }
+          },
+          {
+            type: "function",
+            function: {
+              name: "edit_vehicle",
+              description: "Edit/update vehicle data in inventory. Call when staff wants to change vehicle information. Staff may say 'rubah', 'ganti', 'update', 'ubah', 'edit', 'koreksi'. Examples: 'rubah bensin jadi diesel', 'ganti tahun 2016 ke 2018', 'update harga 150jt'.",
+              parameters: {
+                type: "object",
+                properties: {
+                  vehicle_id: {
+                    type: "string",
+                    description: "Vehicle displayId (e.g., 'PM-PST-001') or UUID. If not provided, will use last uploaded vehicle from context."
+                  },
+                  field: {
+                    type: "string",
+                    enum: ["year", "price", "mileage", "color", "transmission", "fuelType", "make", "model", "variant", "engineCapacity", "condition"],
+                    description: "Field to update. Map Indonesian terms: tahun→year, harga→price, km→mileage, warna→color, transmisi→transmission, bensin/diesel→fuelType, merek→make, tipe→model, varian→variant, cc→engineCapacity, kondisi→condition"
+                  },
+                  old_value: {
+                    type: "string",
+                    description: "Original value to replace (optional, for confirmation). E.g., 'bensin', '2016', 'hitam'"
+                  },
+                  new_value: {
+                    type: "string",
+                    description: "New value to set. E.g., 'diesel', '2018', 'putih', '150jt' (price will be converted)"
+                  }
+                },
+                required: ["field", "new_value"]
+              }
+            }
           }
         ];
         requestParams.tool_choice = "auto";

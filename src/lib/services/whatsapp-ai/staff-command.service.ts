@@ -13,6 +13,7 @@ import { MessageIntent } from "./intent-classifier.service";
 import { VehicleDataExtractorService } from "@/lib/ai/vehicle-data-extractor.service";
 import { WhatsAppVehicleUploadService } from "./vehicle-upload.service";
 import { UploadNotificationService } from "./upload-notification.service";
+import { VehicleEditService } from "./vehicle-edit.service";
 
 // ==================== TYPES ====================
 
@@ -57,6 +58,9 @@ export class StaffCommandService {
 
       case "staff_get_stats":
         return this.parseStatsCommand(trimmedMessage);
+
+      case "staff_edit_vehicle":
+        return this.parseEditCommand(trimmedMessage);
 
       default:
         return {
@@ -121,6 +125,10 @@ export class StaffCommandService {
 
         case "staff_get_stats":
           result = await this.handleGetStats(params, tenantId);
+          break;
+
+        case "staff_edit_vehicle":
+          result = await this.handleEditVehicle(params, tenantId, staffPhone, conversationId);
           break;
 
         default:
@@ -383,6 +391,46 @@ export class StaffCommandService {
     return {
       command: "stats",
       params: { period },
+      isValid: true,
+    };
+  }
+
+  /**
+   * Parse edit command with multi-field support
+   * Format: edit [vehicle_id?] field [old_value?] (jadi|ke) new_value
+   *
+   * Examples:
+   * - "edit PM-PST-001 tahun 2020"
+   * - "rubah bensin jadi diesel"
+   * - "ganti tahun 2016 ke 2018"
+   * - "update harga 150jt, warna hitam, km 50000" (multi-field)
+   */
+  private static parseEditCommand(message: string): CommandParseResult {
+    console.log(`[Staff Command] parseEditCommand - message: "${message}"`);
+
+    const parsed = VehicleEditService.parseEditFields(message);
+
+    if (parsed.fields.length === 0) {
+      return {
+        command: "edit",
+        params: {},
+        isValid: false,
+        error:
+          "Format tidak valid.\n\n" +
+          "*Contoh yang benar:*\n" +
+          "• edit PM-PST-001 tahun 2020\n" +
+          "• rubah bensin jadi diesel\n" +
+          "• ganti tahun 2016 ke 2018\n" +
+          "• update harga 150jt, warna hitam",
+      };
+    }
+
+    return {
+      command: "edit",
+      params: {
+        vehicleId: parsed.vehicleId,
+        fields: parsed.fields,
+      },
       isValid: true,
     };
   }
@@ -1270,16 +1318,23 @@ export class StaffCommandService {
             vehicleId: uploadResult.vehicleId,
             vehicleName: `${vehicleData.make} ${vehicleData.model} ${vehicleData.year}`,
             photosAdded: 0,
+            // Store lastUploadedVehicleId for edit feature
+            lastUploadedVehicleId: uploadResult.vehicleId,
+            lastUploadedAt: new Date().toISOString(),
           },
         },
       });
     } else {
       // Clear conversation state after successful upload with photos
+      // Keep lastUploadedVehicleId for edit feature
       await prisma.whatsAppConversation.update({
         where: { id: conversationId },
         data: {
           conversationState: null,
-          contextData: Prisma.DbNull,
+          contextData: {
+            lastUploadedVehicleId: uploadResult.vehicleId,
+            lastUploadedAt: new Date().toISOString(),
+          },
         },
       });
     }
@@ -1602,6 +1657,46 @@ export class StaffCommandService {
     return {
       success: true,
       message,
+    };
+  }
+
+  /**
+   * Handle vehicle edit command
+   * Supports multi-field editing via VehicleEditService
+   */
+  private static async handleEditVehicle(
+    params: Record<string, any>,
+    tenantId: string,
+    staffPhone: string,
+    conversationId: string
+  ): Promise<CommandExecutionResult> {
+    const { vehicleId, fields } = params;
+
+    if (!fields || fields.length === 0) {
+      return {
+        success: false,
+        message:
+          "Data tidak lengkap.\n\n" +
+          "*Format:* edit [ID?] [field] [nilai baru]\n\n" +
+          "*Contoh:*\n" +
+          "• edit PM-PST-001 tahun 2020\n" +
+          "• rubah bensin jadi diesel\n" +
+          "• ganti harga 150jt, warna hitam",
+      };
+    }
+
+    const result = await VehicleEditService.editVehicle({
+      vehicleId,
+      fields,
+      staffPhone,
+      tenantId,
+      conversationId,
+    });
+
+    return {
+      success: result.success,
+      message: result.message,
+      vehicleId: result.vehicleId,
     };
   }
 

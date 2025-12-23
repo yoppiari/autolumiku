@@ -758,6 +758,37 @@ export class MessageOrchestratorService {
             responseMessage = `Maaf kak, upload cuma buat staff aja 😊\n\nAda yang bisa aku bantu?`;
           }
         }
+
+        // Check if AI detected an edit request
+        if (result.editRequest) {
+          console.log(`[Orchestrator] ✏️ AI detected edit request:`, result.editRequest);
+
+          const isStaff = conversation.isStaff || await this.isStaffMember(incoming.from, incoming.tenantId);
+
+          if (isStaff) {
+            console.log(`[Orchestrator] User is staff, processing edit request...`);
+
+            // Import and use VehicleEditService
+            const { VehicleEditService } = await import('./vehicle-edit.service');
+
+            const editResult = await VehicleEditService.editVehicle({
+              vehicleId: result.editRequest.vehicleId,
+              fields: [{
+                field: result.editRequest.field,
+                oldValue: result.editRequest.oldValue,
+                newValue: result.editRequest.newValue,
+              }],
+              staffPhone: incoming.from,
+              tenantId: incoming.tenantId,
+              conversationId: conversation.id,
+            });
+
+            responseMessage = editResult.message;
+          } else {
+            console.log(`[Orchestrator] User is NOT staff, ignoring edit request`);
+            responseMessage = `Maaf kak, fitur edit cuma buat staff aja 😊\n\nAda yang bisa aku bantu?`;
+          }
+        }
           } catch (aiError: any) {
             // Track AI error for health monitoring
             console.error(`[Orchestrator] AI error caught:`, aiError.message);
@@ -1210,6 +1241,7 @@ export class MessageOrchestratorService {
     escalated: boolean;
     images?: Array<{ imageUrl: string; caption?: string }>;
     uploadRequest?: any;
+    editRequest?: any;
   }> {
     try {
       // Get conversation history (limit to 5 for faster response)
@@ -1238,6 +1270,7 @@ export class MessageOrchestratorService {
         escalated: aiResponse.shouldEscalate,
         ...(aiResponse.images && { images: aiResponse.images }),
         ...(aiResponse.uploadRequest && { uploadRequest: aiResponse.uploadRequest }),
+        ...(aiResponse.editRequest && { editRequest: aiResponse.editRequest }),
       };
     } catch (error: any) {
       console.error("[Message Orchestrator] AI response error:", error);

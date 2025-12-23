@@ -43,6 +43,12 @@ export interface ChatResponse {
     color?: string;
     transmission?: string;
   }; // Optional vehicle upload request from AI
+  editRequest?: {
+    vehicleId?: string;
+    field: string;
+    oldValue?: string;
+    newValue: string;
+  }; // Optional vehicle edit request from AI
 }
 
 // ==================== WHATSAPP AI CHAT SERVICE ====================
@@ -232,6 +238,7 @@ export class WhatsAppAIChatService {
       // Handle tool calls (function calling)
       let images: Array<{ imageUrl: string; caption?: string }> | null = null;
       let uploadRequest: any = null;
+      let editRequest: any = null;
 
       if (aiResponse.toolCalls && aiResponse.toolCalls.length > 0) {
         console.log('[WhatsApp AI Chat] 🔧 Processing tool calls:', aiResponse.toolCalls.length);
@@ -281,6 +288,17 @@ export class WhatsAppAIChatService {
                 color: args.color || 'Unknown',
                 transmission: args.transmission || 'Manual',
               };
+            } else if (toolCall.function.name === 'edit_vehicle') {
+              const args = JSON.parse(toolCall.function.arguments);
+
+              console.log('[WhatsApp AI Chat] ✏️ AI detected vehicle edit request:', args);
+
+              editRequest = {
+                vehicleId: args.vehicle_id,
+                field: args.field,
+                oldValue: args.old_value,
+                newValue: args.new_value,
+              };
             }
           }
         }
@@ -309,6 +327,7 @@ export class WhatsAppAIChatService {
         processingTime,
         ...(images && images.length > 0 && { images }),
         ...(uploadRequest && { uploadRequest }),
+        ...(editRequest && { editRequest }),
       };
     } catch (error: any) {
       console.error("[WhatsApp AI Chat] ❌ ERROR generating response:");
