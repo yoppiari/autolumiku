@@ -731,7 +731,7 @@ export default function ConversationsPage() {
     // Check if this is a LID disguised as a phone number
     if (isLikelyLID(digits)) {
       // Show abbreviated with WA: prefix to indicate it's not a real phone
-      return `WA ID: ${digits}`;
+      return `Pelanggan #${digits.slice(-4)}`;
     }
 
     // If starts with 62 (Indonesia), format nicely
@@ -759,7 +759,7 @@ export default function ConversationsPage() {
 
     // Fallback for anything else - show abbreviated
     if (digits.length > 0) {
-      return `WA ID: ${digits}`;
+      return `Pelanggan #${digits.slice(-4)}`;
     }
 
     return phone || '-';
