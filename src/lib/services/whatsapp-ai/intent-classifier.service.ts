@@ -30,6 +30,7 @@ export type MessageIntent =
   | "staff_check_inventory"
   | "staff_get_stats"
   | "staff_verify_identity"
+  | "staff_edit_vehicle"
   | "unknown";
 
 export interface IntentClassificationResult {
@@ -97,6 +98,16 @@ const STAFF_COMMAND_PATTERNS = {
     /^laporan/i,                     // laporan
     /^statistik/i,                   // statistik
     /^report\b/i,                    // report, report today
+  ],
+  edit_vehicle: [
+    /^\/edit/i,                      // /edit PM-PST-001 km 50000
+    /^edit\s+/i,                     // edit km 50000
+    /^rubah\s+/i,                    // rubah km 50000, rubah bensin jadi diesel
+    /^ganti\s+/i,                    // ganti tahun ke 2018
+    /^ubah\s+/i,                     // ubah transmisi ke matic
+    /^update\s+(km|harga|tahun|warna|transmisi|bensin|diesel|cc)/i, // update km 50000
+    /^koreksi\s+/i,                  // koreksi data
+    /^perbaiki\s+/i,                 // perbaiki km
   ],
 };
 
@@ -457,6 +468,18 @@ export class IntentClassifierService {
         isStaff: true,
         isCustomer: false,
         reason: "Matched update status command pattern",
+      };
+    }
+
+    // Check edit vehicle (rubah km, ganti bensin, ubah tahun, etc.)
+    if (STAFF_COMMAND_PATTERNS.edit_vehicle.some((p) => p.test(message))) {
+      console.log(`[Intent Classifier] ✏️ Edit vehicle command detected: "${message}"`);
+      return {
+        intent: "staff_edit_vehicle",
+        confidence: 0.95,
+        isStaff: true,
+        isCustomer: false,
+        reason: "Matched edit vehicle command pattern (rubah/ganti/ubah)",
       };
     }
 

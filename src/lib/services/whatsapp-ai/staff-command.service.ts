@@ -58,6 +58,9 @@ export class StaffCommandService {
       case "staff_get_stats":
         return this.parseStatsCommand(trimmedMessage);
 
+      case "staff_edit_vehicle":
+        return this.parseEditVehicleCommand(trimmedMessage);
+
       default:
         return {
           command: "unknown",
@@ -121,6 +124,10 @@ export class StaffCommandService {
 
         case "staff_get_stats":
           result = await this.handleGetStats(params, tenantId);
+          break;
+
+        case "staff_edit_vehicle":
+          result = await this.handleEditVehicle(params, tenantId, staffPhone, conversationId);
           break;
 
         default:
@@ -1713,6 +1720,125 @@ export class StaffCommandService {
    */
   private static formatNumber(num: number): string {
     return new Intl.NumberFormat("id-ID").format(num);
+  }
+
+  /**
+   * Parse edit vehicle command
+   * Examples: "rubah km 50000", "ganti bensin jadi diesel", "ubah tahun ke 2018 PM-PST-006"
+   */
+  private static parseEditVehicleCommand(message: string): CommandParseResult {
+    console.log(`[Staff Command] Parsing edit vehicle command: "${message}"`);
+
+    const msg = message.toLowerCase().trim();
+
+    // Extract vehicle ID if mentioned (PM-PST-XXX format)
+    const vehicleIdMatch = msg.match(/pm-\w+-\d+/i);
+    const vehicleId = vehicleIdMatch ? vehicleIdMatch[0].toUpperCase() : undefined;
+
+    // Field detection patterns
+    const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
+      // Mileage
+      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:km|kilometer|odometer)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'mileage', valueExtractor: m => m[1] },
+      { pattern: /(?:km|kilometer)\s*(?:ke|jadi|menjadi)\s*(\d+)/i, field: 'mileage', valueExtractor: m => m[1] },
+
+      // Fuel type
+      { pattern: /(?:rubah|ganti|ubah)\s*(?:bahan\s*bakar|fuel|bensin|solar)?\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[1] },
+      { pattern: /(?:rubah|ganti|ubah)\s*(bensin|diesel|hybrid|electric)\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[2] },
+
+      // Year
+      { pattern: /(?:rubah|ganti|ubah|update)\s*tahun\s*(?:\d+\s*)?(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
+      { pattern: /tahun\s*(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
+
+      // Price
+      { pattern: /(?:rubah|ganti|ubah|update)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
+        const val = m[1].toLowerCase();
+        if (val.includes('jt') || val.includes('juta')) {
+          return String(parseInt(val) * 1000000);
+        }
+        return val;
+      }},
+
+      // Transmission
+      { pattern: /(?:rubah|ganti|ubah)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmission', valueExtractor: m => {
+        const val = m[1].toLowerCase();
+        if (val === 'matic' || val === 'at' || val === 'automatic') return 'automatic';
+        if (val === 'manual' || val === 'mt') return 'manual';
+        return val;
+      }},
+
+      // Color
+      { pattern: /(?:rubah|ganti|ubah)\s*warna\s*(?:\w+\s*)?(?:ke|jadi|menjadi)\s*(\w+)/i, field: 'color', valueExtractor: m => m[1] },
+
+      // Engine capacity
+      { pattern: /(?:rubah|ganti|ubah)\s*(?:cc|kapasitas\s*mesin)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'engineCapacity', valueExtractor: m => m[1] },
+    ];
+
+    for (const { pattern, field, valueExtractor } of patterns) {
+      const match = msg.match(pattern);
+      if (match) {
+        const newValue = valueExtractor(match);
+        console.log(`[Staff Command] ✏️ Edit parsed: field=${field}, newValue=${newValue}, vehicleId=${vehicleId || 'from context'}`);
+        return {
+          command: "edit_vehicle",
+          params: { vehicleId, field, newValue },
+          isValid: true,
+        };
+      }
+    }
+
+    return {
+      command: "edit_vehicle",
+      params: {},
+      isValid: false,
+      error: "Format tidak dikenali. Contoh: 'rubah km 50000' atau 'ganti bensin jadi diesel'",
+    };
+  }
+
+  /**
+   * Handle edit vehicle command - calls VehicleEditService
+   */
+  private static async handleEditVehicle(
+    params: Record<string, any>,
+    tenantId: string,
+    staffPhone: string,
+    conversationId: string
+  ): Promise<CommandExecutionResult> {
+    console.log(`[Staff Command] Handling edit vehicle:`, params);
+
+    if (!params.field || !params.newValue) {
+      return {
+        success: false,
+        message: "❌ Format tidak dikenali.\n\nContoh penggunaan:\n• rubah km 50000\n• ganti bensin jadi diesel\n• ubah tahun ke 2018\n• update harga 150jt",
+      };
+    }
+
+    try {
+      // Import VehicleEditService
+      const { VehicleEditService } = await import('./vehicle-edit.service');
+
+      const editResult = await VehicleEditService.editVehicle({
+        vehicleId: params.vehicleId,
+        fields: [{
+          field: params.field,
+          newValue: params.newValue,
+        }],
+        staffPhone,
+        tenantId,
+        conversationId,
+      });
+
+      return {
+        success: editResult.success,
+        message: editResult.message,
+        vehicleId: editResult.vehicleId,
+      };
+    } catch (error: any) {
+      console.error("[Staff Command] Edit vehicle error:", error);
+      return {
+        success: false,
+        message: `❌ Gagal edit: ${error.message}`,
+      };
+    }
   }
 }
 
