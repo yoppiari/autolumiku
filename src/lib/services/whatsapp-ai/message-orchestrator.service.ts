@@ -722,7 +722,7 @@ export class MessageOrchestratorService {
               `🚗 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
               `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
               `🎨 ${result.uploadRequest.color || '-'} | ⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
-              `📍 ${result.uploadRequest.mileage || 0} km\n\n` +
+              (result.uploadRequest.mileage ? `📍 ${result.uploadRequest.mileage.toLocaleString('id-ID')} km\n\n` : '\n') +
               `Silakan kirimkan 6 foto kendaraan:\n` +
               `• Depan, belakang, samping\n` +
               `• Dashboard, jok, bagasi`;

@@ -419,7 +419,7 @@ A: "Selamat datang di ${tenant.name}! Kami siap membantu Anda menemukan kendaraa
         .slice(0, 10)
         .map(
           (v) =>
-            `• ${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))} | ${v.transmissionType || 'Manual'} | ${v.mileage?.toLocaleString('id-ID') || 0}km | ${v.fuelType || 'Bensin'} | ${v.color || '-'}`
+            `• ${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))} | ${v.transmissionType || 'Manual'}${v.mileage ? ` | ${v.mileage.toLocaleString('id-ID')} km` : ''} | ${v.fuelType || 'Bensin'} | ${v.color || '-'}`
         )
         .join("\n");
 
@@ -786,7 +786,7 @@ Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang be
 
       images.push({
         imageUrl,
-        caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage?.toLocaleString('id-ID') || 0}km • ${v.transmissionType || 'Manual'} • ${v.color || '-'}`,
+        caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`,
       });
     }
 
