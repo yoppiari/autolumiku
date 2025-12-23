@@ -794,16 +794,16 @@ export default function ConversationsPage() {
 
   return (
     <div className="p-3 md:p-4 h-screen flex flex-col overflow-hidden">
-      {/* Header - Responsive */}
-      <div className="mb-3 md:mb-4 flex items-center justify-between">
+      {/* Header - Responsive with left margin for hamburger menu */}
+      <div className="mb-3 md:mb-4 flex items-center justify-between ml-10 md:ml-0">
         <div>
           <div className="flex items-center gap-2 md:gap-4">
-            <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-sm">
+            <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-xs md:text-sm whitespace-nowrap">
               ← Back
             </Link>
-            <h1 className="text-lg md:text-xl font-bold text-gray-900">Conversations</h1>
+            <h1 className="text-base md:text-xl font-bold text-gray-900">Conversations</h1>
           </div>
-          <p className="text-gray-500 text-xs mt-0.5 hidden sm:block">Monitor customer chats dan staff commands</p>
+          <p className="text-gray-500 text-[10px] md:text-xs mt-0.5 hidden sm:block">Monitor customer chats dan staff commands</p>
         </div>
       </div>
 
@@ -889,7 +889,7 @@ export default function ConversationsPage() {
                         <span className="text-base md:text-sm">{conv.isStaff ? '👨‍💼' : '👤'}</span>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-medium text-gray-900 text-sm md:text-sm">
+                        <h3 className="font-medium text-gray-900 text-sm md:text-sm truncate whitespace-nowrap">
                           {conv.customerName || formatPhoneNumber(conv.customerPhone)}
                         </h3>
                         <div className="flex items-center gap-1.5 md:gap-1 mt-1 md:mt-0.5 flex-wrap">
