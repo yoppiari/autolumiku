@@ -572,47 +572,14 @@ export class AimeowClientService {
       console.log(`[Aimeow Send Document] Using clientId: ${apiClientId}`);
       console.log(`[Aimeow Send Document] Payload:`, JSON.stringify(payload, null, 2));
 
-      // Try /send-file endpoint first (common for documents)
-      let response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-file`, {
+      // Send document using /send-document endpoint
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-document`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
-
-      // If /send-file fails, try /send-document
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`[Aimeow Send Document] /send-file failed (${response.status}): ${errorText}`);
-        console.log(`[Aimeow Send Document] Trying /send-document endpoint...`);
-
-        response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-document`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      // If still fails, try /send-media with mediaType
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`[Aimeow Send Document] /send-document failed (${response.status}): ${errorText}`);
-        console.log(`[Aimeow Send Document] Trying /send-media endpoint...`);
-
-        response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-media`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...payload,
-            mediaType: 'document',
-          }),
-        });
-      }
 
       if (!response.ok) {
         const errorText = await response.text();
