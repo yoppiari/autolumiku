@@ -1553,7 +1553,7 @@ export class StaffCommandService {
 
     // Get stats
     const [totalVehicles, newVehicles, totalLeads, newLeads] = await Promise.all([
-      prisma.vehicle.count({ where: { tenantId } }),
+      prisma.vehicle.count({ where: { tenantId, status: { not: "DELETED" } } }),
       prisma.vehicle.count({
         where: {
           tenantId,
@@ -1572,7 +1572,7 @@ export class StaffCommandService {
     // Get vehicle by status
     const vehiclesByStatus = await prisma.vehicle.groupBy({
       by: ["status"],
-      where: { tenantId },
+      where: { tenantId, status: { not: "DELETED" } },
       _count: true,
     });
 
