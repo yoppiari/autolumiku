@@ -24,6 +24,9 @@ export interface VehicleDataExtractionResult {
     mileage?: number;      // In kilometers
     color?: string;        // Hitam, Putih, Silver, etc.
     transmission?: string; // Manual, Automatic, CVT
+    fuelType?: string;     // Bensin, Diesel, Hybrid, Electric
+    engineCapacity?: string; // 1500cc, 1300cc, 2000cc, etc.
+    variant?: string;      // E, G, S, RS, Satya, Veloz, etc.
   };
   confidence: number;      // 0-1 confidence score
   reasoning?: string;      // AI reasoning for extraction
@@ -40,21 +43,30 @@ PENTING: Pahami berbagai cara penulisan:
 - KM: 30rb, 30 ribu, 30.000, 30000, km 30rb, kilometer 30000
 - Transmisi: MT/manual/Manual, AT/matic/Matic/automatic/Automatic, CVT
 - Warna: hitam, Hitam, abu-abu, abu abu, silver, putih metalik, merah maroon
+- Bahan bakar: bensin, solar, diesel, hybrid, listrik, electric
+- CC mesin: 1200cc, 1500cc, 1.5L, 2000cc, 2.0L
+- Varian: E, G, S, RS, Satya, Veloz, Type R, Sport, Luxury, Base
 
 Contoh input yang HARUS bisa dipahami:
 - "Brio 2020 120jt hitam" → Honda Brio
 - "avanza 2019 km 50rb 140 juta silver matic" → Toyota Avanza
 - "xenia 2018 manual putih harga 95jt km 80000" → Daihatsu Xenia
-- "jazz rs 2017 at merah 165jt" → Honda Jazz RS
+- "jazz rs 2017 at merah 165jt" → Honda Jazz, variant: "RS"
+- "brio satya 2020 1200cc bensin hitam" → Honda Brio, variant: "Satya", engineCapacity: "1200cc", fuelType: "Bensin"
+- "avanza veloz 2021 1500cc diesel silver" → Toyota Avanza, variant: "Veloz", engineCapacity: "1500cc", fuelType: "Diesel"
+- "xpander ultimate 2022 1500cc bensin matic" → Mitsubishi Xpander, variant: "Ultimate"
 
 Return ONLY valid JSON (no explanation):
-{"make":"Honda","model":"Brio","year":2020,"price":120000000,"mileage":0,"color":"Hitam","transmission":"Manual"}
+{"make":"Honda","model":"Brio","year":2020,"price":120000000,"mileage":0,"color":"Hitam","transmission":"Manual","fuelType":"Bensin","engineCapacity":"1200cc","variant":"Satya"}
 
 Jika data kurang, tebak yang masuk akal:
 - Tidak ada KM → mileage: 0
 - Tidak ada warna → color: "Unknown"
 - Tidak ada transmisi → transmission: "Manual"
 - Tidak ada merk tapi ada model → auto-detect merk dari model
+- Tidak ada bahan bakar → fuelType: "Bensin" (default mobil Indonesia)
+- Tidak ada CC → engineCapacity: null (biarkan kosong)
+- Tidak ada varian → variant: null (biarkan kosong)
 
 JANGAN return error kecuali benar-benar tidak bisa dipahami.`;
 
@@ -218,6 +230,9 @@ export class VehicleDataExtractorService {
           mileage: extractedData.mileage || 0,
           color: extractedData.color || 'Unknown',
           transmission: extractedData.transmission || 'Manual',
+          fuelType: extractedData.fuelType || 'Bensin',
+          engineCapacity: extractedData.engineCapacity || null,
+          variant: extractedData.variant || null,
         },
         confidence: 0.95, // High confidence for successful extraction
         reasoning: aiResponse.reasoning || undefined,
@@ -249,6 +264,9 @@ export class VehicleDataExtractorService {
       mileage: 0,
       color: 'Unknown',
       transmission: 'Manual',
+      fuelType: 'Bensin',
+      engineCapacity: null,
+      variant: null,
     };
 
     // Extract year (4 digits)
@@ -330,6 +348,29 @@ export class VehicleDataExtractorService {
       }
     }
 
+    // Extract fuel type (bahan bakar)
+    if (/\b(diesel|solar)\b/i.test(text)) {
+      extractedData.fuelType = 'Diesel';
+    } else if (/\b(hybrid)\b/i.test(text)) {
+      extractedData.fuelType = 'Hybrid';
+    } else if (/\b(listrik|electric|ev)\b/i.test(text)) {
+      extractedData.fuelType = 'Electric';
+    } else if (/\b(bensin|pertamax|pertalite)\b/i.test(text)) {
+      extractedData.fuelType = 'Bensin';
+    }
+
+    // Extract engine capacity (CC mesin) - supports formats: 1500cc, 1.5L, 1500 cc, 1.5 L
+    const ccMatch = text.match(/(\d+(?:\.\d+)?)\s*(cc|CC|L)\b/i);
+    if (ccMatch) {
+      let capacity = parseFloat(ccMatch[1]);
+      const unit = ccMatch[2].toLowerCase();
+      // Convert L to cc if needed (1.5L = 1500cc)
+      if (unit === 'l' && capacity < 10) {
+        capacity = capacity * 1000;
+      }
+      extractedData.engineCapacity = `${Math.round(capacity)}cc`;
+    }
+
     // Model to make mapping (common Indonesian market vehicles)
     const modelToMake: Record<string, string> = {
       // Honda
@@ -396,16 +437,35 @@ export class VehicleDataExtractorService {
       }
     }
 
-    // Try to extract variant (e.g., "Brio Satya", "Avanza Veloz")
+    // Try to extract variant (e.g., "Brio Satya", "Avanza Veloz", "Jazz RS")
+    // Common variants in Indonesian market
+    const knownVariants = [
+      'satya', 'veloz', 'rs', 'type r', 'type-r', 'sport', 'luxury', 'ultimate',
+      'base', 'standar', 'standard', 'premium', 'prestige', 'limited', 'special',
+      'g', 'e', 's', 'v', 'vx', 'srz', 'q', 'gx', 'lx', 'ex', 'sx', 'cvt',
+      'cross', 'exceed', 'glx', 'gls', 'sport'
+    ];
+
     if (extractedData.model) {
       const modelPattern = new RegExp(`\\b${extractedData.model}\\s+(\\w+)`, 'i');
       const variantMatch = text.match(modelPattern);
       if (variantMatch && variantMatch[1]) {
         const potentialVariant = variantMatch[1];
-        // Check if it's not a common keyword
-        const excludedWords = ['mt', 'at', 'cvt', 'km', 'tahun', 'warna', 'harga', 'rp', 'manual', 'matic', 'automatic'];
+        // Check if it's a known variant or not a common keyword
+        const excludedWords = ['mt', 'at', 'km', 'tahun', 'warna', 'harga', 'rp', 'manual', 'matic', 'automatic', 'cc', 'bensin', 'diesel', 'hitam', 'putih', 'silver', 'merah', 'biru'];
         if (!excludedWords.includes(potentialVariant.toLowerCase()) && !/^\d+$/.test(potentialVariant)) {
-          extractedData.model = `${extractedData.model} ${potentialVariant}`;
+          // Store as separate variant field instead of appending to model
+          extractedData.variant = potentialVariant.toUpperCase();
+        }
+      }
+    }
+
+    // Also check for standalone known variants
+    if (!extractedData.variant) {
+      for (const variant of knownVariants) {
+        if (new RegExp(`\\b${variant}\\b`, 'i').test(text)) {
+          extractedData.variant = variant.toUpperCase();
+          break;
         }
       }
     }
@@ -532,6 +592,48 @@ export class VehicleDataExtractorService {
     for (const color of colors) {
       if (new RegExp(`\\b${color}\\b`, 'i').test(text)) {
         extractedData.color = color.charAt(0).toUpperCase() + color.slice(1);
+        fieldsFound++;
+        break;
+      }
+    }
+
+    // Extract fuel type (bahan bakar)
+    if (/\b(diesel|solar)\b/i.test(text)) {
+      extractedData.fuelType = 'Diesel';
+      fieldsFound++;
+    } else if (/\b(hybrid)\b/i.test(text)) {
+      extractedData.fuelType = 'Hybrid';
+      fieldsFound++;
+    } else if (/\b(listrik|electric|ev)\b/i.test(text)) {
+      extractedData.fuelType = 'Electric';
+      fieldsFound++;
+    } else if (/\b(bensin|pertamax|pertalite)\b/i.test(text)) {
+      extractedData.fuelType = 'Bensin';
+      fieldsFound++;
+    }
+
+    // Extract engine capacity (CC mesin)
+    const ccMatch = text.match(/(\d+(?:\.\d+)?)\s*(cc|CC|L)\b/i);
+    if (ccMatch) {
+      let capacity = parseFloat(ccMatch[1]);
+      const unit = ccMatch[2].toLowerCase();
+      if (unit === 'l' && capacity < 10) {
+        capacity = capacity * 1000;
+      }
+      extractedData.engineCapacity = `${Math.round(capacity)}cc`;
+      fieldsFound++;
+    }
+
+    // Extract variant
+    const knownVariants = [
+      'satya', 'veloz', 'rs', 'type r', 'type-r', 'sport', 'luxury', 'ultimate',
+      'base', 'standar', 'standard', 'premium', 'prestige', 'limited', 'special',
+      'g', 'e', 's', 'v', 'vx', 'srz', 'q', 'gx', 'lx', 'ex', 'sx',
+      'cross', 'exceed', 'glx', 'gls'
+    ];
+    for (const variant of knownVariants) {
+      if (new RegExp(`\\b${variant}\\b`, 'i').test(text)) {
+        extractedData.variant = variant.toUpperCase();
         fieldsFound++;
         break;
       }
