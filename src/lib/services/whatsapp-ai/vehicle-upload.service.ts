@@ -199,6 +199,10 @@ export class WhatsAppVehicleUploadService {
       console.log('[WhatsApp Vehicle Upload] - Description length:', aiResult.descriptionId.length);
       console.log('[WhatsApp Vehicle Upload] - Features count:', aiResult.features.length);
       console.log('[WhatsApp Vehicle Upload] - Price analysis:', aiResult.priceAnalysis.recommendation);
+      console.log('[WhatsApp Vehicle Upload] - AI Auto-completed fields:');
+      console.log('[WhatsApp Vehicle Upload]   → variant:', aiResult.variant || '(not set)');
+      console.log('[WhatsApp Vehicle Upload]   → fuelType:', aiResult.fuelType || '(not set)');
+      console.log('[WhatsApp Vehicle Upload]   → engineCapacity:', aiResult.specifications?.engineCapacity || '(not set)');
 
       // 3. Get user ID from phone number (using normalized comparison)
       const staff = await this.findStaffByPhone(tenantId, staffPhone);
@@ -253,11 +257,12 @@ export class WhatsAppVehicleUploadService {
           priceConfidence: aiResult.priceConfidence || 0.8,
           priceAnalysis: aiResult.priceAnalysis || { recommendation: 'Harga sesuai pasar' },
 
-          // Vehicle Details
+          // Vehicle Details (AI auto-completes missing fields)
           mileage: vehicleData.mileage || 0,
-          transmissionType: vehicleData.transmission?.toLowerCase() || 'manual',
+          transmissionType: vehicleData.transmission?.toLowerCase() || aiResult.transmissionType || 'manual',
           fuelType: aiResult.fuelType || 'bensin',
-          color: vehicleData.color || 'Unknown',
+          engineCapacity: aiResult.specifications?.engineCapacity || null,
+          color: vehicleData.color || aiResult.color || 'Unknown',
 
           // Status
           status: 'AVAILABLE',  // Auto-publish from WhatsApp
@@ -415,10 +420,23 @@ export class WhatsAppVehicleUploadService {
 
       let message = `Mantap kak, uploadnya berhasil! 🎉\n\n`;
       message += `🚗 *${vehicle.make} ${vehicle.model} ${vehicle.year}*\n`;
+      if (aiResult.variant) {
+        message += `📋 Varian: ${aiResult.variant}\n`;
+      }
       message += `🏷️ ID: *${displayId}*\n`;
       message += `💰 Rp ${priceInJuta} Juta\n`;
-      message += `📍 ${vehicleData.mileage?.toLocaleString('id-ID') || '0'} km | ${vehicleData.transmission || '-'}\n`;
-      message += `🎨 ${vehicleData.color || '-'}\n`;
+      // Only show km if staff provided it
+      const transmissionDisplay = vehicleData.transmission || aiResult.transmissionType || '-';
+      if (vehicleData.mileage && vehicleData.mileage > 0) {
+        message += `📍 ${vehicleData.mileage.toLocaleString('id-ID')} km | ${transmissionDisplay}\n`;
+      } else {
+        message += `🚙 ${transmissionDisplay}\n`;
+      }
+      message += `🎨 ${vehicleData.color || aiResult.color || '-'}\n`;
+      // Show AI auto-completed fields
+      if (aiResult.fuelType || aiResult.specifications?.engineCapacity) {
+        message += `⛽ ${aiResult.fuelType || '-'} | ${aiResult.specifications?.engineCapacity || '-'}\n`;
+      }
 
       // Show photo upload status with details
       if (processedPhotoCount === 0) {

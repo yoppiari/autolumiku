@@ -58,11 +58,16 @@ Parse vehicle data and generate PROFESSIONAL SEO description in Bahasa Indonesia
 Style: Professional, formal, informative. NO slang. Use "second" or "pre-owned" instead of "bekas".
 Keywords: "mobil second", "dijual", make, model, year, city
 
+CRITICAL - You MUST infer these fields based on your vehicle knowledge even if NOT in user input:
+- variant: Infer common variant (e.g. "G AT", "E MT", "RS CVT") based on make/model/year/transmission
+- fuelType: ALWAYS infer from vehicle type (bensin/diesel/hybrid/electric). Most cars use "bensin", trucks/pickups often "diesel"
+- engineCapacity: ALWAYS infer from make/model (e.g. Avanza="1329cc" or "1496cc", Brio="1199cc", Jazz="1497cc")
+
 Price in IDR cents (130jt=13000000000). Estimate if missing.
 Transmission: manual/automatic/cvt
 
 JSON:
-{"make":"Toyota","model":"Avanza","year":2020,"variant":"G AT","transmissionType":"automatic","fuelType":"bensin","color":"Hitam","mileage":20000,"price":13000000000,"descriptionId":"Toyota Avanza G AT 2020 Second\\n\\nDijual Toyota Avanza G AT tahun 2020 dengan kondisi terawat dan siap pakai. Kendaraan ini memiliki kilometer 20.000 km, transmisi automatic, dan warna hitam metalik yang elegan.\\n\\nEksterior masih terawat dengan cat Abu-Abu Metalik yang masih mengkilap. Interior bersih dan nyaman, fitur-fitur lengkap sesuai standar Honda City tahun 2006.\\n\\nHarga 79 Juta, unit siap pakai untuk harian maupun keluarga. Hubungi segera untuk informasi lebih lanjut!","features":["AC","Power Steering"],"specifications":{"engineCapacity":"1329cc"},"aiConfidence":85,"aiReasoning":"OK","aiSuggestedPrice":13500000000,"priceConfidence":90,"priceAnalysis":{"marketRange":{"min":13000000000,"max":14000000000},"factors":["2020"],"recommendation":"Fair"}}`;
+{"make":"Toyota","model":"Avanza","year":2020,"variant":"G AT","transmissionType":"automatic","fuelType":"bensin","color":"Hitam","mileage":20000,"price":13000000000,"descriptionId":"Toyota Avanza G AT 2020 Second\\n\\nDijual Toyota Avanza G AT tahun 2020 dengan kondisi terawat dan siap pakai. Kendaraan ini memiliki kilometer 20.000 km, transmisi automatic, dan warna hitam metalik yang elegan.\\n\\nEksterior masih terawat dengan cat Abu-Abu Metalik yang masih mengkilap. Interior bersih dan nyaman, fitur-fitur lengkap sesuai standar Toyota Avanza.\\n\\nHarga 130 Juta, unit siap pakai untuk harian maupun keluarga. Hubungi segera untuk informasi lebih lanjut!","features":["AC","Power Steering","Electric Mirror","Airbag"],"specifications":{"engineCapacity":"1329cc","seatingCapacity":7},"aiConfidence":85,"aiReasoning":"OK","aiSuggestedPrice":13500000000,"priceConfidence":90,"priceAnalysis":{"marketRange":{"min":13000000000,"max":14000000000},"factors":["2020"],"recommendation":"Fair"}}`;
 
 export class VehicleAIService {
   private client: ZAIClient | null;
@@ -237,13 +242,234 @@ export class VehicleAIService {
         };
       }
 
-      return result;
+      // Step 4: Enrich with PopularVehicle data for any missing fields
+      const enrichedResult = await this.enrichWithPopularVehicleData(result, searchResults);
+
+      return enrichedResult;
     } catch (error) {
       console.error('Vehicle AI identification error:', error);
       throw new Error(
         `Failed to identify vehicle: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  /**
+   * Enrich AI result with PopularVehicle reference data
+   * Fills in missing fuelType, engineCapacity, and variant from database
+   */
+  private async enrichWithPopularVehicleData(
+    result: VehicleAIResult,
+    searchResults: any[]
+  ): Promise<VehicleAIResult> {
+    // If we have search results, use the top match for enrichment
+    if (searchResults.length === 0) {
+      // Fallback defaults if no PopularVehicle data
+      return this.applyDefaultEnrichment(result);
+    }
+
+    const topMatch = searchResults[0];
+    console.log('[VehicleAI] Enriching with PopularVehicle data:', topMatch.make, topMatch.model);
+
+    // Get full PopularVehicle data
+    const popularVehicle = await prisma.popularVehicle.findUnique({
+      where: { id: topMatch.id },
+      select: {
+        variants: true,
+        engineCapacity: true,
+        fuelTypes: true,
+        transmissionTypes: true,
+        category: true,
+      },
+    });
+
+    if (!popularVehicle) {
+      return this.applyDefaultEnrichment(result);
+    }
+
+    // Enrich missing fields
+    const enriched = { ...result };
+
+    // 1. Enrich variant if missing
+    if (!enriched.variant && popularVehicle.variants) {
+      const variants = popularVehicle.variants as string[];
+      if (variants.length > 0) {
+        // Try to match variant based on transmission
+        const transmission = enriched.transmissionType?.toLowerCase() || '';
+        const matchingVariant = variants.find(v => {
+          const vLower = v.toLowerCase();
+          if (transmission.includes('automatic') || transmission.includes('cvt') || transmission.includes('at')) {
+            return vLower.includes('at') || vLower.includes('cvt') || vLower.includes('matic');
+          }
+          return vLower.includes('mt') || vLower.includes('manual');
+        });
+        enriched.variant = matchingVariant || variants[0];
+        console.log('[VehicleAI] Enriched variant:', enriched.variant);
+      }
+    }
+
+    // 2. Enrich fuelType if missing or default "bensin"
+    if (!enriched.fuelType && popularVehicle.fuelTypes) {
+      const fuelTypes = popularVehicle.fuelTypes as string[];
+      if (fuelTypes.length > 0) {
+        enriched.fuelType = fuelTypes[0].toLowerCase();
+        console.log('[VehicleAI] Enriched fuelType:', enriched.fuelType);
+      }
+    }
+
+    // 3. Enrich engineCapacity if missing
+    if (!enriched.specifications?.engineCapacity && popularVehicle.engineCapacity) {
+      const engineData = popularVehicle.engineCapacity as Record<string, string>;
+      const engineKeys = Object.keys(engineData);
+      if (engineKeys.length > 0) {
+        // Get the first (most common) engine capacity
+        const firstKey = engineKeys[0];
+        const capacity = engineData[firstKey] || firstKey;
+        enriched.specifications = {
+          ...enriched.specifications,
+          engineCapacity: capacity,
+        };
+        console.log('[VehicleAI] Enriched engineCapacity:', capacity);
+      }
+    }
+
+    return this.applyDefaultEnrichment(enriched);
+  }
+
+  /**
+   * Apply fallback defaults for any still-missing fields
+   */
+  private applyDefaultEnrichment(result: VehicleAIResult): VehicleAIResult {
+    const enriched = { ...result };
+
+    // Ensure fuelType is never empty
+    if (!enriched.fuelType) {
+      enriched.fuelType = 'bensin';
+    }
+
+    // Ensure specifications exists
+    if (!enriched.specifications) {
+      enriched.specifications = {};
+    }
+
+    // Infer engineCapacity from common knowledge if still missing
+    if (!enriched.specifications.engineCapacity) {
+      const knownEngineCapacity = this.inferEngineCapacity(enriched.make, enriched.model);
+      if (knownEngineCapacity) {
+        enriched.specifications.engineCapacity = knownEngineCapacity;
+        console.log('[VehicleAI] Inferred engineCapacity:', knownEngineCapacity);
+      }
+    }
+
+    return enriched;
+  }
+
+  /**
+   * Infer engine capacity from common Indonesian vehicle knowledge
+   */
+  private inferEngineCapacity(make: string, model: string): string | null {
+    const makeLower = make.toLowerCase();
+    const modelLower = model.toLowerCase();
+
+    // Common Indonesian vehicles with known engine capacities
+    const knownCapacities: Record<string, Record<string, string>> = {
+      toyota: {
+        avanza: '1329cc',
+        calya: '1197cc',
+        rush: '1496cc',
+        innova: '1998cc',
+        fortuner: '2393cc',
+        yaris: '1496cc',
+        vios: '1496cc',
+        agya: '998cc',
+        raize: '1197cc',
+        veloz: '1496cc',
+      },
+      daihatsu: {
+        xenia: '1329cc',
+        sigra: '1197cc',
+        terios: '1496cc',
+        ayla: '998cc',
+        rocky: '1197cc',
+        gran: '1329cc', // Gran Max
+      },
+      honda: {
+        brio: '1199cc',
+        jazz: '1497cc',
+        city: '1497cc',
+        civic: '1498cc',
+        'hr-v': '1497cc',
+        hrv: '1497cc',
+        'cr-v': '1498cc',
+        crv: '1498cc',
+        mobilio: '1497cc',
+        'br-v': '1497cc',
+        brv: '1497cc',
+      },
+      suzuki: {
+        ertiga: '1462cc',
+        xl7: '1462cc',
+        baleno: '1462cc',
+        ignis: '1197cc',
+        karimun: '998cc',
+        apv: '1493cc',
+        swift: '1197cc',
+        jimny: '1462cc',
+      },
+      mitsubishi: {
+        xpander: '1499cc',
+        pajero: '2442cc',
+        outlander: '1998cc',
+        triton: '2442cc',
+        colt: '1298cc', // Colt series
+      },
+      nissan: {
+        livina: '1498cc',
+        march: '1198cc',
+        serena: '1997cc',
+        navara: '2298cc',
+        'x-trail': '1997cc',
+        xtrail: '1997cc',
+        juke: '1498cc',
+      },
+      mazda: {
+        '2': '1496cc',
+        '3': '1998cc',
+        cx3: '1998cc',
+        'cx-3': '1998cc',
+        cx5: '2488cc',
+        'cx-5': '2488cc',
+      },
+      hyundai: {
+        creta: '1497cc',
+        stargazer: '1497cc',
+        ioniq: '1580cc',
+        'santa fe': '2199cc',
+        palisade: '2199cc',
+      },
+      wuling: {
+        confero: '1499cc',
+        cortez: '1499cc',
+        almaz: '1499cc',
+        'air ev': 'Electric',
+      },
+    };
+
+    const makeData = knownCapacities[makeLower];
+    if (makeData) {
+      // Try exact match first
+      if (makeData[modelLower]) {
+        return makeData[modelLower];
+      }
+      // Try partial match
+      for (const [key, value] of Object.entries(makeData)) {
+        if (modelLower.includes(key) || key.includes(modelLower)) {
+          return value;
+        }
+      }
+    }
+
+    return null;
   }
 
   // Vision-based identification removed - text-only identification is used
