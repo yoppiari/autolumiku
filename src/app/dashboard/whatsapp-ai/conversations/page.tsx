@@ -90,6 +90,9 @@ export default function ConversationsPage() {
   const [isDeletingMessage, setIsDeletingMessage] = useState(false);
   const messageMenuRef = useRef<HTMLDivElement>(null);
 
+  // State untuk delete conversation
+  const [isDeletingConversation, setIsDeletingConversation] = useState<string | null>(null);
+
   // Load conversations
   useEffect(() => {
     const loadConversations = async () => {
@@ -264,6 +267,43 @@ export default function ConversationsPage() {
       alert('Gagal menghapus pesan');
     } finally {
       setIsDeletingMessage(false);
+    }
+  };
+
+  // Delete conversation handler
+  const handleDeleteConversation = async (conversationId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent selecting the conversation
+
+    if (isDeletingConversation) return;
+
+    const confirmDelete = window.confirm('Hapus seluruh percakapan ini? Semua pesan akan dihapus permanen.');
+    if (!confirmDelete) return;
+
+    setIsDeletingConversation(conversationId);
+    try {
+      const response = await fetch(
+        `/api/v1/whatsapp-ai/delete-conversation?conversationId=${conversationId}`,
+        { method: 'DELETE' }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        // Remove from local state
+        setConversations((prev) => prev.filter((conv) => conv.id !== conversationId));
+        // Clear selected if it was the deleted one
+        if (selectedConversation?.id === conversationId) {
+          setSelectedConversation(null);
+          setMessages([]);
+          setShowChatOnMobile(false);
+        }
+      } else {
+        alert('Gagal menghapus percakapan: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      alert('Gagal menghapus percakapan');
+    } finally {
+      setIsDeletingConversation(null);
     }
   };
 
@@ -831,7 +871,7 @@ export default function ConversationsPage() {
                 <div
                   key={conv.id}
                   onClick={() => handleSelectConversationMobile(conv)}
-                  className={`px-4 py-3 md:px-3 md:py-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 active:bg-gray-100 ${
+                  className={`px-4 py-3 md:px-3 md:py-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 active:bg-gray-100 group ${
                     selectedConversation?.id === conv.id ? 'bg-green-50' : ''
                   }`}
                 >
@@ -864,13 +904,30 @@ export default function ConversationsPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-3 md:ml-2">
-                      <p className="text-[11px] md:text-[10px] text-gray-500">{formatTime(conv.lastMessageAt)}</p>
-                      {conv.unreadCount > 0 && (
-                        <span className="inline-block mt-1 md:mt-0.5 px-2 py-0.5 md:px-1.5 md:py-0 bg-green-600 text-white text-[11px] md:text-[10px] rounded-full">
-                          {conv.unreadCount}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-3 md:ml-2">
+                      {/* Delete conversation button */}
+                      <button
+                        onClick={(e) => handleDeleteConversation(conv.id, e)}
+                        disabled={isDeletingConversation === conv.id}
+                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
+                        title="Hapus chat"
+                      >
+                        {isDeletingConversation === conv.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-500 border-t-transparent"></div>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
+                      <div className="text-right">
+                        <p className="text-[11px] md:text-[10px] text-gray-500">{formatTime(conv.lastMessageAt)}</p>
+                        {conv.unreadCount > 0 && (
+                          <span className="inline-block mt-1 md:mt-0.5 px-2 py-0.5 md:px-1.5 md:py-0 bg-green-600 text-white text-[11px] md:text-[10px] rounded-full">
+                            {conv.unreadCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
