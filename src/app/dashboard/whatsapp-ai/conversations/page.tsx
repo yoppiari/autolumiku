@@ -995,18 +995,16 @@ export default function ConversationsPage() {
                             </button>
                           </div>
 
-                          {/* Dropdown menu */}
+                          {/* Dropdown menu - positioned inside bubble area */}
                           {activeMessageMenu === msg.id && (
                             <div
                               ref={messageMenuRef}
-                              className={`absolute top-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[140px] z-50 ${
-                                msg.direction === 'inbound' ? 'left-0' : 'right-0'
-                              }`}
+                              className="absolute top-8 right-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[120px] z-50"
                             >
                               <button
                                 onClick={() => handleDeleteMessage(msg.id)}
                                 disabled={isDeletingMessage}
-                                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-red-600 disabled:opacity-50"
+                                className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-red-600 disabled:opacity-50"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
