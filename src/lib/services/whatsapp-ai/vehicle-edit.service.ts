@@ -262,6 +262,7 @@ export class VehicleEditService {
 
       // 7. Format success message
       const vehicleName = `${vehicle.make} ${vehicle.model} ${vehicle.year}`;
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
       let message: string;
 
       if (changes.length === 1) {
@@ -270,22 +271,24 @@ export class VehicleEditService {
         const formattedOld = this.formatValue(change.field, change.oldValue);
         const formattedNew = this.formatValue(change.field, change.newValue);
         message =
-          `Berhasil update ${vehicleName}!\n\n` +
-          `${change.fieldLabel}: ${formattedOld} -> ${formattedNew}\n` +
+          `✅ Berhasil update ${vehicleName}!\n\n` +
+          `${change.fieldLabel}: ${formattedOld} → ${formattedNew}\n` +
           `ID: ${vehicle.displayId || vehicle.id}\n\n` +
-          `Cek di dashboard:\nprimamobil.id/dashboard/vehicles/${vehicle.id}`;
+          `🌐 Website:\n${baseUrl}/vehicles/${vehicle.id}\n\n` +
+          `📊 Dashboard:\n${baseUrl}/dashboard/vehicles/${vehicle.id}`;
       } else {
         // Multi-field changes
         const changeLines = changes.map((c) => {
           const formattedOld = this.formatValue(c.field, c.oldValue);
           const formattedNew = this.formatValue(c.field, c.newValue);
-          return `• ${c.fieldLabel}: ${formattedOld} -> ${formattedNew}`;
+          return `• ${c.fieldLabel}: ${formattedOld} → ${formattedNew}`;
         });
         message =
-          `Berhasil update ${vehicleName}!\n\n` +
+          `✅ Berhasil update ${vehicleName}!\n\n` +
           `Perubahan:\n${changeLines.join("\n")}\n\n` +
           `ID: ${vehicle.displayId || vehicle.id}\n\n` +
-          `Cek di dashboard:\nprimamobil.id/dashboard/vehicles/${vehicle.id}`;
+          `🌐 Website:\n${baseUrl}/vehicles/${vehicle.id}\n\n` +
+          `📊 Dashboard:\n${baseUrl}/dashboard/vehicles/${vehicle.id}`;
       }
 
       // Add partial error info if some fields failed
