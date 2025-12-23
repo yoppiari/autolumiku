@@ -198,49 +198,13 @@ export default function WhatsAppAIDashboard() {
 
   return (
     <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
-      {/* Header with AI Toggle - Single Row */}
-      <div className="mb-3 flex-shrink-0 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">WhatsApp AI Automation</h1>
-          <p className="text-gray-600 text-sm">Asisten virtual 24/7 untuk customer dan staff operations</p>
-        </div>
-
-        {/* AI Controls - Always visible when connected */}
-        {status.isConnected && (
-          <div className="flex items-center space-x-3">
-            {/* AI Health Status Badge */}
-            <div className={`flex items-center px-3 py-1.5 rounded-full text-white text-xs font-medium ${getAIStatusColor(aiHealth?.status)}`}>
-              <span className={`w-2 h-2 rounded-full mr-2 ${aiHealth?.status === 'active' ? 'animate-pulse bg-white' : 'bg-white/60'}`}></span>
-              {getAIStatusText(aiHealth?.status)}
-              {aiHealth && aiHealth.errorCount > 0 && aiHealth.status !== 'active' && (
-                <span className="ml-1">({aiHealth.errorCount} error)</span>
-              )}
-            </div>
-
-            {/* AI Toggle Button */}
-            <button
-              onClick={handleToggleAI}
-              disabled={isTogglingAI}
-              className={`relative inline-flex items-center px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm cursor-pointer ${
-                aiHealth?.enabled !== false
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                  : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-              } ${isTogglingAI ? 'opacity-50 cursor-wait' : ''}`}
-            >
-              {isTogglingAI ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-              ) : (
-                <span className="text-lg mr-2">🤖</span>
-              )}
-              <span>
-                {aiHealth?.enabled !== false ? 'AI: ON' : 'AI: OFF'}
-              </span>
-            </button>
-          </div>
-        )}
+      {/* Header */}
+      <div className="mb-3 flex-shrink-0">
+        <h1 className="text-2xl font-bold text-gray-900">WhatsApp AI Automation</h1>
+        <p className="text-gray-600 text-sm">Asisten virtual 24/7 untuk customer dan staff operations</p>
       </div>
 
-      {/* Connection Status - Compact inline */}
+      {/* Connection Status - With AI Controls inside */}
       <div className={`p-3 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${
         status.isConnected
           ? 'bg-green-50 border-green-300'
@@ -275,7 +239,35 @@ export default function WhatsAppAIDashboard() {
               )}
             </div>
           </div>
-          {!status.isConnected && (
+
+          {/* Right side: AI Controls when connected, Setup button when not */}
+          {status.isConnected ? (
+            <div className="flex items-center space-x-3">
+              {/* AI Health Status Badge */}
+              <div className={`flex items-center px-3 py-1.5 rounded-full text-white text-xs font-medium ${getAIStatusColor(aiHealth?.status)}`}>
+                <span className={`w-2 h-2 rounded-full mr-2 ${aiHealth?.status === 'active' ? 'animate-pulse bg-white' : 'bg-white/60'}`}></span>
+                {getAIStatusText(aiHealth?.status)}
+                {aiHealth && aiHealth.errorCount > 0 && aiHealth.status !== 'active' && (
+                  <span className="ml-1">({aiHealth.errorCount} error)</span>
+                )}
+              </div>
+
+              {/* AI Toggle Button - Links to config page */}
+              <Link
+                href="/dashboard/whatsapp-ai/config"
+                className={`relative inline-flex items-center px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm ${
+                  aiHealth?.enabled !== false
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                }`}
+              >
+                <span className="text-lg mr-2">🤖</span>
+                <span>
+                  {aiHealth?.enabled !== false ? 'AI: ON' : 'AI: OFF'}
+                </span>
+              </Link>
+            </div>
+          ) : (
             <Link
               href="/dashboard/whatsapp-ai/setup"
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md text-sm"
