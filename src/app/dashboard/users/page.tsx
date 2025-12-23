@@ -305,9 +305,9 @@ export default function UsersPage() {
       </div>
 
       {/* Main Content - Two Separate Scroll Areas */}
-      <div className="flex-1 flex flex-col gap-3 min-h-0">
-        {/* Users Table - Scrollable Area 1 */}
-        <div className="flex-1 min-h-0 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+      <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-hidden">
+        {/* Users Table - Scrollable Area 1 (Takes 60% of available space) */}
+        <div className="flex-[3] min-h-[200px] bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
           <div className="flex-1 overflow-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
@@ -459,8 +459,8 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* WhatsApp AI Integration Info - Scrollable Area 2 (Fixed Height) */}
-        <div className="flex-shrink-0 max-h-[280px] overflow-auto bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-3">
+        {/* WhatsApp AI Integration Info - Scrollable Area 2 (Takes 40% of available space) */}
+        <div className="flex-[2] min-h-[150px] overflow-auto bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-3">
           <div className="flex items-start">
             <div className="flex-shrink-0">
               <div className="flex items-center justify-center h-10 w-10 rounded-md bg-green-500 text-white text-xl">
