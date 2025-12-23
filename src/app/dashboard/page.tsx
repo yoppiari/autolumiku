@@ -163,20 +163,15 @@ export default function ShowroomDashboardPage() {
       href: '/dashboard/vehicles',
     },
     {
-      title: 'Leads Aktif',
+      title: 'WhatsApp AI',
       value: stats?.leads.active || 0,
       subValue: stats?.leads.today || 0,
-      subLabel: 'baru hari ini',
-      subColor: 'text-orange-600',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-        </svg>
-      ),
-      emoji: '📞',
+      subLabel: 'chat hari ini',
+      subColor: 'text-emerald-600',
+      emoji: '💬',
       gradient: 'from-emerald-500 to-emerald-600',
       bgLight: 'bg-emerald-50',
-      href: '/dashboard/leads',
+      href: '/dashboard/whatsapp-ai',
     },
     {
       title: 'Tim Showroom',
@@ -353,13 +348,13 @@ export default function ShowroomDashboardPage() {
               <span className="text-sm font-semibold text-blue-800 group-hover:text-blue-900">Manajemen Kendaraan</span>
             </Link>
             <Link
-              href="/dashboard/leads"
-              className="flex items-center gap-3 p-3 rounded-xl bg-red-50 hover:bg-red-100 transition-all group border-2 border-red-200 hover:border-red-400 hover:shadow-lg"
+              href="/dashboard/whatsapp-ai"
+              className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-all group border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-lg"
             >
-              <div className="w-12 h-12 bg-red-100 group-hover:bg-red-200 rounded-xl flex items-center justify-center transition-colors border border-red-300">
-                <span className="text-2xl">📞</span>
+              <div className="w-12 h-12 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center transition-colors border border-emerald-300">
+                <span className="text-2xl">💬</span>
               </div>
-              <span className="text-sm font-semibold text-red-800 group-hover:text-red-900">Manajemen Leads</span>
+              <span className="text-sm font-semibold text-emerald-800 group-hover:text-emerald-900">AI WhatsApp</span>
             </Link>
             <Link
               href="/dashboard/users"
@@ -371,13 +366,13 @@ export default function ShowroomDashboardPage() {
               <span className="text-sm font-semibold text-violet-800 group-hover:text-violet-900">Manajemen Tim</span>
             </Link>
             <Link
-              href="/dashboard/whatsapp-ai"
-              className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-all group border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-lg"
+              href="/dashboard/blog"
+              className="flex items-center gap-3 p-3 rounded-xl bg-orange-50 hover:bg-orange-100 transition-all group border-2 border-orange-200 hover:border-orange-400 hover:shadow-lg"
             >
-              <div className="w-12 h-12 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center transition-colors border border-emerald-300">
-                <span className="text-2xl">💬</span>
+              <div className="w-12 h-12 bg-orange-100 group-hover:bg-orange-200 rounded-xl flex items-center justify-center transition-colors border border-orange-300">
+                <span className="text-2xl">📝</span>
               </div>
-              <span className="text-sm font-semibold text-emerald-800 group-hover:text-emerald-900">AI WhatsApp</span>
+              <span className="text-sm font-semibold text-orange-800 group-hover:text-orange-900">Blog</span>
             </Link>
           </div>
         </div>

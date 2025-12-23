@@ -129,7 +129,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Kendaraan', href: '/dashboard/vehicles', icon: '🚗' },
     { name: 'Tim', href: '/dashboard/users', icon: '👥' },
     { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬' },
-    { name: 'Leads', href: '/dashboard/leads', icon: '📞' },
     { name: 'Blog', href: '/dashboard/blog', icon: '📝' },
     { name: 'Pengaturan', href: '/dashboard/settings', icon: '⚙️' },
   ];
