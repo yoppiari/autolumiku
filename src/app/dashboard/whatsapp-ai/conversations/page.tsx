@@ -888,8 +888,8 @@ export default function ConversationsPage() {
                       >
                         <span className="text-base md:text-sm">{conv.isStaff ? '👨‍💼' : '👤'}</span>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-medium text-gray-900 text-sm md:text-sm truncate whitespace-nowrap">
+                      <div className="min-w-0 flex-1 overflow-visible">
+                        <h3 className="font-medium text-gray-900 text-xs md:text-sm whitespace-nowrap">
                           {conv.customerName || formatPhoneNumber(conv.customerPhone)}
                         </h3>
                         <div className="flex items-center gap-1.5 md:gap-1 mt-1 md:mt-0.5 flex-wrap">
