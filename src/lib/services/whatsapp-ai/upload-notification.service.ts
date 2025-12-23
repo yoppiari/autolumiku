@@ -135,7 +135,7 @@ export class UploadNotificationService {
 
       return (
         `🔔 *NOTIFIKASI UPLOAD MOBIL*\n` +
-        `━━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `━━━━━━━━━━━━━\n\n` +
         `✅ *Upload Berhasil!*\n\n` +
         `📋 *Data Kendaraan:*\n` +
         `• Mobil: ${v.make} ${v.model} ${v.year}\n` +
@@ -148,12 +148,14 @@ export class UploadNotificationService {
         `${notification.uploaderName || notification.uploaderPhone}\n\n` +
         `🕐 *Waktu:* ${timestamp}\n\n` +
         `🌐 *Lihat di Website:*\n` +
-        `https://primamobil.id/vehicles/${v.vehicleId}`
+        `https://primamobil.id/vehicles/${v.vehicleId}\n\n` +
+        `📊 *Dashboard:*\n` +
+        `https://primamobil.id/dashboard/vehicles/${v.vehicleId}`
       );
     } else {
       return (
         `🔔 *NOTIFIKASI UPLOAD MOBIL*\n` +
-        `━━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `━━━━━━━━━━━━━\n\n` +
         `❌ *Upload Gagal!*\n\n` +
         `📋 *Detail:*\n` +
         `• Error: ${notification.error || "Unknown error"}\n\n` +
