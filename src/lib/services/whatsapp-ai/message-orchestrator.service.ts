@@ -201,14 +201,17 @@ export class MessageOrchestratorService {
               incoming.from
             );
 
-            // Clear conversation state but preserve lastUploadedVehicleId for edit feature
+            // Clear conversation state but preserve lastUploadedVehicleId and isStaff for edit feature
+            const currentContext = (conversation.contextData as Record<string, any>) || {};
             await prisma.whatsAppConversation.update({
               where: { id: conversation.id },
               data: {
                 conversationState: null,
+                isStaff: true, // Preserve staff status for future edit requests
                 contextData: uploadResult.success ? {
                   lastUploadedVehicleId: uploadResult.vehicleId,
                   lastUploadedAt: new Date().toISOString(),
+                  verifiedStaffPhone: currentContext.verifiedStaffPhone || incoming.from,
                 } : {},
               },
             });
@@ -452,14 +455,16 @@ export class MessageOrchestratorService {
         const wantsToFinish = finishPatterns.some(p => p.test(normalizedMessage));
 
         if (wantsToFinish) {
-          // Clear state but preserve lastUploadedVehicleId for edit feature
+          // Clear state but preserve lastUploadedVehicleId and isStaff for edit feature
           await prisma.whatsAppConversation.update({
             where: { id: conversation.id },
             data: {
               conversationState: null,
+              isStaff: true, // Preserve staff status for future edit requests
               contextData: {
                 lastUploadedVehicleId: contextData.vehicleId,
                 lastUploadedAt: new Date().toISOString(),
+                verifiedStaffPhone: contextData.verifiedStaffPhone || incoming.from,
               },
             },
           });

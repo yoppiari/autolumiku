@@ -132,8 +132,9 @@ export class WhatsAppAIChatService {
       }
       console.log(`[WhatsApp AI Chat] Customer chat is ENABLED. Proceeding with AI response.`);
 
-      // Check business hours (optional)
-      const shouldCheckHours = config.businessHours && config.afterHoursMessage;
+      // Check business hours (optional) - STAFF BYPASS business hours check
+      const isStaff = context.isStaff || false;
+      const shouldCheckHours = config.businessHours && config.afterHoursMessage && !isStaff;
       if (shouldCheckHours && !this.isWithinBusinessHours(config.businessHours, config.timezone)) {
         console.log(`[WhatsApp AI Chat] Outside business hours, returning after-hours message`);
         return {
@@ -142,6 +143,10 @@ export class WhatsAppAIChatService {
           confidence: 1.0,
           processingTime: Date.now() - startTime,
         };
+      }
+
+      if (isStaff) {
+        console.log(`[WhatsApp AI Chat] ✅ Staff detected - bypassing business hours check`);
       }
 
       // Build system prompt with sender info
