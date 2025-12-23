@@ -695,7 +695,11 @@ export default function ConversationsPage() {
         // Even with valid prefix, check if too long for that country
         if (num.startsWith('62') && num.length > 14) return true;
         if (num.startsWith('60') && num.length > 13) return true;
-        if (num.startsWith('65') && num.length > 11) return true;
+        if (num.startsWith('65') && num.length > 11) return true;  // Singapore
+        if (num.startsWith('1') && num.length > 11) return true;   // US/Canada max 11
+        if (num.startsWith('44') && num.length > 12) return true;  // UK
+        if (num.startsWith('91') && num.length > 12) return true;  // India
+        if (num.startsWith('86') && num.length > 13) return true;  // China
       }
 
       // Known LID prefixes (100, 101, 102) with long numbers
