@@ -1158,6 +1158,59 @@ export class AimeowClientService {
       return { success: false, error: error.message };
     }
   }
+
+  /**
+   * Get WhatsApp profile picture URL for a contact
+   */
+  static async getProfilePicture(
+    clientId: string,
+    phone: string
+  ): Promise<{ success: boolean; pictureUrl?: string; hasPicture: boolean; error?: string }> {
+    try {
+      console.log(`[Aimeow Profile] Getting profile picture for ${phone}`);
+
+      // Get correct client UUID format
+      let apiClientId = clientId;
+      if (clientId.includes("@") || !clientId.includes("-")) {
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+          }
+        }
+      }
+
+      // Clean phone number - remove any suffix
+      const cleanPhone = phone.replace(/@.*$/, '').replace(/[^0-9]/g, '');
+
+      const response = await fetch(
+        `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${cleanPhone}`,
+        {
+          headers: { 'Accept': 'application/json' },
+        }
+      );
+
+      if (!response.ok) {
+        console.log(`[Aimeow Profile] Failed to get profile picture: ${response.status}`);
+        return { success: false, hasPicture: false, error: `HTTP ${response.status}` };
+      }
+
+      const data = await response.json();
+      console.log(`[Aimeow Profile] Response:`, data);
+
+      return {
+        success: true,
+        pictureUrl: data.pictureUrl || undefined,
+        hasPicture: data.hasPicture || false,
+        error: data.error,
+      };
+    } catch (error: any) {
+      console.error(`[Aimeow Profile] ❌ Error:`, error.message);
+      return { success: false, hasPicture: false, error: error.message };
+    }
+  }
 }
 
 export default AimeowClientService;

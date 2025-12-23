@@ -93,6 +93,9 @@ export default function ConversationsPage() {
   // State untuk delete conversation
   const [isDeletingConversation, setIsDeletingConversation] = useState<string | null>(null);
 
+  // State untuk profile pictures
+  const [profilePictures, setProfilePictures] = useState<Record<string, string | null>>({});
+
   // Load conversations
   useEffect(() => {
     const loadConversations = async () => {
@@ -123,6 +126,52 @@ export default function ConversationsPage() {
 
     loadConversations();
   }, []);
+
+  // Load profile pictures for conversations
+  useEffect(() => {
+    const loadProfilePictures = async () => {
+      if (conversations.length === 0) return;
+
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const parsedUser = JSON.parse(storedUser);
+      const tenantId = parsedUser.tenantId;
+
+      // Load profile pictures for each conversation (batch, but don't block UI)
+      for (const conv of conversations) {
+        // Skip if already loaded
+        if (profilePictures[conv.customerPhone] !== undefined) continue;
+
+        try {
+          const response = await fetch(
+            `/api/v1/whatsapp-ai/profile-picture?tenantId=${tenantId}&phone=${encodeURIComponent(conv.customerPhone)}`
+          );
+          const data = await response.json();
+
+          if (data.success && data.hasPicture && data.pictureUrl) {
+            setProfilePictures(prev => ({
+              ...prev,
+              [conv.customerPhone]: data.pictureUrl,
+            }));
+          } else {
+            // Mark as no picture (null) to avoid refetching
+            setProfilePictures(prev => ({
+              ...prev,
+              [conv.customerPhone]: null,
+            }));
+          }
+        } catch (error) {
+          // Mark as no picture on error
+          setProfilePictures(prev => ({
+            ...prev,
+            [conv.customerPhone]: null,
+          }));
+        }
+      }
+    };
+
+    loadProfilePictures();
+  }, [conversations]);
 
   // Load tenant info and team members for contact info
   useEffect(() => {
@@ -928,11 +977,26 @@ export default function ConversationsPage() {
                     <div className="flex items-center min-w-0 flex-1">
                       {(() => {
                         const avatar = getAvatarProps(conv.customerPhone, conv.customerName, conv.isStaff);
+                        const profilePic = profilePictures[conv.customerPhone];
                         return (
-                          <div
-                            className={`w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-3 md:mr-2 flex-shrink-0 ${avatar.color} text-white font-semibold text-sm md:text-xs shadow-sm relative`}
-                          >
-                            {avatar.initials}
+                          <div className="relative w-10 h-10 md:w-8 md:h-8 mr-3 md:mr-2 flex-shrink-0">
+                            {profilePic ? (
+                              <img
+                                src={profilePic}
+                                alt=""
+                                className="w-full h-full rounded-full object-cover shadow-sm"
+                                onError={(e) => {
+                                  // Fallback to initials on image load error
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              className={`${profilePic ? 'hidden' : ''} w-full h-full rounded-full flex items-center justify-center ${avatar.color} text-white font-semibold text-sm md:text-xs shadow-sm`}
+                            >
+                              {avatar.initials}
+                            </div>
                             {conv.isStaff && (
                               <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 md:w-3 md:h-3 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
                                 <svg className="w-2.5 h-2.5 md:w-2 md:h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -1014,11 +1078,25 @@ export default function ConversationsPage() {
                     </button>
                     {(() => {
                       const avatar = getAvatarProps(selectedConversation.customerPhone, selectedConversation.customerName, selectedConversation.isStaff);
+                      const profilePic = profilePictures[selectedConversation.customerPhone];
                       return (
-                        <div
-                          className={`w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-3 md:mr-2 ${avatar.color} text-white font-semibold text-sm md:text-xs shadow-sm relative`}
-                        >
-                          {avatar.initials}
+                        <div className="relative w-10 h-10 md:w-8 md:h-8 mr-3 md:mr-2">
+                          {profilePic ? (
+                            <img
+                              src={profilePic}
+                              alt=""
+                              className="w-full h-full rounded-full object-cover shadow-sm"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className={`${profilePic ? 'hidden' : ''} w-full h-full rounded-full flex items-center justify-center ${avatar.color} text-white font-semibold text-sm md:text-xs shadow-sm`}
+                          >
+                            {avatar.initials}
+                          </div>
                           {selectedConversation.isStaff && (
                             <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 md:w-3 md:h-3 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
                               <svg className="w-2.5 h-2.5 md:w-2 md:h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
