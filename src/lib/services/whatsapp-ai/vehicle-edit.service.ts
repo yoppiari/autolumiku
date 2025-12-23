@@ -298,9 +298,10 @@ export class VehicleEditService {
       }
 
       // 8. Notify all other staff about the edit
+      // Use registered phone from database (authResult.staffPhone) instead of incoming message phone
       UploadNotificationService.notifyEditSuccess(
         request.tenantId,
-        request.staffPhone,
+        authResult.staffPhone || request.staffPhone,
         {
           vehicleId: vehicle.id,
           displayId: vehicle.displayId || undefined,
@@ -489,7 +490,7 @@ export class VehicleEditService {
     vehicle: any,
     staffPhone: string,
     tenantId: string
-  ): Promise<{ authorized: boolean; message: string; staffId?: string; staffName?: string }> {
+  ): Promise<{ authorized: boolean; message: string; staffId?: string; staffName?: string; staffPhone?: string }> {
     const staff = await this.findStaffByPhone(tenantId, staffPhone);
 
     if (!staff) {
@@ -502,7 +503,8 @@ export class VehicleEditService {
     const staffName = `${staff.firstName || ""} ${staff.lastName || ""}`.trim();
 
     // All registered staff can edit any vehicle from the same tenant
-    return { authorized: true, message: "", staffId: staff.id, staffName };
+    // Return the registered phone from database (not the incoming message phone)
+    return { authorized: true, message: "", staffId: staff.id, staffName, staffPhone: staff.phone || undefined };
   }
 
   /**

@@ -29,6 +29,7 @@ export interface CommandExecutionResult {
   data?: any;
   vehicleId?: string;
   leadId?: string;
+  skipResponse?: boolean; // If true, don't send WhatsApp response (for silent photo saves)
 }
 
 // ==================== STAFF COMMAND SERVICE ====================
@@ -743,6 +744,7 @@ export class StaffCommandService {
       console.log(`[Upload Flow] Photo only received (no caption): ${mediaUrl}`);
 
       const photos = contextData.photos || [];
+      const lastNotifiedPhotoCount = contextData.lastNotifiedPhotoCount || 0;
 
       // Check max photos limit
       if (photos.length >= MAX_PHOTOS) {
@@ -753,6 +755,41 @@ export class StaffCommandService {
       }
 
       photos.push(mediaUrl);
+
+      // === BATCHING LOGIC: Only notify at milestones ===
+      // Notify: first photo (1), complete (>=6), or every 3 photos
+      const shouldNotify =
+        photos.length === 1 || // First photo
+        photos.length >= MIN_PHOTOS || // Photos complete (6+)
+        photos.length - lastNotifiedPhotoCount >= 3; // Every 3 photos
+
+      if (!shouldNotify) {
+        // Silently save photo without notification
+        await prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: {
+            conversationState: "upload_vehicle",
+            contextData: {
+              ...contextData,
+              photos,
+              // Keep existing lastNotifiedPhotoCount
+            },
+          },
+        });
+        console.log(`[Upload Flow] Photo ${photos.length} saved silently (no notification)`);
+        return {
+          success: true,
+          message: "",
+          skipResponse: true,
+        };
+      }
+
+      // Update lastNotifiedPhotoCount for milestone notifications
+      const updatedContextForNotify = {
+        ...contextData,
+        photos,
+        lastNotifiedPhotoCount: photos.length,
+      };
 
       // === FIX: Check if vehicleData already exists in context ===
       const existingVehicleData = contextData.vehicleData;
@@ -781,10 +818,9 @@ export class StaffCommandService {
             data: {
               conversationState: "upload_vehicle",
               contextData: {
-                ...contextData,
+                ...updatedContextForNotify,
                 uploadStep: "has_data_awaiting_photo",
                 vehicleData: existingVehicleData,
-                photos,
               },
             },
           });
@@ -806,10 +842,9 @@ export class StaffCommandService {
           data: {
             conversationState: "upload_vehicle",
             contextData: {
-              ...contextData,
+              ...updatedContextForNotify,
               uploadStep: "awaiting_completion",
               vehicleData: existingVehicleData,
-              photos,
             },
           },
         });
@@ -826,9 +861,8 @@ export class StaffCommandService {
         data: {
           conversationState: "upload_vehicle",
           contextData: {
-            ...contextData,
+            ...updatedContextForNotify,
             uploadStep: "has_photo_awaiting_data",
-            photos,
           },
         },
       });
@@ -859,6 +893,7 @@ export class StaffCommandService {
       console.log(`[Upload Flow] Photo received: ${mediaUrl}`);
 
       const photos = contextData.photos || [];
+      const lastNotifiedPhotoCount = contextData.lastNotifiedPhotoCount || 0;
 
       // Check max photos limit
       if (photos.length >= MAX_PHOTOS) {
@@ -870,12 +905,47 @@ export class StaffCommandService {
 
       photos.push(mediaUrl);
 
+      // Determine if we should send notification
+      // Only notify at milestones: first photo (1), complete (>=6), or every 3 photos
+      const shouldNotify =
+        photos.length === 1 || // First photo
+        photos.length >= MIN_PHOTOS || // Photos complete
+        photos.length - lastNotifiedPhotoCount >= 3; // Every 3 photos
+
+      if (!shouldNotify) {
+        // Silently save photo without notification
+        await prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: {
+            conversationState: "upload_vehicle",
+            contextData: {
+              ...contextData,
+              photos,
+              // Don't update lastNotifiedPhotoCount - keep old value
+            },
+          },
+        });
+        console.log(`[Upload Flow] Photo ${photos.length} saved silently (no notification)`);
+        return {
+          success: true,
+          message: "", // Empty message = no response sent
+          skipResponse: true, // Flag to skip sending response
+        };
+      }
+
+      // Update lastNotifiedPhotoCount for milestone notifications
+      const updatedContext = {
+        ...contextData,
+        photos,
+        lastNotifiedPhotoCount: photos.length,
+      };
+
       // Check if we already have vehicle data from context OR from current params
       // This handles: /upload Brio 2015 KM 30.000 Rp 120JT + photo in same message
       const { make, model, year, price, mileage, color, transmission } = params;
 
       // Merge any incoming data with existing context data
-      const existingData = contextData.vehicleData || {};
+      const existingData = updatedContext.vehicleData || {};
       const incomingData = { make, model, year, price, mileage, color, transmission };
       const mergedData = this.mergeVehicleData(existingData, incomingData);
 
@@ -891,10 +961,9 @@ export class StaffCommandService {
             data: {
               conversationState: "upload_vehicle",
               contextData: {
-                ...contextData,
+                ...updatedContext,
                 uploadStep: "has_data_awaiting_photo",
                 vehicleData: mergedData,
-                photos,
               },
             },
           });

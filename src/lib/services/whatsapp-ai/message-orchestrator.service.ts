@@ -632,9 +632,15 @@ export class MessageOrchestratorService {
           incoming.tenantId,
           incoming.mediaUrl
         );
-        responseMessage = result.message;
+        // Check if we should skip response (e.g., silent photo save during batching)
+        if (result.skipResponse) {
+          console.log(`[Orchestrator] Staff command returned skipResponse=true, not sending message`);
+          responseMessage = undefined;
+        } else {
+          responseMessage = result.message;
+        }
         escalated = result.escalated;
-        console.log(`[Orchestrator] Staff command result: ${responseMessage?.substring(0, 50)}...`);
+        console.log(`[Orchestrator] Staff command result: ${result.skipResponse ? '(skipped)' : responseMessage?.substring(0, 50) + '...'}`);
       } else if (classification.isStaff && classification.intent.startsWith("customer_")) {
         // Staff asking general questions - route to AI for natural response
         console.log(`[Orchestrator] Staff with customer intent - routing to AI for natural response`);
@@ -818,7 +824,7 @@ export class MessageOrchestratorService {
         await this.sendResponse(
           incoming.accountId,
           incoming.from,
-          responseMessage,
+          responseMessage || "", // Ensure message is always a string
           conversation.id,
           classification.intent,
           responseImages
@@ -1199,7 +1205,7 @@ export class MessageOrchestratorService {
     staffPhone: string,
     tenantId: string,
     mediaUrl?: string
-  ): Promise<{ message: string; escalated: boolean }> {
+  ): Promise<{ message: string; escalated: boolean; skipResponse?: boolean }> {
     try {
       // Determine if there's media
       const hasMedia = !!mediaUrl;
@@ -1228,12 +1234,14 @@ export class MessageOrchestratorService {
       return {
         message: executionResult.message,
         escalated: !executionResult.success,
+        skipResponse: executionResult.skipResponse,
       };
     } catch (error: any) {
       console.error("[Message Orchestrator] Staff command error:", error);
       return {
         message: `Mohon maaf, terjadi kesalahan:\n\n${error.message}\n\nSilakan coba lagi.`,
         escalated: true,
+        skipResponse: false,
       };
     }
   }
