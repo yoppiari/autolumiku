@@ -470,13 +470,27 @@ A: "Selamat datang di ${tenant.name}! Kami siap membantu Anda menemukan kendaraa
 - Role: ${senderInfo.staffInfo.role}
 - No HP: ${senderInfo.staffInfo.phone}
 
-Jika pengirim bertanya "siapa saya?" atau "kamu tahu saya?", JAWAB bahwa mereka adalah staff terdaftar dengan nama dan role di atas.`;
+Jika pengirim bertanya "siapa saya?" atau "kamu tahu saya?", JAWAB bahwa mereka adalah staff terdaftar dengan nama dan role di atas.
+
+✏️ FITUR EDIT KENDARAAN (KHUSUS STAFF):
+Staff ini BISA mengedit data kendaraan yang sudah diupload. Jika staff minta:
+- "rubah bensin jadi diesel" → panggil edit_vehicle dengan field=fuelType, new_value=diesel
+- "ganti tahun 2016 ke 2018" → panggil edit_vehicle dengan field=year, new_value=2018
+- "ubah transmisi ke matic" → panggil edit_vehicle dengan field=transmission, new_value=automatic
+- "update harga 150jt" → panggil edit_vehicle dengan field=price, new_value=150000000
+- "rubah km ke 50000" → panggil edit_vehicle dengan field=mileage, new_value=50000
+- "ganti warna putih ke hitam" → panggil edit_vehicle dengan field=color, new_value=hitam
+- "ubah cc ke 1497" → panggil edit_vehicle dengan field=engineCapacity, new_value=1497
+
+PENTING: Jika staff minta edit/rubah/ganti/update data kendaraan, LANGSUNG panggil tool edit_vehicle. JANGAN bilang "hubungi admin" atau "tidak bisa diedit".`;
       } else {
         systemPrompt += `
 - Status: Customer/Pengunjung
 - No HP: ${senderInfo.customerPhone}
 
-Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang belum terdaftar di sistem.`;
+Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang belum terdaftar di sistem.
+
+⚠️ FITUR EDIT: Customer TIDAK bisa edit kendaraan. Kalau minta edit, bilang "Maaf kak, fitur edit cuma buat staff aja 😊 Ada yang bisa aku bantu?"`;
       }
     }
 

@@ -201,12 +201,15 @@ export class MessageOrchestratorService {
               incoming.from
             );
 
-            // Clear conversation state
+            // Clear conversation state but preserve lastUploadedVehicleId for edit feature
             await prisma.whatsAppConversation.update({
               where: { id: conversation.id },
               data: {
                 conversationState: null,
-                contextData: {},
+                contextData: uploadResult.success ? {
+                  lastUploadedVehicleId: uploadResult.vehicleId,
+                  lastUploadedAt: new Date().toISOString(),
+                } : {},
               },
             });
 
@@ -449,12 +452,15 @@ export class MessageOrchestratorService {
         const wantsToFinish = finishPatterns.some(p => p.test(normalizedMessage));
 
         if (wantsToFinish) {
-          // Clear state
+          // Clear state but preserve lastUploadedVehicleId for edit feature
           await prisma.whatsAppConversation.update({
             where: { id: conversation.id },
             data: {
               conversationState: null,
-              contextData: {},
+              contextData: {
+                lastUploadedVehicleId: contextData.vehicleId,
+                lastUploadedAt: new Date().toISOString(),
+              },
             },
           });
 
