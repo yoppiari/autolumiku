@@ -215,60 +215,61 @@ export default function UsersPage() {
 
   return (
     <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-3 flex-shrink-0">
+      {/* Header - with left padding on mobile for hamburger menu */}
+      <div className="flex justify-between items-center mb-3 flex-shrink-0 pl-10 md:pl-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manajemen Tim</h1>
-          <p className="text-gray-600 text-sm">Kelola staff dan anggota tim showroom</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Manajemen Tim</h1>
+          <p className="text-gray-600 text-xs md:text-sm">Kelola staff dan anggota tim showroom</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+          className="flex items-center px-2 md:px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-xs md:text-sm whitespace-nowrap"
         >
-          <FaPlus className="mr-2" />
-          Tambah Staff
+          <FaPlus className="mr-1 md:mr-2" />
+          <span className="hidden md:inline">Tambah Staff</span>
+          <span className="md:hidden">Tambah</span>
         </button>
       </div>
 
-      {/* Stats Cards - Urutan (1) */}
-      <div className="grid grid-cols-4 gap-3 mb-3 flex-shrink-0">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-          <p className="text-xs font-medium text-gray-600">Total Staff</p>
+      {/* Stats Cards - 2 cols on mobile, 4 cols on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-3 flex-shrink-0">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-gray-600">Total Staff</p>
           {loading ? (
-            <div className="h-8 w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.total || 0}</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{stats?.total || 0}</p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-          <p className="text-xs font-medium text-gray-600">Admin</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-gray-600">Admin</p>
           {loading ? (
-            <div className="h-8 w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-purple-600 mt-1">
+            <p className="text-xl md:text-2xl font-bold text-purple-600 mt-1">
               {stats?.byRole?.ADMIN || 0}
             </p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-          <p className="text-xs font-medium text-gray-600">Manager</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-gray-600">Manager</p>
           {loading ? (
-            <div className="h-8 w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-blue-600 mt-1">
+            <p className="text-xl md:text-2xl font-bold text-blue-600 mt-1">
               {stats?.byRole?.MANAGER || 0}
             </p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-          <p className="text-xs font-medium text-gray-600">Sales</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-gray-600">Sales</p>
           {loading ? (
-            <div className="h-8 w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
           ) : (
-            <p className="text-2xl font-bold text-green-600 mt-1">
+            <p className="text-xl md:text-2xl font-bold text-green-600 mt-1">
               {stats?.byRole?.SALES || 0}
             </p>
           )}
@@ -312,19 +313,20 @@ export default function UsersPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Staff
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    WhatsApp
+                  <th className="px-2 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <span className="hidden md:inline">WhatsApp</span>
+                    <span className="md:hidden">WA</span>
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Bergabung
                   </th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -372,47 +374,47 @@ export default function UsersPage() {
                 ) : (
                   filteredUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 whitespace-nowrap">
+                      <td className="px-2 md:px-4 py-2 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8">
-                            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                              <span className="text-blue-600 font-semibold text-xs">
+                          <div className="flex-shrink-0 h-7 w-7 md:h-8 md:w-8">
+                            <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                              <span className="text-blue-600 font-semibold text-[10px] md:text-xs">
                                 {user.firstName.charAt(0)}
                                 {user.lastName?.charAt(0) || ''}
                               </span>
                             </div>
                           </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="ml-2 md:ml-3 min-w-0">
+                            <div className="text-xs md:text-sm font-medium text-gray-900 truncate max-w-[100px] md:max-w-none">
                               {user.firstName} {user.lastName}
                             </div>
-                            <div className="text-xs text-gray-500">{user.email}</div>
+                            <div className="text-[10px] md:text-xs text-gray-500 truncate max-w-[100px] md:max-w-none">{user.email}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
+                      <td className="px-2 md:px-4 py-2 whitespace-nowrap">
                         {user.phone ? (
                           <div className="flex items-center">
-                            <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                            <span className="text-xs text-gray-900">{user.phone}</span>
+                            <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1 md:mr-2 flex-shrink-0"></span>
+                            <span className="text-[10px] md:text-xs text-gray-900 truncate max-w-[60px] md:max-w-none">{user.phone}</span>
                           </div>
                         ) : (
                           <div className="flex items-center">
-                            <span className="inline-block w-2 h-2 bg-red-400 rounded-full mr-2"></span>
-                            <span className="text-xs text-gray-400 italic">Belum diisi</span>
+                            <span className="inline-block w-2 h-2 bg-red-400 rounded-full mr-1 md:mr-2 flex-shrink-0"></span>
+                            <span className="text-[10px] md:text-xs text-gray-400 italic">-</span>
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
+                      <td className="px-2 md:px-4 py-2 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(
+                          className={`px-1.5 md:px-2 py-0.5 inline-flex text-[10px] md:text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(
                             user.role
                           )}`}
                         >
                           {user.role}
                         </span>
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
+                      <td className="hidden md:table-cell px-4 py-2 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5">
                           <span
                             className={`px-1.5 py-0.5 inline-flex text-xs leading-4 font-medium rounded ${
@@ -434,21 +436,21 @@ export default function UsersPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
+                      <td className="hidden md:table-cell px-4 py-2 whitespace-nowrap text-xs text-gray-500">
                         {formatDate(user.createdAt)}
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-medium">
+                      <td className="px-2 md:px-4 py-2 whitespace-nowrap text-right text-[10px] md:text-xs font-medium">
                         <button
                           onClick={() => handleEditUser(user)}
-                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          className="text-blue-600 hover:text-blue-900 mr-2 md:mr-3"
                         >
-                          <FaEdit className="inline" /> Edit
+                          <FaEdit className="inline" /> <span className="hidden md:inline">Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeleteUser(user.id)}
                           className="text-red-600 hover:text-red-900"
                         >
-                          <FaTrash className="inline" /> Hapus
+                          <FaTrash className="inline" /> <span className="hidden md:inline">Hapus</span>
                         </button>
                       </td>
                     </tr>
@@ -536,14 +538,14 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-green-200">
-                <div className="flex items-center text-xs text-gray-600">
-                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pt-2 border-t border-green-200">
+                <div className="flex items-center text-[10px] md:text-xs text-gray-600">
+                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></span>
                   <span>Staff harus memiliki <strong>Nomor WhatsApp</strong> terdaftar untuk menggunakan commands</span>
                 </div>
                 <a
                   href="/dashboard/whatsapp-ai"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                  className="text-[10px] md:text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
                 >
                   Lihat WhatsApp AI Dashboard →
                 </a>
