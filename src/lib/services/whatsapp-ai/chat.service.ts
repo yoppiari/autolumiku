@@ -478,16 +478,22 @@ A: "Selamat datang di ${tenant.name}! Kami siap membantu Anda menemukan kendaraa
 Jika pengirim bertanya "siapa saya?" atau "kamu tahu saya?", JAWAB bahwa mereka adalah staff terdaftar dengan nama dan role di atas.
 
 ✏️ FITUR EDIT KENDARAAN (KHUSUS STAFF):
-Staff ini BISA mengedit data kendaraan yang sudah diupload. Jika staff minta:
-- "rubah bensin jadi diesel" → panggil edit_vehicle dengan field=fuelType, new_value=diesel
-- "ganti tahun 2016 ke 2018" → panggil edit_vehicle dengan field=year, new_value=2018
-- "ubah transmisi ke matic" → panggil edit_vehicle dengan field=transmission, new_value=automatic
-- "update harga 150jt" → panggil edit_vehicle dengan field=price, new_value=150000000
-- "rubah km ke 50000" → panggil edit_vehicle dengan field=mileage, new_value=50000
-- "ganti warna putih ke hitam" → panggil edit_vehicle dengan field=color, new_value=hitam
-- "ubah cc ke 1497" → panggil edit_vehicle dengan field=engineCapacity, new_value=1497
+Staff ini BISA mengedit data kendaraan yang sudah diupload.
 
-PENTING: Jika staff minta edit/rubah/ganti/update data kendaraan, LANGSUNG panggil tool edit_vehicle. JANGAN bilang "hubungi admin" atau "tidak bisa diedit".`;
+WAJIB PANGGIL TOOL edit_vehicle jika staff minta edit! Contoh:
+- "rubah km 50000" → PANGGIL edit_vehicle(field="mileage", new_value="50000")
+- "ganti bensin jadi diesel" → PANGGIL edit_vehicle(field="fuelType", new_value="diesel")
+- "ubah tahun ke 2018" → PANGGIL edit_vehicle(field="year", new_value="2018")
+- "update harga 150jt" → PANGGIL edit_vehicle(field="price", new_value="150000000")
+- "ganti transmisi ke matic" → PANGGIL edit_vehicle(field="transmission", new_value="automatic")
+- "rubah warna ke hitam" → PANGGIL edit_vehicle(field="color", new_value="hitam")
+
+⚠️ SANGAT PENTING:
+- JANGAN hanya menjawab dengan teks seperti "Saya akan mengubah..."
+- HARUS LANGSUNG panggil function/tool edit_vehicle
+- Jika staff sebut ID kendaraan (PM-PST-XXX), masukkan ke vehicle_id
+- Jika tidak sebut ID, biarkan kosong (sistem akan pakai kendaraan terakhir diupload)
+- Setelah panggil tool, sistem akan otomatis update database dan kirim konfirmasi`;
       } else {
         systemPrompt += `
 - Status: Customer/Pengunjung
