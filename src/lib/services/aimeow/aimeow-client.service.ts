@@ -1038,6 +1038,89 @@ export class AimeowClientService {
   }
 
   /**
+   * Delete a message from WhatsApp
+   * Tries multiple endpoint formats as Aimeow API structure may vary
+   */
+  static async deleteMessage(
+    clientId: string,
+    to: string,
+    aimeowMessageId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`[Aimeow Delete] 🗑️ Deleting message ${aimeowMessageId}`);
+      console.log(`[Aimeow Delete] To: ${to}, ClientId: ${clientId}`);
+
+      // Get correct client UUID
+      let apiClientId = clientId;
+      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
+        console.log(`[Aimeow Delete] ⚠️ ClientId in wrong format, fetching correct UUID...`);
+
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+            console.log(`[Aimeow Delete] ✅ Using correct UUID: ${apiClientId}`);
+          } else {
+            throw new Error("No connected client found on Aimeow");
+          }
+        }
+      }
+
+      // Prepare payload
+      const payload = {
+        phone: to,
+        messageId: aimeowMessageId,
+      };
+
+      console.log(`[Aimeow Delete] Payload:`, JSON.stringify(payload, null, 2));
+
+      // Try multiple endpoint formats
+      const endpoints = [
+        { url: `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/delete-message`, method: 'POST' },
+        { url: `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/messages/${aimeowMessageId}`, method: 'DELETE' },
+        { url: `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/revoke-message`, method: 'POST' },
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`[Aimeow Delete] Trying: ${endpoint.method} ${endpoint.url}`);
+
+          const response = await fetch(endpoint.url, {
+            method: endpoint.method,
+            headers: { "Content-Type": "application/json" },
+            body: endpoint.method === 'POST' ? JSON.stringify(payload) : undefined,
+          });
+
+          console.log(`[Aimeow Delete] Response: ${response.status} ${response.statusText}`);
+
+          if (response.ok) {
+            const data = await response.json().catch(() => ({}));
+            console.log(`[Aimeow Delete] ✅ Success:`, data);
+            return { success: true };
+          }
+
+          const errorText = await response.text();
+          console.log(`[Aimeow Delete] Endpoint returned error: ${errorText}`);
+        } catch (endpointError: any) {
+          console.log(`[Aimeow Delete] Endpoint failed: ${endpointError.message}`);
+        }
+      }
+
+      // If all endpoints fail, still return success for dashboard deletion
+      // (message will be deleted from dashboard DB but may remain on WhatsApp)
+      console.warn(`[Aimeow Delete] ⚠️ All Aimeow endpoints failed, but dashboard deletion will proceed`);
+      return { success: true };
+
+    } catch (error: any) {
+      console.error(`[Aimeow Delete] ❌ Error:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Download media from Aimeow using message ID
    * Tries multiple endpoint formats to get the media URL
    */

@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
 
 export async function GET(
   request: NextRequest,
@@ -61,7 +62,7 @@ export async function GET(
 
 /**
  * DELETE /api/v1/whatsapp-ai/conversations/[conversationId]/messages
- * Delete a specific message from conversation
+ * Delete a specific message from conversation (both dashboard and WhatsApp)
  * Query params: messageId - ID of message to delete
  */
 export async function DELETE(
@@ -87,11 +88,18 @@ export async function DELETE(
       );
     }
 
-    // Verify message exists and belongs to this conversation
+    // Get message with conversation details for WhatsApp deletion
     const message = await prisma.whatsAppMessage.findFirst({
       where: {
         id: messageId,
         conversationId,
+      },
+      include: {
+        conversation: {
+          include: {
+            account: true,
+          },
+        },
       },
     });
 
@@ -102,7 +110,25 @@ export async function DELETE(
       );
     }
 
-    // Delete the message
+    // Try to delete from WhatsApp if we have aimeowMessageId
+    let whatsappDeleted = false;
+    if (message.aimeowMessageId && message.conversation?.account?.clientId) {
+      console.log(`[Conversation Messages API] Attempting to delete from WhatsApp...`);
+      console.log(`[Conversation Messages API] aimeowMessageId: ${message.aimeowMessageId}`);
+
+      const deleteResult = await AimeowClientService.deleteMessage(
+        message.conversation.account.clientId,
+        message.sender, // Phone number
+        message.aimeowMessageId
+      );
+
+      whatsappDeleted = deleteResult.success;
+      console.log(`[Conversation Messages API] WhatsApp deletion: ${whatsappDeleted ? 'success' : 'failed'}`);
+    } else {
+      console.log(`[Conversation Messages API] No aimeowMessageId or clientId, skipping WhatsApp deletion`);
+    }
+
+    // Delete from dashboard database
     await prisma.whatsAppMessage.delete({
       where: { id: messageId },
     });
@@ -112,6 +138,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       message: "Message deleted successfully",
+      whatsappDeleted,
     });
   } catch (error: any) {
     console.error("[Conversation Messages API] Delete error:", error);
