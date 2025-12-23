@@ -258,7 +258,8 @@ export class WhatsAppVehicleUploadService {
           priceAnalysis: aiResult.priceAnalysis || { recommendation: 'Harga sesuai pasar' },
 
           // Vehicle Details (AI auto-completes missing fields)
-          mileage: vehicleData.mileage || 0,
+          // mileage is nullable - keep undefined if not provided by staff
+          mileage: vehicleData.mileage || undefined,
           transmissionType: vehicleData.transmission?.toLowerCase() || aiResult.transmissionType || 'manual',
           fuelType: aiResult.fuelType || 'bensin',
           engineCapacity: aiResult.specifications?.engineCapacity || null,

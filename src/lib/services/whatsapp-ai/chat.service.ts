@@ -277,7 +277,7 @@ export class WhatsAppAIChatService {
                 model: args.model,
                 year: args.year,
                 price: args.price,
-                mileage: args.mileage || 0,
+                mileage: args.mileage || undefined, // Keep undefined if not provided
                 color: args.color || 'Unknown',
                 transmission: args.transmission || 'Manual',
               };

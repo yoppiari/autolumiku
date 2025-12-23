@@ -506,7 +506,7 @@ export class StaffCommandService {
       model: newData?.model || existingData?.model,
       year: newData?.year || existingData?.year,
       price: newData?.price || existingData?.price,
-      mileage: newData?.mileage ?? existingData?.mileage ?? 0,
+      mileage: newData?.mileage ?? existingData?.mileage ?? undefined,
       color: (newData?.color && newData?.color !== "Unknown") ? newData.color :
              (existingData?.color && existingData?.color !== "Unknown") ? existingData.color : "Unknown",
       transmission: (newData?.transmission && newData?.transmission !== "Unknown") ? newData.transmission :
@@ -909,7 +909,7 @@ export class StaffCommandService {
           model: mergedData.model,
           year: mergedData.year,
           price: mergedData.price,
-          mileage: mergedData.mileage || 0,
+          mileage: mergedData.mileage || undefined, // Keep undefined if not provided
           color: mergedData.color || "Unknown",
           transmission: mergedData.transmission || "Manual",
         };
@@ -1138,7 +1138,7 @@ export class StaffCommandService {
       model: mergedData.model,
       year: mergedData.year,
       price: mergedData.price,
-      mileage: mergedData.mileage || 0,
+      mileage: mergedData.mileage || undefined, // Keep undefined if not provided
       color: mergedData.color || "Unknown",
       transmission: mergedData.transmission || "Manual",
     };

@@ -192,7 +192,7 @@ export class MessageOrchestratorService {
                 model: vehicleData.model,
                 year: vehicleData.year,
                 price: vehicleData.price,
-                mileage: vehicleData.mileage || 0,
+                mileage: vehicleData.mileage || undefined, // Keep undefined if not provided
                 color: vehicleData.color || 'Unknown',
                 transmission: vehicleData.transmission || 'Manual',
               },

@@ -57,10 +57,10 @@ Contoh input yang HARUS bisa dipahami:
 - "xpander ultimate 2022 1500cc bensin matic" → Mitsubishi Xpander, variant: "Ultimate"
 
 Return ONLY valid JSON (no explanation):
-{"make":"Honda","model":"Brio","year":2020,"price":120000000,"mileage":0,"color":"Hitam","transmission":"Manual","fuelType":"Bensin","engineCapacity":"1200cc","variant":"Satya"}
+{"make":"Honda","model":"Brio","year":2020,"price":120000000,"mileage":null,"color":"Hitam","transmission":"Manual","fuelType":"Bensin","engineCapacity":"1200cc","variant":"Satya"}
 
 Jika data kurang, tebak yang masuk akal:
-- Tidak ada KM → mileage: 0
+- Tidak ada KM → mileage: null (JANGAN set 0, biarkan null)
 - Tidak ada warna → color: "Unknown"
 - Tidak ada transmisi → transmission: "Manual"
 - Tidak ada merk tapi ada model → auto-detect merk dari model
@@ -227,7 +227,7 @@ export class VehicleDataExtractorService {
           model,
           year,
           price,
-          mileage: extractedData.mileage || 0,
+          mileage: extractedData.mileage || undefined,
           color: extractedData.color || 'Unknown',
           transmission: extractedData.transmission || 'Manual',
           fuelType: extractedData.fuelType || 'Bensin',
@@ -261,7 +261,7 @@ export class VehicleDataExtractorService {
       model: null,
       year: null,
       price: null,
-      mileage: 0,
+      mileage: undefined, // Keep undefined if not provided, don't default to 0
       color: 'Unknown',
       transmission: 'Manual',
       fuelType: 'Bensin',
