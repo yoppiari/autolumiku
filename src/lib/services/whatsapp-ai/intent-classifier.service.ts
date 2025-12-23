@@ -69,6 +69,7 @@ const STAFF_COMMAND_PATTERNS = {
   update_status: [
     /^\/status\s+/i,                 // /status PM-PST-001 SOLD
     /^status\s+\S+\s+(AVAILABLE|BOOKED|SOLD|DELETED)/i, // status PM-PST-001 SOLD (without /)
+    /^status\s+(PM-|[A-Z]{2,3}-)/i,  // status PM-PST-001 (ID only, will show error for missing status)
     /^update\s+status/i,             // update status
     /^ubah\s+status/i,               // ubah status
     /^ganti\s+status/i,              // ganti status
