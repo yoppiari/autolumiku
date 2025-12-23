@@ -1735,22 +1735,20 @@ export class StaffCommandService {
     const vehicleIdMatch = msg.match(/pm-\w+-\d+/i);
     const vehicleId = vehicleIdMatch ? vehicleIdMatch[0].toUpperCase() : undefined;
 
-    // Field detection patterns
+    // Field detection patterns - more flexible, "ke/jadi" is optional
     const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
-      // Mileage
+      // Mileage: "rubah km 50000", "ganti kilometer ke 30000"
       { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:km|kilometer|odometer)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'mileage', valueExtractor: m => m[1] },
-      { pattern: /(?:km|kilometer)\s*(?:ke|jadi|menjadi)\s*(\d+)/i, field: 'mileage', valueExtractor: m => m[1] },
 
-      // Fuel type
-      { pattern: /(?:rubah|ganti|ubah)\s*(?:bahan\s*bakar|fuel|bensin|solar)?\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[1] },
-      { pattern: /(?:rubah|ganti|ubah)\s*(bensin|diesel|hybrid|electric)\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[2] },
+      // Year: "rubah tahun 2017", "ganti tahun ke 2018", "ubah tahun jadi 2019"
+      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*tahun\s*(?:ke|jadi|menjadi)?\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
 
-      // Year
-      { pattern: /(?:rubah|ganti|ubah|update)\s*tahun\s*(?:\d+\s*)?(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
-      { pattern: /tahun\s*(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
+      // Fuel type: "rubah bensin jadi diesel", "ganti ke diesel", "ubah bahan bakar diesel"
+      { pattern: /(?:rubah|ganti|ubah)\s*(?:bahan\s*bakar|fuel)?\s*(?:ke|jadi|menjadi)?\s*(diesel|bensin|hybrid|electric|listrik|solar)/i, field: 'fuelType', valueExtractor: m => m[1] },
+      { pattern: /(?:rubah|ganti|ubah)\s*(bensin|diesel|solar)\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[2] },
 
-      // Price
-      { pattern: /(?:rubah|ganti|ubah|update)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
+      // Price: "rubah harga 150jt", "update harga ke 200000000"
+      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
         const val = m[1].toLowerCase();
         if (val.includes('jt') || val.includes('juta')) {
           return String(parseInt(val) * 1000000);
@@ -1758,19 +1756,26 @@ export class StaffCommandService {
         return val;
       }},
 
-      // Transmission
-      { pattern: /(?:rubah|ganti|ubah)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmission', valueExtractor: m => {
+      // Transmission: "rubah transmisi matic", "ganti ke manual", "ubah jadi AT"
+      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)?\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmission', valueExtractor: m => {
         const val = m[1].toLowerCase();
-        if (val === 'matic' || val === 'at' || val === 'automatic') return 'automatic';
+        if (val === 'matic' || val === 'at' || val === 'automatic' || val === 'cvt') return 'automatic';
         if (val === 'manual' || val === 'mt') return 'manual';
         return val;
       }},
 
-      // Color
-      { pattern: /(?:rubah|ganti|ubah)\s*warna\s*(?:\w+\s*)?(?:ke|jadi|menjadi)\s*(\w+)/i, field: 'color', valueExtractor: m => m[1] },
+      // Color: "rubah warna biru", "ganti warna ke hitam", "ubah warna jadi putih metalik"
+      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*warna\s*(?:ke|jadi|menjadi)?\s*(.+?)(?:\s+pm-|\s*$)/i, field: 'color', valueExtractor: m => m[1].trim() },
 
-      // Engine capacity
-      { pattern: /(?:rubah|ganti|ubah)\s*(?:cc|kapasitas\s*mesin)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'engineCapacity', valueExtractor: m => m[1] },
+      // Engine capacity: "rubah cc 2500", "ganti kapasitas mesin 1500", "ubah engine 2000cc"
+      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:cc|kapasitas\s*(?:mesin)?|engine|mesin)\s*(?:ke|jadi|menjadi)?\s*(\d+)\s*(?:cc)?/i, field: 'engineCapacity', valueExtractor: m => m[1] },
+
+      // Condition: "rubah kondisi bekas", "ganti kondisi ke baru"
+      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*kondisi\s*(?:ke|jadi|menjadi)?\s*(baru|bekas|used|new)/i, field: 'condition', valueExtractor: m => {
+        const val = m[1].toLowerCase();
+        if (val === 'baru' || val === 'new') return 'new';
+        return 'used';
+      }},
     ];
 
     for (const { pattern, field, valueExtractor } of patterns) {
