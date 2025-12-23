@@ -17,6 +17,7 @@ export interface CatalogVehicle {
   mileage: number | null;
   transmissionType: string | null;
   fuelType: string | null;
+  engineCapacity: string | null;
   color: string | null;
   descriptionId: string | null;
   status: VehicleStatus;
@@ -173,6 +174,7 @@ export class CatalogEngineService {
         mileage: true,
         transmissionType: true,
         fuelType: true,
+        engineCapacity: true,
         color: true,
         descriptionId: true,
         status: true,
@@ -277,6 +279,7 @@ export class CatalogEngineService {
         mileage: true,
         transmissionType: true,
         fuelType: true,
+        engineCapacity: true,
         color: true,
         descriptionId: true,
         status: true,
@@ -336,6 +339,7 @@ export class CatalogEngineService {
         mileage: true,
         transmissionType: true,
         fuelType: true,
+        engineCapacity: true,
         color: true,
         descriptionId: true,
         status: true,
