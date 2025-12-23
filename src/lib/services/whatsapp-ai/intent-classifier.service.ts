@@ -26,7 +26,6 @@ export type MessageIntent =
   | "customer_general_question"
   | "staff_greeting"
   | "staff_upload_vehicle"
-  | "staff_edit_vehicle"
   | "staff_update_status"
   | "staff_check_inventory"
   | "staff_get_stats"
@@ -98,15 +97,6 @@ const STAFF_COMMAND_PATTERNS = {
     /^laporan/i,                     // laporan
     /^statistik/i,                   // statistik
     /^report\b/i,                    // report, report today
-  ],
-  edit_vehicle: [
-    /^\/edit\s+/i,                   // /edit PM-PST-001 tahun 2020
-    /^edit\s+/i,                     // edit PM-PST-001 tahun 2020
-    /^(rubah|ganti|ubah|update)\s+/i, // rubah bensin jadi diesel
-    /^(koreksi|perbaiki)\s+/i,       // koreksi harga, perbaiki data
-    /\b(rubah|ganti|ubah|update)\s+(tahun|harga|warna|km|transmisi|bensin|solar|diesel|merek|tipe|varian|cc|kondisi|kilometer)\b/i,
-    /\b(dari|sebelumnya)\s+\S+\s+(ke|jadi|menjadi)\s+\S+/i, // dari bensin ke diesel
-    /\b(tahun|harga|warna|km|transmisi)\s+\d+\s*(jadi|ke|menjadi)\s+\S+/i, // tahun 2016 jadi 2018
   ],
 };
 
@@ -467,17 +457,6 @@ export class IntentClassifierService {
         isStaff: true,
         isCustomer: false,
         reason: "Matched update status command pattern",
-      };
-    }
-
-    // Check edit vehicle (rubah, ganti, ubah, update + field)
-    if (STAFF_COMMAND_PATTERNS.edit_vehicle.some((p) => p.test(message))) {
-      return {
-        intent: "staff_edit_vehicle",
-        confidence: 0.95,
-        isStaff: true,
-        isCustomer: false,
-        reason: "Matched edit vehicle command pattern",
       };
     }
 
