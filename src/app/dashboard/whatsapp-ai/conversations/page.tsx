@@ -941,10 +941,10 @@ export default function ConversationsPage() {
                         key={msg.id}
                         className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'}`}
                       >
-                        {/* Message bubble with dropdown */}
-                        <div className="relative group">
+                        {/* Message bubble with dropdown - max-w on wrapper for proper flex alignment */}
+                        <div className="relative group max-w-[85%] md:max-w-[75%]">
                           <div
-                            className={`max-w-[85%] md:max-w-[75%] rounded-lg px-3 py-2 md:px-2.5 md:py-1.5 shadow-sm ${
+                            className={`rounded-lg px-3 py-2 md:px-2.5 md:py-1.5 shadow-sm ${
                               msg.direction === 'inbound'
                                 ? 'bg-white text-gray-900 rounded-tl-none'
                                 : msg.aiResponse
