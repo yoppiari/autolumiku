@@ -312,6 +312,16 @@ export class WhatsAppAIChatService {
       // Build response message
       let responseMessage = aiResponse.content || '';
 
+      // FALLBACK: If AI responded with edit intent text but didn't call the tool, parse it manually
+      if (!editRequest && context.isStaff && responseMessage) {
+        const editFallback = this.detectEditIntentFromText(responseMessage, userMessage);
+        if (editFallback) {
+          console.log('[WhatsApp AI Chat] ⚠️ FALLBACK: AI responded with text but no tool call, parsing manually:', editFallback);
+          editRequest = editFallback;
+          responseMessage = ''; // Clear the text response, let orchestrator handle the edit
+        }
+      }
+
       // If AI sent images but no text, add default message
       if (images && images.length > 0 && !responseMessage) {
         responseMessage = `Ini foto ${images.length > 1 ? 'mobil-mobil' : 'mobil'} yang tersedia 👇`;
@@ -985,6 +995,81 @@ Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang be
       role: msg.direction === "inbound" ? ("user" as const) : ("assistant" as const),
       content: msg.content,
     }));
+  }
+
+  /**
+   * FALLBACK: Detect edit intent from user message when AI doesn't call the tool
+   * Parses messages like "rubah km 50000", "ganti bensin jadi diesel", etc.
+   */
+  private static detectEditIntentFromText(
+    aiResponse: string,
+    userMessage: string
+  ): { vehicleId?: string; field: string; oldValue?: string; newValue: string } | null {
+    const msg = userMessage.toLowerCase().trim();
+
+    // Check if this looks like an edit request
+    const editKeywords = ['rubah', 'ganti', 'ubah', 'update', 'edit', 'koreksi', 'perbaiki'];
+    const hasEditKeyword = editKeywords.some(k => msg.includes(k));
+    if (!hasEditKeyword) return null;
+
+    // Also check if AI response indicates it understood as edit
+    const aiIndicatesEdit = aiResponse.toLowerCase().includes('mengubah') ||
+                           aiResponse.toLowerCase().includes('mengganti') ||
+                           aiResponse.toLowerCase().includes('update');
+    if (!aiIndicatesEdit && !hasEditKeyword) return null;
+
+    // Extract vehicle ID if mentioned (PM-PST-XXX format)
+    const vehicleIdMatch = msg.match(/pm-\w+-\d+/i);
+    const vehicleId = vehicleIdMatch ? vehicleIdMatch[0].toUpperCase() : undefined;
+
+    // Field detection patterns
+    const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
+      // Mileage: "rubah km 50000", "km jadi 50000", "update kilometer 30000"
+      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:km|kilometer|odometer)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'mileage', valueExtractor: m => m[1] },
+      { pattern: /(?:km|kilometer)\s*(?:ke|jadi|menjadi)\s*(\d+)/i, field: 'mileage', valueExtractor: m => m[1] },
+
+      // Fuel type: "ganti bensin jadi diesel", "ubah ke diesel"
+      { pattern: /(?:rubah|ganti|ubah)\s*(?:bahan\s*bakar|fuel|bensin|solar)?\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[1] },
+      { pattern: /(?:rubah|ganti|ubah)\s*(bensin|diesel|hybrid|electric)\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[2] },
+
+      // Year: "ganti tahun ke 2018", "ubah tahun 2016 jadi 2018"
+      { pattern: /(?:rubah|ganti|ubah|update)\s*tahun\s*(?:\d+\s*)?(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
+      { pattern: /tahun\s*(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
+
+      // Price: "update harga 150jt", "ganti harga ke 200000000"
+      { pattern: /(?:rubah|ganti|ubah|update)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
+        const val = m[1].toLowerCase();
+        if (val.includes('jt') || val.includes('juta')) {
+          return String(parseInt(val) * 1000000);
+        }
+        return val;
+      }},
+
+      // Transmission: "ganti transmisi ke matic", "ubah ke manual"
+      { pattern: /(?:rubah|ganti|ubah)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmission', valueExtractor: m => {
+        const val = m[1].toLowerCase();
+        if (val === 'matic' || val === 'at' || val === 'automatic') return 'automatic';
+        if (val === 'manual' || val === 'mt') return 'manual';
+        return val;
+      }},
+
+      // Color: "ganti warna ke hitam", "ubah warna putih jadi merah"
+      { pattern: /(?:rubah|ganti|ubah)\s*warna\s*(?:\w+\s*)?(?:ke|jadi|menjadi)\s*(\w+)/i, field: 'color', valueExtractor: m => m[1] },
+
+      // Engine capacity: "ubah cc ke 1500", "ganti kapasitas mesin 1497"
+      { pattern: /(?:rubah|ganti|ubah)\s*(?:cc|kapasitas\s*mesin)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'engineCapacity', valueExtractor: m => m[1] },
+    ];
+
+    for (const { pattern, field, valueExtractor } of patterns) {
+      const match = msg.match(pattern);
+      if (match) {
+        const newValue = valueExtractor(match);
+        console.log(`[WhatsApp AI Chat] Fallback detected edit: field=${field}, newValue=${newValue}, vehicleId=${vehicleId || 'from context'}`);
+        return { vehicleId, field, newValue };
+      }
+    }
+
+    return null;
   }
 }
 
