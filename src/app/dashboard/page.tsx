@@ -211,46 +211,57 @@ export default function ShowroomDashboardPage() {
   return (
     <div className="flex flex-col gap-3 h-[calc(100vh-90px)] -mt-2">
       {/* Welcome Header - Elegant Rich Modern */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-6 py-4 shadow-lg flex-shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-white">
+      <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-lg flex-shrink-0 ml-8 md:ml-0">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-base md:text-2xl font-bold text-white truncate">
             Selamat Datang di Prima Mobil
           </h1>
-          <p className="text-sm text-slate-300">Dashboard manajemen showroom</p>
+          <p className="text-xs md:text-sm text-slate-300">Dashboard manajemen showroom</p>
         </div>
-        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-          <span className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></span>
+        <span className="inline-flex items-center px-2 md:px-3 py-1 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 ml-2 flex-shrink-0">
+          <span className="w-1.5 md:w-2 h-1.5 md:h-2 bg-emerald-400 rounded-full mr-1 md:mr-2 animate-pulse"></span>
           Online
         </span>
       </div>
 
       {/* Stats Grid - Cards with Colored Icons */}
-      <div className="grid grid-cols-4 gap-3 flex-shrink-0">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 flex-shrink-0">
         {statsConfig.map((stat, index) => (
           <Link
             key={index}
             href={stat.href}
-            className={`group bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all p-3 ${
+            className={`group bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all p-2 md:p-3 ${
               index === 0 ? 'hover:border-blue-400 hover:bg-blue-50/50' :
-              index === 1 ? 'hover:border-red-400 hover:bg-red-50/50' :
+              index === 1 ? 'hover:border-emerald-400 hover:bg-emerald-50/50' :
               index === 2 ? 'hover:border-violet-400 hover:bg-violet-50/50' :
               'hover:border-amber-400 hover:bg-amber-50/50'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+            {/* Mobile: Vertical layout, Desktop: Horizontal */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              {/* Icon - Top on mobile, Right on desktop */}
+              <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all shadow-sm mx-auto md:mx-0 md:order-2 mb-2 md:mb-0 ${
+                index === 0 ? 'bg-blue-100 group-hover:bg-blue-500 border-2 border-blue-200 group-hover:border-blue-500' :
+                index === 1 ? 'bg-emerald-100 group-hover:bg-emerald-500 border-2 border-emerald-200 group-hover:border-emerald-500' :
+                index === 2 ? 'bg-violet-100 group-hover:bg-violet-500 border-2 border-violet-200 group-hover:border-violet-500' :
+                'bg-amber-100 group-hover:bg-amber-500 border-2 border-amber-200 group-hover:border-amber-500'
+              }`}>
+                <span className="text-xl md:text-3xl group-hover:scale-110 transition-transform">{stat.emoji}</span>
+              </div>
+              {/* Text - Below icon on mobile, Left on desktop */}
+              <div className="flex-1 min-w-0 text-center md:text-left md:order-1">
+                <p className="text-[9px] md:text-[10px] font-medium text-gray-500 uppercase tracking-wide truncate">
                   {stat.title}
                 </p>
                 {loadingStats ? (
-                  <div className="h-6 w-10 bg-gray-100 animate-pulse rounded mt-1"></div>
+                  <div className="h-5 md:h-6 w-8 md:w-10 bg-gray-100 animate-pulse rounded mt-1 mx-auto md:mx-0"></div>
                 ) : (
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-xl md:text-2xl font-bold text-gray-900">
                     {stat.value}
                   </p>
                 )}
                 {!loadingStats && (
-                  <p className="text-[10px] text-gray-400 mt-0.5">
+                  <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 truncate">
                     <span className={stat.subColor}>
                       {stat.isPercent ? `${stat.subValue >= 0 ? '+' : ''}${stat.subValue}%` : `+${stat.subValue}`}
                     </span>
@@ -258,36 +269,28 @@ export default function ShowroomDashboardPage() {
                   </p>
                 )}
               </div>
-              <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all shadow-sm ${
-                index === 0 ? 'bg-blue-100 group-hover:bg-blue-500 border-2 border-blue-200 group-hover:border-blue-500' :
-                index === 1 ? 'bg-red-100 group-hover:bg-red-500 border-2 border-red-200 group-hover:border-red-500' :
-                index === 2 ? 'bg-violet-100 group-hover:bg-violet-500 border-2 border-violet-200 group-hover:border-violet-500' :
-                'bg-amber-100 group-hover:bg-amber-500 border-2 border-amber-200 group-hover:border-amber-500'
-              }`}>
-                <span className="text-3xl group-hover:scale-110 transition-transform">{stat.emoji}</span>
-              </div>
             </div>
           </Link>
         ))}
       </div>
 
       {/* Main Content - Activity & Subscription Row - FLEX GROW */}
-      <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-h-0 overflow-hidden">
         {/* Left: Activity */}
-        <div className="col-span-2 min-h-0 overflow-hidden">
+        <div className="md:col-span-2 min-h-0 overflow-hidden order-2 md:order-1">
           <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col overflow-hidden">
             <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-              <h3 className="text-base font-semibold text-gray-800">Aktivitas Terkini</h3>
-              <Link href="/dashboard/vehicles?sort=newest" className="text-xs text-gray-500 hover:text-gray-700">
+              <h3 className="text-sm md:text-base font-semibold text-gray-800">Aktivitas Terkini</h3>
+              <Link href="/dashboard/vehicles?sort=newest" className="text-[10px] md:text-xs text-gray-500 hover:text-gray-700">
                 Lihat Semua →
               </Link>
             </div>
             <div className="p-2 flex-1 min-h-0 overflow-y-auto" style={{ maxHeight: 'calc(100% - 40px)' }}>
               {loadingActivities ? (
                 <div className="space-y-2">
-                  {[1, 2, 3, 4, 5].map((i) => (
+                  {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center gap-2 animate-pulse">
-                      <div className="w-8 h-8 bg-gray-100 rounded-lg"></div>
+                      <div className="w-7 md:w-8 h-7 md:h-8 bg-gray-100 rounded-lg"></div>
                       <div className="flex-1 h-4 bg-gray-100 rounded"></div>
                     </div>
                   ))}
@@ -298,9 +301,9 @@ export default function ShowroomDashboardPage() {
                     <Link
                       key={index}
                       href={getActivityLink(activity)}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                      className="flex items-center gap-2 md:gap-3 p-1.5 md:p-2 rounded-lg hover:bg-gray-50 transition-colors group"
                     >
-                      <div className={`w-8 h-8 ${getActivityColor(activity.icon)} rounded-lg flex items-center justify-center text-white text-sm`}>
+                      <div className={`w-7 h-7 md:w-8 md:h-8 ${getActivityColor(activity.icon)} rounded-lg flex items-center justify-center text-white text-xs md:text-sm flex-shrink-0`}>
                         {activity.type === 'vehicle_added' && '🚗'}
                         {activity.type === 'lead_created' && '📞'}
                         {activity.type === 'staff_joined' && '👤'}
@@ -308,71 +311,72 @@ export default function ShowroomDashboardPage() {
                         {!['vehicle_added', 'lead_created', 'staff_joined', 'sale_completed'].includes(activity.type) && '•'}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-700 truncate group-hover:text-gray-900">
+                        <p className="text-xs md:text-sm text-gray-700 truncate group-hover:text-gray-900">
                           {activity.message}
                         </p>
                       </div>
-                      <span className="text-xs text-gray-400 whitespace-nowrap">
+                      <span className="text-[10px] md:text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
                         {formatRelativeTime(activity.timestamp)}
                       </span>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400 text-center py-8">Belum ada aktivitas</p>
+                <p className="text-xs md:text-sm text-gray-400 text-center py-4 md:py-8">Belum ada aktivitas</p>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right: Subscription */}
-        <div className="col-span-1">
+        {/* Right: Subscription - Show first on mobile */}
+        <div className="md:col-span-1 order-1 md:order-2">
           {!loadingSubscription && <SubscriptionCard subscription={subscription} />}
         </div>
       </div>
 
-      {/* Quick Actions - Full Width */}
+      {/* Quick Actions - Horizontal scroll on mobile, Grid on desktop */}
       <div className="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-        <div className="px-4 py-2 border-b border-gray-100">
-          <h3 className="text-base font-bold text-gray-800">Aksi Cepat</h3>
+        <div className="px-3 md:px-4 py-2 border-b border-gray-100">
+          <h3 className="text-sm md:text-base font-bold text-gray-800">Aksi Cepat</h3>
         </div>
-        <div className="p-3">
-          <div className="grid grid-cols-4 gap-3">
+        <div className="p-2 md:p-3">
+          {/* Mobile: Horizontal scroll, Desktop: Grid */}
+          <div className="flex md:grid md:grid-cols-4 gap-2 md:gap-3 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
             <Link
               href="/dashboard/vehicles"
-              className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all group border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg"
+              className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all group border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg min-w-[70px] md:min-w-0"
             >
-              <div className="w-12 h-12 bg-blue-100 group-hover:bg-blue-200 rounded-xl flex items-center justify-center transition-colors border border-blue-300">
-                <span className="text-2xl">🚗</span>
+              <div className="w-9 h-9 md:w-12 md:h-12 bg-blue-100 group-hover:bg-blue-200 rounded-xl flex items-center justify-center transition-colors border border-blue-300 flex-shrink-0">
+                <span className="text-lg md:text-2xl">🚗</span>
               </div>
-              <span className="text-sm font-semibold text-blue-800 group-hover:text-blue-900">Manajemen Kendaraan</span>
+              <span className="text-[10px] md:text-sm font-semibold text-blue-800 group-hover:text-blue-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Kendaraan</span>
             </Link>
             <Link
               href="/dashboard/whatsapp-ai"
-              className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-all group border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-lg"
+              className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-all group border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-lg min-w-[70px] md:min-w-0"
             >
-              <div className="w-12 h-12 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center transition-colors border border-emerald-300">
-                <span className="text-2xl">💬</span>
+              <div className="w-9 h-9 md:w-12 md:h-12 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center transition-colors border border-emerald-300 flex-shrink-0">
+                <span className="text-lg md:text-2xl">💬</span>
               </div>
-              <span className="text-sm font-semibold text-emerald-800 group-hover:text-emerald-900">AI WhatsApp</span>
+              <span className="text-[10px] md:text-sm font-semibold text-emerald-800 group-hover:text-emerald-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">WhatsApp</span>
             </Link>
             <Link
               href="/dashboard/users"
-              className="flex items-center gap-3 p-3 rounded-xl bg-violet-50 hover:bg-violet-100 transition-all group border-2 border-violet-200 hover:border-violet-400 hover:shadow-lg"
+              className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-violet-50 hover:bg-violet-100 transition-all group border-2 border-violet-200 hover:border-violet-400 hover:shadow-lg min-w-[70px] md:min-w-0"
             >
-              <div className="w-12 h-12 bg-violet-100 group-hover:bg-violet-200 rounded-xl flex items-center justify-center transition-colors border border-violet-300">
-                <span className="text-2xl">👥</span>
+              <div className="w-9 h-9 md:w-12 md:h-12 bg-violet-100 group-hover:bg-violet-200 rounded-xl flex items-center justify-center transition-colors border border-violet-300 flex-shrink-0">
+                <span className="text-lg md:text-2xl">👥</span>
               </div>
-              <span className="text-sm font-semibold text-violet-800 group-hover:text-violet-900">Manajemen Tim</span>
+              <span className="text-[10px] md:text-sm font-semibold text-violet-800 group-hover:text-violet-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Tim</span>
             </Link>
             <Link
               href="/dashboard/blog"
-              className="flex items-center gap-3 p-3 rounded-xl bg-orange-50 hover:bg-orange-100 transition-all group border-2 border-orange-200 hover:border-orange-400 hover:shadow-lg"
+              className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-orange-50 hover:bg-orange-100 transition-all group border-2 border-orange-200 hover:border-orange-400 hover:shadow-lg min-w-[70px] md:min-w-0"
             >
-              <div className="w-12 h-12 bg-orange-100 group-hover:bg-orange-200 rounded-xl flex items-center justify-center transition-colors border border-orange-300">
-                <span className="text-2xl">📝</span>
+              <div className="w-9 h-9 md:w-12 md:h-12 bg-orange-100 group-hover:bg-orange-200 rounded-xl flex items-center justify-center transition-colors border border-orange-300 flex-shrink-0">
+                <span className="text-lg md:text-2xl">📝</span>
               </div>
-              <span className="text-sm font-semibold text-orange-800 group-hover:text-orange-900">Blog</span>
+              <span className="text-[10px] md:text-sm font-semibold text-orange-800 group-hover:text-orange-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Blog</span>
             </Link>
           </div>
         </div>
