@@ -215,11 +215,11 @@ export default function UsersPage() {
 
   return (
     <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
-      {/* Header - with left padding on mobile for hamburger menu */}
-      <div className="flex justify-between items-center mb-3 flex-shrink-0 pl-10 md:pl-0">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Manajemen Tim</h1>
-          <p className="text-gray-600 text-xs md:text-sm">Kelola staff dan anggota tim showroom</p>
+      {/* Header - with left margin on mobile for hamburger menu */}
+      <div className="flex justify-between items-center mb-3 flex-shrink-0 ml-10 md:ml-0">
+        <div className="min-w-0">
+          <h1 className="text-lg md:text-2xl font-bold text-gray-900">Manajemen Tim</h1>
+          <p className="text-gray-600 text-[10px] md:text-sm">Kelola staff dan anggota tim showroom</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -538,16 +538,17 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pt-2 border-t border-green-200">
-                <div className="flex items-center text-[10px] md:text-xs text-gray-600">
-                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></span>
-                  <span>Staff harus memiliki <strong>Nomor WhatsApp</strong> terdaftar untuk menggunakan commands</span>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1.5 md:gap-2 pt-2 border-t border-green-200">
+                <div className="flex items-center text-[9px] md:text-xs text-gray-600">
+                  <span className="inline-block w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full mr-1.5 md:mr-2 flex-shrink-0"></span>
+                  <span className="hidden md:inline">Staff harus memiliki <strong>Nomor WhatsApp</strong> terdaftar untuk menggunakan commands</span>
+                  <span className="md:hidden">Staff perlu <strong>No. WA</strong> untuk commands</span>
                 </div>
                 <a
                   href="/dashboard/whatsapp-ai"
-                  className="text-[10px] md:text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
+                  className="text-[9px] md:text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap ml-3 md:ml-0"
                 >
-                  Lihat WhatsApp AI Dashboard →
+                  WhatsApp AI →
                 </a>
               </div>
             </div>
