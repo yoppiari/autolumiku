@@ -1036,7 +1036,78 @@ export class MessageOrchestratorService {
       console.log(`[Orchestrator] Found existing conversation: ${conversation.id}, isStaff: ${conversation.isStaff}, state: ${conversation.conversationState}`);
     }
 
+    // AUTO-UPDATE: If this is a real phone (not LID), check if there are LID conversations to update
+    if (!isLID && !customerPhone.includes("@lid")) {
+      await this.updateLIDConversationsToRealPhone(accountId, tenantId, customerPhone);
+    }
+
     return conversation;
+  }
+
+  /**
+   * Update conversations that have LID customerPhone to real phone number
+   * Called when we receive a message from a real phone number
+   */
+  private static async updateLIDConversationsToRealPhone(
+    accountId: string,
+    tenantId: string,
+    realPhone: string
+  ) {
+    // Helper to check if a number looks like a LID
+    const isLIDNumber = (num: string): boolean => {
+      const digits = num.replace(/\D/g, "");
+      if (digits.length < 14) return false;
+      if (digits.startsWith("100") || digits.startsWith("101") || digits.startsWith("102")) return true;
+      if (digits.length >= 16) return true;
+      if (digits.startsWith("1") && digits.length > 11) return true;
+      if (digits.startsWith("62") && digits.length > 14) return true;
+      return false;
+    };
+
+    try {
+      // Find conversations with LID-like customerPhone
+      const lidConversations = await prisma.whatsAppConversation.findMany({
+        where: {
+          accountId,
+          tenantId,
+          status: "active",
+        },
+      });
+
+      for (const conv of lidConversations) {
+        const customerPhoneDigits = conv.customerPhone.replace(/\D/g, "");
+
+        // Check if this conversation has a LID as customerPhone
+        if (isLIDNumber(customerPhoneDigits) || conv.customerPhone.includes("@lid")) {
+          const contextData = conv.contextData as Record<string, any> | null;
+
+          // Check if this LID conversation is linked to the real phone via verifiedStaffPhone
+          const normalizedReal = this.normalizePhoneForLookup(realPhone);
+          const verifiedPhone = contextData?.verifiedStaffPhone;
+          const normalizedVerified = verifiedPhone ? this.normalizePhoneForLookup(verifiedPhone) : "";
+
+          if (normalizedVerified === normalizedReal) {
+            console.log(`[Orchestrator] 🔄 Updating LID conversation ${conv.id}: ${conv.customerPhone} -> ${realPhone}`);
+
+            await prisma.whatsAppConversation.update({
+              where: { id: conv.id },
+              data: {
+                customerPhone: realPhone,
+                contextData: {
+                  ...contextData,
+                  previousLID: conv.customerPhone,
+                  phoneUpdatedAt: new Date().toISOString(),
+                },
+              },
+            });
+
+            console.log(`[Orchestrator] ✅ Successfully updated conversation phone number`);
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error(`[Orchestrator] Error updating LID conversations:`, error.message);
+    }
   }
 
   /**
