@@ -85,6 +85,11 @@ export default function ConversationsPage() {
   // State untuk mobile view - show chat or list
   const [showChatOnMobile, setShowChatOnMobile] = useState(false);
 
+  // State untuk message menu (delete option)
+  const [activeMessageMenu, setActiveMessageMenu] = useState<string | null>(null);
+  const [isDeletingMessage, setIsDeletingMessage] = useState(false);
+  const messageMenuRef = useRef<HTMLDivElement>(null);
+
   // Load conversations
   useEffect(() => {
     const loadConversations = async () => {
@@ -217,6 +222,50 @@ export default function ConversationsPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Close message menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (messageMenuRef.current && !messageMenuRef.current.contains(event.target as Node)) {
+        setActiveMessageMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Delete message handler
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!selectedConversation || isDeletingMessage) return;
+
+    const confirmDelete = window.confirm('Hapus pesan ini?');
+    if (!confirmDelete) {
+      setActiveMessageMenu(null);
+      return;
+    }
+
+    setIsDeletingMessage(true);
+    try {
+      const response = await fetch(
+        `/api/v1/whatsapp-ai/conversations/${selectedConversation.id}/messages?messageId=${messageId}`,
+        { method: 'DELETE' }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        // Remove from local state
+        setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+        setActiveMessageMenu(null);
+      } else {
+        alert('Gagal menghapus pesan: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      alert('Gagal menghapus pesan');
+    } finally {
+      setIsDeletingMessage(false);
+    }
+  };
 
   // Send manual message
   const handleSendMessage = async () => {
@@ -892,41 +941,80 @@ export default function ConversationsPage() {
                         key={msg.id}
                         className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'}`}
                       >
-                        <div
-                          className={`max-w-[85%] md:max-w-[75%] rounded-lg px-3 py-2 md:px-2.5 md:py-1.5 shadow-sm ${
-                            msg.direction === 'inbound'
-                              ? 'bg-white text-gray-900 rounded-tl-none'
-                              : msg.aiResponse
-                              ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none'
-                              : 'bg-[#d9fdd3] text-gray-900 rounded-tr-none'
-                          }`}
-                        >
-                          {msg.direction === 'inbound' && (
-                            <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
-                              <span className="text-[11px] md:text-[10px] font-semibold text-green-700">
-                                {msg.senderType === 'staff' ? '👨‍💼' : '👤'}
+                        {/* Message bubble with dropdown */}
+                        <div className="relative group">
+                          <div
+                            className={`max-w-[85%] md:max-w-[75%] rounded-lg px-3 py-2 md:px-2.5 md:py-1.5 shadow-sm ${
+                              msg.direction === 'inbound'
+                                ? 'bg-white text-gray-900 rounded-tl-none'
+                                : msg.aiResponse
+                                ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none'
+                                : 'bg-[#d9fdd3] text-gray-900 rounded-tr-none'
+                            }`}
+                          >
+                            {msg.direction === 'inbound' && (
+                              <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
+                                <span className="text-[11px] md:text-[10px] font-semibold text-green-700">
+                                  {msg.senderType === 'staff' ? '👨‍💼' : '👤'}
+                                </span>
+                                {msg.intent && (
+                                  <span className="text-[11px] md:text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
+                                )}
+                              </div>
+                            )}
+                            {msg.direction === 'outbound' && (
+                              <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
+                                <span className="text-[11px] md:text-[10px] font-semibold text-blue-700">
+                                  {msg.senderType === 'ai' ? '🤖' : '👨‍💼'}
+                                </span>
+                              </div>
+                            )}
+                            <p className="text-[13px] md:text-xs whitespace-pre-wrap break-words leading-relaxed pr-5">{msg.content}</p>
+                            <div className="flex items-center justify-end mt-1 md:mt-0.5 space-x-1">
+                              <span className="text-[10px] md:text-[9px] text-gray-500">
+                                {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                               </span>
-                              {msg.intent && (
-                                <span className="text-[11px] md:text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
+                              {msg.direction === 'outbound' && (
+                                <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
                               )}
                             </div>
-                          )}
-                          {msg.direction === 'outbound' && (
-                            <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
-                              <span className="text-[11px] md:text-[10px] font-semibold text-blue-700">
-                                {msg.senderType === 'ai' ? '🤖' : '👨‍💼'}
-                              </span>
+
+                            {/* Dropdown trigger button - appears on hover/tap */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id);
+                              }}
+                              className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opacity ${
+                                activeMessageMenu === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                              }`}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
+
+                          {/* Dropdown menu */}
+                          {activeMessageMenu === msg.id && (
+                            <div
+                              ref={messageMenuRef}
+                              className={`absolute top-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[140px] z-50 ${
+                                msg.direction === 'inbound' ? 'left-0' : 'right-0'
+                              }`}
+                            >
+                              <button
+                                onClick={() => handleDeleteMessage(msg.id)}
+                                disabled={isDeletingMessage}
+                                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-red-600 disabled:opacity-50"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span className="text-sm">{isDeletingMessage ? 'Menghapus...' : 'Hapus'}</span>
+                              </button>
                             </div>
                           )}
-                          <p className="text-[13px] md:text-xs whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
-                          <div className="flex items-center justify-end mt-1 md:mt-0.5 space-x-1">
-                            <span className="text-[10px] md:text-[9px] text-gray-500">
-                              {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            {msg.direction === 'outbound' && (
-                              <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
-                            )}
-                          </div>
                         </div>
                       </div>
                     ))}
