@@ -1196,6 +1196,11 @@ export class StaffCommandService {
       ? `📷 Foto: ${photos.length}/${MIN_PHOTOS_REQ} (perlu ${photosNeeded} lagi)\n\n`
       : "";
 
+    // Only show KM if it's provided and > 0
+    const kmInfo = vehicleData.mileage && vehicleData.mileage > 0
+      ? `📍 ${this.formatNumber(vehicleData.mileage)} km\n`
+      : "";
+
     return {
       success: true,
       message:
@@ -1203,7 +1208,8 @@ export class StaffCommandService {
         `🚗 ${vehicleData.make} ${vehicleData.model} ${vehicleData.year}\n` +
         `💰 Rp ${this.formatPrice(vehicleData.price)}\n` +
         `🔧 ${vehicleData.transmission} | 🎨 ${vehicleData.color}\n` +
-        `📍 ${this.formatNumber(vehicleData.mileage)} km\n\n` +
+        kmInfo +
+        `\n` +
         optionalMissing +
         photoStatus +
         `Tinggal kirim ${photosNeeded > 0 ? photosNeeded : MIN_PHOTOS_REQ} foto ya:\n` +

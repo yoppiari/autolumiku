@@ -133,6 +133,12 @@ export class UploadNotificationService {
       const v = notification.vehicleData;
       const priceInJuta = Math.round(v.price / 1000000);
 
+      // Build optional fields - only show if value exists and > 0
+      const kmLine = v.mileage && v.mileage > 0
+        ? `• KM: ${v.mileage.toLocaleString("id-ID")}\n`
+        : "";
+      const colorLine = v.color ? `• Warna: ${v.color}\n` : "";
+
       return (
         `🔔 *NOTIFIKASI UPLOAD MOBIL*\n` +
         `━━━━━━━━━━━━━\n\n` +
@@ -140,8 +146,8 @@ export class UploadNotificationService {
         `📋 *Data Kendaraan:*\n` +
         `• Mobil: ${v.make} ${v.model} ${v.year}\n` +
         `• Harga: Rp ${priceInJuta} Juta\n` +
-        `• KM: ${v.mileage?.toLocaleString("id-ID") || "-"}\n` +
-        `• Warna: ${v.color || "-"}\n` +
+        kmLine +
+        colorLine +
         `• Foto: ${v.photoCount || 0} foto\n` +
         `• ID: ${v.displayId || v.vehicleId}\n\n` +
         `👤 *Diupload oleh:*\n` +
