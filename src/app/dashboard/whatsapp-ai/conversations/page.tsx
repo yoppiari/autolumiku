@@ -772,6 +772,51 @@ export default function ConversationsPage() {
     return 'bg-gray-100 text-gray-800';
   };
 
+  // Generate avatar color and initials based on phone/name
+  const getAvatarProps = (phone: string, name?: string, isStaff?: boolean) => {
+    // Color palette - WhatsApp-like colors
+    const colors = [
+      'bg-gradient-to-br from-pink-400 to-pink-600',
+      'bg-gradient-to-br from-purple-400 to-purple-600',
+      'bg-gradient-to-br from-indigo-400 to-indigo-600',
+      'bg-gradient-to-br from-blue-400 to-blue-600',
+      'bg-gradient-to-br from-cyan-400 to-cyan-600',
+      'bg-gradient-to-br from-teal-400 to-teal-600',
+      'bg-gradient-to-br from-green-400 to-green-600',
+      'bg-gradient-to-br from-lime-400 to-lime-600',
+      'bg-gradient-to-br from-yellow-400 to-yellow-600',
+      'bg-gradient-to-br from-orange-400 to-orange-600',
+      'bg-gradient-to-br from-red-400 to-red-600',
+      'bg-gradient-to-br from-rose-400 to-rose-600',
+    ];
+
+    // Generate consistent color index from phone number
+    const phoneDigits = phone.replace(/\D/g, '');
+    let hash = 0;
+    for (let i = 0; i < phoneDigits.length; i++) {
+      hash = ((hash << 5) - hash) + phoneDigits.charCodeAt(i);
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    const colorIndex = Math.abs(hash) % colors.length;
+
+    // Generate initials
+    let initials = '';
+    if (name && name.trim()) {
+      // Get first letters of first 2 words
+      const words = name.trim().split(/\s+/);
+      initials = words.slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
+    } else {
+      // Use last 2 digits of phone number
+      initials = phoneDigits.slice(-2) || '?';
+    }
+
+    return {
+      color: colors[colorIndex],
+      initials: initials || '?',
+      isStaff: isStaff || false,
+    };
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -881,13 +926,23 @@ export default function ConversationsPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center min-w-0 flex-1">
-                      <div
-                        className={`w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-3 md:mr-2 flex-shrink-0 ${
-                          conv.isStaff ? 'bg-green-100' : 'bg-blue-100'
-                        }`}
-                      >
-                        <span className="text-base md:text-sm">{conv.isStaff ? '👨‍💼' : '👤'}</span>
-                      </div>
+                      {(() => {
+                        const avatar = getAvatarProps(conv.customerPhone, conv.customerName, conv.isStaff);
+                        return (
+                          <div
+                            className={`w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-3 md:mr-2 flex-shrink-0 ${avatar.color} text-white font-semibold text-sm md:text-xs shadow-sm relative`}
+                          >
+                            {avatar.initials}
+                            {conv.isStaff && (
+                              <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 md:w-3 md:h-3 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                                <svg className="w-2.5 h-2.5 md:w-2 md:h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                       <div className="min-w-0 flex-1 overflow-visible">
                         <h3 className="font-medium text-gray-900 text-xs md:text-sm whitespace-nowrap">
                           {conv.customerName || formatPhoneNumber(conv.customerPhone)}
@@ -957,11 +1012,23 @@ export default function ConversationsPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
-                    <div className={`w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-3 md:mr-2 ${
-                      selectedConversation.isStaff ? 'bg-green-100' : 'bg-blue-100'
-                    }`}>
-                      <span className="text-base md:text-sm">{selectedConversation.isStaff ? '👨‍💼' : '👤'}</span>
-                    </div>
+                    {(() => {
+                      const avatar = getAvatarProps(selectedConversation.customerPhone, selectedConversation.customerName, selectedConversation.isStaff);
+                      return (
+                        <div
+                          className={`w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-3 md:mr-2 ${avatar.color} text-white font-semibold text-sm md:text-xs shadow-sm relative`}
+                        >
+                          {avatar.initials}
+                          {selectedConversation.isStaff && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 md:w-3 md:h-3 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                              <svg className="w-2.5 h-2.5 md:w-2 md:h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div>
                       <h2 className="text-sm font-semibold text-gray-900">
                         {selectedConversation.customerName || formatPhoneNumber(selectedConversation.customerPhone)}
