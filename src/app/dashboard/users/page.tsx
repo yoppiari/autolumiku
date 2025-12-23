@@ -231,7 +231,7 @@ export default function UsersPage() {
       </div>
 
       {/* Stats Cards - Urutan (1) */}
-      <div className="grid grid-cols-3 gap-3 mb-3 flex-shrink-0">
+      <div className="grid grid-cols-4 gap-3 mb-3 flex-shrink-0">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
           <p className="text-xs font-medium text-gray-600">Total Staff</p>
           {loading ? (
@@ -248,6 +248,17 @@ export default function UsersPage() {
           ) : (
             <p className="text-2xl font-bold text-purple-600 mt-1">
               {stats?.byRole?.ADMIN || 0}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+          <p className="text-xs font-medium text-gray-600">Manager</p>
+          {loading ? (
+            <div className="h-8 w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+          ) : (
+            <p className="text-2xl font-bold text-blue-600 mt-1">
+              {stats?.byRole?.MANAGER || 0}
             </p>
           )}
         </div>
@@ -293,13 +304,13 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-auto space-y-3">
-        {/* Users Table - Urutan (2) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+      {/* Main Content - Two Separate Scroll Areas */}
+      <div className="flex-1 flex flex-col gap-3 min-h-0">
+        {/* Users Table - Scrollable Area 1 */}
+        <div className="flex-1 min-h-0 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Staff
@@ -448,8 +459,8 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* WhatsApp AI Integration Info - Urutan (3) */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-3">
+        {/* WhatsApp AI Integration Info - Scrollable Area 2 (Fixed Height) */}
+        <div className="flex-shrink-0 max-h-[280px] overflow-auto bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-3">
           <div className="flex items-start">
             <div className="flex-shrink-0">
               <div className="flex items-center justify-center h-10 w-10 rounded-md bg-green-500 text-white text-xl">
