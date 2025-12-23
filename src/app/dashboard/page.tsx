@@ -352,7 +352,7 @@ export default function ShowroomDashboardPage() {
               <span className="text-[10px] md:text-sm font-semibold text-blue-800 group-hover:text-blue-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Kendaraan</span>
             </Link>
             <Link
-              href="/dashboard/whatsapp-ai"
+              href="/dashboard/whatsapp-ai/conversations"
               className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-all group border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-lg min-w-[70px] md:min-w-0"
             >
               <div className="w-9 h-9 md:w-12 md:h-12 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center transition-colors border border-emerald-300 flex-shrink-0">
