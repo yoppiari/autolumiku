@@ -82,6 +82,9 @@ export default function ConversationsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
 
+  // State untuk mobile view - show chat or list
+  const [showChatOnMobile, setShowChatOnMobile] = useState(false);
+
   // Load conversations
   useEffect(() => {
     const loadConversations = async () => {
@@ -684,48 +687,60 @@ export default function ConversationsPage() {
     );
   }
 
+  // Handle conversation selection dengan mobile support
+  const handleSelectConversationMobile = (conversation: Conversation) => {
+    setSelectedConversation(conversation);
+    loadMessages(conversation.id);
+    setShowChatOnMobile(true); // Show chat panel on mobile
+  };
+
+  // Back to list on mobile
+  const handleBackToList = () => {
+    setShowChatOnMobile(false);
+  };
+
   return (
-    <div className="p-4 h-screen flex flex-col overflow-hidden">
-      {/* Header - Compact */}
-      <div className="mb-3 flex items-center justify-between">
+    <div className="p-3 md:p-4 h-screen flex flex-col overflow-hidden">
+      {/* Header - Responsive */}
+      <div className="mb-3 md:mb-4 flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-sm">
               ← Back
             </Link>
-            <h1 className="text-xl font-bold text-gray-900">Conversations</h1>
+            <h1 className="text-lg md:text-xl font-bold text-gray-900">Conversations</h1>
           </div>
-          <p className="text-gray-500 text-xs mt-0.5">Monitor customer chats dan staff commands</p>
+          <p className="text-gray-500 text-xs mt-0.5 hidden sm:block">Monitor customer chats dan staff commands</p>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 grid grid-cols-12 gap-4 overflow-hidden min-h-0">
-        {/* Conversations List */}
-        <div className="col-span-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-          {/* Filters - Compact */}
-          <div className="p-3 border-b border-gray-200">
+      {/* Main Content - Mobile: stack, Desktop: side-by-side */}
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 overflow-hidden min-h-0">
+        {/* Conversations List - Hidden on mobile when chat is open */}
+        <div className={`${showChatOnMobile ? 'hidden' : 'flex'} md:flex md:col-span-4 bg-white rounded-lg shadow-sm border border-gray-200 flex-col overflow-hidden flex-1 md:flex-none`}>
+          {/* Filters - Responsive */}
+          <div className="p-3 md:p-3 border-b border-gray-200">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by phone or name..."
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2"
+              placeholder="Cari nomor atau nama..."
+              className="w-full px-3 py-2 md:py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2"
             />
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5 md:gap-1">
               <button
                 onClick={() => setFilterType('all')}
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${
                   filterType === 'all'
                     ? 'bg-green-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                All ({conversations.length})
+                Semua ({conversations.length})
               </button>
               <button
                 onClick={() => setFilterType('customer')}
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${
                   filterType === 'customer'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -735,7 +750,7 @@ export default function ConversationsPage() {
               </button>
               <button
                 onClick={() => setFilterType('staff')}
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${
                   filterType === 'staff'
                     ? 'bg-green-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -745,7 +760,7 @@ export default function ConversationsPage() {
               </button>
               <button
                 onClick={() => setFilterType('escalated')}
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${
                   filterType === 'escalated'
                     ? 'bg-red-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -756,54 +771,54 @@ export default function ConversationsPage() {
             </div>
           </div>
 
-          {/* Conversation List */}
+          {/* Conversation List - Better spacing for mobile */}
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                <p>No conversations found</p>
+              <div className="p-6 text-center text-gray-500 text-sm">
+                <p>Tidak ada percakapan</p>
               </div>
             ) : (
               filteredConversations.map((conv) => (
                 <div
                   key={conv.id}
-                  onClick={() => handleSelectConversation(conv)}
-                  className={`px-3 py-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+                  onClick={() => handleSelectConversationMobile(conv)}
+                  className={`px-4 py-3 md:px-3 md:py-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 active:bg-gray-100 ${
                     selectedConversation?.id === conv.id ? 'bg-green-50' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center min-w-0">
+                    <div className="flex items-center min-w-0 flex-1">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 flex-shrink-0 ${
+                        className={`w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-3 md:mr-2 flex-shrink-0 ${
                           conv.isStaff ? 'bg-green-100' : 'bg-blue-100'
                         }`}
                       >
-                        <span className="text-sm">{conv.isStaff ? '👨‍💼' : '👤'}</span>
+                        <span className="text-base md:text-sm">{conv.isStaff ? '👨‍💼' : '👤'}</span>
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-medium text-gray-900 text-sm truncate">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-medium text-gray-900 text-sm md:text-sm">
                           {conv.customerName || formatPhoneNumber(conv.customerPhone)}
                         </h3>
-                        <div className="flex items-center gap-1 mt-0.5">
+                        <div className="flex items-center gap-1.5 md:gap-1 mt-1 md:mt-0.5 flex-wrap">
                           <span
-                            className={`inline-block px-1.5 py-0 rounded text-[10px] font-medium ${getIntentBadgeColor(
+                            className={`inline-block px-2 py-0.5 md:px-1.5 md:py-0 rounded text-[11px] md:text-[10px] font-medium ${getIntentBadgeColor(
                               conv.lastIntent
                             )}`}
                           >
                             {conv.lastIntent?.replace('customer_', '').replace('staff_', '') || '?'}
                           </span>
                           {conv.escalatedTo && (
-                            <span className="inline-block px-1.5 py-0 bg-red-100 text-red-800 rounded text-[10px] font-medium">
+                            <span className="inline-block px-2 py-0.5 md:px-1.5 md:py-0 bg-red-100 text-red-800 rounded text-[11px] md:text-[10px] font-medium">
                               Esc
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-2">
-                      <p className="text-[10px] text-gray-500">{formatTime(conv.lastMessageAt)}</p>
+                    <div className="text-right flex-shrink-0 ml-3 md:ml-2">
+                      <p className="text-[11px] md:text-[10px] text-gray-500">{formatTime(conv.lastMessageAt)}</p>
                       {conv.unreadCount > 0 && (
-                        <span className="inline-block mt-0.5 px-1.5 py-0 bg-green-600 text-white text-[10px] rounded-full">
+                        <span className="inline-block mt-1 md:mt-0.5 px-2 py-0.5 md:px-1.5 md:py-0 bg-green-600 text-white text-[11px] md:text-[10px] rounded-full">
                           {conv.unreadCount}
                         </span>
                       )}
@@ -815,18 +830,27 @@ export default function ConversationsPage() {
           </div>
         </div>
 
-        {/* Message Thread */}
-        <div className="col-span-8 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+        {/* Message Thread - Hidden on mobile when chat list is shown */}
+        <div className={`${showChatOnMobile ? 'flex' : 'hidden'} md:flex md:col-span-8 bg-white rounded-lg shadow-sm border border-gray-200 flex-col overflow-hidden flex-1 md:flex-none`}>
           {selectedConversation ? (
             <>
-              {/* Conversation Header - Compact */}
-              <div className="px-3 py-2 border-b border-gray-200 bg-[#f0f2f5]">
+              {/* Conversation Header - Responsive with back button for mobile */}
+              <div className="px-3 md:px-3 py-3 md:py-2 border-b border-gray-200 bg-[#f0f2f5]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                    {/* Back button - only visible on mobile */}
+                    <button
+                      onClick={handleBackToList}
+                      className="md:hidden mr-2 p-1.5 -ml-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <div className={`w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-3 md:mr-2 ${
                       selectedConversation.isStaff ? 'bg-green-100' : 'bg-blue-100'
                     }`}>
-                      <span className="text-sm">{selectedConversation.isStaff ? '👨‍💼' : '👤'}</span>
+                      <span className="text-base md:text-sm">{selectedConversation.isStaff ? '👨‍💼' : '👤'}</span>
                     </div>
                     <div>
                       <h2 className="text-sm font-semibold text-gray-900">
@@ -839,7 +863,7 @@ export default function ConversationsPage() {
                   </div>
                   <div>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                      className={`px-2 py-0.5 md:py-0.5 rounded-full text-[11px] md:text-[10px] font-medium ${
                         selectedConversation.status === 'active'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
@@ -851,15 +875,15 @@ export default function ConversationsPage() {
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[#e5ddd5]">
+              {/* Messages - Responsive padding and sizing */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-3 space-y-3 md:space-y-2 bg-[#e5ddd5]">
                 {isLoadingMessages ? (
                   <div className="flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 md:h-6 md:w-6 border-b-2 border-green-600"></div>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="text-center text-gray-500 py-4 text-sm">
-                    <p>No messages yet</p>
+                  <div className="text-center text-gray-500 py-8 text-sm">
+                    <p>Belum ada pesan</p>
                   </div>
                 ) : (
                   <>
@@ -869,7 +893,7 @@ export default function ConversationsPage() {
                         className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'}`}
                       >
                         <div
-                          className={`max-w-[75%] rounded-lg px-2.5 py-1.5 shadow-sm ${
+                          className={`max-w-[85%] md:max-w-[75%] rounded-lg px-3 py-2 md:px-2.5 md:py-1.5 shadow-sm ${
                             msg.direction === 'inbound'
                               ? 'bg-white text-gray-900 rounded-tl-none'
                               : msg.aiResponse
@@ -878,29 +902,29 @@ export default function ConversationsPage() {
                           }`}
                         >
                           {msg.direction === 'inbound' && (
-                            <div className="flex items-center space-x-1 mb-0.5">
-                              <span className="text-[10px] font-semibold text-green-700">
+                            <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
+                              <span className="text-[11px] md:text-[10px] font-semibold text-green-700">
                                 {msg.senderType === 'staff' ? '👨‍💼' : '👤'}
                               </span>
                               {msg.intent && (
-                                <span className="text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
+                                <span className="text-[11px] md:text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
                               )}
                             </div>
                           )}
                           {msg.direction === 'outbound' && (
-                            <div className="flex items-center space-x-1 mb-0.5">
-                              <span className="text-[10px] font-semibold text-blue-700">
+                            <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
+                              <span className="text-[11px] md:text-[10px] font-semibold text-blue-700">
                                 {msg.senderType === 'ai' ? '🤖' : '👨‍💼'}
                               </span>
                             </div>
                           )}
-                          <p className="text-xs whitespace-pre-wrap break-words">{msg.content}</p>
-                          <div className="flex items-center justify-end mt-0.5 space-x-1">
-                            <span className="text-[9px] text-gray-500">
+                          <p className="text-[13px] md:text-xs whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                          <div className="flex items-center justify-end mt-1 md:mt-0.5 space-x-1">
+                            <span className="text-[10px] md:text-[9px] text-gray-500">
                               {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             {msg.direction === 'outbound' && (
-                              <span className="text-blue-500 text-[10px]">✓✓</span>
+                              <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
                             )}
                           </div>
                         </div>
@@ -911,17 +935,17 @@ export default function ConversationsPage() {
                 )}
               </div>
 
-              {/* Message Input - Compact */}
-              <div className="px-2 py-2 border-t border-gray-200 bg-[#f0f2f5]">
-                <div className="flex items-center space-x-2">
+              {/* Message Input - Responsive */}
+              <div className="px-3 md:px-2 py-3 md:py-2 border-t border-gray-200 bg-[#f0f2f5]">
+                <div className="flex items-center space-x-2 md:space-x-2">
                   {/* Attachment Button */}
                   <div className="relative" ref={attachmentMenuRef}>
                     <button
                       onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                      className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors"
+                      className="p-2 md:p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors"
                       title="Lampiran"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
@@ -990,20 +1014,20 @@ export default function ConversationsPage() {
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Ketik pesan..."
-                    className="flex-1 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2.5 md:px-3 md:py-1.5 text-sm bg-white border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
 
                   {/* Send Button */}
                   <button
                     onClick={handleSendMessage}
                     disabled={!messageInput.trim() || isSending}
-                    className="p-1.5 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2.5 md:p-1.5 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Kirim"
                   >
                     {isSending ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 md:h-4 md:w-4 border-b-2 border-white"></div>
                     ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-4 md:w-4" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                       </svg>
                     )}
@@ -1012,10 +1036,10 @@ export default function ConversationsPage() {
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="hidden md:flex items-center justify-center h-full text-gray-400">
               <div className="text-center">
-                <p className="text-2xl mb-1">💬</p>
-                <p className="text-sm">Select a conversation</p>
+                <p className="text-4xl mb-2">💬</p>
+                <p className="text-sm">Pilih percakapan untuk melihat pesan</p>
               </div>
             </div>
           )}
