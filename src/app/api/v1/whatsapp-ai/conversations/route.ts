@@ -22,8 +22,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get conversations dengan message count
+    // Exclude deleted conversations from the list (soft-deleted)
     const conversations = await prisma.whatsAppConversation.findMany({
-      where: { tenantId },
+      where: {
+        tenantId,
+        status: { not: "deleted" }, // Exclude deleted conversations
+      },
       include: {
         _count: {
           select: { messages: true },

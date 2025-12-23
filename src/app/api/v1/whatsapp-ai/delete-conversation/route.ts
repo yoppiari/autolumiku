@@ -1,7 +1,7 @@
 /**
- * Delete Conversation
+ * Delete Conversation (Soft Delete)
  * DELETE /api/v1/whatsapp-ai/delete-conversation?conversationId=xxx
- * Deletes a conversation and all its messages
+ * Marks a conversation as deleted (soft delete) - excluded from stats
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -19,14 +19,11 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete all messages in conversation first
-    await prisma.whatsAppMessage.deleteMany({
-      where: { conversationId },
-    });
-
-    // Delete conversation
-    await prisma.whatsAppConversation.delete({
+    // Soft delete - mark as deleted instead of removing
+    // This excludes conversation from stats but keeps data for audit
+    await prisma.whatsAppConversation.update({
       where: { id: conversationId },
+      data: { status: "deleted" },
     });
 
     return NextResponse.json({
