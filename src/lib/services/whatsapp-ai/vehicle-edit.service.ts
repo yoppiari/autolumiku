@@ -11,6 +11,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { UploadNotificationService } from "./upload-notification.service";
 
 // ==================== TYPES ====================
 
@@ -295,6 +296,23 @@ export class VehicleEditService {
       if (errors.length > 0) {
         message += `\n\n⚠️ Beberapa field gagal:\n${errors.map((e) => `• ${e}`).join("\n")}`;
       }
+
+      // 8. Notify all other staff about the edit
+      UploadNotificationService.notifyEditSuccess(
+        request.tenantId,
+        request.staffPhone,
+        {
+          vehicleId: vehicle.id,
+          displayId: vehicle.displayId || undefined,
+          vehicleName,
+          changes: changes.map(c => ({
+            fieldLabel: c.fieldLabel,
+            oldValue: this.formatValue(c.field, c.oldValue),
+            newValue: this.formatValue(c.field, c.newValue),
+          })),
+        },
+        authResult.staffName
+      ).catch(err => console.error('[Vehicle Edit] Notification error:', err.message));
 
       return {
         success: true,

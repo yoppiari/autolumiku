@@ -223,6 +223,115 @@ export class UploadNotificationService {
       timestamp: new Date(),
     });
   }
+
+  /**
+   * Notify all staff about vehicle edit/revision
+   */
+  static async notifyEditSuccess(
+    tenantId: string,
+    editorPhone: string,
+    editData: {
+      vehicleId: string;
+      displayId?: string;
+      vehicleName: string;
+      changes: Array<{ fieldLabel: string; oldValue: string; newValue: string }>;
+    },
+    editorName?: string
+  ): Promise<void> {
+    console.log(`[Edit Notification] Starting edit notification broadcast...`);
+
+    try {
+      // 1. Get Aimeow account untuk tenant ini
+      const aimeowAccount = await prisma.aimeowAccount.findUnique({
+        where: { tenantId },
+        include: { tenant: true },
+      });
+
+      if (!aimeowAccount || !aimeowAccount.isActive) {
+        console.log(`[Edit Notification] WhatsApp not connected for tenant`);
+        return;
+      }
+
+      // 2. Get all staff members
+      const staffMembers = await prisma.user.findMany({
+        where: {
+          tenantId,
+          role: { in: ["ADMIN", "SUPER_ADMIN", "MANAGER", "SALES", "STAFF"] },
+          phone: { not: null },
+        },
+        select: { phone: true, firstName: true },
+      });
+
+      if (staffMembers.length === 0) {
+        console.log(`[Edit Notification] No staff members found`);
+        return;
+      }
+
+      // 3. Build notification message
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+      const now = new Date();
+      const timeStr = now.toLocaleString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const changeLines = editData.changes.map(c =>
+        `• ${c.fieldLabel}: ${c.oldValue} → ${c.newValue}`
+      ).join("\n");
+
+      const message =
+        `🔔 NOTIFIKASI REVISI DATA\n` +
+        `━━━━━━━━━━━━━\n\n` +
+        `✏️ Data Diperbarui!\n\n` +
+        `📋 Kendaraan:\n` +
+        `${editData.vehicleName}\n` +
+        `ID: ${editData.displayId || editData.vehicleId}\n\n` +
+        `📝 Perubahan:\n${changeLines}\n\n` +
+        `👤 Diubah oleh:\n` +
+        `${editorName || editorPhone}\n\n` +
+        `🕐 Waktu: ${timeStr}\n\n` +
+        `🌐 Website:\n${baseUrl}/vehicles/${editData.vehicleId}\n\n` +
+        `📊 Dashboard:\n${baseUrl}/dashboard/vehicles/${editData.vehicleId}`;
+
+      // 4. Send to all staff (except the editor)
+      const normalizedEditorPhone = this.normalizePhone(editorPhone);
+      let sentCount = 0;
+
+      for (const staff of staffMembers) {
+        if (!staff.phone) continue;
+
+        const normalizedStaffPhone = this.normalizePhone(staff.phone);
+
+        // Skip the editor - they already got the response
+        if (normalizedStaffPhone === normalizedEditorPhone) {
+          console.log(`[Edit Notification] Skipping editor: ${staff.phone}`);
+          continue;
+        }
+
+        try {
+          await AimeowClientService.sendMessage({
+            clientId: aimeowAccount.clientId,
+            to: normalizedStaffPhone,
+            message,
+          });
+          sentCount++;
+          console.log(`[Edit Notification] ✅ Sent to ${staff.firstName || staff.phone}`);
+
+          // Small delay to avoid rate limiting
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } catch (error: any) {
+          console.error(`[Edit Notification] ❌ Failed to send to ${staff.phone}:`, error.message);
+        }
+      }
+
+      console.log(`[Edit Notification] Broadcast complete. Sent to ${sentCount} staff members.`);
+    } catch (error: any) {
+      console.error(`[Edit Notification] Error:`, error.message);
+    }
+  }
 }
 
 export default UploadNotificationService;
