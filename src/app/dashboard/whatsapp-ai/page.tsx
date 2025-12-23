@@ -198,91 +198,91 @@ export default function WhatsAppAIDashboard() {
 
   return (
     <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="mb-3 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">WhatsApp AI Automation</h1>
-        <p className="text-gray-600 text-sm">Asisten virtual 24/7 untuk customer dan staff operations</p>
+      {/* Header with AI Toggle - Single Row */}
+      <div className="mb-3 flex-shrink-0 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">WhatsApp AI Automation</h1>
+          <p className="text-gray-600 text-sm">Asisten virtual 24/7 untuk customer dan staff operations</p>
+        </div>
+
+        {/* AI Controls - Always visible when connected */}
+        {status.isConnected && (
+          <div className="flex items-center space-x-3">
+            {/* AI Health Status Badge */}
+            <div className={`flex items-center px-3 py-1.5 rounded-full text-white text-xs font-medium ${getAIStatusColor(aiHealth?.status)}`}>
+              <span className={`w-2 h-2 rounded-full mr-2 ${aiHealth?.status === 'active' ? 'animate-pulse bg-white' : 'bg-white/60'}`}></span>
+              {getAIStatusText(aiHealth?.status)}
+              {aiHealth && aiHealth.errorCount > 0 && aiHealth.status !== 'active' && (
+                <span className="ml-1">({aiHealth.errorCount} error)</span>
+              )}
+            </div>
+
+            {/* AI Toggle Button */}
+            <button
+              onClick={handleToggleAI}
+              disabled={isTogglingAI}
+              className={`relative inline-flex items-center px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm cursor-pointer ${
+                aiHealth?.enabled !== false
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                  : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+              } ${isTogglingAI ? 'opacity-50 cursor-wait' : ''}`}
+            >
+              {isTogglingAI ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+              ) : (
+                <span className="text-lg mr-2">🤖</span>
+              )}
+              <span>
+                {aiHealth?.enabled !== false ? 'AI: ON' : 'AI: OFF'}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Connection Status - Compact */}
-      <div className={`p-4 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${
+      {/* Connection Status - Compact inline */}
+      <div className={`p-3 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${
         status.isConnected
           ? 'bg-green-50 border-green-300'
           : 'bg-yellow-50 border-yellow-300'
       }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
               status.isConnected ? 'bg-green-100' : 'bg-yellow-100'
             }`}>
-              <span className="text-2xl">
+              <span className="text-xl">
                 {status.isConnected ? '✅' : '⚠️'}
               </span>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-base font-bold text-gray-900">
                 {status.isConnected ? 'WhatsApp Connected' : 'Setup Required'}
               </h2>
               {status.isConnected ? (
-                <p className="text-sm text-gray-700">
+                <p className="text-xs text-gray-700">
                   <span className="font-medium">Phone:</span> {status.phoneNumber}
                   {status.lastConnectedAt && (
                     <span className="ml-2 text-gray-500">
-                      Connected {new Date(status.lastConnectedAt).toLocaleString('id-ID')}
+                      · Connected {new Date(status.lastConnectedAt).toLocaleString('id-ID')}
                     </span>
                   )}
                 </p>
               ) : (
-                <p className="text-sm text-gray-700">
+                <p className="text-xs text-gray-700">
                   Connect your WhatsApp Business account to activate AI assistant
                 </p>
               )}
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            {status.isConnected && (
-              <div className="flex items-center space-x-3">
-                {/* AI Health Status Badge */}
-                {aiHealth && (
-                  <div className={`flex items-center px-3 py-1.5 rounded-full text-white text-xs font-medium ${getAIStatusColor(aiHealth.status)}`}>
-                    <span className={`w-2 h-2 rounded-full mr-2 ${aiHealth.status === 'active' ? 'animate-pulse bg-white' : 'bg-white/60'}`}></span>
-                    {getAIStatusText(aiHealth.status)}
-                    {aiHealth.errorCount > 0 && aiHealth.status !== 'active' && (
-                      <span className="ml-1">({aiHealth.errorCount} error)</span>
-                    )}
-                  </div>
-                )}
-
-                {/* AI Toggle Button */}
-                <button
-                  onClick={handleToggleAI}
-                  disabled={isTogglingAI}
-                  className={`relative inline-flex items-center px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm ${
-                    aiHealth?.enabled
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                      : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-                  } ${isTogglingAI ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {isTogglingAI ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  ) : (
-                    <span className="text-lg mr-2">🤖</span>
-                  )}
-                  <span>
-                    {aiHealth?.enabled ? 'AI: ON' : 'AI: OFF'}
-                  </span>
-                </button>
-              </div>
-            )}
-            {!status.isConnected && (
-              <Link
-                href="/dashboard/whatsapp-ai/setup"
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md text-sm"
-              >
-                Setup WhatsApp →
-              </Link>
-            )}
-          </div>
+          {!status.isConnected && (
+            <Link
+              href="/dashboard/whatsapp-ai/setup"
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md text-sm"
+            >
+              Setup WhatsApp →
+            </Link>
+          )}
         </div>
       </div>
 

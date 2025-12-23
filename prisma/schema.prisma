@@ -2087,6 +2087,14 @@ model WhatsAppAIConfig {
   enableStaffUpload      Boolean @default(true)
   enableStaffStatus      Boolean @default(true)
 
+  // AI Health Monitoring
+  aiEnabled      Boolean   @default(true)
+  aiStatus       String    @default("active") // active, degraded, error, disabled
+  aiErrorCount   Int       @default(0)
+  aiLastError    String?   @db.Text
+  aiLastErrorAt  DateTime?
+  aiDisabledAt   DateTime?
+  aiRestoredAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
