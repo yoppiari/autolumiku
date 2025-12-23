@@ -6,11 +6,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tenantId } = body;
+    let { tenantId } = body;
 
     if (!tenantId) {
       return NextResponse.json(
@@ -19,11 +20,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Resolve tenantId - could be UUID or slug
+    let tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) {
+      tenant = await prisma.tenant.findUnique({ where: { slug: tenantId } });
+    }
+
+    if (!tenant) {
+      return NextResponse.json(
+        { success: false, error: `Tenant not found: ${tenantId}` },
+        { status: 404 }
+      );
+    }
+
+    // Use the actual tenant UUID
+    const resolvedTenantId = tenant.id;
+    console.log(`[WhatsApp AI Initialize] Resolved: ${tenantId} -> ${resolvedTenantId}`);
+
     // Check if already connected
-    const existingAccount = await AimeowClientService.getAccountByTenant(tenantId);
+    const existingAccount = await AimeowClientService.getAccountByTenant(resolvedTenantId);
 
     if (existingAccount && existingAccount.isActive) {
-      // Return 200 with isConnected flag - frontend will redirect to already_connected step
       return NextResponse.json({
         success: true,
         message: "WhatsApp already connected",
@@ -39,8 +56,8 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get("host")}`;
     const webhookUrl = `${appUrl}/api/v1/webhooks/aimeow`;
 
-    // Initialize new connection
-    const result = await AimeowClientService.initializeClient(tenantId, webhookUrl);
+    // Initialize new connection with resolved tenant UUID
+    const result = await AimeowClientService.initializeClient(resolvedTenantId, webhookUrl);
 
     if (!result.success) {
       return NextResponse.json(

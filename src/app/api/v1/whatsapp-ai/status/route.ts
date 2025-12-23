@@ -112,7 +112,7 @@ async function autoSyncAimeow(tenantId: string) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get("tenantId");
+    let tenantId = searchParams.get("tenantId");
     const clientId = searchParams.get("clientId");
 
     if (!tenantId && !clientId) {
@@ -120,6 +120,17 @@ export async function GET(request: NextRequest) {
         { success: false, error: "Missing required parameter: tenantId or clientId" },
         { status: 400 }
       );
+    }
+
+    // Resolve tenantId - could be UUID or slug
+    if (tenantId) {
+      let tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+      if (!tenant) {
+        tenant = await prisma.tenant.findUnique({ where: { slug: tenantId } });
+      }
+      if (tenant) {
+        tenantId = tenant.id;
+      }
     }
 
     // Get account by tenantId or clientId
