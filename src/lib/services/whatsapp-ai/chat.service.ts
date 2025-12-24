@@ -544,6 +544,31 @@ export class WhatsAppAIChatService {
           } catch (imgError) {
             console.error(`[SmartFallback] Error fetching images:`, imgError);
           }
+        } else {
+          // No vehicle name found but user asked for photos - send any available photos
+          console.log(`[SmartFallback] 🔄 No vehicle name but user asked for photos, sending any available...`);
+          try {
+            const anyVehicles = await prisma.vehicle.findMany({
+              where: { tenantId, status: 'AVAILABLE' },
+              include: {
+                photos: { orderBy: { isMainPhoto: 'desc' }, take: 1 },
+              },
+              orderBy: { createdAt: 'desc' },
+              take: 2,
+            });
+            if (anyVehicles.length > 0 && anyVehicles.some(v => v.photos?.length > 0)) {
+              const images = this.buildImageArray(anyVehicles);
+              if (images && images.length > 0) {
+                return {
+                  message: `Ini foto unit terbaru kami ya 📸👇\n\nMau info detail yang mana? 😊`,
+                  shouldEscalate: false,
+                  images,
+                };
+              }
+            }
+          } catch (e) {
+            console.error(`[SmartFallback] Error fetching any vehicles:`, e);
+          }
         }
       }
     }
@@ -1182,6 +1207,42 @@ CONTOH RESPON ESCALATED:
 
     if (!vehicleName) {
       console.log(`[WhatsApp AI Chat] Could not extract vehicle name from any source`);
+
+      // If user explicitly asks for photos (e.g., "iya mana fotonya"),
+      // try to send ANY recent available vehicle photos as last resort
+      if (userExplicitlyAsksPhoto) {
+        console.log(`[WhatsApp AI Chat] 🔄 User explicitly asked for photos, trying to send any available vehicle photos...`);
+        try {
+          const anyVehicles = await prisma.vehicle.findMany({
+            where: { tenantId, status: 'AVAILABLE' },
+            include: {
+              photos: {
+                orderBy: { isMainPhoto: 'desc' },
+                take: 1,
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 2,
+          });
+
+          if (anyVehicles.length > 0 && anyVehicles.some(v => v.photos?.length > 0)) {
+            const images = this.buildImageArray(anyVehicles);
+            if (images && images.length > 0) {
+              console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} recent vehicle images as fallback`);
+              const vehicleNames = anyVehicles.slice(0, 2).map(v => `${v.make} ${v.model}`).join(' dan ');
+              return {
+                message: `Ini foto unit terbaru kami ya 📸👇\n\nAda yang mau ditanyakan tentang unit-unit ini? 😊`,
+                shouldEscalate: false,
+                confidence: 0.85,
+                images,
+              };
+            }
+          }
+        } catch (e) {
+          console.error(`[WhatsApp AI Chat] Error fetching any vehicles:`, e);
+        }
+      }
+
       return null;
     }
 
