@@ -566,25 +566,32 @@ export class MessageOrchestratorService {
         const actualStaffPhone = await this.getStaffPhoneFromUser(incoming.from, incoming.tenantId);
         const isLID = incoming.from.includes("@lid");
 
+        // Determine the real phone to use for customerPhone (NEVER store LID in customerPhone)
+        const realPhoneForDB = actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from);
+
         await prisma.whatsAppConversation.update({
           where: { id: conversation.id },
           data: {
             isStaff: true,
             conversationType: "staff",
+            // CRITICAL: Update customerPhone to real phone number (not LID)
+            ...(realPhoneForDB && { customerPhone: realPhoneForDB }),
             // Store the ACTUAL staff phone for LID-to-phone mapping
             contextData: {
               ...currentContext,
               // Always use the real phone number from User table, not the LID format
-              verifiedStaffPhone: actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from),
+              verifiedStaffPhone: realPhoneForDB,
               verifiedAt: new Date().toISOString(),
-              // Track all LIDs that have been used by this staff
+              // Track all LIDs that have been used by this staff (preserve original LID)
               linkedLIDs: isLID
                 ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
                 : currentContext.linkedLIDs,
+              // Store original LID if this conversation started with LID
+              ...(isLID && !currentContext.originalLID && { originalLID: incoming.from }),
             },
           },
         });
-        console.log(`[Orchestrator] Stored verified staff phone: ${actualStaffPhone || incoming.from}, isLID: ${isLID}`);
+        console.log(`[Orchestrator] Updated customerPhone to: ${realPhoneForDB || '(unchanged)'}, isLID: ${isLID}`);
       }
 
       // 4. Route based on intent
@@ -604,18 +611,23 @@ export class MessageOrchestratorService {
         responseMessage = result.message;
         escalated = result.escalated;
 
-        // If verification successful, update conversation to staff
-        if (result.verified) {
+        // If verification successful, update conversation to staff AND customerPhone
+        if (result.verified && result.verifiedPhone) {
+          const currentCtx = (conversation.contextData as Record<string, any>) || {};
           await prisma.whatsAppConversation.update({
             where: { id: conversation.id },
             data: {
               isStaff: true,
               conversationType: "staff",
+              // CRITICAL: Update customerPhone to verified real phone number
+              customerPhone: result.verifiedPhone,
               contextData: {
-                ...((conversation.contextData as Record<string, any>) || {}),
+                ...currentCtx,
                 verifiedStaffPhone: result.verifiedPhone,
                 verifiedAt: new Date().toISOString(),
                 verifiedVia: "verify_command",
+                // Store original LID if present
+                ...(incoming.from.includes("@lid") && !currentCtx.originalLID && { originalLID: incoming.from }),
               },
             },
           });
@@ -713,6 +725,9 @@ export class MessageOrchestratorService {
             const actualStaffPhone = await this.getStaffPhoneFromUser(incoming.from, incoming.tenantId);
             const isLID = incoming.from.includes("@lid");
 
+            // Determine real phone for customerPhone (NEVER store LID)
+            const realPhoneForUpload = actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from);
+
             // Store vehicle data in conversation context
             await prisma.whatsAppConversation.update({
               where: { id: conversation.id },
@@ -720,13 +735,16 @@ export class MessageOrchestratorService {
                 conversationState: "upload_vehicle",
                 isStaff: true,
                 conversationType: "staff",
+                // CRITICAL: Update customerPhone to real phone (not LID)
+                ...(realPhoneForUpload && { customerPhone: realPhoneForUpload }),
                 contextData: {
                   ...currentContext, // Preserve existing fields
                   // CRITICAL: Set verifiedStaffPhone here so LID lookup works on next message!
-                  verifiedStaffPhone: actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from),
+                  verifiedStaffPhone: realPhoneForUpload,
                   linkedLIDs: isLID
                     ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
                     : currentContext.linkedLIDs,
+                  ...(isLID && !currentContext.originalLID && { originalLID: incoming.from }),
                   uploadStep: incoming.mediaUrl ? "has_photo_and_data" : "has_data_awaiting_photo",
                   vehicleData: result.uploadRequest,
                   photos: incoming.mediaUrl ? [incoming.mediaUrl] : [],
@@ -749,13 +767,16 @@ export class MessageOrchestratorService {
               await prisma.whatsAppConversation.update({
                 where: { id: conversation.id },
                 data: {
+                  // CRITICAL: Update customerPhone to real phone (not LID)
+                  ...(realPhoneForUpload && { customerPhone: realPhoneForUpload }),
                   contextData: {
                     ...currentContext, // Preserve existing fields
                     // CRITICAL: Must include verifiedStaffPhone & linkedLIDs here too!
-                    verifiedStaffPhone: actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from),
+                    verifiedStaffPhone: realPhoneForUpload,
                     linkedLIDs: isLID
                       ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
                       : currentContext.linkedLIDs,
+                    ...(isLID && !currentContext.originalLID && { originalLID: incoming.from }),
                     uploadStep: "has_photo_and_data",
                     vehicleData: result.uploadRequest,
                     photos: [incoming.mediaUrl],
@@ -1085,17 +1106,27 @@ export class MessageOrchestratorService {
     // Create new conversation if not found
     if (!conversation) {
       console.log(`[Orchestrator] Creating new conversation for ${customerPhone}`);
+
+      // If this is an LID, mark it for later resolution
+      const contextDataForNew = isLID ? {
+        originalLID: customerPhone,
+        pendingPhoneResolution: true,
+        createdWithLID: true,
+      } : {};
+
       conversation = await prisma.whatsAppConversation.create({
         data: {
           accountId,
           tenantId,
-          customerPhone,
+          customerPhone, // Store LID temporarily, will be updated when real phone is known
           isStaff: false,
           conversationType: "customer",
           status: "active",
+          // Store LID info in contextData if created with LID
+          ...(isLID && { contextData: contextDataForNew }),
         },
       });
-      console.log(`[Orchestrator] Created conversation: ${conversation.id}`);
+      console.log(`[Orchestrator] Created conversation: ${conversation.id}, isLID: ${isLID}`);
     } else {
       console.log(`[Orchestrator] Found existing conversation: ${conversation.id}, isStaff: ${conversation.isStaff}, state: ${conversation.conversationState}`);
     }
@@ -1161,6 +1192,7 @@ export class MessageOrchestratorService {
                   ...contextData,
                   previousLID: conv.customerPhone,
                   phoneUpdatedAt: new Date().toISOString(),
+                  pendingPhoneResolution: false, // Clear the flag
                 },
               },
             });
