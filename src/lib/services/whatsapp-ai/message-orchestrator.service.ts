@@ -219,7 +219,11 @@ export class MessageOrchestratorService {
         const vehicleData = contextData.vehicleData;
 
         // Check if user wants to finish/complete the upload
-        const finishPatterns = [/^(selesai|done|cukup|udah|sudah|beres)$/i];
+        // More flexible pattern - match at start of message, allow trailing words
+        const finishPatterns = [
+          /^(selesai|done|cukup|udah|sudah|beres|finish|ok|oke|yaudah|ya\s*udah)(\s|$|\.|\!)/i,
+          /^(itu\s+aja|segitu\s+aja|cukup\s+segitu)(\s|$|\.|\!)/i,
+        ];
         const wantsToFinish = finishPatterns.some(p => p.test(normalizedMessage));
 
         // If user wants to finish AND we have vehicle data, create vehicle without photos
@@ -372,7 +376,7 @@ export class MessageOrchestratorService {
 
         if (!vehicleId) {
           console.error(`[Orchestrator] ❌ No vehicleId in context for add_photo_to_vehicle state`);
-          const errorMsg = "Maaf, terjadi kesalahan. Silakan upload ulang kendaraan.";
+          const errorMsg = "Waduh, ada kendala nih 😅 Coba upload ulang ya! 🙏";
 
           await this.sendResponse(
             incoming.accountId,
@@ -494,8 +498,11 @@ export class MessageOrchestratorService {
         const vehicleName = contextData.vehicleName || 'kendaraan';
         const photosAdded = contextData.photosAdded || 0;
 
-        // Check if user wants to finish
-        const finishPatterns = [/^(selesai|done|cukup|udah|sudah|beres|ok|oke)$/i];
+        // Check if user wants to finish - more flexible pattern
+        const finishPatterns = [
+          /^(selesai|done|cukup|udah|sudah|beres|finish|ok|oke|yaudah|ya\s*udah)(\s|$|\.|\!)/i,
+          /^(itu\s+aja|segitu\s+aja|cukup\s+segitu)(\s|$|\.|\!)/i,
+        ];
         const wantsToFinish = finishPatterns.some(p => p.test(normalizedMessage));
 
         if (wantsToFinish) {
@@ -1358,7 +1365,7 @@ export class MessageOrchestratorService {
     } catch (error: any) {
       console.error("[Message Orchestrator] Staff command error:", error);
       return {
-        message: `Mohon maaf, terjadi kesalahan:\n\n${error.message}\n\nSilakan coba lagi.`,
+        message: `Waduh, ada kendala nih 😅\n\n${error.message}\n\nCoba lagi ya! 🙏`,
         escalated: true,
         skipResponse: false,
       };
@@ -1583,32 +1590,53 @@ export class MessageOrchestratorService {
             if (!result.messageId) result.messageId = imageResult.messageId;
           }
         } else {
-          // Send multiple images one by one for better reliability
+          // Send multiple images one by one with retry logic
           console.log(`[Orchestrator sendResponse] Sending ${images.length} images one by one...`);
+          let successCount = 0;
+
           for (let i = 0; i < images.length; i++) {
             const img = images[i];
             console.log(`[Orchestrator sendResponse] Sending image ${i + 1}/${images.length}: ${img.imageUrl}`);
 
-            const imageResult = await AimeowClientService.sendImage(
-              account.clientId,
-              to,
-              img.imageUrl,
-              img.caption
-            );
+            // Retry logic with exponential backoff
+            let retries = 0;
+            const maxRetries = 2;
+            let imageSuccess = false;
 
-            if (!imageResult.success) {
-              console.error(`[Orchestrator sendResponse] ❌ Image ${i + 1} send FAILED: ${imageResult.error}`);
-            } else {
-              console.log(`[Orchestrator sendResponse] ✅ Image ${i + 1} sent SUCCESS!`);
-              imagesSent = true;
-              if (!result.messageId) result.messageId = imageResult.messageId;
+            while (retries <= maxRetries && !imageSuccess) {
+              const imageResult = await AimeowClientService.sendImage(
+                account.clientId,
+                to,
+                img.imageUrl,
+                img.caption
+              );
+
+              if (!imageResult.success) {
+                console.error(`[Orchestrator sendResponse] ❌ Image ${i + 1} attempt ${retries + 1} FAILED: ${imageResult.error}`);
+                retries++;
+                if (retries <= maxRetries) {
+                  // Exponential backoff: 1s, 2s
+                  const delay = 1000 * retries;
+                  console.log(`[Orchestrator sendResponse] Retrying in ${delay}ms...`);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                }
+              } else {
+                console.log(`[Orchestrator sendResponse] ✅ Image ${i + 1} sent SUCCESS!`);
+                imagesSent = true;
+                imageSuccess = true;
+                successCount++;
+                if (!result.messageId) result.messageId = imageResult.messageId;
+              }
             }
 
-            // Small delay between images to avoid rate limiting
+            // Delay between images to avoid rate limiting (800ms)
             if (i < images.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 500));
+              await new Promise(resolve => setTimeout(resolve, 800));
             }
           }
+
+          // Log summary
+          console.log(`[Orchestrator sendResponse] Image send summary: ${successCount}/${images.length} successful`);
         }
 
         if (imagesSent) {

@@ -202,8 +202,9 @@ export class WhatsAppAIChatService {
       });
 
       let aiResponse;
+      const tenantName = account.tenant.name || "Showroom";
       try {
-        // Add a race condition with manual timeout (45s for tool calls)
+        // Add a race condition with manual timeout (30s max for better UX)
         const apiCallPromise = zaiClient.generateText({
           systemPrompt,
           userPrompt: conversationContext,
@@ -211,8 +212,8 @@ export class WhatsAppAIChatService {
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
-            reject(new Error('ZAI API call timed out after 45 seconds'));
-          }, 45000); // 45 second timeout for tool calls
+            reject(new Error('ZAI API call timed out after 30 seconds'));
+          }, 30000); // 30 second timeout - faster feedback for customers
         });
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
@@ -223,22 +224,24 @@ export class WhatsAppAIChatService {
         }
 
         console.log(`[WhatsApp AI Chat] ✅ AI response received successfully`);
-        console.log(`[WhatsApp AI Chat] Content length:`, aiResponse.content.length);
-        console.log(`[WhatsApp AI Chat] Reasoning content length (should be 0 with glm-4-flash):`, aiResponse.reasoning?.length || 0);
+        console.log(`[WhatsApp AI Chat] Content length:`, aiResponse.content?.length || 0);
 
-        // If content is empty but reasoning exists, extract answer from reasoning
-        if (!aiResponse.content && aiResponse.reasoning) {
-          console.log(`[WhatsApp AI Chat] ⚠️ Content empty, extracting from reasoning...`);
-          // The reasoning contains the thought process, but we need the final response
-          // For now, use a fallback message
+        // If content is empty, use smart fallback with tenant name
+        if (!aiResponse.content || aiResponse.content.length === 0) {
+          console.log(`[WhatsApp AI Chat] ⚠️ Content empty, using smart fallback...`);
+          // Generate contextual fallback based on user message
+          const fallbackResult = await this.generateSmartFallback(
+            userMessage,
+            context.messageHistory,
+            context.tenantId
+          );
           aiResponse = {
             ...aiResponse,
-            content: "Halo! Selamat datang di Showroom Jakarta Premium. Ada yang bisa saya bantu hari ini?"
+            content: fallbackResult.message,
           };
         }
 
         console.log(`[WhatsApp AI Chat] Response content (first 100 chars): ${aiResponse.content.substring(0, 100)}...`);
-        console.log(`[WhatsApp AI Chat] Response usage:`, aiResponse.usage);
       } catch (apiError: any) {
         console.error(`[WhatsApp AI Chat] ❌ ZAI API call failed:`);
         console.error(`[WhatsApp AI Chat] API Error name:`, apiError.name);

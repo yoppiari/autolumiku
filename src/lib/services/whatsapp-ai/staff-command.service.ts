@@ -166,7 +166,7 @@ export class StaffCommandService {
 
       return {
         success: false,
-        message: `Mohon maaf, terjadi kesalahan:\n\n${error.message}\n\nSilakan coba lagi.`,
+        message: `Waduh, ada kendala nih 😅\n\n${error.message}\n\nCoba lagi ya! 🙏`,
       };
     }
   }
