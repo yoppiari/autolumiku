@@ -722,65 +722,12 @@ export default function ConversationsPage() {
     // Remove any device suffix (e.g., :123)
     cleaned = cleaned.split(':')[0];
 
-    // If it's explicitly marked as LID, show abbreviated
-    if (phone.includes('@lid')) {
-      return `WA: ...${cleaned.slice(-6)}`;
-    }
-
     // Extract phone number - remove any non-digits
     const digits = cleaned.replace(/\D/g, '');
 
-    // Helper to check if this looks like a LID (not a valid phone)
-    const isLikelyLID = (num: string): boolean => {
-      // Too long to be a valid phone (max is ~15 digits)
-      if (num.length >= 16) return true;
-
-      // Numbers 14-15 digits that don't start with valid country codes
-      if (num.length >= 14) {
-        const validPrefixes = ['62', '60', '65', '1', '44', '91', '86', '81', '82', '84', '66', '63'];
-        const startsWithValid = validPrefixes.some(p => num.startsWith(p));
-        if (!startsWithValid) return true;
-
-        // Even with valid prefix, check if too long for that country
-        if (num.startsWith('62') && num.length > 14) return true;
-        if (num.startsWith('60') && num.length > 13) return true;
-        if (num.startsWith('65') && num.length > 11) return true;  // Singapore
-        if (num.startsWith('1') && num.length > 11) return true;   // US/Canada max 11
-        if (num.startsWith('44') && num.length > 12) return true;  // UK
-        if (num.startsWith('91') && num.length > 12) return true;  // India
-        if (num.startsWith('86') && num.length > 13) return true;  // China
-      }
-
-      // Known LID prefixes (100, 101, 102) with long numbers
-      if (num.length >= 14 &&
-          (num.startsWith('100') || num.startsWith('101') || num.startsWith('102'))) {
-        return true;
-      }
-
-      // Suspicious patterns: country code + too many digits
-      const suspiciousPatterns = [
-        { prefix: '7', maxLen: 12 },    // Russia/Kazakhstan
-        { prefix: '212', maxLen: 12 },  // Morocco
-        { prefix: '353', maxLen: 12 },  // Ireland
-        { prefix: '43', maxLen: 13 },   // Austria
-        { prefix: '33', maxLen: 12 },   // France
-        { prefix: '34', maxLen: 12 },   // Spain
-        { prefix: '74', maxLen: 12 },   // Seen in logs
-      ];
-
-      for (const pattern of suspiciousPatterns) {
-        if (num.startsWith(pattern.prefix) && num.length > pattern.maxLen) {
-          return true;
-        }
-      }
-
-      return false;
-    };
-
-    // Check if this is a LID disguised as a phone number
-    if (isLikelyLID(digits)) {
-      // Show abbreviated with WA: prefix to indicate it's not a real phone
-      return `Pelanggan #${digits.slice(-4)}`;
+    // If no digits, return original
+    if (!digits) {
+      return phone || '-';
     }
 
     // If starts with 62 (Indonesia), format nicely
@@ -796,22 +743,13 @@ export default function ConversationsPage() {
       return `+62 ${localNumber}`;
     }
 
-    // If starts with other valid country codes, show with +
-    if (digits.length >= 10 && digits.length <= 15) {
+    // For any other number, show with + prefix if long enough
+    if (digits.length >= 10) {
       return `+${digits}`;
     }
 
-    // Very short number (local format) - return as is
-    if (digits.length < 10 && digits.length > 0) {
-      return digits;
-    }
-
-    // Fallback for anything else - show abbreviated
-    if (digits.length > 0) {
-      return `Pelanggan #${digits.slice(-4)}`;
-    }
-
-    return phone || '-';
+    // Short numbers - return as is
+    return digits;
   };
 
   const getIntentBadgeColor = (intent?: string) => {
