@@ -339,55 +339,6 @@ export default function WhatsAppAIDashboard() {
           </div>
         )}
 
-        {/* Stats Overview - Compact */}
-        {status.isConnected && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xs font-medium text-gray-500">Conversations</h3>
-                <span className="text-xl">💬</span>
-              </div>
-              <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-              <p className="text-xs text-gray-500">{stats.active} active now</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xs font-medium text-gray-500">Today Messages</h3>
-                <span className="text-xl">📨</span>
-              </div>
-              <div className="text-2xl font-bold text-purple-600">{status.todayMessages}</div>
-              <p className="text-xs text-gray-500">
-                {stats.customerChats} customers · {stats.staffCommands} staff
-              </p>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xs font-medium text-gray-500">AI Automation</h3>
-                <span className="text-xl">🤖</span>
-              </div>
-              <div className="text-2xl font-bold text-green-600">{status.aiResponseRate}%</div>
-              <p className="text-xs text-gray-500">
-                {stats.escalated} escalated to human
-              </p>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xs font-medium text-gray-500">Response Time</h3>
-                <span className="text-xl">⚡</span>
-              </div>
-              <div className="text-2xl font-bold text-orange-600">
-                {formatResponseTime(stats.avgResponseTime)}
-              </div>
-              <p className="text-xs text-gray-500">
-                {stats.aiAccuracy}% accuracy
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Navigation Cards - Compact */}
         {status.isConnected && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
@@ -450,6 +401,55 @@ export default function WhatsAppAIDashboard() {
                 Configure →
               </div>
             </Link>
+          </div>
+        )}
+
+        {/* Stats Overview - Compact */}
+        {status.isConnected && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-500">Conversations</h3>
+                <span className="text-xl">💬</span>
+              </div>
+              <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+              <p className="text-xs text-gray-500">{stats.active} active now</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-500">Today Messages</h3>
+                <span className="text-xl">📨</span>
+              </div>
+              <div className="text-2xl font-bold text-purple-600">{status.todayMessages}</div>
+              <p className="text-xs text-gray-500">
+                {stats.customerChats} customers · {stats.staffCommands} staff
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-500">AI Automation</h3>
+                <span className="text-xl">🤖</span>
+              </div>
+              <div className="text-2xl font-bold text-green-600">{status.aiResponseRate}%</div>
+              <p className="text-xs text-gray-500">
+                {stats.escalated} escalated to human
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-500">Response Time</h3>
+                <span className="text-xl">⚡</span>
+              </div>
+              <div className="text-2xl font-bold text-orange-600">
+                {formatResponseTime(stats.avgResponseTime)}
+              </div>
+              <p className="text-xs text-gray-500">
+                {stats.aiAccuracy}% accuracy
+              </p>
+            </div>
           </div>
         )}
 
