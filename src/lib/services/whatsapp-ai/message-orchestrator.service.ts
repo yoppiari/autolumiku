@@ -1389,6 +1389,11 @@ export class MessageOrchestratorService {
       );
 
       // Generate AI response with staff info context
+      // Pass isEscalated flag for priority handling (faster, more direct responses)
+      const isEscalated = !!(conversation.escalatedTo || conversation.status === "escalated");
+      if (isEscalated) {
+        console.log(`[Orchestrator] ⚡ Escalated conversation - using priority response mode`);
+      }
       const aiResponse = await WhatsAppAIChatService.generateResponse(
         {
           tenantId: conversation.tenantId,
@@ -1399,6 +1404,7 @@ export class MessageOrchestratorService {
           messageHistory,
           isStaff,
           staffInfo,
+          isEscalated, // Escalated conversations get faster, more direct responses
         },
         message
       );

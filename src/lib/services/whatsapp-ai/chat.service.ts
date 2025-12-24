@@ -26,6 +26,7 @@ export interface ChatContext {
     role: string;
     phone: string;
   };
+  isEscalated?: boolean; // Escalated conversations get faster, more direct responses
 }
 
 export interface ChatResponse {
@@ -155,6 +156,7 @@ export class WhatsAppAIChatService {
         isStaff: context.isStaff || false,
         staffInfo: context.staffInfo,
         customerPhone: context.customerPhone,
+        isEscalated: context.isEscalated || false,
       };
       const systemPrompt = await this.buildSystemPrompt(
         account.tenant,
@@ -391,7 +393,7 @@ export class WhatsAppAIChatService {
     tenant: any,
     config: any,
     intent: MessageIntent,
-    senderInfo?: { isStaff: boolean; staffInfo?: { name: string; role: string; phone: string }; customerPhone: string }
+    senderInfo?: { isStaff: boolean; staffInfo?: { name: string; role: string; phone: string }; customerPhone: string; isEscalated?: boolean }
   ): Promise<string> {
     // Professional, formal, friendly and helpful personality
     let systemPrompt = `Kamu adalah ${config.aiName}, asisten virtual profesional dari ${tenant.name} (showroom mobil bekas di ${tenant.city || "Indonesia"}).
@@ -535,6 +537,41 @@ Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang be
 
 ⚠️ FITUR EDIT: Customer TIDAK bisa edit kendaraan. Kalau minta edit, bilang "Maaf kak, fitur edit cuma buat staff aja 😊 Ada yang bisa aku bantu?"`;
       }
+    }
+
+    // Add escalated conversation handling - PRIORITY RESPONSE
+    if (senderInfo?.isEscalated) {
+      systemPrompt += `
+
+🚨 PERCAKAPAN ESCALATED - PRIORITAS TINGGI!
+
+Percakapan ini sudah di-escalate ke human. PENTING:
+
+1. RESPON CEPAT & LANGSUNG:
+   - Jangan bertele-tele, langsung ke poin
+   - Maksimal 2-3 kalimat per respon
+   - Skip penjelasan panjang, fokus solusi
+
+2. PROAKTIF TAWARKAN BANTUAN:
+   - Langsung tanyakan: "Ada yang bisa saya bantu sekarang?"
+   - Jika tidak ada pertanyaan baru, tawarkan: "Apakah masalah sebelumnya sudah terselesaikan?"
+   - Tunjukkan bahwa kamu siap membantu
+
+3. GUIDE KE CLOSING:
+   - Jika masalah sudah solved, tanyakan: "Ada hal lain yang perlu dibantu?"
+   - Jika tidak ada lagi, ucapkan closing dengan singkat
+
+4. JANGAN:
+   - Jangan kirim menu panjang
+   - Jangan jelaskan fitur yang tidak ditanya
+   - Jangan response dengan template panjang
+
+CONTOH RESPON ESCALATED:
+❌ Salah: "Halo! Selamat datang di Prima Mobil. Kami memiliki berbagai unit kendaraan berkualitas... [panjang]"
+✅ Benar: "Halo! Ada yang bisa saya bantu sekarang? 🙏"
+
+❌ Salah: [Kirim menu lengkap staff commands]
+✅ Benar: "Apa yang perlu dibantu, Pak?"`;
     }
 
     return systemPrompt;
