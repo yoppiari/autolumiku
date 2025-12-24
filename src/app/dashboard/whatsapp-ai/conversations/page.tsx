@@ -132,41 +132,49 @@ export default function ConversationsPage() {
     const loadProfilePictures = async () => {
       if (conversations.length === 0) return;
 
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) return;
-      const parsedUser = JSON.parse(storedUser);
-      const tenantId = parsedUser.tenantId;
+      // Track which phones we're loading to avoid duplicate requests
+      const phonesToLoad = conversations
+        .map(conv => conv.customerPhone)
+        .filter(phone => profilePictures[phone] === undefined);
 
-      // Load profile pictures for each conversation (batch, but don't block UI)
-      for (const conv of conversations) {
-        // Skip if already loaded
-        if (profilePictures[conv.customerPhone] !== undefined) continue;
+      if (phonesToLoad.length === 0) return;
 
-        try {
-          const response = await fetch(
-            `/api/v1/whatsapp-ai/profile-picture?tenantId=${tenantId}&phone=${encodeURIComponent(conv.customerPhone)}`
-          );
-          const data = await response.json();
+      // Load profile pictures in parallel (max 5 at a time)
+      const batchSize = 5;
+      for (let i = 0; i < phonesToLoad.length; i += batchSize) {
+        const batch = phonesToLoad.slice(i, i + batchSize);
 
-          if (data.success && data.hasPicture && data.pictureUrl) {
-            setProfilePictures(prev => ({
-              ...prev,
-              [conv.customerPhone]: data.pictureUrl,
-            }));
-          } else {
-            // Mark as no picture (null) to avoid refetching
-            setProfilePictures(prev => ({
-              ...prev,
-              [conv.customerPhone]: null,
-            }));
-          }
-        } catch (error) {
-          // Mark as no picture on error
-          setProfilePictures(prev => ({
-            ...prev,
-            [conv.customerPhone]: null,
-          }));
-        }
+        await Promise.all(
+          batch.map(async (phone) => {
+            try {
+              // Clean phone number before sending
+              const cleanPhone = phone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '');
+              if (!cleanPhone) return;
+
+              const response = await fetch(
+                `/api/v1/whatsapp-ai/profile-picture?phone=${cleanPhone}`
+              );
+              const data = await response.json();
+
+              if (data.success && data.hasPicture && data.pictureUrl) {
+                setProfilePictures(prev => ({
+                  ...prev,
+                  [phone]: data.pictureUrl,
+                }));
+              } else {
+                setProfilePictures(prev => ({
+                  ...prev,
+                  [phone]: null,
+                }));
+              }
+            } catch (error) {
+              setProfilePictures(prev => ({
+                ...prev,
+                [phone]: null,
+              }));
+            }
+          })
+        );
       }
     };
 
