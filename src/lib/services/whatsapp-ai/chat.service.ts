@@ -1474,7 +1474,12 @@ CONTOH RESPON ESCALATED:
       /^20\d{2}$/.test(term)
     );
 
-    // Query vehicles with photos - more flexible search
+    // Query vehicles with photos
+    // IMPORTANT: If customer asked for SPECIFIC vehicle, only return 1!
+    // If generic query, can return up to 3
+    const maxVehicles = hasSpecificQuery ? 1 : 3;
+    console.log(`[WhatsApp AI Chat] hasSpecificQuery: ${hasSpecificQuery}, maxVehicles: ${maxVehicles}`);
+
     const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId,
@@ -1495,7 +1500,7 @@ CONTOH RESPON ESCALATED:
           take: 2, // Get main photo + 1 backup
         },
       },
-      take: 3, // Max 3 vehicles to avoid spamming
+      take: maxVehicles, // Only 1 for specific query, up to 3 for generic
     });
 
     console.log(`[WhatsApp AI Chat] Found ${vehicles.length} vehicles matching query`);
