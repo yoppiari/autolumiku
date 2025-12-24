@@ -1842,13 +1842,12 @@ export class MessageOrchestratorService {
 
   /**
    * Format price to Indonesian format
-   * Note: Database stores prices in IDR cents (Rp 250jt = 25000000000)
-   * So we divide by 100 to get the actual Rupiah value
+   * Note: uploadRequest.price from AI is already in full IDR (e.g., 250000000 for 250 juta)
+   * Database stores in cents (x100), but this function receives raw IDR from AI parsing
    */
   private static formatPrice(price: number): string {
-    // Convert from cents to Rupiah
-    const priceInRupiah = Math.round(price / 100);
-    return new Intl.NumberFormat("id-ID").format(priceInRupiah);
+    // Price is already in full IDR from AI parsing, just format it
+    return new Intl.NumberFormat("id-ID").format(price);
   }
 
   /**
@@ -1969,6 +1968,7 @@ export class MessageOrchestratorService {
       const nextDisplayOrder = lastPhoto ? lastPhoto.displayOrder + 1 : 1;
 
       // Create database record
+      // isMainPhoto = true if this is the first photo (lastPhoto is null)
       await prisma.vehiclePhoto.create({
         data: {
           vehicleId: vehicle.id,
@@ -1984,6 +1984,7 @@ export class MessageOrchestratorService {
           width: processed.metadata?.width || 0,
           height: processed.metadata?.height || 0,
           displayOrder: nextDisplayOrder,
+          isMainPhoto: !lastPhoto, // First photo becomes main photo
         },
       });
 
