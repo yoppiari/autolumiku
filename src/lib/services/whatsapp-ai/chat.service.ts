@@ -478,8 +478,12 @@ export class WhatsAppAIChatService {
     ];
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
 
-    if (isPhotoConfirmation) {
-      console.log(`[SmartFallback] 📸 Photo confirmation detected: "${userMessage}"`);
+    // Check if user explicitly asks for photos (contains "foto", "gambar", "mana fotonya" etc)
+    const userExplicitlyAsksPhoto = msg.includes("foto") || msg.includes("gambar") ||
+                                     /mana.*(foto|gambar)/i.test(msg);
+
+    if (isPhotoConfirmation || userExplicitlyAsksPhoto) {
+      console.log(`[SmartFallback] 📸 Photo request detected: "${userMessage}" (explicit: ${userExplicitlyAsksPhoto})`);
 
       // Check if previous AI message offered photos
       const lastAiMsg = messageHistory.filter(m => m.role === "assistant").pop();
@@ -487,8 +491,9 @@ export class WhatsAppAIChatService {
                             lastAiMsg?.content.toLowerCase().includes("lihat") ||
                             lastAiMsg?.content.toLowerCase().includes("📸");
 
-      if (offeredPhotos) {
-        console.log(`[SmartFallback] Previous AI message offered photos, extracting vehicle...`);
+      // Process if AI offered photos OR user explicitly asked
+      if (offeredPhotos || userExplicitlyAsksPhoto) {
+        console.log(`[SmartFallback] Processing photo request (offeredPhotos: ${offeredPhotos}, explicit: ${userExplicitlyAsksPhoto})`);
 
         // Extract vehicle from AI message or conversation history
         const vehiclePatterns = [
@@ -554,7 +559,7 @@ export class WhatsAppAIChatService {
                 photos: { orderBy: { isMainPhoto: 'desc' }, take: 1 },
               },
               orderBy: { createdAt: 'desc' },
-              take: 2,
+              take: 3,
             });
             if (anyVehicles.length > 0 && anyVehicles.some(v => v.photos?.length > 0)) {
               const images = this.buildImageArray(anyVehicles);
@@ -565,6 +570,14 @@ export class WhatsAppAIChatService {
                   images,
                 };
               }
+            }
+            // Vehicles exist but no photos available
+            if (anyVehicles.length > 0) {
+              const vehicleList = anyVehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n');
+              return {
+                message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
+                shouldEscalate: false,
+              };
             }
           } catch (e) {
             console.error(`[SmartFallback] Error fetching any vehicles:`, e);
@@ -1229,7 +1242,6 @@ CONTOH RESPON ESCALATED:
             const images = this.buildImageArray(anyVehicles);
             if (images && images.length > 0) {
               console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} recent vehicle images as fallback`);
-              const vehicleNames = anyVehicles.slice(0, 2).map(v => `${v.make} ${v.model}`).join(' dan ');
               return {
                 message: `Ini foto unit terbaru kami ya 📸👇\n\nAda yang mau ditanyakan tentang unit-unit ini? 😊`,
                 shouldEscalate: false,
@@ -1237,6 +1249,16 @@ CONTOH RESPON ESCALATED:
                 images,
               };
             }
+          }
+          // Vehicles exist but no photos available
+          if (anyVehicles.length > 0) {
+            const vehicleList = anyVehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n');
+            console.log(`[WhatsApp AI Chat] ⚠️ Vehicles found but no photos, returning list`);
+            return {
+              message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
+              shouldEscalate: false,
+              confidence: 0.8,
+            };
           }
         } catch (e) {
           console.error(`[WhatsApp AI Chat] Error fetching any vehicles:`, e);
