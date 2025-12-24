@@ -55,8 +55,10 @@ export async function GET(request: NextRequest) {
       const contextData = conv.contextData as Record<string, any> | null;
       let displayPhone = conv.customerPhone;
 
-      // If customerPhone looks like a LID, try to get real phone from contextData
-      if (isLIDNumber(conv.customerPhone)) {
+      // IMPORTANT: Only check for LID on STAFF conversations
+      // Customer (non-staff) always sends from their real phone number
+      // Only staff might use WhatsApp Web/Desktop which creates LIDs
+      if (conv.isStaff && isLIDNumber(conv.customerPhone)) {
         const realPhone = contextData?.verifiedStaffPhone || contextData?.realPhone || contextData?.actualPhone;
         if (realPhone && !isLIDNumber(realPhone)) {
           displayPhone = realPhone;
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest) {
         escalatedTo: conv.escalatedTo,
         messageCount: conv._count.messages,
         unreadCount: 0, // TODO: Implement unread tracking
-        hasRealPhone: !isLIDNumber(displayPhone), // Flag to indicate if we have real phone
+        hasRealPhone: !conv.isStaff || !isLIDNumber(displayPhone), // Customer always has real phone
       };
     });
 

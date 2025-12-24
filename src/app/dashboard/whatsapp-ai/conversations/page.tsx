@@ -727,7 +727,9 @@ export default function ConversationsPage() {
     return false;
   };
 
-  const formatPhoneNumber = (phone: string): string => {
+  // Format phone number for display
+  // isStaff parameter determines if LID detection should be applied
+  const formatPhoneNumber = (phone: string, isStaff: boolean = false): string => {
     if (!phone) return '-';
 
     // Remove @lid, @s.whatsapp.net, or other WhatsApp suffixes
@@ -744,8 +746,8 @@ export default function ConversationsPage() {
       return phone || '-';
     }
 
-    // If this looks like a LID, show placeholder
-    if (isLIDNumber(digits)) {
+    // Only check for LID on STAFF - customers always have real phone numbers
+    if (isStaff && isLIDNumber(digits)) {
       return '(Nomor tidak tersedia)';
     }
 
@@ -811,11 +813,12 @@ export default function ConversationsPage() {
       // Get first letters of first 2 words
       const words = name.trim().split(/\s+/);
       initials = words.slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
-    } else if (!isLIDNumber(phoneDigits)) {
-      // Use last 2 digits of phone number (only if it's a real phone)
+    } else if (!isStaff || !isLIDNumber(phoneDigits)) {
+      // Use last 2 digits of phone number
+      // Customers always have real phone, staff might have LID
       initials = phoneDigits.slice(-2) || '?';
     } else {
-      // LID without name - show question mark
+      // Staff with LID without name - show question mark
       initials = '?';
     }
 
@@ -969,7 +972,7 @@ export default function ConversationsPage() {
                       })()}
                       <div className="min-w-0 flex-1 overflow-visible">
                         <h3 className="font-medium text-gray-900 text-xs md:text-sm whitespace-nowrap">
-                          {conv.customerName || formatPhoneNumber(conv.customerPhone)}
+                          {conv.customerName || formatPhoneNumber(conv.customerPhone, conv.isStaff)}
                         </h3>
                         <div className="flex items-center gap-1.5 md:gap-1 mt-1 md:mt-0.5 flex-wrap">
                           <span
@@ -1069,7 +1072,7 @@ export default function ConversationsPage() {
                     })()}
                     <div>
                       <h2 className="text-sm font-semibold text-gray-900">
-                        {selectedConversation.customerName || formatPhoneNumber(selectedConversation.customerPhone)}
+                        {selectedConversation.customerName || formatPhoneNumber(selectedConversation.customerPhone, selectedConversation.isStaff)}
                       </h2>
                       <p className="text-xs text-gray-500">
                         {selectedConversation.isStaff ? 'Staff' : 'Customer'}
