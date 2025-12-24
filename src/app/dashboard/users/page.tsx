@@ -89,10 +89,11 @@ export default function UsersPage() {
     if (usersWithPhone.length === 0) return;
 
     // Load profile pictures in parallel
+    // Note: Don't pass tenantId - API works better with fallback to any connected client
     const picturePromises = usersWithPhone.map(async (user) => {
       try {
         const response = await fetch(
-          `/api/v1/whatsapp-ai/profile-picture?tenantId=${tid}&phone=${user.phone}`
+          `/api/v1/whatsapp-ai/profile-picture?phone=${user.phone}`
         );
         const data = await response.json();
         if (data.success) {

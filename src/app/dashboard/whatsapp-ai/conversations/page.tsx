@@ -697,12 +697,18 @@ export default function ConversationsPage() {
   };
 
   // Filter conversations
+  // IMPORTANT: Closed escalated conversations are hidden from "Semua" (soft deleted)
+  // Only active conversations should appear in the main list
   const filteredConversations = conversations.filter((conv) => {
+    // Skip closed escalated conversations in "all" view (they are considered resolved/done)
+    const isClosedEscalated = conv.escalatedTo && conv.status === 'closed';
+
     const matchesType =
-      filterType === 'all' ||
-      (filterType === 'customer' && !conv.isStaff) ||
-      (filterType === 'staff' && conv.isStaff) ||
-      // Escalated: only show if escalatedTo is set AND status is not 'closed' (resolved)
+      // All: show everything EXCEPT closed escalated (those are soft deleted from main view)
+      (filterType === 'all' && !isClosedEscalated) ||
+      (filterType === 'customer' && !conv.isStaff && !isClosedEscalated) ||
+      (filterType === 'staff' && conv.isStaff && !isClosedEscalated) ||
+      // Escalated: only show ACTIVE escalated (not closed/resolved)
       (filterType === 'escalated' && conv.escalatedTo && conv.status !== 'closed');
 
     const matchesSearch =
@@ -880,7 +886,7 @@ export default function ConversationsPage() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Semua ({conversations.length})
+                Semua ({conversations.filter(c => !(c.escalatedTo && c.status === 'closed')).length})
               </button>
               <button
                 onClick={() => setFilterType('customer')}
