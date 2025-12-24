@@ -127,17 +127,25 @@ export default function ConversationsPage() {
     loadConversations();
   }, []);
 
+  // Track which phones have been requested (to avoid duplicate API calls)
+  const loadedPhonesRef = useRef<Set<string>>(new Set());
+
   // Load profile pictures for conversations
   useEffect(() => {
     const loadProfilePictures = async () => {
       if (conversations.length === 0) return;
 
-      // Track which phones we're loading to avoid duplicate requests
+      // Get phones that haven't been requested yet
       const phonesToLoad = conversations
         .map(conv => conv.customerPhone)
-        .filter(phone => profilePictures[phone] === undefined);
+        .filter(phone => !loadedPhonesRef.current.has(phone));
 
       if (phonesToLoad.length === 0) return;
+
+      console.log('[Profile Pictures] Loading for:', phonesToLoad);
+
+      // Mark phones as being loaded
+      phonesToLoad.forEach(phone => loadedPhonesRef.current.add(phone));
 
       // Load profile pictures in parallel (max 5 at a time)
       const batchSize = 5;
@@ -156,22 +164,20 @@ export default function ConversationsPage() {
               );
               const data = await response.json();
 
+              console.log(`[Profile Pictures] ${cleanPhone}:`, data.hasPicture ? 'HAS PICTURE' : 'no picture');
+
               if (data.success && data.hasPicture && data.pictureUrl) {
-                setProfilePictures(prev => ({
-                  ...prev,
-                  [phone]: data.pictureUrl,
-                }));
+                setProfilePictures(prev => {
+                  const updated = { ...prev, [phone]: data.pictureUrl };
+                  console.log('[Profile Pictures] Updated state:', Object.keys(updated).length, 'entries');
+                  return updated;
+                });
               } else {
-                setProfilePictures(prev => ({
-                  ...prev,
-                  [phone]: null,
-                }));
+                setProfilePictures(prev => ({ ...prev, [phone]: null }));
               }
             } catch (error) {
-              setProfilePictures(prev => ({
-                ...prev,
-                [phone]: null,
-              }));
+              console.error('[Profile Pictures] Error:', phone, error);
+              setProfilePictures(prev => ({ ...prev, [phone]: null }));
             }
           })
         );
