@@ -372,6 +372,10 @@ export class WhatsAppAIChatService {
       const photoConfirmPatterns = [
         /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti|yoi|gass?|cuss?)$/i,
         /^(kirimin|kirimkan|lanjut|lanjutkan|hayuk|yuk|ayo)$/i,
+        // Phrases with "foto" - "iya mana fotonya", "kirim fotonya" etc
+        /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
+        /\b(mana|kirim|kasih|tunjuk)\b.*\b(foto|gambar)/i,
+        /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
         /silahkan|silakan/i, /ditunggu/i, /tunggu/i,
         /kirim\s*(aja|dong|ya|in)?/i, /kirimin\s*(dong|ya|aja)?/i,
         /boleh\s*(dong|ya|lah|aja|silahkan|silakan|banget)?/i,
@@ -896,6 +900,11 @@ CONTOH RESPON ESCALATED:
       /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti|yoi|gass?|cuss?)$/i,
       /^(lihat|kirim|send|tampilkan|tunjukkan|kasih|berikan|kirimin|kirimkan|lanjut|lanjutkan)$/i,
       /^(foto|gambar|pictures?|images?|hayuk|yuk|ayo)$/i,
+      // Phrases with "foto" - IMPORTANT for "iya mana fotonya" etc
+      /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
+      /\b(mana|kirim|kasih|tunjuk)\b.*\b(foto|gambar)/i,
+      /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
+      /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
       /silahkan|silakan/i,
       /ditunggu/i,
       /tunggu/i,
@@ -950,9 +959,16 @@ CONTOH RESPON ESCALATED:
 
     // Photo confirmation patterns - comprehensive list
     const photoConfirmPatterns = [
+      // Exact single word confirmations
       /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti|yoi|gass?|cuss?)$/i,
       /^(lihat|kirim|send|tampilkan|tunjukkan|kasih|berikan|kirimin|kirimkan|lanjut|lanjutkan)$/i,
       /^(foto|gambar|pictures?|images?|hayuk|yuk|ayo)$/i,
+      // Phrases with "foto" - IMPORTANT for "iya mana fotonya" etc
+      /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
+      /\b(mana|kirim|kasih|tunjuk)\b.*\b(foto|gambar)/i,
+      /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
+      /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
+      // Other confirmations
       /silahkan|silakan/i,
       /ditunggu/i,
       /tunggu/i,
@@ -998,12 +1014,14 @@ CONTOH RESPON ESCALATED:
     // Extract vehicle name from the AI message
     // Match brand + model + optional year
     const vehiclePatterns = [
-      // Full brand + model + year: "Toyota Innova Reborn 2019"
-      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling|Chevrolet)\s+[\w\s]+\s+(?:20\d{2}|19\d{2})/gi,
-      // Brand + model without year: "Toyota Innova Reborn"
-      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling|Chevrolet)\s+[\w\s]+/gi,
-      // Model only: "Innova Reborn", "Avanza", "Brio"
-      /\b(Innova|Avanza|Xenia|Brio|Jazz|Ertiga|Rush|Terios|Fortuner|Pajero|Alphard|Civic|Accord|CRV|HRV|Yaris|Camry|Calya|Sigra|Ayla|Agya|Xpander|Livina)\s*[\w]*/gi,
+      // Full brand + model + year: "Toyota Innova Reborn 2019", "Toyota Fortuner 2017"
+      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling|Chevrolet)\s+[\w\-]+(?:\s+[\w\-]+)?\s+(?:20\d{2}|19\d{2})/gi,
+      // Brand + model without year: "Toyota Innova Reborn", "Toyota Fortuner"
+      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling|Chevrolet)\s+[\w\-]+(?:\s+[\w\-]+)?/gi,
+      // Model + Reborn/variant: "Innova Reborn", "Fortuner VRZ"
+      /\b(Innova\s*Reborn|Fortuner\s*VRZ|Fortuner\s*TRD|Pajero\s*Sport|Xpander\s*Cross|Rush\s*TRD|Terios\s*TX|HRV\s*Prestige|CRV\s*Turbo)\b/gi,
+      // Model only with year: "Fortuner 2017", "Innova 2019"
+      /\b(Innova|Avanza|Xenia|Brio|Jazz|Ertiga|Rush|Terios|Fortuner|Pajero|Alphard|Civic|Accord|CRV|HRV|BRV|Yaris|Camry|Calya|Sigra|Ayla|Agya|Xpander|Livina|City|Mobilio|Freed|Vios|Corolla|Raize|Rocky|Confero|Almaz|Cortez|Serena)\s*(?:Reborn)?\s*(?:20\d{2}|19\d{2})?/gi,
     ];
 
     let vehicleName = "";
@@ -1011,14 +1029,31 @@ CONTOH RESPON ESCALATED:
       const match = lastAiMsg.content.match(pattern);
       if (match && match[0]) {
         vehicleName = match[0].trim();
-        // Clean up: remove trailing words like "dengan", "harga", etc.
-        vehicleName = vehicleName.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap).*$/i, "").trim();
+        // Clean up: remove trailing words like "dengan", "harga", "diesel", "matic" etc.
+        vehicleName = vehicleName.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|at|mt).*$/i, "").trim();
         break;
       }
     }
 
+    // Fallback: Try to extract from user's earlier messages in history
     if (!vehicleName) {
-      console.log(`[WhatsApp AI Chat] Could not extract vehicle name from AI message`);
+      console.log(`[WhatsApp AI Chat] Trying to extract vehicle from conversation history...`);
+      for (const msg of [...messageHistory].reverse()) {
+        for (const pattern of vehiclePatterns) {
+          const match = msg.content.match(pattern);
+          if (match && match[0]) {
+            vehicleName = match[0].trim();
+            vehicleName = vehicleName.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|at|mt).*$/i, "").trim();
+            console.log(`[WhatsApp AI Chat] Found vehicle in history: "${vehicleName}"`);
+            break;
+          }
+        }
+        if (vehicleName) break;
+      }
+    }
+
+    if (!vehicleName) {
+      console.log(`[WhatsApp AI Chat] Could not extract vehicle name from AI message or history`);
       return null;
     }
 

@@ -153,6 +153,11 @@ const CUSTOMER_PATTERNS = {
     /^(iya|ya|yup|yap|ok|oke|okay|okey|boleh|mau|sip|siap|bisa|gas|tentu|pasti|betul|benar)$/i,
     /^(let'?s?\s*go|kirim|send|tampilkan|tunjukkan|kasih|berikan|lanjut|next)$/i,
     /^(kirimin|kirimkan|kirimkn|kiriminya)$/i,
+    // Phrases with "foto" - IMPORTANT for "iya mana fotonya", "mana fotonya" etc
+    /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
+    /\b(mana|kirim|kasih|tunjuk)\b.*\b(foto|gambar)/i,
+    /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
+    /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
     // Compound confirmations
     /^(iya\s+boleh|ya\s+boleh|boleh\s+dong|mau\s+dong|oke\s+kirim|ya\s+kirim)$/i,
     /^(ok\s+kirim|sip\s+kirim|gas\s+kirim|oke\s+dong|boleh\s+aja)$/i,
