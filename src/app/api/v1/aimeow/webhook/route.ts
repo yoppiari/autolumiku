@@ -61,6 +61,16 @@ export async function POST(request: NextRequest) {
   try {
     const payload: AimeowWebhookPayload = await request.json();
 
+    // ========== MEGA DEBUG LOG ==========
+    console.log("=".repeat(80));
+    console.log("[WEBHOOK DEBUG] ======= INCOMING WEBHOOK =======");
+    console.log("[WEBHOOK DEBUG] Time:", new Date().toISOString());
+    console.log("[WEBHOOK DEBUG] Event:", payload.event);
+    console.log("[WEBHOOK DEBUG] ClientId:", payload.clientId);
+    console.log("[WEBHOOK DEBUG] Full payload:", JSON.stringify(payload, null, 2));
+    console.log("=".repeat(80));
+    // ========== END MEGA DEBUG LOG ==========
+
     console.log("[Aimeow Webhook] Received event:", {
       event: payload.event,
       clientId: payload.clientId,
