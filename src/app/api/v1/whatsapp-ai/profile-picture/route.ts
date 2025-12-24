@@ -15,27 +15,15 @@ export async function GET(request: NextRequest) {
     const tenantId = searchParams.get("tenantId");
     const phone = searchParams.get("phone");
 
-    if (!tenantId || !phone) {
+    if (!phone) {
       return NextResponse.json(
-        { success: false, error: "Missing tenantId or phone" },
+        { success: false, error: "Missing phone" },
         { status: 400 }
       );
     }
 
-    // Get Aimeow account for this tenant
-    const account = await prisma.aimeowAccount.findUnique({
-      where: { tenantId },
-    });
-
-    if (!account) {
-      return NextResponse.json(
-        { success: false, hasPicture: false, error: "No WhatsApp account" },
-        { status: 200 }
-      );
-    }
-
-    // Always fetch connected clients from Aimeow to get correct UUID
-    // Don't rely on isActive flag which might be out of sync
+    // Always fetch connected clients from Aimeow
+    // This is more reliable than checking database isActive flag
     let apiClientId: string | null = null;
 
     try {
@@ -46,27 +34,37 @@ export async function GET(request: NextRequest) {
       if (clientsResponse.ok) {
         const clients = await clientsResponse.json();
 
-        // Try to find client by phone number match first
-        if (account.phoneNumber) {
-          const matchingClient = clients.find((c: any) =>
-            c.isConnected && c.phone === account.phoneNumber
-          );
-          if (matchingClient) {
-            apiClientId = matchingClient.id;
+        // If tenantId provided, try to match with account in database
+        if (tenantId) {
+          const account = await prisma.aimeowAccount.findUnique({
+            where: { tenantId },
+          });
+
+          if (account) {
+            // Try to find client by phone number match first
+            if (account.phoneNumber) {
+              const matchingClient = clients.find((c: any) =>
+                c.isConnected && c.phone === account.phoneNumber
+              );
+              if (matchingClient) {
+                apiClientId = matchingClient.id;
+              }
+            }
+
+            // If not found by phone, try by clientId
+            if (!apiClientId && account.clientId) {
+              const matchingClient = clients.find((c: any) =>
+                c.isConnected && c.id === account.clientId
+              );
+              if (matchingClient) {
+                apiClientId = matchingClient.id;
+              }
+            }
           }
         }
 
-        // If not found by phone, try by clientId
-        if (!apiClientId && account.clientId) {
-          const matchingClient = clients.find((c: any) =>
-            c.isConnected && c.id === account.clientId
-          );
-          if (matchingClient) {
-            apiClientId = matchingClient.id;
-          }
-        }
-
-        // Last resort: use any connected client (single tenant scenario)
+        // Fallback: use any connected client
+        // This handles cases where tenantId is wrong or not provided
         if (!apiClientId) {
           const anyConnected = clients.find((c: any) => c.isConnected);
           if (anyConnected) {
