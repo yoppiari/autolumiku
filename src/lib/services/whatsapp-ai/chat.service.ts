@@ -407,37 +407,166 @@ export class WhatsAppAIChatService {
         }
       }
 
-      // Get tenant info for helpful fallback
-      let tenantName = "Showroom Kami";
-      let whatsappNumber = "";
-      try {
-        const tenant = await prisma.tenant.findUnique({
-          where: { id: context.tenantId },
-          select: { name: true, whatsappNumber: true, phoneNumber: true }
-        });
-        if (tenant) {
-          tenantName = tenant.name;
-          whatsappNumber = tenant.whatsappNumber || tenant.phoneNumber || "";
-        }
-      } catch (e) {
-        // Ignore errors fetching tenant
-      }
-
-      // Helpful fallback response instead of generic error
-      const fallbackMessage = `Halo! Terima kasih sudah menghubungi ${tenantName}. 😊\n\n` +
-        `Untuk informasi lebih lanjut tentang mobil yang tersedia, silakan:\n` +
-        `• Ketik "mobil" untuk melihat daftar mobil\n` +
-        `• Ketik "harga" untuk info harga\n` +
-        (whatsappNumber ? `• Hubungi langsung: ${whatsappNumber}\n` : '') +
-        `\nAda yang bisa kami bantu?`;
+      // ==================== SMART CONTEXTUAL FALLBACK ====================
+      // Instead of generic menu, try to give a helpful response based on user's message
+      const smartFallback = await this.generateSmartFallback(
+        userMessage,
+        context.messageHistory,
+        context.tenantId
+      );
 
       return {
-        message: fallbackMessage,
-        shouldEscalate: false,
-        confidence: 0.5,
+        message: smartFallback.message,
+        shouldEscalate: smartFallback.shouldEscalate,
+        confidence: 0.6,
         processingTime: Date.now() - startTime,
+        ...(smartFallback.images && { images: smartFallback.images }),
       };
     }
+  }
+
+  /**
+   * Generate smart contextual fallback when AI fails
+   * Tries to understand user intent and give helpful response
+   */
+  private static async generateSmartFallback(
+    userMessage: string,
+    messageHistory: Array<{ role: "user" | "assistant"; content: string }>,
+    tenantId: string
+  ): Promise<{ message: string; shouldEscalate: boolean; images?: Array<{ imageUrl: string; caption?: string }> }> {
+    const msg = userMessage.toLowerCase().trim();
+
+    // Get tenant info
+    let tenantName = "kami";
+    try {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { name: true }
+      });
+      if (tenant) tenantName = tenant.name;
+    } catch (e) { /* ignore */ }
+
+    // Get available vehicles for context
+    let vehicles: any[] = [];
+    try {
+      vehicles = await prisma.vehicle.findMany({
+        where: { tenantId, status: "AVAILABLE" },
+        select: { make: true, model: true, year: true, price: true, mileage: true, transmissionType: true, color: true },
+        take: 10,
+      });
+    } catch (e) { /* ignore */ }
+
+    // Pattern matching for user intent
+    const vehicleBrands = ['toyota', 'honda', 'suzuki', 'daihatsu', 'mitsubishi', 'nissan', 'mazda', 'bmw', 'mercedes', 'hyundai', 'kia', 'wuling'];
+    const vehicleModels = ['innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'crv', 'hrv', 'yaris', 'camry', 'calya', 'sigra', 'xpander'];
+
+    // Check if asking about specific vehicle
+    const mentionedBrand = vehicleBrands.find(b => msg.includes(b));
+    const mentionedModel = vehicleModels.find(m => msg.includes(m));
+
+    if (mentionedBrand || mentionedModel) {
+      // User asking about specific vehicle - try to find it
+      const searchTerm = mentionedModel || mentionedBrand || "";
+      const matchingVehicle = vehicles.find(v =>
+        v.make.toLowerCase().includes(searchTerm) ||
+        v.model.toLowerCase().includes(searchTerm)
+      );
+
+      if (matchingVehicle) {
+        const price = Math.round(Number(matchingVehicle.price) / 100).toLocaleString('id-ID');
+        const response = `Untuk ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}, ` +
+          `harganya Rp ${price}, transmisi ${matchingVehicle.transmissionType || 'manual'}, ` +
+          `${matchingVehicle.mileage ? matchingVehicle.mileage.toLocaleString('id-ID') + ' km' : ''}, ` +
+          `warna ${matchingVehicle.color || '-'}.\n\n` +
+          `Mau lihat fotonya? 📸`;
+
+        return { message: response, shouldEscalate: false };
+      } else {
+        return {
+          message: `Mohon maaf, saat ini ${searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1)} belum tersedia di ${tenantName}.\n\n` +
+            `Unit yang tersedia: ${vehicles.slice(0, 3).map(v => `${v.make} ${v.model} ${v.year}`).join(', ')}.\n\n` +
+            `Ada yang lain yang bisa kami bantu?`,
+          shouldEscalate: false,
+        };
+      }
+    }
+
+    // Check if asking about price/budget
+    const priceMatch = msg.match(/(\d+)\s*(jt|juta|rb|ribu)/i);
+    if (priceMatch || msg.includes('harga') || msg.includes('budget') || msg.includes('murah')) {
+      const budget = priceMatch ? parseInt(priceMatch[1]) * (priceMatch[2].toLowerCase().includes('jt') || priceMatch[2].toLowerCase().includes('juta') ? 1000000 : 1000) : 0;
+
+      let relevantVehicles = vehicles;
+      if (budget > 0) {
+        relevantVehicles = vehicles.filter(v => Number(v.price) / 100 <= budget * 1.2);
+      }
+
+      if (relevantVehicles.length > 0) {
+        const list = relevantVehicles.slice(0, 3).map(v => {
+          const price = Math.round(Number(v.price) / 100 / 1000000);
+          return `• ${v.make} ${v.model} ${v.year} - Rp ${price} juta`;
+        }).join('\n');
+
+        return {
+          message: `Berikut pilihan ${budget > 0 ? `budget sekitar Rp ${budget/1000000} juta` : 'yang tersedia'}:\n\n${list}\n\nMau info detail yang mana?`,
+          shouldEscalate: false,
+        };
+      }
+    }
+
+    // Check if greeting
+    if (/^(halo|hai|hello|hi|sore|pagi|siang|malam|selamat)/i.test(msg)) {
+      return {
+        message: `Halo! Selamat datang di ${tenantName} 👋\n\n` +
+          `Saat ini tersedia ${vehicles.length} unit kendaraan. ` +
+          `Silakan tanyakan mobil yang Anda cari, atau sebutkan budget Anda, kami bantu carikan yang cocok!`,
+        shouldEscalate: false,
+      };
+    }
+
+    // Check if complaint/frustration
+    if (/kaku|nyebelin|ga (jelas|responsif|bisa)|muter|bingung|kesal|males/i.test(msg)) {
+      return {
+        message: `Mohon maaf atas ketidaknyamanannya 🙏\n\n` +
+          `Silakan sampaikan langsung kebutuhan Anda, misalnya:\n` +
+          `• "Cari Avanza budget 150 juta"\n` +
+          `• "Ada Innova matic?"\n` +
+          `• "Mobil keluarga 7 seater"\n\n` +
+          `Kami akan bantu carikan yang sesuai!`,
+        shouldEscalate: false,
+      };
+    }
+
+    // Check if wants to leave/cancel
+    if (/ga jadi|cancel|batal|pergi|showroom lain|bye|dadah/i.test(msg)) {
+      return {
+        message: `Baik, terima kasih sudah mampir ke ${tenantName}! ` +
+          `Semoga Anda menemukan mobil impian. Sampai jumpa lagi 🙏`,
+        shouldEscalate: false,
+      };
+    }
+
+    // Default: Try to be helpful based on available inventory
+    if (vehicles.length > 0) {
+      const randomVehicles = vehicles.sort(() => Math.random() - 0.5).slice(0, 3);
+      const list = randomVehicles.map(v => {
+        const price = Math.round(Number(v.price) / 100 / 1000000);
+        return `• ${v.make} ${v.model} ${v.year} - Rp ${price} jt`;
+      }).join('\n');
+
+      return {
+        message: `Maaf, bisa diperjelas lagi kebutuhannya?\n\n` +
+          `Beberapa unit ready di ${tenantName}:\n${list}\n\n` +
+          `Atau sebutkan merk/budget yang dicari, kami bantu carikan! 😊`,
+        shouldEscalate: false,
+      };
+    }
+
+    // Ultimate fallback
+    return {
+      message: `Maaf, ada kendala teknis. Bisa diulang pertanyaannya? 🙏`,
+      shouldEscalate: true,
+    };
   }
 
   /**
