@@ -702,7 +702,8 @@ export default function ConversationsPage() {
       filterType === 'all' ||
       (filterType === 'customer' && !conv.isStaff) ||
       (filterType === 'staff' && conv.isStaff) ||
-      (filterType === 'escalated' && conv.escalatedTo);
+      // Escalated: only show if escalatedTo is set AND status is not 'closed' (resolved)
+      (filterType === 'escalated' && conv.escalatedTo && conv.status !== 'closed');
 
     const matchesSearch =
       conv.customerPhone.includes(searchTerm) ||
@@ -909,7 +910,7 @@ export default function ConversationsPage() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Escalated
+                Escalated ({conversations.filter(c => c.escalatedTo && c.status !== 'closed').length})
               </button>
             </div>
           </div>
