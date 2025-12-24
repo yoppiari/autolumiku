@@ -152,16 +152,22 @@ const CUSTOMER_PATTERNS = {
     // Single word confirmations
     /^(iya|ya|yup|yap|ok|oke|okay|okey|boleh|mau|sip|siap|bisa|gas|tentu|pasti|betul|benar)$/i,
     /^(let'?s?\s*go|kirim|send|tampilkan|tunjukkan|kasih|berikan|lanjut|next)$/i,
+    /^(kirimin|kirimkan|kirimkn|kiriminya)$/i,
     // Compound confirmations
     /^(iya\s+boleh|ya\s+boleh|boleh\s+dong|mau\s+dong|oke\s+kirim|ya\s+kirim)$/i,
     /^(ok\s+kirim|sip\s+kirim|gas\s+kirim|oke\s+dong|boleh\s+aja)$/i,
-    /^(silahkan|silakan|monggo|mangga)\s*(kirim)?/i,
-    /^(tolong|please|coba)\s*(kirim|send|lihat)/i,
+    /^(boleh\s+silahkan|boleh\s+silakan|silahkan\s+kirim|silakan\s+kirim)$/i,
+    /^(lanjutkan|lanjut\s+kirim|ok\s+lanjut\s+kirim|oke\s+lanjut|lanjut\s+aja)$/i,
+    /^(silahkan|silakan|monggo|mangga)\s*(kirim|lanjut)?/i,
+    /^(tolong|please|coba)\s*(kirim|send|lihat|kirimin|kirimkan)/i,
     // Waiting phrases
     /^(ditunggu|saya\s+tunggu|tunggu\s+ya|ok\s+ditunggu|sip\s+ditunggu)$/i,
-    /^(kirim\s+aja|kirim\s+dong|kirim\s+ya|kirim\s+deh)$/i,
+    /^(kirim\s+aja|kirim\s+dong|kirim\s+ya|kirim\s+deh|kirimin\s+dong)$/i,
     // Short affirmative
-    /^(yoi|yess?|yup|yap|yep|oks?|okee?y?|sippp?)$/i,
+    /^(yoi|yess?|yup|yap|yep|oks?|okee?y?|sippp?|cuss?|gass?)$/i,
+    // Extended affirmative phrases
+    /^(boleh\s+banget|mau\s+banget|oke\s+banget|sip\s+lanjut)$/i,
+    /^(hayuk|yuk|ayo|coba\s+liat|coba\s+lihat)$/i,
   ],
   // New: Follow-up/continuation patterns
   follow_up: [

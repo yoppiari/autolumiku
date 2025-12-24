@@ -341,7 +341,7 @@ export class WhatsAppAIChatService {
 
       // If AI sent images but no text, add default message
       if (images && images.length > 0 && !responseMessage) {
-        responseMessage = `Ini foto ${images.length > 1 ? 'mobil-mobil' : 'mobil'} yang tersedia 👇`;
+        responseMessage = `Siap! Ini foto ${images.length > 1 ? 'mobil-mobilnya' : 'mobilnya'} ya 📸👇`;
         console.log('[WhatsApp AI Chat] Added default image message:', responseMessage);
       }
 
@@ -349,7 +349,7 @@ export class WhatsAppAIChatService {
       if (aiResponse.toolCalls?.some(tc =>
         tc.type === 'function' && 'function' in tc && tc.function.name === 'send_vehicle_images'
       ) && (!images || images.length === 0)) {
-        responseMessage = responseMessage || 'Maaf, saat ini belum ada foto untuk mobil tersebut. Ada yang lain yang bisa saya bantu?';
+        responseMessage = responseMessage || 'Wah, maaf ya foto mobilnya belum tersedia saat ini 🙏 Ada yang lain yang bisa dibantu? 😊';
       }
 
       return {
@@ -370,9 +370,12 @@ export class WhatsAppAIChatService {
       // Check if this is a photo confirmation request - try to handle it directly
       const msg = userMessage.trim().toLowerCase();
       const photoConfirmPatterns = [
-        /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti)$/i,
-        /silahkan/i, /ditunggu/i, /tunggu/i,
-        /kirim\s*(aja|dong|ya)?/i, /boleh\s*(dong|ya|lah|aja)?/i,
+        /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti|yoi|gass?|cuss?)$/i,
+        /^(kirimin|kirimkan|lanjut|lanjutkan|hayuk|yuk|ayo)$/i,
+        /silahkan|silakan/i, /ditunggu/i, /tunggu/i,
+        /kirim\s*(aja|dong|ya|in)?/i, /kirimin\s*(dong|ya|aja)?/i,
+        /boleh\s*(dong|ya|lah|aja|silahkan|silakan|banget)?/i,
+        /lanjut\s*(kirim|aja)?/i, /ok\s*lanjut\s*kirim/i,
       ];
       const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
 
@@ -394,7 +397,7 @@ export class WhatsAppAIChatService {
             if (images && images.length > 0) {
               console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} images for "${vehicleName}" via fallback`);
               return {
-                message: `Berikut foto ${vehicleName} 👇`,
+                message: `Siap! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain? 😊`,
                 shouldEscalate: false,
                 confidence: 0.8,
                 processingTime: Date.now() - startTime,
@@ -474,18 +477,19 @@ export class WhatsAppAIChatService {
 
       if (matchingVehicle) {
         const price = Math.round(Number(matchingVehicle.price) / 100).toLocaleString('id-ID');
-        const response = `Untuk ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}, ` +
-          `harganya Rp ${price}, transmisi ${matchingVehicle.transmissionType || 'manual'}, ` +
-          `${matchingVehicle.mileage ? matchingVehicle.mileage.toLocaleString('id-ID') + ' km' : ''}, ` +
-          `warna ${matchingVehicle.color || '-'}.\n\n` +
+        const response = `Ada nih ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}! 🚗✨\n\n` +
+          `💰 Harga: Rp ${price}\n` +
+          `⚙️ Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
+          `${matchingVehicle.mileage ? `📊 Kilometer: ${matchingVehicle.mileage.toLocaleString('id-ID')} km\n` : ''}` +
+          `🎨 Warna: ${matchingVehicle.color || '-'}\n\n` +
           `Mau lihat fotonya? 📸`;
 
         return { message: response, shouldEscalate: false };
       } else {
         return {
-          message: `Mohon maaf, saat ini ${searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1)} belum tersedia di ${tenantName}.\n\n` +
-            `Unit yang tersedia: ${vehicles.slice(0, 3).map(v => `${v.make} ${v.model} ${v.year}`).join(', ')}.\n\n` +
-            `Ada yang lain yang bisa kami bantu?`,
+          message: `Wah, maaf ya ${searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1)} belum tersedia saat ini 🙏\n\n` +
+            `Tapi ada pilihan lain nih 🚗✨\n${vehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n')}\n\n` +
+            `Mau info yang mana? 😊`,
           shouldEscalate: false,
         };
       }
@@ -504,11 +508,11 @@ export class WhatsAppAIChatService {
       if (relevantVehicles.length > 0) {
         const list = relevantVehicles.slice(0, 3).map(v => {
           const price = Math.round(Number(v.price) / 100 / 1000000);
-          return `• ${v.make} ${v.model} ${v.year} - Rp ${price} juta`;
+          return `• ${v.make} ${v.model} ${v.year} - Rp ${price} jt`;
         }).join('\n');
 
         return {
-          message: `Berikut pilihan ${budget > 0 ? `budget sekitar Rp ${budget/1000000} juta` : 'yang tersedia'}:\n\n${list}\n\nMau info detail yang mana?`,
+          message: `Ada beberapa pilihan ${budget > 0 ? `di budget Rp ${budget/1000000} juta` : ''} nih! 💰✨\n\n${list}\n\nMau info detail yang mana? 😊`,
           shouldEscalate: false,
         };
       }
@@ -517,9 +521,9 @@ export class WhatsAppAIChatService {
     // Check if greeting
     if (/^(halo|hai|hello|hi|sore|pagi|siang|malam|selamat)/i.test(msg)) {
       return {
-        message: `Halo! Selamat datang di ${tenantName} 👋\n\n` +
-          `Saat ini tersedia ${vehicles.length} unit kendaraan. ` +
-          `Silakan tanyakan mobil yang Anda cari, atau sebutkan budget Anda, kami bantu carikan yang cocok!`,
+        message: `Halo! Selamat datang di ${tenantName}! 👋😊\n\n` +
+          `Saat ini tersedia ${vehicles.length} unit kendaraan 🚗✨\n\n` +
+          `Silakan info mobil yang dicari atau sebutkan budget-nya, kami bantu carikan yang cocok ya!`,
         shouldEscalate: false,
       };
     }
@@ -527,12 +531,12 @@ export class WhatsAppAIChatService {
     // Check if complaint/frustration
     if (/kaku|nyebelin|ga (jelas|responsif|bisa)|muter|bingung|kesal|males/i.test(msg)) {
       return {
-        message: `Mohon maaf atas ketidaknyamanannya 🙏\n\n` +
-          `Silakan sampaikan langsung kebutuhan Anda, misalnya:\n` +
+        message: `Waduh, maaf banget ya atas ketidaknyamanannya 🙏😔\n\n` +
+          `Coba langsung aja sebutin kebutuhannya, misal:\n` +
           `• "Cari Avanza budget 150 juta"\n` +
           `• "Ada Innova matic?"\n` +
           `• "Mobil keluarga 7 seater"\n\n` +
-          `Kami akan bantu carikan yang sesuai!`,
+          `Pasti kami bantu carikan! 💪😊`,
         shouldEscalate: false,
       };
     }
@@ -540,8 +544,8 @@ export class WhatsAppAIChatService {
     // Check if wants to leave/cancel
     if (/ga jadi|cancel|batal|pergi|showroom lain|bye|dadah/i.test(msg)) {
       return {
-        message: `Baik, terima kasih sudah mampir ke ${tenantName}! ` +
-          `Semoga Anda menemukan mobil impian. Sampai jumpa lagi 🙏`,
+        message: `Baik, terima kasih sudah mampir ke ${tenantName}! 🙏✨\n` +
+          `Semoga ketemu mobil impiannya ya. Sampai jumpa! 👋😊`,
         shouldEscalate: false,
       };
     }
@@ -555,16 +559,16 @@ export class WhatsAppAIChatService {
       }).join('\n');
 
       return {
-        message: `Maaf, bisa diperjelas lagi kebutuhannya?\n\n` +
-          `Beberapa unit ready di ${tenantName}:\n${list}\n\n` +
-          `Atau sebutkan merk/budget yang dicari, kami bantu carikan! 😊`,
+        message: `Hmm, bisa diperjelas kebutuhannya? 🤔\n\n` +
+          `Ini beberapa unit ready di ${tenantName}:\n${list}\n\n` +
+          `Atau sebutkan merk/budget yang dicari ya! 😊🚗`,
         shouldEscalate: false,
       };
     }
 
     // Ultimate fallback
     return {
-      message: `Maaf, ada kendala teknis. Bisa diulang pertanyaannya? 🙏`,
+      message: `Maaf, ada kendala teknis nih 🙏 Bisa diulang pertanyaannya?`,
       shouldEscalate: true,
     };
   }
@@ -592,7 +596,8 @@ GAYA KOMUNIKASI:
 - Sapa dengan "Bapak/Ibu" atau nama jika diketahui
 - Gunakan kata-kata sopan: "silakan", "terima kasih", "mohon maaf"
 - Hindari bahasa slang atau terlalu casual
-- Emoji hanya seperlunya untuk keramahan (maksimal 1-2 per pesan)
+- Gunakan emoji untuk membuat percakapan lebih hangat dan friendly 😊
+- Emoji yang cocok: 👋 (salam), 🚗 (mobil), 📸 (foto), ✨ (highlight), 💰 (harga), 📋 (info), 🙏 (terima kasih), 😊 (ramah), 👍 (ok)
 - Berikan informasi lengkap namun ringkas (3-4 kalimat)
 
 CARA MERESPONS:
@@ -604,7 +609,7 @@ CARA MERESPONS:
 
 2. PERMINTAAN FOTO (iya/ya/mau/boleh/ok):
    → Langsung panggil tool "send_vehicle_images"
-   → Sampaikan: "Berikut foto kendaraannya 👇"
+   → Sampaikan: "Siap! Ini foto mobilnya ya 📸👇"
    ⚠️ PENTING: HANYA kirim foto kendaraan yang SEDANG DIBAHAS!
    ⚠️ JANGAN kirim foto kendaraan lain yang tidak ditanyakan customer!
 
@@ -630,27 +635,27 @@ ATURAN PENTING:
 CONTOH PERCAKAPAN BENAR:
 
 C: "ada Avanza matic ga?"
-A: "Terima kasih atas pertanyaannya. Kami memiliki Avanza 2021 Matic dengan harga Rp 180 juta, kilometer 35.000, warna Silver. Apakah Bapak/Ibu berkenan melihat fotonya?"
+A: "Halo Bapak/Ibu! 👋 Ada unit Avanza 2021 Matic nih 🚗✨ Harga Rp 180 juta, km 35.000, warna Silver. Mau lihat fotonya? 📸"
 
 C: "boleh"
-A: [panggil send_vehicle_images dengan query "Avanza" SAJA] "Berikut foto Avanza-nya 👇"
+A: [panggil send_vehicle_images dengan query "Avanza" SAJA] "Siap! Ini foto Avanza-nya ya 📸👇"
    (HANYA kirim foto Avanza, BUKAN foto mobil lain!)
 
 C: "tertarik Innova Reborn PM-PST-005, bisa lihat fotonya?"
-A: [panggil send_vehicle_images dengan query "Innova Reborn PM-PST-005"] "Berikut foto Innova Reborn-nya 👇"
+A: [panggil send_vehicle_images dengan query "Innova Reborn PM-PST-005"] "Baik, ini foto Innova Reborn-nya 📸👇"
    (HANYA Innova yang diminta, JANGAN kirim foto Calya, Fortuner, dll!)
 
 C: "budget 100-150jt ada apa aja?"
-A: "Untuk budget Rp 100-150 juta, kami memiliki:\n• Honda Brio 2019 - Rp 125 juta\n• Toyota Agya 2020 - Rp 110 juta\nMohon informasikan jika ada yang ingin dilihat lebih lanjut."
+A: "Untuk budget Rp 100-150 juta ada beberapa pilihan bagus nih 💰✨\n• Honda Brio 2019 - Rp 125 juta\n• Toyota Agya 2020 - Rp 110 juta\nMau info detail yang mana? 😊"
 
 C: "ga usah deh, km nya berapa?"
-A: "Baik, tidak masalah. Untuk informasi kilometer:\n• Brio 2019: 45.000 km\n• Agya 2020: 30.000 km\nAda hal lain yang bisa kami bantu?"
+A: "Oke, tidak masalah! 👍 Untuk info kilometer:\n• Brio 2019: 45.000 km\n• Agya 2020: 30.000 km\nAda yang lain yang bisa dibantu? 😊"
 
 C: "tidak ada, cukup"
-A: "Terima kasih telah menghubungi ${tenant.name}! Semoga informasinya bermanfaat. Jangan ragu hubungi kami kembali ya 🙏"
+A: "Siap, terima kasih sudah menghubungi ${tenant.name}! 🙏✨ Semoga infonya bermanfaat. Kalau ada pertanyaan lagi, langsung hubungi kami ya! 👋"
 
 C: "halo"
-A: "Selamat datang di ${tenant.name}! Kami siap membantu Anda menemukan kendaraan impian. Silakan informasikan preferensi Anda seperti merk, budget, atau tipe kendaraan yang dicari."
+A: "Halo! Selamat datang di ${tenant.name}! 👋😊 Kami siap bantu carikan mobil impian Anda. Silakan info merk, budget, atau tipe mobil yang dicari ya! 🚗✨"
 `;
 
     // Add vehicle inventory context
@@ -888,18 +893,22 @@ CONTOH RESPON ESCALATED:
     // Include: boleh, ok, silahkan, silahkan kirim, saya tunggu, ok kirim, sip ditunggu, ditunggu, etc.
     const msg = currentMessage.trim().toLowerCase();
     const photoConfirmPatterns = [
-      /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti)$/i,
-      /^(lihat|kirim|send|tampilkan|tunjukkan|kasih|berikan)$/i,
-      /^(foto|gambar|pictures?|images?)$/i,
-      /silahkan/i,
+      /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti|yoi|gass?|cuss?)$/i,
+      /^(lihat|kirim|send|tampilkan|tunjukkan|kasih|berikan|kirimin|kirimkan|lanjut|lanjutkan)$/i,
+      /^(foto|gambar|pictures?|images?|hayuk|yuk|ayo)$/i,
+      /silahkan|silakan/i,
       /ditunggu/i,
       /tunggu/i,
-      /kirim\s*(aja|dong|ya)?/i,
-      /boleh\s*(dong|ya|lah|aja)?/i,
-      /ok\s*(kirim|dong|ya)?/i,
-      /sip\s*(ditunggu|tunggu)?/i,
-      /mau\s*(dong|ya|lah|lihat)?/i,
-      /^(coba|tolong)\s*(lihat|kirim)/i,
+      /kirim\s*(aja|dong|ya|in)?/i,
+      /kirimin\s*(dong|ya|aja)?/i,
+      /kirimkan\s*(dong|ya)?/i,
+      /boleh\s*(dong|ya|lah|aja|silahkan|silakan|banget)?/i,
+      /ok\s*(kirim|dong|ya|lanjut)?/i,
+      /sip\s*(ditunggu|tunggu|lanjut)?/i,
+      /mau\s*(dong|ya|lah|lihat|banget)?/i,
+      /lanjut\s*(kirim|aja)?/i,
+      /ok\s*lanjut\s*kirim/i,
+      /^(coba|tolong)\s*(lihat|kirim|kirimin|kirimkan)/i,
     ];
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
 
@@ -941,18 +950,22 @@ CONTOH RESPON ESCALATED:
 
     // Photo confirmation patterns - comprehensive list
     const photoConfirmPatterns = [
-      /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti)$/i,
-      /^(lihat|kirim|send|tampilkan|tunjukkan|kasih|berikan)$/i,
-      /^(foto|gambar|pictures?|images?)$/i,
-      /silahkan/i,
+      /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti|yoi|gass?|cuss?)$/i,
+      /^(lihat|kirim|send|tampilkan|tunjukkan|kasih|berikan|kirimin|kirimkan|lanjut|lanjutkan)$/i,
+      /^(foto|gambar|pictures?|images?|hayuk|yuk|ayo)$/i,
+      /silahkan|silakan/i,
       /ditunggu/i,
       /tunggu/i,
-      /kirim\s*(aja|dong|ya)?/i,
-      /boleh\s*(dong|ya|lah|aja)?/i,
-      /ok\s*(kirim|dong|ya)?/i,
-      /sip\s*(ditunggu|tunggu)?/i,
-      /mau\s*(dong|ya|lah|lihat)?/i,
-      /^(coba|tolong)\s*(lihat|kirim)/i,
+      /kirim\s*(aja|dong|ya|in)?/i,
+      /kirimin\s*(dong|ya|aja)?/i,
+      /kirimkan\s*(dong|ya)?/i,
+      /boleh\s*(dong|ya|lah|aja|silahkan|silakan|banget)?/i,
+      /ok\s*(kirim|dong|ya|lanjut)?/i,
+      /sip\s*(ditunggu|tunggu|lanjut)?/i,
+      /mau\s*(dong|ya|lah|lihat|banget)?/i,
+      /lanjut\s*(kirim|aja)?/i,
+      /ok\s*lanjut\s*kirim/i,
+      /^(coba|tolong)\s*(lihat|kirim|kirimin|kirimkan)/i,
     ];
 
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
@@ -1018,7 +1031,7 @@ CONTOH RESPON ESCALATED:
       if (images && images.length > 0) {
         console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} images for "${vehicleName}"`);
         return {
-          message: `Berikut foto ${vehicleName} 👇\n\nAda pertanyaan lain tentang unit ini?`,
+          message: `Siap! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain tentang unit ini? 😊`,
           shouldEscalate: false,
           confidence: 0.95,
           images,
@@ -1026,7 +1039,7 @@ CONTOH RESPON ESCALATED:
       } else {
         console.log(`[WhatsApp AI Chat] ⚠️ No images found for "${vehicleName}"`);
         return {
-          message: `Mohon maaf, saat ini foto untuk ${vehicleName} belum tersedia.\n\nApakah ada informasi lain yang bisa kami bantu?`,
+          message: `Wah, maaf ya foto ${vehicleName} belum tersedia saat ini 🙏\n\nAda yang lain yang bisa kami bantu? 😊`,
           shouldEscalate: false,
           confidence: 0.9,
         };
