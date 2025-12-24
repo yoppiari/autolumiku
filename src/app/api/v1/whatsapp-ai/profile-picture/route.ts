@@ -27,36 +27,80 @@ export async function GET(request: NextRequest) {
       where: { tenantId },
     });
 
-    if (!account || !account.isActive) {
+    if (!account) {
       return NextResponse.json(
-        { success: false, hasPicture: false, error: "WhatsApp not connected" },
+        { success: false, hasPicture: false, error: "No WhatsApp account" },
         { status: 200 }
       );
     }
 
-    // Get correct client UUID
-    let apiClientId = account.clientId;
-    if (account.clientId.includes("@") || !account.clientId.includes("-")) {
-      const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+    // Always fetch connected clients from Aimeow to get correct UUID
+    // Don't rely on isActive flag which might be out of sync
+    let apiClientId: string | null = null;
+
+    try {
+      const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`, {
+        cache: 'no-store',
+      });
+
       if (clientsResponse.ok) {
         const clients = await clientsResponse.json();
-        const connectedClient = clients.find((c: any) => c.isConnected === true);
-        if (connectedClient) {
-          apiClientId = connectedClient.id;
+
+        // Try to find client by phone number match first
+        if (account.phoneNumber) {
+          const matchingClient = clients.find((c: any) =>
+            c.isConnected && c.phone === account.phoneNumber
+          );
+          if (matchingClient) {
+            apiClientId = matchingClient.id;
+          }
+        }
+
+        // If not found by phone, try by clientId
+        if (!apiClientId && account.clientId) {
+          const matchingClient = clients.find((c: any) =>
+            c.isConnected && c.id === account.clientId
+          );
+          if (matchingClient) {
+            apiClientId = matchingClient.id;
+          }
+        }
+
+        // Last resort: use any connected client (single tenant scenario)
+        if (!apiClientId) {
+          const anyConnected = clients.find((c: any) => c.isConnected);
+          if (anyConnected) {
+            apiClientId = anyConnected.id;
+          }
         }
       }
+    } catch (fetchError) {
+      console.error("[Profile Picture API] Failed to fetch clients:", fetchError);
     }
 
-    // Clean phone number
-    const cleanPhone = phone.replace(/@.*$/, "").replace(/[^0-9]/g, "");
+    if (!apiClientId) {
+      return NextResponse.json(
+        { success: false, hasPicture: false, error: "No connected WhatsApp" },
+        { status: 200 }
+      );
+    }
+
+    // Clean phone number - remove suffixes and non-digits
+    const cleanPhone = phone.replace(/@.*$/, "").replace(/:/g, "").replace(/[^0-9]/g, "");
+
+    if (!cleanPhone) {
+      return NextResponse.json(
+        { success: false, hasPicture: false, error: "Invalid phone" },
+        { status: 200 }
+      );
+    }
 
     // Fetch profile picture from Aimeow
     const response = await fetch(
       `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${cleanPhone}`,
       {
         headers: { Accept: "application/json" },
-        // Cache for 5 minutes
-        next: { revalidate: 300 },
+        cache: 'no-store',
       }
     );
 
