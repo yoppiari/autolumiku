@@ -713,6 +713,20 @@ export default function ConversationsPage() {
 
   // Format WhatsApp JID to readable phone number
   // Handles both valid phone numbers and LID (Linked IDs) that aren't real phone numbers
+  // Helper to check if a number looks like a LID (not a real phone)
+  const isLIDNumber = (num: string): boolean => {
+    if (!num) return false;
+    const digits = num.replace(/\D/g, "");
+    if (digits.length < 10) return false;
+    // LID patterns: very long numbers, or numbers starting with 100/101/102
+    if (digits.length >= 16) return true;
+    if (digits.length >= 14 && (digits.startsWith("100") || digits.startsWith("101") || digits.startsWith("102"))) return true;
+    // Numbers that are too long for valid country codes
+    if (digits.startsWith("62") && digits.length > 14) return true;
+    if (digits.startsWith("1") && digits.length > 11 && !digits.startsWith("1800")) return true;
+    return false;
+  };
+
   const formatPhoneNumber = (phone: string): string => {
     if (!phone) return '-';
 
@@ -730,6 +744,11 @@ export default function ConversationsPage() {
       return phone || '-';
     }
 
+    // If this looks like a LID, show placeholder
+    if (isLIDNumber(digits)) {
+      return '(Nomor tidak tersedia)';
+    }
+
     // If starts with 62 (Indonesia), format nicely
     if (digits.startsWith('62') && digits.length >= 10 && digits.length <= 14) {
       const localNumber = digits.substring(2);
@@ -744,7 +763,7 @@ export default function ConversationsPage() {
     }
 
     // For any other number, show with + prefix if long enough
-    if (digits.length >= 10) {
+    if (digits.length >= 10 && digits.length <= 15) {
       return `+${digits}`;
     }
 
@@ -792,9 +811,12 @@ export default function ConversationsPage() {
       // Get first letters of first 2 words
       const words = name.trim().split(/\s+/);
       initials = words.slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
-    } else {
-      // Use last 2 digits of phone number
+    } else if (!isLIDNumber(phoneDigits)) {
+      // Use last 2 digits of phone number (only if it's a real phone)
       initials = phoneDigits.slice(-2) || '?';
+    } else {
+      // LID without name - show question mark
+      initials = '?';
     }
 
     return {
