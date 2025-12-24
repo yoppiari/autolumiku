@@ -150,6 +150,21 @@ export class WhatsAppAIChatService {
         console.log(`[WhatsApp AI Chat] ✅ Staff detected - bypassing business hours check`);
       }
 
+      // ==================== PRE-AI PHOTO CONFIRMATION HANDLER ====================
+      // Handle photo confirmations BEFORE calling AI to avoid AI failures breaking the flow
+      const photoConfirmResult = await this.handlePhotoConfirmationDirectly(
+        userMessage,
+        context.messageHistory,
+        context.tenantId
+      );
+      if (photoConfirmResult) {
+        console.log(`[WhatsApp AI Chat] ✅ Photo confirmation handled directly - bypassing AI`);
+        return {
+          ...photoConfirmResult,
+          processingTime: Date.now() - startTime,
+        };
+      }
+
       // Build system prompt with sender info
       console.log(`[WhatsApp AI Chat] Building system prompt for tenant: ${account.tenant.name}`);
       const senderInfo = {
@@ -782,6 +797,115 @@ CONTOH RESPON ESCALATED:
     }
 
     return context;
+  }
+
+  /**
+   * Handle photo confirmation directly WITHOUT calling AI
+   * This ensures photo confirmations always work even if AI has issues
+   */
+  private static async handlePhotoConfirmationDirectly(
+    userMessage: string,
+    messageHistory: Array<{ role: "user" | "assistant"; content: string }>,
+    tenantId: string
+  ): Promise<{ message: string; shouldEscalate: boolean; confidence: number; images?: Array<{ imageUrl: string; caption?: string }> } | null> {
+    const msg = userMessage.trim().toLowerCase();
+
+    // Photo confirmation patterns - comprehensive list
+    const photoConfirmPatterns = [
+      /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti)$/i,
+      /^(lihat|kirim|send|tampilkan|tunjukkan|kasih|berikan)$/i,
+      /^(foto|gambar|pictures?|images?)$/i,
+      /silahkan/i,
+      /ditunggu/i,
+      /tunggu/i,
+      /kirim\s*(aja|dong|ya)?/i,
+      /boleh\s*(dong|ya|lah|aja)?/i,
+      /ok\s*(kirim|dong|ya)?/i,
+      /sip\s*(ditunggu|tunggu)?/i,
+      /mau\s*(dong|ya|lah|lihat)?/i,
+      /^(coba|tolong)\s*(lihat|kirim)/i,
+    ];
+
+    const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
+    if (!isPhotoConfirmation) {
+      return null; // Not a photo confirmation, let AI handle it
+    }
+
+    console.log(`[WhatsApp AI Chat] 📸 Detected photo confirmation: "${userMessage}"`);
+
+    // Get the last AI message to check if it offered photos
+    const lastAiMsg = messageHistory.filter(m => m.role === "assistant").pop();
+    if (!lastAiMsg) {
+      console.log(`[WhatsApp AI Chat] No previous AI message found in history`);
+      return null;
+    }
+
+    const aiContent = lastAiMsg.content.toLowerCase();
+    const offeredPhotos = aiContent.includes("foto") ||
+                          aiContent.includes("lihat") ||
+                          aiContent.includes("gambar") ||
+                          aiContent.includes("📸");
+
+    if (!offeredPhotos) {
+      console.log(`[WhatsApp AI Chat] Previous AI message didn't offer photos`);
+      return null;
+    }
+
+    console.log(`[WhatsApp AI Chat] Previous AI message offered photos, extracting vehicle...`);
+
+    // Extract vehicle name from the AI message
+    // Match brand + model + optional year
+    const vehiclePatterns = [
+      // Full brand + model + year: "Toyota Innova Reborn 2019"
+      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling|Chevrolet)\s+[\w\s]+\s+(?:20\d{2}|19\d{2})/gi,
+      // Brand + model without year: "Toyota Innova Reborn"
+      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling|Chevrolet)\s+[\w\s]+/gi,
+      // Model only: "Innova Reborn", "Avanza", "Brio"
+      /\b(Innova|Avanza|Xenia|Brio|Jazz|Ertiga|Rush|Terios|Fortuner|Pajero|Alphard|Civic|Accord|CRV|HRV|Yaris|Camry|Calya|Sigra|Ayla|Agya|Xpander|Livina)\s*[\w]*/gi,
+    ];
+
+    let vehicleName = "";
+    for (const pattern of vehiclePatterns) {
+      const match = lastAiMsg.content.match(pattern);
+      if (match && match[0]) {
+        vehicleName = match[0].trim();
+        // Clean up: remove trailing words like "dengan", "harga", etc.
+        vehicleName = vehicleName.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap).*$/i, "").trim();
+        break;
+      }
+    }
+
+    if (!vehicleName) {
+      console.log(`[WhatsApp AI Chat] Could not extract vehicle name from AI message`);
+      return null;
+    }
+
+    console.log(`[WhatsApp AI Chat] 🚗 Extracted vehicle name: "${vehicleName}"`);
+
+    // Fetch vehicle images
+    try {
+      const images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
+
+      if (images && images.length > 0) {
+        console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} images for "${vehicleName}"`);
+        return {
+          message: `Berikut foto ${vehicleName} 👇\n\nAda pertanyaan lain tentang unit ini?`,
+          shouldEscalate: false,
+          confidence: 0.95,
+          images,
+        };
+      } else {
+        console.log(`[WhatsApp AI Chat] ⚠️ No images found for "${vehicleName}"`);
+        return {
+          message: `Mohon maaf, saat ini foto untuk ${vehicleName} belum tersedia.\n\nApakah ada informasi lain yang bisa kami bantu?`,
+          shouldEscalate: false,
+          confidence: 0.9,
+        };
+      }
+    } catch (error) {
+      console.error(`[WhatsApp AI Chat] Error fetching images for "${vehicleName}":`, error);
+      return null; // Let AI handle as fallback
+    }
   }
 
   /**
