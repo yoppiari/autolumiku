@@ -68,9 +68,8 @@ export async function POST(request: NextRequest) {
       total: allConversations.length,
       lidConversations: 0,
       fixed: 0,
-      noRealPhoneAvailable: 0,
+      skipped: 0, // LID without real phone available (will be auto-detected by Aimeow)
       alreadyReal: 0,
-      deleted: 0,
       details: [] as Array<{
         id: string;
         oldPhone: string;
@@ -96,34 +95,17 @@ export async function POST(request: NextRequest) {
       const verifiedStaffPhone = contextData?.verifiedStaffPhone;
       const realPhone = verifiedStaffPhone || contextData?.realPhone || contextData?.actualPhone;
 
-      // Check if realPhone is also a LID (shouldn't be used)
+      // Check if realPhone is also a LID (can't fix this one)
       if (!realPhone || isLIDNumber(realPhone)) {
-        results.noRealPhoneAvailable++;
+        results.skipped++;
         results.details.push({
           id: conv.id,
           oldPhone: customerPhone,
           newPhone: null,
-          status: "no_real_phone",
+          status: "skipped_no_real_phone",
           verifiedStaffPhone: verifiedStaffPhone || null,
         });
-
-        // If this is a staff conversation with no real phone, soft-delete it
-        if (!dryRun && conv.isStaff) {
-          await prisma.whatsAppConversation.update({
-            where: { id: conv.id },
-            data: {
-              status: "deleted",
-              contextData: {
-                ...contextData,
-                deletedReason: "lid_no_real_phone",
-                deletedAt: new Date().toISOString(),
-                originalLID: customerPhone,
-              },
-            },
-          });
-          results.deleted++;
-          results.details[results.details.length - 1].status = "deleted";
-        }
+        // Skip - Aimeow will detect real phone automatically on next message
         continue;
       }
 
@@ -158,8 +140,7 @@ export async function POST(request: NextRequest) {
       total: results.total,
       lidConversations: results.lidConversations,
       fixed: results.fixed,
-      noRealPhoneAvailable: results.noRealPhoneAvailable,
-      deleted: results.deleted,
+      skipped: results.skipped,
       alreadyReal: results.alreadyReal,
     });
 
@@ -237,7 +218,7 @@ export async function GET(request: NextRequest) {
         lidWithRealPhoneAvailable: lidWithRealPhone.length,
         lidWithoutRealPhone: lidWithoutRealPhone.length,
         canFix: lidWithRealPhone.length,
-        willDelete: lidWithoutRealPhone.filter(c => c.isStaff).length,
+        willSkip: lidWithoutRealPhone.length, // Will be auto-detected by Aimeow on next message
         details: {
           lidWithRealPhone: lidWithRealPhone.map(c => ({
             id: c.id,
