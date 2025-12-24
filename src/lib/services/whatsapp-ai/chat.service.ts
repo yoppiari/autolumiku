@@ -572,7 +572,7 @@ Percakapan ini sudah di-escalate ke human. PENTING:
 
 CONTOH RESPON ESCALATED:
 ✅ Greeting awal: "Halo! Selamat datang di Prima Mobil... [lengkap]" - OK
-✅ Respon selanjutnya: "Baik Pak, untuk Avanza kami ada yang 2021 harga 180jt. Mau lihat fotonya?" - Singkat & langsung
+✅ Respon selanjutnya: "Baik Pak, untuk unit Avanza 2021 harga 180jt statusnya ready. Apakah mau saya kirimkan fotonya?" - Singkat, informatif & langsung
 ❌ Respon selanjutnya: [Kirim menu lengkap lagi] - Jangan`;
     }
 
