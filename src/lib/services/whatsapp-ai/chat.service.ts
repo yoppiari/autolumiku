@@ -468,122 +468,137 @@ export class WhatsAppAIChatService {
 
     // ==================== PHOTO CONFIRMATION HANDLER (CRITICAL FIX) ====================
     // Handle photo confirmations FIRST before other fallbacks
-    // This fixes the issue where "Iya mana fotonya" falls through to generic response
+    // IMPORTANT: This MUST return a photo-related response, NEVER fall through!
     const photoConfirmPatterns = [
       /^(boleh|ya|iya|ok|oke|mau|yup|sip|siap|bisa)$/i,
       /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
       /\b(mana|kirim|kasih|tunjuk|lihat)\b.*\b(foto|gambar)/i,
       /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
       /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
+      /^mana\s/i, // "mana fotonya", "mana gambarnya"
     ];
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
 
     // Check if user explicitly asks for photos (contains "foto", "gambar", "mana fotonya" etc)
     const userExplicitlyAsksPhoto = msg.includes("foto") || msg.includes("gambar") ||
-                                     /mana.*(foto|gambar)/i.test(msg);
+                                     /mana.*(foto|gambar)/i.test(msg) ||
+                                     msg.startsWith("mana ");
+
+    console.log(`[SmartFallback] Photo check: msg="${msg}", isPhotoConfirmation=${isPhotoConfirmation}, explicit=${userExplicitlyAsksPhoto}`);
 
     if (isPhotoConfirmation || userExplicitlyAsksPhoto) {
-      console.log(`[SmartFallback] 📸 Photo request detected: "${userMessage}" (explicit: ${userExplicitlyAsksPhoto})`);
+      console.log(`[SmartFallback] 📸 Photo request detected: "${userMessage}"`);
 
-      // Check if previous AI message offered photos
+      // Get the last AI message
       const lastAiMsg = messageHistory.filter(m => m.role === "assistant").pop();
-      const offeredPhotos = lastAiMsg?.content.toLowerCase().includes("foto") ||
-                            lastAiMsg?.content.toLowerCase().includes("lihat") ||
-                            lastAiMsg?.content.toLowerCase().includes("📸");
 
-      // Process if AI offered photos OR user explicitly asked
-      if (offeredPhotos || userExplicitlyAsksPhoto) {
-        console.log(`[SmartFallback] Processing photo request (offeredPhotos: ${offeredPhotos}, explicit: ${userExplicitlyAsksPhoto})`);
+      // Extract vehicle from AI message or conversation history
+      const vehiclePatterns = [
+        /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\-]+(?:\s+[\w\-]+)?\s*(?:20\d{2}|19\d{2})?/gi,
+        /\b(Innova\s*Reborn?|Fortuner|Pajero\s*Sport|Xpander|Rush|Terios|Ertiga|Avanza|Xenia|Brio|Jazz|Calya|Sigra|Ayla|Agya|HRV|CRV|BRV|Yaris|Camry|Alphard|City|Civic)\s*(?:20\d{2}|19\d{2})?\b/gi,
+      ];
 
-        // Extract vehicle from AI message or conversation history
-        const vehiclePatterns = [
-          /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\-]+(?:\s+[\w\-]+)?\s*(?:20\d{2}|19\d{2})?/gi,
-          /\b(Innova\s*Reborn?|Fortuner|Pajero\s*Sport|Xpander|Rush|Terios|Ertiga|Avanza|Xenia|Brio|Jazz|Calya|Sigra|Ayla|Agya|HRV|CRV|BRV|Yaris|Camry|Alphard|City|Civic)\s*(?:20\d{2}|19\d{2})?\b/gi,
-        ];
+      let vehicleName = "";
 
-        let vehicleName = "";
-        // Try to extract from last AI message first
+      // Try to extract from last AI message first
+      if (lastAiMsg) {
         for (const pattern of vehiclePatterns) {
-          const match = lastAiMsg?.content.match(pattern);
+          const match = lastAiMsg.content.match(pattern);
           if (match && match[0]) {
             vehicleName = match[0].trim()
               .replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|yang).*$/i, "")
               .trim();
+            console.log(`[SmartFallback] Found vehicle in AI message: "${vehicleName}"`);
             break;
           }
         }
+      }
 
-        // Fallback: check user messages in history
-        if (!vehicleName) {
-          const vehicleModelsLower = ['innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'crv', 'hrv', 'brv', 'yaris', 'camry', 'calya', 'sigra', 'xpander', 'city'];
-          for (const historyMsg of [...messageHistory].reverse()) {
-            for (const model of vehicleModelsLower) {
-              if (historyMsg.content.toLowerCase().includes(model)) {
-                vehicleName = model.charAt(0).toUpperCase() + model.slice(1);
-                console.log(`[SmartFallback] Found vehicle in history: "${vehicleName}"`);
-                break;
-              }
+      // Fallback: check all messages in history
+      if (!vehicleName) {
+        const vehicleModelsLower = ['innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'crv', 'hrv', 'brv', 'yaris', 'camry', 'calya', 'sigra', 'xpander', 'city'];
+        for (const historyMsg of [...messageHistory].reverse()) {
+          for (const model of vehicleModelsLower) {
+            if (historyMsg.content.toLowerCase().includes(model)) {
+              vehicleName = model.charAt(0).toUpperCase() + model.slice(1);
+              console.log(`[SmartFallback] Found vehicle in history: "${vehicleName}"`);
+              break;
             }
-            if (vehicleName) break;
+          }
+          if (vehicleName) break;
+        }
+      }
+
+      // Try to fetch photos
+      try {
+        if (vehicleName) {
+          console.log(`[SmartFallback] 🚗 Trying to fetch images for: "${vehicleName}"`);
+          const images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
+          if (images && images.length > 0) {
+            console.log(`[SmartFallback] ✅ Found ${images.length} images!`);
+            return {
+              message: `Siap! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain tentang unit ini? 😊`,
+              shouldEscalate: false,
+              images,
+            };
           }
         }
 
-        if (vehicleName) {
-          console.log(`[SmartFallback] 🚗 Trying to fetch images for: "${vehicleName}"`);
-          try {
-            const images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
+        // No specific vehicle or no images - try ANY available vehicles
+        console.log(`[SmartFallback] 🔄 Trying to fetch any available vehicle photos...`);
+        const anyVehicles = await prisma.vehicle.findMany({
+          where: { tenantId, status: 'AVAILABLE' },
+          include: {
+            photos: { orderBy: { isMainPhoto: 'desc' }, take: 1 },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+        });
+
+        console.log(`[SmartFallback] Found ${anyVehicles.length} vehicles, checking photos...`);
+
+        if (anyVehicles.length > 0) {
+          const vehiclesWithPhotos = anyVehicles.filter(v => v.photos && v.photos.length > 0);
+          console.log(`[SmartFallback] Vehicles with photos: ${vehiclesWithPhotos.length}`);
+
+          if (vehiclesWithPhotos.length > 0) {
+            const images = this.buildImageArray(vehiclesWithPhotos);
             if (images && images.length > 0) {
-              console.log(`[SmartFallback] ✅ Found ${images.length} images!`);
+              const label = vehicleName ? `${vehicleName}` : "unit terbaru kami";
               return {
-                message: `Siap! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain tentang unit ini? 😊`,
+                message: `Ini foto ${label} ya 📸👇\n\nMau info detail yang mana? 😊`,
                 shouldEscalate: false,
                 images,
               };
-            } else {
-              console.log(`[SmartFallback] ⚠️ No images found for "${vehicleName}"`);
-              return {
-                message: `Wah, maaf ya foto ${vehicleName} belum tersedia saat ini 🙏\n\nAda yang lain yang bisa kami bantu? 😊`,
-                shouldEscalate: false,
-              };
             }
-          } catch (imgError) {
-            console.error(`[SmartFallback] Error fetching images:`, imgError);
           }
-        } else {
-          // No vehicle name found but user asked for photos - send any available photos
-          console.log(`[SmartFallback] 🔄 No vehicle name but user asked for photos, sending any available...`);
-          try {
-            const anyVehicles = await prisma.vehicle.findMany({
-              where: { tenantId, status: 'AVAILABLE' },
-              include: {
-                photos: { orderBy: { isMainPhoto: 'desc' }, take: 1 },
-              },
-              orderBy: { createdAt: 'desc' },
-              take: 3,
-            });
-            if (anyVehicles.length > 0 && anyVehicles.some(v => v.photos?.length > 0)) {
-              const images = this.buildImageArray(anyVehicles);
-              if (images && images.length > 0) {
-                return {
-                  message: `Ini foto unit terbaru kami ya 📸👇\n\nMau info detail yang mana? 😊`,
-                  shouldEscalate: false,
-                  images,
-                };
-              }
-            }
-            // Vehicles exist but no photos available
-            if (anyVehicles.length > 0) {
-              const vehicleList = anyVehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n');
-              return {
-                message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
-                shouldEscalate: false,
-              };
-            }
-          } catch (e) {
-            console.error(`[SmartFallback] Error fetching any vehicles:`, e);
-          }
+
+          // Vehicles exist but NO photos at all
+          const vehicleList = anyVehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n');
+          console.log(`[SmartFallback] ⚠️ No photos available, returning vehicle list`);
+          return {
+            message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
+            shouldEscalate: false,
+          };
         }
+      } catch (photoError) {
+        console.error(`[SmartFallback] Error in photo handling:`, photoError);
       }
+
+      // FINAL FALLBACK: User asked for photos but we couldn't get any
+      // NEVER fall through to generic response!
+      console.log(`[SmartFallback] ⚠️ Final fallback for photo request`);
+      if (vehicles.length > 0) {
+        const vehicleList = vehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n');
+        return {
+          message: `Maaf, sedang ada kendala menampilkan foto 🙏\n\nUnit yang tersedia:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
+          shouldEscalate: false,
+        };
+      }
+      return {
+        message: `Maaf, sedang ada kendala teknis untuk menampilkan foto 🙏\n\nSilakan coba lagi atau tanyakan info unit yang tersedia ya! 😊`,
+        shouldEscalate: false,
+      };
     }
     // ==================== END PHOTO CONFIRMATION HANDLER ====================
 
