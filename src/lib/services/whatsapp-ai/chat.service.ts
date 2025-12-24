@@ -1484,8 +1484,8 @@ CONTOH RESPON ESCALATED:
             { make: { contains: term, mode: 'insensitive' as const } },
             { model: { contains: term, mode: 'insensitive' as const } },
             { variant: { contains: term, mode: 'insensitive' as const } },
-            // Also match stock code
-            { stockCode: { contains: term, mode: 'insensitive' as const } },
+            // Also match display ID (e.g., PM-PST-001)
+            { displayId: { contains: term, mode: 'insensitive' as const } },
           ])
         }),
       },
