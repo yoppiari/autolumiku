@@ -19,9 +19,10 @@ export async function GET() {
       },
     });
 
-    // Get conversation counts per tenant
+    // Get conversation counts per tenant (exclude deleted)
     const convCounts = await prisma.whatsAppConversation.groupBy({
       by: ['tenantId'],
+      where: { status: { not: "deleted" } },
       _count: true,
     });
 
