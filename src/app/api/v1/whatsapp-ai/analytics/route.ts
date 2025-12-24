@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get overview metrics
+    // NOTE: Exclude conversations with status="deleted" (data sampah/spam)
+    // but INCLUDE status="closed" (soft delete - resolved conversations for escalation tracking)
     const [
       totalConversations,
       activeConversations,
@@ -49,15 +51,16 @@ export async function GET(request: NextRequest) {
       customerMessages,
       escalatedConversations,
     ] = await Promise.all([
-      // Total conversations in range
+      // Total conversations in range (exclude deleted)
       prisma.whatsAppConversation.count({
         where: {
           tenantId,
           startedAt: { gte: startDate },
+          status: { not: "deleted" }, // Exclude hard-deleted data
         },
       }),
 
-      // Active conversations
+      // Active conversations (exclude deleted)
       prisma.whatsAppConversation.count({
         where: {
           tenantId,
@@ -65,39 +68,49 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Total messages
+      // Total messages (exclude messages from deleted conversations)
       prisma.whatsAppMessage.count({
         where: {
           tenantId,
           createdAt: { gte: startDate },
+          conversation: {
+            status: { not: "deleted" }, // Exclude messages from deleted conversations
+          },
         },
       }),
 
-      // AI messages
+      // AI messages (exclude from deleted conversations)
       prisma.whatsAppMessage.count({
         where: {
           tenantId,
           aiResponse: true,
           createdAt: { gte: startDate },
+          conversation: {
+            status: { not: "deleted" },
+          },
         },
       }),
 
-      // Customer inbound messages
+      // Customer inbound messages (exclude from deleted conversations)
       prisma.whatsAppMessage.count({
         where: {
           tenantId,
           direction: "inbound",
           senderType: "customer",
           createdAt: { gte: startDate },
+          conversation: {
+            status: { not: "deleted" },
+          },
         },
       }),
 
-      // Escalated conversations
+      // Escalated conversations (exclude deleted - but INCLUDE closed)
       prisma.whatsAppConversation.count({
         where: {
           tenantId,
           escalatedTo: { not: null },
           startedAt: { gte: startDate },
+          status: { not: "deleted" }, // Include "escalated" and "closed" for escalation stats
         },
       }),
     ]);
@@ -107,13 +120,16 @@ export async function GET(request: NextRequest) {
     const escalationRate =
       totalConversations > 0 ? Math.round((escalatedConversations / totalConversations) * 100) : 0;
 
-    // Get intent breakdown
+    // Get intent breakdown (exclude messages from deleted conversations)
     const intentData = await prisma.whatsAppMessage.groupBy({
       by: ["intent"],
       where: {
         tenantId,
         intent: { not: null },
         createdAt: { gte: startDate },
+        conversation: {
+          status: { not: "deleted" }, // Exclude deleted conversations
+        },
       },
       _count: true,
     });
@@ -171,6 +187,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Time series data (simplified - daily aggregation)
+    // Exclude deleted conversations from time series
     const timeSeriesData = await Promise.all(
       Array.from({ length: 7 }, (_, i) => {
         const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
@@ -181,12 +198,16 @@ export async function GET(request: NextRequest) {
             where: {
               tenantId,
               startedAt: { gte: date, lt: nextDate },
+              status: { not: "deleted" }, // Exclude deleted
             },
           }),
           prisma.whatsAppMessage.count({
             where: {
               tenantId,
               createdAt: { gte: date, lt: nextDate },
+              conversation: {
+                status: { not: "deleted" }, // Exclude from deleted conversations
+              },
             },
           }),
           prisma.whatsAppConversation.count({
@@ -194,6 +215,7 @@ export async function GET(request: NextRequest) {
               tenantId,
               escalatedTo: { not: null },
               startedAt: { gte: date, lt: nextDate },
+              status: { not: "deleted" }, // Exclude deleted
             },
           }),
         ]).then(([conversations, messages, escalations]) => ({

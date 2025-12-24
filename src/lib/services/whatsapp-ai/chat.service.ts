@@ -418,28 +418,50 @@ CARA MERESPONS:
 
 2. PERMINTAAN FOTO (iya/ya/mau/boleh/ok):
    → Langsung panggil tool "send_vehicle_images"
-   → Sampaikan: "Berikut foto kendaraan yang dimaksud 👇"
+   → Sampaikan: "Berikut foto kendaraannya 👇"
+   ⚠️ PENTING: HANYA kirim foto kendaraan yang SEDANG DIBAHAS!
+   ⚠️ JANGAN kirim foto kendaraan lain yang tidak ditanyakan customer!
 
 3. PERMINTAAN FOTO LANGSUNG:
    → Langsung panggil tool "send_vehicle_images"
+   → ⚠️ HANYA untuk kendaraan yang diminta, BUKAN semua stok!
 
 4. PERTANYAAN LAIN:
    → Jawab dengan informatif dan membantu
    → Arahkan ke solusi yang tepat
 
-CONTOH PERCAKAPAN:
+5. SETELAH SELESAI MEMBAHAS:
+   → Selalu tanyakan: "Ada hal lain yang bisa kami bantu?"
+
+6. CLOSING GREETING (jika customer bilang tidak ada/cukup/sudah):
+   → Ucapkan: "Terima kasih telah menghubungi ${tenant.name}! Semoga informasinya bermanfaat. Jangan ragu hubungi kami kembali ya 🙏"
+
+ATURAN PENTING:
+⚠️ JANGAN PERNAH kirim foto kendaraan yang TIDAK ditanyakan customer!
+⚠️ Jika customer tanya Innova, HANYA kirim foto Innova saja!
+⚠️ Jika customer tanya 1 kendaraan, JANGAN kirim foto kendaraan lainnya!
+
+CONTOH PERCAKAPAN BENAR:
 
 C: "ada Avanza matic ga?"
 A: "Terima kasih atas pertanyaannya. Kami memiliki Avanza 2021 Matic dengan harga Rp 180 juta, kilometer 35.000, warna Silver. Apakah Bapak/Ibu berkenan melihat fotonya?"
 
 C: "boleh"
-A: [panggil send_vehicle_images: "Avanza"] "Berikut foto kendaraannya 👇"
+A: [panggil send_vehicle_images dengan query "Avanza" SAJA] "Berikut foto Avanza-nya 👇"
+   (HANYA kirim foto Avanza, BUKAN foto mobil lain!)
+
+C: "tertarik Innova Reborn PM-PST-005, bisa lihat fotonya?"
+A: [panggil send_vehicle_images dengan query "Innova Reborn PM-PST-005"] "Berikut foto Innova Reborn-nya 👇"
+   (HANYA Innova yang diminta, JANGAN kirim foto Calya, Fortuner, dll!)
 
 C: "budget 100-150jt ada apa aja?"
-A: "Untuk budget Rp 100-150 juta, kami memiliki beberapa pilihan menarik:\n• Honda Brio 2019 - Rp 125 juta\n• Toyota Agya 2020 - Rp 110 juta\nMohon informasikan jika ada yang ingin dilihat lebih lanjut."
+A: "Untuk budget Rp 100-150 juta, kami memiliki:\n• Honda Brio 2019 - Rp 125 juta\n• Toyota Agya 2020 - Rp 110 juta\nMohon informasikan jika ada yang ingin dilihat lebih lanjut."
 
 C: "ga usah deh, km nya berapa?"
-A: "Baik, tidak masalah. Untuk informasi kilometer:\n• Brio 2019: 45.000 km\n• Agya 2020: 30.000 km\nAda pertanyaan lain yang bisa kami bantu?"
+A: "Baik, tidak masalah. Untuk informasi kilometer:\n• Brio 2019: 45.000 km\n• Agya 2020: 30.000 km\nAda hal lain yang bisa kami bantu?"
+
+C: "tidak ada, cukup"
+A: "Terima kasih telah menghubungi ${tenant.name}! Semoga informasinya bermanfaat. Jangan ragu hubungi kami kembali ya 🙏"
 
 C: "halo"
 A: "Selamat datang di ${tenant.name}! Kami siap membantu Anda menemukan kendaraan impian. Silakan informasikan preferensi Anda seperti merk, budget, atau tipe kendaraan yang dicari."
@@ -716,6 +738,8 @@ Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang be
 
   /**
    * Fetch vehicle images based on search query
+   * IMPORTANT: Only returns images for vehicles matching the specific query
+   * Does NOT fallback to unrelated vehicles - customer asked for specific vehicle!
    */
   private static async fetchVehicleImagesByQuery(
     searchQuery: string,
@@ -728,6 +752,19 @@ Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang be
     const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(term => term.length > 0);
     console.log('[WhatsApp AI Chat] Search terms:', searchTerms);
 
+    // Check if query contains specific vehicle identifiers (model name, stock code, etc.)
+    const hasSpecificQuery = searchTerms.some(term =>
+      // Common car models
+      ['innova', 'avanza', 'xenia', 'fortuner', 'rush', 'calya', 'sigra', 'brio', 'jazz', 'civic', 'accord',
+       'xpander', 'pajero', 'triton', 'ertiga', 'swift', 'baleno', 'livina', 'serena', 'terios', 'ayla',
+       'hiace', 'alphard', 'vellfire', 'yaris', 'vios', 'camry', 'corolla', 'raize', 'rocky', 'wuling',
+       'confero', 'cortez', 'almaz', 'hrv', 'crv', 'wrv', 'brv'].includes(term) ||
+      // Stock code pattern (PM-PST-XXX, PM-XXX, etc.)
+      /^pm-?/i.test(term) ||
+      // Year pattern
+      /^20\d{2}$/.test(term)
+    );
+
     // Query vehicles with photos - more flexible search
     const vehicles = await prisma.vehicle.findMany({
       where: {
@@ -738,6 +775,8 @@ Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang be
             { make: { contains: term, mode: 'insensitive' as const } },
             { model: { contains: term, mode: 'insensitive' as const } },
             { variant: { contains: term, mode: 'insensitive' as const } },
+            // Also match stock code
+            { stockCode: { contains: term, mode: 'insensitive' as const } },
           ])
         }),
       },
@@ -755,8 +794,15 @@ Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang be
     if (vehicles.length === 0) {
       console.log('[WhatsApp AI Chat] ❌ No vehicles found for query:', searchQuery);
 
-      // Try a broader search if specific search failed - get ANY available vehicles
-      console.log('[WhatsApp AI Chat] 🔄 Trying broader search for any available vehicles...');
+      // IMPORTANT: If customer asked for a SPECIFIC vehicle/model, DO NOT fallback
+      // to random vehicles - this confuses customers and sends irrelevant photos!
+      if (hasSpecificQuery) {
+        console.log('[WhatsApp AI Chat] ⚠️ Customer asked for specific vehicle, NOT falling back to random vehicles');
+        return null;
+      }
+
+      // Only fallback to any vehicles if query was very generic (e.g., "mobil", "foto", "stok")
+      console.log('[WhatsApp AI Chat] 🔄 Generic query, trying broader search for any available vehicles...');
       const anyVehicles = await prisma.vehicle.findMany({
         where: {
           tenantId,

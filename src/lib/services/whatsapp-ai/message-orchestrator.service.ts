@@ -37,6 +37,10 @@ export interface ProcessingResult {
 
 // ==================== MESSAGE ORCHESTRATOR ====================
 
+// Track recent messages to prevent double responses
+const recentMessages = new Map<string, { timestamp: number; messageId: string }>();
+const DUPLICATE_WINDOW_MS = 3000; // 3 seconds window for duplicate detection
+
 export class MessageOrchestratorService {
   /**
    * Process incoming WhatsApp message
@@ -48,6 +52,46 @@ export class MessageOrchestratorService {
     console.log(`[Orchestrator] === Processing incoming message ===`);
     console.log(`[Orchestrator] Account: ${incoming.accountId}, Tenant: ${incoming.tenantId}`);
     console.log(`[Orchestrator] From: ${incoming.from}, Message: ${incoming.message}`);
+
+    // Check for duplicate/rapid fire messages from same sender
+    const senderKey = `${incoming.accountId}:${incoming.from}`;
+    const now = Date.now();
+    const recent = recentMessages.get(senderKey);
+
+    if (recent && (now - recent.timestamp) < DUPLICATE_WINDOW_MS) {
+      console.log(`[Orchestrator] ⚠️ Rapid message detected from ${incoming.from} (${now - recent.timestamp}ms since last)`);
+      // If it's a greeting while we just responded, skip it
+      const greetingPatterns = [/^(halo|helo|hai|hello|hi|hey|hallo)$/i];
+      if (greetingPatterns.some(p => p.test(incoming.message.trim()))) {
+        console.log(`[Orchestrator] ⏭️ Skipping duplicate greeting message`);
+        // Save message but don't respond
+        const conversation = await this.getOrCreateConversation(
+          incoming.accountId,
+          incoming.tenantId,
+          incoming.from
+        );
+        await this.saveIncomingMessage(conversation.id, incoming);
+        return {
+          success: true,
+          conversationId: conversation.id,
+          intent: "customer_greeting",
+          responseMessage: undefined,
+          escalated: false,
+        };
+      }
+    }
+
+    // Update recent message tracker
+    recentMessages.set(senderKey, { timestamp: now, messageId: incoming.messageId });
+
+    // Cleanup old entries (older than 10 seconds)
+    const keysToDelete: string[] = [];
+    recentMessages.forEach((value, key) => {
+      if (now - value.timestamp > 10000) {
+        keysToDelete.push(key);
+      }
+    });
+    keysToDelete.forEach(key => recentMessages.delete(key));
 
     try {
       // 1. Get or create conversation
@@ -871,7 +915,16 @@ export class MessageOrchestratorService {
         }
       }
 
-      // 6. Update conversation status
+      // 6. Check for closing greeting to auto-resolve escalated conversations
+      const isClosingGreeting = this.isClosingGreeting(incoming.message);
+      const shouldAutoResolve = isClosingGreeting &&
+        (conversation.status === "escalated" || conversation.escalatedTo);
+
+      if (shouldAutoResolve) {
+        console.log(`[Orchestrator] 🏁 Closing greeting detected for escalated conversation - auto-resolving`);
+      }
+
+      // 7. Update conversation status
       await prisma.whatsAppConversation.update({
         where: { id: conversation.id },
         data: {
@@ -880,9 +933,27 @@ export class MessageOrchestratorService {
           ...(escalated && {
             escalatedTo: "human", // In production, assign to specific staff
             escalatedAt: new Date(),
+            status: "escalated",
+          }),
+          // Auto-resolve: close escalated conversation after closing greeting
+          // Use "closed" status (not "deleted") so it's still included in analytics
+          // "deleted" status is reserved for data that should be excluded from statistics
+          ...(shouldAutoResolve && {
+            status: "closed",
+            closedAt: new Date(),
+            contextData: {
+              ...((conversation.contextData as Record<string, any>) || {}),
+              resolvedAt: new Date().toISOString(),
+              resolvedReason: "closing_greeting",
+              closingMessage: incoming.message.substring(0, 100),
+            },
           }),
         },
       });
+
+      if (shouldAutoResolve) {
+        console.log(`[Orchestrator] ✅ Conversation ${conversation.id} auto-resolved and closed`);
+      }
 
       return {
         success: true,
@@ -1917,6 +1988,67 @@ export class MessageOrchestratorService {
       console.error(`[Orchestrator] Error adding photo:`, error);
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * Detect closing greeting in message
+   * Used to auto-resolve escalated conversations
+   */
+  private static isClosingGreeting(message: string): boolean {
+    if (!message) return false;
+
+    const normalizedMessage = message.toLowerCase().trim();
+
+    // Closing greeting patterns (Indonesian & English)
+    const closingPatterns = [
+      // Thank you patterns
+      /^(ok[ea]?y?|baik|sip|siap)?\s*(terima\s*kasih|makasih|thanks|thank\s*you|thx|tq)/i,
+      /terima\s*kasih\s*(ya|kak|mas|mba|pak|bu|bang|sis)?$/i,
+      /makasih\s*(ya|kak|mas|mba|pak|bu|bang|sis)?$/i,
+      /thanks?\s*(ya|you)?$/i,
+
+      // Goodbye patterns
+      /^(sampai\s*jumpa|bye|goodbye|good\s*bye|dadah|dah)/i,
+      /sampai\s*jumpa\s*(lagi)?$/i,
+
+      // Satisfaction patterns
+      /^(ok[ea]?y?|sip|siap|mantap|oke\s*deh|baik|sudah\s*cukup|cukup)$/i,
+      /sudah\s*(jelas|paham|mengerti|clear)(\s*terima\s*kasih)?/i,
+
+      // Closing with satisfaction + thanks
+      /^(sudah|uda[h]?|udh)\s*(ok[ea]?y?|sip|clear|jelas).*?(makasih|terima\s*kasih|thanks)?/i,
+
+      // No more questions
+      /^(tidak|gak?|nggak?|ga)\s*(ada)?\s*(pertanyaan|tanya|lagi)/i,
+      /^(cukup|sudah|uda[h]?)\s*(dulu|sekian)/i,
+    ];
+
+    // Check if message matches any closing pattern
+    for (const pattern of closingPatterns) {
+      if (pattern.test(normalizedMessage)) {
+        return true;
+      }
+    }
+
+    // Also check for very short closing messages (max 30 chars with closing keywords)
+    if (normalizedMessage.length <= 30) {
+      const shortClosingKeywords = [
+        'terima kasih', 'makasih', 'thanks', 'thank you', 'tq', 'thx',
+        'ok terima kasih', 'oke makasih', 'baik terima kasih',
+        'sip makasih', 'siap terima kasih', 'mantap makasih',
+        'sampai jumpa', 'bye', 'goodbye', 'dadah',
+        'sudah cukup', 'cukup', 'sudah jelas', 'clear',
+        'oke deh', 'ok deh', 'sip deh', 'baik deh'
+      ];
+
+      for (const keyword of shortClosingKeywords) {
+        if (normalizedMessage.includes(keyword)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 }
 
