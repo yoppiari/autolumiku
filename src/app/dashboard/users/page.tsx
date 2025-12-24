@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FaSearch, FaPlus, FaEdit, FaTrash, FaUserCircle } from 'react-icons/fa';
 import { api } from '@/lib/api-client';
 
@@ -22,6 +22,11 @@ interface UserStats {
   byRole: Record<string, number>;
 }
 
+interface ProfilePicture {
+  pictureUrl: string | null;
+  hasPicture: boolean;
+}
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -33,6 +38,7 @@ export default function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [tenantId, setTenantId] = useState<string>('');
+  const [profilePictures, setProfilePictures] = useState<Record<string, ProfilePicture>>({});
 
   // Form state
   const [formData, setFormData] = useState({
@@ -63,8 +69,11 @@ export default function UsersPage() {
     try {
       const response = await api.get(`/api/v1/users?tenantId=${tid}`);
       if (response.success) {
-        setUsers(response.data?.users || []);
+        const loadedUsers = response.data?.users || [];
+        setUsers(loadedUsers);
         setStats(response.data?.stats || { total: 0, byStatus: {}, byRole: {} });
+        // Load profile pictures for users with phone numbers
+        loadProfilePictures(loadedUsers, tid);
       } else {
         console.error('Failed to load users:', response.error);
       }
@@ -74,6 +83,42 @@ export default function UsersPage() {
       setLoading(false);
     }
   };
+
+  const loadProfilePictures = useCallback(async (usersList: User[], tid: string) => {
+    const usersWithPhone = usersList.filter(u => u.phone);
+    if (usersWithPhone.length === 0) return;
+
+    // Load profile pictures in parallel
+    const picturePromises = usersWithPhone.map(async (user) => {
+      try {
+        const response = await fetch(
+          `/api/v1/whatsapp-ai/profile-picture?tenantId=${tid}&phone=${user.phone}`
+        );
+        const data = await response.json();
+        if (data.success) {
+          return {
+            phone: user.phone!,
+            data: {
+              pictureUrl: data.pictureUrl || null,
+              hasPicture: data.hasPicture || false,
+            },
+          };
+        }
+      } catch (error) {
+        console.error(`Failed to load profile picture for ${user.phone}:`, error);
+      }
+      return null;
+    });
+
+    const results = await Promise.all(picturePromises);
+    const newPictures: Record<string, ProfilePicture> = {};
+    results.forEach((result) => {
+      if (result) {
+        newPictures[result.phone] = result.data;
+      }
+    });
+    setProfilePictures((prev) => ({ ...prev, ...newPictures }));
+  }, []);
 
   const applyFilters = () => {
     let filtered = [...users];
@@ -376,13 +421,29 @@ export default function UsersPage() {
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-7 w-7 md:h-8 md:w-8">
-                            <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <div className="flex-shrink-0 h-7 w-7 md:h-8 md:w-8 relative">
+                            {user.phone && profilePictures[user.phone]?.hasPicture && profilePictures[user.phone]?.pictureUrl ? (
+                              <img
+                                src={profilePictures[user.phone].pictureUrl!}
+                                alt={`${user.firstName} ${user.lastName}`}
+                                className="h-7 w-7 md:h-8 md:w-8 rounded-full object-cover"
+                                onError={(e) => {
+                                  // Fallback to initials if image fails to load
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                            ) : null}
+                            <div className={`h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex items-center justify-center ${user.phone && profilePictures[user.phone]?.hasPicture && profilePictures[user.phone]?.pictureUrl ? 'hidden' : ''}`}>
                               <span className="text-blue-600 font-semibold text-[10px] md:text-xs">
                                 {user.firstName.charAt(0)}
                                 {user.lastName?.charAt(0) || ''}
                               </span>
                             </div>
+                            {user.phone && (
+                              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                            )}
                           </div>
                           <div className="ml-2 md:ml-3 min-w-0">
                             <div className="text-xs md:text-sm font-medium text-gray-900 truncate max-w-[100px] md:max-w-none">

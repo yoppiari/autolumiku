@@ -24,6 +24,10 @@ export type MessageIntent =
   | "customer_price_inquiry"
   | "customer_test_drive"
   | "customer_general_question"
+  | "customer_photo_confirmation"  // New: explicit photo confirmation
+  | "customer_follow_up"           // New: follow-up/continuation
+  | "customer_negative"            // New: rejection/negative response
+  | "customer_closing"             // New: closing/thanks
   | "staff_greeting"
   | "staff_upload_vehicle"
   | "staff_update_status"
@@ -145,9 +149,40 @@ const CUSTOMER_PATTERNS = {
     /\b(ada\s+foto|punya\s+foto)\b/i,
   ],
   photo_confirmation: [
-    /^(iya|ya|yup|yap|ok|oke|okay|boleh|mau|sip|siap|bisa|gas|let'?s?\s*go|kirim|send)$/i,
+    // Single word confirmations
+    /^(iya|ya|yup|yap|ok|oke|okay|okey|boleh|mau|sip|siap|bisa|gas|tentu|pasti|betul|benar)$/i,
+    /^(let'?s?\s*go|kirim|send|tampilkan|tunjukkan|kasih|berikan|lanjut|next)$/i,
+    // Compound confirmations
     /^(iya\s+boleh|ya\s+boleh|boleh\s+dong|mau\s+dong|oke\s+kirim|ya\s+kirim)$/i,
-    /^(tolong|please)\s*(kirim|send)/i,
+    /^(ok\s+kirim|sip\s+kirim|gas\s+kirim|oke\s+dong|boleh\s+aja)$/i,
+    /^(silahkan|silakan|monggo|mangga)\s*(kirim)?/i,
+    /^(tolong|please|coba)\s*(kirim|send|lihat)/i,
+    // Waiting phrases
+    /^(ditunggu|saya\s+tunggu|tunggu\s+ya|ok\s+ditunggu|sip\s+ditunggu)$/i,
+    /^(kirim\s+aja|kirim\s+dong|kirim\s+ya|kirim\s+deh)$/i,
+    // Short affirmative
+    /^(yoi|yess?|yup|yap|yep|oks?|okee?y?|sippp?)$/i,
+  ],
+  // New: Follow-up/continuation patterns
+  follow_up: [
+    /^(terus|lalu|kemudian|selanjutnya|lanjut)$/i,
+    /^(gimana|bagaimana)\s*(itu|nya)?$/i,
+    /^(yang\s+tadi|tadi\s+itu|itu\s+tadi)$/i,
+    /^(maksudnya|maksud\s+saya)$/i,
+    /^(jadi|so|nah)$/i,
+  ],
+  // New: Negative/rejection patterns
+  negative_response: [
+    /^(tidak|nggak|gak|ga|enggak|engga|no|nope|jangan|skip|lewat)$/i,
+    /^(tidak\s+jadi|ga\s+jadi|gajadi|nggak\s+deh|gak\s+usah)$/i,
+    /^(nanti\s+aja|nanti\s+dulu|belum|kapan-kapan)$/i,
+  ],
+  // New: Closing/thanks patterns
+  closing: [
+    /^(makasih|terima\s*kasih|thanks|thank\s*you|tq|thx|tengkyu)$/i,
+    /^(cukup|sudah|udah|selesai|done|ok\s+cukup|sip\s+cukup)$/i,
+    /^(tidak\s+ada|ga\s+ada|gak\s+ada|cuma\s+itu)$/i,
+    /^(sampai\s+jumpa|bye|dadah|see\s+you)$/i,
   ],
 };
 
@@ -532,32 +567,70 @@ export class IntentClassifierService {
 
   /**
    * Classify customer intent
+   * Enhanced to recognize more behavior patterns for natural conversation flow
    */
   private static classifyCustomerIntent(
     message: string
   ): IntentClassificationResult {
+    const trimmedMessage = message.trim();
     let maxConfidence = 0;
     let detectedIntent: MessageIntent = "customer_general_question";
     let reason = "Default customer inquiry";
 
-    // Check photo confirmation FIRST (highest priority for short responses)
-    // This catches "iya", "mau", "boleh" etc. after being offered photos
-    if (CUSTOMER_PATTERNS.photo_confirmation.some((p) => p.test(message.trim()))) {
+    // 1. Check photo confirmation FIRST (highest priority for short responses)
+    // This catches "iya", "mau", "boleh", "ditunggu" etc. after being offered photos
+    if (CUSTOMER_PATTERNS.photo_confirmation.some((p) => p.test(trimmedMessage))) {
       console.log('[Intent Classifier] 📸 Photo confirmation detected:', message);
       return {
-        intent: "customer_vehicle_inquiry", // Route to AI to handle photo sending
-        confidence: 0.95,
+        intent: "customer_photo_confirmation",
+        confidence: 0.98,
         isStaff: false,
         isCustomer: true,
-        reason: "Photo confirmation detected - customer wants photos",
+        reason: "Photo confirmation detected - customer confirming to see photos/info",
       };
     }
 
-    // Check photo request
+    // 2. Check closing/thanks patterns (customer ending conversation)
+    if (CUSTOMER_PATTERNS.closing.some((p) => p.test(trimmedMessage))) {
+      console.log('[Intent Classifier] 👋 Closing/thanks detected:', message);
+      return {
+        intent: "customer_closing",
+        confidence: 0.95,
+        isStaff: false,
+        isCustomer: true,
+        reason: "Closing/thanks detected - customer ending conversation",
+      };
+    }
+
+    // 3. Check negative response (customer rejecting offer)
+    if (CUSTOMER_PATTERNS.negative_response.some((p) => p.test(trimmedMessage))) {
+      console.log('[Intent Classifier] ❌ Negative response detected:', message);
+      return {
+        intent: "customer_negative",
+        confidence: 0.95,
+        isStaff: false,
+        isCustomer: true,
+        reason: "Negative response detected - customer declining",
+      };
+    }
+
+    // 4. Check follow-up patterns
+    if (CUSTOMER_PATTERNS.follow_up.some((p) => p.test(trimmedMessage))) {
+      console.log('[Intent Classifier] 🔄 Follow-up detected:', message);
+      return {
+        intent: "customer_follow_up",
+        confidence: 0.9,
+        isStaff: false,
+        isCustomer: true,
+        reason: "Follow-up detected - customer continuing conversation",
+      };
+    }
+
+    // 5. Check photo request
     if (CUSTOMER_PATTERNS.photo_request.some((p) => p.test(message))) {
       console.log('[Intent Classifier] 📷 Photo request detected:', message);
       return {
-        intent: "customer_vehicle_inquiry", // Route to AI to handle photo sending
+        intent: "customer_vehicle_inquiry",
         confidence: 0.9,
         isStaff: false,
         isCustomer: true,
@@ -565,7 +638,7 @@ export class IntentClassifierService {
       };
     }
 
-    // Check greeting
+    // 6. Check greeting
     if (CUSTOMER_PATTERNS.greeting.some((p) => p.test(message))) {
       maxConfidence = Math.max(maxConfidence, 0.9);
       if (maxConfidence === 0.9) {
@@ -574,7 +647,7 @@ export class IntentClassifierService {
       }
     }
 
-    // Check vehicle inquiry
+    // 7. Check vehicle inquiry
     if (CUSTOMER_PATTERNS.vehicle_inquiry.some((p) => p.test(message))) {
       maxConfidence = Math.max(maxConfidence, 0.85);
       if (maxConfidence === 0.85) {
@@ -583,7 +656,7 @@ export class IntentClassifierService {
       }
     }
 
-    // Check price inquiry
+    // 8. Check price inquiry
     if (CUSTOMER_PATTERNS.price_inquiry.some((p) => p.test(message))) {
       maxConfidence = Math.max(maxConfidence, 0.85);
       if (maxConfidence === 0.85) {
@@ -592,7 +665,7 @@ export class IntentClassifierService {
       }
     }
 
-    // Check test drive
+    // 9. Check test drive
     if (CUSTOMER_PATTERNS.test_drive.some((p) => p.test(message))) {
       maxConfidence = Math.max(maxConfidence, 0.85);
       if (maxConfidence === 0.85) {

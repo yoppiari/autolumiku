@@ -352,6 +352,46 @@ export class WhatsAppAIChatService {
       console.error("[WhatsApp AI Chat] Error message:", error.message);
       console.error("[WhatsApp AI Chat] Error stack:", error.stack);
 
+      // Check if this is a photo confirmation request - try to handle it directly
+      const msg = userMessage.trim().toLowerCase();
+      const photoConfirmPatterns = [
+        /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti)$/i,
+        /silahkan/i, /ditunggu/i, /tunggu/i,
+        /kirim\s*(aja|dong|ya)?/i, /boleh\s*(dong|ya|lah|aja)?/i,
+      ];
+      const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
+
+      // Check conversation history for vehicle context
+      const lastAiMsg = context.messageHistory.filter(m => m.role === "assistant").pop();
+      const offeredPhotos = lastAiMsg?.content.toLowerCase().includes("foto") ||
+                            lastAiMsg?.content.toLowerCase().includes("lihat");
+
+      if (isPhotoConfirmation && offeredPhotos) {
+        console.log("[WhatsApp AI Chat] 🔄 AI failed but detected photo confirmation - trying direct photo fetch");
+
+        // Extract vehicle name from last AI message
+        const vehicleMatch = lastAiMsg?.content.match(/(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia)\s+[\w\s]+(?:\d{4})?/i);
+        const vehicleName = vehicleMatch ? vehicleMatch[0].trim() : "";
+
+        if (vehicleName) {
+          try {
+            const images = await this.fetchVehicleImagesByQuery(vehicleName, context.tenantId);
+            if (images && images.length > 0) {
+              console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} images for "${vehicleName}" via fallback`);
+              return {
+                message: `Berikut foto ${vehicleName} 👇`,
+                shouldEscalate: false,
+                confidence: 0.8,
+                processingTime: Date.now() - startTime,
+                images,
+              };
+            }
+          } catch (imgError) {
+            console.error("[WhatsApp AI Chat] Failed to fetch images in fallback:", imgError);
+          }
+        }
+      }
+
       // Get tenant info for helpful fallback
       let tenantName = "Showroom Kami";
       let whatsappNumber = "";
@@ -694,13 +734,52 @@ CONTOH RESPON ESCALATED:
       context += "Chat sebelumnya:\n";
       recentHistory.forEach((msg) => {
         const label = msg.role === "user" ? "C" : "A";
-        // Keep 150 chars to preserve vehicle names for context
-        const truncated = msg.content.length > 150 ? msg.content.substring(0, 150) + "..." : msg.content;
+        // Keep 350 chars to preserve vehicle info and photo offers in context
+        const truncated = msg.content.length > 350 ? msg.content.substring(0, 350) + "..." : msg.content;
         context += `${label}: ${truncated}\n`;
       });
     }
 
-    context += `\nPesan sekarang: ${currentMessage}\n\nBalas (singkat, responsif):`;
+    // Detect photo confirmation patterns and add explicit hint
+    // Include: boleh, ok, silahkan, silahkan kirim, saya tunggu, ok kirim, sip ditunggu, ditunggu, etc.
+    const msg = currentMessage.trim().toLowerCase();
+    const photoConfirmPatterns = [
+      /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti)$/i,
+      /^(lihat|kirim|send|tampilkan|tunjukkan|kasih|berikan)$/i,
+      /^(foto|gambar|pictures?|images?)$/i,
+      /silahkan/i,
+      /ditunggu/i,
+      /tunggu/i,
+      /kirim\s*(aja|dong|ya)?/i,
+      /boleh\s*(dong|ya|lah|aja)?/i,
+      /ok\s*(kirim|dong|ya)?/i,
+      /sip\s*(ditunggu|tunggu)?/i,
+      /mau\s*(dong|ya|lah|lihat)?/i,
+      /^(coba|tolong)\s*(lihat|kirim)/i,
+    ];
+    const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
+
+    // Check if previous AI message offered photos
+    const lastAiMsg = recentHistory.filter(m => m.role === "assistant").pop();
+    const offeredPhotos = lastAiMsg?.content.toLowerCase().includes("foto") ||
+                          lastAiMsg?.content.toLowerCase().includes("lihat") ||
+                          lastAiMsg?.content.toLowerCase().includes("gambar");
+
+    if (isPhotoConfirmation && offeredPhotos) {
+      // Extract vehicle name from last AI message for photo sending
+      const vehicleMatch = lastAiMsg?.content.match(/(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia)\s+[\w\s]+(?:\d{4})?/i);
+      const vehicleName = vehicleMatch ? vehicleMatch[0].trim() : "";
+
+      context += `\nPesan sekarang: ${currentMessage}`;
+      context += `\n\n⚠️ PENTING: Customer baru saja bilang "${currentMessage}" sebagai konfirmasi untuk melihat foto.`;
+      if (vehicleName) {
+        context += ` Kendaraan yang dibahas: ${vehicleName}.`;
+        context += ` WAJIB panggil tool send_vehicle_images dengan query "${vehicleName}"!`;
+      }
+      context += `\n\nBalas (kirim foto yang diminta):`;
+    } else {
+      context += `\nPesan sekarang: ${currentMessage}\n\nBalas (singkat, responsif):`;
+    }
 
     return context;
   }
