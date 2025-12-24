@@ -51,36 +51,42 @@ export async function GET(request: NextRequest) {
     };
 
     // Format response - resolve real phone from contextData if customerPhone is LID
-    const formattedConversations = conversations.map((conv) => {
-      const contextData = conv.contextData as Record<string, any> | null;
-      let displayPhone = conv.customerPhone;
+    const formattedConversations = conversations
+      .map((conv) => {
+        const contextData = conv.contextData as Record<string, any> | null;
+        let displayPhone = conv.customerPhone;
+        let hasRealPhone = true;
 
-      // IMPORTANT: Only check for LID on STAFF conversations
-      // Customer (non-staff) always sends from their real phone number
-      // Only staff might use WhatsApp Web/Desktop which creates LIDs
-      if (conv.isStaff && isLIDNumber(conv.customerPhone)) {
-        const realPhone = contextData?.verifiedStaffPhone || contextData?.realPhone || contextData?.actualPhone;
-        if (realPhone && !isLIDNumber(realPhone)) {
-          displayPhone = realPhone;
+        // Check if customerPhone is a LID
+        if (isLIDNumber(conv.customerPhone)) {
+          // Try to get real phone from contextData
+          const realPhone = contextData?.verifiedStaffPhone || contextData?.realPhone || contextData?.actualPhone;
+          if (realPhone && !isLIDNumber(realPhone)) {
+            displayPhone = realPhone;
+          } else {
+            // No real phone available - mark it
+            hasRealPhone = false;
+          }
         }
-      }
 
-      return {
-        id: conv.id,
-        customerPhone: displayPhone,
-        originalPhone: conv.customerPhone, // Keep original for debugging
-        customerName: conv.customerName,
-        isStaff: conv.isStaff,
-        conversationType: conv.conversationType,
-        lastIntent: conv.lastIntent,
-        status: conv.status,
-        lastMessageAt: conv.lastMessageAt.toISOString(),
-        escalatedTo: conv.escalatedTo,
-        messageCount: conv._count.messages,
-        unreadCount: 0, // TODO: Implement unread tracking
-        hasRealPhone: !conv.isStaff || !isLIDNumber(displayPhone), // Customer always has real phone
-      };
-    });
+        return {
+          id: conv.id,
+          customerPhone: displayPhone,
+          originalPhone: conv.customerPhone, // Keep original for debugging
+          customerName: conv.customerName,
+          isStaff: conv.isStaff,
+          conversationType: conv.conversationType,
+          lastIntent: conv.lastIntent,
+          status: conv.status,
+          lastMessageAt: conv.lastMessageAt.toISOString(),
+          escalatedTo: conv.escalatedTo,
+          messageCount: conv._count.messages,
+          unreadCount: 0, // TODO: Implement unread tracking
+          hasRealPhone,
+        };
+      })
+      // Filter out conversations that only have LID (no real phone number)
+      .filter((conv) => conv.hasRealPhone);
 
     return NextResponse.json({
       success: true,

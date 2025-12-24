@@ -713,23 +713,9 @@ export default function ConversationsPage() {
 
   // Format WhatsApp JID to readable phone number
   // Handles both valid phone numbers and LID (Linked IDs) that aren't real phone numbers
-  // Helper to check if a number looks like a LID (not a real phone)
-  const isLIDNumber = (num: string): boolean => {
-    if (!num) return false;
-    const digits = num.replace(/\D/g, "");
-    if (digits.length < 10) return false;
-    // LID patterns: very long numbers, or numbers starting with 100/101/102
-    if (digits.length >= 16) return true;
-    if (digits.length >= 14 && (digits.startsWith("100") || digits.startsWith("101") || digits.startsWith("102"))) return true;
-    // Numbers that are too long for valid country codes
-    if (digits.startsWith("62") && digits.length > 14) return true;
-    if (digits.startsWith("1") && digits.length > 11 && !digits.startsWith("1800")) return true;
-    return false;
-  };
-
   // Format phone number for display
-  // isStaff parameter determines if LID detection should be applied
-  const formatPhoneNumber = (phone: string, isStaff: boolean = false): string => {
+  // API already filters out LID-only conversations, so we just format the number
+  const formatPhoneNumber = (phone: string): string => {
     if (!phone) return '-';
 
     // Remove @lid, @s.whatsapp.net, or other WhatsApp suffixes
@@ -744,11 +730,6 @@ export default function ConversationsPage() {
     // If no digits, return original
     if (!digits) {
       return phone || '-';
-    }
-
-    // Only check for LID on STAFF - customers always have real phone numbers
-    if (isStaff && isLIDNumber(digits)) {
-      return '(Nomor tidak tersedia)';
     }
 
     // If starts with 62 (Indonesia), format nicely
@@ -813,13 +794,10 @@ export default function ConversationsPage() {
       // Get first letters of first 2 words
       const words = name.trim().split(/\s+/);
       initials = words.slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
-    } else if (!isStaff || !isLIDNumber(phoneDigits)) {
-      // Use last 2 digits of phone number
-      // Customers always have real phone, staff might have LID
-      initials = phoneDigits.slice(-2) || '?';
     } else {
-      // Staff with LID without name - show question mark
-      initials = '?';
+      // Use last 2 digits of phone number
+      // API already filters out LID-only conversations
+      initials = phoneDigits.slice(-2) || '?';
     }
 
     return {
@@ -972,7 +950,7 @@ export default function ConversationsPage() {
                       })()}
                       <div className="min-w-0 flex-1 overflow-visible">
                         <h3 className="font-medium text-gray-900 text-xs md:text-sm whitespace-nowrap">
-                          {conv.customerName || formatPhoneNumber(conv.customerPhone, conv.isStaff)}
+                          {conv.customerName || formatPhoneNumber(conv.customerPhone)}
                         </h3>
                         <div className="flex items-center gap-1.5 md:gap-1 mt-1 md:mt-0.5 flex-wrap">
                           <span
@@ -1072,7 +1050,7 @@ export default function ConversationsPage() {
                     })()}
                     <div>
                       <h2 className="text-sm font-semibold text-gray-900">
-                        {selectedConversation.customerName || formatPhoneNumber(selectedConversation.customerPhone, selectedConversation.isStaff)}
+                        {selectedConversation.customerName || formatPhoneNumber(selectedConversation.customerPhone)}
                       </h2>
                       <p className="text-xs text-gray-500">
                         {selectedConversation.isStaff ? 'Staff' : 'Customer'}
