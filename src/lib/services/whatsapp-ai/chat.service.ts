@@ -1096,6 +1096,22 @@ CONTOH RESPON ESCALATED:
   ): Promise<{ message: string; shouldEscalate: boolean; confidence: number; images?: Array<{ imageUrl: string; caption?: string }> } | null> {
     const msg = userMessage.trim().toLowerCase();
 
+    // ========== DEBUG LOGGING ==========
+    console.log(`[PhotoConfirm DEBUG] ========== START ==========`);
+    console.log(`[PhotoConfirm DEBUG] User message: "${userMessage}"`);
+    console.log(`[PhotoConfirm DEBUG] Message (lowercase): "${msg}"`);
+    console.log(`[PhotoConfirm DEBUG] TenantId: ${tenantId}`);
+    console.log(`[PhotoConfirm DEBUG] MessageHistory length: ${messageHistory.length}`);
+    if (messageHistory.length > 0) {
+      console.log(`[PhotoConfirm DEBUG] MessageHistory contents:`);
+      messageHistory.forEach((m, i) => {
+        console.log(`[PhotoConfirm DEBUG]   [${i}] ${m.role}: "${m.content.substring(0, 100)}..."`);
+      });
+    } else {
+      console.log(`[PhotoConfirm DEBUG] ⚠️ MessageHistory is EMPTY!`);
+    }
+    // ========== END DEBUG LOGGING ==========
+
     // Photo confirmation patterns - comprehensive list
     const photoConfirmPatterns = [
       // Exact single word confirmations
@@ -1124,7 +1140,9 @@ CONTOH RESPON ESCALATED:
     ];
 
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
+    console.log(`[PhotoConfirm DEBUG] isPhotoConfirmation: ${isPhotoConfirmation}`);
     if (!isPhotoConfirmation) {
+      console.log(`[PhotoConfirm DEBUG] ❌ Not a photo confirmation, returning null`);
       return null; // Not a photo confirmation, let AI handle it
     }
 
@@ -1132,9 +1150,14 @@ CONTOH RESPON ESCALATED:
 
     // Check if user is EXPLICITLY asking for photos (contains "foto" or "gambar")
     const userExplicitlyAsksPhoto = msg.includes("foto") || msg.includes("gambar");
+    console.log(`[PhotoConfirm DEBUG] userExplicitlyAsksPhoto: ${userExplicitlyAsksPhoto}`);
 
     // Get the last AI message to check if it offered photos
     const lastAiMsg = messageHistory.filter(m => m.role === "assistant").pop();
+    console.log(`[PhotoConfirm DEBUG] lastAiMsg exists: ${!!lastAiMsg}`);
+    if (lastAiMsg) {
+      console.log(`[PhotoConfirm DEBUG] lastAiMsg content: "${lastAiMsg.content.substring(0, 150)}..."`);
+    }
 
     // If user explicitly asks for photo, we don't need AI to have offered
     // This handles cases like "iya mana fotonya" even if message history is empty
@@ -1234,12 +1257,12 @@ CONTOH RESPON ESCALATED:
     }
 
     if (!vehicleName) {
-      console.log(`[WhatsApp AI Chat] Could not extract vehicle name from any source`);
+      console.log(`[PhotoConfirm DEBUG] ⚠️ Could not extract vehicle name from any source`);
 
       // If user explicitly asks for photos (e.g., "iya mana fotonya"),
       // try to send ANY recent available vehicle photos as last resort
       if (userExplicitlyAsksPhoto) {
-        console.log(`[WhatsApp AI Chat] 🔄 User explicitly asked for photos, trying to send any available vehicle photos...`);
+        console.log(`[PhotoConfirm DEBUG] 🔄 Entering fallback: send any available photos...`);
         try {
           const anyVehicles = await prisma.vehicle.findMany({
             where: { tenantId, status: 'AVAILABLE' },
@@ -1253,10 +1276,20 @@ CONTOH RESPON ESCALATED:
             take: 2,
           });
 
+          console.log(`[PhotoConfirm DEBUG] Fallback query result: ${anyVehicles.length} vehicles found`);
+          anyVehicles.forEach((v, i) => {
+            console.log(`[PhotoConfirm DEBUG]   Vehicle ${i}: ${v.make} ${v.model}, photos: ${v.photos?.length || 0}`);
+            if (v.photos && v.photos.length > 0) {
+              console.log(`[PhotoConfirm DEBUG]     Photo URL: ${v.photos[0].originalUrl || v.photos[0].mediumUrl || 'NO URL'}`);
+            }
+          });
+
           if (anyVehicles.length > 0 && anyVehicles.some(v => v.photos?.length > 0)) {
+            console.log(`[PhotoConfirm DEBUG] ✅ Vehicles with photos found, building image array...`);
             const images = this.buildImageArray(anyVehicles);
+            console.log(`[PhotoConfirm DEBUG] buildImageArray returned: ${images?.length || 0} images`);
             if (images && images.length > 0) {
-              console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} recent vehicle images as fallback`);
+              console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${images.length} images`);
               return {
                 message: `Ini foto unit terbaru kami ya 📸👇\n\nAda yang mau ditanyakan tentang unit-unit ini? 😊`,
                 shouldEscalate: false,
@@ -1268,29 +1301,39 @@ CONTOH RESPON ESCALATED:
           // Vehicles exist but no photos available
           if (anyVehicles.length > 0) {
             const vehicleList = anyVehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n');
-            console.log(`[WhatsApp AI Chat] ⚠️ Vehicles found but no photos, returning list`);
+            console.log(`[PhotoConfirm DEBUG] ⚠️ Vehicles found but no photos, returning list`);
             return {
               message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
               shouldEscalate: false,
               confidence: 0.8,
             };
           }
-        } catch (e) {
-          console.error(`[WhatsApp AI Chat] Error fetching any vehicles:`, e);
+          console.log(`[PhotoConfirm DEBUG] ❌ No vehicles found at all`);
+        } catch (e: any) {
+          console.error(`[PhotoConfirm DEBUG] ❌ ERROR in fallback:`, e.message);
+          console.error(`[PhotoConfirm DEBUG] Error stack:`, e.stack);
         }
+      } else {
+        console.log(`[PhotoConfirm DEBUG] ❌ userExplicitlyAsksPhoto is false, not entering fallback`);
       }
 
+      console.log(`[PhotoConfirm DEBUG] ❌ Returning NULL from handlePhotoConfirmationDirectly`);
       return null;
     }
 
-    console.log(`[WhatsApp AI Chat] 🚗 Extracted vehicle name: "${vehicleName}"`);
+    console.log(`[PhotoConfirm DEBUG] ✅ Vehicle name extracted: "${vehicleName}"`);
 
     // Fetch vehicle images
     try {
+      console.log(`[PhotoConfirm DEBUG] Calling fetchVehicleImagesByQuery("${vehicleName}", "${tenantId}")...`);
       const images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
 
+      console.log(`[PhotoConfirm DEBUG] fetchVehicleImagesByQuery returned: ${images?.length || 0} images`);
       if (images && images.length > 0) {
-        console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} images for "${vehicleName}"`);
+        console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${images.length} images for "${vehicleName}"`);
+        images.forEach((img, i) => {
+          console.log(`[PhotoConfirm DEBUG]   Image ${i}: ${img.imageUrl?.substring(0, 80)}...`);
+        });
         return {
           message: `Siap! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain tentang unit ini? 😊`,
           shouldEscalate: false,
@@ -1298,15 +1341,17 @@ CONTOH RESPON ESCALATED:
           images,
         };
       } else {
-        console.log(`[WhatsApp AI Chat] ⚠️ No images found for "${vehicleName}"`);
+        console.log(`[PhotoConfirm DEBUG] ⚠️ No images found for "${vehicleName}", returning text response`);
         return {
           message: `Wah, maaf ya foto ${vehicleName} belum tersedia saat ini 🙏\n\nAda yang lain yang bisa kami bantu? 😊`,
           shouldEscalate: false,
           confidence: 0.9,
         };
       }
-    } catch (error) {
-      console.error(`[WhatsApp AI Chat] Error fetching images for "${vehicleName}":`, error);
+    } catch (error: any) {
+      console.error(`[PhotoConfirm DEBUG] ❌ ERROR fetching images for "${vehicleName}":`, error.message);
+      console.error(`[PhotoConfirm DEBUG] Error stack:`, error.stack);
+      console.log(`[PhotoConfirm DEBUG] ❌ Returning NULL due to error`);
       return null; // Let AI handle as fallback
     }
   }
