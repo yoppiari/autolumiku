@@ -831,7 +831,23 @@ export class MessageOrchestratorService {
         );
         console.log(`[Orchestrator] Response sent successfully`);
       } else {
-        console.log(`[Orchestrator] No response message generated`);
+        // SAFETY NET: Always send a fallback for non-staff customers
+        // This prevents "typing" indicator from hanging forever
+        const isCustomer = !conversation.isStaff && !classification.isStaff;
+        if (isCustomer) {
+          console.log(`[Orchestrator] ⚠️ No response generated for customer - sending fallback`);
+          const fallbackMessage = `Halo! 👋\n\nTerima kasih sudah menghubungi kami.\n\nTim kami akan segera membalas pesan Anda.\nMohon menunggu sebentar ya 🙏`;
+          await this.sendResponse(
+            incoming.accountId,
+            incoming.from,
+            fallbackMessage,
+            conversation.id,
+            classification.intent
+          );
+          console.log(`[Orchestrator] Fallback response sent`);
+        } else {
+          console.log(`[Orchestrator] No response message generated (staff message)`);
+        }
       }
 
       // 6. Update conversation status
