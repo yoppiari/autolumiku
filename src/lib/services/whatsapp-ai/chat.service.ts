@@ -29,6 +29,27 @@ export interface ChatContext {
   isEscalated?: boolean; // Escalated conversations get faster, more direct responses
 }
 
+// Vehicle details with images for detailed response
+export interface VehicleWithImages {
+  vehicle: {
+    id: string;
+    make: string;
+    model: string;
+    year: number;
+    price: number;
+    mileage?: number;
+    transmissionType?: string;
+    fuelType?: string;
+    color?: string;
+    condition?: string;
+    descriptionId?: string; // Indonesian description
+    features?: string[];
+    engineCapacity?: string;
+    displayId?: string;
+  };
+  images: Array<{ imageUrl: string; caption?: string }>;
+}
+
 export interface ChatResponse {
   message: string;
   shouldEscalate: boolean;
@@ -529,9 +550,36 @@ export class WhatsAppAIChatService {
         }
       }
 
+      // Check if user is asking for DETAILED photos
+      const detailPatterns = [
+        /\b(detail|lengkap|semua|all)\b/i,
+        /\b(interior|eksterior|dalam|luar)\b/i,
+        /\b(dashboard|jok|bagasi|mesin)\b/i,
+        /\bfoto.*(semua|lengkap|detail)\b/i,
+        /\b(semua|lengkap).*(foto|gambar)\b/i,
+      ];
+      const wantsDetailedPhotos = detailPatterns.some(p => p.test(msg));
+      console.log(`[SmartFallback] Wants detailed photos: ${wantsDetailedPhotos}`);
+
       // Try to fetch photos
       try {
         if (vehicleName) {
+          // If user wants detailed photos, fetch with full details
+          if (wantsDetailedPhotos) {
+            console.log(`[SmartFallback] 📋 Fetching DETAILED vehicle info for: "${vehicleName}"`);
+            const vehicleWithDetails = await this.fetchVehicleWithDetails(vehicleName, tenantId);
+            if (vehicleWithDetails && vehicleWithDetails.images.length > 0) {
+              console.log(`[SmartFallback] ✅ Found ${vehicleWithDetails.images.length} images with DETAILS!`);
+              const detailedMessage = this.buildVehicleDetailMessage(vehicleWithDetails.vehicle);
+              return {
+                message: detailedMessage,
+                shouldEscalate: false,
+                images: vehicleWithDetails.images,
+              };
+            }
+          }
+
+          // Regular photo request
           console.log(`[SmartFallback] 🚗 Trying to fetch images for: "${vehicleName}"`);
           const images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
           if (images && images.length > 0) {
@@ -1323,8 +1371,37 @@ CONTOH RESPON ESCALATED:
 
     console.log(`[PhotoConfirm DEBUG] ✅ Vehicle name extracted: "${vehicleName}"`);
 
+    // Check if user is asking for DETAILED photos (interior, exterior, semua, lengkap, dll)
+    const detailPatterns = [
+      /\b(detail|lengkap|semua|all)\b/i,
+      /\b(interior|eksterior|dalam|luar)\b/i,
+      /\b(dashboard|jok|bagasi|mesin)\b/i,
+      /\bfoto.*(semua|lengkap|detail)\b/i,
+      /\b(semua|lengkap).*(foto|gambar)\b/i,
+    ];
+    const wantsDetailedPhotos = detailPatterns.some(p => p.test(userMessage));
+    console.log(`[PhotoConfirm DEBUG] Wants detailed photos: ${wantsDetailedPhotos}`);
+
     // Fetch vehicle images
     try {
+      // If user wants detailed photos, use fetchVehicleWithDetails for full info
+      if (wantsDetailedPhotos) {
+        console.log(`[PhotoConfirm DEBUG] Fetching DETAILED vehicle info for "${vehicleName}"...`);
+        const vehicleWithDetails = await this.fetchVehicleWithDetails(vehicleName, tenantId);
+
+        if (vehicleWithDetails && vehicleWithDetails.images.length > 0) {
+          console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${vehicleWithDetails.images.length} images with DETAILS`);
+          const detailedMessage = this.buildVehicleDetailMessage(vehicleWithDetails.vehicle);
+          return {
+            message: detailedMessage,
+            shouldEscalate: false,
+            confidence: 0.95,
+            images: vehicleWithDetails.images,
+          };
+        }
+      }
+
+      // Regular photo request (not detailed)
       console.log(`[PhotoConfirm DEBUG] Calling fetchVehicleImagesByQuery("${vehicleName}", "${tenantId}")...`);
       const images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
 
@@ -1560,6 +1637,154 @@ CONTOH RESPON ESCALATED:
     }
 
     return this.buildImageArray(vehicles);
+  }
+
+  /**
+   * Fetch vehicle with FULL details including description, features, and ALL photos
+   * Used when customer asks for detailed info about a specific vehicle
+   */
+  private static async fetchVehicleWithDetails(
+    searchQuery: string,
+    tenantId: string
+  ): Promise<VehicleWithImages | null> {
+    console.log('[WhatsApp AI Chat] 📋 Fetching vehicle with FULL details for:', searchQuery);
+
+    // Parse search query into individual terms
+    const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(term => term.length > 0);
+
+    // Build AND conditions for search
+    const termConditions = searchTerms.map(term => ({
+      OR: [
+        { make: { contains: term, mode: 'insensitive' as const } },
+        { model: { contains: term, mode: 'insensitive' as const } },
+        { variant: { contains: term, mode: 'insensitive' as const } },
+        { displayId: { contains: term, mode: 'insensitive' as const } },
+      ]
+    }));
+
+    const vehicle = await prisma.vehicle.findFirst({
+      where: {
+        tenantId,
+        status: 'AVAILABLE',
+        ...(termConditions.length > 0 && { AND: termConditions }),
+      },
+      include: {
+        photos: {
+          orderBy: [{ isMainPhoto: 'desc' }, { displayOrder: 'asc' }],
+        },
+      },
+    });
+
+    if (!vehicle) {
+      console.log('[WhatsApp AI Chat] ❌ No vehicle found for detailed query');
+      return null;
+    }
+
+    console.log(`[WhatsApp AI Chat] ✅ Found vehicle: ${vehicle.make} ${vehicle.model} with ${vehicle.photos.length} photos`);
+
+    // Build image array for this vehicle
+    const images = this.buildImageArray([vehicle]);
+    if (!images || images.length === 0) {
+      return null;
+    }
+
+    // Parse features from JSON if available
+    let features: string[] = [];
+    if (vehicle.features) {
+      try {
+        features = Array.isArray(vehicle.features) ? vehicle.features : [];
+      } catch {
+        features = [];
+      }
+    }
+
+    return {
+      vehicle: {
+        id: vehicle.id,
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        price: Number(vehicle.price),
+        mileage: vehicle.mileage || undefined,
+        transmissionType: vehicle.transmissionType || undefined,
+        fuelType: vehicle.fuelType || undefined,
+        color: vehicle.color || undefined,
+        condition: vehicle.condition || undefined,
+        descriptionId: vehicle.descriptionId || undefined,
+        features,
+        engineCapacity: vehicle.engineCapacity || undefined,
+        displayId: vehicle.displayId || undefined,
+      },
+      images,
+    };
+  }
+
+  /**
+   * Build detailed vehicle description message
+   * Includes all specs, features, and condition info
+   */
+  private static buildVehicleDetailMessage(vehicleData: VehicleWithImages['vehicle']): string {
+    const v = vehicleData;
+    const priceFormatted = this.formatPrice(v.price);
+
+    let message = `📋 *DETAIL ${v.make.toUpperCase()} ${v.model.toUpperCase()} ${v.year}*\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    // Basic specs
+    message += `🚗 *Spesifikasi:*\n`;
+    message += `• Merek: ${v.make}\n`;
+    message += `• Model: ${v.model}\n`;
+    message += `• Tahun: ${v.year}\n`;
+    message += `• Harga: Rp ${priceFormatted}\n`;
+
+    if (v.mileage) {
+      message += `• Kilometer: ${v.mileage.toLocaleString('id-ID')} km\n`;
+    }
+    if (v.transmissionType) {
+      const trans = v.transmissionType.toLowerCase() === 'automatic' ? 'Automatic (AT)' : 'Manual (MT)';
+      message += `• Transmisi: ${trans}\n`;
+    }
+    if (v.fuelType) {
+      message += `• Bahan Bakar: ${v.fuelType}\n`;
+    }
+    if (v.color) {
+      message += `• Warna: ${v.color}\n`;
+    }
+    if (v.engineCapacity) {
+      message += `• Mesin: ${v.engineCapacity}\n`;
+    }
+    if (v.condition) {
+      const conditionMap: Record<string, string> = {
+        'excellent': 'Sangat Baik',
+        'good': 'Baik',
+        'fair': 'Cukup',
+        'poor': 'Perlu Perbaikan'
+      };
+      message += `• Kondisi: ${conditionMap[v.condition.toLowerCase()] || v.condition}\n`;
+    }
+
+    // Description if available
+    if (v.descriptionId) {
+      message += `\n📝 *Deskripsi:*\n`;
+      // Truncate if too long for WhatsApp
+      const desc = v.descriptionId.length > 500 ? v.descriptionId.substring(0, 500) + '...' : v.descriptionId;
+      message += `${desc}\n`;
+    }
+
+    // Features if available
+    if (v.features && v.features.length > 0) {
+      message += `\n✨ *Fitur:*\n`;
+      v.features.slice(0, 8).forEach(f => {
+        message += `• ${f}\n`;
+      });
+      if (v.features.length > 8) {
+        message += `• ... dan ${v.features.length - 8} fitur lainnya\n`;
+      }
+    }
+
+    message += `\n📸 Berikut foto-foto unitnya 👇`;
+
+    return message;
   }
 
   /**
