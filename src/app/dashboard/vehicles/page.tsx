@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api-client';
+import VehicleImageCarousel from '@/components/ui/VehicleImageCarousel';
 
 type VehicleStatus = 'DRAFT' | 'AVAILABLE' | 'BOOKED' | 'SOLD' | 'DELETED';
 type ViewMode = 'grid' | 'list';
@@ -450,39 +451,23 @@ export default function VehiclesPage() {
                   viewMode === 'list' ? 'flex gap-3' : ''
                 }`}
               >
-                {/* Image - Compact */}
+                {/* Image Carousel - Auto-rotate every 10 seconds */}
                 <div className={`relative ${viewMode === 'list' ? 'w-32 flex-shrink-0' : ''}`}>
-                  {vehicle.photos && vehicle.photos.length > 0 ? (
-                    <img
-                      src={vehicle.photos[0].thumbnailUrl || vehicle.photos[0].originalUrl}
-                      alt={`${vehicle.make} ${vehicle.model}`}
-                      className={`w-full object-cover ${
-                        viewMode === 'grid' ? 'h-32 rounded-t-lg' : 'h-24 rounded-l-lg'
-                      } ${vehicle.status === 'SOLD' ? 'grayscale' : ''}`}
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        if (target.nextElementSibling) {
-                          (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                        }
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className={`bg-gray-200 flex flex-col items-center justify-center ${
-                      viewMode === 'grid' ? 'h-32 rounded-t-lg' : 'h-24 rounded-l-lg'
-                    }`}
-                    style={{ display: vehicle.photos && vehicle.photos.length > 0 ? 'none' : 'flex' }}
-                  >
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  {vehicle.status === 'SOLD' && (
-                    <div className={`absolute inset-0 bg-black/40 flex items-center justify-center ${viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'}`}>
-                      <span className="text-white text-xs font-bold rotate-[-15deg] bg-red-600 px-2 py-0.5 rounded">TERJUAL</span>
-                    </div>
-                  )}
+                  <VehicleImageCarousel
+                    photos={vehicle.photos || []}
+                    alt={`${vehicle.make} ${vehicle.model}`}
+                    aspectRatio={viewMode === 'grid' ? 'h-32' : 'h-24'}
+                    roundedClass={viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'}
+                    grayscale={vehicle.status === 'SOLD'}
+                    showIndicators={true}
+                    showCounter={false}
+                    interval={10000}
+                    overlay={vehicle.status === 'SOLD' ? (
+                      <div className={`absolute inset-0 bg-black/40 flex items-center justify-center ${viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'} z-20`}>
+                        <span className="text-white text-xs font-bold rotate-[-15deg] bg-red-600 px-2 py-0.5 rounded">TERJUAL</span>
+                      </div>
+                    ) : undefined}
+                  />
                 </div>
 
                 {/* Content - Compact */}

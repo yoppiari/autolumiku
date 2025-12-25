@@ -2,6 +2,7 @@
  * Vehicle Card Component for Catalog
  * Updated to use shadcn/ui components
  * WITH WhatsApp AI Dual Contact (Story 8.6)
+ * WITH Auto-rotating image carousel (10 second intervals)
  */
 
 'use client';
@@ -12,6 +13,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import WhatsAppContactModal from './WhatsAppContactModal';
+import VehicleImageCarousel from '@/components/ui/VehicleImageCarousel';
 
 interface VehicleCardProps {
   vehicle: {
@@ -53,92 +55,38 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
     }
   };
 
-  const mainPhoto = vehicle.photos[0];
-  const photoUrl = mainPhoto?.thumbnailUrl || mainPhoto?.originalUrl;
   const photoCount = vehicle.photos.length;
-  const extraPhotos = vehicle.photos.slice(1, 4); // Show up to 3 extra thumbnails
 
   return (
     <Card className="hover:shadow-xl transition-shadow overflow-hidden">
-      {/* Image */}
+      {/* Image Carousel - Auto-rotate every 10 seconds */}
       <Link href={`/catalog/${slug}/vehicles/${vehicle.id}`}>
-        <div className="relative aspect-[16/10] bg-gray-200">
-          {photoUrl ? (
-            <img
-              src={photoUrl}
-              alt={`${vehicle.make} ${vehicle.model}`}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <svg
-                className="w-16 h-16 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-          )}
+        <VehicleImageCarousel
+          photos={vehicle.photos}
+          alt={`${vehicle.make} ${vehicle.model}`}
+          aspectRatio="aspect-[16/10]"
+          roundedClass="rounded-t-lg"
+          showIndicators={true}
+          showCounter={true}
+          interval={10000}
+          badges={
+            <>
+              {/* Status badge - Top Left */}
+              <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1 shadow z-10">
+                <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                Ready
+              </div>
 
-          {/* Status badge - Top Left */}
-          <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1 shadow">
-            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-            Ready
-          </div>
-
-          {/* Vehicle ID badge - Bottom Left */}
-          {vehicle.displayId && (
-            <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow z-20">
-              {vehicle.displayId}
-            </div>
-          )}
-
-          {/* Note: License plates are now covered at upload time using AI detection */}
-
-          {/* Photo count badge - Bottom Right */}
-          {photoCount > 1 && (
-            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              {photoCount}
-            </div>
-          )}
-        </div>
+              {/* Vehicle ID badge - Bottom Left */}
+              {vehicle.displayId && (
+                <div className="absolute bottom-8 left-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow z-20">
+                  {vehicle.displayId}
+                </div>
+              )}
+            </>
+          }
+        />
       </Link>
-
-      {/* Mini thumbnails - proportional to photo count */}
-      {extraPhotos.length > 0 && (
-        <Link href={`/catalog/${slug}/vehicles/${vehicle.id}`}>
-          <div className="flex gap-1 px-1 py-1 bg-gray-100">
-            {extraPhotos.map((photo, idx) => (
-              <div
-                key={idx}
-                className="relative flex-1 aspect-[4/3] bg-gray-200 overflow-hidden rounded"
-              >
-                <img
-                  src={photo.thumbnailUrl || photo.originalUrl}
-                  alt={`${vehicle.make} ${vehicle.model} foto ${idx + 2}`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
-            {/* Show "+X more" indicator if more than 4 photos total */}
-            {photoCount > 4 && (
-              <div className="relative flex-1 aspect-[4/3] bg-gray-800 overflow-hidden rounded flex items-center justify-center">
-                <span className="text-white text-xs font-bold">+{photoCount - 4}</span>
-              </div>
-            )}
-          </div>
-        </Link>
-      )}
 
       {/* Content */}
       <CardContent className="p-4">
