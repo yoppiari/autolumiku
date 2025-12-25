@@ -720,6 +720,49 @@ export class MessageOrchestratorService {
         escalated = result.escalated;
         responseImages = result.images;
         console.log(`[Orchestrator] AI response for staff: ${responseMessage?.substring(0, 50)}...`);
+      } else if (classification.intent === "customer_greeting") {
+        // ==================== CUSTOMER GREETING - USE CONFIGURED WELCOME MESSAGE ====================
+        console.log(`[Orchestrator] Customer greeting detected - using configured welcomeMessage`);
+
+        // Get AI config for welcome message
+        const aimeowAccount = await prisma.aimeowAccount.findUnique({
+          where: { tenantId: incoming.tenantId },
+          include: {
+            aiConfig: true,
+            tenant: true,
+          },
+        });
+
+        // Get time-based greeting
+        const now = new Date();
+        const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+        const hour = wibTime.getHours();
+        let timeGreeting: string;
+        if (hour >= 4 && hour < 11) {
+          timeGreeting = "Selamat pagi";
+        } else if (hour >= 11 && hour < 15) {
+          timeGreeting = "Selamat siang";
+        } else if (hour >= 15 && hour < 18) {
+          timeGreeting = "Selamat sore";
+        } else {
+          timeGreeting = "Selamat malam";
+        }
+
+        const tenantName = aimeowAccount?.tenant?.name || "Showroom";
+
+        if (aimeowAccount?.aiConfig?.welcomeMessage) {
+          // Use welcome message from config, replace placeholders
+          responseMessage = aimeowAccount.aiConfig.welcomeMessage
+            .replace(/\{greeting\}/gi, timeGreeting)
+            .replace(/\{tenant\}/gi, tenantName)
+            .replace(/\{showroom\}/gi, tenantName);
+          console.log(`[Orchestrator] Using configured welcomeMessage: ${responseMessage?.substring(0, 50)}...`);
+        } else {
+          // Default welcome message
+          responseMessage = `${timeGreeting}! Halo, terima kasih sudah menghubungi ${tenantName}. 👋\n\nSaya siap bantu carikan mobil yang pas untuk Anda. Lagi cari mobil apa nih? 🚗`;
+          console.log(`[Orchestrator] Using default welcomeMessage`);
+        }
+        escalated = false;
       } else {
         // Handle customer inquiry dengan AI
         console.log(`[Orchestrator] Routing to AI customer inquiry handler`);
