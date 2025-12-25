@@ -352,6 +352,8 @@ export class AimeowClientService {
       if (mediaUrl) {
         endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`;
         payload.images = [mediaUrl]; // Array of image URLs
+        payload.viewOnce = false;     // Display inline, not as download link
+        payload.isViewOnce = false;   // Alternative field name
         delete payload.message; // Images endpoint doesn't need message
       }
 
@@ -444,11 +446,14 @@ export class AimeowClientService {
 
       // Build payload - try multiple field names for compatibility
       // Some Aimeow versions expect 'url', others 'imageUrl', others 'image'
+      // IMPORTANT: viewOnce: false ensures image displays inline, not as download link
       const payload: Record<string, any> = {
         phone: to,
         url: imageUrl,        // Primary field for /send-image endpoint
         imageUrl: imageUrl,   // Alternative field name
         image: imageUrl,      // Another alternative
+        viewOnce: false,      // Display inline, not as download link
+        isViewOnce: false,    // Alternative field name
       };
 
       if (caption) {
@@ -476,6 +481,8 @@ export class AimeowClientService {
         const imagesPayload = {
           phone: to,
           images: [imageUrl],
+          viewOnce: false,      // Display inline, not as download link
+          isViewOnce: false,    // Alternative field name
           ...(caption && { caption }),
         };
 
@@ -646,6 +653,8 @@ export class AimeowClientService {
       const payload = {
         phone: to,
         images,
+        viewOnce: false,      // Display inline, not as download link
+        isViewOnce: false,    // Alternative field name
       };
 
       const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
