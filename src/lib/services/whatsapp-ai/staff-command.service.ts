@@ -96,6 +96,7 @@ export class StaffCommandService {
 
   /**
    * Execute command
+   * @param skipAuthorization - If true, skip staff verification (use when conversation is already verified as staff)
    */
   static async executeCommand(
     intent: MessageIntent,
@@ -103,20 +104,26 @@ export class StaffCommandService {
     tenantId: string,
     staffPhone: string,
     conversationId: string,
-    mediaUrl?: string
+    mediaUrl?: string,
+    skipAuthorization: boolean = false
   ): Promise<CommandExecutionResult> {
-    // Verify staff authorization
-    const isAuthorized = await this.verifyStaffAuthorization(
-      tenantId,
-      staffPhone,
-      intent
-    );
+    // Verify staff authorization (skip if conversation is already verified as staff)
+    if (!skipAuthorization) {
+      const isAuthorized = await this.verifyStaffAuthorization(
+        tenantId,
+        staffPhone,
+        intent
+      );
 
-    if (!isAuthorized) {
-      return {
-        success: false,
-        message: "Maaf kak, ini fitur khusus staff aja 🙏\n\nKalau mau jadi staff, hubungi admin ya!",
-      };
+      if (!isAuthorized) {
+        console.log(`[Staff Command] ❌ Authorization failed for phone: ${staffPhone}`);
+        return {
+          success: false,
+          message: "Maaf kak, ini fitur khusus staff aja 🙏\n\nKalau mau jadi staff, hubungi admin ya!",
+        };
+      }
+    } else {
+      console.log(`[Staff Command] ✅ Skipping authorization (conversation already verified as staff)`);
     }
 
     try {
@@ -1820,7 +1827,9 @@ export class StaffCommandService {
 
   /**
    * Parse edit vehicle command
-   * Examples: "rubah km 50000", "ganti bensin jadi diesel", "ubah tahun ke 2018 PM-PST-006"
+   * Examples:
+   * - "rubah km 50000", "ganti bensin jadi diesel", "ubah tahun ke 2018 PM-PST-006"
+   * - "ubah innova reborn 2019 jadi bensin" (vehicle name + implicit field)
    */
   private static parseEditVehicleCommand(message: string): CommandParseResult {
     console.log(`[Staff Command] Parsing edit vehicle command: "${message}"`);
@@ -1830,6 +1839,76 @@ export class StaffCommandService {
     // Extract vehicle ID if mentioned (PM-PST-XXX format)
     const vehicleIdMatch = msg.match(/pm-\w+-\d+/i);
     const vehicleId = vehicleIdMatch ? vehicleIdMatch[0].toUpperCase() : undefined;
+
+    // Known vehicle models for vehicle-name-based editing
+    const vehicleModels = [
+      'innova', 'avanza', 'xenia', 'fortuner', 'rush', 'calya', 'sigra', 'brio', 'jazz', 'civic', 'accord',
+      'xpander', 'pajero', 'triton', 'ertiga', 'swift', 'baleno', 'livina', 'serena', 'terios', 'ayla',
+      'hiace', 'alphard', 'vellfire', 'yaris', 'vios', 'camry', 'corolla', 'raize', 'rocky', 'wuling',
+      'confero', 'cortez', 'almaz', 'hrv', 'crv', 'wrv', 'brv', 'city', 'freed', 'mobilio', 'odyssey',
+      'agya', 'granmax', 'luxio', 'taruna', 'feroza', 'ranger', 'everest', 'ecosport', 'fiesta',
+      'captiva', 'spin', 'trax', 'trailblazer', 'tiguan', 'polo', 'golf', 'cx3', 'cx5', 'mazda2', 'mazda3',
+      'juke', 'xtrail', 'navara', 'terra', 'march', 'tucson', 'santa', 'stargazer', 'creta', 'kona',
+      'sportage', 'seltos', 'sonet', 'sorento', 'carnival', 'outlander', 'delica', 'l300', 'reborn'
+    ];
+
+    // Fuel types for implicit field detection
+    const fuelTypes = ['bensin', 'diesel', 'solar', 'hybrid', 'electric', 'listrik'];
+    // Transmissions for implicit field detection
+    const transmissions = ['matic', 'manual', 'automatic', 'cvt', 'at', 'mt'];
+
+    // NEW PATTERN 1: "ubah [vehicle name] [year?] jadi [fuel/transmission]"
+    // Example: "ubah innova reborn 2019 jadi bensin", "ubah avanza jadi matic"
+    const vehicleNameEditPattern = /(?:rubah|ganti|ubah|update|edit)\s+(.+?)\s+(?:ke|jadi|menjadi)\s+(\w+)$/i;
+    const vehicleNameMatch = msg.match(vehicleNameEditPattern);
+
+    if (vehicleNameMatch) {
+      const vehiclePart = vehicleNameMatch[1].toLowerCase();
+      const newValue = vehicleNameMatch[2].toLowerCase();
+
+      // Check if vehiclePart contains a known vehicle model
+      const containsVehicle = vehicleModels.some(model => vehiclePart.includes(model));
+
+      if (containsVehicle) {
+        // Determine field from newValue
+        let field: string | null = null;
+        let normalizedValue = newValue;
+
+        if (fuelTypes.includes(newValue)) {
+          field = 'fuelType';
+          normalizedValue = newValue === 'solar' ? 'diesel' : newValue;
+        } else if (transmissions.includes(newValue)) {
+          field = 'transmissionType';
+          if (newValue === 'matic' || newValue === 'at' || newValue === 'automatic' || newValue === 'cvt') {
+            normalizedValue = 'automatic';
+          } else if (newValue === 'manual' || newValue === 'mt') {
+            normalizedValue = 'manual';
+          }
+        }
+
+        if (field) {
+          // Extract year from vehiclePart if present
+          const yearMatch = vehiclePart.match(/\b(20\d{2}|19\d{2})\b/);
+          const year = yearMatch ? parseInt(yearMatch[1], 10) : undefined;
+
+          // Extract vehicle name (remove year)
+          const vehicleName = vehiclePart.replace(/\b(20\d{2}|19\d{2})\b/g, '').trim();
+
+          console.log(`[Staff Command] ✏️ Vehicle-name edit parsed: vehicleName="${vehicleName}", year=${year}, field=${field}, newValue=${normalizedValue}`);
+          return {
+            command: "edit_vehicle",
+            params: {
+              vehicleId,
+              vehicleName, // Pass vehicle name for search
+              vehicleYear: year,
+              field,
+              newValue: normalizedValue
+            },
+            isValid: true,
+          };
+        }
+      }
+    }
 
     // Field detection patterns - more flexible, "ke/jadi" is optional
     const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
@@ -1853,7 +1932,7 @@ export class StaffCommandService {
       }},
 
       // Transmission: "rubah transmisi matic", "ganti ke manual", "ubah jadi AT"
-      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)?\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmission', valueExtractor: m => {
+      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)?\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmissionType', valueExtractor: m => {
         const val = m[1].toLowerCase();
         if (val === 'matic' || val === 'at' || val === 'automatic' || val === 'cvt') return 'automatic';
         if (val === 'manual' || val === 'mt') return 'manual';
@@ -1897,6 +1976,7 @@ export class StaffCommandService {
 
   /**
    * Handle edit vehicle command - calls VehicleEditService
+   * Now supports vehicle name + year search (e.g., "ubah innova reborn 2019 jadi bensin")
    */
   private static async handleEditVehicle(
     params: Record<string, any>,
@@ -1909,7 +1989,7 @@ export class StaffCommandService {
     if (!params.field || !params.newValue) {
       return {
         success: false,
-        message: "❌ Format tidak dikenali.\n\nContoh penggunaan:\n• rubah km 50000\n• ganti bensin jadi diesel\n• ubah tahun ke 2018\n• update harga 150jt",
+        message: "❌ Format tidak dikenali.\n\nContoh penggunaan:\n• rubah km 50000\n• ganti bensin jadi diesel\n• ubah tahun ke 2018\n• update harga 150jt\n• ubah innova 2019 jadi bensin",
       };
     }
 
@@ -1919,6 +1999,8 @@ export class StaffCommandService {
 
       const editResult = await VehicleEditService.editVehicle({
         vehicleId: params.vehicleId,
+        vehicleName: params.vehicleName, // For vehicle-name-based search
+        vehicleYear: params.vehicleYear, // For filtering by year
         fields: [{
           field: params.field,
           newValue: params.newValue,

@@ -1366,6 +1366,7 @@ export class MessageOrchestratorService {
   /**
    * Handle staff command
    * UPDATED: Now uses StaffCommandService for full command processing
+   * FIXED: Pass skipAuthorization=true when conversation is already verified as staff
    */
   private static async handleStaffCommand(
     conversation: any,
@@ -1378,7 +1379,7 @@ export class MessageOrchestratorService {
     try {
       // Determine if there's media
       const hasMedia = !!mediaUrl;
-      console.log(`[Orchestrator] handleStaffCommand - message: "${message}", hasMedia: ${hasMedia}, mediaUrl: ${mediaUrl}`);
+      console.log(`[Orchestrator] handleStaffCommand - message: "${message}", hasMedia: ${hasMedia}, mediaUrl: ${mediaUrl}, conversationIsStaff: ${conversation.isStaff}`);
 
       // Parse command (now async - supports AI-powered natural language extraction)
       const parseResult = await StaffCommandService.parseCommand(message, intent, hasMedia);
@@ -1391,13 +1392,16 @@ export class MessageOrchestratorService {
       }
 
       // Execute command
+      // IMPORTANT: Skip authorization if conversation is already verified as staff
+      // This fixes LID format issues where phone matching can fail
       const executionResult = await StaffCommandService.executeCommand(
         intent,
         parseResult.params,
         tenantId,
         staffPhone,
         conversation.id,
-        mediaUrl
+        mediaUrl,
+        conversation.isStaff === true // skipAuthorization if conversation is already verified
       );
 
       return {

@@ -23,6 +23,8 @@ export interface VehicleEditField {
 
 export interface VehicleEditRequest {
   vehicleId?: string; // displayId or UUID (optional if using context)
+  vehicleName?: string; // For vehicle-name-based search (e.g., "innova reborn")
+  vehicleYear?: number; // For filtering by year when using vehicleName
   fields: VehicleEditField[]; // Support multiple field edits
   staffPhone: string; // For authorization
   tenantId: string;
@@ -137,6 +139,7 @@ const FIELD_LABELS: Record<string, string> = {
 export class VehicleEditService {
   /**
    * Edit vehicle from WhatsApp with multi-field support
+   * Now supports vehicle name + year search
    */
   static async editVehicle(request: VehicleEditRequest): Promise<VehicleEditResult> {
     console.log("[Vehicle Edit] Starting edit request:", JSON.stringify(request, null, 2));
@@ -147,16 +150,21 @@ export class VehicleEditService {
         request.vehicleId,
         request.staffPhone,
         request.tenantId,
-        request.conversationId
+        request.conversationId,
+        request.vehicleName,
+        request.vehicleYear
       );
 
       if (!vehicle) {
+        const searchInfo = request.vehicleName
+          ? `"${request.vehicleName}${request.vehicleYear ? ` ${request.vehicleYear}` : ''}"`
+          : (request.vehicleId || 'context');
         return {
           success: false,
           message:
-            `Kendaraan tidak ditemukan.\n\n` +
-            `Pastikan ID kendaraan benar atau upload kendaraan terlebih dahulu.\n` +
-            `Format: edit PM-PST-001 tahun 2020`,
+            `Kendaraan ${searchInfo} tidak ditemukan.\n\n` +
+            `Pastikan nama/ID kendaraan benar atau upload kendaraan terlebih dahulu.\n` +
+            `Contoh: edit PM-PST-001 tahun 2020\nAtau: ubah innova 2019 jadi bensin`,
           error: "Vehicle not found",
         };
       }
@@ -405,13 +413,16 @@ export class VehicleEditService {
   }
 
   /**
-   * Find target vehicle by ID or from recent uploads / conversation context
+   * Find target vehicle by ID, name + year, or from recent uploads / conversation context
+   * Now supports vehicle name search (e.g., "innova reborn 2019")
    */
   private static async findTargetVehicle(
     vehicleId: string | undefined,
     staffPhone: string,
     tenantId: string,
-    conversationId?: string
+    conversationId?: string,
+    vehicleName?: string,
+    vehicleYear?: number
   ) {
     const selectFields = {
       id: true,
@@ -440,6 +451,43 @@ export class VehicleEditService {
         },
         select: selectFields,
       });
+    }
+
+    // NEW: If vehicleName provided, search by name + optional year
+    if (vehicleName) {
+      console.log(`[Vehicle Edit] Searching by vehicle name: "${vehicleName}", year: ${vehicleYear}`);
+
+      // Split vehicle name into search terms
+      const searchTerms = vehicleName.toLowerCase().split(/\s+/).filter(t => t.length > 1);
+      console.log(`[Vehicle Edit] Search terms: ${searchTerms.join(', ')}`);
+
+      // Build search conditions - each term must match make, model, or variant
+      const termConditions = searchTerms.map(term => ({
+        OR: [
+          { make: { contains: term, mode: 'insensitive' as const } },
+          { model: { contains: term, mode: 'insensitive' as const } },
+          { variant: { contains: term, mode: 'insensitive' as const } },
+        ]
+      }));
+
+      const vehicle = await prisma.vehicle.findFirst({
+        where: {
+          tenantId,
+          status: { not: 'DELETED' },
+          AND: termConditions,
+          ...(vehicleYear && { year: vehicleYear }),
+        },
+        orderBy: { createdAt: 'desc' }, // Most recent first
+        select: selectFields,
+      });
+
+      if (vehicle) {
+        console.log(`[Vehicle Edit] Found vehicle by name: ${vehicle.make} ${vehicle.model} ${vehicle.year} (${vehicle.id})`);
+        return vehicle;
+      }
+
+      console.log(`[Vehicle Edit] No vehicle found matching name: "${vehicleName}"`);
+      return null;
     }
 
     // Check conversation context for lastUploadedVehicleId
