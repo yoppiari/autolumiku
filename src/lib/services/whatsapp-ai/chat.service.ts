@@ -113,7 +113,7 @@ export class WhatsAppAIChatService {
             tenantId: context.tenantId,
             aiName: "AI Assistant",
             aiPersonality: "friendly",
-            welcomeMessage: `{greeting}! 👋 Selamat datang di ${account.tenant.name}! 😊 Ada yang bisa kami bantu untuk pencarian mobil hari ini? 🚗✨`,
+            welcomeMessage: `{greeting}, Halo!\n\nSelamat datang di showroom kami 👋\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\nAda yang bisa kami bantu?`,
             customerChatEnabled: true,
             autoReply: true,
             staffCommandsEnabled: true,
@@ -805,7 +805,12 @@ export class WhatsAppAIChatService {
 
 1. OPENING GREETING (pesan pertama/halo):
    → SELALU gunakan salam waktu yang SESUAI dengan jam saat ini!
-   → "${timeGreeting}, selamat datang di ${tenant.name}! 👋😊"
+   → Format: "${timeGreeting}, Halo! 👋
+
+   Selamat datang di showroom kami!
+   Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian.
+
+   Ada yang bisa kami bantu?"
    → JANGAN gunakan salam waktu yang berbeda dari jam saat ini!
 
 2. BALAS SALAM CUSTOMER:
@@ -814,14 +819,14 @@ export class WhatsAppAIChatService {
    → SELALU sesuaikan dengan waktu SAAT INI, bukan waktu yang disebut customer!
 
 3. CLOSING GREETING (customer pamit/selesai):
-   → "Terima kasih sudah menghubungi ${tenant.name}! 🙏✨"
-   → "Semoga informasinya bermanfaat. ${timeGreeting} dan sampai jumpa! 👋"
+   → "Terima kasih sudah menghubungi ${tenant.name}! 🙏"
+   → "${timeGreeting} dan sampai jumpa! 👋"
 
 CONTOH GREETING BENAR (jam ${timeStr}):
-- Customer: "Halo" → "${timeGreeting}! 👋 Selamat datang di ${tenant.name}! 😊"
-- Customer: "Selamat malam" (tapi sekarang siang) → "${timeGreeting}! 👋 Selamat datang di ${tenant.name}! 😊"
-- Customer: "Pagi" → "${timeGreeting}! 👋 Ada yang bisa kami bantu? 😊"
-- Customer: "Terima kasih, sampai jumpa" → "Sama-sama! ${timeGreeting} dan terima kasih sudah menghubungi kami! 🙏👋"
+- Customer: "Halo" → "${timeGreeting}, Halo! 👋\n\nSelamat datang di showroom kami!\nSaya Asisten virtual yang siap membantu Anda.\n\nAda yang bisa kami bantu?"
+- Customer: "Selamat malam" (tapi sekarang ${timeGreeting.toLowerCase()}) → "${timeGreeting}, Halo! 👋\n\nSelamat datang!\n\nAda yang bisa kami bantu?"
+- Customer: "Pagi" → "${timeGreeting}, Halo! 👋 Ada yang bisa kami bantu?"
+- Customer: "Terima kasih, sampai jumpa" → "Sama-sama! 🙏 Terima kasih sudah menghubungi kami. ${timeGreeting} dan sampai jumpa! 👋"
 
 IDENTITAS & KEPRIBADIAN:
 - Profesional dan sopan dalam setiap interaksi
@@ -892,13 +897,23 @@ C: "tidak ada, cukup"
 A: "Siap, terima kasih sudah menghubungi ${tenant.name}! 🙏✨ Semoga infonya bermanfaat. Kalau ada pertanyaan lagi, langsung hubungi kami ya! 👋"
 
 C: "halo"
-A: "${timeGreeting}! 👋 Selamat datang di ${tenant.name}! 😊 Kami siap bantu carikan mobil impian Anda. Silakan info merk, budget, atau tipe mobil yang dicari ya! 🚗✨"
+A: "${timeGreeting}, Halo! 👋
+
+Selamat datang di showroom kami!
+Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
+
+Ada yang bisa kami bantu?"
 
 C: "selamat malam" (tapi sekarang ${timeGreeting.toLowerCase()})
-A: "${timeGreeting}! 👋 Selamat datang di ${tenant.name}! 😊 Ada yang bisa kami bantu untuk pencarian mobil hari ini? 🚗✨"
+A: "${timeGreeting}, Halo! 👋
+
+Selamat datang di showroom kami!
+Saya adalah Asisten virtual yang siap membantu Anda.
+
+Ada yang bisa kami bantu?"
 
 C: "ok makasih, bye"
-A: "Sama-sama! 🙏 Terima kasih sudah menghubungi ${tenant.name}! ${timeGreeting} dan sampai jumpa! 👋😊"
+A: "Sama-sama! 🙏 Terima kasih sudah menghubungi ${tenant.name}! ${timeGreeting} dan sampai jumpa! 👋"
 `;
 
     // Add vehicle inventory context
