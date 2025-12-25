@@ -1716,7 +1716,11 @@ CONTOH RESPON ESCALATED:
 
     // Build query: each search term must match at least one field (AND logic)
     // This ensures "Honda City" only matches vehicles with BOTH "Honda" AND "City"
-    const termConditions = searchTerms.map(term => ({
+    // Filter out year terms - we'll handle them separately
+    const yearTerms = searchTerms.filter(term => /^20\d{2}$/.test(term));
+    const nonYearTerms = searchTerms.filter(term => !/^20\d{2}$/.test(term));
+
+    const termConditions = nonYearTerms.map(term => ({
       OR: [
         { make: { contains: term, mode: 'insensitive' as const } },
         { model: { contains: term, mode: 'insensitive' as const } },
@@ -1725,12 +1729,20 @@ CONTOH RESPON ESCALATED:
       ]
     }));
 
+    // Build year condition separately
+    const yearCondition = yearTerms.length > 0 ? parseInt(yearTerms[0], 10) : null;
+    if (yearCondition) {
+      console.log(`[WhatsApp AI Chat] Added year filter: ${yearCondition}`);
+    }
+
     const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId,
         status: 'AVAILABLE',
         // AND logic: ALL terms must match (each term can match any field)
         ...(termConditions.length > 0 && { AND: termConditions }),
+        // Year filter (if specified)
+        ...(yearCondition && { year: yearCondition }),
       },
       include: {
         photos: {
