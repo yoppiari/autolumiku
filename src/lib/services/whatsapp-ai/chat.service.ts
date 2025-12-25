@@ -1515,7 +1515,7 @@ CONTOH RESPON ESCALATED:
       include: {
         photos: {
           orderBy: { isMainPhoto: 'desc' },
-          take: 2, // Get main photo + 1 backup
+          // Get ALL photos - customer may ask for interior/exterior/all
         },
       },
       take: maxVehicles, // Only 1 for specific query, up to 3 for generic
@@ -1543,7 +1543,7 @@ CONTOH RESPON ESCALATED:
         include: {
           photos: {
             orderBy: { isMainPhoto: 'desc' },
-            take: 2,
+            // Get ALL photos
           },
         },
         take: 3,
@@ -1582,44 +1582,47 @@ CONTOH RESPON ESCALATED:
         continue;
       }
 
-      const photo = v.photos[0];
-      console.log(`[WhatsApp AI Chat] Photo data:`, {
-        id: photo.id,
-        originalUrl: photo.originalUrl?.substring(0, 100),
-        mediumUrl: photo.mediumUrl?.substring(0, 100),
-        largeUrl: photo.largeUrl?.substring(0, 100),
-      });
+      // Loop through ALL photos for this vehicle (not just the first one)
+      // This sends interior, exterior, dashboard, etc. as requested by customer
+      for (let photoIndex = 0; photoIndex < v.photos.length; photoIndex++) {
+        const photo = v.photos[photoIndex];
+        console.log(`[WhatsApp AI Chat] Photo ${photoIndex + 1}/${v.photos.length}:`, {
+          id: photo.id,
+          isMainPhoto: photo.isMainPhoto,
+          originalUrl: photo.originalUrl?.substring(0, 100),
+        });
 
-      // Prioritize JPG (originalUrl) for better WhatsApp mobile compatibility
-      // WebP format (medium/large) may not display on some mobile devices
-      // Fallback: originalUrl (JPG) → largeUrl → mediumUrl
-      let imageUrl = photo.originalUrl || photo.largeUrl || photo.mediumUrl;
+        // Prioritize JPG (originalUrl) for better WhatsApp mobile compatibility
+        // WebP format (medium/large) may not display on some mobile devices
+        // Fallback: originalUrl (JPG) → largeUrl → mediumUrl
+        let imageUrl = photo.originalUrl || photo.largeUrl || photo.mediumUrl;
 
-      if (!imageUrl) {
-        console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for ${v.make} ${v.model} photo`);
-        continue;
+        if (!imageUrl) {
+          console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for photo ${photoIndex + 1}`);
+          continue;
+        }
+
+        // Convert relative URL to full URL
+        if (imageUrl.startsWith('/')) {
+          imageUrl = `${baseUrl}${imageUrl}`;
+        }
+
+        // Ensure URL is properly encoded (handle spaces, special chars)
+        try {
+          const url = new URL(imageUrl);
+          imageUrl = url.toString();
+        } catch (e) {
+          console.log(`[WhatsApp AI Chat] ⚠️ Invalid URL format, using as-is: ${imageUrl}`);
+        }
+
+        // Caption: only show full details on first photo, simpler for rest
+        const caption = photoIndex === 0
+          ? `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
+          : `${v.make} ${v.model} ${v.year} (${photoIndex + 1}/${v.photos.length})`;
+
+        images.push({ imageUrl, caption });
       }
-
-      // Convert relative URL to full URL
-      if (imageUrl.startsWith('/')) {
-        imageUrl = `${baseUrl}${imageUrl}`;
-        console.log(`[WhatsApp AI Chat] Converted relative URL to: ${imageUrl}`);
-      }
-
-      // Ensure URL is properly encoded (handle spaces, special chars)
-      try {
-        const url = new URL(imageUrl);
-        imageUrl = url.toString();
-      } catch (e) {
-        console.log(`[WhatsApp AI Chat] ⚠️ Invalid URL format, using as-is: ${imageUrl}`);
-      }
-
-      console.log(`[WhatsApp AI Chat] ✅ Final imageUrl: ${imageUrl}`);
-
-      images.push({
-        imageUrl,
-        caption: `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`,
-      });
+      console.log(`[WhatsApp AI Chat] ✅ Added ${v.photos.length} photos for ${v.make} ${v.model}`);
     }
 
     console.log(`[WhatsApp AI Chat] ✅ Prepared ${images.length} vehicle images to send`);
