@@ -31,7 +31,6 @@ interface HomepageVehicleCardProps {
   vehicleUrl: string;
   waLink: string;
   waNumber: string;
-  formatPrice: (price: number) => string;
 }
 
 export default function HomepageVehicleCard({
@@ -39,8 +38,12 @@ export default function HomepageVehicleCard({
   vehicleUrl,
   waLink,
   waNumber,
-  formatPrice,
 }: HomepageVehicleCardProps) {
+  // Format price in Rupiah
+  const formatPrice = (price: number) => {
+    const rupiah = price / 100;
+    return `Rp ${rupiah.toLocaleString('id-ID')}`;
+  };
   const isSold = vehicle.status === 'SOLD';
 
   return (

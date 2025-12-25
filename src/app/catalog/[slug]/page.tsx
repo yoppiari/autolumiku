@@ -261,10 +261,6 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
                         vehicleUrl={getVehicleUrl(vehicle.id)}
                         waLink={waLink}
                         waNumber={waNumber}
-                        formatPrice={(price: number) => {
-                          const rupiah = price / 100;
-                          return `Rp ${rupiah.toLocaleString('id-ID')}`;
-                        }}
                       />
                     );
                   })}
