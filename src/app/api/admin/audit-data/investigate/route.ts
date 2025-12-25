@@ -46,7 +46,6 @@ export async function GET(request: NextRequest) {
           price: true,
           createdAt: true,
           updatedAt: true,
-          deletedAt: true,
         },
         orderBy: { updatedAt: 'desc' }
       });
@@ -164,7 +163,6 @@ export async function GET(request: NextRequest) {
                 id: v.id,
                 name: `${v.make} ${v.model} ${v.year}`,
                 price: v.price,
-                deletedAt: v.deletedAt,
                 updatedAt: v.updatedAt,
               }))
             }))
