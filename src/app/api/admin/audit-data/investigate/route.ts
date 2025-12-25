@@ -64,12 +64,12 @@ export async function GET(request: NextRequest) {
           customerPhone: true,
           customerName: true,
           status: true,
-          createdAt: true,
+          startedAt: true,
           _count: {
             select: { messages: true }
           }
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { startedAt: 'desc' }
       });
 
       // 3. Get all messages grouped by conversation status
