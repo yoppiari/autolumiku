@@ -8,6 +8,7 @@ import { headers } from 'next/headers';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
+import GoogleMapEmbed from '@/components/catalog/GoogleMapEmbed';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FaPhone, FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
@@ -68,10 +69,6 @@ export default async function ContactPage({ params }: { params: { slug: string }
   const fullAddress = [tenant.address, tenant.city, tenant.province]
     .filter(Boolean)
     .join(', ');
-
-  // Construct Google Maps Embed URL
-  // Using the embed API with the address as the query
-  const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(fullAddress || tenant.name)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
   return (
     <ThemeProvider tenantId={tenant.id}>
@@ -202,20 +199,14 @@ export default async function ContactPage({ params }: { params: { slug: string }
                 </div>
               </div>
 
-              {/* Map */}
+              {/* Map - Using memoized component to prevent flickering */}
               <div className="lg:col-span-2">
-                <div className="h-full min-h-[500px] rounded-2xl overflow-hidden bg-muted relative">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0, minHeight: '500px' }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={mapUrl}
-                    title="Showroom Location"
-                  ></iframe>
-                </div>
+                <GoogleMapEmbed
+                  address={fullAddress || tenant.name}
+                  title="Lokasi Showroom"
+                  height="500px"
+                  className="h-full"
+                />
               </div>
             </div>
           </div>
