@@ -13,6 +13,7 @@
 
 const BASE_URL = process.env.BASE_URL || "https://auto.lumiku.com";
 const TENANT_ID = "e592973f-9eff-4f40-adf6-ca6b2ad9721f"; // Prima Mobil
+const FETCH_TIMEOUT = 30000; // 30 seconds timeout per request
 
 // ==================== TEST UTILITIES ====================
 
@@ -55,6 +56,53 @@ function info(message: string) {
   log(`  ℹ️ ${message}`, 'blue');
 }
 
+/**
+ * Fetch with timeout support
+ */
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = FETCH_TIMEOUT): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeout}ms`);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Test webhook with retry
+ */
+async function testWebhook(phone: string, message: string, retries = 2): Promise<any> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const response = await fetchWithTimeout(
+        `${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, message }),
+        },
+        FETCH_TIMEOUT
+      );
+      return await response.json();
+    } catch (error: any) {
+      if (i === retries) throw error;
+      // Wait before retry
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+}
+
 // ==================== 1. INTENT CLASSIFIER TESTS ====================
 
 async function testIntentClassifier() {
@@ -75,18 +123,17 @@ async function testIntentClassifier() {
 
   for (const pattern of customerPatterns) {
     try {
-      const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: '6281999000111', message: pattern.message }),
-      });
-      const data = await response.json();
+      const data = await testWebhook('6281999000111', pattern.message);
 
-      if (data.processingResult?.intent?.includes('customer')) {
+      if (data?.data?.processingResult?.intent?.includes('customer')) {
+        pass(`${pattern.desc}: "${pattern.message}" → ${data.data.processingResult.intent}`);
+        passed++;
+      } else if (data?.processingResult?.intent?.includes('customer')) {
         pass(`${pattern.desc}: "${pattern.message}" → ${data.processingResult.intent}`);
         passed++;
       } else {
-        fail(`${pattern.desc}: Expected customer intent, got ${data.processingResult?.intent}`);
+        const intent = data?.data?.processingResult?.intent || data?.processingResult?.intent;
+        fail(`${pattern.desc}: Expected customer intent, got ${intent}`);
         failed++;
       }
     } catch (error: any) {
@@ -111,18 +158,14 @@ async function testIntentClassifier() {
 
   for (const pattern of staffPatterns) {
     try {
-      const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: staffPhone, message: pattern.message }),
-      });
-      const data = await response.json();
+      const data = await testWebhook(staffPhone, pattern.message);
+      const intent = data?.data?.processingResult?.intent || data?.processingResult?.intent;
 
-      if (data.processingResult?.intent?.includes('staff')) {
-        pass(`${pattern.desc}: "${pattern.message}" → ${data.processingResult.intent}`);
+      if (intent?.includes('staff')) {
+        pass(`${pattern.desc}: "${pattern.message}" → ${intent}`);
         passed++;
       } else {
-        fail(`${pattern.desc}: Expected staff intent, got ${data.processingResult?.intent}`);
+        fail(`${pattern.desc}: Expected staff intent, got ${intent}`);
         failed++;
       }
     } catch (error: any) {
@@ -135,18 +178,14 @@ async function testIntentClassifier() {
 
   try {
     const botPhone = '6285385419766';
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: botPhone, message: 'test' }),
-    });
-    const data = await response.json();
+    const data = await testWebhook(botPhone, 'test');
+    const error = data?.data?.processingResult?.error || data?.processingResult?.error;
 
-    if (data.processingResult?.error?.includes('skipped')) {
+    if (error?.includes('skipped')) {
       pass(`Bot phone correctly skipped`);
       passed++;
     } else {
-      fail(`Bot phone should be skipped`);
+      fail(`Bot phone should be skipped, got: ${error}`);
       failed++;
     }
   } catch (error: any) {
@@ -168,22 +207,19 @@ async function testStaffCommands() {
   subHeader('Inventory Command');
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: staffPhone, message: 'inventory' }),
-    });
-    const data = await response.json();
+    const data = await testWebhook(staffPhone, 'inventory');
+    const responseMsg = data?.data?.processingResult?.responseMessage || data?.processingResult?.responseMessage;
 
-    if (data.processingResult?.responseMessage?.includes('unit') ||
-        data.processingResult?.responseMessage?.includes('kendaraan') ||
-        data.processingResult?.responseMessage?.includes('AVAILABLE')) {
+    if (responseMsg?.includes('unit') || responseMsg?.includes('kendaraan') || responseMsg?.includes('AVAILABLE')) {
       pass(`Inventory command returns vehicle list`);
       passed++;
-    } else {
-      info(`Response: ${data.processingResult?.responseMessage?.substring(0, 100)}...`);
+    } else if (responseMsg) {
+      info(`Response: ${responseMsg.substring(0, 100)}...`);
       pass(`Inventory command executed`);
       passed++;
+    } else {
+      fail(`Inventory command failed - no response`);
+      failed++;
     }
   } catch (error: any) {
     fail(`Inventory: ${error.message}`);
@@ -193,14 +229,10 @@ async function testStaffCommands() {
   subHeader('Stats Command');
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: staffPhone, message: 'stats' }),
-    });
-    const data = await response.json();
+    const data = await testWebhook(staffPhone, 'stats');
+    const responseMsg = data?.data?.processingResult?.responseMessage || data?.processingResult?.responseMessage;
 
-    if (data.processingResult?.responseMessage) {
+    if (responseMsg) {
       pass(`Stats command returns statistics`);
       passed++;
     } else {
@@ -215,22 +247,19 @@ async function testStaffCommands() {
   subHeader('Upload Command (Init)');
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: staffPhone, message: 'upload' }),
-    });
-    const data = await response.json();
+    const data = await testWebhook(staffPhone, 'upload');
+    const responseMsg = data?.data?.processingResult?.responseMessage || data?.processingResult?.responseMessage;
 
-    if (data.processingResult?.responseMessage?.includes('foto') ||
-        data.processingResult?.responseMessage?.includes('upload') ||
-        data.processingResult?.responseMessage?.includes('kirim')) {
+    if (responseMsg?.includes('foto') || responseMsg?.includes('upload') || responseMsg?.includes('kirim')) {
       pass(`Upload command prompts for photo`);
       passed++;
-    } else {
-      info(`Response: ${data.processingResult?.responseMessage?.substring(0, 100)}...`);
+    } else if (responseMsg) {
+      info(`Response: ${responseMsg.substring(0, 100)}...`);
       pass(`Upload command executed`);
       passed++;
+    } else {
+      fail(`Upload command failed - no response`);
+      failed++;
     }
   } catch (error: any) {
     fail(`Upload: ${error.message}`);
@@ -240,22 +269,19 @@ async function testStaffCommands() {
   subHeader('Staff Greeting Menu');
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: staffPhone, message: 'halo' }),
-    });
-    const data = await response.json();
+    const data = await testWebhook(staffPhone, 'halo');
+    const responseMsg = data?.data?.processingResult?.responseMessage || data?.processingResult?.responseMessage;
 
-    if (data.processingResult?.responseMessage?.includes('upload') ||
-        data.processingResult?.responseMessage?.includes('inventory') ||
-        data.processingResult?.responseMessage?.includes('stats')) {
+    if (responseMsg?.includes('upload') || responseMsg?.includes('inventory') || responseMsg?.includes('stats')) {
       pass(`Staff greeting shows command menu`);
       passed++;
-    } else {
-      info(`Response: ${data.processingResult?.responseMessage?.substring(0, 100)}...`);
+    } else if (responseMsg) {
+      info(`Response: ${responseMsg.substring(0, 100)}...`);
       pass(`Staff greeting executed`);
       passed++;
+    } else {
+      fail(`Staff greeting failed - no response`);
+      failed++;
     }
   } catch (error: any) {
     fail(`Staff greeting: ${error.message}`);
@@ -276,16 +302,12 @@ async function testAIChat() {
   subHeader('Customer Greeting Response');
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: customerPhone, message: 'halo' }),
-    });
-    const data = await response.json();
+    const data = await testWebhook(customerPhone, 'halo');
+    const responseMsg = data?.data?.processingResult?.responseMessage || data?.processingResult?.responseMessage;
 
-    if (data.processingResult?.responseMessage) {
+    if (responseMsg) {
       pass(`AI responds to greeting`);
-      info(`Response length: ${data.processingResult.responseMessage.length} chars`);
+      info(`Response length: ${responseMsg.length} chars`);
       passed++;
     } else {
       fail(`No AI response`);
@@ -299,14 +321,10 @@ async function testAIChat() {
   subHeader('Vehicle Inquiry Response');
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: customerPhone, message: 'ada mobil apa saja yang tersedia?' }),
-    });
-    const data = await response.json();
+    const data = await testWebhook(customerPhone, 'ada mobil apa saja yang tersedia?');
+    const responseMsg = data?.data?.processingResult?.responseMessage || data?.processingResult?.responseMessage;
 
-    if (data.processingResult?.responseMessage) {
+    if (responseMsg) {
       pass(`AI responds to vehicle inquiry`);
       passed++;
     } else {
@@ -321,14 +339,10 @@ async function testAIChat() {
   subHeader('Price Inquiry Response');
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: customerPhone, message: 'berapa harga mobil yang paling murah?' }),
-    });
-    const data = await response.json();
+    const data = await testWebhook(customerPhone, 'berapa harga mobil yang paling murah?');
+    const responseMsg = data?.data?.processingResult?.responseMessage || data?.processingResult?.responseMessage;
 
-    if (data.processingResult?.responseMessage) {
+    if (responseMsg) {
       pass(`AI responds to price inquiry`);
       passed++;
     } else {
@@ -344,21 +358,13 @@ async function testAIChat() {
 
   try {
     // First message
-    await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: '6281777666555', message: 'saya cari avanza' }),
-    });
+    await testWebhook('6281777666555', 'saya cari avanza');
 
     // Follow-up message
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: '6281777666555', message: 'yang tahun berapa?' }),
-    });
-    const data = await response.json();
+    const data = await testWebhook('6281777666555', 'yang tahun berapa?');
+    const conversationId = data?.data?.processingResult?.conversationId || data?.processingResult?.conversationId;
 
-    if (data.processingResult?.conversationId) {
+    if (conversationId) {
       pass(`Conversation context maintained`);
       passed++;
     } else {
@@ -383,7 +389,7 @@ async function testAIHealthMonitor() {
 
   try {
     // Check if there's a health endpoint
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/debug-staff`);
+    const response = await fetchWithTimeout(`${BASE_URL}/api/v1/whatsapp-ai/debug-staff`);
     const data = await response.json();
 
     if (data.success) {
@@ -543,7 +549,7 @@ async function testProductionAPIs() {
 
   for (const endpoint of debugEndpoints) {
     try {
-      const response = await fetch(`${BASE_URL}${endpoint}`);
+      const response = await fetchWithTimeout(`${BASE_URL}${endpoint}`);
       if (response.ok) {
         pass(`GET ${endpoint} - Status ${response.status}`);
         passed++;
@@ -560,7 +566,7 @@ async function testProductionAPIs() {
   subHeader('Test Endpoints');
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-upload?phone=6281234567890&tenantId=${TENANT_ID}`);
+    const response = await fetchWithTimeout(`${BASE_URL}/api/v1/whatsapp-ai/test-upload?phone=6281234567890&tenantId=${TENANT_ID}`);
     if (response.ok) {
       pass(`GET /api/v1/whatsapp-ai/test-upload - Status ${response.status}`);
       passed++;
@@ -576,11 +582,14 @@ async function testProductionAPIs() {
   subHeader('Webhook Endpoint');
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: '6281999888777', message: 'test' }),
-    });
+    const response = await fetchWithTimeout(
+      `${BASE_URL}/api/v1/whatsapp-ai/test-webhook?tenantId=${TENANT_ID}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: '6281999888777', message: 'test' }),
+      }
+    );
     if (response.ok) {
       pass(`POST /api/v1/whatsapp-ai/test-webhook - Status ${response.status}`);
       passed++;
