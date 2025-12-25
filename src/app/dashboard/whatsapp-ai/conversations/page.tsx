@@ -975,7 +975,7 @@ export default function ConversationsPage() {
                       <div className="min-w-0 flex-1 overflow-visible">
                         <div className="flex items-center gap-1">
                           <h3 className="font-medium text-gray-900 text-xs md:text-sm whitespace-nowrap">
-                            {conv.customerName || formatPhoneNumber(conv.customerPhone)}
+                            {formatPhoneNumber(conv.customerPhone)}
                           </h3>
                           {conv.hasRealPhone && (
                             <span title="Verified WhatsApp">
@@ -1083,7 +1083,7 @@ export default function ConversationsPage() {
                     })()}
                     <div>
                       <h2 className="text-sm font-semibold text-gray-900">
-                        {selectedConversation.customerName || formatPhoneNumber(selectedConversation.customerPhone)}
+                        {formatPhoneNumber(selectedConversation.customerPhone)}
                       </h2>
                       <p className="text-xs text-gray-500">
                         {selectedConversation.isStaff ? 'Staff' : 'Customer'}
