@@ -1794,9 +1794,25 @@ export class MessageOrchestratorService {
 
   /**
    * Get full staff info (name, role, phone) for a phone number
+   * IMPORTANT: Explicitly excludes bot phone numbers (Aimeow accounts)
    */
   private static async getStaffInfo(phone: string, tenantId: string): Promise<{ name: string; role: string; phone: string } | null> {
     console.log(`[Orchestrator] getStaffInfo: Looking up phone="${phone}" in tenant=${tenantId}`);
+
+    // CRITICAL: Check if this is the bot phone (Aimeow account) - NEVER treat as staff
+    const aimeowAccount = await prisma.aimeowAccount.findFirst({
+      where: { tenantId },
+      select: { phoneNumber: true },
+    });
+
+    if (aimeowAccount?.phoneNumber) {
+      const botPhoneNormalized = this.normalizePhone(aimeowAccount.phoneNumber);
+      const inputNormalized = this.normalizePhone(phone);
+      if (inputNormalized === botPhoneNormalized) {
+        console.log(`[Orchestrator] getStaffInfo: 🤖 Bot phone detected - NOT staff`);
+        return null;
+      }
+    }
 
     // Handle LID format - check conversation context for verified phone
     if (phone.includes("@lid")) {
@@ -1855,10 +1871,25 @@ export class MessageOrchestratorService {
    * Check if phone number belongs to staff
    * Uses normalized phone comparison for flexible matching
    * Includes: ADMIN, MANAGER, SALES, STAFF roles
+   * IMPORTANT: Explicitly excludes bot phone numbers (Aimeow accounts)
    */
   private static async isStaffMember(phone: string, tenantId: string): Promise<boolean> {
     const normalizedInput = this.normalizePhone(phone);
     console.log(`[Orchestrator] Checking staff - input: ${phone}, normalized: ${normalizedInput}`);
+
+    // CRITICAL: Check if this is the bot phone (Aimeow account) - NEVER treat as staff
+    const aimeowAccount = await prisma.aimeowAccount.findFirst({
+      where: { tenantId },
+      select: { phoneNumber: true },
+    });
+
+    if (aimeowAccount?.phoneNumber) {
+      const botPhoneNormalized = this.normalizePhone(aimeowAccount.phoneNumber);
+      if (normalizedInput === botPhoneNormalized) {
+        console.log(`[Orchestrator] 🤖 Bot phone detected (${aimeowAccount.phoneNumber}) - NOT staff, treating as customer`);
+        return false;
+      }
+    }
 
     // Get all users in tenant with staff roles and check phone match with normalization
     const users = await prisma.user.findMany({

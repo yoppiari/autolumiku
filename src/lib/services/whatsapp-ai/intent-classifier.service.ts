@@ -396,12 +396,27 @@ export class IntentClassifierService {
   /**
    * Check if a normalized phone number belongs to staff
    * Uses cache for performance but always verifies against DB
+   * IMPORTANT: Explicitly excludes bot phone numbers (Aimeow accounts)
    */
   private static async checkPhoneIsStaff(
     normalizedPhone: string,
     tenantId: string
   ): Promise<boolean> {
     console.log(`[Intent Classifier] 🔍 Checking if ${normalizedPhone} is staff in tenant ${tenantId}`);
+
+    // CRITICAL: Check if this is the bot phone (Aimeow account) - NEVER treat as staff
+    const aimeowAccount = await prisma.aimeowAccount.findFirst({
+      where: { tenantId },
+      select: { phoneNumber: true },
+    });
+
+    if (aimeowAccount?.phoneNumber) {
+      const botPhoneNormalized = this.normalizePhone(aimeowAccount.phoneNumber);
+      if (normalizedPhone === botPhoneNormalized) {
+        console.log(`[Intent Classifier] 🤖 Bot phone detected (${aimeowAccount.phoneNumber}) - NOT staff, treating as customer`);
+        return false;
+      }
+    }
 
     // Check cache first for quick lookup
     const cacheKey = tenantId;
