@@ -254,20 +254,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
             {/* Right side items */}
             <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 018.14 15.66l-1.405 1.405M15 17H9m0-5a2 2 0 012-2m2-2a2 2 0 012 2m-6-4a2 2 0 012-2m2 2a2 2 0 012 2" />
-                </svg>
-              </button>
-
-              {/* Help */}
-              <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549 1.651 1.938 2.975 3.578 3.889a8.008 8.008 0 01-3.578 3.889c-1.64-.914-3.029-2.238-3.578-3.889a8.008 8.008 0 013.578-3.889c1.64.914 3.029 2.238 3.578 3.889M8 2.5a8.002 8.002 0 01-7.428 0" />
-                </svg>
-              </button>
-
               {/* User avatar */}
               <div className="relative">
                 <button className="flex items-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
