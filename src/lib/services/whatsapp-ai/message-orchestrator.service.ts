@@ -53,6 +53,23 @@ export class MessageOrchestratorService {
     console.log(`[Orchestrator] Account: ${incoming.accountId}, Tenant: ${incoming.tenantId}`);
     console.log(`[Orchestrator] From: ${incoming.from}, Message: ${incoming.message}`);
 
+    // CRITICAL: Skip processing if message is from bot's own phone number
+    // This prevents loops, unnecessary processing, and garbage data
+    const botPhoneCheck = await this.isBotPhoneNumber(incoming.from, incoming.tenantId);
+    if (botPhoneCheck.isBot) {
+      console.log(`[Orchestrator] 🤖 SKIPPING - Message from bot's own number: ${incoming.from}`);
+      console.log(`[Orchestrator] 🤖 Bot phone: ${botPhoneCheck.botPhone}`);
+      console.log(`[Orchestrator] 🤖 This is likely a webhook anomaly or testing error`);
+      return {
+        success: true,
+        conversationId: "",
+        intent: "unknown",
+        responseMessage: undefined,
+        escalated: false,
+        error: "Message from bot's own phone number - skipped",
+      };
+    }
+
     // Check for duplicate/rapid fire messages from same sender
     const senderKey = `${incoming.accountId}:${incoming.from}`;
     const now = Date.now();
@@ -1944,6 +1961,40 @@ export class MessageOrchestratorService {
     }
 
     return digits;
+  }
+
+  /**
+   * Check if a phone number is the bot's own phone number
+   * Used to skip processing messages from the bot itself (prevents loops and garbage data)
+   */
+  private static async isBotPhoneNumber(
+    phone: string,
+    tenantId: string
+  ): Promise<{ isBot: boolean; botPhone?: string }> {
+    try {
+      // Get the Aimeow account for this tenant
+      const aimeowAccount = await prisma.aimeowAccount.findFirst({
+        where: { tenantId },
+        select: { phoneNumber: true },
+      });
+
+      if (!aimeowAccount?.phoneNumber) {
+        return { isBot: false };
+      }
+
+      // Normalize both phones for comparison
+      const normalizedInput = this.normalizePhone(phone);
+      const normalizedBotPhone = this.normalizePhone(aimeowAccount.phoneNumber);
+
+      if (normalizedInput === normalizedBotPhone) {
+        return { isBot: true, botPhone: aimeowAccount.phoneNumber };
+      }
+
+      return { isBot: false, botPhone: aimeowAccount.phoneNumber };
+    } catch (error: any) {
+      console.error(`[Orchestrator] Error checking bot phone:`, error.message);
+      return { isBot: false };
+    }
   }
 
   /**
