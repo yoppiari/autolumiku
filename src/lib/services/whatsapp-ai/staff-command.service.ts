@@ -32,6 +32,28 @@ export interface CommandExecutionResult {
   skipResponse?: boolean; // If true, don't send WhatsApp response (for silent photo saves)
 }
 
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Get time-based greeting in Indonesian based on WIB (UTC+7) timezone
+ * Exported for use in other services
+ */
+export function getTimeBasedGreeting(): string {
+  const now = new Date();
+  const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+  const hour = wibTime.getHours();
+
+  if (hour >= 4 && hour < 11) {
+    return "Selamat pagi";
+  } else if (hour >= 11 && hour < 15) {
+    return "Selamat siang";
+  } else if (hour >= 15 && hour < 18) {
+    return "Selamat sore";
+  } else {
+    return "Selamat malam";
+  }
+}
+
 // ==================== STAFF COMMAND SERVICE ====================
 
 export class StaffCommandService {
@@ -1496,15 +1518,20 @@ export class StaffCommandService {
     let greeting = "";
     const tenantName = aimeowAccount?.tenant?.name || "Showroom";
 
+    // Get time-based greeting (Selamat pagi/siang/sore/malam)
+    const timeGreeting = getTimeBasedGreeting();
+
     if (aimeowAccount?.aiConfig?.welcomeMessage) {
       // Use welcome message from config, replace placeholders
+      // Supported placeholders: {greeting}, {name}, {tenant}, {showroom}
       greeting = aimeowAccount.aiConfig.welcomeMessage
+        .replace(/\{greeting\}/gi, timeGreeting)
         .replace(/\{name\}/gi, staffName)
         .replace(/\{tenant\}/gi, tenantName)
         .replace(/\{showroom\}/gi, tenantName);
     } else {
-      // Default professional greeting
-      greeting = `Selamat datang, ${staffName}!`;
+      // Default professional greeting with time-based salam
+      greeting = `${timeGreeting}, ${staffName}! Selamat datang di ${tenantName}!`;
     }
 
     // Build professional staff menu - user-friendly format without "/" prefix

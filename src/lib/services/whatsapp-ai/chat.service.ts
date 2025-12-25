@@ -113,7 +113,7 @@ export class WhatsAppAIChatService {
             tenantId: context.tenantId,
             aiName: "AI Assistant",
             aiPersonality: "friendly",
-            welcomeMessage: `Halo! Saya adalah asisten virtual ${account.tenant.name}. Ada yang bisa saya bantu?`,
+            welcomeMessage: `{greeting}! 👋 Selamat datang di ${account.tenant.name}! 😊 Ada yang bisa kami bantu untuk pencarian mobil hari ini? 🚗✨`,
             customerChatEnabled: true,
             autoReply: true,
             staffCommandsEnabled: true,
