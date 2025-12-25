@@ -1462,12 +1462,26 @@ CONTOH RESPON ESCALATED:
     console.log('[WhatsApp AI Chat] Search terms:', searchTerms);
 
     // Check if query contains specific vehicle identifiers (model name, stock code, etc.)
+    const specificModels = [
+      'innova', 'avanza', 'xenia', 'fortuner', 'rush', 'calya', 'sigra', 'brio', 'jazz', 'civic', 'accord',
+      'xpander', 'pajero', 'triton', 'ertiga', 'swift', 'baleno', 'livina', 'serena', 'terios', 'ayla',
+      'hiace', 'alphard', 'vellfire', 'yaris', 'vios', 'camry', 'corolla', 'raize', 'rocky', 'wuling',
+      'confero', 'cortez', 'almaz', 'hrv', 'crv', 'wrv', 'brv', 'br-v', 'hr-v', 'cr-v', 'wr-v',
+      // Additional models
+      'city', 'freed', 'mobilio', 'odyssey', 'stream', 'fit', 'shuttle', // Honda
+      'agya', 'granmax', 'luxio', 'taruna', 'feroza', // Daihatsu
+      'ranger', 'everest', 'ecosport', 'fiesta', 'focus', // Ford
+      'captiva', 'spin', 'trax', 'trailblazer', 'orlando', // Chevrolet
+      'tiguan', 'polo', 'golf', 'touran', // VW
+      'cx3', 'cx5', 'cx7', 'cx8', 'cx9', 'mazda2', 'mazda3', 'mazda6', 'biante', // Mazda
+      'juke', 'xtrail', 'x-trail', 'navara', 'terra', 'grand', 'march', 'note', // Nissan
+      'tucson', 'santa', 'stargazer', 'creta', 'kona', 'palisade', // Hyundai
+      'sportage', 'seltos', 'sonet', 'sorento', 'carnival', 'carens', // Kia
+      'outlander', 'delica', 'l300', // Mitsubishi
+    ];
+
     const hasSpecificQuery = searchTerms.some(term =>
-      // Common car models
-      ['innova', 'avanza', 'xenia', 'fortuner', 'rush', 'calya', 'sigra', 'brio', 'jazz', 'civic', 'accord',
-       'xpander', 'pajero', 'triton', 'ertiga', 'swift', 'baleno', 'livina', 'serena', 'terios', 'ayla',
-       'hiace', 'alphard', 'vellfire', 'yaris', 'vios', 'camry', 'corolla', 'raize', 'rocky', 'wuling',
-       'confero', 'cortez', 'almaz', 'hrv', 'crv', 'wrv', 'brv'].includes(term) ||
+      specificModels.includes(term) ||
       // Stock code pattern (PM-PST-XXX, PM-XXX, etc.)
       /^pm-?/i.test(term) ||
       // Year pattern
@@ -1480,19 +1494,23 @@ CONTOH RESPON ESCALATED:
     const maxVehicles = hasSpecificQuery ? 1 : 3;
     console.log(`[WhatsApp AI Chat] hasSpecificQuery: ${hasSpecificQuery}, maxVehicles: ${maxVehicles}`);
 
+    // Build query: each search term must match at least one field (AND logic)
+    // This ensures "Honda City" only matches vehicles with BOTH "Honda" AND "City"
+    const termConditions = searchTerms.map(term => ({
+      OR: [
+        { make: { contains: term, mode: 'insensitive' as const } },
+        { model: { contains: term, mode: 'insensitive' as const } },
+        { variant: { contains: term, mode: 'insensitive' as const } },
+        { displayId: { contains: term, mode: 'insensitive' as const } },
+      ]
+    }));
+
     const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId,
         status: 'AVAILABLE',
-        ...(searchTerms.length > 0 && {
-          OR: searchTerms.flatMap(term => [
-            { make: { contains: term, mode: 'insensitive' as const } },
-            { model: { contains: term, mode: 'insensitive' as const } },
-            { variant: { contains: term, mode: 'insensitive' as const } },
-            // Also match display ID (e.g., PM-PST-001)
-            { displayId: { contains: term, mode: 'insensitive' as const } },
-          ])
-        }),
+        // AND logic: ALL terms must match (each term can match any field)
+        ...(termConditions.length > 0 && { AND: termConditions }),
       },
       include: {
         photos: {
