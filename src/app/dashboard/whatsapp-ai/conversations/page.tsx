@@ -10,6 +10,7 @@ import Link from 'next/link';
 
 interface Conversation {
   id: string;
+  allConversationIds?: string[]; // All conversation IDs for this phone (grouped)
   customerPhone: string;
   customerName?: string;
   isStaff: boolean;
@@ -18,6 +19,7 @@ interface Conversation {
   status: string;
   lastMessageAt: string;
   escalatedTo?: string;
+  isEscalated?: boolean; // True if any conversation for this phone is escalated
   messageCount: number;
   unreadCount: number;
   hasRealPhone?: boolean;
@@ -701,7 +703,7 @@ export default function ConversationsPage() {
   // Only active conversations should appear in the main list
   const filteredConversations = conversations.filter((conv) => {
     // Skip closed escalated conversations in "all" view (they are considered resolved/done)
-    const isClosedEscalated = conv.escalatedTo && conv.status === 'closed';
+    const isClosedEscalated = conv.isEscalated && conv.status === 'closed';
 
     const matchesType =
       // All: show everything EXCEPT closed escalated (those are soft deleted from main view)
@@ -709,7 +711,7 @@ export default function ConversationsPage() {
       (filterType === 'customer' && !conv.isStaff && !isClosedEscalated) ||
       (filterType === 'staff' && conv.isStaff && !isClosedEscalated) ||
       // Escalated: only show ACTIVE escalated (not closed/resolved)
-      (filterType === 'escalated' && conv.escalatedTo && conv.status !== 'closed');
+      (filterType === 'escalated' && conv.isEscalated && conv.status !== 'closed');
 
     const matchesSearch =
       conv.customerPhone.includes(searchTerm) ||
@@ -886,7 +888,7 @@ export default function ConversationsPage() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Semua ({conversations.filter(c => !(c.escalatedTo && c.status === 'closed')).length})
+                Semua ({conversations.filter(c => !(c.isEscalated && c.status === 'closed')).length})
               </button>
               <button
                 onClick={() => setFilterType('customer')}
@@ -916,7 +918,7 @@ export default function ConversationsPage() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Escalated ({conversations.filter(c => c.escalatedTo && c.status !== 'closed').length})
+                Escalated ({conversations.filter(c => c.isEscalated && c.status !== 'closed').length})
               </button>
             </div>
           </div>
@@ -991,7 +993,7 @@ export default function ConversationsPage() {
                           >
                             {conv.lastIntent?.replace('customer_', '').replace('staff_', '') || '?'}
                           </span>
-                          {conv.escalatedTo && (
+                          {conv.isEscalated && (
                             <span className="inline-block px-2 py-0.5 md:px-1.5 md:py-0 bg-red-100 text-red-800 rounded text-[11px] md:text-[10px] font-medium">
                               Esc
                             </span>

@@ -122,49 +122,126 @@ export async function GET(request: NextRequest) {
       return false;
     };
 
-    // Format response - resolve real phone from contextData if customerPhone is LID
-    // Also apply corrected staff status immediately
-    const formattedConversations = conversations
-      .map((conv) => {
-        const contextData = conv.contextData as Record<string, any> | null;
-        let displayPhone = conv.customerPhone;
-        let hasRealPhone = true;
+    // Group conversations by normalized phone number
+    // Show only 1 entry per phone, with combined data
+    const phoneGroupMap = new Map<string, {
+      id: string;
+      allIds: string[];
+      customerPhone: string;
+      originalPhone: string;
+      customerName: string | null;
+      isStaff: boolean;
+      conversationType: string | null;
+      lastIntent: string | null;
+      status: string;
+      lastMessageAt: Date;
+      escalatedTo: string | null;
+      isEscalated: boolean;
+      messageCount: number;
+      hasRealPhone: boolean;
+    }>();
 
-        // Check if customerPhone is a LID
-        if (isLIDNumber(conv.customerPhone)) {
-          // Try to get real phone from contextData
-          const realPhone = contextData?.verifiedStaffPhone || contextData?.realPhone || contextData?.actualPhone;
-          if (realPhone && !isLIDNumber(realPhone)) {
-            displayPhone = realPhone;
-          } else {
-            // No real phone available - mark it
-            hasRealPhone = false;
-          }
+    for (const conv of conversations) {
+      const contextData = conv.contextData as Record<string, any> | null;
+      let displayPhone = conv.customerPhone;
+      let hasRealPhone = true;
+
+      // Check if customerPhone is a LID
+      if (isLIDNumber(conv.customerPhone)) {
+        // Try to get real phone from contextData
+        const realPhone = contextData?.verifiedStaffPhone || contextData?.realPhone || contextData?.actualPhone;
+        if (realPhone && !isLIDNumber(realPhone)) {
+          displayPhone = realPhone;
+        } else {
+          // No real phone available - skip
+          hasRealPhone = false;
         }
+      }
 
-        // Check actual staff status against registered users
-        const normalizedPhone = normalizePhone(conv.customerPhone);
-        const isCurrentlyStaff = staffPhoneSet.has(normalizedPhone);
-        const isStale = conv.isStaff && !isCurrentlyStaff;
+      if (!hasRealPhone) continue;
 
-        return {
+      // Normalize for grouping
+      const normalizedPhone = normalizePhone(displayPhone);
+      if (!normalizedPhone) continue;
+
+      // Check actual staff status against registered users
+      const isCurrentlyStaff = staffPhoneSet.has(normalizedPhone);
+      const isStale = conv.isStaff && !isCurrentlyStaff;
+      const correctedIsStaff = isStale ? false : conv.isStaff;
+      const correctedType = isStale ? 'customer' : conv.conversationType;
+
+      // Check if this conversation is escalated
+      const isEscalated = conv.status === 'escalated' || !!conv.escalatedTo;
+
+      const existing = phoneGroupMap.get(normalizedPhone);
+
+      if (!existing) {
+        // First conversation for this phone
+        phoneGroupMap.set(normalizedPhone, {
           id: conv.id,
+          allIds: [conv.id],
           customerPhone: displayPhone,
-          originalPhone: conv.customerPhone, // Keep original for debugging
+          originalPhone: conv.customerPhone,
           customerName: conv.customerName,
-          isStaff: isStale ? false : conv.isStaff, // Return corrected value immediately
-          conversationType: isStale ? 'customer' : conv.conversationType,
+          isStaff: correctedIsStaff,
+          conversationType: correctedType,
           lastIntent: conv.lastIntent,
           status: conv.status,
-          lastMessageAt: conv.lastMessageAt.toISOString(),
+          lastMessageAt: conv.lastMessageAt,
           escalatedTo: conv.escalatedTo,
+          isEscalated,
           messageCount: conv._count.messages,
-          unreadCount: 0, // TODO: Implement unread tracking
-          hasRealPhone,
-        };
-      })
-      // Filter out conversations that only have LID (no real phone number)
-      .filter((conv) => conv.hasRealPhone);
+          hasRealPhone: true,
+        });
+      } else {
+        // Merge with existing - keep most recent data
+        existing.allIds.push(conv.id);
+        existing.messageCount += conv._count.messages;
+
+        // If ANY conversation is escalated, mark as escalated
+        if (isEscalated) {
+          existing.isEscalated = true;
+          existing.escalatedTo = existing.escalatedTo || conv.escalatedTo;
+        }
+
+        // If this conversation is more recent, update primary data
+        if (conv.lastMessageAt > existing.lastMessageAt) {
+          existing.id = conv.id;
+          existing.lastMessageAt = conv.lastMessageAt;
+          existing.lastIntent = conv.lastIntent;
+          existing.status = conv.status;
+          existing.customerName = conv.customerName || existing.customerName;
+        }
+
+        // Use corrected staff status if any conversation has it
+        if (correctedIsStaff) {
+          existing.isStaff = true;
+          existing.conversationType = 'staff';
+        }
+      }
+    }
+
+    // Convert map to array and format response
+    const formattedConversations = Array.from(phoneGroupMap.values())
+      .map((group) => ({
+        id: group.id,
+        allConversationIds: group.allIds, // For reference if needed
+        customerPhone: group.customerPhone,
+        originalPhone: group.originalPhone,
+        customerName: group.customerName,
+        isStaff: group.isStaff,
+        conversationType: group.conversationType,
+        lastIntent: group.lastIntent,
+        status: group.isEscalated ? 'escalated' : group.status,
+        lastMessageAt: group.lastMessageAt.toISOString(),
+        escalatedTo: group.escalatedTo,
+        isEscalated: group.isEscalated, // Explicit flag for UI
+        messageCount: group.messageCount,
+        unreadCount: 0, // TODO: Implement unread tracking
+        hasRealPhone: group.hasRealPhone,
+      }))
+      // Sort by lastMessageAt descending
+      .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
 
     return NextResponse.json({
       success: true,
