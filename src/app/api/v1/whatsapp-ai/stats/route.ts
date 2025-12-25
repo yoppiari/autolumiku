@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Get conversation counts
+    // Get conversation counts (exclude deleted conversations - data sampah)
     const [
       totalConversations,
       activeConversations,
@@ -33,7 +33,10 @@ export async function GET(request: NextRequest) {
       staffConversations,
     ] = await Promise.all([
       prisma.whatsAppConversation.count({
-        where: { tenantId },
+        where: {
+          tenantId,
+          status: { not: "deleted" },
+        },
       }),
       prisma.whatsAppConversation.count({
         where: {
@@ -45,37 +48,45 @@ export async function GET(request: NextRequest) {
         where: {
           tenantId,
           escalatedTo: { not: null },
+          status: { not: "deleted" },
         },
       }),
       prisma.whatsAppConversation.count({
         where: {
           tenantId,
           conversationType: "customer",
+          status: { not: "deleted" },
         },
       }),
       prisma.whatsAppConversation.count({
         where: {
           tenantId,
           isStaff: true,
+          status: { not: "deleted" },
         },
       }),
     ]);
 
-    // Get message counts
+    // Get message counts (exclude messages from deleted conversations)
     const [totalMessages, aiMessages, customerMessages] = await Promise.all([
       prisma.whatsAppMessage.count({
-        where: { tenantId },
+        where: {
+          tenantId,
+          conversation: { status: { not: "deleted" } },
+        },
       }),
       prisma.whatsAppMessage.count({
         where: {
           tenantId,
           aiResponse: true,
+          conversation: { status: { not: "deleted" } },
         },
       }),
       prisma.whatsAppMessage.count({
         where: {
           tenantId,
           direction: "inbound",
+          conversation: { status: { not: "deleted" } },
         },
       }),
     ]);
