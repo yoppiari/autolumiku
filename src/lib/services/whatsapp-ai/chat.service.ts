@@ -113,7 +113,7 @@ export class WhatsAppAIChatService {
             tenantId: context.tenantId,
             aiName: "AI Assistant",
             aiPersonality: "friendly",
-            welcomeMessage: `{greeting}, Halo!\n\nSelamat datang di showroom kami 👋\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\nAda yang bisa kami bantu?`,
+            welcomeMessage: `{greeting}! Selamat datang di showroom kami!\n\nAda yang bisa kami bantu?`,
             customerChatEnabled: true,
             autoReply: true,
             staffCommandsEnabled: true,
@@ -734,8 +734,8 @@ export class WhatsAppAIChatService {
     // Check if greeting
     if (/^(halo|hai|hello|hi|sore|pagi|siang|malam|selamat)/i.test(msg)) {
       return {
-        message: `Halo! Selamat datang di ${tenantName}! 👋😊\n\n` +
-          `Saat ini tersedia ${vehicles.length} unit kendaraan 🚗✨\n\n` +
+        message: `Halo! Selamat datang di ${tenantName}!\n\n` +
+          `Saat ini tersedia ${vehicles.length} unit kendaraan.\n\n` +
           `Silakan info mobil yang dicari atau sebutkan budget-nya, kami bantu carikan yang cocok ya!`,
         shouldEscalate: false,
       };
@@ -827,13 +827,11 @@ export class WhatsAppAIChatService {
 
 1. OPENING GREETING (pesan pertama/halo):
    → SELALU gunakan salam waktu yang SESUAI dengan jam saat ini!
-   → Format: "${timeGreeting}, Halo! 👋
-
-   Selamat datang di showroom kami!
-   Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian.
+   → Format: "${timeGreeting}! Selamat datang di ${tenant.name}!
 
    Ada yang bisa kami bantu?"
    → JANGAN gunakan salam waktu yang berbeda dari jam saat ini!
+   → JANGAN tambahkan emoji berlebihan di greeting awal!
 
 2. BALAS SALAM CUSTOMER:
    → Jika customer bilang "selamat pagi" → balas "${timeGreeting}" (sesuai JAM SAAT INI, bukan ikut customer!)
@@ -841,14 +839,13 @@ export class WhatsAppAIChatService {
    → SELALU sesuaikan dengan waktu SAAT INI, bukan waktu yang disebut customer!
 
 3. CLOSING GREETING (customer pamit/selesai):
-   → "Terima kasih sudah menghubungi ${tenant.name}! 🙏"
-   → "${timeGreeting} dan sampai jumpa! 👋"
+   → "Siap, terima kasih sudah menghubungi ${tenant.name}! Semoga informasinya bermanfaat. Jangan ragu hubungi kami kembali ya!"
 
 CONTOH GREETING BENAR (jam ${timeStr}):
-- Customer: "Halo" → "${timeGreeting}, Halo! 👋\n\nSelamat datang di showroom kami!\nSaya Asisten virtual yang siap membantu Anda.\n\nAda yang bisa kami bantu?"
-- Customer: "Selamat malam" (tapi sekarang ${timeGreeting.toLowerCase()}) → "${timeGreeting}, Halo! 👋\n\nSelamat datang!\n\nAda yang bisa kami bantu?"
-- Customer: "Pagi" → "${timeGreeting}, Halo! 👋 Ada yang bisa kami bantu?"
-- Customer: "Terima kasih, sampai jumpa" → "Sama-sama! 🙏 Terima kasih sudah menghubungi kami. ${timeGreeting} dan sampai jumpa! 👋"
+- Customer: "Halo" → "${timeGreeting}! Selamat datang di ${tenant.name}!\n\nAda yang bisa kami bantu?"
+- Customer: "Selamat malam" (tapi sekarang ${timeGreeting.toLowerCase()}) → "${timeGreeting}! Selamat datang di ${tenant.name}!\n\nAda yang bisa kami bantu?"
+- Customer: "Pagi" → "${timeGreeting}! Ada yang bisa kami bantu?"
+- Customer: "Terima kasih, sampai jumpa" → "Siap, terima kasih sudah menghubungi ${tenant.name}! Semoga informasinya bermanfaat. Jangan ragu hubungi kami kembali ya!"
 
 IDENTITAS & KEPRIBADIAN:
 - Profesional dan sopan dalam setiap interaksi
@@ -860,8 +857,9 @@ GAYA KOMUNIKASI:
 - Sapa dengan "Bapak/Ibu" atau nama jika diketahui
 - Gunakan kata-kata sopan: "silakan", "terima kasih", "mohon maaf"
 - Hindari bahasa slang atau terlalu casual
-- Gunakan emoji untuk membuat percakapan lebih hangat dan friendly 😊
-- Emoji yang cocok: 👋 (salam), 🚗 (mobil), 📸 (foto), ✨ (highlight), 💰 (harga), 📋 (info), 🙏 (terima kasih), 😊 (ramah), 👍 (ok)
+- Gunakan emoji SECUKUPNYA (1-2 emoji per pesan, tidak berlebihan)
+- Emoji yang cocok: 🚗 (mobil), 📸 (foto), ✨ (highlight penting saja)
+- JANGAN gunakan emoji di setiap kalimat!
 - Berikan informasi lengkap namun ringkas (3-4 kalimat)
 
 CARA MERESPONS:
@@ -916,26 +914,20 @@ C: "ga usah deh, km nya berapa?"
 A: "Oke, tidak masalah! 👍 Untuk info kilometer:\n• Brio 2019: 45.000 km\n• Agya 2020: 30.000 km\nAda yang lain yang bisa dibantu? 😊"
 
 C: "tidak ada, cukup"
-A: "Siap, terima kasih sudah menghubungi ${tenant.name}! 🙏✨ Semoga infonya bermanfaat. Kalau ada pertanyaan lagi, langsung hubungi kami ya! 👋"
+A: "Siap, terima kasih sudah menghubungi ${tenant.name}! Semoga infonya bermanfaat. Kalau ada pertanyaan lagi, langsung hubungi kami ya!"
 
 C: "halo"
-A: "${timeGreeting}, Halo! 👋
-
-Selamat datang di showroom kami!
-Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
+A: "${timeGreeting}! Selamat datang di ${tenant.name}!
 
 Ada yang bisa kami bantu?"
 
 C: "selamat malam" (tapi sekarang ${timeGreeting.toLowerCase()})
-A: "${timeGreeting}, Halo! 👋
-
-Selamat datang di showroom kami!
-Saya adalah Asisten virtual yang siap membantu Anda.
+A: "${timeGreeting}! Selamat datang di ${tenant.name}!
 
 Ada yang bisa kami bantu?"
 
 C: "ok makasih, bye"
-A: "Sama-sama! 🙏 Terima kasih sudah menghubungi ${tenant.name}! ${timeGreeting} dan sampai jumpa! 👋"
+A: "Sama-sama! Terima kasih sudah menghubungi ${tenant.name}! Semoga informasinya bermanfaat. Jangan ragu hubungi kami kembali ya!"
 `;
 
     // Add vehicle inventory context
@@ -1248,6 +1240,26 @@ CONTOH RESPON ESCALATED:
       console.log(`[PhotoConfirm DEBUG] ⚠️ MessageHistory is EMPTY!`);
     }
     // ========== END DEBUG LOGGING ==========
+
+    // ==================== APPRECIATION HANDLER (MUST BE FIRST!) ====================
+    // Detect positive acknowledgment BEFORE photo confirmation check
+    // These should NOT be treated as photo requests!
+    const appreciationPatterns = [
+      /\b(mantap|mantab|mantul|keren|bagus|oke banget|ok banget|sip banget)\b/i,
+      /\b(good|great|nice|cool|awesome|perfect|excellent)\b/i,
+      /\b(makasih|terima\s*kasih|thanks|thank you|thx)\b/i,
+      /^(ok|oke|sip|siap)\s+(mantap|mantab|keren|bagus|banget|deh|ya|boss?|bos)/i,
+      /^mantap/i, // starts with mantap
+      /^keren/i,  // starts with keren
+      /^bagus/i,  // starts with bagus
+      /^(sudah|udah)\s*(cukup|ok|oke)/i, // "sudah cukup", "udah ok"
+      /^cukup/i,  // starts with cukup
+    ];
+    const isAppreciation = appreciationPatterns.some(p => p.test(msg));
+    if (isAppreciation) {
+      console.log(`[PhotoConfirm DEBUG] ✅ Appreciation detected: "${msg}" - NOT a photo request`);
+      return null; // Let the AI or smartFallback handle appreciation
+    }
 
     // Photo confirmation patterns - comprehensive list
     const photoConfirmPatterns = [
