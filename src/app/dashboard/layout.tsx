@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import DashboardErrorBoundary from '@/components/dashboard/ErrorBoundary';
+import SessionManager from '@/components/auth/SessionManager';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -93,6 +94,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <DashboardErrorBoundary>
+    <SessionManager
+      inactivityTimeout={60 * 60 * 1000}  // 60 minutes of inactivity
+      refreshInterval={50 * 60 * 1000}    // Refresh token every 50 minutes
+      warningTime={5 * 60 * 1000}         // Show warning 5 minutes before timeout
+    >
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
@@ -210,6 +216,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </main>
       </div>
     </div>
+    </SessionManager>
     </DashboardErrorBoundary>
   );
 }
