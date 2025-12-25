@@ -88,14 +88,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Set annual contract dates
+    // Set 14-month contract dates
     const currentPeriodStart = new Date();
     const currentPeriodEnd = new Date();
-    currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
+    currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 14); // 14 months from now
 
-    // Annual price: Rp 30,000,000 per year
-    const annualPrice = 30000000;
-    const pricePerMonth = Math.floor(annualPrice / 12);
+    // Price: Rp 2,500,000 per month
+    const pricePerMonth = 2500000;
 
     const results: Array<{ tenant: string; success: boolean; error?: string }> = [];
 
@@ -139,10 +138,10 @@ export async function POST(request: NextRequest) {
       subscriptionDetails: {
         plan: 'enterprise',
         status: 'active',
-        contractPeriod: '1 year',
+        contractPeriod: '14 months',
         start: currentPeriodStart.toISOString(),
         end: currentPeriodEnd.toISOString(),
-        annualPrice: `Rp ${annualPrice.toLocaleString('id-ID')}`,
+        pricePerMonth: `Rp ${pricePerMonth.toLocaleString('id-ID')}`,
       },
     });
   } catch (error: any) {

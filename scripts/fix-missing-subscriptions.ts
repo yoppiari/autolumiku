@@ -38,14 +38,13 @@ async function main() {
 
     console.log('\n🔧 Creating subscriptions...\n');
 
-    // Set annual contract dates
+    // Set 14-month contract dates
     const currentPeriodStart = new Date();
     const currentPeriodEnd = new Date();
-    currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1); // 1 year from now
+    currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 14); // 14 months from now
 
-    // Annual price: Rp 30,000,000 per year
-    const annualPrice = 30000000;
-    const pricePerMonth = Math.floor(annualPrice / 12);
+    // Price: Rp 2,500,000 per month
+    const pricePerMonth = 2500000;
 
     let successCount = 0;
     let failedCount = 0;
@@ -88,10 +87,10 @@ async function main() {
     console.log(`\n📝 Subscription Details Applied:`);
     console.log(`   - Plan: ENTERPRISE`);
     console.log(`   - Status: active`);
-    console.log(`   - Contract Period: 1 year`);
+    console.log(`   - Contract Period: 14 months`);
     console.log(`   - Start: ${currentPeriodStart.toLocaleDateString('id-ID')}`);
     console.log(`   - End: ${currentPeriodEnd.toLocaleDateString('id-ID')}`);
-    console.log(`   - Annual Price: Rp ${annualPrice.toLocaleString('id-ID')}`);
+    console.log(`   - Price/Month: Rp ${pricePerMonth.toLocaleString('id-ID')}`);
 
   } catch (error) {
     console.error('❌ Error:', error);
