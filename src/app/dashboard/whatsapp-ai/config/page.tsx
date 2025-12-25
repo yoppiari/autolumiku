@@ -242,12 +242,6 @@ export default function WhatsAppAIConfigPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-y min-h-[100px]"
                 placeholder="{greeting}! 👋 Selamat datang di {showroom}! 😊 Ada yang bisa kami bantu?"
               />
-              <p className="mt-2 text-xs text-gray-500">
-                <strong>Placeholder yang didukung:</strong><br />
-                <code className="bg-gray-100 px-1 rounded">{'{greeting}'}</code> = Selamat pagi/siang/sore/malam (otomatis sesuai waktu WIB)<br />
-                <code className="bg-gray-100 px-1 rounded">{'{name}'}</code> = Nama pengguna<br />
-                <code className="bg-gray-100 px-1 rounded">{'{showroom}'}</code> atau <code className="bg-gray-100 px-1 rounded">{'{tenant}'}</code> = Nama showroom
-              </p>
             </div>
           </div>
         </div>
