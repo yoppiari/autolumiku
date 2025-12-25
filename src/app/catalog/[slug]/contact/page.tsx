@@ -211,9 +211,9 @@ export default async function ContactPage({ params }: { params: { slug: string }
                     style={{ border: 0, minHeight: '500px' }}
                     loading="lazy"
                     allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
                     src={mapUrl}
                     title="Showroom Location"
-                    className="grayscale hover:grayscale-0 transition-all duration-500"
                   ></iframe>
                 </div>
               </div>
