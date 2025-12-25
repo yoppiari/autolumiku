@@ -12,6 +12,43 @@ import bcrypt from 'bcryptjs';
 import { authenticateRequest, type AuthResult } from '@/lib/auth/middleware';
 
 /**
+ * Sync WhatsApp conversations to mark as staff when user is registered
+ * Updates existing conversations from this phone to be marked as staff
+ */
+async function syncConversationsAsStaff(tenantId: string, phone: string, staffName: string): Promise<{ updated: number }> {
+  try {
+    // Find all conversations with this phone number (with various formats)
+    // Phone in conversations might be: 6281234567890@s.whatsapp.net or 6281234567890
+    const phonePatterns = [
+      phone,                           // 6281234567890
+      `${phone}@s.whatsapp.net`,       // 6281234567890@s.whatsapp.net
+      `${phone}@lid`,                  // 6281234567890@lid (linked device)
+    ];
+
+    // Update all matching conversations to mark as staff
+    const result = await prisma.whatsAppConversation.updateMany({
+      where: {
+        tenantId,
+        OR: phonePatterns.map(p => ({
+          customerPhone: { startsWith: phone.substring(0, 10) } // Match by phone prefix
+        })),
+        isStaff: false, // Only update non-staff conversations
+      },
+      data: {
+        isStaff: true,
+        conversationType: 'staff',
+        customerName: staffName || undefined,
+      },
+    });
+
+    return { updated: result.count };
+  } catch (error) {
+    console.error('[syncConversationsAsStaff] Error:', error);
+    return { updated: 0 };
+  }
+}
+
+/**
  * Normalize phone number to consistent format (62xxx)
  * Handles: +62xxx, 62xxx, 0xxx, 08xxx, with spaces/dashes
  */
@@ -245,6 +282,11 @@ export async function POST(request: NextRequest) {
           canManageLeads: true,
         },
       });
+
+      // Sync existing WhatsApp conversations - mark as staff
+      // This handles conversations that existed before the user was registered
+      const syncResult = await syncConversationsAsStaff(tenantId, normalizedPhone, `${firstName} ${lastName || ''}`.trim());
+      console.log(`[Users API] Synced ${syncResult.updated} conversations as staff for ${normalizedPhone}`);
     }
 
     return NextResponse.json({

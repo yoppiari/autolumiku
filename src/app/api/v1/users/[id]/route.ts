@@ -12,6 +12,31 @@ import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 
 /**
+ * Sync WhatsApp conversations to mark as staff when user phone is updated
+ */
+async function syncConversationsAsStaff(tenantId: string, phone: string, staffName: string): Promise<{ updated: number }> {
+  try {
+    // Update all matching conversations to mark as staff
+    const result = await prisma.whatsAppConversation.updateMany({
+      where: {
+        tenantId,
+        customerPhone: { startsWith: phone.substring(0, 10) },
+        isStaff: false,
+      },
+      data: {
+        isStaff: true,
+        conversationType: 'staff',
+        customerName: staffName || undefined,
+      },
+    });
+    return { updated: result.count };
+  } catch (error) {
+    console.error('[syncConversationsAsStaff] Error:', error);
+    return { updated: 0 };
+  }
+}
+
+/**
  * Normalize phone number to consistent format (62xxx)
  * Handles: +62xxx, 62xxx, 0xxx, 08xxx, with spaces/dashes
  */
@@ -223,6 +248,17 @@ export async function PUT(
             canManageLeads: true,
           },
         });
+      }
+
+      // Sync existing WhatsApp conversations - mark as staff
+      // This handles cases where phone was added/changed
+      if (currentUser.tenantId && normalizedPhone !== currentUser.phone) {
+        const syncResult = await syncConversationsAsStaff(
+          currentUser.tenantId,
+          normalizedPhone,
+          `${firstName} ${lastName || ''}`.trim()
+        );
+        console.log(`[Users API] Synced ${syncResult.updated} conversations as staff for ${normalizedPhone}`);
       }
     } else if (existingStaffAuth) {
       // Phone removed - delete staff auth
