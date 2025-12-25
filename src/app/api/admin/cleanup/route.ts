@@ -88,6 +88,17 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // 5. Delete staff command logs
+      if (cleanupOptions?.staffCommandLogs !== false) {
+        const deletedStaffLogs = await prisma.staffCommandLog.deleteMany({
+          where: { tenantId }
+        });
+        results.operations.push({
+          type: 'staff_command_logs_deleted',
+          count: deletedStaffLogs.count
+        });
+      }
+
       // Log to audit
       console.log(`[Cleanup] Tenant ${tenant.name} (${tenantId}) cleanup completed:`, results);
 
@@ -148,6 +159,10 @@ export async function GET(request: NextRequest) {
         where: { tenantId }
       });
 
+      const staffCommandLogsCount = await prisma.staffCommandLog.count({
+        where: { tenantId }
+      });
+
       return NextResponse.json({
         success: true,
         data: {
@@ -158,6 +173,7 @@ export async function GET(request: NextRequest) {
             whatsapp_messages: messagesCount,
             whatsapp_conversations: conversationsCount,
             leads: leadsCount,
+            staff_command_logs: staffCommandLogsCount,
           },
           warning: 'Use POST to permanently delete this data. This action cannot be undone!'
         }
