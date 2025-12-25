@@ -56,24 +56,7 @@ export async function GET(request: NextRequest) {
         return acc;
       }, {} as Record<string, typeof vehicles>);
 
-      // 2. Investigate WhatsApp Messages without Conversations
-      const messagesWithoutConversation = await prisma.whatsAppMessage.findMany({
-        where: {
-          tenantId,
-          conversationId: { equals: null }
-        },
-        select: {
-          id: true,
-          content: true,
-          direction: true,
-          createdAt: true,
-          senderPhone: true,
-        },
-        take: 20,
-        orderBy: { createdAt: 'desc' }
-      });
-
-      // 3. Get all conversations
+      // 2. Get all conversations
       const conversations = await prisma.whatsAppConversation.findMany({
         where: { tenantId },
         select: {
@@ -89,7 +72,7 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' }
       });
 
-      // 4. Get all messages grouped by conversation status
+      // 3. Get all messages grouped by conversation status
       const allMessages = await prisma.whatsAppMessage.findMany({
         where: { tenantId },
         select: {
@@ -110,23 +93,7 @@ export async function GET(request: NextRequest) {
         return acc;
       }, {} as Record<string, number>);
 
-      // 5. Check orphaned messages (messages with conversationId that doesn't exist)
-      const orphanedMessages = await prisma.whatsAppMessage.findMany({
-        where: {
-          tenantId,
-          conversationId: { not: null },
-          conversation: null
-        },
-        select: {
-          id: true,
-          conversationId: true,
-          content: true,
-          createdAt: true,
-        },
-        take: 10
-      });
-
-      // 6. Get conversations with deleted status
+      // 4. Get conversations with deleted status
       const deletedConversations = await prisma.whatsAppConversation.findMany({
         where: {
           tenantId,
@@ -180,9 +147,6 @@ export async function GET(request: NextRequest) {
             messages: {
               total: allMessages.length,
               byConversationStatus: messagesByConvStatus,
-              withoutConversation: messagesWithoutConversation.length,
-              samplesWithoutConv: messagesWithoutConversation.slice(0, 5),
-              orphaned: orphanedMessages.length,
               inDeletedConversations: totalMessagesInDeletedConv,
             },
             deletedConversations: {
