@@ -487,6 +487,52 @@ export class WhatsAppAIChatService {
       });
     } catch (e) { /* ignore */ }
 
+    // ==================== GREETING HANDLER (OPENING GREETING) ====================
+    // Detect greeting patterns for new conversations
+    const greetingPatterns = [
+      /^(halo|hai|hello|hi|hey)$/i,
+      /^(pagi|siang|sore|malam)$/i,
+      /^selamat\s+(pagi|siang|sore|malam)/i,
+      /^(assalamualaikum|assalamu'?alaikum)/i,
+      /^(halo|hai|hi)\s+(kak|mas|mbak|pak|bu)/i,
+      /^(permisi|maaf)\s*(ganggu)?/i,
+    ];
+    const isGreeting = greetingPatterns.some(p => p.test(msg));
+    const isNewConversation = messageHistory.length <= 2;
+
+    // Check if it looks like a greeting (short message, starts with greeting word)
+    const looksLikeGreeting = msg.length < 20 && /^(halo|hai|hi|pagi|siang|sore|malam|selamat|assalam)/i.test(msg);
+
+    if (isGreeting || (isNewConversation && looksLikeGreeting)) {
+      console.log(`[SmartFallback] 👋 Greeting detected: "${msg}" - sending warm welcome`);
+
+      // Get time-based greeting
+      const now = new Date();
+      const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+      const hour = wibTime.getHours();
+      let timeGreeting = "Selamat pagi";
+      if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+      else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+      else if (hour >= 18 || hour < 4) timeGreeting = "Selamat malam";
+
+      // Build vehicle preview
+      let vehiclePreview = "";
+      if (vehicles.length > 0) {
+        const topVehicles = vehicles.slice(0, 3);
+        vehiclePreview = "\n\n🚗 *Beberapa pilihan mobil kami:*\n";
+        for (const v of topVehicles) {
+          const priceJuta = Math.round(v.price / 1000000);
+          vehiclePreview += `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} Juta\n`;
+        }
+        vehiclePreview += `\n_Ketik nama mobil untuk info lebih lengkap!_`;
+      }
+
+      return {
+        message: `${timeGreeting}! 👋\n\nHalo, selamat datang di ${tenantName}!\n\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian dan mendapatkan informasi yang Anda butuhkan.\n\nAda yang bisa kami bantu?${vehiclePreview}`,
+        shouldEscalate: false,
+      };
+    }
+
     // ==================== APPRECIATION/ACKNOWLEDGMENT HANDLER ====================
     // Detect positive acknowledgment phrases (mantap, keren, bagus, etc.)
     // These should NOT be treated as photo requests!
