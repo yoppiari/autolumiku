@@ -33,6 +33,7 @@ interface AuditLog {
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAuditLogs();
@@ -41,8 +42,13 @@ export default function AuditLogsPage() {
   const fetchAuditLogs = async () => {
     try {
       setIsLoading(true);
+      setError(null);
 
       const data = await api.get('/api/admin/audit?limit=100');
+
+      if (!data.success && data.error) {
+        throw new Error(data.error);
+      }
 
       if (data.success && data.data) {
         const mappedLogs: AuditLog[] = data.data.map((log: any) => ({
@@ -67,8 +73,9 @@ export default function AuditLogsPage() {
         }));
         setLogs(mappedLogs);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch audit logs:', error);
+      setError(error.message || 'Failed to fetch audit logs');
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +127,29 @@ export default function AuditLogsPage() {
     return true;
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <div className="text-red-500 mb-2">Failed to load audit logs</div>
+        <div className="text-sm text-gray-500">{error}</div>
+        <button
+          onClick={fetchAuditLogs}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   const exportLogs = () => {
     // Mock export functionality
     alert('Export audit logs as CSV - Feature coming soon');
@@ -152,7 +182,7 @@ export default function AuditLogsPage() {
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="text-sm text-gray-500">Success Rate</div>
           <div className="text-2xl font-bold text-green-600">
-            {Math.round((logs.filter(l => l.status === 'success').length / logs.length) * 100)}%
+            {logs.length > 0 ? Math.round((logs.filter(l => l.status === 'success').length / logs.length) * 100) : 0}%
           </div>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
