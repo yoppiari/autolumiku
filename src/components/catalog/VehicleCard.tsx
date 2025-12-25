@@ -66,7 +66,7 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
           alt={`${vehicle.make} ${vehicle.model}`}
           aspectRatio="aspect-[16/10]"
           roundedClass="rounded-t-lg"
-          showIndicators={true}
+          showIndicators={false}
           showCounter={true}
           interval={10000}
           badges={

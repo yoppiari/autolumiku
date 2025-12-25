@@ -459,7 +459,7 @@ export default function VehiclesPage() {
                     aspectRatio={viewMode === 'grid' ? 'h-32' : 'h-24'}
                     roundedClass={viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'}
                     grayscale={vehicle.status === 'SOLD'}
-                    showIndicators={true}
+                    showIndicators={false}
                     showCounter={false}
                     interval={10000}
                     overlay={vehicle.status === 'SOLD' ? (

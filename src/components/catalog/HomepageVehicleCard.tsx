@@ -1,6 +1,6 @@
 /**
- * Public Vehicle Card Component
- * Used in public catalog listing with auto-rotating image carousel
+ * Homepage Vehicle Card Component
+ * Used in homepage featured vehicles section with auto-rotating carousel
  */
 
 'use client';
@@ -16,55 +16,38 @@ interface Photo {
   originalUrl: string;
 }
 
-interface PublicVehicleCardProps {
+interface HomepageVehicleCardProps {
   vehicle: {
     id: string;
     displayId: string | null;
     make: string;
     model: string;
     year: number;
-    price: number; // Serialized as number from server
+    price: number;
     transmissionType: string | null;
     status: string;
     photos: Photo[];
   };
-  slug: string;
-  isCustomDomain: boolean;
+  vehicleUrl: string;
+  waLink: string;
   waNumber: string;
+  formatPrice: (price: number) => string;
 }
 
-export default function PublicVehicleCard({
+export default function HomepageVehicleCard({
   vehicle,
-  slug,
-  isCustomDomain,
+  vehicleUrl,
+  waLink,
   waNumber,
-}: PublicVehicleCardProps) {
+  formatPrice,
+}: HomepageVehicleCardProps) {
   const isSold = vehicle.status === 'SOLD';
 
-  // Helper to format price
-  const formatPrice = (price: number) => {
-    const rupiah = price / 100;
-    return `Rp ${rupiah.toLocaleString('id-ID')}`;
-  };
-
-  // Helper to generate URL based on domain context
-  const getUrl = (path: string) => {
-    if (isCustomDomain) {
-      return path; // Clean URL for custom domain
-    }
-    return `/catalog/${slug}${path}`; // Platform domain with catalog prefix
-  };
-
-  const waMessage = encodeURIComponent(
-    `Halo, saya tertarik dengan ${vehicle.make} ${vehicle.model} ${vehicle.year} (${formatPrice(vehicle.price)}). Apakah unit masih tersedia?`
-  );
-  const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
-
   return (
-    <div className="group">
+    <div className="group cursor-pointer">
       {/* Image Carousel */}
       <div className="mb-4">
-        <Link href={getUrl(`/vehicles/${vehicle.id}`)}>
+        <Link href={vehicleUrl}>
           <VehicleImageCarousel
             photos={vehicle.photos}
             alt={`${vehicle.make} ${vehicle.model}`}
@@ -103,7 +86,7 @@ export default function PublicVehicleCard({
                     Ready
                   </div>
                 )}
-                {/* Vehicle ID Badge - Bottom Left */}
+                {/* Vehicle ID Badge */}
                 {vehicle.displayId && (
                   <div className="absolute bottom-8 left-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg z-20">
                     {vehicle.displayId}
@@ -117,17 +100,17 @@ export default function PublicVehicleCard({
 
       {/* Vehicle Info */}
       <div className="space-y-2 px-1">
-        <Link href={getUrl(`/vehicles/${vehicle.id}`)}>
+        <Link href={vehicleUrl}>
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+              <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
                 {vehicle.make} {vehicle.model}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {vehicle.year} • {vehicle.transmissionType || 'N/A'}
               </p>
             </div>
-            <p className="text-lg font-bold text-primary whitespace-nowrap">
+            <p className="text-xl font-bold text-foreground whitespace-nowrap">
               {formatPrice(vehicle.price)}
             </p>
           </div>
@@ -141,7 +124,7 @@ export default function PublicVehicleCard({
             variant="outline"
             size="sm"
           >
-            <Link href={getUrl(`/vehicles/${vehicle.id}`)}>Detail</Link>
+            <Link href={vehicleUrl}>Detail</Link>
           </Button>
           {waNumber && !isSold && (
             <Button
