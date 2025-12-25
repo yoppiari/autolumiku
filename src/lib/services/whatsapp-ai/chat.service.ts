@@ -487,11 +487,33 @@ export class WhatsAppAIChatService {
       });
     } catch (e) { /* ignore */ }
 
+    // ==================== APPRECIATION/ACKNOWLEDGMENT HANDLER ====================
+    // Detect positive acknowledgment phrases (mantap, keren, bagus, etc.)
+    // These should NOT be treated as photo requests!
+    const appreciationPatterns = [
+      /\b(mantap|mantab|mantul|keren|bagus|oke banget|ok banget|sip banget)\b/i,
+      /\b(good|great|nice|cool|awesome|perfect)\b/i,
+      /\b(makasih|terima\s*kasih|thanks|thank you)\b/i,
+      /^(ok|oke|sip|siap)\s+(mantap|mantab|keren|bagus|banget|deh|ya)/i,
+      /^mantap/i, // starts with mantap
+      /^keren/i,  // starts with keren
+      /^bagus/i,  // starts with bagus
+    ];
+    const isAppreciation = appreciationPatterns.some(p => p.test(msg));
+
+    if (isAppreciation) {
+      console.log(`[SmartFallback] ✅ Appreciation detected: "${msg}" - responding positively`);
+      return {
+        message: `Terima kasih! 🙏😊 Senang bisa membantu.\n\nAda yang lain yang bisa kami bantu? 🚗`,
+        shouldEscalate: false,
+      };
+    }
+
     // ==================== PHOTO CONFIRMATION HANDLER (CRITICAL FIX) ====================
     // Handle photo confirmations FIRST before other fallbacks
     // IMPORTANT: This MUST return a photo-related response, NEVER fall through!
     const photoConfirmPatterns = [
-      /^(boleh|ya|iya|ok|oke|mau|yup|sip|siap|bisa)$/i,
+      /^(boleh|ya|iya|mau|yup|bisa)$/i, // Removed "ok", "oke", "sip", "siap" as they can be appreciation
       /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
       /\b(mana|kirim|kasih|tunjuk|lihat)\b.*\b(foto|gambar)/i,
       /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
