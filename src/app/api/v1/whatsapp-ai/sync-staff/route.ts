@@ -94,14 +94,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Check each conversation and update if needed
-    let updated = 0;
+    let markedAsStaff = 0;
+    let unmarkedAsStaff = 0;
     let alreadyStaff = 0;
+    let alreadyCustomer = 0;
 
     for (const conv of conversations) {
       const normalizedConvPhone = normalizePhone(conv.customerPhone);
       const staffInfo = staffPhoneMap.get(normalizedConvPhone);
 
       if (staffInfo) {
+        // Phone belongs to a registered staff member
         if (!conv.isStaff) {
           // Update conversation to mark as staff
           await prisma.whatsAppConversation.update({
@@ -112,25 +115,44 @@ export async function POST(request: NextRequest) {
               customerName: staffInfo.name || conv.customerName,
             },
           });
-          updated++;
-          console.log(`[Staff Sync] Updated conversation ${conv.id} (${normalizedConvPhone}) as staff: ${staffInfo.name}`);
+          markedAsStaff++;
+          console.log(`[Staff Sync] Marked as STAFF: ${conv.id} (${normalizedConvPhone}) - ${staffInfo.name}`);
         } else {
           alreadyStaff++;
+        }
+      } else {
+        // Phone does NOT belong to any registered staff member
+        if (conv.isStaff) {
+          // This was previously marked as staff but person is no longer staff
+          // Reset to customer
+          await prisma.whatsAppConversation.update({
+            where: { id: conv.id },
+            data: {
+              isStaff: false,
+              conversationType: 'customer',
+            },
+          });
+          unmarkedAsStaff++;
+          console.log(`[Staff Sync] Unmarked as CUSTOMER: ${conv.id} (${normalizedConvPhone}) - was staff, now removed`);
+        } else {
+          alreadyCustomer++;
         }
       }
     }
 
-    console.log(`[Staff Sync] Complete. Updated: ${updated}, Already staff: ${alreadyStaff}`);
+    console.log(`[Staff Sync] Complete. Marked staff: ${markedAsStaff}, Unmarked (→customer): ${unmarkedAsStaff}, Already staff: ${alreadyStaff}, Already customer: ${alreadyCustomer}`);
 
     return NextResponse.json({
       success: true,
       data: {
         totalConversations: conversations.length,
         staffUsers: staffUsers.length,
-        updated,
+        markedAsStaff,
+        unmarkedAsStaff,
         alreadyStaff,
+        alreadyCustomer,
       },
-      message: `Synced ${updated} conversations as staff`,
+      message: `Synced conversations: ${markedAsStaff} marked as staff, ${unmarkedAsStaff} reverted to customer`,
     });
   } catch (error) {
     console.error('[Staff Sync] Error:', error);

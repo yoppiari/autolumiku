@@ -2,12 +2,41 @@
  * WhatsApp AI Conversations API
  * GET /api/v1/whatsapp-ai/conversations?tenantId=xxx
  * Returns list of conversations dengan stats
+ *
+ * Auto-validates staff status against registered users
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Normalize phone number for comparison
+ */
+function normalizePhone(phone: string): string {
+  if (!phone) return '';
+
+  // Handle JID format (e.g., "6281234567890@s.whatsapp.net")
+  if (phone.includes('@')) {
+    phone = phone.split('@')[0];
+  }
+
+  // Handle device suffix (e.g., "6281234567890:17")
+  if (phone.includes(':')) {
+    phone = phone.split(':')[0];
+  }
+
+  // Remove all non-digits
+  let digits = phone.replace(/\D/g, '');
+
+  // Convert 0xxx to 62xxx (Indonesian format)
+  if (digits.startsWith('0')) {
+    digits = '62' + digits.substring(1);
+  }
+
+  return digits;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,6 +48,24 @@ export async function GET(request: NextRequest) {
         { success: false, error: "Missing required parameter: tenantId" },
         { status: 400 }
       );
+    }
+
+    // Get all staff users with phone numbers for validation
+    const staffUsers = await prisma.user.findMany({
+      where: {
+        tenantId,
+        role: { in: ['ADMIN', 'MANAGER', 'SALES', 'STAFF'] },
+        phone: { not: null },
+      },
+      select: { phone: true },
+    });
+
+    // Build staff phone lookup set
+    const staffPhoneSet = new Set<string>();
+    for (const user of staffUsers) {
+      if (user.phone) {
+        staffPhoneSet.add(normalizePhone(user.phone));
+      }
     }
 
     // Get conversations dengan message count
@@ -36,6 +83,31 @@ export async function GET(request: NextRequest) {
       orderBy: { lastMessageAt: "desc" },
     });
 
+    // Auto-validate and fix stale staff flags
+    const staleStaffConversations: string[] = [];
+    for (const conv of conversations) {
+      const normalizedPhone = normalizePhone(conv.customerPhone);
+      const isCurrentlyStaff = staffPhoneSet.has(normalizedPhone);
+
+      if (conv.isStaff && !isCurrentlyStaff) {
+        // Conversation marked as staff but user is no longer staff
+        staleStaffConversations.push(conv.id);
+      }
+    }
+
+    // Update stale staff conversations in background
+    if (staleStaffConversations.length > 0) {
+      console.log(`[Conversations API] Auto-fixing ${staleStaffConversations.length} stale staff conversations`);
+      prisma.whatsAppConversation.updateMany({
+        where: { id: { in: staleStaffConversations } },
+        data: { isStaff: false, conversationType: 'customer' },
+      }).then(() => {
+        console.log(`[Conversations API] Fixed ${staleStaffConversations.length} stale staff flags`);
+      }).catch((err) => {
+        console.error('[Conversations API] Error fixing stale staff flags:', err);
+      });
+    }
+
     // Helper to check if a number looks like a LID (not a real phone)
     const isLIDNumber = (num: string): boolean => {
       if (!num) return false;
@@ -51,6 +123,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Format response - resolve real phone from contextData if customerPhone is LID
+    // Also apply corrected staff status immediately
     const formattedConversations = conversations
       .map((conv) => {
         const contextData = conv.contextData as Record<string, any> | null;
@@ -69,13 +142,18 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // Check actual staff status against registered users
+        const normalizedPhone = normalizePhone(conv.customerPhone);
+        const isCurrentlyStaff = staffPhoneSet.has(normalizedPhone);
+        const isStale = conv.isStaff && !isCurrentlyStaff;
+
         return {
           id: conv.id,
           customerPhone: displayPhone,
           originalPhone: conv.customerPhone, // Keep original for debugging
           customerName: conv.customerName,
-          isStaff: conv.isStaff,
-          conversationType: conv.conversationType,
+          isStaff: isStale ? false : conv.isStaff, // Return corrected value immediately
+          conversationType: isStale ? 'customer' : conv.conversationType,
           lastIntent: conv.lastIntent,
           status: conv.status,
           lastMessageAt: conv.lastMessageAt.toISOString(),
