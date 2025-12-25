@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       const messagesWithoutConversation = await prisma.whatsAppMessage.findMany({
         where: {
           tenantId,
-          conversationId: null
+          conversationId: { equals: null }
         },
         select: {
           id: true,
