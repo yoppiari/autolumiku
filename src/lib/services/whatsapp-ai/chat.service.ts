@@ -1744,7 +1744,7 @@ CONTOH RESPON ESCALATED:
     let features: string[] = [];
     if (vehicle.features) {
       try {
-        features = Array.isArray(vehicle.features) ? vehicle.features : [];
+        features = Array.isArray(vehicle.features) ? (vehicle.features as string[]) : [];
       } catch {
         features = [];
       }
