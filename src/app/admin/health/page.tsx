@@ -72,20 +72,24 @@ const AnalyticsDashboard: React.FC = () => {
       setIsLoading(true);
       try {
         // Fetch analytics data from API with auth
-        const analyticsData = await api.get(`/api/admin/analytics?timeRange=${selectedTimeRange}`);
+        const response = await api.get<TenantAnalytics>(`/api/admin/analytics?timeRange=${selectedTimeRange}`);
 
-        if (!analyticsData.success && analyticsData.error) {
-          throw new Error(analyticsData.error);
+        if (!response.success && response.error) {
+          throw new Error(response.error);
         }
+
+        // The analytics API returns data directly (not wrapped in .data)
+        // Check if response has analytics fields directly or in .data
+        const analyticsData = response.data || response;
 
         // Transform API data to match our interface
         const transformedAnalytics: TenantAnalytics = {
-          mostCollected: analyticsData.mostCollected || [],
-          mostViewed: analyticsData.mostViewed || [],
-          mostAsked: analyticsData.mostAsked || [],
-          mostSold: analyticsData.mostSold || [],
-          tenantSummary: analyticsData.tenantSummary || [],
-          timeSeriesData: analyticsData.timeSeriesData || []
+          mostCollected: (analyticsData as any).mostCollected || [],
+          mostViewed: (analyticsData as any).mostViewed || [],
+          mostAsked: (analyticsData as any).mostAsked || [],
+          mostSold: (analyticsData as any).mostSold || [],
+          tenantSummary: (analyticsData as any).tenantSummary || [],
+          timeSeriesData: (analyticsData as any).timeSeriesData || []
         };
 
         setAnalytics(transformedAnalytics);
