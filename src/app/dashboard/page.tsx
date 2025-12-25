@@ -275,7 +275,7 @@ export default function ShowroomDashboardPage() {
       </div>
 
       {/* Main Content - Activity & Subscription Row - FLEX GROW */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-h-0">
         {/* Left: Activity */}
         <div className="md:col-span-2 min-h-0 overflow-hidden order-2 md:order-1">
           <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col overflow-hidden">

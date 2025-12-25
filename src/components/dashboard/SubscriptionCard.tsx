@@ -23,7 +23,7 @@ interface SubscriptionCardProps {
 export default function SubscriptionCard({ subscription }: SubscriptionCardProps) {
   if (!subscription) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-full">
+      <div className="bg-white rounded-lg border border-gray-200">
         <div className="px-2 md:px-3 py-2 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-[10px] md:text-xs font-semibold text-gray-700 flex items-center gap-1">
             <span className="text-sm md:text-base">💳</span>
@@ -92,7 +92,7 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
   const days = daysRemaining();
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-full">
+    <div className="bg-white rounded-lg border border-gray-200">
       {/* Header */}
       <div className="px-2 md:px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-1">
         <h2 className="text-[10px] md:text-xs font-semibold text-gray-700 flex items-center gap-1 min-w-0">
