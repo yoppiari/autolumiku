@@ -19,6 +19,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import { api } from '@/lib/api-client';
 
 // Analytics types
 interface TenantAnalytics {
@@ -70,14 +71,12 @@ const AnalyticsDashboard: React.FC = () => {
     const loadAnalyticsData = async () => {
       setIsLoading(true);
       try {
-        // Fetch analytics data from API
-        const analyticsResponse = await fetch(`/api/admin/analytics?timeRange=${selectedTimeRange}`);
-        
-        if (!analyticsResponse.ok) {
-          throw new Error('Failed to fetch analytics data');
-        }
+        // Fetch analytics data from API with auth
+        const analyticsData = await api.get(`/api/admin/analytics?timeRange=${selectedTimeRange}`);
 
-        const analyticsData = await analyticsResponse.json();
+        if (!analyticsData.success && analyticsData.error) {
+          throw new Error(analyticsData.error);
+        }
 
         // Transform API data to match our interface
         const transformedAnalytics: TenantAnalytics = {
