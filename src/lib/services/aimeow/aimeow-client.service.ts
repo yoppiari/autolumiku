@@ -354,6 +354,10 @@ export class AimeowClientService {
         payload.images = [mediaUrl]; // Array of image URLs
         payload.viewOnce = false;     // Display inline, not as download link
         payload.isViewOnce = false;   // Alternative field name
+        payload.mimetype = 'image/jpeg';  // Required for inline display
+        payload.mimeType = 'image/jpeg';  // Alternative field name
+        payload.type = 'image';           // Explicitly set type as image
+        payload.mediaType = 'image';      // Alternative field name
         delete payload.message; // Images endpoint doesn't need message
       }
 
@@ -447,6 +451,7 @@ export class AimeowClientService {
       // Build payload - try multiple field names for compatibility
       // Some Aimeow versions expect 'url', others 'imageUrl', others 'image'
       // IMPORTANT: viewOnce: false ensures image displays inline, not as download link
+      // IMPORTANT: mimetype must be specified for WhatsApp to display image inline
       const payload: Record<string, any> = {
         phone: to,
         url: imageUrl,        // Primary field for /send-image endpoint
@@ -454,6 +459,10 @@ export class AimeowClientService {
         image: imageUrl,      // Another alternative
         viewOnce: false,      // Display inline, not as download link
         isViewOnce: false,    // Alternative field name
+        mimetype: 'image/jpeg',  // Required for inline display
+        mimeType: 'image/jpeg',  // Alternative field name
+        type: 'image',           // Explicitly set type as image, not document
+        mediaType: 'image',      // Alternative field name
       };
 
       if (caption) {
@@ -483,6 +492,10 @@ export class AimeowClientService {
           images: [imageUrl],
           viewOnce: false,      // Display inline, not as download link
           isViewOnce: false,    // Alternative field name
+          mimetype: 'image/jpeg',  // Required for inline display
+          mimeType: 'image/jpeg',  // Alternative field name
+          type: 'image',           // Explicitly set type as image
+          mediaType: 'image',      // Alternative field name
           ...(caption && { caption }),
         };
 
@@ -655,6 +668,10 @@ export class AimeowClientService {
         images,
         viewOnce: false,      // Display inline, not as download link
         isViewOnce: false,    // Alternative field name
+        mimetype: 'image/jpeg',  // Required for inline display
+        mimeType: 'image/jpeg',  // Alternative field name
+        type: 'image',           // Explicitly set type as image
+        mediaType: 'image',      // Alternative field name
       };
 
       const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
