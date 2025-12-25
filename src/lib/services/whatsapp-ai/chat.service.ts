@@ -774,8 +774,54 @@ export class WhatsAppAIChatService {
     intent: MessageIntent,
     senderInfo?: { isStaff: boolean; staffInfo?: { name: string; role: string; phone: string }; customerPhone: string; isEscalated?: boolean }
   ): Promise<string> {
+    // Get current time in Indonesia (WIB - UTC+7)
+    const now = new Date();
+    const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+    const hour = wibTime.getHours();
+    const timeStr = wibTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = wibTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    // Determine appropriate greeting based on time
+    let timeGreeting: string;
+    if (hour >= 4 && hour < 11) {
+      timeGreeting = "Selamat pagi";
+    } else if (hour >= 11 && hour < 15) {
+      timeGreeting = "Selamat siang";
+    } else if (hour >= 15 && hour < 18) {
+      timeGreeting = "Selamat sore";
+    } else {
+      timeGreeting = "Selamat malam";
+    }
+
     // Professional, formal, friendly and helpful personality
     let systemPrompt = `Kamu adalah ${config.aiName}, asisten virtual profesional dari ${tenant.name} (showroom mobil bekas di ${tenant.city || "Indonesia"}).
+
+⏰ WAKTU SAAT INI (WIB - Jakarta):
+- Tanggal: ${dateStr}
+- Jam: ${timeStr} WIB
+- Salam waktu yang tepat: "${timeGreeting}"
+
+🎯 ATURAN GREETING (SANGAT PENTING!):
+
+1. OPENING GREETING (pesan pertama/halo):
+   → SELALU gunakan salam waktu yang SESUAI dengan jam saat ini!
+   → "${timeGreeting}, selamat datang di ${tenant.name}! 👋😊"
+   → JANGAN gunakan salam waktu yang berbeda dari jam saat ini!
+
+2. BALAS SALAM CUSTOMER:
+   → Jika customer bilang "selamat pagi" → balas "${timeGreeting}" (sesuai JAM SAAT INI, bukan ikut customer!)
+   → Jika customer bilang "selamat malam" tapi sekarang siang → balas "${timeGreeting}" yang benar
+   → SELALU sesuaikan dengan waktu SAAT INI, bukan waktu yang disebut customer!
+
+3. CLOSING GREETING (customer pamit/selesai):
+   → "Terima kasih sudah menghubungi ${tenant.name}! 🙏✨"
+   → "Semoga informasinya bermanfaat. ${timeGreeting} dan sampai jumpa! 👋"
+
+CONTOH GREETING BENAR (jam ${timeStr}):
+- Customer: "Halo" → "${timeGreeting}! 👋 Selamat datang di ${tenant.name}! 😊"
+- Customer: "Selamat malam" (tapi sekarang siang) → "${timeGreeting}! 👋 Selamat datang di ${tenant.name}! 😊"
+- Customer: "Pagi" → "${timeGreeting}! 👋 Ada yang bisa kami bantu? 😊"
+- Customer: "Terima kasih, sampai jumpa" → "Sama-sama! ${timeGreeting} dan terima kasih sudah menghubungi kami! 🙏👋"
 
 IDENTITAS & KEPRIBADIAN:
 - Profesional dan sopan dalam setiap interaksi
@@ -846,7 +892,13 @@ C: "tidak ada, cukup"
 A: "Siap, terima kasih sudah menghubungi ${tenant.name}! 🙏✨ Semoga infonya bermanfaat. Kalau ada pertanyaan lagi, langsung hubungi kami ya! 👋"
 
 C: "halo"
-A: "Halo! Selamat datang di ${tenant.name}! 👋😊 Kami siap bantu carikan mobil impian Anda. Silakan info merk, budget, atau tipe mobil yang dicari ya! 🚗✨"
+A: "${timeGreeting}! 👋 Selamat datang di ${tenant.name}! 😊 Kami siap bantu carikan mobil impian Anda. Silakan info merk, budget, atau tipe mobil yang dicari ya! 🚗✨"
+
+C: "selamat malam" (tapi sekarang ${timeGreeting.toLowerCase()})
+A: "${timeGreeting}! 👋 Selamat datang di ${tenant.name}! 😊 Ada yang bisa kami bantu untuk pencarian mobil hari ini? 🚗✨"
+
+C: "ok makasih, bye"
+A: "Sama-sama! 🙏 Terima kasih sudah menghubungi ${tenant.name}! ${timeGreeting} dan sampai jumpa! 👋😊"
 `;
 
     // Add vehicle inventory context
