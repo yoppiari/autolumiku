@@ -156,47 +156,6 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6 mb-4 md:mb-8">
-        <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-1 md:mb-2">
-            <h3 className="text-[10px] md:text-sm font-medium text-gray-500">Total Conversations</h3>
-            <span className="text-base md:text-2xl">💬</span>
-          </div>
-          <div className="text-xl md:text-3xl font-bold text-gray-900">{analytics.overview.totalConversations}</div>
-          <p className="text-[10px] md:text-xs text-gray-500 mt-1">{analytics.overview.activeConversations} active</p>
-        </div>
-
-        <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-1 md:mb-2">
-            <h3 className="text-[10px] md:text-sm font-medium text-gray-500">Messages</h3>
-            <span className="text-base md:text-2xl">📨</span>
-          </div>
-          <div className="text-xl md:text-3xl font-bold text-gray-900">{analytics.overview.totalMessages}</div>
-          <p className="text-[10px] md:text-xs text-gray-500 mt-1">All conversations</p>
-        </div>
-
-        <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-1 md:mb-2">
-            <h3 className="text-[10px] md:text-sm font-medium text-gray-500">AI Response</h3>
-            <span className="text-base md:text-2xl">🤖</span>
-          </div>
-          <div className="text-xl md:text-3xl font-bold text-green-600">{analytics.overview.aiResponseRate}%</div>
-          <p className="text-[10px] md:text-xs text-gray-500 mt-1">Automated</p>
-        </div>
-
-        <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-1 md:mb-2">
-            <h3 className="text-[10px] md:text-sm font-medium text-gray-500">Avg Response</h3>
-            <span className="text-base md:text-2xl">⚡</span>
-          </div>
-          <div className="text-xl md:text-3xl font-bold text-blue-600">
-            {formatResponseTime(analytics.overview.avgResponseTime)}
-          </div>
-          <p className="text-[10px] md:text-xs text-gray-500 mt-1">Fast!</p>
-        </div>
-      </div>
-
       {/* Performance Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
         <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
