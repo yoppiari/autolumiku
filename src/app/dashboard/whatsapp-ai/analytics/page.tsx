@@ -307,11 +307,11 @@ export default function AnalyticsPage() {
                   });
                 })()}
                 {/* Center text */}
-                <text x="50" y="47" textAnchor="middle" fill="#374151" fontSize="12" fontWeight="bold">
-                  {analytics.performance.aiAccuracy + analytics.performance.resolutionRate + analytics.performance.customerSatisfaction + analytics.overview.escalationRate}
+                <text x="50" y="47" textAnchor="middle" fill="#374151" fontSize="11" fontWeight="bold">
+                  {Math.round((analytics.performance.aiAccuracy + analytics.performance.resolutionRate + analytics.performance.customerSatisfaction + (100 - analytics.overview.escalationRate)) / 4)}%
                 </text>
-                <text x="50" y="58" textAnchor="middle" fill="#9ca3af" fontSize="7">
-                  Total
+                <text x="50" y="58" textAnchor="middle" fill="#9ca3af" fontSize="6">
+                  Avg Score
                 </text>
               </svg>
             </div>
