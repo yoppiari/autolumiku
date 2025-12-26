@@ -119,8 +119,8 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Main Content - Flex grow */}
-      <div className="flex-1 overflow-hidden flex flex-col gap-2">
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto flex flex-col gap-2">
         {/* Row 1: AI Performance & Intent Breakdown */}
         <div className="grid grid-cols-2 gap-2 flex-shrink-0">
           {/* AI Performance */}
@@ -230,8 +230,8 @@ export default function AnalyticsPage() {
 
         {/* Row 2: Staff Activity */}
         {analytics.staffActivity.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
-            <div className="px-2 py-1.5 border-b border-gray-100 flex-shrink-0">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-shrink-0">
+            <div className="px-2 py-1 border-b border-gray-100">
               <h2 className="text-[10px] md:text-xs font-semibold text-gray-900">Staff Activity</h2>
             </div>
             {(() => {
@@ -242,9 +242,9 @@ export default function AnalyticsPage() {
               const sortedStaff = [...staffData].sort((a, b) => b.commandCount - a.commandCount);
 
               return (
-                <div className="p-2 flex-1 flex flex-col overflow-hidden">
+                <div className="p-2">
                   {/* Summary Stats */}
-                  <div className="grid grid-cols-3 gap-1 mb-2 flex-shrink-0">
+                  <div className="grid grid-cols-3 gap-1 mb-2">
                     <div className="bg-blue-50 rounded p-1">
                       <div className="flex items-center gap-0.5">
                         <div className="w-1 h-1 rounded bg-blue-500"></div>
@@ -268,10 +268,10 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
 
-                  {/* Chart Area */}
-                  <div className="flex gap-2 flex-1 min-h-0">
+                  {/* Chart Area - Horizontal layout */}
+                  <div className="flex gap-2">
                     {/* Staff List */}
-                    <div className="w-24 md:w-32 flex-shrink-0 flex flex-col justify-center">
+                    <div className="w-24 md:w-28 flex-shrink-0">
                       <div className="text-[7px] md:text-[9px] text-gray-500 mb-1">WhatsApp Staff</div>
                       <div className="space-y-0.5">
                         {sortedStaff.map((staff, idx) => (
@@ -286,9 +286,9 @@ export default function AnalyticsPage() {
                     </div>
 
                     {/* Bar Chart */}
-                    <div className="flex-1 flex flex-col">
+                    <div className="flex-1">
                       <div className="text-[7px] md:text-[9px] text-gray-600 text-center mb-1">Summary Statistik Staff</div>
-                      <div className="flex items-end justify-around gap-1 flex-1" style={{ minHeight: '80px' }}>
+                      <div className="flex items-end justify-around gap-1" style={{ height: '100px' }}>
                         {sortedStaff.map((staff, idx) => {
                           const successH = staff.successRate;
                           const cmdH = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
@@ -296,18 +296,18 @@ export default function AnalyticsPage() {
                           const soldH = maxCommands > 0 ? (soldV / maxCommands) * 100 : 0;
                           return (
                             <div key={idx} className="flex flex-col items-center flex-1">
-                              <div className="flex items-end gap-px w-full justify-center h-full">
-                                <div className="flex flex-col items-center" style={{ width: '14px' }}>
+                              <div className="flex items-end gap-px w-full justify-center" style={{ height: '80px' }}>
+                                <div className="flex flex-col items-center" style={{ width: '16px' }}>
                                   <span className="text-[6px] font-bold text-blue-600">{staff.successRate}%</span>
-                                  <div className="w-full bg-blue-500 rounded-t" style={{ height: `${Math.max(successH * 0.6, 4)}px` }}></div>
+                                  <div className="w-full bg-blue-500 rounded-t" style={{ height: `${Math.max(successH * 0.7, 4)}px` }}></div>
                                 </div>
-                                <div className="flex flex-col items-center" style={{ width: '14px' }}>
+                                <div className="flex flex-col items-center" style={{ width: '16px' }}>
                                   <span className="text-[6px] font-bold text-green-600">{staff.commandCount}</span>
-                                  <div className="w-full bg-green-500 rounded-t" style={{ height: `${Math.max(cmdH * 0.6, 4)}px` }}></div>
+                                  <div className="w-full bg-green-500 rounded-t" style={{ height: `${Math.max(cmdH * 0.7, 4)}px` }}></div>
                                 </div>
-                                <div className="flex flex-col items-center" style={{ width: '14px' }}>
+                                <div className="flex flex-col items-center" style={{ width: '16px' }}>
                                   <span className="text-[6px] font-bold text-purple-600">{soldV}</span>
-                                  <div className="w-full bg-purple-500 rounded-t" style={{ height: `${Math.max(soldH * 0.6, 4)}px` }}></div>
+                                  <div className="w-full bg-purple-500 rounded-t" style={{ height: `${Math.max(soldH * 0.7, 4)}px` }}></div>
                                 </div>
                               </div>
                               <span className="text-[6px] text-gray-500 mt-0.5">Staff {idx + 1}</span>
@@ -318,20 +318,20 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
 
-                  {/* Legends */}
-                  <div className="flex gap-2 pt-1 border-t border-gray-100 mt-1 flex-shrink-0">
-                    <div className="flex-1">
-                      <span className="text-[6px] md:text-[7px] text-gray-500">Performance:</span>
-                      <div className="flex gap-2 text-[6px] md:text-[7px]">
+                  {/* Legends - Always visible */}
+                  <div className="flex gap-3 pt-2 border-t border-gray-100 mt-2">
+                    <div>
+                      <span className="text-[7px] md:text-[8px] text-gray-500">Performance:</span>
+                      <div className="flex gap-2 text-[7px] md:text-[8px]">
                         <span className="text-green-600">● ≥90%</span>
                         <span className="text-yellow-600">● 70-89%</span>
                         <span className="text-red-600">● &lt;70%</span>
                       </div>
                     </div>
                     <div className="w-px bg-gray-300"></div>
-                    <div className="flex-1">
-                      <span className="text-[6px] md:text-[7px] text-gray-500">Diagram:</span>
-                      <div className="flex gap-2 text-[6px] md:text-[7px]">
+                    <div>
+                      <span className="text-[7px] md:text-[8px] text-gray-500">Diagram:</span>
+                      <div className="flex gap-2 text-[7px] md:text-[8px]">
                         <span className="text-blue-600">● Success%</span>
                         <span className="text-green-600">● Commands</span>
                         <span className="text-purple-600">● Sold</span>
