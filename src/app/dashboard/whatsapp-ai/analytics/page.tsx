@@ -429,9 +429,6 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                {/* Section Title */}
-                <h3 className="text-xs md:text-sm font-semibold text-gray-800 mb-3">Summary Statistik Staff</h3>
-
                 {/* Main Chart Area */}
                 <div className="flex flex-col lg:flex-row gap-4 md:gap-6 items-stretch">
                   {/* Staff List with WhatsApp Icon - Vertically centered */}
@@ -456,6 +453,8 @@ export default function AnalyticsPage() {
 
                   {/* Grouped Vertical Bar Chart */}
                   <div className="flex-1 order-1 lg:order-2">
+                    {/* Chart Title */}
+                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 text-center mb-2">Summary Statistik Staff</h4>
                     <div className="flex items-end justify-around gap-2 md:gap-4" style={{ height: '160px' }}>
                       {sortedStaff.map((staff, idx) => {
                         // Blue = Upload success rate (percentage)
