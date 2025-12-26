@@ -629,6 +629,57 @@ export default function WhatsAppAIDashboard() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Metrics Legend */}
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Bar Chart Legend */}
+                      <div>
+                        <h4 className="text-[9px] font-medium text-gray-500 mb-1.5">Keterangan Metrik</h4>
+                        <div className="space-y-1 text-[9px]">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded bg-blue-500 flex-shrink-0"></div>
+                            <span className="text-gray-600">Conversations - Total percakapan</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded bg-purple-500 flex-shrink-0"></div>
+                            <span className="text-gray-600">Messages - Pesan hari ini</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded bg-green-500 flex-shrink-0"></div>
+                            <span className="text-gray-600">AI Automation - % respons otomatis</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded bg-orange-500 flex-shrink-0"></div>
+                            <span className="text-gray-600">AI Accuracy - Ketepatan jawaban AI</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Health Score Legend */}
+                      <div>
+                        <h4 className="text-[9px] font-medium text-gray-500 mb-1.5">Keterangan Health Score</h4>
+                        <div className="space-y-1 text-[9px]">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
+                            <span className="text-gray-600">≥80% - Excellent</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0"></div>
+                            <span className="text-gray-600">60-79% - Good</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
+                            <span className="text-gray-600">&lt;60% - Need Improvement</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0"></div>
+                            <span className="text-gray-600">- (No data)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </>
               );
             })()}
