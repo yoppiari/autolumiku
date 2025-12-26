@@ -248,8 +248,8 @@ export default function AnalyticsPage() {
               const sortedStaff = [...staffData].sort((a, b) => b.commandCount - a.commandCount);
 
               return (
-                <div className="p-3 flex-1 flex flex-col min-h-0">
-                  {/* Summary Stats */}
+                <div className="p-3 flex-1 flex flex-col min-h-0 overflow-hidden">
+                  {/* Summary Stats - Row 1 */}
                   <div className="grid grid-cols-3 gap-2 mb-3 flex-shrink-0">
                     <div className="bg-blue-50 rounded-lg p-2">
                       <div className="flex items-center gap-1">
@@ -274,49 +274,49 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
 
-                  {/* Chart Area - Fills remaining space */}
-                  <div className="flex gap-4 items-center flex-1 min-h-0">
-                    {/* Staff List - Centered vertically */}
-                    <div className="w-32 md:w-40 flex-shrink-0">
-                      <div className="text-xs text-gray-500 mb-2">WhatsApp Staff</div>
+                  {/* Main Content - Row 2: Staff List + Bar Chart side by side */}
+                  <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
+                    {/* Left: Staff List in a card */}
+                    <div className="w-40 md:w-48 flex-shrink-0 bg-gray-50 rounded-lg p-3">
+                      <div className="text-xs font-medium text-gray-600 mb-2">WhatsApp Staff</div>
                       <div className="space-y-2">
                         {sortedStaff.map((staff, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
+                          <div key={idx} className="flex items-center gap-2 bg-white rounded px-2 py-1.5">
                             <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="#25D366">
                               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                             </svg>
-                            <span className="text-xs md:text-sm text-gray-700 truncate">{staff.staffPhone}</span>
+                            <span className="text-xs text-gray-700 truncate">{staff.staffPhone}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Bar Chart - Full width and height */}
-                    <div className="flex-1 h-full flex flex-col min-h-0">
-                      <div className="text-xs md:text-sm text-gray-600 text-center mb-2 flex-shrink-0">Summary Statistik Staff</div>
-                      <div className="flex items-end justify-between flex-1 min-h-[120px]">
+                    {/* Right: Bar Chart */}
+                    <div className="flex-1 bg-gray-50 rounded-lg p-3 flex flex-col min-h-0">
+                      <div className="text-xs font-medium text-gray-600 text-center mb-3 flex-shrink-0">Summary Statistik Staff</div>
+                      <div className="flex items-end justify-around flex-1" style={{ minHeight: '100px' }}>
                         {sortedStaff.map((staff, idx) => {
                           const successH = staff.successRate;
                           const cmdH = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
                           const soldV = Math.round(staff.commandCount * staff.successRate / 100);
                           const soldH = maxCommands > 0 ? (soldV / maxCommands) * 100 : 0;
                           return (
-                            <div key={idx} className="flex flex-col items-center flex-1 px-2 h-full">
-                              <div className="flex items-end gap-1 w-full justify-center flex-1">
-                                <div className="flex flex-col items-center flex-1 max-w-[32px]">
-                                  <span className="text-xs font-bold text-blue-600 mb-1">{staff.successRate}%</span>
-                                  <div className="w-full bg-blue-500 rounded-t" style={{ height: `${Math.max(successH, 4)}px` }}></div>
+                            <div key={idx} className="flex flex-col items-center">
+                              <div className="flex items-end gap-1 mb-1">
+                                <div className="flex flex-col items-center w-6">
+                                  <span className="text-[10px] font-bold text-blue-600 mb-0.5">{staff.successRate}%</span>
+                                  <div className="w-full bg-blue-500 rounded-t" style={{ height: `${Math.max(successH * 0.8, 4)}px` }}></div>
                                 </div>
-                                <div className="flex flex-col items-center flex-1 max-w-[32px]">
-                                  <span className="text-xs font-bold text-green-600 mb-1">{staff.commandCount}</span>
-                                  <div className="w-full bg-green-500 rounded-t" style={{ height: `${Math.max(cmdH, 4)}px` }}></div>
+                                <div className="flex flex-col items-center w-6">
+                                  <span className="text-[10px] font-bold text-green-600 mb-0.5">{staff.commandCount}</span>
+                                  <div className="w-full bg-green-500 rounded-t" style={{ height: `${Math.max(cmdH * 0.8, 4)}px` }}></div>
                                 </div>
-                                <div className="flex flex-col items-center flex-1 max-w-[32px]">
-                                  <span className="text-xs font-bold text-purple-600 mb-1">{soldV}</span>
-                                  <div className="w-full bg-purple-500 rounded-t" style={{ height: `${Math.max(soldH, 4)}px` }}></div>
+                                <div className="flex flex-col items-center w-6">
+                                  <span className="text-[10px] font-bold text-purple-600 mb-0.5">{soldV}</span>
+                                  <div className="w-full bg-purple-500 rounded-t" style={{ height: `${Math.max(soldH * 0.8, 4)}px` }}></div>
                                 </div>
                               </div>
-                              <span className="text-xs text-gray-500 mt-1 flex-shrink-0">Staff {idx + 1}</span>
+                              <span className="text-xs text-gray-500">Staff {idx + 1}</span>
                             </div>
                           );
                         })}
@@ -324,56 +324,40 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
 
-                  {/* Legend Tables - Bottom */}
+                  {/* Legend - Row 3: Horizontal at bottom */}
                   <div className="mt-3 pt-3 border-t border-gray-200 flex-shrink-0">
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Bar Chart Legend */}
-                      <div>
-                        <h4 className="text-xs md:text-sm font-medium text-gray-500 mb-2">Keterangan Diagram Batang</h4>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs md:text-sm">
-                            <div className="w-3 h-3 rounded bg-blue-500 flex-shrink-0"></div>
-                            <span className="text-blue-600 font-medium">Biru</span>
-                            <span className="text-gray-400">-</span>
-                            <span className="text-gray-600">% upload sukses</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs md:text-sm">
-                            <div className="w-3 h-3 rounded bg-green-500 flex-shrink-0"></div>
-                            <span className="text-green-600 font-medium">Hijau</span>
-                            <span className="text-gray-400">-</span>
-                            <span className="text-gray-600">Total command</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs md:text-sm">
-                            <div className="w-3 h-3 rounded bg-purple-500 flex-shrink-0"></div>
-                            <span className="text-purple-600 font-medium">Ungu</span>
-                            <span className="text-gray-400">-</span>
-                            <span className="text-gray-600">Jumlah terjual</span>
-                          </div>
+                    <div className="flex flex-wrap gap-x-6 gap-y-2">
+                      {/* Diagram Legend */}
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs font-medium text-gray-500">Diagram:</span>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2.5 h-2.5 rounded bg-blue-500"></div>
+                          <span className="text-xs text-gray-600">Success %</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2.5 h-2.5 rounded bg-green-500"></div>
+                          <span className="text-xs text-gray-600">Commands</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2.5 h-2.5 rounded bg-purple-500"></div>
+                          <span className="text-xs text-gray-600">Sold</span>
                         </div>
                       </div>
-
+                      <div className="w-px h-4 bg-gray-300 hidden md:block"></div>
                       {/* Performance Legend */}
-                      <div>
-                        <h4 className="text-xs md:text-sm font-medium text-gray-500 mb-2">Keterangan Performance Staff</h4>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs md:text-sm">
-                            <div className="w-3 h-3 rounded bg-green-500 flex-shrink-0"></div>
-                            <span className="text-green-600 font-medium">Hijau</span>
-                            <span className="text-gray-400">-</span>
-                            <span className="text-gray-700">Excellent (≥90%)</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs md:text-sm">
-                            <div className="w-3 h-3 rounded bg-yellow-500 flex-shrink-0"></div>
-                            <span className="text-yellow-600 font-medium">Kuning</span>
-                            <span className="text-gray-400">-</span>
-                            <span className="text-gray-700">Good (70-89%)</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs md:text-sm">
-                            <div className="w-3 h-3 rounded bg-red-500 flex-shrink-0"></div>
-                            <span className="text-red-600 font-medium">Merah</span>
-                            <span className="text-gray-400">-</span>
-                            <span className="text-gray-700">Need Improve (&lt;70%)</span>
-                          </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs font-medium text-gray-500">Performance:</span>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2.5 h-2.5 rounded bg-green-500"></div>
+                          <span className="text-xs text-gray-600">≥90%</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2.5 h-2.5 rounded bg-yellow-500"></div>
+                          <span className="text-xs text-gray-600">70-89%</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2.5 h-2.5 rounded bg-red-500"></div>
+                          <span className="text-xs text-gray-600">&lt;70%</span>
                         </div>
                       </div>
                     </div>
