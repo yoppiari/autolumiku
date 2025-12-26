@@ -324,41 +324,31 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
 
-                  {/* Legend - Row 3: Horizontal at bottom */}
-                  <div className="mt-3 pt-3 border-t border-gray-200 flex-shrink-0">
-                    <div className="flex flex-wrap gap-x-6 gap-y-2">
+                  {/* Legend - Row 3: Small footnotes at bottom */}
+                  <div className="mt-2 pt-2 border-t border-gray-100 flex-shrink-0">
+                    <div className="flex gap-6 text-[10px] text-gray-400">
                       {/* Diagram Legend */}
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs font-medium text-gray-500">Diagram:</span>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2.5 h-2.5 rounded bg-blue-500"></div>
-                          <span className="text-xs text-gray-600">Success %</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2.5 h-2.5 rounded bg-green-500"></div>
-                          <span className="text-xs text-gray-600">Commands</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2.5 h-2.5 rounded bg-purple-500"></div>
-                          <span className="text-xs text-gray-600">Sold</span>
-                        </div>
+                      <div>
+                        <span className="font-medium">Keterangan Diagram:</span>
+                        <span className="ml-1">
+                          <span className="text-blue-500">●</span> Biru - % upload sukses
+                          <span className="mx-1">|</span>
+                          <span className="text-green-500">●</span> Hijau - Total command
+                          <span className="mx-1">|</span>
+                          <span className="text-purple-500">●</span> Ungu - Jumlah terjual
+                        </span>
                       </div>
-                      <div className="w-px h-4 bg-gray-300 hidden md:block"></div>
+                      <div className="w-px bg-gray-200"></div>
                       {/* Performance Legend */}
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs font-medium text-gray-500">Performance:</span>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2.5 h-2.5 rounded bg-green-500"></div>
-                          <span className="text-xs text-gray-600">≥90%</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2.5 h-2.5 rounded bg-yellow-500"></div>
-                          <span className="text-xs text-gray-600">70-89%</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2.5 h-2.5 rounded bg-red-500"></div>
-                          <span className="text-xs text-gray-600">&lt;70%</span>
-                        </div>
+                      <div>
+                        <span className="font-medium">Performance:</span>
+                        <span className="ml-1">
+                          <span className="text-green-500">●</span> Hijau ≥90%
+                          <span className="mx-1">|</span>
+                          <span className="text-yellow-500">●</span> Kuning 70-89%
+                          <span className="mx-1">|</span>
+                          <span className="text-red-500">●</span> Merah &lt;70%
+                        </span>
                       </div>
                     </div>
                   </div>
