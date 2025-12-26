@@ -295,70 +295,115 @@ export default function AnalyticsPage() {
 
         <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Intent Breakdown</h2>
-          {analytics.intentBreakdown.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <span className="text-3xl mb-2 block">📊</span>
-              <p className="text-sm">Belum ada data intent</p>
-            </div>
-          ) : (
-            <div className="flex flex-col md:flex-row items-center gap-4">
-              {/* Donut Chart */}
-              <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
-                <svg viewBox="0 0 36 36" className="w-full h-full">
-                  {(() => {
-                    const colors = ['#16a34a', '#2563eb', '#9333ea', '#ea580c', '#dc2626'];
-                    const radius = 15.9155;
-                    const circumference = 2 * Math.PI * radius;
-                    let offset = 0;
+          {(() => {
+            // Default intent categories for display
+            const defaultIntents = [
+              { intent: 'customer_greeting', label: 'Greeting', color: '#16a34a', bgColor: 'bg-green-600' },
+              { intent: 'customer_vehicle_inquiry', label: 'Vehicle Inquiry', color: '#2563eb', bgColor: 'bg-blue-600' },
+              { intent: 'customer_price_inquiry', label: 'Price Inquiry', color: '#9333ea', bgColor: 'bg-purple-600' },
+              { intent: 'customer_general_question', label: 'General Question', color: '#ea580c', bgColor: 'bg-orange-600' },
+              { intent: 'customer_closing', label: 'Closing', color: '#dc2626', bgColor: 'bg-red-600' },
+            ];
 
-                    return analytics.intentBreakdown.map((item, index) => {
-                      const strokeDasharray = `${(item.percentage / 100) * circumference} ${circumference}`;
-                      const strokeDashoffset = -offset;
-                      offset += (item.percentage / 100) * circumference;
+            // Merge actual data with defaults
+            const intentData = defaultIntents.map(def => {
+              const actual = analytics.intentBreakdown.find(i => i.intent === def.intent);
+              return {
+                ...def,
+                count: actual?.count || 0,
+                percentage: actual?.percentage || 0,
+              };
+            });
 
-                      return (
-                        <circle
-                          key={item.intent}
-                          cx="18"
-                          cy="18"
-                          r={radius}
-                          fill="none"
-                          stroke={colors[index % colors.length]}
-                          strokeWidth="3.5"
-                          strokeDasharray={strokeDasharray}
-                          strokeDashoffset={strokeDashoffset}
-                          transform="rotate(-90 18 18)"
-                        />
-                      );
-                    });
-                  })()}
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs md:text-sm font-bold text-gray-700">
-                    {analytics.intentBreakdown.reduce((sum, item) => sum + item.count, 0)}
-                  </span>
+            // Add any intents from data that aren't in defaults
+            analytics.intentBreakdown.forEach(item => {
+              if (!defaultIntents.find(d => d.intent === item.intent)) {
+                const colorIndex = intentData.length % 5;
+                const colors = ['#16a34a', '#2563eb', '#9333ea', '#ea580c', '#dc2626'];
+                const bgColors = ['bg-green-600', 'bg-blue-600', 'bg-purple-600', 'bg-orange-600', 'bg-red-600'];
+                intentData.push({
+                  intent: item.intent,
+                  label: item.intent.replace('customer_', '').replace(/_/g, ' '),
+                  color: colors[colorIndex],
+                  bgColor: bgColors[colorIndex],
+                  count: item.count,
+                  percentage: item.percentage,
+                });
+              }
+            });
+
+            const totalCount = intentData.reduce((sum, item) => sum + item.count, 0);
+            const activeIntents = intentData.filter(i => i.count > 0);
+            const radius = 15.9155;
+            const circumference = 2 * Math.PI * radius;
+
+            return (
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                {/* Donut Chart */}
+                <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
+                  <svg viewBox="0 0 36 36" className="w-full h-full">
+                    {/* Background circle when no data */}
+                    {activeIntents.length === 0 && (
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r={radius}
+                        fill="none"
+                        stroke="#e5e7eb"
+                        strokeWidth="3.5"
+                      />
+                    )}
+                    {/* Intent segments */}
+                    {(() => {
+                      let offset = 0;
+                      return activeIntents.map((item) => {
+                        const percentage = totalCount > 0 ? (item.count / totalCount) * 100 : 0;
+                        const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
+                        const strokeDashoffset = -offset;
+                        offset += (percentage / 100) * circumference;
+
+                        return (
+                          <circle
+                            key={item.intent}
+                            cx="18"
+                            cy="18"
+                            r={radius}
+                            fill="none"
+                            stroke={item.color}
+                            strokeWidth="3.5"
+                            strokeDasharray={strokeDasharray}
+                            strokeDashoffset={strokeDashoffset}
+                            transform="rotate(-90 18 18)"
+                          />
+                        );
+                      });
+                    })()}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className={`text-lg md:text-xl font-bold ${totalCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
+                      {totalCount}
+                    </span>
+                    <span className="text-[8px] md:text-[10px] text-gray-500">Total</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Legend */}
-              <div className="flex-1 space-y-2">
-                {analytics.intentBreakdown.map((item, index) => {
-                  const colors = ['bg-green-600', 'bg-blue-600', 'bg-purple-600', 'bg-orange-600', 'bg-red-600'];
-                  return (
+                {/* Legend */}
+                <div className="flex-1 space-y-2">
+                  {intentData.map((item) => (
                     <div key={item.intent} className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${colors[index % colors.length]}`}></div>
-                      <span className="text-xs md:text-sm text-gray-600 capitalize truncate flex-1">
-                        {item.intent.replace('customer_', '').replace(/_/g, ' ')}
-                      </span>
-                      <span className="text-xs md:text-sm font-medium text-gray-900 whitespace-nowrap">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${item.bgColor}`}></div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs md:text-sm text-gray-700 capitalize">{item.label}</span>
+                      </div>
+                      <span className="text-xs md:text-sm font-semibold text-gray-900 whitespace-nowrap">
                         {item.percentage}%
                       </span>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 
