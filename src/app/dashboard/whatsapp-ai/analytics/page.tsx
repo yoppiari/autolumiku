@@ -225,70 +225,92 @@ export default function AnalyticsPage() {
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 {(() => {
                   const metrics = [
-                    { value: analytics.performance.aiAccuracy, color: '#22c55e', label: analytics.performance.aiAccuracy },
-                    { value: analytics.performance.resolutionRate, color: '#eab308', label: analytics.performance.resolutionRate },
-                    { value: analytics.performance.customerSatisfaction, color: '#f97316', label: analytics.performance.customerSatisfaction },
-                    { value: analytics.overview.escalationRate, color: '#ef4444', label: analytics.overview.escalationRate },
+                    { value: analytics.performance.aiAccuracy || 0, color: '#22c55e', name: 'AI Accuracy' },
+                    { value: analytics.performance.resolutionRate || 0, color: '#eab308', name: 'Resolution' },
+                    { value: analytics.performance.customerSatisfaction || 0, color: '#f97316', name: 'Satisfaction' },
+                    { value: analytics.overview.escalationRate || 0, color: '#ef4444', name: 'Escalation' },
                   ];
-                  const total = metrics.reduce((sum, m) => sum + m.value, 0) || 1;
-                  const cx = 50, cy = 50, radius = 35;
-                  let cumulativeAngle = -90;
+                  const total = metrics.reduce((sum, m) => sum + m.value, 0);
+                  const cx = 50, cy = 50, radius = 35, innerRadius = 20;
 
+                  // If no data, show empty ring
+                  if (total === 0) {
+                    return (
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={(radius + innerRadius) / 2}
+                        fill="none"
+                        stroke="#e5e7eb"
+                        strokeWidth={radius - innerRadius}
+                      />
+                    );
+                  }
+
+                  let cumulativePercent = 0;
                   return metrics.map((metric, index) => {
-                    const percentage = (metric.value / total) * 100;
-                    const angle = (percentage / 100) * 360;
-                    const startAngle = cumulativeAngle;
-                    const endAngle = cumulativeAngle + angle;
-                    cumulativeAngle = endAngle;
+                    if (metric.value === 0) return null;
 
-                    if (percentage === 0) return null;
+                    const percent = (metric.value / total) * 100;
+                    const startPercent = cumulativePercent;
+                    cumulativePercent += percent;
 
+                    // Calculate arc path for donut segment
+                    const startAngle = (startPercent / 100) * 360 - 90;
+                    const endAngle = (cumulativePercent / 100) * 360 - 90;
                     const startRad = (startAngle * Math.PI) / 180;
                     const endRad = (endAngle * Math.PI) / 180;
-                    const largeArc = angle > 180 ? 1 : 0;
 
+                    // Outer arc points
                     const x1 = cx + radius * Math.cos(startRad);
                     const y1 = cy + radius * Math.sin(startRad);
                     const x2 = cx + radius * Math.cos(endRad);
                     const y2 = cy + radius * Math.sin(endRad);
 
-                    // Label position (middle of arc)
+                    // Inner arc points
+                    const x3 = cx + innerRadius * Math.cos(endRad);
+                    const y3 = cy + innerRadius * Math.sin(endRad);
+                    const x4 = cx + innerRadius * Math.cos(startRad);
+                    const y4 = cy + innerRadius * Math.sin(startRad);
+
+                    const largeArc = percent > 50 ? 1 : 0;
+
+                    // Label position
                     const midAngle = ((startAngle + endAngle) / 2) * Math.PI / 180;
-                    const labelRadius = radius * 0.7;
+                    const labelRadius = (radius + innerRadius) / 2;
                     const labelX = cx + labelRadius * Math.cos(midAngle);
                     const labelY = cy + labelRadius * Math.sin(midAngle);
 
                     return (
                       <g key={index}>
                         <path
-                          d={`M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                          d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z`}
                           fill={metric.color}
                           stroke="white"
-                          strokeWidth="2"
+                          strokeWidth="1"
                         />
-                        {percentage > 5 && (
+                        {percent >= 10 && (
                           <text
                             x={labelX}
                             y={labelY}
                             textAnchor="middle"
                             dominantBaseline="middle"
                             fill="white"
-                            fontSize="8"
+                            fontSize="7"
                             fontWeight="bold"
                           >
-                            {metric.label}%
+                            {metric.value}%
                           </text>
                         )}
                       </g>
                     );
                   });
                 })()}
-                {/* Center hole */}
-                <circle cx="50" cy="50" r="18" fill="white" />
-                <text x="50" y="47" textAnchor="middle" fill="#374151" fontSize="10" fontWeight="bold">
+                {/* Center text */}
+                <text x="50" y="47" textAnchor="middle" fill="#374151" fontSize="12" fontWeight="bold">
                   {analytics.performance.aiAccuracy + analytics.performance.resolutionRate + analytics.performance.customerSatisfaction + analytics.overview.escalationRate}
                 </text>
-                <text x="50" y="57" textAnchor="middle" fill="#9ca3af" fontSize="6">
+                <text x="50" y="58" textAnchor="middle" fill="#9ca3af" fontSize="7">
                   Total
                 </text>
               </svg>
