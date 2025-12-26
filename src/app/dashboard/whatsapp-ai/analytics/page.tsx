@@ -1,7 +1,7 @@
 /**
  * WhatsApp AI Analytics Dashboard
  * Performance metrics, conversation insights, AI accuracy
- * Optimized for fit-to-screen at 100% zoom
+ * Readable fonts and full screen layout
  */
 
 'use client';
@@ -95,21 +95,19 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="p-2 md:p-3 h-[calc(100vh-64px)] overflow-hidden flex flex-col">
-      {/* Header - Compact */}
-      <div className="flex items-center justify-between mb-2 ml-8 md:ml-0">
-        <div className="flex items-center gap-2">
-          <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-xs">← Back</Link>
-          <div>
-            <h1 className="text-sm md:text-lg font-bold text-gray-900">Analytics</h1>
-          </div>
+    <div className="p-3 md:p-4 h-[calc(100vh-64px)] overflow-hidden flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3 ml-8 md:ml-0 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-sm">← Back</Link>
+          <h1 className="text-base md:text-xl font-bold text-gray-900">Analytics</h1>
         </div>
         <div className="flex items-center gap-1">
           {['today', 'week', 'month'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range as typeof timeRange)}
-              className={`px-2 py-0.5 rounded text-[10px] md:text-xs font-medium ${
+              className={`px-3 py-1 rounded text-xs md:text-sm font-medium ${
                 timeRange === range ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'
               }`}
             >
@@ -119,13 +117,13 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto flex flex-col gap-2">
+      {/* Main Content - Fill remaining space */}
+      <div className="flex-1 flex flex-col gap-3 min-h-0">
         {/* Row 1: AI Performance & Intent Breakdown */}
-        <div className="grid grid-cols-2 gap-2 flex-shrink-0">
+        <div className="grid grid-cols-2 gap-3 flex-shrink-0">
           {/* AI Performance */}
-          <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-[10px] md:text-xs font-semibold text-gray-900 mb-1">AI Performance</h2>
+          <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-xs md:text-sm font-semibold text-gray-900 mb-2">AI Performance</h2>
             {(() => {
               const metrics = [
                 { value: analytics.performance.aiAccuracy || 0, color: '#22c55e', name: 'Accuracy' },
@@ -140,8 +138,8 @@ export default function AnalyticsPage() {
               const circumference = 2 * Math.PI * radius;
 
               return (
-                <div className="flex items-center gap-2">
-                  <div className="relative w-16 h-16 md:w-20 md:h-20 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0">
                     <svg viewBox="0 0 36 36" className="w-full h-full">
                       {activeMetrics.length === 0 && <circle cx="18" cy="18" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="3" />}
                       {(() => {
@@ -156,15 +154,15 @@ export default function AnalyticsPage() {
                       })()}
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={`text-xs md:text-sm font-bold ${avgScore >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>{avgScore}%</span>
+                      <span className={`text-sm md:text-lg font-bold ${avgScore >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>{avgScore}%</span>
                     </div>
                   </div>
-                  <div className="flex-1 space-y-0.5">
+                  <div className="flex-1 space-y-1">
                     {metrics.map((m) => (
-                      <div key={m.name} className="flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }}></div>
-                        <span className="text-[8px] md:text-[9px] text-gray-600 flex-1">{m.name}</span>
-                        <span className="text-[8px] md:text-[9px] font-semibold">{m.value}%</span>
+                      <div key={m.name} className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }}></div>
+                        <span className="text-xs md:text-sm text-gray-600 flex-1">{m.name}</span>
+                        <span className="text-xs md:text-sm font-semibold">{m.value}%</span>
                       </div>
                     ))}
                   </div>
@@ -174,8 +172,8 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Intent Breakdown */}
-          <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-[10px] md:text-xs font-semibold text-gray-900 mb-1">Intent Breakdown</h2>
+          <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-xs md:text-sm font-semibold text-gray-900 mb-2">Intent Breakdown</h2>
             {(() => {
               const defaultIntents = [
                 { intent: 'customer_greeting', label: 'Greeting', color: '#16a34a' },
@@ -194,8 +192,8 @@ export default function AnalyticsPage() {
               const circumference = 2 * Math.PI * radius;
 
               return (
-                <div className="flex items-center gap-2">
-                  <div className="relative w-16 h-16 md:w-20 md:h-20 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0">
                     <svg viewBox="0 0 36 36" className="w-full h-full">
                       {activeIntents.length === 0 && <circle cx="18" cy="18" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="3" />}
                       {(() => {
@@ -210,15 +208,15 @@ export default function AnalyticsPage() {
                       })()}
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={`text-xs md:text-sm font-bold ${totalCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>{totalCount}</span>
+                      <span className={`text-sm md:text-lg font-bold ${totalCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>{totalCount}</span>
                     </div>
                   </div>
-                  <div className="flex-1 space-y-0.5">
+                  <div className="flex-1 space-y-1">
                     {intentData.map((i) => (
-                      <div key={i.intent} className="flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: i.color }}></div>
-                        <span className="text-[8px] md:text-[9px] text-gray-600 flex-1">{i.label}</span>
-                        <span className="text-[8px] md:text-[9px] font-semibold">{i.percentage}%</span>
+                      <div key={i.intent} className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: i.color }}></div>
+                        <span className="text-xs md:text-sm text-gray-600 flex-1">{i.label}</span>
+                        <span className="text-xs md:text-sm font-semibold">{i.percentage}%</span>
                       </div>
                     ))}
                   </div>
@@ -228,11 +226,11 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Row 2: Staff Activity */}
+        {/* Row 2: Staff Activity - Fills remaining space */}
         {analytics.staffActivity.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-shrink-0">
-            <div className="px-2 py-1 border-b border-gray-100">
-              <h2 className="text-[10px] md:text-xs font-semibold text-gray-900">Staff Activity</h2>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0">
+            <div className="px-3 py-2 border-b border-gray-100 flex-shrink-0">
+              <h2 className="text-xs md:text-sm font-semibold text-gray-900">Staff Activity</h2>
             </div>
             {(() => {
               const staffData = analytics.staffActivity;
@@ -242,75 +240,75 @@ export default function AnalyticsPage() {
               const sortedStaff = [...staffData].sort((a, b) => b.commandCount - a.commandCount);
 
               return (
-                <div className="p-2">
+                <div className="p-3 flex-1 flex flex-col min-h-0">
                   {/* Summary Stats */}
-                  <div className="grid grid-cols-3 gap-1 mb-2">
-                    <div className="bg-blue-50 rounded p-1">
-                      <div className="flex items-center gap-0.5">
-                        <div className="w-1 h-1 rounded bg-blue-500"></div>
-                        <span className="text-[6px] md:text-[8px] text-blue-700">Commands</span>
+                  <div className="grid grid-cols-3 gap-2 mb-3 flex-shrink-0">
+                    <div className="bg-blue-50 rounded-lg p-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded bg-blue-500"></div>
+                        <span className="text-xs text-blue-700">Commands</span>
                       </div>
-                      <div className="text-[10px] md:text-xs font-bold text-blue-600">{totalCommands}</div>
+                      <div className="text-lg md:text-xl font-bold text-blue-600">{totalCommands}</div>
                     </div>
-                    <div className="bg-green-50 rounded p-1">
-                      <div className="flex items-center gap-0.5">
-                        <div className="w-1 h-1 rounded bg-green-500"></div>
-                        <span className="text-[6px] md:text-[8px] text-green-700">Success</span>
+                    <div className="bg-green-50 rounded-lg p-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded bg-green-500"></div>
+                        <span className="text-xs text-green-700">Success</span>
                       </div>
-                      <div className="text-[10px] md:text-xs font-bold text-green-600">{avgSuccessRate}%</div>
+                      <div className="text-lg md:text-xl font-bold text-green-600">{avgSuccessRate}%</div>
                     </div>
-                    <div className="bg-purple-50 rounded p-1">
-                      <div className="flex items-center gap-0.5">
-                        <div className="w-1 h-1 rounded bg-purple-500"></div>
-                        <span className="text-[6px] md:text-[8px] text-purple-700">Staff</span>
+                    <div className="bg-purple-50 rounded-lg p-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded bg-purple-500"></div>
+                        <span className="text-xs text-purple-700">Staff</span>
                       </div>
-                      <div className="text-[10px] md:text-xs font-bold text-purple-600">{staffData.length}</div>
+                      <div className="text-lg md:text-xl font-bold text-purple-600">{staffData.length}</div>
                     </div>
                   </div>
 
-                  {/* Chart Area - Horizontal layout with vertical centering */}
-                  <div className="flex gap-3 items-center">
+                  {/* Chart Area - Fills remaining space */}
+                  <div className="flex gap-4 items-center flex-1 min-h-0">
                     {/* Staff List - Centered vertically */}
-                    <div className="w-28 md:w-32 flex-shrink-0">
-                      <div className="text-[7px] md:text-[9px] text-gray-500 mb-1">WhatsApp Staff</div>
-                      <div className="space-y-1">
+                    <div className="w-32 md:w-40 flex-shrink-0">
+                      <div className="text-xs text-gray-500 mb-2">WhatsApp Staff</div>
+                      <div className="space-y-2">
                         {sortedStaff.map((staff, idx) => (
-                          <div key={idx} className="flex items-center gap-1">
-                            <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="#25D366">
+                          <div key={idx} className="flex items-center gap-2">
+                            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="#25D366">
                               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                             </svg>
-                            <span className="text-[8px] md:text-[9px] text-gray-700 truncate">{staff.staffPhone}</span>
+                            <span className="text-xs md:text-sm text-gray-700 truncate">{staff.staffPhone}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Bar Chart - Full width */}
-                    <div className="flex-1">
-                      <div className="text-[8px] md:text-[9px] text-gray-600 text-center mb-1">Summary Statistik Staff</div>
-                      <div className="flex items-end justify-between" style={{ height: '100px' }}>
+                    {/* Bar Chart - Full width and height */}
+                    <div className="flex-1 h-full flex flex-col min-h-0">
+                      <div className="text-xs md:text-sm text-gray-600 text-center mb-2 flex-shrink-0">Summary Statistik Staff</div>
+                      <div className="flex items-end justify-between flex-1 min-h-[120px]">
                         {sortedStaff.map((staff, idx) => {
                           const successH = staff.successRate;
                           const cmdH = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
                           const soldV = Math.round(staff.commandCount * staff.successRate / 100);
                           const soldH = maxCommands > 0 ? (soldV / maxCommands) * 100 : 0;
                           return (
-                            <div key={idx} className="flex flex-col items-center flex-1 px-2">
-                              <div className="flex items-end gap-1 w-full justify-center" style={{ height: '80px' }}>
-                                <div className="flex flex-col items-center flex-1 max-w-[24px]">
-                                  <span className="text-[7px] font-bold text-blue-600">{staff.successRate}%</span>
-                                  <div className="w-full bg-blue-500 rounded-t" style={{ height: `${Math.max(successH * 0.7, 4)}px` }}></div>
+                            <div key={idx} className="flex flex-col items-center flex-1 px-2 h-full">
+                              <div className="flex items-end gap-1 w-full justify-center flex-1">
+                                <div className="flex flex-col items-center flex-1 max-w-[32px]">
+                                  <span className="text-xs font-bold text-blue-600 mb-1">{staff.successRate}%</span>
+                                  <div className="w-full bg-blue-500 rounded-t" style={{ height: `${Math.max(successH, 4)}px` }}></div>
                                 </div>
-                                <div className="flex flex-col items-center flex-1 max-w-[24px]">
-                                  <span className="text-[7px] font-bold text-green-600">{staff.commandCount}</span>
-                                  <div className="w-full bg-green-500 rounded-t" style={{ height: `${Math.max(cmdH * 0.7, 4)}px` }}></div>
+                                <div className="flex flex-col items-center flex-1 max-w-[32px]">
+                                  <span className="text-xs font-bold text-green-600 mb-1">{staff.commandCount}</span>
+                                  <div className="w-full bg-green-500 rounded-t" style={{ height: `${Math.max(cmdH, 4)}px` }}></div>
                                 </div>
-                                <div className="flex flex-col items-center flex-1 max-w-[24px]">
-                                  <span className="text-[7px] font-bold text-purple-600">{soldV}</span>
-                                  <div className="w-full bg-purple-500 rounded-t" style={{ height: `${Math.max(soldH * 0.7, 4)}px` }}></div>
+                                <div className="flex flex-col items-center flex-1 max-w-[32px]">
+                                  <span className="text-xs font-bold text-purple-600 mb-1">{soldV}</span>
+                                  <div className="w-full bg-purple-500 rounded-t" style={{ height: `${Math.max(soldH, 4)}px` }}></div>
                                 </div>
                               </div>
-                              <span className="text-[7px] text-gray-500 mt-0.5">Staff {idx + 1}</span>
+                              <span className="text-xs text-gray-500 mt-1 flex-shrink-0">Staff {idx + 1}</span>
                             </div>
                           );
                         })}
@@ -318,23 +316,57 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
 
-                  {/* Legends - Always visible */}
-                  <div className="flex gap-3 pt-2 border-t border-gray-100 mt-2">
-                    <div>
-                      <span className="text-[7px] md:text-[8px] text-gray-500">Performance:</span>
-                      <div className="flex gap-2 text-[7px] md:text-[8px]">
-                        <span className="text-green-600">● ≥90%</span>
-                        <span className="text-yellow-600">● 70-89%</span>
-                        <span className="text-red-600">● &lt;70%</span>
+                  {/* Legend Tables - Bottom */}
+                  <div className="mt-3 pt-3 border-t border-gray-200 flex-shrink-0">
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Bar Chart Legend */}
+                      <div>
+                        <h4 className="text-xs md:text-sm font-medium text-gray-500 mb-2">Keterangan Diagram Batang</h4>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="w-3 h-3 rounded bg-blue-500 flex-shrink-0"></div>
+                            <span className="text-blue-600 font-medium">Biru</span>
+                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-600">% upload sukses</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="w-3 h-3 rounded bg-green-500 flex-shrink-0"></div>
+                            <span className="text-green-600 font-medium">Hijau</span>
+                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-600">Total command</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="w-3 h-3 rounded bg-purple-500 flex-shrink-0"></div>
+                            <span className="text-purple-600 font-medium">Ungu</span>
+                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-600">Jumlah terjual</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-px bg-gray-300"></div>
-                    <div>
-                      <span className="text-[7px] md:text-[8px] text-gray-500">Diagram:</span>
-                      <div className="flex gap-2 text-[7px] md:text-[8px]">
-                        <span className="text-blue-600">● Success%</span>
-                        <span className="text-green-600">● Commands</span>
-                        <span className="text-purple-600">● Sold</span>
+
+                      {/* Performance Legend */}
+                      <div>
+                        <h4 className="text-xs md:text-sm font-medium text-gray-500 mb-2">Keterangan Performance Staff</h4>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="w-3 h-3 rounded bg-green-500 flex-shrink-0"></div>
+                            <span className="text-green-600 font-medium">Hijau</span>
+                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-700">Excellent (≥90%)</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="w-3 h-3 rounded bg-yellow-500 flex-shrink-0"></div>
+                            <span className="text-yellow-600 font-medium">Kuning</span>
+                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-700">Good (70-89%)</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="w-3 h-3 rounded bg-red-500 flex-shrink-0"></div>
+                            <span className="text-red-600 font-medium">Merah</span>
+                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-700">Need Improve (&lt;70%)</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -343,7 +375,6 @@ export default function AnalyticsPage() {
             })()}
           </div>
         )}
-
       </div>
     </div>
   );
