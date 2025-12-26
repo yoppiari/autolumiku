@@ -201,89 +201,74 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
         <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">AI Performance</h2>
-          <div className="grid grid-cols-2 gap-3 md:gap-4">
-            {/* AI Accuracy */}
-            <div className="flex flex-col items-center">
-              <div className="relative w-16 h-16 md:w-20 md:h-20">
-                <svg viewBox="0 0 36 36" className="w-full h-full">
-                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                  <circle
-                    cx="18" cy="18" r="15.9155" fill="none"
-                    stroke="#16a34a"
-                    strokeWidth="3"
-                    strokeDasharray={`${analytics.performance.aiAccuracy} 100`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 18 18)"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs md:text-sm font-bold text-gray-900">{analytics.performance.aiAccuracy}%</span>
-                </div>
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            {/* Single Donut Chart */}
+            <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
+              <svg viewBox="0 0 36 36" className="w-full h-full">
+                {(() => {
+                  const metrics = [
+                    { value: analytics.performance.aiAccuracy, color: '#16a34a' },
+                    { value: analytics.performance.resolutionRate, color: '#2563eb' },
+                    { value: analytics.performance.customerSatisfaction, color: '#9333ea' },
+                    { value: analytics.overview.escalationRate, color: '#ea580c' },
+                  ];
+                  const total = metrics.reduce((sum, m) => sum + m.value, 0);
+                  const radius = 15.9155;
+                  const circumference = 2 * Math.PI * radius;
+                  let offset = 0;
+
+                  return metrics.map((metric, index) => {
+                    const percentage = total > 0 ? (metric.value / total) * 100 : 25;
+                    const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
+                    const strokeDashoffset = -offset;
+                    offset += (percentage / 100) * circumference;
+
+                    return (
+                      <circle
+                        key={index}
+                        cx="18"
+                        cy="18"
+                        r={radius}
+                        fill="none"
+                        stroke={metric.color}
+                        strokeWidth="3.5"
+                        strokeDasharray={strokeDasharray}
+                        strokeDashoffset={strokeDashoffset}
+                        transform="rotate(-90 18 18)"
+                      />
+                    );
+                  });
+                })()}
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xs md:text-sm font-bold text-gray-700">
+                  {Math.round((analytics.performance.aiAccuracy + analytics.performance.resolutionRate + analytics.performance.customerSatisfaction + (100 - analytics.overview.escalationRate)) / 4)}%
+                </span>
               </div>
-              <span className="text-[10px] md:text-xs text-gray-600 mt-1 text-center">AI Accuracy</span>
             </div>
 
-            {/* Resolution Rate */}
-            <div className="flex flex-col items-center">
-              <div className="relative w-16 h-16 md:w-20 md:h-20">
-                <svg viewBox="0 0 36 36" className="w-full h-full">
-                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                  <circle
-                    cx="18" cy="18" r="15.9155" fill="none"
-                    stroke="#2563eb"
-                    strokeWidth="3"
-                    strokeDasharray={`${analytics.performance.resolutionRate} 100`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 18 18)"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs md:text-sm font-bold text-gray-900">{analytics.performance.resolutionRate}%</span>
-                </div>
+            {/* Legend */}
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full flex-shrink-0 bg-green-600"></div>
+                <span className="text-xs md:text-sm text-gray-600 flex-1">AI Accuracy</span>
+                <span className="text-xs md:text-sm font-medium text-gray-900">{analytics.performance.aiAccuracy}%</span>
               </div>
-              <span className="text-[10px] md:text-xs text-gray-600 mt-1 text-center">Resolution</span>
-            </div>
-
-            {/* Customer Satisfaction */}
-            <div className="flex flex-col items-center">
-              <div className="relative w-16 h-16 md:w-20 md:h-20">
-                <svg viewBox="0 0 36 36" className="w-full h-full">
-                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                  <circle
-                    cx="18" cy="18" r="15.9155" fill="none"
-                    stroke="#9333ea"
-                    strokeWidth="3"
-                    strokeDasharray={`${analytics.performance.customerSatisfaction} 100`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 18 18)"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs md:text-sm font-bold text-gray-900">{analytics.performance.customerSatisfaction}%</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full flex-shrink-0 bg-blue-600"></div>
+                <span className="text-xs md:text-sm text-gray-600 flex-1">Resolution</span>
+                <span className="text-xs md:text-sm font-medium text-gray-900">{analytics.performance.resolutionRate}%</span>
               </div>
-              <span className="text-[10px] md:text-xs text-gray-600 mt-1 text-center">Satisfaction</span>
-            </div>
-
-            {/* Escalation Rate */}
-            <div className="flex flex-col items-center">
-              <div className="relative w-16 h-16 md:w-20 md:h-20">
-                <svg viewBox="0 0 36 36" className="w-full h-full">
-                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                  <circle
-                    cx="18" cy="18" r="15.9155" fill="none"
-                    stroke="#ea580c"
-                    strokeWidth="3"
-                    strokeDasharray={`${analytics.overview.escalationRate} 100`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 18 18)"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs md:text-sm font-bold text-gray-900">{analytics.overview.escalationRate}%</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full flex-shrink-0 bg-purple-600"></div>
+                <span className="text-xs md:text-sm text-gray-600 flex-1">Satisfaction</span>
+                <span className="text-xs md:text-sm font-medium text-gray-900">{analytics.performance.customerSatisfaction}%</span>
               </div>
-              <span className="text-[10px] md:text-xs text-gray-600 mt-1 text-center">Escalation</span>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full flex-shrink-0 bg-orange-600"></div>
+                <span className="text-xs md:text-sm text-gray-600 flex-1">Escalation</span>
+                <span className="text-xs md:text-sm font-medium text-gray-900">{analytics.overview.escalationRate}%</span>
+              </div>
             </div>
           </div>
         </div>
