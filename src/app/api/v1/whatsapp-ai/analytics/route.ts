@@ -262,12 +262,26 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5); // Top 5 intents
 
-    // Get staff activity
+    // Get registered staff phone numbers from StaffWhatsAppAuth
+    const registeredStaff = await prisma.staffWhatsAppAuth.findMany({
+      where: {
+        tenantId,
+        isActive: true,
+      },
+      select: {
+        phoneNumber: true,
+      },
+    });
+    const registeredPhones = registeredStaff.map(s => s.phoneNumber);
+
+    // Get staff activity - only for registered staff
     const staffActivity = await prisma.staffCommandLog.groupBy({
       by: ["staffPhone"],
       where: {
         tenantId,
         executedAt: { gte: startDate },
+        // Only include registered staff phones
+        staffPhone: { in: registeredPhones },
       },
       _count: true,
       _max: {
