@@ -431,57 +431,51 @@ export default function AnalyticsPage() {
 
             return (
               <div className="p-3 md:p-6">
-                {/* Summary Stats with Bar Visualization */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
+                {/* Summary Stats - Compact */}
+                <div className="grid grid-cols-3 gap-2 md:gap-3 mb-4 md:mb-6">
                   {/* Total Commands - Blue */}
-                  <div className="bg-blue-50 rounded-lg p-3 md:p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded bg-blue-500"></div>
-                        <span className="text-[10px] md:text-xs text-blue-700 font-medium">Total Commands</span>
-                      </div>
-                      <span className="text-lg md:text-2xl font-bold text-blue-600">{totalCommands}</span>
+                  <div className="bg-blue-50 rounded-lg p-2 md:p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-blue-500"></div>
+                      <span className="text-[8px] md:text-[10px] text-blue-700 font-medium">Total Commands</span>
                     </div>
-                    <div className="h-2 bg-blue-200 rounded-full overflow-hidden">
+                    <div className="text-sm md:text-base font-bold text-blue-600">{totalCommands}</div>
+                    <div className="h-1 md:h-1.5 bg-blue-200 rounded-full overflow-hidden mt-1">
                       <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }}></div>
                     </div>
                   </div>
 
                   {/* Avg Success Rate - Green */}
-                  <div className="bg-green-50 rounded-lg p-3 md:p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded bg-green-500"></div>
-                        <span className="text-[10px] md:text-xs text-green-700 font-medium">Avg Success Rate</span>
-                      </div>
-                      <span className="text-lg md:text-2xl font-bold text-green-600">{avgSuccessRate}%</span>
+                  <div className="bg-green-50 rounded-lg p-2 md:p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-green-500"></div>
+                      <span className="text-[8px] md:text-[10px] text-green-700 font-medium">Avg Success</span>
                     </div>
-                    <div className="h-2 bg-green-200 rounded-full overflow-hidden">
+                    <div className="text-sm md:text-base font-bold text-green-600">{avgSuccessRate}%</div>
+                    <div className="h-1 md:h-1.5 bg-green-200 rounded-full overflow-hidden mt-1">
                       <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${avgSuccessRate}%` }}></div>
                     </div>
                   </div>
 
                   {/* Active Staff - Purple */}
-                  <div className="bg-purple-50 rounded-lg p-3 md:p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded bg-purple-500"></div>
-                        <span className="text-[10px] md:text-xs text-purple-700 font-medium">Active Staff</span>
-                      </div>
-                      <span className="text-lg md:text-2xl font-bold text-purple-600">{staffData.length}</span>
+                  <div className="bg-purple-50 rounded-lg p-2 md:p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-purple-500"></div>
+                      <span className="text-[8px] md:text-[10px] text-purple-700 font-medium">Active Staff</span>
                     </div>
-                    <div className="h-2 bg-purple-200 rounded-full overflow-hidden">
+                    <div className="text-sm md:text-base font-bold text-purple-600">{staffData.length}</div>
+                    <div className="h-1 md:h-1.5 bg-purple-200 rounded-full overflow-hidden mt-1">
                       <div className="h-full bg-purple-500 rounded-full" style={{ width: '100%' }}></div>
                     </div>
                   </div>
                 </div>
 
                 {/* Main Chart Area */}
-                <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
-                  {/* Staff List with Color Indicator */}
-                  <div className="lg:min-w-[140px] order-2 lg:order-1">
+                <div className="flex flex-col lg:flex-row gap-4 md:gap-6 items-stretch">
+                  {/* Staff List with Color Indicator - Vertically centered */}
+                  <div className="lg:min-w-[140px] order-2 lg:order-1 flex flex-col justify-center">
                     <div className="text-[9px] md:text-xs font-medium text-gray-500 mb-2">No. WhatsApp Staff</div>
-                    <div className="flex flex-row lg:flex-col gap-2 lg:gap-1.5 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+                    <div className="flex flex-row lg:flex-col gap-2 lg:gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
                       {sortedStaff.map((staff, idx) => {
                         const indicatorColor = staff.successRate >= 90
                           ? 'bg-green-500'
@@ -502,7 +496,7 @@ export default function AnalyticsPage() {
 
                   {/* Grouped Vertical Bar Chart */}
                   <div className="flex-1 order-1 lg:order-2">
-                    <div className="flex items-end justify-around gap-3 md:gap-6 h-36 md:h-48 lg:h-56">
+                    <div className="flex items-end justify-around gap-2 md:gap-4" style={{ height: '160px' }}>
                       {sortedStaff.map((staff, idx) => {
                         // Blue = Upload success rate (percentage)
                         const uploadSuccessHeight = staff.successRate;
@@ -513,51 +507,45 @@ export default function AnalyticsPage() {
                         const soldHeight = maxCommands > 0 ? (soldVehicles / maxCommands) * 100 : 0;
 
                         return (
-                          <div key={idx} className="flex flex-col items-center flex-1">
-                            {/* Grouped Bars */}
-                            <div className="flex items-end gap-0.5 md:gap-1 w-full justify-center" style={{ height: '100%' }}>
+                          <div key={idx} className="flex flex-col items-center" style={{ flex: 1, maxWidth: '120px' }}>
+                            {/* Grouped Bars Container */}
+                            <div className="flex items-end gap-1 w-full justify-center" style={{ height: '120px' }}>
                               {/* Blue Bar - Upload Success Rate */}
-                              <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
-                                <span className="text-[7px] md:text-[9px] font-bold text-blue-600 mb-0.5">
+                              <div className="flex flex-col items-center" style={{ width: '24px' }}>
+                                <span className="text-[8px] md:text-[10px] font-bold text-blue-600 mb-1">
                                   {staff.successRate}%
                                 </span>
-                                <div className="w-full bg-blue-100 rounded-t flex items-end" style={{ height: '100%' }}>
-                                  <div
-                                    className="w-full bg-blue-500 rounded-t transition-all duration-500"
-                                    style={{ height: `${Math.max(uploadSuccessHeight, 10)}%` }}
-                                  ></div>
-                                </div>
+                                <div
+                                  className="w-full bg-blue-500 rounded-t transition-all duration-500"
+                                  style={{ height: `${Math.max(uploadSuccessHeight, 8)}px`, minHeight: '8px' }}
+                                ></div>
                               </div>
 
                               {/* Green Bar - Total Commands */}
-                              <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
-                                <span className="text-[7px] md:text-[9px] font-bold text-green-600 mb-0.5">
+                              <div className="flex flex-col items-center" style={{ width: '24px' }}>
+                                <span className="text-[8px] md:text-[10px] font-bold text-green-600 mb-1">
                                   {staff.commandCount}
                                 </span>
-                                <div className="w-full bg-green-100 rounded-t flex items-end" style={{ height: '100%' }}>
-                                  <div
-                                    className="w-full bg-green-500 rounded-t transition-all duration-500"
-                                    style={{ height: `${Math.max(commandHeight, 10)}%` }}
-                                  ></div>
-                                </div>
+                                <div
+                                  className="w-full bg-green-500 rounded-t transition-all duration-500"
+                                  style={{ height: `${Math.max(commandHeight, 8)}px`, minHeight: '8px' }}
+                                ></div>
                               </div>
 
                               {/* Purple Bar - Sold Vehicles */}
-                              <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
-                                <span className="text-[7px] md:text-[9px] font-bold text-purple-600 mb-0.5">
+                              <div className="flex flex-col items-center" style={{ width: '24px' }}>
+                                <span className="text-[8px] md:text-[10px] font-bold text-purple-600 mb-1">
                                   {soldVehicles}
                                 </span>
-                                <div className="w-full bg-purple-100 rounded-t flex items-end" style={{ height: '100%' }}>
-                                  <div
-                                    className="w-full bg-purple-500 rounded-t transition-all duration-500"
-                                    style={{ height: `${Math.max(soldHeight, 10)}%` }}
-                                  ></div>
-                                </div>
+                                <div
+                                  className="w-full bg-purple-500 rounded-t transition-all duration-500"
+                                  style={{ height: `${Math.max(soldHeight, 8)}px`, minHeight: '8px' }}
+                                ></div>
                               </div>
                             </div>
 
                             {/* Staff Label */}
-                            <div className="mt-1 text-[7px] md:text-[9px] text-gray-500 text-center truncate w-full">
+                            <div className="mt-2 text-[8px] md:text-[10px] text-gray-500 text-center">
                               Staff {idx + 1}
                             </div>
                           </div>
@@ -575,32 +563,7 @@ export default function AnalyticsPage() {
                 {/* Legend Tables - Bottom */}
                 <div className="mt-3 md:mt-4 pt-3 border-t border-gray-200">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                    {/* Bar Chart Legend */}
-                    <div>
-                      <h4 className="text-[8px] md:text-[10px] font-medium text-gray-500 mb-1.5">Keterangan Diagram Batang</h4>
-                      <div className="space-y-1 text-[8px] md:text-[10px]">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded bg-blue-500 flex-shrink-0"></div>
-                          <span className="text-blue-600 font-medium">Biru</span>
-                          <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Persentase upload sukses kendaraan</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded bg-green-500 flex-shrink-0"></div>
-                          <span className="text-green-600 font-medium">Hijau</span>
-                          <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Jumlah total command dieksekusi</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded bg-purple-500 flex-shrink-0"></div>
-                          <span className="text-purple-600 font-medium">Ungu</span>
-                          <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Jumlah staff berhasil menjual</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Performance Legend */}
+                    {/* Performance Legend - LEFT */}
                     <div>
                       <h4 className="text-[8px] md:text-[10px] font-medium text-gray-500 mb-1.5">Keterangan Performance Staff</h4>
                       <div className="space-y-1 text-[8px] md:text-[10px]">
@@ -624,6 +587,31 @@ export default function AnalyticsPage() {
                           <span className="text-gray-400">-</span>
                           <span className="text-gray-700">Need Improve</span>
                           <span className="text-gray-400">(&lt;70%)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bar Chart Legend - RIGHT */}
+                    <div>
+                      <h4 className="text-[8px] md:text-[10px] font-medium text-gray-500 mb-1.5">Keterangan Diagram Batang</h4>
+                      <div className="space-y-1 text-[8px] md:text-[10px]">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded bg-blue-500 flex-shrink-0"></div>
+                          <span className="text-blue-600 font-medium">Biru</span>
+                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-600">Persentase upload sukses kendaraan</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded bg-green-500 flex-shrink-0"></div>
+                          <span className="text-green-600 font-medium">Hijau</span>
+                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-600">Jumlah total command dieksekusi</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded bg-purple-500 flex-shrink-0"></div>
+                          <span className="text-purple-600 font-medium">Ungu</span>
+                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-600">Jumlah staff berhasil menjual</span>
                         </div>
                       </div>
                     </div>
