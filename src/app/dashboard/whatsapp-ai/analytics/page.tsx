@@ -391,39 +391,39 @@ export default function AnalyticsPage() {
             return (
               <div className="p-3 md:p-6">
                 {/* Summary Stats - Compact */}
-                <div className="grid grid-cols-3 gap-2 md:gap-3 mb-4 md:mb-6">
+                <div className="grid grid-cols-3 gap-1.5 md:gap-2 mb-3 md:mb-4">
                   {/* Total Commands - Blue */}
-                  <div className="bg-blue-50 rounded-lg p-2 md:p-3">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-blue-500"></div>
-                      <span className="text-[8px] md:text-[10px] text-blue-700 font-medium">Total Commands</span>
+                  <div className="bg-blue-50 rounded-md p-1.5 md:p-2">
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded bg-blue-500"></div>
+                      <span className="text-[7px] md:text-[9px] text-blue-700 font-medium">Total Commands</span>
                     </div>
-                    <div className="text-sm md:text-base font-bold text-blue-600">{totalCommands}</div>
-                    <div className="h-1 md:h-1.5 bg-blue-200 rounded-full overflow-hidden mt-1">
+                    <div className="text-xs md:text-sm font-bold text-blue-600">{totalCommands}</div>
+                    <div className="h-0.5 md:h-1 bg-blue-200 rounded-full overflow-hidden mt-0.5">
                       <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }}></div>
                     </div>
                   </div>
 
                   {/* Avg Success Rate - Green */}
-                  <div className="bg-green-50 rounded-lg p-2 md:p-3">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-green-500"></div>
-                      <span className="text-[8px] md:text-[10px] text-green-700 font-medium">Avg Success</span>
+                  <div className="bg-green-50 rounded-md p-1.5 md:p-2">
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded bg-green-500"></div>
+                      <span className="text-[7px] md:text-[9px] text-green-700 font-medium">Avg Success</span>
                     </div>
-                    <div className="text-sm md:text-base font-bold text-green-600">{avgSuccessRate}%</div>
-                    <div className="h-1 md:h-1.5 bg-green-200 rounded-full overflow-hidden mt-1">
+                    <div className="text-xs md:text-sm font-bold text-green-600">{avgSuccessRate}%</div>
+                    <div className="h-0.5 md:h-1 bg-green-200 rounded-full overflow-hidden mt-0.5">
                       <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${avgSuccessRate}%` }}></div>
                     </div>
                   </div>
 
                   {/* Active Staff - Purple */}
-                  <div className="bg-purple-50 rounded-lg p-2 md:p-3">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-purple-500"></div>
-                      <span className="text-[8px] md:text-[10px] text-purple-700 font-medium">Active Staff</span>
+                  <div className="bg-purple-50 rounded-md p-1.5 md:p-2">
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded bg-purple-500"></div>
+                      <span className="text-[7px] md:text-[9px] text-purple-700 font-medium">Active Staff</span>
                     </div>
-                    <div className="text-sm md:text-base font-bold text-purple-600">{staffData.length}</div>
-                    <div className="h-1 md:h-1.5 bg-purple-200 rounded-full overflow-hidden mt-1">
+                    <div className="text-xs md:text-sm font-bold text-purple-600">{staffData.length}</div>
+                    <div className="h-0.5 md:h-1 bg-purple-200 rounded-full overflow-hidden mt-0.5">
                       <div className="h-full bg-purple-500 rounded-full" style={{ width: '100%' }}></div>
                     </div>
                   </div>
