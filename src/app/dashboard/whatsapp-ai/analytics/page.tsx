@@ -201,82 +201,83 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
         <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">AI Performance</h2>
-          <div className="relative flex items-center justify-center py-4">
-            {/* Donut Chart with Labels Around */}
-            <div className="relative w-36 h-36 md:w-44 md:h-44">
-              {/* SVG Donut */}
-              <svg viewBox="0 0 36 36" className="w-full h-full">
-                {(() => {
-                  const metrics = [
-                    { value: analytics.performance.aiAccuracy, color: '#16a34a' },
-                    { value: analytics.performance.resolutionRate, color: '#2563eb' },
-                    { value: analytics.performance.customerSatisfaction, color: '#9333ea' },
-                    { value: analytics.overview.escalationRate, color: '#ea580c' },
-                  ];
-                  const total = metrics.reduce((sum, m) => sum + m.value, 0);
-                  const radius = 15.9155;
-                  const circumference = 2 * Math.PI * radius;
-                  let offset = 0;
+          <div className="flex flex-col items-center">
+            {/* Top Label - Satisfaction */}
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-xs md:text-sm font-bold text-gray-900">{analytics.performance.customerSatisfaction}%</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-purple-600"></div>
+              <span className="text-xs text-gray-600">Satisfaction</span>
+            </div>
 
-                  return metrics.map((metric, index) => {
-                    const percentage = total > 0 ? (metric.value / total) * 100 : 25;
-                    const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
-                    const strokeDashoffset = -offset;
-                    offset += (percentage / 100) * circumference;
-
-                    return (
-                      <circle
-                        key={index}
-                        cx="18"
-                        cy="18"
-                        r={radius}
-                        fill="none"
-                        stroke={metric.color}
-                        strokeWidth="3.5"
-                        strokeDasharray={strokeDasharray}
-                        strokeDashoffset={strokeDashoffset}
-                        transform="rotate(-90 18 18)"
-                      />
-                    );
-                  });
-                })()}
-              </svg>
-
-              {/* Top Label - Satisfaction */}
-              <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-center">
-                <div className="text-[10px] md:text-xs font-bold text-gray-900">{analytics.performance.customerSatisfaction}%</div>
+            {/* Middle Row: Left Label + Donut + Right Label */}
+            <div className="flex items-center gap-3 md:gap-4">
+              {/* Left Label - AI Accuracy */}
+              <div className="flex flex-col items-end min-w-[70px] md:min-w-[80px]">
+                <span className="text-xs md:text-sm font-bold text-gray-900">{analytics.performance.aiAccuracy}%</span>
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-purple-600"></div>
-                  <span className="text-[9px] md:text-[10px] text-gray-600">Satisfaction</span>
+                  <span className="text-[10px] md:text-xs text-gray-600">AI Accuracy</span>
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-600"></div>
                 </div>
+              </div>
+
+              {/* Donut Chart */}
+              <div className="relative w-24 h-24 md:w-32 md:h-32">
+                <svg viewBox="0 0 42 42" className="w-full h-full">
+                  {(() => {
+                    const metrics = [
+                      { value: analytics.performance.customerSatisfaction, color: '#9333ea' },
+                      { value: analytics.overview.escalationRate, color: '#ea580c' },
+                      { value: analytics.performance.resolutionRate, color: '#2563eb' },
+                      { value: analytics.performance.aiAccuracy, color: '#16a34a' },
+                    ];
+                    const total = metrics.reduce((sum, m) => sum + m.value, 0);
+                    const radius = 15.9155;
+                    const circumference = 2 * Math.PI * radius;
+                    let offset = 0;
+                    const gap = 0.5;
+
+                    return metrics.map((metric, index) => {
+                      const percentage = total > 0 ? (metric.value / total) * 100 : 25;
+                      const segmentLength = Math.max(0, (percentage / 100) * circumference - gap);
+                      const strokeDasharray = `${segmentLength} ${circumference}`;
+                      const strokeDashoffset = -offset;
+                      offset += (percentage / 100) * circumference;
+
+                      return (
+                        <circle
+                          key={index}
+                          cx="21"
+                          cy="21"
+                          r={radius}
+                          fill="none"
+                          stroke={metric.color}
+                          strokeWidth="5"
+                          strokeDasharray={strokeDasharray}
+                          strokeDashoffset={strokeDashoffset}
+                          strokeLinecap="round"
+                          transform="rotate(-90 21 21)"
+                        />
+                      );
+                    });
+                  })()}
+                </svg>
               </div>
 
               {/* Right Label - Escalation */}
-              <div className="absolute top-1/2 -right-2 md:-right-4 -translate-y-1/2 text-left">
-                <div className="text-[10px] md:text-xs font-bold text-gray-900">{analytics.overview.escalationRate}%</div>
+              <div className="flex flex-col items-start min-w-[70px] md:min-w-[80px]">
+                <span className="text-xs md:text-sm font-bold text-gray-900">{analytics.overview.escalationRate}%</span>
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-orange-600"></div>
-                  <span className="text-[9px] md:text-[10px] text-gray-600">Escalation</span>
+                  <div className="w-2.5 h-2.5 rounded-full bg-orange-600"></div>
+                  <span className="text-[10px] md:text-xs text-gray-600">Escalation</span>
                 </div>
               </div>
+            </div>
 
-              {/* Bottom Label - Resolution */}
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-center">
-                <div className="flex items-center gap-1 justify-center">
-                  <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                  <span className="text-[9px] md:text-[10px] text-gray-600">Resolution</span>
-                </div>
-                <div className="text-[10px] md:text-xs font-bold text-gray-900">{analytics.performance.resolutionRate}%</div>
-              </div>
-
-              {/* Left Label - AI Accuracy */}
-              <div className="absolute top-1/2 -left-2 md:-left-4 -translate-y-1/2 text-right">
-                <div className="text-[10px] md:text-xs font-bold text-gray-900">{analytics.performance.aiAccuracy}%</div>
-                <div className="flex items-center gap-1 justify-end">
-                  <span className="text-[9px] md:text-[10px] text-gray-600">AI Accuracy</span>
-                  <div className="w-2 h-2 rounded-full bg-green-600"></div>
-                </div>
-              </div>
+            {/* Bottom Label - Resolution */}
+            <div className="flex items-center gap-1.5 mt-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>
+              <span className="text-xs text-gray-600">Resolution</span>
+              <span className="text-xs md:text-sm font-bold text-gray-900">{analytics.performance.resolutionRate}%</span>
             </div>
           </div>
         </div>
