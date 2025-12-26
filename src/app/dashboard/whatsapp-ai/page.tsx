@@ -406,47 +406,47 @@ export default function WhatsAppAIDashboard() {
 
         {/* Stats Overview - Compact */}
         {status.isConnected && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xs font-medium text-gray-500">Conversations</h3>
-                <span className="text-xl">💬</span>
+          <div className="grid grid-cols-4 gap-2 mb-2">
+            <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-medium text-gray-500">Conversations</h3>
+                <span className="text-sm">💬</span>
               </div>
-              <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-              <p className="text-xs text-gray-500">{stats.active} active now</p>
+              <div className="text-lg font-bold text-blue-600">{stats.total}</div>
+              <p className="text-[10px] text-gray-500">{stats.active} active now</p>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xs font-medium text-gray-500">Today Messages</h3>
-                <span className="text-xl">📨</span>
+            <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-medium text-gray-500">Today Messages</h3>
+                <span className="text-sm">📨</span>
               </div>
-              <div className="text-2xl font-bold text-purple-600">{status.todayMessages}</div>
-              <p className="text-xs text-gray-500">
+              <div className="text-lg font-bold text-purple-600">{status.todayMessages}</div>
+              <p className="text-[10px] text-gray-500">
                 {stats.customerChats} customers · {stats.staffCommands} staff
               </p>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xs font-medium text-gray-500">AI Automation</h3>
-                <span className="text-xl">🤖</span>
+            <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-medium text-gray-500">AI Automation</h3>
+                <span className="text-sm">🤖</span>
               </div>
-              <div className="text-2xl font-bold text-green-600">{status.aiResponseRate}%</div>
-              <p className="text-xs text-gray-500">
+              <div className="text-lg font-bold text-green-600">{status.aiResponseRate}%</div>
+              <p className="text-[10px] text-gray-500">
                 {stats.escalated} escalated to human
               </p>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xs font-medium text-gray-500">Response Time</h3>
-                <span className="text-xl">⚡</span>
+            <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-medium text-gray-500">Response Time</h3>
+                <span className="text-sm">⚡</span>
               </div>
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-lg font-bold text-orange-600">
                 {formatResponseTime(stats.avgResponseTime)}
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-[10px] text-gray-500">
                 {stats.aiAccuracy}% accuracy
               </p>
             </div>
@@ -455,10 +455,10 @@ export default function WhatsAppAIDashboard() {
 
         {/* Performance Summary Chart */}
         {status.isConnected && (
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-3">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-900">📊 Performance Summary</h3>
-              <Link href="/dashboard/whatsapp-ai/analytics" className="text-xs text-blue-600 hover:text-blue-800">
+          <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 mb-2">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-gray-900">📊 Performance Summary</h3>
+              <Link href="/dashboard/whatsapp-ai/analytics" className="text-[10px] text-blue-600 hover:text-blue-800">
                 Lihat Detail →
               </Link>
             </div>
@@ -508,62 +508,50 @@ export default function WhatsAppAIDashboard() {
               return (
                 <>
                   {/* Visual Metrics */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-2">
                     {/* Left: Horizontal Bar Chart */}
-                    <div className="space-y-3">
+                    <div className="space-y-1.5">
                       {/* Conversations Bar */}
                       <div>
-                        <div className="flex items-center justify-between text-xs mb-1">
+                        <div className="flex items-center justify-between text-[10px] mb-0.5">
                           <span className="text-gray-600">💬 Conversations</span>
                           <span className="font-semibold text-blue-600">{totalConversations}</span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                            style={{ width: `${conversationBarWidth}%` }}
-                          ></div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${conversationBarWidth}%` }}></div>
                         </div>
                       </div>
 
                       {/* Messages Bar */}
                       <div>
-                        <div className="flex items-center justify-between text-xs mb-1">
+                        <div className="flex items-center justify-between text-[10px] mb-0.5">
                           <span className="text-gray-600">📨 Today Messages</span>
                           <span className="font-semibold text-purple-600">{todayMessages}</span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-purple-500 rounded-full transition-all duration-500"
-                            style={{ width: `${messagesBarWidth}%` }}
-                          ></div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-purple-500 rounded-full" style={{ width: `${messagesBarWidth}%` }}></div>
                         </div>
                       </div>
 
                       {/* AI Automation Bar */}
                       <div>
-                        <div className="flex items-center justify-between text-xs mb-1">
+                        <div className="flex items-center justify-between text-[10px] mb-0.5">
                           <span className="text-gray-600">🤖 AI Automation</span>
                           <span className="font-semibold text-green-600">{aiAutomation}%</span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-green-500 rounded-full transition-all duration-500"
-                            style={{ width: `${aiAutomation}%` }}
-                          ></div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-green-500 rounded-full" style={{ width: `${aiAutomation}%` }}></div>
                         </div>
                       </div>
 
                       {/* Accuracy Bar */}
                       <div>
-                        <div className="flex items-center justify-between text-xs mb-1">
+                        <div className="flex items-center justify-between text-[10px] mb-0.5">
                           <span className="text-gray-600">🎯 AI Accuracy</span>
                           <span className="font-semibold text-orange-600">{aiAccuracy}%</span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-orange-500 rounded-full transition-all duration-500"
-                            style={{ width: `${aiAccuracy}%` }}
-                          ></div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-orange-500 rounded-full" style={{ width: `${aiAccuracy}%` }}></div>
                         </div>
                       </div>
                     </div>
@@ -571,112 +559,37 @@ export default function WhatsAppAIDashboard() {
                     {/* Right: Donut Chart - Overall Health Score */}
                     <div className="flex items-center justify-center">
                       <div className="relative">
-                        <svg width="140" height="140" className="transform -rotate-90">
-                          {/* Background circle */}
-                          <circle
-                            cx="70"
-                            cy="70"
-                            r={radius}
-                            fill="none"
-                            stroke="#e5e7eb"
-                            strokeWidth="10"
-                          />
-                          {/* Progress circle */}
-                          <circle
-                            cx="70"
-                            cy="70"
-                            r={radius}
-                            fill="none"
-                            stroke={scoreColor}
-                            strokeWidth="10"
-                            strokeLinecap="round"
-                            strokeDasharray={circumference}
-                            strokeDashoffset={offset}
-                            className="transition-all duration-1000"
-                          />
+                        <svg width="80" height="80" className="transform -rotate-90">
+                          <circle cx="40" cy="40" r="30" fill="none" stroke="#e5e7eb" strokeWidth="6" />
+                          <circle cx="40" cy="40" r="30" fill="none" stroke={scoreColor} strokeWidth="6" strokeLinecap="round"
+                            strokeDasharray={2 * Math.PI * 30} strokeDashoffset={2 * Math.PI * 30 - (healthScore / 100) * 2 * Math.PI * 30} />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-3xl font-bold" style={{ color: scoreColor }}>
-                            {hasData ? `${healthScore}%` : '-'}
-                          </span>
-                          <span className="text-xs text-gray-500">Health Score</span>
-                          {!hasData && (
-                            <span className="text-[10px] text-gray-400">No data</span>
-                          )}
+                          <span className="text-lg font-bold" style={{ color: scoreColor }}>{hasData ? `${healthScore}%` : '-'}</span>
+                          <span className="text-[8px] text-gray-500">Health</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Bottom: Quick Stats Row */}
-                  <div className="mt-4 pt-3 border-t border-gray-100">
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      <div className="bg-blue-50 rounded-lg p-2">
-                        <div className="text-lg font-bold text-blue-600">{stats.active || 0}</div>
-                        <div className="text-[10px] text-gray-500">Active Now</div>
+                  <div className="mt-2 pt-2 border-t border-gray-100">
+                    <div className="grid grid-cols-4 gap-1 text-center">
+                      <div className="bg-blue-50 rounded p-1">
+                        <div className="text-sm font-bold text-blue-600">{stats.active || 0}</div>
+                        <div className="text-[8px] text-gray-500">Active</div>
                       </div>
-                      <div className="bg-purple-50 rounded-lg p-2">
-                        <div className="text-lg font-bold text-purple-600">{stats.customerChats || 0}</div>
-                        <div className="text-[10px] text-gray-500">Customers</div>
+                      <div className="bg-purple-50 rounded p-1">
+                        <div className="text-sm font-bold text-purple-600">{stats.customerChats || 0}</div>
+                        <div className="text-[8px] text-gray-500">Customers</div>
                       </div>
-                      <div className="bg-green-50 rounded-lg p-2">
-                        <div className="text-lg font-bold text-green-600">{stats.staffCommands || 0}</div>
-                        <div className="text-[10px] text-gray-500">Staff Cmds</div>
+                      <div className="bg-green-50 rounded p-1">
+                        <div className="text-sm font-bold text-green-600">{stats.staffCommands || 0}</div>
+                        <div className="text-[8px] text-gray-500">Staff</div>
                       </div>
-                      <div className="bg-orange-50 rounded-lg p-2">
-                        <div className="text-lg font-bold text-orange-600">{formatResponseTime(stats.avgResponseTime || 0)}</div>
-                        <div className="text-[10px] text-gray-500">Avg Response</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Metrics Legend */}
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {/* Bar Chart Legend */}
-                      <div>
-                        <h4 className="text-[9px] font-medium text-gray-500 mb-1.5">Keterangan Metrik</h4>
-                        <div className="space-y-1 text-[9px]">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded bg-blue-500 flex-shrink-0"></div>
-                            <span className="text-gray-600">Conversations - Total percakapan</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded bg-purple-500 flex-shrink-0"></div>
-                            <span className="text-gray-600">Messages - Pesan hari ini</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded bg-green-500 flex-shrink-0"></div>
-                            <span className="text-gray-600">AI Automation - % respons otomatis</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded bg-orange-500 flex-shrink-0"></div>
-                            <span className="text-gray-600">AI Accuracy - Ketepatan jawaban AI</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Health Score Legend */}
-                      <div>
-                        <h4 className="text-[9px] font-medium text-gray-500 mb-1.5">Keterangan Health Score</h4>
-                        <div className="space-y-1 text-[9px]">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
-                            <span className="text-gray-600">≥80% - Excellent</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0"></div>
-                            <span className="text-gray-600">60-79% - Good</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
-                            <span className="text-gray-600">&lt;60% - Need Improvement</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0"></div>
-                            <span className="text-gray-600">- (No data)</span>
-                          </div>
-                        </div>
+                      <div className="bg-orange-50 rounded p-1">
+                        <div className="text-sm font-bold text-orange-600">{formatResponseTime(stats.avgResponseTime || 0)}</div>
+                        <div className="text-[8px] text-gray-500">Response</div>
                       </div>
                     </div>
                   </div>
