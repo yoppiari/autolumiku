@@ -500,33 +500,62 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
 
-                  {/* Vertical Bar Chart */}
+                  {/* Grouped Vertical Bar Chart */}
                   <div className="flex-1 order-1 lg:order-2">
-                    <div className="flex items-end justify-around gap-2 md:gap-4 h-32 md:h-44 lg:h-52">
+                    <div className="flex items-end justify-around gap-3 md:gap-6 h-36 md:h-48 lg:h-56">
                       {sortedStaff.map((staff, idx) => {
-                        const barHeight = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
-                        const barColor = staff.successRate >= 90
-                          ? 'bg-green-500'
-                          : staff.successRate >= 70
-                          ? 'bg-yellow-500'
-                          : 'bg-red-500';
+                        const commandHeight = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
+                        const successHeight = staff.successRate; // Already percentage
+                        const successfulCommands = Math.round(staff.commandCount * staff.successRate / 100);
+                        const successfulHeight = maxCommands > 0 ? (successfulCommands / maxCommands) * 100 : 0;
 
                         return (
-                          <div key={idx} className="flex flex-col items-center flex-1 max-w-[80px] md:max-w-[100px]">
-                            {/* Command count label */}
-                            <div className="text-[10px] md:text-sm font-bold text-gray-700 mb-1">
-                              {staff.commandCount}
-                            </div>
-                            {/* Bar */}
-                            <div className="w-full bg-gray-100 rounded-t-lg flex items-end justify-center" style={{ height: '100%' }}>
-                              <div
-                                className={`w-full ${barColor} rounded-t-lg transition-all duration-500 flex items-end justify-center pb-1`}
-                                style={{ height: `${Math.max(barHeight, 15)}%` }}
-                              >
-                                <span className="text-[8px] md:text-[10px] font-bold text-white drop-shadow">
+                          <div key={idx} className="flex flex-col items-center flex-1">
+                            {/* Grouped Bars */}
+                            <div className="flex items-end gap-0.5 md:gap-1 w-full justify-center" style={{ height: '100%' }}>
+                              {/* Blue Bar - Total Commands */}
+                              <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
+                                <span className="text-[7px] md:text-[9px] font-bold text-blue-600 mb-0.5">
+                                  {staff.commandCount}
+                                </span>
+                                <div className="w-full bg-blue-100 rounded-t flex items-end" style={{ height: '100%' }}>
+                                  <div
+                                    className="w-full bg-blue-500 rounded-t transition-all duration-500"
+                                    style={{ height: `${Math.max(commandHeight, 10)}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+
+                              {/* Green Bar - Success Rate */}
+                              <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
+                                <span className="text-[7px] md:text-[9px] font-bold text-green-600 mb-0.5">
                                   {staff.successRate}%
                                 </span>
+                                <div className="w-full bg-green-100 rounded-t flex items-end" style={{ height: '100%' }}>
+                                  <div
+                                    className="w-full bg-green-500 rounded-t transition-all duration-500"
+                                    style={{ height: `${Math.max(successHeight, 10)}%` }}
+                                  ></div>
+                                </div>
                               </div>
+
+                              {/* Purple Bar - Successful Commands */}
+                              <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
+                                <span className="text-[7px] md:text-[9px] font-bold text-purple-600 mb-0.5">
+                                  {successfulCommands}
+                                </span>
+                                <div className="w-full bg-purple-100 rounded-t flex items-end" style={{ height: '100%' }}>
+                                  <div
+                                    className="w-full bg-purple-500 rounded-t transition-all duration-500"
+                                    style={{ height: `${Math.max(successfulHeight, 10)}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Staff Label */}
+                            <div className="mt-1 text-[7px] md:text-[9px] text-gray-500 text-center truncate w-full">
+                              Staff {idx + 1}
                             </div>
                           </div>
                         );
@@ -535,7 +564,7 @@ export default function AnalyticsPage() {
 
                     {/* X-axis label */}
                     <div className="text-center mt-2 text-[8px] md:text-[10px] text-gray-400">
-                      Total Command per Staff
+                      Performance per Staff
                     </div>
                   </div>
                 </div>
@@ -543,27 +572,27 @@ export default function AnalyticsPage() {
                 {/* Legend Tables - Bottom */}
                 <div className="mt-3 md:mt-4 pt-3 border-t border-gray-200">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                    {/* Summary Stats Legend */}
+                    {/* Bar Chart Legend */}
                     <div>
-                      <h4 className="text-[8px] md:text-[10px] font-medium text-gray-500 mb-1.5">Keterangan Summary Stats</h4>
+                      <h4 className="text-[8px] md:text-[10px] font-medium text-gray-500 mb-1.5">Keterangan Diagram Batang</h4>
                       <div className="space-y-1 text-[8px] md:text-[10px]">
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded bg-blue-500 flex-shrink-0"></div>
                           <span className="text-blue-600 font-medium">Biru</span>
                           <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Total command semua staff</span>
+                          <span className="text-gray-600">Total command per staff</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded bg-green-500 flex-shrink-0"></div>
                           <span className="text-green-600 font-medium">Hijau</span>
                           <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Rata-rata % keberhasilan</span>
+                          <span className="text-gray-600">Success rate (%)</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded bg-purple-500 flex-shrink-0"></div>
                           <span className="text-purple-600 font-medium">Ungu</span>
                           <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Jumlah staff aktif</span>
+                          <span className="text-gray-600">Command berhasil</span>
                         </div>
                       </div>
                     </div>
