@@ -222,98 +222,65 @@ export default function AnalyticsPage() {
 
             {/* Donut Chart */}
             <div className="relative w-28 h-28 md:w-36 md:h-36 flex-shrink-0">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                {(() => {
-                  const metrics = [
-                    { value: analytics.performance.aiAccuracy || 0, color: '#22c55e', name: 'AI Accuracy' },
-                    { value: analytics.performance.resolutionRate || 0, color: '#eab308', name: 'Resolution' },
-                    { value: analytics.performance.customerSatisfaction || 0, color: '#f97316', name: 'Satisfaction' },
-                    { value: analytics.overview.escalationRate || 0, color: '#ef4444', name: 'Escalation' },
-                  ];
-                  const total = metrics.reduce((sum, m) => sum + m.value, 0);
-                  const cx = 50, cy = 50, radius = 35, innerRadius = 20;
+              {(() => {
+                const metrics = [
+                  { value: analytics.performance.aiAccuracy || 0, color: '#22c55e', name: 'AI Accuracy' },
+                  { value: analytics.performance.resolutionRate || 0, color: '#eab308', name: 'Resolution' },
+                  { value: analytics.performance.customerSatisfaction || 0, color: '#f97316', name: 'Satisfaction' },
+                  { value: analytics.overview.escalationRate || 0, color: '#ef4444', name: 'Escalation' },
+                ];
+                const total = metrics.reduce((sum, m) => sum + m.value, 0) || 1;
+                const size = 100;
+                const strokeWidth = 12;
+                const radius = (size - strokeWidth) / 2;
+                const circumference = 2 * Math.PI * radius;
 
-                  // If no data, show empty ring
-                  if (total === 0) {
-                    return (
-                      <circle
-                        cx={cx}
-                        cy={cy}
-                        r={(radius + innerRadius) / 2}
-                        fill="none"
-                        stroke="#e5e7eb"
-                        strokeWidth={radius - innerRadius}
-                      />
-                    );
-                  }
+                let accumulatedOffset = 0;
 
-                  let cumulativePercent = 0;
-                  return metrics.map((metric, index) => {
-                    if (metric.value === 0) return null;
+                return (
+                  <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full transform -rotate-90">
+                    {/* Background circle */}
+                    <circle
+                      cx={size/2}
+                      cy={size/2}
+                      r={radius}
+                      fill="none"
+                      stroke="#e5e7eb"
+                      strokeWidth={strokeWidth}
+                    />
+                    {/* Segments */}
+                    {metrics.map((metric, index) => {
+                      if (metric.value === 0) return null;
+                      const percent = metric.value / total;
+                      const dashLength = percent * circumference;
+                      const dashOffset = -accumulatedOffset;
+                      accumulatedOffset += dashLength;
 
-                    const percent = (metric.value / total) * 100;
-                    const startPercent = cumulativePercent;
-                    cumulativePercent += percent;
-
-                    // Calculate arc path for donut segment
-                    const startAngle = (startPercent / 100) * 360 - 90;
-                    const endAngle = (cumulativePercent / 100) * 360 - 90;
-                    const startRad = (startAngle * Math.PI) / 180;
-                    const endRad = (endAngle * Math.PI) / 180;
-
-                    // Outer arc points
-                    const x1 = cx + radius * Math.cos(startRad);
-                    const y1 = cy + radius * Math.sin(startRad);
-                    const x2 = cx + radius * Math.cos(endRad);
-                    const y2 = cy + radius * Math.sin(endRad);
-
-                    // Inner arc points
-                    const x3 = cx + innerRadius * Math.cos(endRad);
-                    const y3 = cy + innerRadius * Math.sin(endRad);
-                    const x4 = cx + innerRadius * Math.cos(startRad);
-                    const y4 = cy + innerRadius * Math.sin(startRad);
-
-                    const largeArc = percent > 50 ? 1 : 0;
-
-                    // Label position
-                    const midAngle = ((startAngle + endAngle) / 2) * Math.PI / 180;
-                    const labelRadius = (radius + innerRadius) / 2;
-                    const labelX = cx + labelRadius * Math.cos(midAngle);
-                    const labelY = cy + labelRadius * Math.sin(midAngle);
-
-                    return (
-                      <g key={index}>
-                        <path
-                          d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z`}
-                          fill={metric.color}
-                          stroke="white"
-                          strokeWidth="1"
+                      return (
+                        <circle
+                          key={index}
+                          cx={size/2}
+                          cy={size/2}
+                          r={radius}
+                          fill="none"
+                          stroke={metric.color}
+                          strokeWidth={strokeWidth}
+                          strokeDasharray={`${dashLength} ${circumference}`}
+                          strokeDashoffset={dashOffset}
+                          strokeLinecap="butt"
                         />
-                        {percent >= 10 && (
-                          <text
-                            x={labelX}
-                            y={labelY}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            fill="white"
-                            fontSize="7"
-                            fontWeight="bold"
-                          >
-                            {metric.value}%
-                          </text>
-                        )}
-                      </g>
-                    );
-                  });
-                })()}
-                {/* Center text */}
-                <text x="50" y="47" textAnchor="middle" fill="#374151" fontSize="11" fontWeight="bold">
+                      );
+                    })}
+                  </svg>
+                );
+              })()}
+              {/* Center text overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-sm md:text-base font-bold text-gray-700">
                   {Math.round((analytics.performance.aiAccuracy + analytics.performance.resolutionRate + analytics.performance.customerSatisfaction + (100 - analytics.overview.escalationRate)) / 4)}%
-                </text>
-                <text x="50" y="58" textAnchor="middle" fill="#9ca3af" fontSize="6">
-                  Avg Score
-                </text>
-              </svg>
+                </span>
+                <span className="text-[8px] md:text-[10px] text-gray-400">Avg Score</span>
+              </div>
             </div>
 
             {/* Right Descriptions */}
