@@ -258,22 +258,82 @@ export default function AnalyticsPage() {
 
         <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Intent Breakdown</h2>
-          <div className="space-y-2 md:space-y-3">
-            {analytics.intentBreakdown.map((item) => (
-              <div key={item.intent}>
-                <div className="flex justify-between text-xs md:text-sm mb-1">
-                  <span className="text-gray-600 capitalize truncate mr-2">{item.intent.replace('customer_', '').replace(/_/g, ' ')}</span>
-                  <span className="font-medium text-gray-900 whitespace-nowrap">{item.count} ({item.percentage}%)</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
-                  <div
-                    className="bg-gradient-to-r from-green-600 to-blue-600 h-1.5 md:h-2 rounded-full"
-                    style={{ width: `${item.percentage}%` }}
-                  ></div>
+          {analytics.intentBreakdown.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <span className="text-3xl mb-2 block">📊</span>
+              <p className="text-sm">Belum ada data intent</p>
+            </div>
+          ) : (
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              {/* Pie Chart */}
+              <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
+                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                  {(() => {
+                    const colors = ['#16a34a', '#2563eb', '#9333ea', '#ea580c', '#dc2626'];
+                    let cumulativePercentage = 0;
+                    return analytics.intentBreakdown.map((item, index) => {
+                      const startAngle = cumulativePercentage * 3.6;
+                      cumulativePercentage += item.percentage;
+                      const endAngle = cumulativePercentage * 3.6;
+                      const largeArcFlag = item.percentage > 50 ? 1 : 0;
+
+                      const startX = 50 + 40 * Math.cos((startAngle - 90) * Math.PI / 180);
+                      const startY = 50 + 40 * Math.sin((startAngle - 90) * Math.PI / 180);
+                      const endX = 50 + 40 * Math.cos((endAngle - 90) * Math.PI / 180);
+                      const endY = 50 + 40 * Math.sin((endAngle - 90) * Math.PI / 180);
+
+                      if (item.percentage === 0) return null;
+                      if (item.percentage === 100) {
+                        return (
+                          <circle
+                            key={item.intent}
+                            cx="50"
+                            cy="50"
+                            r="40"
+                            fill="none"
+                            stroke={colors[index % colors.length]}
+                            strokeWidth="20"
+                          />
+                        );
+                      }
+
+                      return (
+                        <path
+                          key={item.intent}
+                          d={`M 50 50 L ${startX} ${startY} A 40 40 0 ${largeArcFlag} 1 ${endX} ${endY} Z`}
+                          fill={colors[index % colors.length]}
+                        />
+                      );
+                    });
+                  })()}
+                  <circle cx="50" cy="50" r="25" fill="white" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs md:text-sm font-bold text-gray-700">
+                    {analytics.intentBreakdown.reduce((sum, item) => sum + item.count, 0)}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {/* Legend */}
+              <div className="flex-1 space-y-2">
+                {analytics.intentBreakdown.map((item, index) => {
+                  const colors = ['bg-green-600', 'bg-blue-600', 'bg-purple-600', 'bg-orange-600', 'bg-red-600'];
+                  return (
+                    <div key={item.intent} className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${colors[index % colors.length]}`}></div>
+                      <span className="text-xs md:text-sm text-gray-600 capitalize truncate flex-1">
+                        {item.intent.replace('customer_', '').replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-xs md:text-sm font-medium text-gray-900 whitespace-nowrap">
+                        {item.percentage}%
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
