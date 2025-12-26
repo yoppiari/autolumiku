@@ -1,6 +1,7 @@
 /**
  * WhatsApp AI Analytics Dashboard
  * Performance metrics, conversation insights, AI accuracy
+ * Optimized for fit-to-screen at 100% zoom
  */
 
 'use client';
@@ -53,25 +54,13 @@ export default function AnalyticsPage() {
 
   const loadAnalytics = async () => {
     setIsLoading(true);
-
     try {
       const storedUser = localStorage.getItem('user');
-      if (!storedUser) {
-        console.error('No user found');
-        return;
-      }
-
+      if (!storedUser) return;
       const parsedUser = JSON.parse(storedUser);
-      const tenantId = parsedUser.tenantId;
-
-      const response = await fetch(
-        `/api/v1/whatsapp-ai/analytics?tenantId=${tenantId}&range=${timeRange}`
-      );
+      const response = await fetch(`/api/v1/whatsapp-ai/analytics?tenantId=${parsedUser.tenantId}&range=${timeRange}`);
       const data = await response.json();
-
-      if (data.success) {
-        setAnalytics(data.data);
-      }
+      if (data.success) setAnalytics(data.data);
     } catch (error) {
       console.error('Error loading analytics:', error);
     } finally {
@@ -81,28 +70,24 @@ export default function AnalyticsPage() {
 
   const formatResponseTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}m ${seconds % 60}s`;
+    return `${Math.floor(seconds / 60)}m`;
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
       </div>
     );
   }
 
   if (!analytics) {
     return (
-      <div className="p-6">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <p className="text-yellow-800">Tidak ada data analytics. Setup WhatsApp AI terlebih dahulu.</p>
-          <Link
-            href="/dashboard/whatsapp-ai/setup"
-            className="mt-4 inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          >
-            Setup WhatsApp AI →
+      <div className="p-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+          <p className="text-yellow-800 text-sm">Setup WhatsApp AI terlebih dahulu.</p>
+          <Link href="/dashboard/whatsapp-ai/setup" className="mt-2 inline-block px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg">
+            Setup →
           </Link>
         </div>
       </div>
@@ -110,508 +95,255 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="p-3 md:p-6">
-      {/* Header */}
-      <div className="mb-4 md:mb-8 ml-8 md:ml-0">
-        <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 mb-2 md:mb-4 inline-block text-sm md:text-base">
-          ← Back
-        </Link>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div className="p-2 md:p-3 h-[calc(100vh-64px)] overflow-hidden flex flex-col">
+      {/* Header - Compact */}
+      <div className="flex items-center justify-between mb-2 ml-8 md:ml-0">
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-xs">← Back</Link>
           <div>
-            <h1 className="text-xl md:text-3xl font-bold text-gray-900">Analytics & Insights</h1>
-            <p className="text-gray-600 text-xs md:text-base mt-1">AI performance & metrics</p>
+            <h1 className="text-sm md:text-lg font-bold text-gray-900">Analytics</h1>
           </div>
-          <div className="flex items-center gap-1 md:gap-2">
+        </div>
+        <div className="flex items-center gap-1">
+          {['today', 'week', 'month'].map((range) => (
             <button
-              onClick={() => setTimeRange('today')}
-              className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                timeRange === 'today'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              key={range}
+              onClick={() => setTimeRange(range as typeof timeRange)}
+              className={`px-2 py-0.5 rounded text-[10px] md:text-xs font-medium ${
+                timeRange === range ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'
               }`}
             >
-              Today
+              {range.charAt(0).toUpperCase() + range.slice(1)}
             </button>
-            <button
-              onClick={() => setTimeRange('week')}
-              className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                timeRange === 'week'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Week
-            </button>
-            <button
-              onClick={() => setTimeRange('month')}
-              className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                timeRange === 'month'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Month
-            </button>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Performance Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
-        <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">AI Performance</h2>
-          {(() => {
-            // Define metrics once for both donut and legend
-            const metrics = [
-              { value: analytics.performance.aiAccuracy || 0, color: '#22c55e', bgColor: 'bg-green-500', name: 'AI Accuracy', label: 'Akurasi respons AI' },
-              { value: analytics.performance.resolutionRate || 0, color: '#eab308', bgColor: 'bg-yellow-500', name: 'Resolution', label: 'Tingkat penyelesaian' },
-              { value: analytics.performance.customerSatisfaction || 0, color: '#f97316', bgColor: 'bg-orange-500', name: 'Satisfaction', label: 'Kepuasan pelanggan' },
-              { value: analytics.overview.escalationRate || 0, color: '#ef4444', bgColor: 'bg-red-500', name: 'Escalation', label: 'Eskalasi ke manusia' },
-            ];
+      {/* Main Content - Flex grow */}
+      <div className="flex-1 overflow-hidden flex flex-col gap-2">
+        {/* Row 1: AI Performance & Intent Breakdown */}
+        <div className="grid grid-cols-2 gap-2 flex-shrink-0">
+          {/* AI Performance */}
+          <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-[10px] md:text-xs font-semibold text-gray-900 mb-1">AI Performance</h2>
+            {(() => {
+              const metrics = [
+                { value: analytics.performance.aiAccuracy || 0, color: '#22c55e', name: 'Accuracy' },
+                { value: analytics.performance.resolutionRate || 0, color: '#eab308', name: 'Resolution' },
+                { value: analytics.performance.customerSatisfaction || 0, color: '#f97316', name: 'Satisfaction' },
+                { value: analytics.overview.escalationRate || 0, color: '#ef4444', name: 'Escalation' },
+              ];
+              const avgScore = Math.round((metrics[0].value + metrics[1].value + metrics[2].value + (100 - metrics[3].value)) / 4);
+              const activeMetrics = metrics.filter(m => m.value > 0);
+              const total = activeMetrics.reduce((sum, m) => sum + m.value, 0) || 1;
+              const radius = 15.9155;
+              const circumference = 2 * Math.PI * radius;
 
-            // Calculate total and average score
-            // For avg score: AI Accuracy, Resolution, Satisfaction are positive (higher=better)
-            // Escalation is negative (lower=better), so we use (100 - escalation) for avg calculation
-            const avgScore = Math.round(
-              (metrics[0].value + metrics[1].value + metrics[2].value + (100 - metrics[3].value)) / 4
-            );
-
-            // For donut: use actual values, filter out zeros for cleaner display
-            const activeMetrics = metrics.filter(m => m.value > 0);
-            const total = activeMetrics.reduce((sum, m) => sum + m.value, 0) || 1;
-            const radius = 15.9155;
-            const circumference = 2 * Math.PI * radius;
-
-            return (
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                {/* Donut Chart */}
-                <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
-                  <svg viewBox="0 0 36 36" className="w-full h-full">
-                    {/* Background circle when no data */}
-                    {activeMetrics.length === 0 && (
-                      <circle
-                        cx="18"
-                        cy="18"
-                        r={radius}
-                        fill="none"
-                        stroke="#e5e7eb"
-                        strokeWidth="3.5"
-                      />
-                    )}
-                    {/* Metric segments */}
-                    {(() => {
-                      let offset = 0;
-                      return activeMetrics.map((metric) => {
-                        const percentage = (metric.value / total) * 100;
-                        const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
-                        const strokeDashoffset = -offset;
-                        offset += (percentage / 100) * circumference;
-
-                        return (
-                          <circle
-                            key={metric.name}
-                            cx="18"
-                            cy="18"
-                            r={radius}
-                            fill="none"
-                            stroke={metric.color}
-                            strokeWidth="3.5"
-                            strokeDasharray={strokeDasharray}
-                            strokeDashoffset={strokeDashoffset}
-                            transform="rotate(-90 18 18)"
-                          />
-                        );
-                      });
-                    })()}
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-lg md:text-xl font-bold ${avgScore >= 70 ? 'text-green-600' : avgScore >= 40 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {avgScore}%
-                    </span>
-                    <span className="text-[8px] md:text-[10px] text-gray-500">Avg Score</span>
+              return (
+                <div className="flex items-center gap-2">
+                  <div className="relative w-16 h-16 md:w-20 md:h-20 flex-shrink-0">
+                    <svg viewBox="0 0 36 36" className="w-full h-full">
+                      {activeMetrics.length === 0 && <circle cx="18" cy="18" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="3" />}
+                      {(() => {
+                        let offset = 0;
+                        return activeMetrics.map((m) => {
+                          const pct = (m.value / total) * 100;
+                          const dash = `${(pct / 100) * circumference} ${circumference}`;
+                          const el = <circle key={m.name} cx="18" cy="18" r={radius} fill="none" stroke={m.color} strokeWidth="3" strokeDasharray={dash} strokeDashoffset={-offset} transform="rotate(-90 18 18)" />;
+                          offset += (pct / 100) * circumference;
+                          return el;
+                        });
+                      })()}
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className={`text-xs md:text-sm font-bold ${avgScore >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>{avgScore}%</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-0.5">
+                    {metrics.map((m) => (
+                      <div key={m.name} className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }}></div>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 flex-1">{m.name}</span>
+                        <span className="text-[8px] md:text-[9px] font-semibold">{m.value}%</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                {/* Legend */}
-                <div className="flex-1 space-y-2">
-                  {metrics.map((item) => (
-                    <div key={item.name} className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${item.bgColor}`}></div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs md:text-sm text-gray-700">{item.name}</span>
-                        <p className="text-[9px] md:text-[10px] text-gray-400 truncate">{item.label}</p>
-                      </div>
-                      <span className="text-xs md:text-sm font-semibold text-gray-900 whitespace-nowrap">
-                        {item.value}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-
-        <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Intent Breakdown</h2>
-          {(() => {
-            // Default intent categories for display
-            const defaultIntents = [
-              { intent: 'customer_greeting', label: 'Greeting', color: '#16a34a', bgColor: 'bg-green-600' },
-              { intent: 'customer_vehicle_inquiry', label: 'Vehicle Inquiry', color: '#2563eb', bgColor: 'bg-blue-600' },
-              { intent: 'customer_price_inquiry', label: 'Price Inquiry', color: '#9333ea', bgColor: 'bg-purple-600' },
-              { intent: 'customer_general_question', label: 'General Question', color: '#ea580c', bgColor: 'bg-orange-600' },
-              { intent: 'customer_closing', label: 'Closing', color: '#dc2626', bgColor: 'bg-red-600' },
-            ];
-
-            // Merge actual data with defaults
-            const intentData = defaultIntents.map(def => {
-              const actual = analytics.intentBreakdown.find(i => i.intent === def.intent);
-              return {
-                ...def,
-                count: actual?.count || 0,
-                percentage: actual?.percentage || 0,
-              };
-            });
-
-            // Add any intents from data that aren't in defaults
-            analytics.intentBreakdown.forEach(item => {
-              if (!defaultIntents.find(d => d.intent === item.intent)) {
-                const colorIndex = intentData.length % 5;
-                const colors = ['#16a34a', '#2563eb', '#9333ea', '#ea580c', '#dc2626'];
-                const bgColors = ['bg-green-600', 'bg-blue-600', 'bg-purple-600', 'bg-orange-600', 'bg-red-600'];
-                intentData.push({
-                  intent: item.intent,
-                  label: item.intent.replace('customer_', '').replace(/_/g, ' '),
-                  color: colors[colorIndex],
-                  bgColor: bgColors[colorIndex],
-                  count: item.count,
-                  percentage: item.percentage,
-                });
-              }
-            });
-
-            const totalCount = intentData.reduce((sum, item) => sum + item.count, 0);
-            const activeIntents = intentData.filter(i => i.count > 0);
-            const radius = 15.9155;
-            const circumference = 2 * Math.PI * radius;
-
-            return (
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                {/* Donut Chart */}
-                <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
-                  <svg viewBox="0 0 36 36" className="w-full h-full">
-                    {/* Background circle when no data */}
-                    {activeIntents.length === 0 && (
-                      <circle
-                        cx="18"
-                        cy="18"
-                        r={radius}
-                        fill="none"
-                        stroke="#e5e7eb"
-                        strokeWidth="3.5"
-                      />
-                    )}
-                    {/* Intent segments */}
-                    {(() => {
-                      let offset = 0;
-                      return activeIntents.map((item) => {
-                        const percentage = totalCount > 0 ? (item.count / totalCount) * 100 : 0;
-                        const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
-                        const strokeDashoffset = -offset;
-                        offset += (percentage / 100) * circumference;
-
-                        return (
-                          <circle
-                            key={item.intent}
-                            cx="18"
-                            cy="18"
-                            r={radius}
-                            fill="none"
-                            stroke={item.color}
-                            strokeWidth="3.5"
-                            strokeDasharray={strokeDasharray}
-                            strokeDashoffset={strokeDashoffset}
-                            transform="rotate(-90 18 18)"
-                          />
-                        );
-                      });
-                    })()}
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-lg md:text-xl font-bold ${totalCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {totalCount}
-                    </span>
-                    <span className="text-[8px] md:text-[10px] text-gray-500">Total</span>
-                  </div>
-                </div>
-
-                {/* Legend */}
-                <div className="flex-1 space-y-2">
-                  {intentData.map((item) => (
-                    <div key={item.intent} className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${item.bgColor}`}></div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs md:text-sm text-gray-700 capitalize">{item.label}</span>
-                      </div>
-                      <span className="text-xs md:text-sm font-semibold text-gray-900 whitespace-nowrap">
-                        {item.percentage}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* Staff Activity - Vertical Bar Chart */}
-      {analytics.staffActivity.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 md:mb-8">
-          <div className="p-3 md:p-6 border-b border-gray-200">
-            <h2 className="text-sm md:text-lg font-semibold text-gray-900">Staff Activity</h2>
-            <p className="text-xs md:text-sm text-gray-600 mt-1">WhatsApp command usage & performance</p>
+              );
+            })()}
           </div>
 
-          {(() => {
-            const staffData = analytics.staffActivity;
-            const maxCommands = Math.max(...staffData.map(s => s.commandCount));
-            const totalCommands = staffData.reduce((sum, s) => sum + s.commandCount, 0);
-            const avgSuccessRate = Math.round(staffData.reduce((sum, s) => sum + s.successRate, 0) / staffData.length);
+          {/* Intent Breakdown */}
+          <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-[10px] md:text-xs font-semibold text-gray-900 mb-1">Intent Breakdown</h2>
+            {(() => {
+              const defaultIntents = [
+                { intent: 'customer_greeting', label: 'Greeting', color: '#16a34a' },
+                { intent: 'customer_vehicle_inquiry', label: 'Vehicle', color: '#2563eb' },
+                { intent: 'customer_price_inquiry', label: 'Price', color: '#9333ea' },
+                { intent: 'customer_general_question', label: 'General', color: '#ea580c' },
+                { intent: 'customer_closing', label: 'Closing', color: '#dc2626' },
+              ];
+              const intentData = defaultIntents.map(def => {
+                const actual = analytics.intentBreakdown.find(i => i.intent === def.intent);
+                return { ...def, count: actual?.count || 0, percentage: actual?.percentage || 0 };
+              });
+              const totalCount = intentData.reduce((sum, i) => sum + i.count, 0);
+              const activeIntents = intentData.filter(i => i.count > 0);
+              const radius = 15.9155;
+              const circumference = 2 * Math.PI * radius;
 
-            // Sort by command count descending
-            const sortedStaff = [...staffData].sort((a, b) => b.commandCount - a.commandCount);
-
-            // Performance classification
-            const excellent = staffData.filter(s => s.successRate >= 90).length;
-            const good = staffData.filter(s => s.successRate >= 70 && s.successRate < 90).length;
-            const needsImprovement = staffData.filter(s => s.successRate < 70).length;
-
-            return (
-              <div className="p-3 md:p-6">
-                {/* Summary Stats - Compact */}
-                <div className="grid grid-cols-3 gap-1.5 md:gap-2 mb-3 md:mb-4">
-                  {/* Total Commands - Blue */}
-                  <div className="bg-blue-50 rounded-md p-1.5 md:p-2">
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded bg-blue-500"></div>
-                      <span className="text-[7px] md:text-[9px] text-blue-700 font-medium">Total Commands</span>
-                    </div>
-                    <div className="text-xs md:text-sm font-bold text-blue-600">{totalCommands}</div>
-                    <div className="h-0.5 md:h-1 bg-blue-200 rounded-full overflow-hidden mt-0.5">
-                      <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }}></div>
+              return (
+                <div className="flex items-center gap-2">
+                  <div className="relative w-16 h-16 md:w-20 md:h-20 flex-shrink-0">
+                    <svg viewBox="0 0 36 36" className="w-full h-full">
+                      {activeIntents.length === 0 && <circle cx="18" cy="18" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="3" />}
+                      {(() => {
+                        let offset = 0;
+                        return activeIntents.map((i) => {
+                          const pct = totalCount > 0 ? (i.count / totalCount) * 100 : 0;
+                          const dash = `${(pct / 100) * circumference} ${circumference}`;
+                          const el = <circle key={i.intent} cx="18" cy="18" r={radius} fill="none" stroke={i.color} strokeWidth="3" strokeDasharray={dash} strokeDashoffset={-offset} transform="rotate(-90 18 18)" />;
+                          offset += (pct / 100) * circumference;
+                          return el;
+                        });
+                      })()}
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className={`text-xs md:text-sm font-bold ${totalCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>{totalCount}</span>
                     </div>
                   </div>
-
-                  {/* Avg Success Rate - Green */}
-                  <div className="bg-green-50 rounded-md p-1.5 md:p-2">
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded bg-green-500"></div>
-                      <span className="text-[7px] md:text-[9px] text-green-700 font-medium">Avg Success</span>
-                    </div>
-                    <div className="text-xs md:text-sm font-bold text-green-600">{avgSuccessRate}%</div>
-                    <div className="h-0.5 md:h-1 bg-green-200 rounded-full overflow-hidden mt-0.5">
-                      <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${avgSuccessRate}%` }}></div>
-                    </div>
-                  </div>
-
-                  {/* Active Staff - Purple */}
-                  <div className="bg-purple-50 rounded-md p-1.5 md:p-2">
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded bg-purple-500"></div>
-                      <span className="text-[7px] md:text-[9px] text-purple-700 font-medium">Active Staff</span>
-                    </div>
-                    <div className="text-xs md:text-sm font-bold text-purple-600">{staffData.length}</div>
-                    <div className="h-0.5 md:h-1 bg-purple-200 rounded-full overflow-hidden mt-0.5">
-                      <div className="h-full bg-purple-500 rounded-full" style={{ width: '100%' }}></div>
-                    </div>
+                  <div className="flex-1 space-y-0.5">
+                    {intentData.map((i) => (
+                      <div key={i.intent} className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: i.color }}></div>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 flex-1">{i.label}</span>
+                        <span className="text-[8px] md:text-[9px] font-semibold">{i.percentage}%</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
+              );
+            })()}
+          </div>
+        </div>
 
-                {/* Main Chart Area */}
-                <div className="flex flex-col lg:flex-row gap-4 md:gap-6 items-stretch">
-                  {/* Staff List with WhatsApp Icon - Vertically centered */}
-                  <div className="lg:min-w-[160px] order-2 lg:order-1 flex flex-col justify-center">
-                    <div className="text-[9px] md:text-xs font-medium text-gray-500 mb-2">No. WhatsApp Staff</div>
-                    <div className="flex flex-row lg:flex-col gap-2 lg:gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
-                      {sortedStaff.map((staff, idx) => {
-                        return (
-                          <div key={idx} className="flex items-center gap-1.5 flex-shrink-0">
-                            {/* WhatsApp Icon */}
-                            <svg className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" viewBox="0 0 24 24" fill="#25D366">
+        {/* Row 2: Staff Activity */}
+        {analytics.staffActivity.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
+            <div className="px-2 py-1.5 border-b border-gray-100 flex-shrink-0">
+              <h2 className="text-[10px] md:text-xs font-semibold text-gray-900">Staff Activity</h2>
+            </div>
+            {(() => {
+              const staffData = analytics.staffActivity;
+              const maxCommands = Math.max(...staffData.map(s => s.commandCount));
+              const totalCommands = staffData.reduce((sum, s) => sum + s.commandCount, 0);
+              const avgSuccessRate = Math.round(staffData.reduce((sum, s) => sum + s.successRate, 0) / staffData.length);
+              const sortedStaff = [...staffData].sort((a, b) => b.commandCount - a.commandCount);
+
+              return (
+                <div className="p-2 flex-1 flex flex-col overflow-hidden">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-3 gap-1 mb-2 flex-shrink-0">
+                    <div className="bg-blue-50 rounded p-1">
+                      <div className="flex items-center gap-0.5">
+                        <div className="w-1 h-1 rounded bg-blue-500"></div>
+                        <span className="text-[6px] md:text-[8px] text-blue-700">Commands</span>
+                      </div>
+                      <div className="text-[10px] md:text-xs font-bold text-blue-600">{totalCommands}</div>
+                    </div>
+                    <div className="bg-green-50 rounded p-1">
+                      <div className="flex items-center gap-0.5">
+                        <div className="w-1 h-1 rounded bg-green-500"></div>
+                        <span className="text-[6px] md:text-[8px] text-green-700">Success</span>
+                      </div>
+                      <div className="text-[10px] md:text-xs font-bold text-green-600">{avgSuccessRate}%</div>
+                    </div>
+                    <div className="bg-purple-50 rounded p-1">
+                      <div className="flex items-center gap-0.5">
+                        <div className="w-1 h-1 rounded bg-purple-500"></div>
+                        <span className="text-[6px] md:text-[8px] text-purple-700">Staff</span>
+                      </div>
+                      <div className="text-[10px] md:text-xs font-bold text-purple-600">{staffData.length}</div>
+                    </div>
+                  </div>
+
+                  {/* Chart Area */}
+                  <div className="flex gap-2 flex-1 min-h-0">
+                    {/* Staff List */}
+                    <div className="w-24 md:w-32 flex-shrink-0 flex flex-col justify-center">
+                      <div className="text-[7px] md:text-[9px] text-gray-500 mb-1">WhatsApp Staff</div>
+                      <div className="space-y-0.5">
+                        {sortedStaff.map((staff, idx) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            <svg className="w-2.5 h-2.5 flex-shrink-0" viewBox="0 0 24 24" fill="#25D366">
                               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                             </svg>
-                            <span className="text-[9px] md:text-xs font-medium text-gray-700 whitespace-nowrap">
-                              {staff.staffPhone}
-                            </span>
+                            <span className="text-[7px] md:text-[9px] text-gray-700 truncate">{staff.staffPhone}</span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Grouped Vertical Bar Chart */}
-                  <div className="flex-1 order-1 lg:order-2">
-                    {/* Chart Title */}
-                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 text-center mb-2">Summary Statistik Staff</h4>
-                    <div className="flex items-end justify-around gap-2 md:gap-4" style={{ height: '160px' }}>
-                      {sortedStaff.map((staff, idx) => {
-                        // Blue = Upload success rate (percentage)
-                        const uploadSuccessHeight = staff.successRate;
-                        // Green = Total commands executed
-                        const commandHeight = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
-                        // Purple = Staff who successfully sold vehicles (using successful commands as proxy)
-                        const soldVehicles = Math.round(staff.commandCount * staff.successRate / 100);
-                        const soldHeight = maxCommands > 0 ? (soldVehicles / maxCommands) * 100 : 0;
-
-                        return (
-                          <div key={idx} className="flex flex-col items-center" style={{ flex: 1, maxWidth: '120px' }}>
-                            {/* Grouped Bars Container */}
-                            <div className="flex items-end gap-1 w-full justify-center" style={{ height: '120px' }}>
-                              {/* Blue Bar - Upload Success Rate */}
-                              <div className="flex flex-col items-center" style={{ width: '24px' }}>
-                                <span className="text-[8px] md:text-[10px] font-bold text-blue-600 mb-1">
-                                  {staff.successRate}%
-                                </span>
-                                <div
-                                  className="w-full bg-blue-500 rounded-t transition-all duration-500"
-                                  style={{ height: `${Math.max(uploadSuccessHeight, 8)}px`, minHeight: '8px' }}
-                                ></div>
-                              </div>
-
-                              {/* Green Bar - Total Commands */}
-                              <div className="flex flex-col items-center" style={{ width: '24px' }}>
-                                <span className="text-[8px] md:text-[10px] font-bold text-green-600 mb-1">
-                                  {staff.commandCount}
-                                </span>
-                                <div
-                                  className="w-full bg-green-500 rounded-t transition-all duration-500"
-                                  style={{ height: `${Math.max(commandHeight, 8)}px`, minHeight: '8px' }}
-                                ></div>
-                              </div>
-
-                              {/* Purple Bar - Sold Vehicles */}
-                              <div className="flex flex-col items-center" style={{ width: '24px' }}>
-                                <span className="text-[8px] md:text-[10px] font-bold text-purple-600 mb-1">
-                                  {soldVehicles}
-                                </span>
-                                <div
-                                  className="w-full bg-purple-500 rounded-t transition-all duration-500"
-                                  style={{ height: `${Math.max(soldHeight, 8)}px`, minHeight: '8px' }}
-                                ></div>
-                              </div>
-                            </div>
-
-                            {/* Staff Label */}
-                            <div className="mt-2 text-[8px] md:text-[10px] text-gray-500 text-center">
-                              Staff {idx + 1}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* X-axis label */}
-                    <div className="text-center mt-2 text-[8px] md:text-[10px] text-gray-400">
-                      Performance per Staff
-                    </div>
-                  </div>
-                </div>
-
-                {/* Legend Tables - Bottom */}
-                <div className="mt-3 md:mt-4 pt-3 border-t border-gray-200">
-                  <div className="flex flex-col md:flex-row gap-3 md:gap-0">
-                    {/* Performance Legend - LEFT */}
-                    <div className="flex-1 md:pr-4">
-                      <h4 className="text-[8px] md:text-[10px] font-medium text-gray-500 mb-1.5">Keterangan Performance Staff</h4>
-                      <div className="space-y-1 text-[8px] md:text-[10px]">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded bg-green-500 flex-shrink-0"></div>
-                          <span className="text-green-600 font-medium">Hijau</span>
-                          <span className="text-gray-400">-</span>
-                          <span className="text-gray-700">Excellent</span>
-                          <span className="text-gray-400">(≥90%)</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded bg-yellow-500 flex-shrink-0"></div>
-                          <span className="text-yellow-600 font-medium">Kuning</span>
-                          <span className="text-gray-400">-</span>
-                          <span className="text-gray-700">Good</span>
-                          <span className="text-gray-400">(70-89%)</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded bg-red-500 flex-shrink-0"></div>
-                          <span className="text-red-600 font-medium">Merah</span>
-                          <span className="text-gray-400">-</span>
-                          <span className="text-gray-700">Need Improve</span>
-                          <span className="text-gray-400">(&lt;70%)</span>
-                        </div>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Vertical Divider - Black line */}
-                    <div className="hidden md:block w-px bg-gray-800 mx-4"></div>
-                    {/* Horizontal Divider for mobile */}
-                    <div className="md:hidden h-px bg-gray-800 my-2"></div>
+                    {/* Bar Chart */}
+                    <div className="flex-1 flex flex-col">
+                      <div className="text-[7px] md:text-[9px] text-gray-600 text-center mb-1">Summary Statistik Staff</div>
+                      <div className="flex items-end justify-around gap-1 flex-1" style={{ minHeight: '80px' }}>
+                        {sortedStaff.map((staff, idx) => {
+                          const successH = staff.successRate;
+                          const cmdH = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
+                          const soldV = Math.round(staff.commandCount * staff.successRate / 100);
+                          const soldH = maxCommands > 0 ? (soldV / maxCommands) * 100 : 0;
+                          return (
+                            <div key={idx} className="flex flex-col items-center flex-1">
+                              <div className="flex items-end gap-px w-full justify-center h-full">
+                                <div className="flex flex-col items-center" style={{ width: '14px' }}>
+                                  <span className="text-[6px] font-bold text-blue-600">{staff.successRate}%</span>
+                                  <div className="w-full bg-blue-500 rounded-t" style={{ height: `${Math.max(successH * 0.6, 4)}px` }}></div>
+                                </div>
+                                <div className="flex flex-col items-center" style={{ width: '14px' }}>
+                                  <span className="text-[6px] font-bold text-green-600">{staff.commandCount}</span>
+                                  <div className="w-full bg-green-500 rounded-t" style={{ height: `${Math.max(cmdH * 0.6, 4)}px` }}></div>
+                                </div>
+                                <div className="flex flex-col items-center" style={{ width: '14px' }}>
+                                  <span className="text-[6px] font-bold text-purple-600">{soldV}</span>
+                                  <div className="w-full bg-purple-500 rounded-t" style={{ height: `${Math.max(soldH * 0.6, 4)}px` }}></div>
+                                </div>
+                              </div>
+                              <span className="text-[6px] text-gray-500 mt-0.5">Staff {idx + 1}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* Bar Chart Legend - RIGHT */}
-                    <div className="flex-1 md:pl-4">
-                      <h4 className="text-[8px] md:text-[10px] font-medium text-gray-500 mb-1.5">Keterangan Diagram Batang</h4>
-                      <div className="space-y-1 text-[8px] md:text-[10px]">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded bg-blue-500 flex-shrink-0"></div>
-                          <span className="text-blue-600 font-medium">Biru</span>
-                          <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Persentase upload sukses kendaraan</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded bg-green-500 flex-shrink-0"></div>
-                          <span className="text-green-600 font-medium">Hijau</span>
-                          <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Jumlah total command dieksekusi</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded bg-purple-500 flex-shrink-0"></div>
-                          <span className="text-purple-600 font-medium">Ungu</span>
-                          <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Jumlah staff berhasil menjual</span>
-                        </div>
+                  {/* Legends */}
+                  <div className="flex gap-2 pt-1 border-t border-gray-100 mt-1 flex-shrink-0">
+                    <div className="flex-1">
+                      <span className="text-[6px] md:text-[7px] text-gray-500">Performance:</span>
+                      <div className="flex gap-2 text-[6px] md:text-[7px]">
+                        <span className="text-green-600">● ≥90%</span>
+                        <span className="text-yellow-600">● 70-89%</span>
+                        <span className="text-red-600">● &lt;70%</span>
+                      </div>
+                    </div>
+                    <div className="w-px bg-gray-300"></div>
+                    <div className="flex-1">
+                      <span className="text-[6px] md:text-[7px] text-gray-500">Diagram:</span>
+                      <div className="flex gap-2 text-[6px] md:text-[7px]">
+                        <span className="text-blue-600">● Success%</span>
+                        <span className="text-green-600">● Commands</span>
+                        <span className="text-purple-600">● Sold</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
+              );
+            })()}
+          </div>
+        )}
 
-      {/* Insights */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-3 md:p-6 border border-blue-200">
-        <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">💡 Key Insights</h2>
-        <ul className="space-y-2 text-xs md:text-sm text-gray-700">
-          <li className="flex items-start">
-            <span className="text-green-600 mr-1 md:mr-2 flex-shrink-0">✓</span>
-            <span>
-              <strong>AI handling {analytics.overview.aiResponseRate}%</strong> <span className="hidden md:inline">of inquiries</span> - Excellent automation
-            </span>
-          </li>
-          <li className="flex items-start">
-            <span className="text-green-600 mr-1 md:mr-2 flex-shrink-0">✓</span>
-            <span>
-              <strong>Avg response: {formatResponseTime(analytics.overview.avgResponseTime)}</strong> - Lightning fast
-            </span>
-          </li>
-          <li className="flex items-start">
-            <span className={`${analytics.overview.escalationRate > 20 ? 'text-orange-600' : 'text-green-600'} mr-1 md:mr-2 flex-shrink-0`}>
-              {analytics.overview.escalationRate > 20 ? '!' : '✓'}
-            </span>
-            <span>
-              <strong>{analytics.overview.escalationRate}% escalation</strong> - {analytics.overview.escalationRate > 20 ? 'Improve AI training' : 'Good performance'}
-            </span>
-          </li>
-        </ul>
       </div>
     </div>
   );
