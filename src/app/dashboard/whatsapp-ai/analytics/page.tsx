@@ -504,50 +504,53 @@ export default function AnalyticsPage() {
                   <div className="flex-1 order-1 lg:order-2">
                     <div className="flex items-end justify-around gap-3 md:gap-6 h-36 md:h-48 lg:h-56">
                       {sortedStaff.map((staff, idx) => {
+                        // Blue = Upload success rate (percentage)
+                        const uploadSuccessHeight = staff.successRate;
+                        // Green = Total commands executed
                         const commandHeight = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
-                        const successHeight = staff.successRate; // Already percentage
-                        const successfulCommands = Math.round(staff.commandCount * staff.successRate / 100);
-                        const successfulHeight = maxCommands > 0 ? (successfulCommands / maxCommands) * 100 : 0;
+                        // Purple = Staff who successfully sold vehicles (using successful commands as proxy)
+                        const soldVehicles = Math.round(staff.commandCount * staff.successRate / 100);
+                        const soldHeight = maxCommands > 0 ? (soldVehicles / maxCommands) * 100 : 0;
 
                         return (
                           <div key={idx} className="flex flex-col items-center flex-1">
                             {/* Grouped Bars */}
                             <div className="flex items-end gap-0.5 md:gap-1 w-full justify-center" style={{ height: '100%' }}>
-                              {/* Blue Bar - Total Commands */}
+                              {/* Blue Bar - Upload Success Rate */}
                               <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
                                 <span className="text-[7px] md:text-[9px] font-bold text-blue-600 mb-0.5">
-                                  {staff.commandCount}
+                                  {staff.successRate}%
                                 </span>
                                 <div className="w-full bg-blue-100 rounded-t flex items-end" style={{ height: '100%' }}>
                                   <div
                                     className="w-full bg-blue-500 rounded-t transition-all duration-500"
+                                    style={{ height: `${Math.max(uploadSuccessHeight, 10)}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+
+                              {/* Green Bar - Total Commands */}
+                              <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
+                                <span className="text-[7px] md:text-[9px] font-bold text-green-600 mb-0.5">
+                                  {staff.commandCount}
+                                </span>
+                                <div className="w-full bg-green-100 rounded-t flex items-end" style={{ height: '100%' }}>
+                                  <div
+                                    className="w-full bg-green-500 rounded-t transition-all duration-500"
                                     style={{ height: `${Math.max(commandHeight, 10)}%` }}
                                   ></div>
                                 </div>
                               </div>
 
-                              {/* Green Bar - Success Rate */}
-                              <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
-                                <span className="text-[7px] md:text-[9px] font-bold text-green-600 mb-0.5">
-                                  {staff.successRate}%
-                                </span>
-                                <div className="w-full bg-green-100 rounded-t flex items-end" style={{ height: '100%' }}>
-                                  <div
-                                    className="w-full bg-green-500 rounded-t transition-all duration-500"
-                                    style={{ height: `${Math.max(successHeight, 10)}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-
-                              {/* Purple Bar - Successful Commands */}
+                              {/* Purple Bar - Sold Vehicles */}
                               <div className="flex flex-col items-center flex-1 max-w-[20px] md:max-w-[28px]">
                                 <span className="text-[7px] md:text-[9px] font-bold text-purple-600 mb-0.5">
-                                  {successfulCommands}
+                                  {soldVehicles}
                                 </span>
                                 <div className="w-full bg-purple-100 rounded-t flex items-end" style={{ height: '100%' }}>
                                   <div
                                     className="w-full bg-purple-500 rounded-t transition-all duration-500"
-                                    style={{ height: `${Math.max(successfulHeight, 10)}%` }}
+                                    style={{ height: `${Math.max(soldHeight, 10)}%` }}
                                   ></div>
                                 </div>
                               </div>
@@ -580,19 +583,19 @@ export default function AnalyticsPage() {
                           <div className="w-2.5 h-2.5 rounded bg-blue-500 flex-shrink-0"></div>
                           <span className="text-blue-600 font-medium">Biru</span>
                           <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Total command per staff</span>
+                          <span className="text-gray-600">Persentase upload sukses kendaraan</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded bg-green-500 flex-shrink-0"></div>
                           <span className="text-green-600 font-medium">Hijau</span>
                           <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Success rate (%)</span>
+                          <span className="text-gray-600">Jumlah total command dieksekusi</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded bg-purple-500 flex-shrink-0"></div>
                           <span className="text-purple-600 font-medium">Ungu</span>
                           <span className="text-gray-400">-</span>
-                          <span className="text-gray-600">Command berhasil</span>
+                          <span className="text-gray-600">Jumlah staff berhasil menjual</span>
                         </div>
                       </div>
                     </div>
