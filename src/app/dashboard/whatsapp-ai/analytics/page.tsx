@@ -265,48 +265,36 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <div className="flex flex-col md:flex-row items-center gap-4">
-              {/* Pie Chart */}
+              {/* Donut Chart */}
               <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
-                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                <svg viewBox="0 0 36 36" className="w-full h-full">
                   {(() => {
                     const colors = ['#16a34a', '#2563eb', '#9333ea', '#ea580c', '#dc2626'];
-                    let cumulativePercentage = 0;
+                    const radius = 15.9155;
+                    const circumference = 2 * Math.PI * radius;
+                    let offset = 0;
+
                     return analytics.intentBreakdown.map((item, index) => {
-                      const startAngle = cumulativePercentage * 3.6;
-                      cumulativePercentage += item.percentage;
-                      const endAngle = cumulativePercentage * 3.6;
-                      const largeArcFlag = item.percentage > 50 ? 1 : 0;
-
-                      const startX = 50 + 40 * Math.cos((startAngle - 90) * Math.PI / 180);
-                      const startY = 50 + 40 * Math.sin((startAngle - 90) * Math.PI / 180);
-                      const endX = 50 + 40 * Math.cos((endAngle - 90) * Math.PI / 180);
-                      const endY = 50 + 40 * Math.sin((endAngle - 90) * Math.PI / 180);
-
-                      if (item.percentage === 0) return null;
-                      if (item.percentage === 100) {
-                        return (
-                          <circle
-                            key={item.intent}
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            fill="none"
-                            stroke={colors[index % colors.length]}
-                            strokeWidth="20"
-                          />
-                        );
-                      }
+                      const strokeDasharray = `${(item.percentage / 100) * circumference} ${circumference}`;
+                      const strokeDashoffset = -offset;
+                      offset += (item.percentage / 100) * circumference;
 
                       return (
-                        <path
+                        <circle
                           key={item.intent}
-                          d={`M 50 50 L ${startX} ${startY} A 40 40 0 ${largeArcFlag} 1 ${endX} ${endY} Z`}
-                          fill={colors[index % colors.length]}
+                          cx="18"
+                          cy="18"
+                          r={radius}
+                          fill="none"
+                          stroke={colors[index % colors.length]}
+                          strokeWidth="3.5"
+                          strokeDasharray={strokeDasharray}
+                          strokeDashoffset={strokeDashoffset}
+                          transform="rotate(-90 18 18)"
                         />
                       );
                     });
                   })()}
-                  <circle cx="50" cy="50" r="25" fill="white" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-xs md:text-sm font-bold text-gray-700">
