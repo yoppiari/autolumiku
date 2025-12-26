@@ -407,7 +407,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Staff Activity - Bar Chart */}
+      {/* Staff Activity - Vertical Bar Chart */}
       {analytics.staffActivity.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 md:mb-8">
           <div className="p-3 md:p-6 border-b border-gray-200">
@@ -447,87 +447,84 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                {/* Performance Distribution Mini */}
-                <div className="flex items-center gap-2 md:gap-4 mb-4 md:mb-6 text-[10px] md:text-xs">
-                  <span className="text-gray-500">Performance:</span>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-green-500"></div>
-                    <span className="text-gray-600">Excellent ({excellent})</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-yellow-500"></div>
-                    <span className="text-gray-600">Good ({good})</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-red-500"></div>
-                    <span className="text-gray-600">Need Improve ({needsImprovement})</span>
-                  </div>
-                </div>
-
-                {/* Horizontal Bar Chart */}
-                <div className="space-y-3 md:space-y-4">
-                  {sortedStaff.map((staff, idx) => {
-                    const barWidth = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
-                    const barColor = staff.successRate >= 90
-                      ? 'bg-green-500'
-                      : staff.successRate >= 70
-                      ? 'bg-yellow-500'
-                      : 'bg-red-500';
-                    const barColorLight = staff.successRate >= 90
-                      ? 'bg-green-100'
-                      : staff.successRate >= 70
-                      ? 'bg-yellow-100'
-                      : 'bg-red-100';
-
-                    return (
-                      <div key={idx} className="group">
-                        {/* Staff Info Row */}
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs md:text-sm font-medium text-gray-700 w-20 md:w-32 truncate">
-                              {staff.staffPhone.slice(-8)}
-                            </span>
-                            <span className={`text-[9px] md:text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                              staff.successRate >= 90
-                                ? 'bg-green-100 text-green-700'
-                                : staff.successRate >= 70
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}>
-                              {staff.successRate}%
-                            </span>
-                          </div>
-                          <div className="text-[9px] md:text-xs text-gray-400">
-                            {new Date(staff.lastActive).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
-                          </div>
-                        </div>
-
-                        {/* Bar */}
-                        <div className={`h-6 md:h-8 ${barColorLight} rounded-lg overflow-hidden relative`}>
-                          <div
-                            className={`h-full ${barColor} rounded-lg transition-all duration-500 flex items-center justify-end pr-2`}
-                            style={{ width: `${Math.max(barWidth, 15)}%` }}
-                          >
-                            <span className="text-[10px] md:text-xs font-bold text-white drop-shadow">
-                              {staff.commandCount} cmd
-                            </span>
-                          </div>
-                        </div>
+                {/* Chart Area with Legend */}
+                <div className="flex gap-4 md:gap-6">
+                  {/* Legend - Left Side */}
+                  <div className="flex flex-col justify-center gap-2 md:gap-3 min-w-[80px] md:min-w-[100px]">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-green-500"></div>
+                      <div className="text-[9px] md:text-xs">
+                        <div className="font-medium text-gray-700">Excellent</div>
+                        <div className="text-gray-400">&ge;90%</div>
                       </div>
-                    );
-                  })}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-yellow-500"></div>
+                      <div className="text-[9px] md:text-xs">
+                        <div className="font-medium text-gray-700">Good</div>
+                        <div className="text-gray-400">70-89%</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-red-500"></div>
+                      <div className="text-[9px] md:text-xs">
+                        <div className="font-medium text-gray-700">Need Improve</div>
+                        <div className="text-gray-400">&lt;70%</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vertical Bar Chart */}
+                  <div className="flex-1">
+                    <div className="flex items-end justify-around gap-2 md:gap-4 h-40 md:h-52 px-2">
+                      {sortedStaff.map((staff, idx) => {
+                        const barHeight = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
+                        const barColor = staff.successRate >= 90
+                          ? 'bg-green-500'
+                          : staff.successRate >= 70
+                          ? 'bg-yellow-500'
+                          : 'bg-red-500';
+
+                        return (
+                          <div key={idx} className="flex flex-col items-center flex-1 max-w-[80px]">
+                            {/* Command count label */}
+                            <div className="text-[9px] md:text-xs font-bold text-gray-700 mb-1">
+                              {staff.commandCount}
+                            </div>
+                            {/* Bar */}
+                            <div className="w-full bg-gray-100 rounded-t-lg flex items-end justify-center" style={{ height: '100%' }}>
+                              <div
+                                className={`w-full ${barColor} rounded-t-lg transition-all duration-500 flex items-start justify-center pt-1`}
+                                style={{ height: `${Math.max(barHeight, 10)}%` }}
+                              >
+                                <span className="text-[8px] md:text-[10px] font-medium text-white">
+                                  {staff.successRate}%
+                                </span>
+                              </div>
+                            </div>
+                            {/* Staff phone label */}
+                            <div className="mt-2 text-center">
+                              <div className="text-[8px] md:text-[10px] font-medium text-gray-600 truncate max-w-[60px] md:max-w-[70px]">
+                                {staff.staffPhone.slice(-8)}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* X-axis label */}
+                    <div className="text-center mt-3 text-[9px] md:text-xs text-gray-400">
+                      No. WhatsApp Staff
+                    </div>
+                  </div>
                 </div>
 
-                {/* Legend */}
+                {/* Bottom Info */}
                 <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-100">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] md:text-[10px] text-gray-500">
-                    <span>Bar length = Command count</span>
-                    <span>•</span>
-                    <span className="text-green-600">Green = 90%+ success</span>
-                    <span>•</span>
-                    <span className="text-yellow-600">Yellow = 70-89%</span>
-                    <span>•</span>
-                    <span className="text-red-600">Red = &lt;70%</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[9px] md:text-[10px] text-gray-500">
+                    <span>Bar height = Total command yang dieksekusi</span>
+                    <span>Bar color = Success rate performance</span>
                   </div>
                 </div>
               </div>
