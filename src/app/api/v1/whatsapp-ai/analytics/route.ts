@@ -330,8 +330,11 @@ export async function GET(request: NextRequest) {
     // - Resolution rate (issues were resolved)
     // Formula: weighted average of (100 - escalationRate) and resolutionRate
     // Weight: 60% non-escalation, 40% resolution (escalation is stronger indicator)
+    // Returns 0 if no conversations (no data to calculate from)
     const nonEscalationRate = 100 - escalationRate;
-    const customerSatisfaction = Math.round((nonEscalationRate * 0.6) + (resolutionRate * 0.4));
+    const customerSatisfaction = totalConversations > 0
+      ? Math.round((nonEscalationRate * 0.6) + (resolutionRate * 0.4))
+      : 0;
 
     // Calculate average response time from actual message timestamps
     const avgResponseTime = await calculateAvgResponseTime(tenantId, startDate);
