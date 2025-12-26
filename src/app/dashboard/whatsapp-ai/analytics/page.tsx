@@ -447,36 +447,31 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                {/* Chart Area with Legend */}
+                {/* Chart Area */}
                 <div className="flex gap-4 md:gap-6">
-                  {/* Legend - Left Side */}
-                  <div className="flex flex-col justify-center gap-2 md:gap-3 min-w-[80px] md:min-w-[100px]">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-green-500"></div>
-                      <div className="text-[9px] md:text-xs">
-                        <div className="font-medium text-gray-700">Excellent</div>
-                        <div className="text-gray-400">&ge;90%</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-yellow-500"></div>
-                      <div className="text-[9px] md:text-xs">
-                        <div className="font-medium text-gray-700">Good</div>
-                        <div className="text-gray-400">70-89%</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-red-500"></div>
-                      <div className="text-[9px] md:text-xs">
-                        <div className="font-medium text-gray-700">Need Improve</div>
-                        <div className="text-gray-400">&lt;70%</div>
-                      </div>
-                    </div>
+                  {/* Staff List with Color Indicator - Left Side */}
+                  <div className="flex flex-col justify-end gap-1 md:gap-2 min-w-[100px] md:min-w-[130px] pb-6">
+                    <div className="text-[9px] md:text-xs font-medium text-gray-500 mb-1">No. WhatsApp Staff</div>
+                    {sortedStaff.map((staff, idx) => {
+                      const indicatorColor = staff.successRate >= 90
+                        ? 'bg-green-500'
+                        : staff.successRate >= 70
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500';
+                      return (
+                        <div key={idx} className="flex items-center gap-1.5">
+                          <div className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-full ${indicatorColor} flex-shrink-0`}></div>
+                          <span className="text-[9px] md:text-xs font-medium text-gray-700">
+                            {staff.staffPhone}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Vertical Bar Chart */}
                   <div className="flex-1">
-                    <div className="flex items-end justify-around gap-2 md:gap-4 h-40 md:h-52 px-2">
+                    <div className="flex items-end justify-around gap-3 md:gap-6 h-40 md:h-52 px-2">
                       {sortedStaff.map((staff, idx) => {
                         const barHeight = maxCommands > 0 ? (staff.commandCount / maxCommands) * 100 : 0;
                         const barColor = staff.successRate >= 90
@@ -486,26 +481,20 @@ export default function AnalyticsPage() {
                           : 'bg-red-500';
 
                         return (
-                          <div key={idx} className="flex flex-col items-center flex-1 max-w-[80px]">
+                          <div key={idx} className="flex flex-col items-center flex-1 max-w-[100px]">
                             {/* Command count label */}
-                            <div className="text-[9px] md:text-xs font-bold text-gray-700 mb-1">
+                            <div className="text-[10px] md:text-sm font-bold text-gray-700 mb-1">
                               {staff.commandCount}
                             </div>
                             {/* Bar */}
                             <div className="w-full bg-gray-100 rounded-t-lg flex items-end justify-center" style={{ height: '100%' }}>
                               <div
-                                className={`w-full ${barColor} rounded-t-lg transition-all duration-500 flex items-start justify-center pt-1`}
-                                style={{ height: `${Math.max(barHeight, 10)}%` }}
+                                className={`w-full ${barColor} rounded-t-lg transition-all duration-500 flex items-end justify-center pb-1`}
+                                style={{ height: `${Math.max(barHeight, 15)}%` }}
                               >
-                                <span className="text-[8px] md:text-[10px] font-medium text-white">
+                                <span className="text-[8px] md:text-[10px] font-bold text-white drop-shadow">
                                   {staff.successRate}%
                                 </span>
-                              </div>
-                            </div>
-                            {/* Staff phone label */}
-                            <div className="mt-2 text-center">
-                              <div className="text-[8px] md:text-[10px] font-medium text-gray-600 truncate max-w-[60px] md:max-w-[70px]">
-                                {staff.staffPhone.slice(-8)}
                               </div>
                             </div>
                           </div>
@@ -514,17 +503,56 @@ export default function AnalyticsPage() {
                     </div>
 
                     {/* X-axis label */}
-                    <div className="text-center mt-3 text-[9px] md:text-xs text-gray-400">
-                      No. WhatsApp Staff
+                    <div className="text-center mt-2 text-[9px] md:text-xs text-gray-400">
+                      Total Command per Staff
                     </div>
                   </div>
                 </div>
 
-                {/* Bottom Info */}
-                <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-100">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[9px] md:text-[10px] text-gray-500">
-                    <span>Bar height = Total command yang dieksekusi</span>
-                    <span>Bar color = Success rate performance</span>
+                {/* Legend Table - Bottom */}
+                <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[9px] md:text-xs">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="py-1.5 px-2 text-left font-semibold text-gray-600">Warna</th>
+                          <th className="py-1.5 px-2 text-left font-semibold text-gray-600">Kategori</th>
+                          <th className="py-1.5 px-2 text-left font-semibold text-gray-600">Kriteria</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-gray-100">
+                          <td className="py-1.5 px-2">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-green-500"></div>
+                              <span className="text-green-600 font-medium">Hijau</span>
+                            </div>
+                          </td>
+                          <td className="py-1.5 px-2 font-medium text-gray-700">Excellent</td>
+                          <td className="py-1.5 px-2 text-gray-500">Success rate ≥ 90%</td>
+                        </tr>
+                        <tr className="border-b border-gray-100">
+                          <td className="py-1.5 px-2">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-yellow-500"></div>
+                              <span className="text-yellow-600 font-medium">Kuning</span>
+                            </div>
+                          </td>
+                          <td className="py-1.5 px-2 font-medium text-gray-700">Good</td>
+                          <td className="py-1.5 px-2 text-gray-500">Success rate 70-89%</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1.5 px-2">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-red-500"></div>
+                              <span className="text-red-600 font-medium">Merah</span>
+                            </div>
+                          </td>
+                          <td className="py-1.5 px-2 font-medium text-gray-700">Need Improve</td>
+                          <td className="py-1.5 px-2 text-gray-500">Success rate &lt; 70%</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
