@@ -509,50 +509,96 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                {/* Legend Table - Bottom */}
+                {/* Legend Tables - Bottom */}
                 <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-[9px] md:text-xs">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="py-1.5 px-2 text-left font-semibold text-gray-600">Warna</th>
-                          <th className="py-1.5 px-2 text-left font-semibold text-gray-600">Kategori</th>
-                          <th className="py-1.5 px-2 text-left font-semibold text-gray-600">Kriteria</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="border-b border-gray-100">
-                          <td className="py-1.5 px-2">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-green-500"></div>
-                              <span className="text-green-600 font-medium">Hijau</span>
-                            </div>
-                          </td>
-                          <td className="py-1.5 px-2 font-medium text-gray-700">Excellent</td>
-                          <td className="py-1.5 px-2 text-gray-500">Success rate ≥ 90%</td>
-                        </tr>
-                        <tr className="border-b border-gray-100">
-                          <td className="py-1.5 px-2">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-yellow-500"></div>
-                              <span className="text-yellow-600 font-medium">Kuning</span>
-                            </div>
-                          </td>
-                          <td className="py-1.5 px-2 font-medium text-gray-700">Good</td>
-                          <td className="py-1.5 px-2 text-gray-500">Success rate 70-89%</td>
-                        </tr>
-                        <tr>
-                          <td className="py-1.5 px-2">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-red-500"></div>
-                              <span className="text-red-600 font-medium">Merah</span>
-                            </div>
-                          </td>
-                          <td className="py-1.5 px-2 font-medium text-gray-700">Need Improve</td>
-                          <td className="py-1.5 px-2 text-gray-500">Success rate &lt; 70%</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Summary Stats Legend */}
+                    <div>
+                      <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-2">Keterangan Summary Stats</h4>
+                      <table className="w-full text-[9px] md:text-xs">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="py-1 px-2 text-left font-semibold text-gray-600">Warna</th>
+                            <th className="py-1 px-2 text-left font-semibold text-gray-600">Keterangan</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-b border-gray-100">
+                            <td className="py-1 px-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-blue-500"></div>
+                                <span className="text-blue-600 font-medium">Biru</span>
+                              </div>
+                            </td>
+                            <td className="py-1 px-2 text-gray-600">Total command yang dieksekusi semua staff</td>
+                          </tr>
+                          <tr className="border-b border-gray-100">
+                            <td className="py-1 px-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-green-500"></div>
+                                <span className="text-green-600 font-medium">Hijau</span>
+                              </div>
+                            </td>
+                            <td className="py-1 px-2 text-gray-600">Rata-rata persentase keberhasilan command</td>
+                          </tr>
+                          <tr>
+                            <td className="py-1 px-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-purple-500"></div>
+                                <span className="text-purple-600 font-medium">Ungu</span>
+                              </div>
+                            </td>
+                            <td className="py-1 px-2 text-gray-600">Jumlah staff yang aktif menggunakan command</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Performance Legend */}
+                    <div>
+                      <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-2">Keterangan Performance Staff</h4>
+                      <table className="w-full text-[9px] md:text-xs">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="py-1 px-2 text-left font-semibold text-gray-600">Warna</th>
+                            <th className="py-1 px-2 text-left font-semibold text-gray-600">Kategori</th>
+                            <th className="py-1 px-2 text-left font-semibold text-gray-600">Kriteria</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-b border-gray-100">
+                            <td className="py-1 px-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-green-500"></div>
+                                <span className="text-green-600 font-medium">Hijau</span>
+                              </div>
+                            </td>
+                            <td className="py-1 px-2 font-medium text-gray-700">Excellent</td>
+                            <td className="py-1 px-2 text-gray-500">≥ 90%</td>
+                          </tr>
+                          <tr className="border-b border-gray-100">
+                            <td className="py-1 px-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-yellow-500"></div>
+                                <span className="text-yellow-600 font-medium">Kuning</span>
+                              </div>
+                            </td>
+                            <td className="py-1 px-2 font-medium text-gray-700">Good</td>
+                            <td className="py-1 px-2 text-gray-500">70-89%</td>
+                          </tr>
+                          <tr>
+                            <td className="py-1 px-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-red-500"></div>
+                                <span className="text-red-600 font-medium">Merah</span>
+                              </div>
+                            </td>
+                            <td className="py-1 px-2 font-medium text-gray-700">Need Improve</td>
+                            <td className="py-1 px-2 text-gray-500">&lt; 70%</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
