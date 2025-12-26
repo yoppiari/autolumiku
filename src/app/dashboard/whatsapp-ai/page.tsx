@@ -453,6 +453,151 @@ export default function WhatsAppAIDashboard() {
           </div>
         )}
 
+        {/* Performance Summary Chart */}
+        {status.isConnected && (
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-3">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">📊 Performance Summary</h3>
+              <Link href="/dashboard/whatsapp-ai/analytics" className="text-xs text-blue-600 hover:text-blue-800">
+                Lihat Detail →
+              </Link>
+            </div>
+
+            {/* Visual Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left: Horizontal Bar Chart */}
+              <div className="space-y-3">
+                {/* Conversations Bar */}
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-gray-600">💬 Conversations</span>
+                    <span className="font-semibold text-blue-600">{stats.total}</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min((stats.total / Math.max(stats.total, 100)) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Messages Bar */}
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-gray-600">📨 Today Messages</span>
+                    <span className="font-semibold text-purple-600">{status.todayMessages}</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min((status.todayMessages / Math.max(status.todayMessages, 100)) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* AI Automation Bar */}
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-gray-600">🤖 AI Automation</span>
+                    <span className="font-semibold text-green-600">{status.aiResponseRate}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full transition-all duration-500"
+                      style={{ width: `${status.aiResponseRate}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Accuracy Bar */}
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-gray-600">🎯 AI Accuracy</span>
+                    <span className="font-semibold text-orange-600">{stats.aiAccuracy}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-orange-500 rounded-full transition-all duration-500"
+                      style={{ width: `${stats.aiAccuracy}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Donut Chart - Overall Health Score */}
+              <div className="flex items-center justify-center">
+                {(() => {
+                  // Calculate overall health score
+                  const healthScore = Math.round(
+                    (status.aiResponseRate + stats.aiAccuracy + (100 - Math.min(stats.escalated * 10, 100))) / 3
+                  );
+                  const radius = 45;
+                  const circumference = 2 * Math.PI * radius;
+                  const offset = circumference - (healthScore / 100) * circumference;
+                  const scoreColor = healthScore >= 80 ? '#22c55e' : healthScore >= 60 ? '#eab308' : '#ef4444';
+
+                  return (
+                    <div className="relative">
+                      <svg width="140" height="140" className="transform -rotate-90">
+                        {/* Background circle */}
+                        <circle
+                          cx="70"
+                          cy="70"
+                          r={radius}
+                          fill="none"
+                          stroke="#e5e7eb"
+                          strokeWidth="10"
+                        />
+                        {/* Progress circle */}
+                        <circle
+                          cx="70"
+                          cy="70"
+                          r={radius}
+                          fill="none"
+                          stroke={scoreColor}
+                          strokeWidth="10"
+                          strokeLinecap="round"
+                          strokeDasharray={circumference}
+                          strokeDashoffset={offset}
+                          className="transition-all duration-1000"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-bold" style={{ color: scoreColor }}>
+                          {healthScore}%
+                        </span>
+                        <span className="text-xs text-gray-500">Health Score</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Bottom: Quick Stats Row */}
+            <div className="mt-4 pt-3 border-t border-gray-100">
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="bg-blue-50 rounded-lg p-2">
+                  <div className="text-lg font-bold text-blue-600">{stats.active}</div>
+                  <div className="text-[10px] text-gray-500">Active Now</div>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-2">
+                  <div className="text-lg font-bold text-purple-600">{stats.customerChats}</div>
+                  <div className="text-[10px] text-gray-500">Customers</div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-2">
+                  <div className="text-lg font-bold text-green-600">{stats.staffCommands}</div>
+                  <div className="text-[10px] text-gray-500">Staff Cmds</div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-2">
+                  <div className="text-lg font-bold text-orange-600">{formatResponseTime(stats.avgResponseTime)}</div>
+                  <div className="text-[10px] text-gray-500">Avg Response</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Setup Guide - Only when NOT connected */}
         {!status.isConnected && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-3">
