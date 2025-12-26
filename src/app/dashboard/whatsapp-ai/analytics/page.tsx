@@ -227,12 +227,20 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Row 2: Staff Activity - Fills remaining space */}
-        {analytics.staffActivity.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0">
-            <div className="px-3 py-2 border-b border-gray-100 flex-shrink-0">
-              <h2 className="text-xs md:text-sm font-semibold text-gray-900">Staff Activity</h2>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0">
+          <div className="px-3 py-2 border-b border-gray-100 flex-shrink-0">
+            <h2 className="text-xs md:text-sm font-semibold text-gray-900">Staff Activity</h2>
+          </div>
+          {analytics.staffActivity.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="text-center">
+                <div className="text-gray-400 text-4xl mb-3">📊</div>
+                <p className="text-gray-500 text-sm">Belum ada aktivitas staff</p>
+                <p className="text-gray-400 text-xs mt-1">Data akan muncul setelah staff menggunakan WhatsApp AI</p>
+              </div>
             </div>
-            {(() => {
+          ) : (
+            (() => {
               const staffData = analytics.staffActivity;
               const maxCommands = Math.max(...staffData.map(s => s.commandCount));
               const totalCommands = staffData.reduce((sum, s) => sum + s.commandCount, 0);
@@ -372,9 +380,9 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               );
-            })()}
-          </div>
-        )}
+            })()
+          )}
+        </div>
       </div>
     </div>
   );
