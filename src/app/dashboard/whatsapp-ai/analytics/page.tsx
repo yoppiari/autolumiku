@@ -201,9 +201,10 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
         <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">AI Performance</h2>
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            {/* Single Donut Chart */}
-            <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
+          <div className="relative flex items-center justify-center py-4">
+            {/* Donut Chart with Labels Around */}
+            <div className="relative w-36 h-36 md:w-44 md:h-44">
+              {/* SVG Donut */}
               <svg viewBox="0 0 36 36" className="w-full h-full">
                 {(() => {
                   const metrics = [
@@ -240,34 +241,41 @@ export default function AnalyticsPage() {
                   });
                 })()}
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs md:text-sm font-bold text-gray-700">
-                  {Math.round((analytics.performance.aiAccuracy + analytics.performance.resolutionRate + analytics.performance.customerSatisfaction + (100 - analytics.overview.escalationRate)) / 4)}%
-                </span>
-              </div>
-            </div>
 
-            {/* Legend */}
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full flex-shrink-0 bg-green-600"></div>
-                <span className="text-xs md:text-sm text-gray-600 flex-1">AI Accuracy</span>
-                <span className="text-xs md:text-sm font-medium text-gray-900">{analytics.performance.aiAccuracy}%</span>
+              {/* Top Label - Satisfaction */}
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-center">
+                <div className="text-[10px] md:text-xs font-bold text-gray-900">{analytics.performance.customerSatisfaction}%</div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                  <span className="text-[9px] md:text-[10px] text-gray-600">Satisfaction</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full flex-shrink-0 bg-blue-600"></div>
-                <span className="text-xs md:text-sm text-gray-600 flex-1">Resolution</span>
-                <span className="text-xs md:text-sm font-medium text-gray-900">{analytics.performance.resolutionRate}%</span>
+
+              {/* Right Label - Escalation */}
+              <div className="absolute top-1/2 -right-2 md:-right-4 -translate-y-1/2 text-left">
+                <div className="text-[10px] md:text-xs font-bold text-gray-900">{analytics.overview.escalationRate}%</div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-orange-600"></div>
+                  <span className="text-[9px] md:text-[10px] text-gray-600">Escalation</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full flex-shrink-0 bg-purple-600"></div>
-                <span className="text-xs md:text-sm text-gray-600 flex-1">Satisfaction</span>
-                <span className="text-xs md:text-sm font-medium text-gray-900">{analytics.performance.customerSatisfaction}%</span>
+
+              {/* Bottom Label - Resolution */}
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-center">
+                <div className="flex items-center gap-1 justify-center">
+                  <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                  <span className="text-[9px] md:text-[10px] text-gray-600">Resolution</span>
+                </div>
+                <div className="text-[10px] md:text-xs font-bold text-gray-900">{analytics.performance.resolutionRate}%</div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full flex-shrink-0 bg-orange-600"></div>
-                <span className="text-xs md:text-sm text-gray-600 flex-1">Escalation</span>
-                <span className="text-xs md:text-sm font-medium text-gray-900">{analytics.overview.escalationRate}%</span>
+
+              {/* Left Label - AI Accuracy */}
+              <div className="absolute top-1/2 -left-2 md:-left-4 -translate-y-1/2 text-right">
+                <div className="text-[10px] md:text-xs font-bold text-gray-900">{analytics.performance.aiAccuracy}%</div>
+                <div className="flex items-center gap-1 justify-end">
+                  <span className="text-[9px] md:text-[10px] text-gray-600">AI Accuracy</span>
+                  <div className="w-2 h-2 rounded-full bg-green-600"></div>
+                </div>
               </div>
             </div>
           </div>
