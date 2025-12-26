@@ -490,8 +490,8 @@ export default function WhatsAppAIDashboard() {
           </div>
         )}
 
-        {/* Value Proposition - Compact */}
-        <div className="bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-4 rounded-xl border border-green-200">
+        {/* Value Proposition - Compact (Hidden for now) */}
+        <div className="hidden bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-4 rounded-xl border border-green-200">
           <h2 className="text-sm font-bold text-gray-900 mb-3">Why WhatsApp AI?</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-white/70 backdrop-blur p-3 rounded-lg">
