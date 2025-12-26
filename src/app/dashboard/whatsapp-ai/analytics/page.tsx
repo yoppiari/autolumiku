@@ -201,76 +201,96 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
         <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">AI Performance</h2>
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            {/* Donut Chart */}
-            <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
-              {(() => {
-                const metrics = [
-                  { value: analytics.performance.aiAccuracy || 0, color: '#22c55e', name: 'AI Accuracy', label: 'Akurasi AI' },
-                  { value: analytics.performance.resolutionRate || 0, color: '#eab308', name: 'Resolution', label: 'Penyelesaian' },
-                  { value: analytics.performance.customerSatisfaction || 0, color: '#f97316', name: 'Satisfaction', label: 'Kepuasan' },
-                  { value: 100 - (analytics.overview.escalationRate || 0), color: '#ef4444', name: 'Non-Escalation', label: 'Tidak Eskalasi' },
-                ];
-                const total = metrics.reduce((sum, m) => sum + m.value, 0) || 1;
-                const radius = 15.9155;
-                const circumference = 2 * Math.PI * radius;
-                let offset = 0;
+          {(() => {
+            // Define metrics once for both donut and legend
+            const metrics = [
+              { value: analytics.performance.aiAccuracy || 0, color: '#22c55e', bgColor: 'bg-green-500', name: 'AI Accuracy', label: 'Akurasi respons AI' },
+              { value: analytics.performance.resolutionRate || 0, color: '#eab308', bgColor: 'bg-yellow-500', name: 'Resolution', label: 'Tingkat penyelesaian' },
+              { value: analytics.performance.customerSatisfaction || 0, color: '#f97316', bgColor: 'bg-orange-500', name: 'Satisfaction', label: 'Kepuasan pelanggan' },
+              { value: analytics.overview.escalationRate || 0, color: '#ef4444', bgColor: 'bg-red-500', name: 'Escalation', label: 'Eskalasi ke manusia' },
+            ];
 
-                return (
+            // Calculate total and average score
+            // For avg score: AI Accuracy, Resolution, Satisfaction are positive (higher=better)
+            // Escalation is negative (lower=better), so we use (100 - escalation) for avg calculation
+            const avgScore = Math.round(
+              (metrics[0].value + metrics[1].value + metrics[2].value + (100 - metrics[3].value)) / 4
+            );
+
+            // For donut: use actual values, filter out zeros for cleaner display
+            const activeMetrics = metrics.filter(m => m.value > 0);
+            const total = activeMetrics.reduce((sum, m) => sum + m.value, 0) || 1;
+            const radius = 15.9155;
+            const circumference = 2 * Math.PI * radius;
+
+            return (
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                {/* Donut Chart */}
+                <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
                   <svg viewBox="0 0 36 36" className="w-full h-full">
-                    {metrics.map((metric, index) => {
-                      const percentage = (metric.value / total) * 100;
-                      const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
-                      const strokeDashoffset = -offset;
-                      offset += (percentage / 100) * circumference;
+                    {/* Background circle when no data */}
+                    {activeMetrics.length === 0 && (
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r={radius}
+                        fill="none"
+                        stroke="#e5e7eb"
+                        strokeWidth="3.5"
+                      />
+                    )}
+                    {/* Metric segments */}
+                    {(() => {
+                      let offset = 0;
+                      return activeMetrics.map((metric) => {
+                        const percentage = (metric.value / total) * 100;
+                        const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
+                        const strokeDashoffset = -offset;
+                        offset += (percentage / 100) * circumference;
 
-                      return (
-                        <circle
-                          key={metric.name}
-                          cx="18"
-                          cy="18"
-                          r={radius}
-                          fill="none"
-                          stroke={metric.color}
-                          strokeWidth="3.5"
-                          strokeDasharray={strokeDasharray}
-                          strokeDashoffset={strokeDashoffset}
-                          transform="rotate(-90 18 18)"
-                        />
-                      );
-                    })}
+                        return (
+                          <circle
+                            key={metric.name}
+                            cx="18"
+                            cy="18"
+                            r={radius}
+                            fill="none"
+                            stroke={metric.color}
+                            strokeWidth="3.5"
+                            strokeDasharray={strokeDasharray}
+                            strokeDashoffset={strokeDashoffset}
+                            transform="rotate(-90 18 18)"
+                          />
+                        );
+                      });
+                    })()}
                   </svg>
-                );
-              })()}
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-lg md:text-xl font-bold text-green-600">
-                  {Math.round((analytics.performance.aiAccuracy + analytics.performance.resolutionRate + analytics.performance.customerSatisfaction + (100 - analytics.overview.escalationRate)) / 4)}%
-                </span>
-                <span className="text-[8px] md:text-[10px] text-gray-500">Total Score</span>
-              </div>
-            </div>
-
-            {/* Legend */}
-            <div className="flex-1 space-y-2">
-              {[
-                { value: analytics.performance.aiAccuracy || 0, color: 'bg-green-500', name: 'AI Accuracy', label: 'Akurasi respons AI' },
-                { value: analytics.performance.resolutionRate || 0, color: 'bg-yellow-500', name: 'Resolution', label: 'Tingkat penyelesaian' },
-                { value: analytics.performance.customerSatisfaction || 0, color: 'bg-orange-500', name: 'Satisfaction', label: 'Kepuasan pelanggan' },
-                { value: analytics.overview.escalationRate || 0, color: 'bg-red-500', name: 'Escalation', label: 'Eskalasi ke manusia' },
-              ].map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${item.color}`}></div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-xs md:text-sm text-gray-700">{item.name}</span>
-                    <p className="text-[9px] md:text-[10px] text-gray-400 truncate">{item.label}</p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className={`text-lg md:text-xl font-bold ${avgScore >= 70 ? 'text-green-600' : avgScore >= 40 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {avgScore}%
+                    </span>
+                    <span className="text-[8px] md:text-[10px] text-gray-500">Avg Score</span>
                   </div>
-                  <span className="text-xs md:text-sm font-semibold text-gray-900 whitespace-nowrap">
-                    {item.value}%
-                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
+
+                {/* Legend */}
+                <div className="flex-1 space-y-2">
+                  {metrics.map((item) => (
+                    <div key={item.name} className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${item.bgColor}`}></div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs md:text-sm text-gray-700">{item.name}</span>
+                        <p className="text-[9px] md:text-[10px] text-gray-400 truncate">{item.label}</p>
+                      </div>
+                      <span className="text-xs md:text-sm font-semibold text-gray-900 whitespace-nowrap">
+                        {item.value}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <div className="bg-white p-3 md:p-6 rounded-xl shadow-sm border border-gray-200">
