@@ -92,31 +92,31 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
   const days = daysRemaining();
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col">
       {/* Header */}
-      <div className="px-2 md:px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-1">
+      <div className="px-2 py-1.5 border-b border-gray-100 flex items-center justify-between gap-1 flex-shrink-0">
         <h2 className="text-[10px] md:text-xs font-semibold text-gray-700 flex items-center gap-1 min-w-0">
-          <span className="text-sm md:text-base flex-shrink-0">💳</span>
+          <span className="text-sm flex-shrink-0">💳</span>
           <span className="truncate">Subscription</span>
         </h2>
-        <span className={`px-1.5 md:px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-semibold flex-shrink-0 ${getStatusColor()}`}>
+        <span className={`px-1.5 py-0.5 rounded-full text-[8px] md:text-[9px] font-semibold flex-shrink-0 ${getStatusColor()}`}>
           {getStatusLabel()}
         </span>
       </div>
 
-      <div className="p-2 md:p-3 space-y-2 md:space-y-3">
+      <div className="p-2 flex-1 flex flex-col justify-between min-h-0">
         {/* Period Info */}
         <div className="text-center">
-          <p className="text-[10px] md:text-xs text-gray-500">Berlaku hingga</p>
-          <p className="text-xs md:text-sm font-semibold text-gray-900">{formatDate(subscription.currentPeriodEnd)}</p>
-          <p className="text-[10px] md:text-xs text-blue-600 font-medium mt-0.5">{days > 0 ? `${days} hari tersisa` : 'Berakhir'}</p>
+          <p className="text-[9px] md:text-[10px] text-gray-500">Berlaku hingga</p>
+          <p className="text-xs md:text-sm font-bold text-gray-900">{formatDate(subscription.currentPeriodEnd)}</p>
+          <p className="text-[9px] md:text-[10px] text-blue-600 font-medium">{days > 0 ? `${days} hari tersisa` : 'Berakhir'}</p>
         </div>
 
         {/* Progress Bar */}
-        <div className="px-2 md:px-4">
-          <div className="bg-gray-100 rounded-full h-1.5 md:h-2 overflow-hidden">
+        <div className="my-2">
+          <div className="bg-gray-100 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 md:h-2 rounded-full transition-all"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 rounded-full transition-all"
               style={{ width: `${Math.max(0, Math.min(100, (days / 365) * 100))}%` }}
             ></div>
           </div>
@@ -124,16 +124,16 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
 
         {/* Warning */}
         {days > 0 && days <= 30 && (
-          <div className="bg-amber-50 rounded-lg p-1.5 md:p-2 border border-amber-100 text-center">
-            <p className="text-[9px] md:text-[10px] text-amber-700 font-medium">Segera berakhir! Hubungi admin.</p>
+          <div className="bg-amber-50 rounded p-1 border border-amber-100 text-center mb-1">
+            <p className="text-[8px] md:text-[9px] text-amber-700 font-medium">Segera berakhir!</p>
           </div>
         )}
 
         {/* Features - 2 columns compact */}
-        <div className="grid grid-cols-2 gap-1">
+        <div className="grid grid-cols-2 gap-x-1 gap-y-0.5">
           {['Unlimited kendaraan', 'WhatsApp AI', 'Custom domain', 'Support 24/7'].map((f) => (
-            <div key={f} className="flex items-center gap-1 text-[9px] md:text-[10px] text-gray-600">
-              <FaCheckCircle className="text-green-500 text-[7px] md:text-[8px] flex-shrink-0" />
+            <div key={f} className="flex items-center gap-0.5 text-[8px] md:text-[9px] text-gray-600">
+              <FaCheckCircle className="text-green-500 text-[6px] md:text-[7px] flex-shrink-0" />
               <span className="truncate">{f}</span>
             </div>
           ))}

@@ -292,46 +292,43 @@ export default function ShowroomDashboardPage() {
                     href="/dashboard/whatsapp-ai/analytics"
                     className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
                   >
-                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 md:mb-2 truncate">AI Performance</h4>
-                    <div className="flex-1 flex items-center justify-center">
+                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 truncate">AI Performance</h4>
+                    <div className="flex-1 flex items-center justify-center py-1">
                       <div className="relative">
-                        {/* Donut Chart */}
-                        <svg className="w-16 h-16 md:w-24 md:h-24" viewBox="0 0 36 36">
-                          {/* Background circle */}
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="4" />
-                          {/* Accuracy segment */}
+                        <svg className="w-20 h-20 md:w-28 md:h-28" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           <circle
                             cx="18" cy="18" r="14"
                             fill="none"
                             stroke="#22c55e"
-                            strokeWidth="4"
+                            strokeWidth="3.5"
                             strokeDasharray={`${(analytics?.performance.aiAccuracy || 0) * 0.88} 88`}
                             strokeDashoffset="22"
                             strokeLinecap="round"
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-sm md:text-base font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
+                          <span className="text-base md:text-xl font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - compact */}
-                    <div className="mt-1 md:mt-2 space-y-0.5">
+                    {/* Legend - 2x2 grid */}
+                    <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 mt-1">
                       <div className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[10px] text-gray-600 truncate">Accuracy</span>
+                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600">Accuracy</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[10px] text-gray-600 truncate">Resolution</span>
+                        <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600">Satisfaction</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[10px] text-gray-600 truncate">Satisfaction</span>
+                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600">Resolution</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[10px] text-gray-600 truncate">Escalation</span>
+                        <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600">Escalation</span>
                       </div>
                     </div>
                   </Link>
@@ -341,12 +338,11 @@ export default function ShowroomDashboardPage() {
                     href="/dashboard/whatsapp-ai/analytics"
                     className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
                   >
-                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 md:mb-2 truncate">Intent Breakdown</h4>
-                    <div className="flex-1 flex items-center justify-center">
+                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 truncate">Intent Breakdown</h4>
+                    <div className="flex-1 flex items-center justify-center py-1">
                       <div className="relative">
-                        {/* Donut Chart */}
-                        <svg className="w-16 h-16 md:w-24 md:h-24" viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                        <svg className="w-20 h-20 md:w-28 md:h-28" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           {analytics?.intentBreakdown && analytics.intentBreakdown.length > 0 ? (
                             (() => {
                               let offset = 0;
@@ -358,7 +354,7 @@ export default function ShowroomDashboardPage() {
                                     cx="18" cy="18" r="14"
                                     fill="none"
                                     stroke={intentColors[item.intent.toLowerCase()] || '#6b7280'}
-                                    strokeWidth="4"
+                                    strokeWidth="3.5"
                                     strokeDasharray={`${dashLength} 88`}
                                     strokeDashoffset={-offset}
                                     strokeLinecap="round"
@@ -372,45 +368,32 @@ export default function ShowroomDashboardPage() {
                           ) : null}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-sm md:text-base font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}</span>
+                          <span className="text-base md:text-xl font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}</span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend */}
-                    <div className="mt-1 md:mt-2 space-y-0.5">
-                      {(analytics?.intentBreakdown || []).slice(0, 5).map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-1">
-                          <span
-                            className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: intentColors[item.intent.toLowerCase()] || '#6b7280' }}
-                          ></span>
-                          <span className="text-[8px] md:text-[10px] text-gray-600 truncate">{getIntentName(item.intent)}</span>
-                        </div>
-                      ))}
-                      {(!analytics?.intentBreakdown || analytics.intentBreakdown.length === 0) && (
-                        <>
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 flex-shrink-0"></span>
-                            <span className="text-[8px] md:text-[10px] text-gray-600">Greeting</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
-                            <span className="text-[8px] md:text-[10px] text-gray-600">Vehicle</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
-                            <span className="text-[8px] md:text-[10px] text-gray-600">Price</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
-                            <span className="text-[8px] md:text-[10px] text-gray-600">General</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 flex-shrink-0"></span>
-                            <span className="text-[8px] md:text-[10px] text-gray-600">Closing</span>
-                          </div>
-                        </>
-                      )}
+                    {/* Legend - 2x3 grid */}
+                    <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 mt-1">
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600">Price</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600">Greeting</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600">General</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600">Vehicle</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600">Closing</span>
+                      </div>
                     </div>
                   </Link>
 
@@ -419,10 +402,10 @@ export default function ShowroomDashboardPage() {
                     href="/dashboard/whatsapp-ai/analytics"
                     className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
                   >
-                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 md:mb-2 truncate">Staff Activity</h4>
-                    <div className="flex-1 flex items-center justify-center">
+                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 truncate">Staff Activity</h4>
+                    <div className="flex-1 flex items-center justify-center py-1">
                       {/* Bar Chart */}
-                      <div className="flex items-end gap-1 md:gap-1.5 h-14 md:h-20">
+                      <div className="flex items-end gap-2 md:gap-3 h-20 md:h-28">
                         {analytics?.staffActivity && analytics.staffActivity.length > 0 ? (
                           analytics.staffActivity.slice(0, 5).map((staff, idx) => {
                             const maxCommands = Math.max(...analytics.staffActivity.map(s => s.commandCount), 1);
@@ -430,7 +413,7 @@ export default function ShowroomDashboardPage() {
                             return (
                               <div
                                 key={idx}
-                                className="w-3 md:w-4 bg-blue-500 rounded-t transition-all"
+                                className="w-4 md:w-6 bg-blue-500 rounded-t transition-all"
                                 style={{ height: `${Math.max(heightPercent, 10)}%` }}
                                 title={`${staff.staffPhone}: ${staff.commandCount} commands`}
                               ></div>
@@ -441,21 +424,21 @@ export default function ShowroomDashboardPage() {
                           [1, 2, 3, 4, 5].map((i) => (
                             <div
                               key={i}
-                              className="w-3 md:w-4 bg-gray-300 rounded-t"
-                              style={{ height: `${15 + i * 10}%` }}
+                              className="w-4 md:w-6 bg-gray-300 rounded-t"
+                              style={{ height: `${15 + i * 12}%` }}
                             ></div>
                           ))
                         )}
                       </div>
                     </div>
                     {/* Staff count or empty message */}
-                    <div className="mt-1 md:mt-2 text-center">
+                    <div className="mt-1 text-center">
                       {analytics?.staffActivity && analytics.staffActivity.length > 0 ? (
-                        <span className="text-[8px] md:text-[10px] text-gray-600">
+                        <span className="text-[9px] md:text-[10px] text-gray-600">
                           {analytics.staffActivity.length} staff aktif
                         </span>
                       ) : (
-                        <span className="text-[8px] md:text-[10px] text-gray-400">
+                        <span className="text-[9px] md:text-[10px] text-gray-400">
                           Belum ada aktivitas
                         </span>
                       )}
