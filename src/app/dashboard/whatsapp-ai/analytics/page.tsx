@@ -224,9 +224,21 @@ export default function AnalyticsPage() {
                 <option value="yearly">Tahunan</option>
               </select>
               <button
-                onClick={() => handleExport('pdf')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                onClick={() => handleExport('excel')}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Excel
+              </button>
+              <button
+                onClick={() => handleExport('pdf')}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
                 PDF
               </button>
             </>
@@ -326,6 +338,210 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
+          {/* Chart Section - 3 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Sales Performance Donut */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Performa Penjualan</h4>
+              <div className="flex items-center justify-center py-4">
+                <div className="relative">
+                  <svg className="w-32 h-32" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                    {/* Target achievement - assume target is 100 units */}
+                    {(salesStats?.totalSales || 0) > 0 && (
+                      <circle
+                        cx="18" cy="18" r="14"
+                        fill="none"
+                        stroke="#22c55e"
+                        strokeWidth="3.5"
+                        strokeDasharray={`${Math.min((salesStats?.totalSales || 0) / 100, 1) * 88} 88`}
+                        strokeLinecap="round"
+                        transform="rotate(-90 18 18)"
+                      />
+                    )}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-700">{salesStats?.totalSales || 0}</span>
+                    <span className="text-[10px] text-gray-500">Unit</span>
+                  </div>
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                  <span className="text-xs text-gray-600">Terjual {salesStats?.totalSales || 0}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-gray-300"></span>
+                  <span className="text-xs text-gray-600">Target 100</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                  <span className="text-xs text-gray-600">Achievement {Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                  <span className="text-xs text-gray-600">Gap {Math.max(100 - (salesStats?.totalSales || 0), 0)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Brand Distribution Donut */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Distribusi Brand</h4>
+              <div className="flex items-center justify-center py-4">
+                <div className="relative">
+                  <svg className="w-32 h-32" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                    {salesStats?.topBrands && salesStats.topBrands.length > 0 && (
+                      (() => {
+                        const total = salesStats.topBrands.reduce((sum, b) => sum + b.count, 0);
+                        let offset = 0;
+                        const brandColors = ['#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#ef4444', '#06b6d4'];
+                        return salesStats.topBrands.slice(0, 5).map((brand, idx) => {
+                          if (brand.count <= 0 || total <= 0) return null;
+                          const percentage = (brand.count / total) * 100;
+                          const dashLength = (percentage / 100) * 88;
+                          const segment = (
+                            <circle
+                              key={idx}
+                              cx="18" cy="18" r="14"
+                              fill="none"
+                              stroke={brandColors[idx % brandColors.length]}
+                              strokeWidth="3.5"
+                              strokeDasharray={`${dashLength} 88`}
+                              strokeDashoffset={-offset}
+                              strokeLinecap="round"
+                              transform="rotate(-90 18 18)"
+                            />
+                          );
+                          offset += dashLength;
+                          return segment;
+                        });
+                      })()
+                    )}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-700">{salesStats?.topBrands?.length || 0}</span>
+                    <span className="text-[10px] text-gray-500">Brand</span>
+                  </div>
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {(() => {
+                  const brandColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500', 'bg-red-500', 'bg-cyan-500'];
+                  const total = salesStats?.topBrands?.reduce((sum, b) => sum + b.count, 0) || 0;
+                  return salesStats?.topBrands?.slice(0, 6).map((brand, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${brandColors[idx % brandColors.length]}`}></span>
+                      <span className="text-xs text-gray-600 truncate">{brand.brand} {total > 0 ? Math.round((brand.count / total) * 100) : 0}%</span>
+                    </div>
+                  )) || (
+                    <div className="col-span-2 text-xs text-gray-500 text-center">Belum ada data</div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Revenue Distribution Donut */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Distribusi Revenue</h4>
+              <div className="flex items-center justify-center py-4">
+                <div className="relative">
+                  <svg className="w-32 h-32" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                    {salesStats?.topBrands && salesStats.topBrands.length > 0 && (
+                      (() => {
+                        const total = salesStats.topBrands.reduce((sum, b) => sum + b.revenue, 0);
+                        let offset = 0;
+                        const brandColors = ['#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#ef4444', '#06b6d4'];
+                        return salesStats.topBrands.slice(0, 5).map((brand, idx) => {
+                          if (brand.revenue <= 0 || total <= 0) return null;
+                          const percentage = (brand.revenue / total) * 100;
+                          const dashLength = (percentage / 100) * 88;
+                          const segment = (
+                            <circle
+                              key={idx}
+                              cx="18" cy="18" r="14"
+                              fill="none"
+                              stroke={brandColors[idx % brandColors.length]}
+                              strokeWidth="3.5"
+                              strokeDasharray={`${dashLength} 88`}
+                              strokeDashoffset={-offset}
+                              strokeLinecap="round"
+                              transform="rotate(-90 18 18)"
+                            />
+                          );
+                          offset += dashLength;
+                          return segment;
+                        });
+                      })()
+                    )}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-lg font-bold text-gray-700">{formatRupiah(salesStats?.totalRevenue || 0).replace('Rp', '').trim().split(',')[0]}</span>
+                    <span className="text-[10px] text-gray-500">Juta</span>
+                  </div>
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {(() => {
+                  const brandColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500', 'bg-red-500', 'bg-cyan-500'];
+                  const total = salesStats?.topBrands?.reduce((sum, b) => sum + b.revenue, 0) || 0;
+                  return salesStats?.topBrands?.slice(0, 6).map((brand, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${brandColors[idx % brandColors.length]}`}></span>
+                      <span className="text-xs text-gray-600 truncate">{brand.brand} {total > 0 ? Math.round((brand.revenue / total) * 100) : 0}%</span>
+                    </div>
+                  )) || (
+                    <div className="col-span-2 text-xs text-gray-500 text-center">Belum ada data</div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly Trend Bar Chart */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-4">Tren Penjualan Bulanan</h4>
+            <div className="h-48 flex items-end gap-2 px-4">
+              {salesStats?.monthlySales && salesStats.monthlySales.length > 0 ? (
+                (() => {
+                  const maxCount = Math.max(...salesStats.monthlySales.map(m => m.count), 1);
+                  return salesStats.monthlySales.map((month, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[10px] text-gray-600 font-medium">{month.count}</span>
+                      <div
+                        className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
+                        style={{ height: `${Math.max((month.count / maxCount) * 140, 4)}px` }}
+                        title={`${month.month}: ${month.count} unit - ${formatRupiah(month.revenue)}`}
+                      ></div>
+                      <span className="text-[9px] text-gray-500 truncate w-full text-center">{month.month.substring(0, 3)}</span>
+                    </div>
+                  ));
+                })()
+              ) : (
+                // Default empty bars
+                ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[10px] text-gray-400">0</span>
+                    <div className="w-full bg-gray-200 rounded-t h-4"></div>
+                    <span className="text-[9px] text-gray-400">{month}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded bg-blue-500"></span>
+                <span className="text-xs text-gray-600">Unit Terjual</span>
+              </div>
+            </div>
+          </div>
+
           {/* Top Brands Table */}
           <div className="bg-white rounded-lg shadow">
             <div className="p-4 border-b border-gray-200">
@@ -338,22 +554,102 @@ export default function AnalyticsPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brand</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Terjual</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Kontribusi</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {salesStats?.topBrands?.map((brand, idx) => (
-                    <tr key={idx}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{brand.brand}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">{brand.count}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{formatRupiah(brand.revenue)}</td>
-                    </tr>
-                  )) || (
+                  {salesStats?.topBrands?.map((brand, idx) => {
+                    const totalRevenue = salesStats.topBrands?.reduce((sum, b) => sum + b.revenue, 0) || 0;
+                    const contribution = totalRevenue > 0 ? Math.round((brand.revenue / totalRevenue) * 100) : 0;
+                    return (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{brand.brand}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">{brand.count}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{formatRupiah(brand.revenue)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            contribution >= 30 ? 'bg-green-100 text-green-800' :
+                            contribution >= 15 ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {contribution}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  }) || (
                     <tr>
-                      <td colSpan={3} className="px-6 py-8 text-center text-gray-500">Belum ada data penjualan</td>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-500">Belum ada data penjualan</td>
                     </tr>
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* Management Analysis Footnotes */}
+          <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg border border-slate-200 p-4">
+            <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+              <span>📋</span> Analisis Manajemen Showroom
+            </h4>
+            <div className="space-y-3">
+              {/* Analysis Point 1 - Performance */}
+              <div className="text-[11px] text-slate-600 leading-relaxed">
+                <span className="font-semibold text-slate-700">Performa Penjualan:</span>{' '}
+                {(salesStats?.totalSales || 0) >= 80 ? (
+                  <>Target tercapai dengan baik ({salesStats?.totalSales || 0} unit). <span className="text-green-600">Strategi pemasaran efektif.</span> Pertahankan momentum dengan program loyalitas pelanggan.</>
+                ) : (salesStats?.totalSales || 0) >= 50 ? (
+                  <>Pencapaian moderat ({salesStats?.totalSales || 0} unit, {Math.round(((salesStats?.totalSales || 0) / 100) * 100)}% target). <span className="text-amber-600">Perlu peningkatan.</span> Evaluasi strategi promosi dan perluas jangkauan pemasaran digital.</>
+                ) : (
+                  <>Pencapaian rendah ({salesStats?.totalSales || 0} unit). <span className="text-red-600">Perlu tindakan korektif segera.</span> Rekomendasi: review pricing strategy, tingkatkan kualitas leads, dan intensifkan follow-up prospek.</>
+                )}
+              </div>
+
+              {/* Analysis Point 2 - Brand Mix */}
+              <div className="text-[11px] text-slate-600 leading-relaxed">
+                <span className="font-semibold text-slate-700">Strategi Brand:</span>{' '}
+                {salesStats?.topBrands && salesStats.topBrands.length > 0 ? (
+                  <>
+                    {salesStats.topBrands[0].brand} mendominasi pasar ({salesStats.topBrands[0].count} unit).
+                    {salesStats.topBrands.length > 1 ? (
+                      <> Diversifikasi dengan {salesStats.topBrands[1]?.brand} dapat mengurangi risiko ketergantungan satu brand.</>
+                    ) : (
+                      <> <span className="text-amber-600">Perlu diversifikasi brand</span> untuk mengurangi risiko market concentration.</>
+                    )}
+                  </>
+                ) : (
+                  <>Belum ada data brand. Mulai tracking penjualan per brand untuk analisis market share.</>
+                )}
+              </div>
+
+              {/* Analysis Point 3 - Revenue */}
+              <div className="text-[11px] text-slate-600 leading-relaxed">
+                <span className="font-semibold text-slate-700">Optimasi Revenue:</span>{' '}
+                {(salesStats?.avgPrice || 0) > 200000000 ? (
+                  <>Rata-rata harga jual tinggi ({formatRupiah(salesStats?.avgPrice || 0)}). <span className="text-green-600">Margin profit optimal.</span> Fokus pada segmen premium dan value-added services.</>
+                ) : (salesStats?.avgPrice || 0) > 100000000 ? (
+                  <>Rata-rata harga jual menengah ({formatRupiah(salesStats?.avgPrice || 0)}). Pertimbangkan upselling aksesoris dan paket after-sales service untuk meningkatkan revenue per unit.</>
+                ) : (
+                  <>Rata-rata harga jual rendah ({formatRupiah(salesStats?.avgPrice || 0)}). <span className="text-amber-600">Evaluasi product mix.</span> Pertimbangkan penambahan inventory segment menengah-atas.</>
+                )}
+              </div>
+
+              {/* Analysis Point 4 - Action Items */}
+              <div className="text-[11px] text-slate-600 leading-relaxed border-t border-slate-200 pt-2 mt-2">
+                <span className="font-semibold text-slate-700">Rekomendasi Aksi:</span>{' '}
+                <span className="text-blue-600">1)</span> Review target bulanan dengan tim sales. {' '}
+                <span className="text-blue-600">2)</span> Evaluasi conversion rate leads-to-sales. {' '}
+                <span className="text-blue-600">3)</span> Analisis kompetitor pricing. {' '}
+                <span className="text-blue-600">4)</span> Optimasi inventory berdasarkan demand forecast.
+              </div>
+            </div>
+
+            {/* Footer timestamp */}
+            <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between">
+              <span className="text-[9px] text-slate-400">
+                *Analisis otomatis berdasarkan data {period === 'monthly' ? 'bulanan' : period === 'quarterly' ? 'kuartalan' : 'tahunan'}. Generated: {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </span>
+              <span className="text-[9px] text-slate-400">Prima Mobil Analytics v1.0</span>
             </div>
           </div>
         </div>
