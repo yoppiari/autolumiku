@@ -131,7 +131,11 @@ export default function AnalyticsPage() {
                 { value: analytics.performance.customerSatisfaction || 0, color: '#f97316', name: 'Satisfaction' },
                 { value: analytics.overview.escalationRate || 0, color: '#ef4444', name: 'Escalation' },
               ];
-              const avgScore = Math.round((metrics[0].value + metrics[1].value + metrics[2].value + (100 - metrics[3].value)) / 4);
+              // If no data (all positive metrics are 0), show 0%. Otherwise calculate average.
+              const hasData = metrics[0].value > 0 || metrics[1].value > 0 || metrics[2].value > 0;
+              const avgScore = hasData
+                ? Math.round((metrics[0].value + metrics[1].value + metrics[2].value + (100 - metrics[3].value)) / 4)
+                : 0;
               const activeMetrics = metrics.filter(m => m.value > 0);
               const total = activeMetrics.reduce((sum, m) => sum + m.value, 0) || 1;
               const radius = 15.9155;
