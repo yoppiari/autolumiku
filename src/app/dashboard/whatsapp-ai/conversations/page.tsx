@@ -852,7 +852,7 @@ export default function ConversationsPage() {
   };
 
   return (
-    <div className="p-3 md:p-4 h-screen flex flex-col overflow-hidden">
+    <div className="p-3 md:p-4 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
       {/* Header - Responsive with left margin for hamburger menu */}
       <div className="mb-3 md:mb-4 flex items-center justify-between ml-10 md:ml-0">
         <div>
