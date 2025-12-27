@@ -313,22 +313,22 @@ export default function ShowroomDashboardPage() {
                       </div>
                     </div>
                     {/* Legend - 2x2 grid */}
-                    <div className="grid grid-cols-2 gap-x-0.5 gap-y-0.5 mt-1">
+                    <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 mt-1 flex-shrink-0">
                       <div className="flex items-center gap-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[9px] text-gray-600">Accuracy</span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 truncate">Accuracy</span>
                       </div>
                       <div className="flex items-center gap-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[9px] text-gray-600">Satisfaction</span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 truncate">Satisfact.</span>
                       </div>
                       <div className="flex items-center gap-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[9px] text-gray-600">Resolution</span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 truncate">Resolution</span>
                       </div>
                       <div className="flex items-center gap-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[9px] text-gray-600">Escalation</span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 truncate">Escalation</span>
                       </div>
                     </div>
                   </Link>
@@ -373,22 +373,22 @@ export default function ShowroomDashboardPage() {
                       </div>
                     </div>
                     {/* Legend - 2x2 grid (4 items only) */}
-                    <div className="grid grid-cols-2 gap-x-0.5 gap-y-0.5 mt-1">
+                    <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 mt-1 flex-shrink-0">
                       <div className="flex items-center gap-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[9px] text-gray-600">Price</span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 truncate">Price</span>
                       </div>
                       <div className="flex items-center gap-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[9px] text-gray-600">Greeting</span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 truncate">Greeting</span>
                       </div>
                       <div className="flex items-center gap-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[9px] text-gray-600">General</span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 truncate">General</span>
                       </div>
                       <div className="flex items-center gap-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[8px] md:text-[9px] text-gray-600">Vehicle</span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600 truncate">Vehicle</span>
                       </div>
                     </div>
                   </Link>
