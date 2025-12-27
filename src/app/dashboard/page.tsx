@@ -202,7 +202,7 @@ export default function ShowroomDashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-3 h-[calc(100vh-90px)] -mt-2">
+    <div className="flex flex-col gap-3 min-h-[calc(100vh-90px)] -mt-2">
       {/* Welcome Header - Elegant Rich Modern */}
       <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-lg flex-shrink-0 ml-8 md:ml-0">
         <div className="min-w-0 flex-1">
@@ -267,26 +267,26 @@ export default function ShowroomDashboardPage() {
         ))}
       </div>
 
-      {/* Main Content - Analytics & Subscription Row - FLEX GROW */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-h-0">
+      {/* Main Content - Analytics & Subscription Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-shrink-0">
         {/* Left: Analytics */}
-        <div className="md:col-span-2 min-h-0 overflow-hidden order-2 md:order-1">
-          <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col overflow-hidden">
+        <div className="md:col-span-2 order-2 md:order-1">
+          <div className="bg-white rounded-lg border border-gray-200 flex flex-col">
             <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <h3 className="text-sm md:text-base font-bold text-gray-800">Analytics</h3>
               <Link href="/dashboard/whatsapp-ai/analytics" className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium">
                 Lihat Detail →
               </Link>
             </div>
-            <div className="p-2 md:p-3 flex-1 min-h-0 overflow-y-auto">
+            <div className="p-2 md:p-3">
               {loadingAnalytics ? (
-                <div className="grid grid-cols-3 gap-2 md:gap-3 h-full">
+                <div className="grid grid-cols-3 gap-2 md:gap-3">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="bg-gray-50 rounded-lg animate-pulse h-32 md:h-40"></div>
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-4 gap-2 md:gap-3 h-full">
+                <div className="grid grid-cols-4 gap-2 md:gap-3">
                   {/* AI Performance Card - 1 col */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
@@ -368,7 +368,7 @@ export default function ShowroomDashboardPage() {
                           ) : null}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-sm md:text-lg font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}</span>
+                          <span className="text-sm md:text-lg font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.percentage, 0) || 0}%</span>
                         </div>
                       </div>
                     </div>
