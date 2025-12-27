@@ -4,12 +4,36 @@
  * POST /api/v1/users - Create new user
  *
  * Protected: Requires authentication + admin role
+ *
+ * Roles: OWNER(100), ADMIN(90), MANAGER(70), FINANCE(60), SALES(30)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authenticateRequest, type AuthResult } from '@/lib/auth/middleware';
+
+/**
+ * Get roleLevel based on role name
+ * Used for access control comparisons
+ */
+function getRoleLevel(role: string): number {
+  switch (role.toUpperCase()) {
+    case 'OWNER':
+      return 100;
+    case 'ADMIN':
+    case 'SUPER_ADMIN':
+      return 90;
+    case 'MANAGER':
+      return 70;
+    case 'FINANCE':
+      return 60;
+    case 'SALES':
+      return 30;
+    default:
+      return 30;
+  }
+}
 
 /**
  * Sync WhatsApp conversations to mark as staff when user is registered
@@ -244,6 +268,7 @@ export async function POST(request: NextRequest) {
 
     // Create user with a temporary password
     // In production, you should generate a secure random password or use invitation token
+    const normalizedRole = role.toUpperCase();
     const user = await prisma.user.create({
       data: {
         tenantId,
@@ -251,7 +276,8 @@ export async function POST(request: NextRequest) {
         firstName,
         lastName: lastName || '',
         phone: normalizedPhone,
-        role: role.toUpperCase(),
+        role: normalizedRole,
+        roleLevel: getRoleLevel(normalizedRole),
         passwordHash: await bcrypt.hash('temporary_password', 10), // In production: generate random password
         emailVerified: false,
       },

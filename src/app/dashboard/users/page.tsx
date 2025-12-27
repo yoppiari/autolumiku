@@ -247,15 +247,36 @@ export default function UsersPage() {
   };
 
   const getRoleBadgeColor = (role: string) => {
-    switch (role) {
+    switch (role.toUpperCase()) {
+      case 'OWNER':
+        return 'bg-amber-100 text-amber-800';
       case 'ADMIN':
         return 'bg-purple-100 text-purple-800';
       case 'MANAGER':
         return 'bg-blue-100 text-blue-800';
+      case 'FINANCE':
+        return 'bg-emerald-100 text-emerald-800';
       case 'SALES':
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role.toUpperCase()) {
+      case 'OWNER':
+        return 'Owner';
+      case 'ADMIN':
+        return 'Admin';
+      case 'MANAGER':
+        return 'Manager';
+      case 'FINANCE':
+        return 'Finance';
+      case 'SALES':
+        return 'Sales';
+      default:
+        return role;
     }
   };
 
@@ -277,10 +298,10 @@ export default function UsersPage() {
         </button>
       </div>
 
-      {/* Stats Cards - 2 cols on mobile, 4 cols on desktop */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-3 flex-shrink-0">
+      {/* Stats Cards - 3 cols on mobile, 6 cols on desktop */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3 mb-3 flex-shrink-0">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
-          <p className="text-[10px] md:text-xs font-medium text-gray-600">Total Staff</p>
+          <p className="text-[10px] md:text-xs font-medium text-gray-600">Total</p>
           {loading ? (
             <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
           ) : (
@@ -289,7 +310,18 @@ export default function UsersPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
-          <p className="text-[10px] md:text-xs font-medium text-gray-600">Admin</p>
+          <p className="text-[10px] md:text-xs font-medium text-amber-600">Owner</p>
+          {loading ? (
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+          ) : (
+            <p className="text-xl md:text-2xl font-bold text-amber-600 mt-1">
+              {stats?.byRole?.OWNER || 0}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-purple-600">Admin</p>
           {loading ? (
             <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
           ) : (
@@ -300,7 +332,7 @@ export default function UsersPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
-          <p className="text-[10px] md:text-xs font-medium text-gray-600">Manager</p>
+          <p className="text-[10px] md:text-xs font-medium text-blue-600">Manager</p>
           {loading ? (
             <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
           ) : (
@@ -311,7 +343,18 @@ export default function UsersPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
-          <p className="text-[10px] md:text-xs font-medium text-gray-600">Sales</p>
+          <p className="text-[10px] md:text-xs font-medium text-emerald-600">Finance</p>
+          {loading ? (
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+          ) : (
+            <p className="text-xl md:text-2xl font-bold text-emerald-600 mt-1">
+              {stats?.byRole?.FINANCE || 0}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-green-600">Sales</p>
           {loading ? (
             <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
           ) : (
@@ -344,8 +387,10 @@ export default function UsersPage() {
             className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">Semua Role</option>
+            <option value="OWNER">Owner</option>
             <option value="ADMIN">Admin</option>
             <option value="MANAGER">Manager</option>
+            <option value="FINANCE">Finance</option>
             <option value="SALES">Sales</option>
           </select>
         </div>
@@ -473,7 +518,7 @@ export default function UsersPage() {
                             user.role
                           )}`}
                         >
-                          {user.role}
+                          {getRoleLabel(user.role)}
                         </span>
                       </td>
                       <td className="hidden md:table-cell px-4 py-2 whitespace-nowrap">
@@ -712,9 +757,14 @@ export default function UsersPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="SALES">Sales</option>
+                    <option value="FINANCE">Finance Accounting</option>
                     <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Admin</option>
+                    <option value="OWNER">Owner</option>
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Sales tidak bisa akses fitur Invoice & Laporan Keuangan
+                  </p>
                 </div>
 
                 <div className="flex justify-end space-x-3 mt-6">
@@ -839,9 +889,14 @@ export default function UsersPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="SALES">Sales</option>
+                    <option value="FINANCE">Finance Accounting</option>
                     <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Admin</option>
+                    <option value="OWNER">Owner</option>
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Sales tidak bisa akses fitur Invoice & Laporan Keuangan
+                  </p>
                 </div>
 
                 <div className="flex justify-end space-x-3 mt-6">

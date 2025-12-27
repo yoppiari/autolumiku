@@ -84,7 +84,9 @@ model User {
   phone        String?
 
   tenantId String?
-  role     String @default("user")
+  // Role: OWNER(100), ADMIN(90), MANAGER(70), FINANCE(60), SALES(30)
+  role      String @default("SALES")
+  roleLevel Int    @default(30) // Permission level for access control
 
   // Email Verification
   emailVerified           Boolean   @default(false)
