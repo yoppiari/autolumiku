@@ -427,8 +427,8 @@ export default function ShowroomDashboardPage() {
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2x2 grid */}
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-2 flex-shrink-0">
+                    {/* Legend - 3 cols for 5 items */}
+                    <div className="grid grid-cols-3 gap-x-1 gap-y-1 mt-2 flex-shrink-0">
                       <div className="flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
                         <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Correct</span>
@@ -442,8 +442,12 @@ export default function ShowroomDashboardPage() {
                         <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Wrong</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0"></span>
+                        <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
                         <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Escalated</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Timeout</span>
                       </div>
                     </div>
                   </Link>

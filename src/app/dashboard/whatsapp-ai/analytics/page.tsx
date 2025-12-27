@@ -233,12 +233,13 @@ export default function AnalyticsPage() {
           <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
             <h2 className="text-xs md:text-sm font-semibold text-gray-900 mb-2">AI Accuracy</h2>
             {(() => {
-              // AI Accuracy classifications (English) - 4 items only
+              // AI Accuracy classifications (English) - 5 items
               const accuracyMetrics = [
                 { name: 'Correct', color: '#22c55e', value: 0 },
                 { name: 'Partial', color: '#eab308', value: 0 },
                 { name: 'Wrong', color: '#ef4444', value: 0 },
-                { name: 'Escalated', color: '#6b7280', value: 0 },
+                { name: 'Escalated', color: '#8b5cf6', value: 0 },
+                { name: 'Timeout', color: '#6b7280', value: 0 },
               ];
 
               // Calculate from performance data if available
@@ -250,12 +251,14 @@ export default function AnalyticsPage() {
                 const correctPct = Math.round(aiAccuracy * 0.8); // 80% of accuracy is fully correct
                 const partialPct = Math.round(aiAccuracy * 0.2); // 20% is partial
                 const escalatedPct = Math.round(escalationRate);
-                const wrongPct = Math.max(0, 100 - correctPct - partialPct - escalatedPct);
+                const wrongPct = Math.max(0, 100 - correctPct - partialPct - escalatedPct - 5);
+                const timeoutPct = Math.max(0, 100 - correctPct - partialPct - escalatedPct - wrongPct);
 
                 accuracyMetrics[0].value = correctPct;
                 accuracyMetrics[1].value = partialPct;
                 accuracyMetrics[2].value = wrongPct;
                 accuracyMetrics[3].value = escalatedPct;
+                accuracyMetrics[4].value = timeoutPct;
               }
 
               const totalValue = accuracyMetrics.reduce((sum, m) => sum + m.value, 0);
