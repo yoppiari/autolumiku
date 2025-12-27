@@ -286,16 +286,16 @@ export default function ShowroomDashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2 md:gap-3 h-full">
-                  {/* AI Performance Card */}
+                <div className="grid grid-cols-4 gap-2 md:gap-3 h-full">
+                  {/* AI Performance Card - 1 col */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
-                    className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
+                    className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col h-full"
                   >
                     <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 truncate">AI Performance</h4>
-                    <div className="flex-1 flex items-center justify-center py-1">
+                    <div className="flex-1 flex items-center justify-center">
                       <div className="relative">
-                        <svg className="w-20 h-20 md:w-28 md:h-28" viewBox="0 0 36 36">
+                        <svg className="w-16 h-16 md:w-24 md:h-24" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           <circle
                             cx="18" cy="18" r="14"
@@ -308,40 +308,40 @@ export default function ShowroomDashboardPage() {
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-base md:text-xl font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
+                          <span className="text-sm md:text-lg font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
                         </div>
                       </div>
                     </div>
                     {/* Legend - 2x2 grid */}
-                    <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 mt-1">
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600">Accuracy</span>
+                    <div className="grid grid-cols-2 gap-x-0.5 gap-y-0.5 mt-1">
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600">Accuracy</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600">Satisfaction</span>
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600">Satisfaction</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600">Resolution</span>
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600">Resolution</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600">Escalation</span>
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600">Escalation</span>
                       </div>
                     </div>
                   </Link>
 
-                  {/* Intent Breakdown Card */}
+                  {/* Intent Breakdown Card - 1 col */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
-                    className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
+                    className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col h-full"
                   >
                     <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 truncate">Intent Breakdown</h4>
-                    <div className="flex-1 flex items-center justify-center py-1">
+                    <div className="flex-1 flex items-center justify-center">
                       <div className="relative">
-                        <svg className="w-20 h-20 md:w-28 md:h-28" viewBox="0 0 36 36">
+                        <svg className="w-16 h-16 md:w-24 md:h-24" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           {analytics?.intentBreakdown && analytics.intentBreakdown.length > 0 ? (
                             (() => {
@@ -368,44 +368,40 @@ export default function ShowroomDashboardPage() {
                           ) : null}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-base md:text-xl font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}</span>
+                          <span className="text-sm md:text-lg font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}</span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2x3 grid */}
-                    <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 mt-1">
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600">Price</span>
+                    {/* Legend - 2x2 grid (4 items only) */}
+                    <div className="grid grid-cols-2 gap-x-0.5 gap-y-0.5 mt-1">
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600">Price</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600">Greeting</span>
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600">Greeting</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600">General</span>
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600">General</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600">Vehicle</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600">Closing</span>
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[9px] text-gray-600">Vehicle</span>
                       </div>
                     </div>
                   </Link>
 
-                  {/* Staff Activity Card */}
+                  {/* Staff Activity Card - 2 cols (wider) */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
-                    className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
+                    className="col-span-2 bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col h-full"
                   >
                     <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 truncate">Staff Activity</h4>
-                    <div className="flex-1 flex items-center justify-center py-1">
-                      {/* Bar Chart */}
-                      <div className="flex items-end gap-2 md:gap-3 h-20 md:h-28">
+                    <div className="flex-1 flex items-center justify-center">
+                      {/* Bar Chart - wider bars */}
+                      <div className="flex items-end gap-3 md:gap-4 h-16 md:h-24">
                         {analytics?.staffActivity && analytics.staffActivity.length > 0 ? (
                           analytics.staffActivity.slice(0, 5).map((staff, idx) => {
                             const maxCommands = Math.max(...analytics.staffActivity.map(s => s.commandCount), 1);
@@ -413,18 +409,18 @@ export default function ShowroomDashboardPage() {
                             return (
                               <div
                                 key={idx}
-                                className="w-4 md:w-6 bg-blue-500 rounded-t transition-all"
+                                className="w-6 md:w-8 bg-blue-500 rounded-t transition-all"
                                 style={{ height: `${Math.max(heightPercent, 10)}%` }}
                                 title={`${staff.staffPhone}: ${staff.commandCount} commands`}
                               ></div>
                             );
                           })
                         ) : (
-                          // Default empty bars
+                          // Default empty bars - wider
                           [1, 2, 3, 4, 5].map((i) => (
                             <div
                               key={i}
-                              className="w-4 md:w-6 bg-gray-300 rounded-t"
+                              className="w-6 md:w-8 bg-gray-300 rounded-t"
                               style={{ height: `${15 + i * 12}%` }}
                             ></div>
                           ))
