@@ -2244,3 +2244,348 @@ model StaffCommandLog {
   @@index([staffPhone, executedAt])
   @@map("staff_command_logs")
 }
+
+// ============================================================================
+// VEHICLE SALES INVOICE & FINANCIAL MANAGEMENT
+// ============================================================================
+
+// Customer data for vehicle sales invoicing
+model SalesCustomer {
+  id       String @id @default(uuid())
+  tenantId String
+
+  // Basic Info
+  name    String
+  type    String @default("individual") // individual, company
+  phone   String
+  email   String?
+  address String? @db.Text
+
+  // Identity
+  nik  String? // NIK for individual
+  npwp String? // NPWP for tax
+
+  // Source tracking
+  source                 String? // whatsapp, walk-in, referral, manual
+  whatsappConversationId String? // Link to WhatsApp conversation if from chat
+
+  // Metadata
+  notes     String? @db.Text
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // User ID who created
+
+  // Relations
+  salesInvoices SalesInvoice[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+  @@index([tenantId, name])
+  @@map("sales_customers")
+}
+
+// Leasing partner master data
+model LeasingPartner {
+  id       String @id @default(uuid())
+  tenantId String
+
+  // Basic Info
+  name String // Adira Finance, FIFGROUP, etc.
+  code String // ADIRA, FIF, BAF, etc.
+
+  // Interest Rates
+  interestRateMin Float @default(0) // Minimum interest rate %
+  interestRateMax Float @default(0) // Maximum interest rate %
+  interestType    String @default("flat") // flat, effective
+
+  // Terms
+  tenorOptions String @default("12,24,36,48,60") // Comma-separated months
+  dpMinPercent Float  @default(20) // Minimum down payment %
+  adminFee     Float  @default(0) // Fixed admin fee
+
+  // Contact
+  contactPerson String?
+  phone         String?
+  email         String?
+
+  // Status
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  creditDetails SalesInvoiceCreditDetail[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("leasing_partners")
+}
+
+// Main Vehicle Sales Invoice
+model SalesInvoice {
+  id       String @id @default(uuid())
+  tenantId String
+
+  // Invoice Number (auto-generated, sequential)
+  invoiceNumber String @unique // Format: INV/TENANT/YYYY/MM/0001
+
+  // Parties
+  customerId  String
+  vehicleId   String?
+  salesUserId String? // Sales who made the sale
+
+  // Dates
+  invoiceDate DateTime @default(now())
+  dueDate     DateTime
+
+  // Vehicle Details (snapshot at time of sale)
+  vehicleMake        String?
+  vehicleModel       String?
+  vehicleYear        Int?
+  vehicleColor       String?
+  vehiclePlateNumber String?
+  vehicleFrameNumber String?
+  vehicleEngineNumber String?
+  vehicleMileage     Int?
+
+  // Amounts
+  vehiclePrice   Float @default(0) // Base vehicle price
+  discountAmount Float @default(0)
+  discountNote   String?
+
+  // Tax (for future PKP support)
+  dpp          Float @default(0) // Dasar Pengenaan Pajak
+  ppnPercent   Float @default(0) // PPN percentage (11%)
+  ppnAmount    Float @default(0)
+  ppnbmPercent Float @default(0) // PPnBM for luxury
+  ppnbmAmount  Float @default(0)
+
+  // Additional Fees
+  adminFee     Float @default(0)
+  transferFee  Float @default(0) // Biaya balik nama
+  otherFee     Float @default(0)
+  otherFeeNote String?
+
+  // Total
+  grandTotal Float @default(0)
+  paidAmount Float @default(0)
+
+  // Payment
+  paymentMethod String @default("cash") // cash, transfer, credit
+  status        String @default("draft") // draft, sent, unpaid, partial, paid, void
+
+  // Void handling
+  voidReason String?
+  voidedAt   DateTime?
+  voidedBy   String?
+
+  // Notes
+  notes           String? @db.Text
+  termsConditions String? @db.Text
+
+  // Lock after paid (immutable)
+  lockedAt DateTime?
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  // Relations
+  customer     SalesCustomer             @relation(fields: [customerId], references: [id])
+  payments     SalesInvoicePayment[]
+  creditDetail SalesInvoiceCreditDetail?
+  commission   SalesCommission?
+  auditLogs    SalesInvoiceAuditLog[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, invoiceDate])
+  @@index([customerId])
+  @@index([salesUserId])
+  @@map("sales_invoices")
+}
+
+// Credit/Leasing details for vehicle sales invoice
+model SalesInvoiceCreditDetail {
+  id        String @id @default(uuid())
+  invoiceId String @unique
+
+  // Leasing Partner
+  leasingPartnerId String
+
+  // Down Payment
+  dpAmount  Float
+  dpPercent Float
+
+  // Credit Terms
+  principalAmount Float // Amount to be financed
+  tenor           Int   // Months
+  interestRate    Float // Annual interest rate %
+  interestType    String @default("flat") // flat, effective
+
+  // Calculated
+  monthlyInstallment Float
+  totalInterest      Float
+  totalPayment       Float
+
+  // Approval
+  leasingApprovalNumber String?
+  approvalDate          DateTime?
+  disbursementDate      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  invoice        SalesInvoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  leasingPartner LeasingPartner @relation(fields: [leasingPartnerId], references: [id])
+
+  @@index([leasingPartnerId])
+  @@map("sales_invoice_credit_details")
+}
+
+// Payment records for vehicle sales invoice
+model SalesInvoicePayment {
+  id        String @id @default(uuid())
+  invoiceId String
+
+  // Payment Details
+  paymentNumber   Int    // Sequential per invoice (1, 2, 3...)
+  amount          Float
+  method          String // cash, transfer, check, leasing_disbursement
+  paymentType     String @default("regular") // dp, installment, settlement, regular
+
+  // Bank Transfer Details
+  bankName        String?
+  accountNumber   String?
+  referenceNumber String?
+
+  // Proof
+  proofUrl String? @db.Text // URL to payment proof image
+
+  // Timestamps
+  receivedAt DateTime @default(now())
+  receivedBy String? // User ID who recorded
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  invoice SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("sales_invoice_payments")
+}
+
+// Commission configuration per tenant
+model CommissionConfig {
+  id       String @id @default(uuid())
+  tenantId String
+
+  name String @default("Default Commission")
+
+  // Type
+  type String @default("percentage_price") // fixed, percentage_price, tiered
+
+  // Fixed Amount
+  fixedAmount Float @default(0)
+
+  // Percentage
+  percentageRate Float @default(1) // in %
+
+  // Tiered Rules (JSON)
+  // [{ "minUnits": 1, "maxUnits": 5, "rate": 1.0, "bonus": 200000 }, ...]
+  tieredRules String? @db.Text
+
+  // Conditions
+  appliesTo   String @default("all") // all, cash_only, credit_only
+  vehicleType String @default("all") // all, car, motorcycle
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("commission_configs")
+}
+
+// Sales commission per vehicle sale
+model SalesCommission {
+  id        String @id @default(uuid())
+  tenantId  String
+  invoiceId String @unique
+
+  salesUserId String // Sales who earned the commission
+
+  // Calculation
+  calculationType  String // fixed, percentage_price
+  baseAmount       Float  // Sale price
+  rate             Float? // Percentage rate if applicable
+  commissionAmount Float
+
+  // Bonus (from tiered)
+  bonusAmount Float @default(0)
+  totalAmount Float // commissionAmount + bonusAmount
+
+  // Status
+  status String @default("pending") // pending, approved, rejected, disbursed
+
+  // Approval
+  approvedBy      String?
+  approvedAt      DateTime?
+  rejectedBy      String?
+  rejectedAt      DateTime?
+  rejectionReason String?
+
+  // Disbursement
+  disbursedAt        DateTime?
+  disbursedBy        String?
+  disbursementMethod String? // cash, transfer
+  disbursementRef    String?
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  invoice SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([salesUserId])
+  @@map("sales_commissions")
+}
+
+// Audit log for vehicle sales invoice changes
+model SalesInvoiceAuditLog {
+  id        String @id @default(uuid())
+  invoiceId String
+
+  // Action
+  action   String // create, update, status_change, payment, void, print, download
+  field    String? // Field that was changed
+  oldValue String? @db.Text
+  newValue String? @db.Text
+
+  // Performer
+  performedBy String
+  performedAt DateTime @default(now())
+
+  // Context
+  ipAddress String?
+  userAgent String? @db.Text
+
+  // Relations
+  invoice SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([performedAt])
+  @@map("sales_invoice_audit_logs")
+}
+
