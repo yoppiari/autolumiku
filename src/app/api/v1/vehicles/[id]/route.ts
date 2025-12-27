@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { VehicleStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 // Reserved route names that should not be treated as vehicle IDs
 const RESERVED_ROUTES = ['update-ids', 'ai-identify', 'search', 'bulk'];
@@ -36,6 +37,15 @@ export async function GET(
     return NextResponse.json(
       { error: auth.error || 'Unauthorized' },
       { status: 401 }
+    );
+  }
+
+  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
+  // Per Excel access matrix: only Staff, Admin, Owner, Super Admin can access
+  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
+    return NextResponse.json(
+      { error: 'Forbidden - Your role cannot access vehicles' },
+      { status: 403 }
     );
   }
 
@@ -123,8 +133,17 @@ export async function PUT(
     );
   }
 
-  // Check permission - admin, manager, and sales can update vehicles
-  if (!['admin', 'super_admin', 'manager', 'staff', 'sales'].includes(auth.user.role.toLowerCase())) {
+  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
+  // Per Excel access matrix: only Staff, Admin, Owner, Super Admin can update
+  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
+    return NextResponse.json(
+      { error: 'Forbidden - Your role cannot access vehicles' },
+      { status: 403 }
+    );
+  }
+
+  // Check permission - admin, owner, and sales/staff can update vehicles
+  if (!['admin', 'super_admin', 'owner', 'staff', 'sales'].includes(auth.user.role.toLowerCase())) {
     return NextResponse.json(
       { error: 'Forbidden - No permission to update vehicles' },
       { status: 403 }
@@ -292,10 +311,19 @@ export async function DELETE(
     );
   }
 
-  // Check permission - only admin and manager can delete vehicles
-  if (!['admin', 'super_admin', 'manager'].includes(auth.user.role.toLowerCase())) {
+  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
+  // Per Excel access matrix: only Admin, Owner, Super Admin can delete
+  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
     return NextResponse.json(
-      { error: 'Forbidden - Admin or Manager access required to delete vehicles' },
+      { error: 'Forbidden - Your role cannot access vehicles' },
+      { status: 403 }
+    );
+  }
+
+  // Check permission - only admin, owner, and super_admin can delete vehicles
+  if (!['admin', 'super_admin', 'owner'].includes(auth.user.role.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Forbidden - Admin or Owner access required to delete vehicles' },
       { status: 403 }
     );
   }

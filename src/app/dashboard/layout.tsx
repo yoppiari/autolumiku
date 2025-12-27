@@ -1,10 +1,19 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import DashboardErrorBoundary from '@/components/dashboard/ErrorBoundary';
 import SessionManager from '@/components/auth/SessionManager';
+import { ROLE_LEVELS, canAccessPage } from '@/lib/rbac';
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: string;
+  minRole: number;
+  excludeRoles?: number[];
+}
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -83,15 +92,38 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     window.location.href = '/login';
   }, []);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
-    { name: 'Kendaraan', href: '/dashboard/vehicles', icon: '🚗' },
-    { name: 'Invoice', href: '/dashboard/invoices', icon: '📄' },
-    { name: 'Tim', href: '/dashboard/users', icon: '👥' },
-    { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬' },
-    { name: 'Blog', href: '/dashboard/blog', icon: '📝' },
-    { name: 'Pengaturan', href: '/dashboard/settings', icon: '⚙️' },
+  // All navigation items with role requirements based on Excel access matrix
+  const allNavigation: NavItem[] = [
+    { name: 'Dashboard', href: '/dashboard', icon: '🏠', minRole: ROLE_LEVELS.SALES },
+    // Kendaraan - Staff, Admin+ (exclude Manager and Finance)
+    { name: 'Kendaraan', href: '/dashboard/vehicles', icon: '🚗', minRole: ROLE_LEVELS.SALES, excludeRoles: [ROLE_LEVELS.MANAGER, ROLE_LEVELS.FINANCE] },
+    // Invoice - Finance+
+    { name: 'Invoice', href: '/dashboard/invoices', icon: '📄', minRole: ROLE_LEVELS.FINANCE },
+    // Analytics - Manager+ (exclude Finance)
+    { name: 'Analytics', href: '/dashboard/analytics', icon: '📊', minRole: ROLE_LEVELS.MANAGER, excludeRoles: [ROLE_LEVELS.FINANCE] },
+    // Tim - Admin+ only
+    { name: 'Tim', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.ADMIN },
+    // WhatsApp AI - Admin+ only (not Manager)
+    { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬', minRole: ROLE_LEVELS.ADMIN },
+    // Blog - visible to ALL roles
+    { name: 'Blog', href: '/dashboard/blog', icon: '📝', minRole: ROLE_LEVELS.SALES },
+    // Pengaturan - Admin+ only
+    { name: 'Pengaturan', href: '/dashboard/settings', icon: '⚙️', minRole: ROLE_LEVELS.ADMIN },
   ];
+
+  // Get user's role level
+  const userRoleLevel = user?.roleLevel || ROLE_LEVELS.SALES;
+
+  // Filter navigation based on user's role
+  const navigation = useMemo(() => {
+    return allNavigation.filter((item) => {
+      // Check minimum role
+      if (userRoleLevel < item.minRole) return false;
+      // Check excluded roles
+      if (item.excludeRoles?.includes(userRoleLevel)) return false;
+      return true;
+    });
+  }, [userRoleLevel]);
 
   return (
     <DashboardErrorBoundary>

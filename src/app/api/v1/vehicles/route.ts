@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { VehicleStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 /**
  * GET /api/v1/vehicles
@@ -25,6 +26,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { error: auth.error || 'Unauthorized' },
       { status: 401 }
+    );
+  }
+
+  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
+  // Per Excel access matrix: only Staff, Admin, Owner, Super Admin can access
+  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
+    return NextResponse.json(
+      { error: 'Forbidden - Your role cannot access vehicles' },
+      { status: 403 }
     );
   }
 
@@ -297,8 +307,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Check permission - admin, manager, and sales can create vehicles
-  if (!['admin', 'super_admin', 'manager', 'staff', 'sales'].includes(auth.user.role.toLowerCase())) {
+  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
+  // Per Excel access matrix: only Staff, Admin, Owner, Super Admin can create
+  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
+    return NextResponse.json(
+      { error: 'Forbidden - Your role cannot access vehicles' },
+      { status: 403 }
+    );
+  }
+
+  // Check permission - admin, owner, and sales/staff can create vehicles
+  if (!['admin', 'super_admin', 'owner', 'staff', 'sales'].includes(auth.user.role.toLowerCase())) {
     return NextResponse.json(
       { error: 'Forbidden - No permission to create vehicles' },
       { status: 403 }
