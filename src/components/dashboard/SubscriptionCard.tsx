@@ -113,10 +113,10 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
         </div>
 
         {/* Progress Bar */}
-        <div>
-          <div className="bg-gray-100 rounded-full h-1 md:h-1.5 overflow-hidden">
+        <div className="px-2 md:px-4">
+          <div className="bg-gray-100 rounded-full h-1.5 md:h-2 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-1 md:h-1.5 rounded-full transition-all"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 md:h-2 rounded-full transition-all"
               style={{ width: `${Math.max(0, Math.min(100, (days / 365) * 100))}%` }}
             ></div>
           </div>

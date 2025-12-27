@@ -296,7 +296,7 @@ export default function ShowroomDashboardPage() {
                     <div className="flex-1 flex items-center justify-center">
                       <div className="relative">
                         {/* Donut Chart */}
-                        <svg className="w-14 h-14 md:w-20 md:h-20" viewBox="0 0 36 36">
+                        <svg className="w-16 h-16 md:w-24 md:h-24" viewBox="0 0 36 36">
                           {/* Background circle */}
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="4" />
                           {/* Accuracy segment */}
@@ -311,7 +311,7 @@ export default function ShowroomDashboardPage() {
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xs md:text-sm font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
+                          <span className="text-sm md:text-base font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
                         </div>
                       </div>
                     </div>
@@ -345,7 +345,7 @@ export default function ShowroomDashboardPage() {
                     <div className="flex-1 flex items-center justify-center">
                       <div className="relative">
                         {/* Donut Chart */}
-                        <svg className="w-14 h-14 md:w-20 md:h-20" viewBox="0 0 36 36">
+                        <svg className="w-16 h-16 md:w-24 md:h-24" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="4" />
                           {analytics?.intentBreakdown && analytics.intentBreakdown.length > 0 ? (
                             (() => {
@@ -372,7 +372,7 @@ export default function ShowroomDashboardPage() {
                           ) : null}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xs md:text-sm font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}</span>
+                          <span className="text-sm md:text-base font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}</span>
                         </div>
                       </div>
                     </div>
