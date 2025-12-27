@@ -9,17 +9,18 @@ import { verifyAccessToken, extractTokenFromHeader, type JWTPayload } from './jw
 
 /**
  * Compute roleLevel from role string
- * OWNER(100), ADMIN(90), SUPER_ADMIN(90), MANAGER(70), FINANCE(60), SALES(30)
+ * SUPER_ADMIN(110), OWNER(100), ADMIN(90), MANAGER(70), FINANCE(60), SALES/STAFF(30)
  */
 export function getRoleLevelFromRole(role: string): number {
   const normalizedRole = role.toUpperCase();
   switch (normalizedRole) {
+    case 'SUPER_ADMIN': return 110;
     case 'OWNER': return 100;
     case 'ADMIN': return 90;
-    case 'SUPER_ADMIN': return 90;
     case 'MANAGER': return 70;
     case 'FINANCE': return 60;
     case 'SALES': return 30;
+    case 'STAFF': return 30;
     default: return 30;
   }
 }

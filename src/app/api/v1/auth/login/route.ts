@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { generateTokenPair } from '@/lib/auth/jwt';
-import { getUserPermissions } from '@/lib/auth/middleware';
+import { getUserPermissions, getRoleLevelFromRole } from '@/lib/auth/middleware';
 
 // Self-healing: ensure roleLevel column exists
 async function ensureRoleLevelColumn(): Promise<void> {
@@ -21,14 +21,14 @@ async function ensureRoleLevelColumn(): Promise<void> {
     // Update roleLevel for existing users based on role
     await prisma.$executeRaw`
       UPDATE "users" SET "roleLevel" = CASE
+        WHEN UPPER("role") = 'SUPER_ADMIN' THEN 110
         WHEN UPPER("role") = 'OWNER' THEN 100
         WHEN UPPER("role") = 'ADMIN' THEN 90
-        WHEN UPPER("role") = 'SUPER_ADMIN' THEN 90
         WHEN UPPER("role") = 'MANAGER' THEN 70
         WHEN UPPER("role") = 'FINANCE' THEN 60
         ELSE 30
       END
-      WHERE "roleLevel" = 30;
+      WHERE "roleLevel" = 30 OR "roleLevel" IS NULL;
     `;
     console.log('[Login] roleLevel column verified/created');
   } catch (err) {
@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
         firstName: true,
         lastName: true,
         role: true,
+        roleLevel: true,
         tenantId: true,
         emailVerified: true,
         failedLoginAttempts: true,
@@ -158,6 +159,9 @@ export async function POST(request: NextRequest) {
     });
     console.log('[Login] Tokens generated successfully');
 
+    // Compute roleLevel from role if not set in database
+    const roleLevel = user.roleLevel ?? getRoleLevelFromRole(user.role);
+
     // Return success response
     return NextResponse.json({
       success: true,
@@ -169,6 +173,7 @@ export async function POST(request: NextRequest) {
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
+          roleLevel: roleLevel,
           tenantId: user.tenantId,
           emailVerified: user.emailVerified,
         },
