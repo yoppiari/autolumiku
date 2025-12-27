@@ -8,15 +8,14 @@ echo "Running database migrations..."
 if npx prisma migrate deploy; then
   echo "Migrations applied successfully"
 else
-  echo "Migration warning - checking if database is usable..."
+  echo "Migration warning - will attempt schema fixes..."
 fi
 
-# Ensure critical columns exist (fallback for migration issues)
+# Ensure critical schema elements exist (fallback for migration issues)
 echo "Verifying database schema..."
-npx prisma db execute --stdin <<EOF || true
-ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "roleLevel" INTEGER NOT NULL DEFAULT 30;
-UPDATE "users" SET "roleLevel" = 30 WHERE "roleLevel" IS NULL;
-EOF
+if [ -f ./prisma/ensure-schema.sql ]; then
+  npx prisma db execute --file ./prisma/ensure-schema.sql || echo "Schema verification completed with warnings"
+fi
 
 echo "Starting application..."
 
