@@ -43,15 +43,17 @@ export default function VehiclesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'price'>('date');
 
-  // Access guard: Block FINANCE (60) - they cannot access vehicles
+  // Access guard: Block FINANCE (60) and MANAGER (70) - they cannot access vehicles
+  // Per Excel matrix: Staff=Y, Finance=N, Manager=N, Admin=Y, Owner=Y
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES;
 
-      // FINANCE (60) cannot access vehicles page
-      if (roleLevel === ROLE_LEVELS.FINANCE) {
+      // FINANCE (60) and MANAGER (70) cannot access vehicles page
+      // Admin (90), Owner (100), Super Admin (110), Staff (30) CAN access
+      if (roleLevel === ROLE_LEVELS.FINANCE || roleLevel === ROLE_LEVELS.MANAGER) {
         setAccessDenied(true);
         setTimeout(() => {
           router.push('/dashboard');

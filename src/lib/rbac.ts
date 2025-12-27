@@ -2,13 +2,21 @@
  * Role-Based Access Control (RBAC) Utility
  * Centralized permission constants and helper functions for Prima Mobil dashboard
  *
- * Access Matrix based on criteria table:
- * - Staff (SALES): Vehicle operations, Blog view
- * - Finance: Invoice operations, Blog view
- * - Manager: Analytics, Invoice (no report), Blog view
- * - Admin: Team management, WhatsApp AI, Blog management
- * - Owner: Full access
- * - Super Admin: Platform-wide access
+ * OFFICIAL ACCESS MATRIX (from Excel criteria table):
+ * ┌─────────────┬───────┬─────────┬─────────┬───────┬───────┬─────────────┐
+ * │ Feature     │ Staff │ Finance │ Manager │ Admin │ Owner │ Super Admin │
+ * ├─────────────┼───────┼─────────┼─────────┼───────┼───────┼─────────────┤
+ * │ Kendaraan   │   Y   │    N    │    N    │   Y   │   Y   │      Y      │
+ * │ Invoice     │   N   │    Y    │    Y    │   Y   │   Y   │      Y      │
+ * │ Analytics   │   N   │    N    │    Y    │   Y   │   Y   │      Y      │
+ * │ Tim         │   N   │    N    │    N    │   Y   │   Y   │      Y      │
+ * │ WhatsApp AI │   N   │    N    │    N    │   Y   │   Y   │      Y      │
+ * │ Blog (view) │   Y   │    Y    │    Y    │   Y   │   Y   │      Y      │
+ * │ Blog (mgmt) │   N   │    N    │    N    │   Y   │   Y   │      Y      │
+ * │ Settings    │   N   │    N    │    N    │   Y   │   Y   │      Y      │
+ * └─────────────┴───────┴─────────┴─────────┴───────┴───────┴─────────────┘
+ *
+ * Role Levels: Staff=30, Finance=60, Manager=70, Admin=90, Owner=100, Super Admin=110
  */
 
 // Role levels - higher number = more access
@@ -196,7 +204,7 @@ export function getRoleName(roleLevel: number): string {
 /**
  * Dashboard card visibility based on role (Excel access matrix)
  *
- * Total Kendaraan: Staff √, Finance ×, Manager √, Admin+ √
+ * Total Kendaraan: Staff √, Finance ×, Manager ×, Admin+ √
  * Analytics: Staff ×, Finance ×, Manager √, Admin+ √
  * Tim Showroom: Staff ×, Finance ×, Manager ×, Admin+ √
  * Invoice: Staff ×, Finance √, Manager √, Admin+ √
