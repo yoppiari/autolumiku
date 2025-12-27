@@ -45,9 +45,6 @@ export const PAGE_ACCESS: Record<string, { minRole: number; excludeRoles?: numbe
   // Dashboard - all roles can access
   '/dashboard': { minRole: ROLE_LEVELS.SALES },
 
-  // Analytics - Manager+ only, Finance excluded
-  '/dashboard/analytics': { minRole: ROLE_LEVELS.MANAGER, excludeRoles: [ROLE_LEVELS.FINANCE] },
-
   // Tim/Users - Admin+ only
   '/dashboard/users': { minRole: ROLE_LEVELS.ADMIN },
 

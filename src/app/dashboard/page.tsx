@@ -289,13 +289,13 @@ export default function ShowroomDashboardPage() {
 
       {/* Main Content - Analytics & Subscription Row */}
       <div className={`grid gap-2 flex-shrink-0 ${canSeeAnalytics ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1'}`}>
-        {/* Left: Analytics (MANAGER+ only) */}
+        {/* Left: Analytics (MANAGER+ only) - now links to WhatsApp AI analytics */}
         {canSeeAnalytics && (
         <div className="md:col-span-2 order-2 md:order-1">
           <div className="bg-white rounded-lg border border-gray-200 flex flex-col">
             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <h3 className="text-base md:text-lg font-bold text-gray-800">Analytics WhatsApp AI</h3>
-              <Link href="/dashboard/analytics" className="text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium">
+              <Link href="/dashboard/whatsapp-ai/analytics" className="text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium">
                 Lihat Detail →
               </Link>
             </div>
@@ -504,17 +504,6 @@ export default function ShowroomDashboardPage() {
                   <span className="text-lg md:text-2xl">🚗</span>
                 </div>
                 <span className="text-[10px] md:text-sm font-semibold text-blue-800 group-hover:text-blue-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Kendaraan</span>
-              </Link>
-            )}
-            {canSeeAnalytics && (
-              <Link
-                href="/dashboard/analytics"
-                className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-all group border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-lg min-w-[70px] md:min-w-0"
-              >
-                <div className="w-9 h-9 md:w-12 md:h-12 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center transition-colors border border-emerald-300 flex-shrink-0">
-                  <span className="text-lg md:text-2xl">📊</span>
-                </div>
-                <span className="text-[10px] md:text-sm font-semibold text-emerald-800 group-hover:text-emerald-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Analytics</span>
               </Link>
             )}
             {canSeeTim && (

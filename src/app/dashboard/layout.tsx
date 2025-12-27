@@ -93,14 +93,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   // All navigation items with role requirements based on Excel access matrix
+  // NOTE: Analytics moved to WhatsApp AI page (/dashboard/whatsapp-ai/analytics)
   const allNavigation: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠', minRole: ROLE_LEVELS.SALES },
     // Kendaraan - Staff, Admin+ (exclude Manager and Finance)
     { name: 'Kendaraan', href: '/dashboard/vehicles', icon: '🚗', minRole: ROLE_LEVELS.SALES, excludeRoles: [ROLE_LEVELS.MANAGER, ROLE_LEVELS.FINANCE] },
     // Invoice - Finance+
     { name: 'Invoice', href: '/dashboard/invoices', icon: '📄', minRole: ROLE_LEVELS.FINANCE },
-    // Analytics - Manager+ (exclude Finance)
-    { name: 'Analytics', href: '/dashboard/analytics', icon: '📊', minRole: ROLE_LEVELS.MANAGER, excludeRoles: [ROLE_LEVELS.FINANCE] },
     // Tim - Admin+ only
     { name: 'Tim', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.ADMIN },
     // WhatsApp AI - Admin+ only (not Manager)
