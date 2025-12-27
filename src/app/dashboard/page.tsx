@@ -197,7 +197,7 @@ export default function ShowroomDashboardPage() {
       emoji: '💰',
       gradient: 'from-amber-500 to-amber-600',
       bgLight: 'bg-amber-50',
-      href: '/dashboard/vehicles?status=SOLD',
+      href: '/dashboard/invoices',
     },
   ];
 
