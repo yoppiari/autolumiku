@@ -525,8 +525,16 @@ export default function AnalyticsPage() {
                       <span className="text-xs text-gray-600">Resolution {whatsappAnalytics.performance.resolutionRate}%</span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                      <span className="text-xs text-gray-600">Response {whatsappAnalytics.overview.aiResponseRate}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-red-500"></span>
                       <span className="text-xs text-gray-600">Escalation {whatsappAnalytics.overview.escalationRate}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-cyan-500"></span>
+                      <span className="text-xs text-gray-600">Avg Time {whatsappAnalytics.overview.avgResponseTime}s</span>
                     </div>
                   </div>
                 </div>
@@ -569,17 +577,32 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                   </div>
-                  {/* Legend */}
+                  {/* Legend - always show standard intents */}
                   <div className="grid grid-cols-2 gap-2 mt-4">
-                    {whatsappAnalytics.intentBreakdown?.slice(0, 6).map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: intentColors[item.intent.toLowerCase()] || '#6b7280' }}
-                        ></span>
-                        <span className="text-xs text-gray-600 capitalize">{item.intent} {item.percentage}%</span>
-                      </div>
-                    ))}
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                      <span className="text-xs text-gray-600">Greeting {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'greeting')?.percentage || 0}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                      <span className="text-xs text-gray-600">Vehicle {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'vehicle')?.percentage || 0}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-purple-500"></span>
+                      <span className="text-xs text-gray-600">Price {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'price')?.percentage || 0}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                      <span className="text-xs text-gray-600">General {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'general')?.percentage || 0}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                      <span className="text-xs text-gray-600">Closing {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'closing')?.percentage || 0}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-gray-500"></span>
+                      <span className="text-xs text-gray-600">Unknown {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'unknown')?.percentage || 0}%</span>
+                    </div>
                   </div>
                 </div>
 
@@ -617,15 +640,15 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                   </div>
-                  {/* Legend */}
+                  {/* Legend - standardized colors */}
                   <div className="grid grid-cols-2 gap-2 mt-4">
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-green-500"></span>
                       <span className="text-xs text-gray-600">Correct {whatsappAnalytics.performance.aiAccuracy}%</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
-                      <span className="text-xs text-gray-600">Partial</span>
+                      <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                      <span className="text-xs text-gray-600">Partial 0%</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-red-500"></span>
@@ -633,30 +656,38 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-                      <span className="text-xs text-gray-600">Escalated</span>
+                      <span className="text-xs text-gray-600">Escalated {whatsappAnalytics.overview.escalationRate}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                      <span className="text-xs text-gray-600">Timeout 0%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-gray-400"></span>
+                      <span className="text-xs text-gray-600">No Response 0%</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Staff Activity */}
-              {whatsappAnalytics.staffActivity && whatsappAnalytics.staffActivity.length > 0 && (
-                <div className="bg-white rounded-lg shadow">
-                  <div className="p-4 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Staff Activity</h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff Phone</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Commands</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Success Rate</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Last Active</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {whatsappAnalytics.staffActivity.map((staff, idx) => (
+              {/* Staff Activity - Always show table */}
+              <div className="bg-white rounded-lg shadow">
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Staff Activity</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff Phone</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Commands</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Success Rate</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Last Active</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {whatsappAnalytics.staffActivity && whatsappAnalytics.staffActivity.length > 0 ? (
+                        whatsappAnalytics.staffActivity.map((staff, idx) => (
                           <tr key={idx}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{staff.staffPhone}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">{staff.commandCount}</td>
@@ -667,23 +698,18 @@ export default function AnalyticsPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">{staff.lastActive}</td>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                            Belum ada aktivitas staff tercatat
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              )}
-
-              {/* Show placeholder if no staff activity */}
-              {(!whatsappAnalytics.staffActivity || whatsappAnalytics.staffActivity.length === 0) && (
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Staff Activity</h3>
-                  <div className="text-center py-8 text-gray-500">
-                    <div className="text-4xl mb-3">👥</div>
-                    <p className="text-sm">Belum ada aktivitas staff tercatat</p>
-                  </div>
-                </div>
-              )}
+              </div>
             </>
           )}
         </div>
