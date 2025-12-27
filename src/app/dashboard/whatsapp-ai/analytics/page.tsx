@@ -233,13 +233,13 @@ export default function AnalyticsPage() {
           <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
             <h2 className="text-xs md:text-sm font-semibold text-gray-900 mb-2">AI Accuracy</h2>
             {(() => {
-              // AI Accuracy classifications
+              // AI Accuracy classifications (English)
               const accuracyMetrics = [
-                { name: 'Benar', color: '#22c55e', value: 0 }, // Correct response
-                { name: 'Sebagian', color: '#eab308', value: 0 }, // Partial match
-                { name: 'Salah', color: '#ef4444', value: 0 }, // Wrong response
-                { name: 'Eskalasi', color: '#8b5cf6', value: 0 }, // Escalated to human
-                { name: 'Timeout', color: '#6b7280', value: 0 }, // No response/timeout
+                { name: 'Correct', color: '#22c55e', value: 0 },
+                { name: 'Partial', color: '#eab308', value: 0 },
+                { name: 'Wrong', color: '#ef4444', value: 0 },
+                { name: 'Escalated', color: '#8b5cf6', value: 0 },
+                { name: 'Timeout', color: '#6b7280', value: 0 },
               ];
 
               // Calculate from performance data if available
