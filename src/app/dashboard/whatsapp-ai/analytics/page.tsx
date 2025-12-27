@@ -493,17 +493,20 @@ export default function AnalyticsPage() {
                   <div className="flex items-center justify-center py-4">
                     <div className="relative">
                       <svg className="w-32 h-32" viewBox="0 0 36 36">
+                        {/* Background circle - gray */}
                         <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                        {/* Accuracy - Green */}
-                        <circle
-                          cx="18" cy="18" r="14"
-                          fill="none"
-                          stroke="#22c55e"
-                          strokeWidth="3.5"
-                          strokeDasharray={`${(whatsappAnalytics.performance.aiAccuracy / 100) * 88} 88`}
-                          strokeLinecap="round"
-                          transform="rotate(-90 18 18)"
-                        />
+                        {/* Only show colored segments if value > 0 */}
+                        {whatsappAnalytics.performance.aiAccuracy > 0 && (
+                          <circle
+                            cx="18" cy="18" r="14"
+                            fill="none"
+                            stroke="#22c55e"
+                            strokeWidth="3.5"
+                            strokeDasharray={`${(whatsappAnalytics.performance.aiAccuracy / 100) * 88} 88`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 18 18)"
+                          />
+                        )}
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-2xl font-bold text-gray-700">{whatsappAnalytics.performance.aiAccuracy}%</span>
@@ -545,11 +548,15 @@ export default function AnalyticsPage() {
                   <div className="flex items-center justify-center py-4">
                     <div className="relative">
                       <svg className="w-32 h-32" viewBox="0 0 36 36">
+                        {/* Background circle - gray */}
                         <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                        {whatsappAnalytics.intentBreakdown && whatsappAnalytics.intentBreakdown.length > 0 ? (
+                        {/* Only render segments if data exists and has percentage > 0 */}
+                        {whatsappAnalytics.intentBreakdown && whatsappAnalytics.intentBreakdown.length > 0 &&
+                         whatsappAnalytics.intentBreakdown.some(i => i.percentage > 0) ? (
                           (() => {
                             let offset = 0;
                             return whatsappAnalytics.intentBreakdown.slice(0, 5).map((item, idx) => {
+                              if (item.percentage <= 0) return null;
                               const dashLength = (item.percentage / 100) * 88;
                               const segment = (
                                 <circle
@@ -572,7 +579,9 @@ export default function AnalyticsPage() {
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-2xl font-bold text-gray-700">
-                          {whatsappAnalytics.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}
+                          {whatsappAnalytics.intentBreakdown && whatsappAnalytics.intentBreakdown.length > 0
+                            ? `${Math.round(whatsappAnalytics.intentBreakdown.reduce((sum, i) => sum + i.percentage, 0))}%`
+                            : '0%'}
                         </span>
                       </div>
                     </div>
@@ -612,35 +621,40 @@ export default function AnalyticsPage() {
                   <div className="flex items-center justify-center py-4">
                     <div className="relative">
                       <svg className="w-32 h-32" viewBox="0 0 36 36">
+                        {/* Background circle - gray */}
                         <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                        {/* Correct responses - Green */}
-                        <circle
-                          cx="18" cy="18" r="14"
-                          fill="none"
-                          stroke="#22c55e"
-                          strokeWidth="3.5"
-                          strokeDasharray={`${(whatsappAnalytics.performance.aiAccuracy / 100) * 88} 88`}
-                          strokeLinecap="round"
-                          transform="rotate(-90 18 18)"
-                        />
-                        {/* Wrong/Escalated - show remaining */}
-                        <circle
-                          cx="18" cy="18" r="14"
-                          fill="none"
-                          stroke="#ef4444"
-                          strokeWidth="3.5"
-                          strokeDasharray={`${((100 - whatsappAnalytics.performance.aiAccuracy) / 100) * 88} 88`}
-                          strokeDashoffset={`${-(whatsappAnalytics.performance.aiAccuracy / 100) * 88}`}
-                          strokeLinecap="round"
-                          transform="rotate(-90 18 18)"
-                        />
+                        {/* Only show colored segments if values > 0 */}
+                        {whatsappAnalytics.performance.aiAccuracy > 0 && (
+                          <circle
+                            cx="18" cy="18" r="14"
+                            fill="none"
+                            stroke="#22c55e"
+                            strokeWidth="3.5"
+                            strokeDasharray={`${(whatsappAnalytics.performance.aiAccuracy / 100) * 88} 88`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 18 18)"
+                          />
+                        )}
+                        {/* Wrong segment - only if accuracy < 100 and there's some data */}
+                        {whatsappAnalytics.performance.aiAccuracy < 100 && whatsappAnalytics.overview.totalMessages > 0 && (
+                          <circle
+                            cx="18" cy="18" r="14"
+                            fill="none"
+                            stroke="#ef4444"
+                            strokeWidth="3.5"
+                            strokeDasharray={`${((100 - whatsappAnalytics.performance.aiAccuracy) / 100) * 88} 88`}
+                            strokeDashoffset={`${-(whatsappAnalytics.performance.aiAccuracy / 100) * 88}`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 18 18)"
+                          />
+                        )}
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-2xl font-bold text-gray-700">{whatsappAnalytics.performance.aiAccuracy}%</span>
                       </div>
                     </div>
                   </div>
-                  {/* Legend - standardized colors */}
+                  {/* Legend - standardized colors matching other charts */}
                   <div className="grid grid-cols-2 gap-2 mt-4">
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-green-500"></span>
@@ -663,14 +677,14 @@ export default function AnalyticsPage() {
                       <span className="text-xs text-gray-600">Timeout 0%</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-gray-400"></span>
+                      <span className="w-3 h-3 rounded-full bg-cyan-500"></span>
                       <span className="text-xs text-gray-600">No Response 0%</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Staff Activity - Always show table */}
+              {/* Staff Activity - Always show table with proper structure */}
               <div className="bg-white rounded-lg shadow">
                 <div className="p-4 border-b border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900">Staff Activity</h3>
@@ -679,20 +693,24 @@ export default function AnalyticsPage() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff Phone</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Commands</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Success Rate</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Last Active</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff Phone</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Commands</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Success Rate</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Last Active</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {whatsappAnalytics.staffActivity && whatsappAnalytics.staffActivity.length > 0 ? (
                         whatsappAnalytics.staffActivity.map((staff, idx) => (
-                          <tr key={idx}>
+                          <tr key={idx} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{staff.staffPhone}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">{staff.commandCount}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                              <span className={`font-medium ${staff.successRate >= 80 ? 'text-green-600' : staff.successRate >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                staff.successRate >= 80 ? 'bg-green-100 text-green-800' :
+                                staff.successRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
                                 {staff.successRate}%
                               </span>
                             </td>
@@ -701,9 +719,12 @@ export default function AnalyticsPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                            Belum ada aktivitas staff tercatat
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">0</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">0%</span>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">-</td>
                         </tr>
                       )}
                     </tbody>
