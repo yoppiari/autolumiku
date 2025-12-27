@@ -98,20 +98,21 @@ export default function AnalyticsPage() {
     <div className="p-3 md:p-4 h-[calc(100vh-64px)] overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-3 ml-8 md:ml-0 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-sm">← Back</Link>
-          <h1 className="text-base md:text-xl font-bold text-gray-900">Analytics</h1>
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-xs md:text-sm flex-shrink-0">← Back</Link>
+          <h1 className="text-sm md:text-xl font-bold text-gray-900 truncate">Analytics</h1>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 md:gap-1 flex-shrink-0">
           {['today', 'week', 'month'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range as typeof timeRange)}
-              className={`px-3 py-1 rounded text-xs md:text-sm font-medium ${
+              className={`px-2 md:px-3 py-1 rounded text-[10px] md:text-sm font-medium ${
                 timeRange === range ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'
               }`}
             >
-              {range.charAt(0).toUpperCase() + range.slice(1)}
+              <span className="hidden md:inline">{range.charAt(0).toUpperCase() + range.slice(1)}</span>
+              <span className="md:hidden">{range === 'today' ? 'Day' : range === 'week' ? 'Week' : 'Mon'}</span>
             </button>
           ))}
         </div>
