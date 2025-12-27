@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FaPlus, FaSearch, FaFileInvoice, FaEye } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaFileInvoice, FaEye, FaChartLine } from 'react-icons/fa';
 import { SalesInvoice, INVOICE_STATUS, formatRupiah, formatDate } from '@/types/invoice';
 
 interface InvoiceStats {
@@ -84,15 +84,24 @@ export default function InvoicesPage() {
           <h1 className="text-xl md:text-2xl font-bold text-gray-900">Invoice Penjualan</h1>
           <p className="text-sm text-gray-500 mt-1">Kelola invoice penjualan kendaraan</p>
         </div>
-        {canCreate && (
+        <div className="flex items-center gap-2 mt-3 md:mt-0">
           <Link
-            href="/dashboard/invoices/create"
-            className="mt-3 md:mt-0 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            href="/dashboard/invoices/ledger"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
           >
-            <FaPlus className="text-xs" />
-            Buat Invoice
+            <FaChartLine className="text-xs" />
+            Alur Transaksi
           </Link>
-        )}
+          {canCreate && (
+            <Link
+              href="/dashboard/invoices/create"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              <FaPlus className="text-xs" />
+              Buat Invoice
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
