@@ -200,7 +200,7 @@ export default function WhatsAppAIDashboard() {
     <div className="p-3 md:p-4 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
       {/* Header - Extra left padding on mobile to avoid hamburger menu */}
       <div className="mb-3 flex-shrink-0 pl-10 md:pl-0">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">WhatsApp AI Automation</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">WhatsApp AI Rate</h1>
         <p className="text-gray-600 text-xs md:text-sm">Asisten virtual 24/7 untuk customer dan staff operations</p>
       </div>
 
@@ -406,47 +406,47 @@ export default function WhatsAppAIDashboard() {
 
         {/* Stats Overview - Compact */}
         {status.isConnected && (
-          <div className="grid grid-cols-4 gap-2 mb-2">
-            <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-[10px] font-medium text-gray-500">Conversations</h3>
+                <h3 className="text-xs font-medium text-gray-500">Conversations</h3>
                 <span className="text-sm">💬</span>
               </div>
               <div className="text-lg font-bold text-blue-600">{stats.total}</div>
-              <p className="text-[10px] text-gray-500">{stats.active} active now</p>
+              <p className="text-xs text-gray-500">{stats.active} active</p>
             </div>
 
             <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-[10px] font-medium text-gray-500">Today Messages</h3>
+                <h3 className="text-xs font-medium text-gray-500">Messages</h3>
                 <span className="text-sm">📨</span>
               </div>
               <div className="text-lg font-bold text-purple-600">{status.todayMessages}</div>
-              <p className="text-[10px] text-gray-500">
-                {stats.customerChats} customers · {stats.staffCommands} staff
+              <p className="text-xs text-gray-500">
+                {stats.customerChats} cust · {stats.staffCommands} staff
               </p>
             </div>
 
             <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-[10px] font-medium text-gray-500">AI Automation</h3>
+                <h3 className="text-xs font-medium text-gray-500">AI Automation</h3>
                 <span className="text-sm">🤖</span>
               </div>
               <div className="text-lg font-bold text-green-600">{status.aiResponseRate}%</div>
-              <p className="text-[10px] text-gray-500">
-                {stats.escalated} escalated to human
+              <p className="text-xs text-gray-500">
+                {stats.escalated} escalated
               </p>
             </div>
 
             <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-[10px] font-medium text-gray-500">Response Time</h3>
+                <h3 className="text-xs font-medium text-gray-500">Response</h3>
                 <span className="text-sm">⚡</span>
               </div>
               <div className="text-lg font-bold text-orange-600">
                 {formatResponseTime(stats.avgResponseTime)}
               </div>
-              <p className="text-[10px] text-gray-500">
+              <p className="text-xs text-gray-500">
                 {stats.aiAccuracy}% accuracy
               </p>
             </div>
@@ -458,7 +458,7 @@ export default function WhatsAppAIDashboard() {
           <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 mb-2">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-semibold text-gray-900">📊 Performance Summary</h3>
-              <Link href="/dashboard/whatsapp-ai/analytics" className="text-[10px] text-blue-600 hover:text-blue-800">
+              <Link href="/dashboard/whatsapp-ai/analytics" className="text-xs text-blue-600 hover:text-blue-800">
                 Lihat Detail →
               </Link>
             </div>
@@ -513,7 +513,7 @@ export default function WhatsAppAIDashboard() {
                     <div className="space-y-1.5">
                       {/* Conversations Bar */}
                       <div>
-                        <div className="flex items-center justify-between text-[10px] mb-0.5">
+                        <div className="flex items-center justify-between text-xs mb-0.5">
                           <span className="text-gray-600">💬 Conversations</span>
                           <span className="font-semibold text-blue-600">{totalConversations}</span>
                         </div>
@@ -524,7 +524,7 @@ export default function WhatsAppAIDashboard() {
 
                       {/* Messages Bar */}
                       <div>
-                        <div className="flex items-center justify-between text-[10px] mb-0.5">
+                        <div className="flex items-center justify-between text-xs mb-0.5">
                           <span className="text-gray-600">📨 Today Messages</span>
                           <span className="font-semibold text-purple-600">{todayMessages}</span>
                         </div>
@@ -535,7 +535,7 @@ export default function WhatsAppAIDashboard() {
 
                       {/* AI Automation Bar */}
                       <div>
-                        <div className="flex items-center justify-between text-[10px] mb-0.5">
+                        <div className="flex items-center justify-between text-xs mb-0.5">
                           <span className="text-gray-600">🤖 AI Automation</span>
                           <span className="font-semibold text-green-600">{aiAutomation}%</span>
                         </div>
@@ -546,7 +546,7 @@ export default function WhatsAppAIDashboard() {
 
                       {/* Accuracy Bar */}
                       <div>
-                        <div className="flex items-center justify-between text-[10px] mb-0.5">
+                        <div className="flex items-center justify-between text-xs mb-0.5">
                           <span className="text-gray-600">🎯 AI Accuracy</span>
                           <span className="font-semibold text-orange-600">{aiAccuracy}%</span>
                         </div>
@@ -566,7 +566,7 @@ export default function WhatsAppAIDashboard() {
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <span className="text-lg font-bold" style={{ color: scoreColor }}>{hasData ? `${healthScore}%` : '-'}</span>
-                          <span className="text-[8px] text-gray-500">Health</span>
+                          <span className="text-[10px] text-gray-500">Health</span>
                         </div>
                       </div>
                     </div>
@@ -577,19 +577,19 @@ export default function WhatsAppAIDashboard() {
                     <div className="grid grid-cols-4 gap-1 text-center">
                       <div className="bg-blue-50 rounded p-1">
                         <div className="text-sm font-bold text-blue-600">{stats.active || 0}</div>
-                        <div className="text-[8px] text-gray-500">Active</div>
+                        <div className="text-[10px] text-gray-500">Active</div>
                       </div>
                       <div className="bg-purple-50 rounded p-1">
                         <div className="text-sm font-bold text-purple-600">{stats.customerChats || 0}</div>
-                        <div className="text-[8px] text-gray-500">Customers</div>
+                        <div className="text-[10px] text-gray-500">Customers</div>
                       </div>
                       <div className="bg-green-50 rounded p-1">
                         <div className="text-sm font-bold text-green-600">{stats.staffCommands || 0}</div>
-                        <div className="text-[8px] text-gray-500">Staff</div>
+                        <div className="text-[10px] text-gray-500">Staff</div>
                       </div>
                       <div className="bg-orange-50 rounded p-1">
                         <div className="text-sm font-bold text-orange-600">{formatResponseTime(stats.avgResponseTime || 0)}</div>
-                        <div className="text-[8px] text-gray-500">Response</div>
+                        <div className="text-[10px] text-gray-500">Response</div>
                       </div>
                     </div>
                   </div>
