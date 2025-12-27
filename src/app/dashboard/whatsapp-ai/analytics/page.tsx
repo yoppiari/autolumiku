@@ -682,10 +682,281 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
+          {/* Chart Section - 3 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Collection Rate Donut */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Tingkat Koleksi</h4>
+              <div className="flex items-center justify-center py-4">
+                <div className="relative">
+                  <svg className="w-32 h-32" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                    {/* Paid portion */}
+                    {(financeStats?.paidAmount || 0) > 0 && (financeStats?.totalAmount || 0) > 0 && (
+                      <circle
+                        cx="18" cy="18" r="14"
+                        fill="none"
+                        stroke="#22c55e"
+                        strokeWidth="3.5"
+                        strokeDasharray={`${((financeStats?.paidAmount || 0) / (financeStats?.totalAmount || 1)) * 88} 88`}
+                        strokeLinecap="round"
+                        transform="rotate(-90 18 18)"
+                      />
+                    )}
+                    {/* Pending portion */}
+                    {(financeStats?.pendingAmount || 0) > 0 && (financeStats?.totalAmount || 0) > 0 && (
+                      <circle
+                        cx="18" cy="18" r="14"
+                        fill="none"
+                        stroke="#ef4444"
+                        strokeWidth="3.5"
+                        strokeDasharray={`${((financeStats?.pendingAmount || 0) / (financeStats?.totalAmount || 1)) * 88} 88`}
+                        strokeDashoffset={`${-((financeStats?.paidAmount || 0) / (financeStats?.totalAmount || 1)) * 88}`}
+                        strokeLinecap="round"
+                        transform="rotate(-90 18 18)"
+                      />
+                    )}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-700">
+                      {financeStats?.totalAmount ? Math.round((financeStats.paidAmount / financeStats.totalAmount) * 100) : 0}%
+                    </span>
+                    <span className="text-[10px] text-gray-500">Terkumpul</span>
+                  </div>
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                  <span className="text-xs text-gray-600">Lunas {financeStats?.totalAmount ? Math.round((financeStats.paidAmount / financeStats.totalAmount) * 100) : 0}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                  <span className="text-xs text-gray-600">Outstanding {financeStats?.totalAmount ? Math.round((financeStats.pendingAmount / financeStats.totalAmount) * 100) : 0}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                  <span className="text-xs text-gray-600">Total {financeStats?.totalInvoices || 0} inv</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                  <span className="text-xs text-gray-600">Target 100%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Invoice Status Donut */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Status Invoice</h4>
+              <div className="flex items-center justify-center py-4">
+                <div className="relative">
+                  <svg className="w-32 h-32" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                    {financeStats?.byStatus && financeStats.byStatus.length > 0 && (
+                      (() => {
+                        const total = financeStats.byStatus.reduce((sum, s) => sum + s.count, 0);
+                        let offset = 0;
+                        const statusColors: Record<string, string> = {
+                          paid: '#22c55e',
+                          partial: '#f59e0b',
+                          unpaid: '#ef4444',
+                          draft: '#6b7280',
+                          cancelled: '#94a3b8'
+                        };
+                        return financeStats.byStatus.map((item, idx) => {
+                          if (item.count <= 0 || total <= 0) return null;
+                          const percentage = (item.count / total) * 100;
+                          const dashLength = (percentage / 100) * 88;
+                          const segment = (
+                            <circle
+                              key={idx}
+                              cx="18" cy="18" r="14"
+                              fill="none"
+                              stroke={statusColors[item.status] || '#6b7280'}
+                              strokeWidth="3.5"
+                              strokeDasharray={`${dashLength} 88`}
+                              strokeDashoffset={-offset}
+                              strokeLinecap="round"
+                              transform="rotate(-90 18 18)"
+                            />
+                          );
+                          offset += dashLength;
+                          return segment;
+                        });
+                      })()
+                    )}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-700">{financeStats?.totalInvoices || 0}</span>
+                    <span className="text-[10px] text-gray-500">Invoice</span>
+                  </div>
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {(() => {
+                  const total = financeStats?.byStatus?.reduce((sum, s) => sum + s.count, 0) || 0;
+                  const statusLabels: Record<string, string> = {
+                    paid: 'Lunas',
+                    partial: 'Sebagian',
+                    unpaid: 'Belum Bayar',
+                    draft: 'Draft',
+                    cancelled: 'Batal'
+                  };
+                  const statusColors: Record<string, string> = {
+                    paid: 'bg-green-500',
+                    partial: 'bg-amber-500',
+                    unpaid: 'bg-red-500',
+                    draft: 'bg-gray-500',
+                    cancelled: 'bg-slate-400'
+                  };
+                  return financeStats?.byStatus?.slice(0, 6).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${statusColors[item.status] || 'bg-gray-500'}`}></span>
+                      <span className="text-xs text-gray-600">{statusLabels[item.status] || item.status} {total > 0 ? Math.round((item.count / total) * 100) : 0}%</span>
+                    </div>
+                  )) || (
+                    <div className="col-span-2 text-xs text-gray-500 text-center">Belum ada data</div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Amount Distribution Donut */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Distribusi Nominal</h4>
+              <div className="flex items-center justify-center py-4">
+                <div className="relative">
+                  <svg className="w-32 h-32" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                    {financeStats?.byStatus && financeStats.byStatus.length > 0 && (
+                      (() => {
+                        const total = financeStats.byStatus.reduce((sum, s) => sum + s.amount, 0);
+                        let offset = 0;
+                        const statusColors: Record<string, string> = {
+                          paid: '#22c55e',
+                          partial: '#f59e0b',
+                          unpaid: '#ef4444',
+                          draft: '#6b7280',
+                          cancelled: '#94a3b8'
+                        };
+                        return financeStats.byStatus.map((item, idx) => {
+                          if (item.amount <= 0 || total <= 0) return null;
+                          const percentage = (item.amount / total) * 100;
+                          const dashLength = (percentage / 100) * 88;
+                          const segment = (
+                            <circle
+                              key={idx}
+                              cx="18" cy="18" r="14"
+                              fill="none"
+                              stroke={statusColors[item.status] || '#6b7280'}
+                              strokeWidth="3.5"
+                              strokeDasharray={`${dashLength} 88`}
+                              strokeDashoffset={-offset}
+                              strokeLinecap="round"
+                              transform="rotate(-90 18 18)"
+                            />
+                          );
+                          offset += dashLength;
+                          return segment;
+                        });
+                      })()
+                    )}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-lg font-bold text-gray-700">{formatRupiah(financeStats?.totalAmount || 0).replace('Rp', '').trim().split(',')[0]}</span>
+                    <span className="text-[10px] text-gray-500">Juta</span>
+                  </div>
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {(() => {
+                  const total = financeStats?.byStatus?.reduce((sum, s) => sum + s.amount, 0) || 0;
+                  const statusLabels: Record<string, string> = {
+                    paid: 'Lunas',
+                    partial: 'Sebagian',
+                    unpaid: 'Belum Bayar',
+                    draft: 'Draft',
+                    cancelled: 'Batal'
+                  };
+                  const statusColors: Record<string, string> = {
+                    paid: 'bg-green-500',
+                    partial: 'bg-amber-500',
+                    unpaid: 'bg-red-500',
+                    draft: 'bg-gray-500',
+                    cancelled: 'bg-slate-400'
+                  };
+                  return financeStats?.byStatus?.slice(0, 6).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${statusColors[item.status] || 'bg-gray-500'}`}></span>
+                      <span className="text-xs text-gray-600">{statusLabels[item.status] || item.status} {total > 0 ? Math.round((item.amount / total) * 100) : 0}%</span>
+                    </div>
+                  )) || (
+                    <div className="col-span-2 text-xs text-gray-500 text-center">Belum ada data</div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly Payment Trend Bar Chart */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-4">Tren Pembayaran Bulanan</h4>
+            <div className="h-48 flex items-end gap-2 px-4">
+              {financeStats?.monthlyPayments && financeStats.monthlyPayments.length > 0 ? (
+                (() => {
+                  const maxAmount = Math.max(...financeStats.monthlyPayments.map(m => Math.max(m.collected, m.pending)), 1);
+                  return financeStats.monthlyPayments.map((month, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full flex gap-0.5 items-end justify-center" style={{ height: '140px' }}>
+                        {/* Collected bar */}
+                        <div
+                          className="flex-1 bg-green-500 rounded-t transition-all hover:bg-green-600"
+                          style={{ height: `${Math.max((month.collected / maxAmount) * 140, 4)}px` }}
+                          title={`Terkumpul: ${formatRupiah(month.collected)}`}
+                        ></div>
+                        {/* Pending bar */}
+                        <div
+                          className="flex-1 bg-red-400 rounded-t transition-all hover:bg-red-500"
+                          style={{ height: `${Math.max((month.pending / maxAmount) * 140, 4)}px` }}
+                          title={`Outstanding: ${formatRupiah(month.pending)}`}
+                        ></div>
+                      </div>
+                      <span className="text-[9px] text-gray-500 truncate w-full text-center">{month.month.substring(0, 3)}</span>
+                    </div>
+                  ));
+                })()
+              ) : (
+                // Default empty bars
+                ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full flex gap-0.5 items-end justify-center" style={{ height: '140px' }}>
+                      <div className="flex-1 bg-gray-200 rounded-t h-4"></div>
+                      <div className="flex-1 bg-gray-100 rounded-t h-2"></div>
+                    </div>
+                    <span className="text-[9px] text-gray-400">{month}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded bg-green-500"></span>
+                <span className="text-xs text-gray-600">Terkumpul</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded bg-red-400"></span>
+                <span className="text-xs text-gray-600">Outstanding</span>
+              </div>
+            </div>
+          </div>
+
           {/* Invoice Status Table */}
           <div className="bg-white rounded-lg shadow">
             <div className="p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Status Invoice</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Detail Status Invoice</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -693,31 +964,45 @@ export default function AnalyticsPage() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Nominal</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Kontribusi</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {financeStats?.byStatus?.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          item.status === 'paid' ? 'bg-green-100 text-green-800' :
-                          item.status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
-                          item.status === 'unpaid' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {item.status === 'paid' ? 'Lunas' :
-                           item.status === 'partial' ? 'Sebagian' :
-                           item.status === 'unpaid' ? 'Belum Bayar' :
-                           item.status === 'draft' ? 'Draft' : item.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">{item.count}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{formatRupiah(item.amount)}</td>
-                    </tr>
-                  )) || (
+                  {financeStats?.byStatus?.map((item, idx) => {
+                    const totalAmount = financeStats.byStatus?.reduce((sum, s) => sum + s.amount, 0) || 0;
+                    const contribution = totalAmount > 0 ? Math.round((item.amount / totalAmount) * 100) : 0;
+                    return (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            item.status === 'paid' ? 'bg-green-100 text-green-800' :
+                            item.status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
+                            item.status === 'unpaid' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {item.status === 'paid' ? 'Lunas' :
+                             item.status === 'partial' ? 'Sebagian' :
+                             item.status === 'unpaid' ? 'Belum Bayar' :
+                             item.status === 'draft' ? 'Draft' : item.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">{item.count}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{formatRupiah(item.amount)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            item.status === 'paid' ? 'bg-green-100 text-green-800' :
+                            item.status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {contribution}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  }) || (
                     <tr>
-                      <td colSpan={3} className="px-6 py-8 text-center text-gray-500">Belum ada data invoice</td>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-500">Belum ada data invoice</td>
                     </tr>
                   )}
                 </tbody>
@@ -725,23 +1010,120 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Collection Rate */}
+          {/* Collection Rate Progress */}
           <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Tingkat Koleksi Pembayaran</h3>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-4 bg-green-500 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${financeStats?.totalAmount ? (financeStats.paidAmount / financeStats.totalAmount) * 100 : 0}%`
-                    }}
-                  ></div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Progress Tingkat Koleksi</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600 w-20">Terkumpul</span>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-4 bg-green-500 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${financeStats?.totalAmount ? (financeStats.paidAmount / financeStats.totalAmount) * 100 : 0}%`
+                      }}
+                    ></div>
+                  </div>
                 </div>
+                <span className="text-sm font-bold text-green-600 w-16 text-right">
+                  {financeStats?.totalAmount ? Math.round((financeStats.paidAmount / financeStats.totalAmount) * 100) : 0}%
+                </span>
               </div>
-              <span className="text-lg font-bold text-gray-900">
-                {financeStats?.totalAmount ? Math.round((financeStats.paidAmount / financeStats.totalAmount) * 100) : 0}%
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600 w-20">Outstanding</span>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-4 bg-red-500 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${financeStats?.totalAmount ? (financeStats.pendingAmount / financeStats.totalAmount) * 100 : 0}%`
+                      }}
+                    ></div>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-red-600 w-16 text-right">
+                  {financeStats?.totalAmount ? Math.round((financeStats.pendingAmount / financeStats.totalAmount) * 100) : 0}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Management Analysis Footnotes */}
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200 p-4">
+            <h4 className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-3 flex items-center gap-2">
+              <span>💰</span> Analisis Keuangan Showroom
+            </h4>
+            <div className="space-y-3">
+              {/* Analysis Point 1 - Collection Rate */}
+              <div className="text-[11px] text-slate-600 leading-relaxed">
+                <span className="font-semibold text-slate-700">Tingkat Koleksi:</span>{' '}
+                {(() => {
+                  const rate = financeStats?.totalAmount ? Math.round((financeStats.paidAmount / financeStats.totalAmount) * 100) : 0;
+                  if (rate >= 90) {
+                    return <>Koleksi excellent ({rate}%). <span className="text-green-600">Cash flow sehat.</span> Pertahankan kebijakan payment term dan monitoring rutin.</>;
+                  } else if (rate >= 70) {
+                    return <>Koleksi baik ({rate}%). <span className="text-blue-600">Masih dalam target.</span> Intensifkan follow-up invoice mendekati jatuh tempo.</>;
+                  } else if (rate >= 50) {
+                    return <>Koleksi moderat ({rate}%). <span className="text-amber-600">Perlu perhatian.</span> Review aging AR dan prioritaskan penagihan invoice overdue.</>;
+                  } else {
+                    return <>Koleksi rendah ({rate}%). <span className="text-red-600">Butuh tindakan segera.</span> Evaluasi credit policy, pertimbangkan insentif pelunasan dini.</>;
+                  }
+                })()}
+              </div>
+
+              {/* Analysis Point 2 - Outstanding */}
+              <div className="text-[11px] text-slate-600 leading-relaxed">
+                <span className="font-semibold text-slate-700">Piutang Outstanding:</span>{' '}
+                {(financeStats?.pendingAmount || 0) > 0 ? (
+                  <>
+                    Total outstanding {formatRupiah(financeStats?.pendingAmount || 0)}.
+                    {(financeStats?.pendingAmount || 0) > (financeStats?.paidAmount || 0) ? (
+                      <> <span className="text-red-600">Outstanding melebihi koleksi.</span> Segera lakukan rekonsiliasi AR dan intensifkan penagihan.</>
+                    ) : (
+                      <> Proporsi masih terkendali. Pastikan monitoring aging schedule berjalan rutin.</>
+                    )}
+                  </>
+                ) : (
+                  <>Tidak ada outstanding. <span className="text-green-600">Excellent!</span> Semua invoice sudah terbayar lunas.</>
+                )}
+              </div>
+
+              {/* Analysis Point 3 - Invoice Health */}
+              <div className="text-[11px] text-slate-600 leading-relaxed">
+                <span className="font-semibold text-slate-700">Kesehatan Invoice:</span>{' '}
+                {(() => {
+                  const paidCount = financeStats?.byStatus?.find(s => s.status === 'paid')?.count || 0;
+                  const unpaidCount = financeStats?.byStatus?.find(s => s.status === 'unpaid')?.count || 0;
+                  const total = financeStats?.totalInvoices || 0;
+                  const paidRatio = total > 0 ? Math.round((paidCount / total) * 100) : 0;
+
+                  if (paidRatio >= 80) {
+                    return <>Rasio invoice lunas tinggi ({paidRatio}%). <span className="text-green-600">Manajemen AR efektif.</span></>;
+                  } else if (paidRatio >= 60) {
+                    return <>Rasio invoice lunas moderat ({paidRatio}%). Perlu peningkatan collection effort.</>;
+                  } else {
+                    return <>Rasio invoice lunas rendah ({paidRatio}%). <span className="text-red-600">Evaluasi credit approval process.</span></>;
+                  }
+                })()}
+              </div>
+
+              {/* Analysis Point 4 - Action Items */}
+              <div className="text-[11px] text-slate-600 leading-relaxed border-t border-amber-200 pt-2 mt-2">
+                <span className="font-semibold text-slate-700">Rekomendasi Aksi:</span>{' '}
+                <span className="text-amber-600">1)</span> Review aging AR &gt;30 hari. {' '}
+                <span className="text-amber-600">2)</span> Follow-up invoice jatuh tempo minggu ini. {' '}
+                <span className="text-amber-600">3)</span> Evaluasi credit limit customer dengan outstanding tinggi. {' '}
+                <span className="text-amber-600">4)</span> Rekonsiliasi pembayaran dengan bank statement.
+              </div>
+            </div>
+
+            {/* Footer timestamp */}
+            <div className="mt-3 pt-2 border-t border-amber-200 flex items-center justify-between">
+              <span className="text-[9px] text-amber-600/70">
+                *Analisis otomatis berdasarkan data {period === 'monthly' ? 'bulanan' : period === 'quarterly' ? 'kuartalan' : 'tahunan'}. Generated: {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
               </span>
+              <span className="text-[9px] text-amber-600/70">Prima Mobil Finance v1.0</span>
             </div>
           </div>
         </div>
