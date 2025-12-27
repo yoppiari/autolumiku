@@ -24,23 +24,42 @@ interface DashboardStats {
   };
 }
 
-interface Activity {
-  type: string;
-  icon: string;
-  message: string;
-  timestamp: string;
-  details: any;
-  link?: string;
+interface AnalyticsData {
+  overview: {
+    totalConversations: number;
+    activeConversations: number;
+    totalMessages: number;
+    aiResponseRate: number;
+    avgResponseTime: number;
+    escalationRate: number;
+  };
+  performance: {
+    aiAccuracy: number;
+    customerSatisfaction: number;
+    resolutionRate: number;
+    firstResponseTime: number;
+  };
+  intentBreakdown: Array<{
+    intent: string;
+    count: number;
+    percentage: number;
+  }>;
+  staffActivity: Array<{
+    staffPhone: string;
+    commandCount: number;
+    successRate: number;
+    lastActive: string;
+  }>;
 }
 
 export default function ShowroomDashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [loadingActivities, setLoadingActivities] = useState(true);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -49,7 +68,7 @@ export default function ShowroomDashboardPage() {
       setUser(parsedUser);
       loadSubscription(parsedUser.tenantId);
       loadDashboardStats(parsedUser.tenantId);
-      loadRecentActivities(parsedUser.tenantId);
+      loadAnalytics(parsedUser.tenantId);
     }
   }, []);
 
@@ -81,66 +100,40 @@ export default function ShowroomDashboardPage() {
     }
   };
 
-  const loadRecentActivities = async (tenantId: string) => {
+  const loadAnalytics = async (tenantId: string) => {
     try {
-      const response = await fetch(`/api/v1/dashboard/activities?tenantId=${tenantId}&limit=20`);
+      const response = await fetch(`/api/v1/whatsapp-ai/analytics?tenantId=${tenantId}&range=week`);
       if (response.ok) {
         const data = await response.json();
-        setActivities(data.data.activities || []);
+        setAnalytics(data.data || null);
       }
     } catch (error) {
-      console.error('Failed to load activities:', error);
+      console.error('Failed to load analytics:', error);
     } finally {
-      setLoadingActivities(false);
+      setLoadingAnalytics(false);
     }
   };
 
-  const formatRelativeTime = (timestamp: string) => {
-    const now = new Date();
-    const past = new Date(timestamp);
-    const diffMs = now.getTime() - past.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Baru saja';
-    if (diffMins < 60) return `${diffMins} menit yang lalu`;
-    if (diffHours < 24) return `${diffHours} jam yang lalu`;
-    if (diffDays === 1) return 'Kemarin';
-    if (diffDays < 7) return `${diffDays} hari yang lalu`;
-    return past.toLocaleDateString('id-ID');
+  // Intent colors for donut chart
+  const intentColors: Record<string, string> = {
+    greeting: '#22c55e',
+    vehicle: '#3b82f6',
+    price: '#a855f7',
+    general: '#f59e0b',
+    closing: '#ef4444',
+    unknown: '#6b7280',
   };
 
-  const getActivityColor = (icon: string) => {
-    switch (icon) {
-      case 'blue': return 'bg-blue-500';
-      case 'green': return 'bg-green-500';
-      case 'purple': return 'bg-purple-500';
-      case 'yellow': return 'bg-amber-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  // Get activity link based on type and details
-  const getActivityLink = (activity: Activity): string => {
-    switch (activity.type) {
-      case 'vehicle_added':
-        return activity.details?.vehicleId
-          ? `/dashboard/vehicles/${activity.details.vehicleId}`
-          : '/dashboard/vehicles';
-      case 'staff_joined':
-        return '/dashboard/users';
-      case 'lead_created':
-        return activity.details?.leadId
-          ? `/dashboard/leads?id=${activity.details.leadId}`
-          : '/dashboard/leads';
-      case 'sale_completed':
-        return activity.details?.vehicleId
-          ? `/dashboard/vehicles/${activity.details.vehicleId}`
-          : '/dashboard/vehicles?status=SOLD';
-      default:
-        return '/dashboard';
-    }
+  // Get intent display name
+  const getIntentName = (intent: string) => {
+    const names: Record<string, string> = {
+      greeting: 'Greeting',
+      vehicle: 'Vehicle',
+      price: 'Price',
+      general: 'General',
+      closing: 'Closing',
+    };
+    return names[intent.toLowerCase()] || intent;
   };
 
   // Stats card configuration with links
@@ -163,7 +156,7 @@ export default function ShowroomDashboardPage() {
       href: '/dashboard/vehicles',
     },
     {
-      title: 'WhatsApp AI',
+      title: 'Analytics',
       value: stats?.leads.active || 0,
       subValue: stats?.leads.today || 0,
       subLabel: 'chat hari ini',
@@ -171,7 +164,7 @@ export default function ShowroomDashboardPage() {
       emoji: '💬',
       gradient: 'from-emerald-500 to-emerald-600',
       bgLight: 'bg-emerald-50',
-      href: '/dashboard/whatsapp-ai',
+      href: '/dashboard/whatsapp-ai/analytics',
     },
     {
       title: 'Tim Showroom',
@@ -274,55 +267,201 @@ export default function ShowroomDashboardPage() {
         ))}
       </div>
 
-      {/* Main Content - Activity & Subscription Row - FLEX GROW */}
+      {/* Main Content - Analytics & Subscription Row - FLEX GROW */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-h-0">
-        {/* Left: Activity */}
+        {/* Left: Analytics */}
         <div className="md:col-span-2 min-h-0 overflow-hidden order-2 md:order-1">
           <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col overflow-hidden">
             <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-              <h3 className="text-sm md:text-base font-semibold text-gray-800">Aktivitas Terkini</h3>
-              <Link href="/dashboard/vehicles?sort=newest" className="text-[10px] md:text-xs text-gray-500 hover:text-gray-700">
-                Lihat Semua →
+              <h3 className="text-sm md:text-base font-bold text-gray-800">Analytics</h3>
+              <Link href="/dashboard/whatsapp-ai/analytics" className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium">
+                Lihat Detail →
               </Link>
             </div>
-            <div className="p-2 flex-1 min-h-0 overflow-y-auto" style={{ maxHeight: 'calc(100% - 40px)' }}>
-              {loadingActivities ? (
-                <div className="space-y-2">
+            <div className="p-2 md:p-3 flex-1 min-h-0 overflow-y-auto">
+              {loadingAnalytics ? (
+                <div className="grid grid-cols-3 gap-2 md:gap-3 h-full">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-2 animate-pulse">
-                      <div className="w-7 md:w-8 h-7 md:h-8 bg-gray-100 rounded-lg"></div>
-                      <div className="flex-1 h-4 bg-gray-100 rounded"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : activities.length > 0 ? (
-                <div className="space-y-1">
-                  {activities.map((activity, index) => (
-                    <Link
-                      key={index}
-                      href={getActivityLink(activity)}
-                      className="flex items-center gap-2 md:gap-3 p-1.5 md:p-2 rounded-lg hover:bg-gray-50 transition-colors group"
-                    >
-                      <div className={`w-7 h-7 md:w-8 md:h-8 ${getActivityColor(activity.icon)} rounded-lg flex items-center justify-center text-white text-xs md:text-sm flex-shrink-0`}>
-                        {activity.type === 'vehicle_added' && '🚗'}
-                        {activity.type === 'lead_created' && '📞'}
-                        {activity.type === 'staff_joined' && '👤'}
-                        {activity.type === 'sale_completed' && '💰'}
-                        {!['vehicle_added', 'lead_created', 'staff_joined', 'sale_completed'].includes(activity.type) && '•'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs md:text-sm text-gray-700 truncate group-hover:text-gray-900">
-                          {activity.message}
-                        </p>
-                      </div>
-                      <span className="text-[10px] md:text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
-                        {formatRelativeTime(activity.timestamp)}
-                      </span>
-                    </Link>
+                    <div key={i} className="bg-gray-50 rounded-lg animate-pulse h-32 md:h-40"></div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs md:text-sm text-gray-400 text-center py-4 md:py-8">Belum ada aktivitas</p>
+                <div className="grid grid-cols-3 gap-2 md:gap-3 h-full">
+                  {/* AI Performance Card */}
+                  <Link
+                    href="/dashboard/whatsapp-ai/analytics"
+                    className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
+                  >
+                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 md:mb-2 truncate">AI Performance</h4>
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="relative">
+                        {/* Donut Chart */}
+                        <svg className="w-14 h-14 md:w-20 md:h-20" viewBox="0 0 36 36">
+                          {/* Background circle */}
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                          {/* Accuracy segment */}
+                          <circle
+                            cx="18" cy="18" r="14"
+                            fill="none"
+                            stroke="#22c55e"
+                            strokeWidth="4"
+                            strokeDasharray={`${(analytics?.performance.aiAccuracy || 0) * 0.88} 88`}
+                            strokeDashoffset="22"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xs md:text-sm font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Legend - compact */}
+                    <div className="mt-1 md:mt-2 space-y-0.5">
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[10px] text-gray-600 truncate">Accuracy</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[10px] text-gray-600 truncate">Resolution</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[10px] text-gray-600 truncate">Satisfaction</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span className="text-[8px] md:text-[10px] text-gray-600 truncate">Escalation</span>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Intent Breakdown Card */}
+                  <Link
+                    href="/dashboard/whatsapp-ai/analytics"
+                    className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
+                  >
+                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 md:mb-2 truncate">Intent Breakdown</h4>
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="relative">
+                        {/* Donut Chart */}
+                        <svg className="w-14 h-14 md:w-20 md:h-20" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                          {analytics?.intentBreakdown && analytics.intentBreakdown.length > 0 ? (
+                            (() => {
+                              let offset = 0;
+                              return analytics.intentBreakdown.slice(0, 5).map((item, idx) => {
+                                const dashLength = (item.percentage / 100) * 88;
+                                const segment = (
+                                  <circle
+                                    key={idx}
+                                    cx="18" cy="18" r="14"
+                                    fill="none"
+                                    stroke={intentColors[item.intent.toLowerCase()] || '#6b7280'}
+                                    strokeWidth="4"
+                                    strokeDasharray={`${dashLength} 88`}
+                                    strokeDashoffset={-offset}
+                                    strokeLinecap="round"
+                                    transform="rotate(-90 18 18)"
+                                  />
+                                );
+                                offset += dashLength;
+                                return segment;
+                              });
+                            })()
+                          ) : null}
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xs md:text-sm font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Legend */}
+                    <div className="mt-1 md:mt-2 space-y-0.5">
+                      {(analytics?.intentBreakdown || []).slice(0, 5).map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-1">
+                          <span
+                            className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: intentColors[item.intent.toLowerCase()] || '#6b7280' }}
+                          ></span>
+                          <span className="text-[8px] md:text-[10px] text-gray-600 truncate">{getIntentName(item.intent)}</span>
+                        </div>
+                      ))}
+                      {(!analytics?.intentBreakdown || analytics.intentBreakdown.length === 0) && (
+                        <>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 flex-shrink-0"></span>
+                            <span className="text-[8px] md:text-[10px] text-gray-600">Greeting</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                            <span className="text-[8px] md:text-[10px] text-gray-600">Vehicle</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
+                            <span className="text-[8px] md:text-[10px] text-gray-600">Price</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
+                            <span className="text-[8px] md:text-[10px] text-gray-600">General</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+                            <span className="text-[8px] md:text-[10px] text-gray-600">Closing</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </Link>
+
+                  {/* Staff Activity Card */}
+                  <Link
+                    href="/dashboard/whatsapp-ai/analytics"
+                    className="bg-gray-50 rounded-lg p-2 md:p-3 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
+                  >
+                    <h4 className="text-[10px] md:text-xs font-semibold text-gray-700 mb-1 md:mb-2 truncate">Staff Activity</h4>
+                    <div className="flex-1 flex items-center justify-center">
+                      {/* Bar Chart */}
+                      <div className="flex items-end gap-1 md:gap-1.5 h-14 md:h-20">
+                        {analytics?.staffActivity && analytics.staffActivity.length > 0 ? (
+                          analytics.staffActivity.slice(0, 5).map((staff, idx) => {
+                            const maxCommands = Math.max(...analytics.staffActivity.map(s => s.commandCount), 1);
+                            const heightPercent = (staff.commandCount / maxCommands) * 100;
+                            return (
+                              <div
+                                key={idx}
+                                className="w-3 md:w-4 bg-blue-500 rounded-t transition-all"
+                                style={{ height: `${Math.max(heightPercent, 10)}%` }}
+                                title={`${staff.staffPhone}: ${staff.commandCount} commands`}
+                              ></div>
+                            );
+                          })
+                        ) : (
+                          // Default empty bars
+                          [1, 2, 3, 4, 5].map((i) => (
+                            <div
+                              key={i}
+                              className="w-3 md:w-4 bg-gray-300 rounded-t"
+                              style={{ height: `${15 + i * 10}%` }}
+                            ></div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    {/* Staff count or empty message */}
+                    <div className="mt-1 md:mt-2 text-center">
+                      {analytics?.staffActivity && analytics.staffActivity.length > 0 ? (
+                        <span className="text-[8px] md:text-[10px] text-gray-600">
+                          {analytics.staffActivity.length} staff aktif
+                        </span>
+                      ) : (
+                        <span className="text-[8px] md:text-[10px] text-gray-400">
+                          Belum ada aktivitas
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                </div>
               )}
             </div>
           </div>
