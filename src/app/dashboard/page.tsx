@@ -397,51 +397,54 @@ export default function ShowroomDashboardPage() {
                     </div>
                   </Link>
 
-                  {/* Staff Activity Card */}
+                  {/* AI Accuracy Card */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
                     className="bg-gray-50 rounded-lg p-3 md:p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
                   >
-                    <h4 className="text-xs md:text-sm font-semibold text-gray-700 mb-2">Staff Activity</h4>
+                    <h4 className="text-xs md:text-sm font-semibold text-gray-700 mb-2">AI Accuracy</h4>
                     <div className="flex-1 flex items-center justify-center py-2">
-                      {/* Bar Chart */}
-                      <div className="flex items-end gap-2 md:gap-3 h-20 md:h-28">
-                        {analytics?.staffActivity && analytics.staffActivity.length > 0 ? (
-                          analytics.staffActivity.slice(0, 5).map((staff, idx) => {
-                            const maxCommands = Math.max(...analytics.staffActivity.map(s => s.commandCount), 1);
-                            const heightPercent = (staff.commandCount / maxCommands) * 100;
-                            return (
-                              <div
-                                key={idx}
-                                className="w-5 md:w-7 bg-blue-500 rounded-t transition-all"
-                                style={{ height: `${Math.max(heightPercent, 10)}%` }}
-                                title={`${staff.staffPhone}: ${staff.commandCount} commands`}
-                              ></div>
-                            );
-                          })
-                        ) : (
-                          // Default empty bars
-                          [1, 2, 3, 4, 5].map((i) => (
-                            <div
-                              key={i}
-                              className="w-5 md:w-7 bg-gray-300 rounded-t"
-                              style={{ height: `${15 + i * 12}%` }}
-                            ></div>
-                          ))
-                        )}
+                      <div className="relative">
+                        <svg className="w-20 h-20 md:w-28 md:h-28" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                          {/* Show accuracy segments when data exists */}
+                          {analytics?.performance?.aiAccuracy && analytics.performance.aiAccuracy > 0 ? (
+                            <circle
+                              cx="18" cy="18" r="14"
+                              fill="none"
+                              stroke="#22c55e"
+                              strokeWidth="3.5"
+                              strokeDasharray={`${(analytics.performance.aiAccuracy / 100) * 88} 88`}
+                              strokeLinecap="round"
+                              transform="rotate(-90 18 18)"
+                            />
+                          ) : null}
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-base md:text-xl font-bold text-gray-700">
+                            {analytics?.performance?.aiAccuracy || 0}%
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    {/* Staff count or empty message */}
-                    <div className="mt-2 text-center">
-                      {analytics?.staffActivity && analytics.staffActivity.length > 0 ? (
-                        <span className="text-[10px] md:text-xs text-gray-600">
-                          {analytics.staffActivity.length} staff aktif
-                        </span>
-                      ) : (
-                        <span className="text-[10px] md:text-xs text-gray-400">
-                          Belum ada aktivitas
-                        </span>
-                      )}
+                    {/* Legend - 2x3 grid */}
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-2 flex-shrink-0">
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Correct</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Partial</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Wrong</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Escalated</span>
+                      </div>
                     </div>
                   </Link>
                 </div>
