@@ -86,6 +86,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
     { name: 'Kendaraan', href: '/dashboard/vehicles', icon: '🚗' },
+    { name: 'Invoice', href: '/dashboard/invoices', icon: '📄' },
     { name: 'Tim', href: '/dashboard/users', icon: '👥' },
     { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬' },
     { name: 'Blog', href: '/dashboard/blog', icon: '📝' },
