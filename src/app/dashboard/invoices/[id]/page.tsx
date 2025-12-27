@@ -19,6 +19,7 @@ export default function InvoiceDetailPage() {
   const [userRoleLevel, setUserRoleLevel] = useState(30);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showVoidModal, setShowVoidModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -50,6 +51,38 @@ export default function InvoiceDetailPage() {
   const canRecordPayment = userRoleLevel >= 60 && invoice?.status !== 'paid' && invoice?.status !== 'void';
   const canVoid = userRoleLevel >= 70 && invoice?.status !== 'void';
   const canExport = userRoleLevel >= 70;
+
+  const handleExport = async () => {
+    if (!invoice || isExporting) return;
+
+    setIsExporting(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/v1/sales-invoices/${invoice.id}/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      // Get the blob and create download link
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Invoice-${invoice.invoiceNumber.replace(/\//g, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Gagal mengekspor invoice');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -114,9 +147,13 @@ export default function InvoiceDetailPage() {
             </button>
           )}
           {canExport && (
-            <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
+            <button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <FaPrint className="text-xs" />
-              Cetak
+              {isExporting ? 'Mengunduh...' : 'Cetak PDF'}
             </button>
           )}
         </div>
