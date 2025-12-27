@@ -8,6 +8,23 @@ import { prisma } from '@/lib/prisma';
 import { verifyAccessToken, extractTokenFromHeader, type JWTPayload } from './jwt';
 
 /**
+ * Compute roleLevel from role string
+ * OWNER(100), ADMIN(90), SUPER_ADMIN(90), MANAGER(70), FINANCE(60), SALES(30)
+ */
+export function getRoleLevelFromRole(role: string): number {
+  const normalizedRole = role.toUpperCase();
+  switch (normalizedRole) {
+    case 'OWNER': return 100;
+    case 'ADMIN': return 90;
+    case 'SUPER_ADMIN': return 90;
+    case 'MANAGER': return 70;
+    case 'FINANCE': return 60;
+    case 'SALES': return 30;
+    default: return 30;
+  }
+}
+
+/**
  * Authentication result
  */
 export interface AuthResult {
@@ -18,6 +35,7 @@ export interface AuthResult {
     firstName: string;
     lastName: string;
     role: string;
+    roleLevel: number;
     tenantId: string | null;
   };
   payload?: JWTPayload;
@@ -51,19 +69,55 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
     }
 
     // Fetch user from database to ensure still exists and active
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        tenantId: true,
-        emailVerified: true,
-        lockedUntil: true,
-      },
-    });
+    // Try with roleLevel first, fallback without if column doesn't exist
+    let user: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+      roleLevel?: number | null;
+      tenantId: string | null;
+      emailVerified: boolean;
+      lockedUntil: Date | null;
+    } | null = null;
+
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          roleLevel: true,
+          tenantId: true,
+          emailVerified: true,
+          lockedUntil: true,
+        },
+      });
+    } catch (err: any) {
+      // If roleLevel column doesn't exist (P2022), try without it
+      if (err?.code === 'P2022' && err?.meta?.column?.includes('roleLevel')) {
+        console.log('[Auth] roleLevel column not found, querying without it');
+        user = await prisma.user.findUnique({
+          where: { id: payload.userId },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            tenantId: true,
+            emailVerified: true,
+            lockedUntil: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     if (!user) {
       return {
@@ -80,6 +134,9 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
       };
     }
 
+    // Compute roleLevel from role if not set in database
+    const roleLevel = user.roleLevel ?? getRoleLevelFromRole(user.role);
+
     return {
       success: true,
       user: {
@@ -88,6 +145,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        roleLevel,
         tenantId: user.tenantId,
       },
       payload,

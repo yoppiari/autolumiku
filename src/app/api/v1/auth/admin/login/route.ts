@@ -4,7 +4,40 @@ import { prisma } from '@/lib/prisma';
 import { generateTokenPair } from '@/lib/auth/jwt';
 import { getUserPermissions } from '@/lib/auth/middleware';
 
+// Self-healing: ensure roleLevel column exists
+async function ensureRoleLevelColumn(): Promise<void> {
+  try {
+    await prisma.$executeRaw`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'roleLevel'
+        ) THEN
+          ALTER TABLE "users" ADD COLUMN "roleLevel" INTEGER NOT NULL DEFAULT 30;
+        END IF;
+      END $$;
+    `;
+    await prisma.$executeRaw`
+      UPDATE "users" SET "roleLevel" = CASE
+        WHEN UPPER("role") = 'OWNER' THEN 100
+        WHEN UPPER("role") = 'ADMIN' THEN 90
+        WHEN UPPER("role") = 'SUPER_ADMIN' THEN 90
+        WHEN UPPER("role") = 'MANAGER' THEN 70
+        WHEN UPPER("role") = 'FINANCE' THEN 60
+        ELSE 30
+      END
+      WHERE "roleLevel" = 30;
+    `;
+  } catch (err) {
+    console.error('[AdminLogin] Failed to ensure roleLevel column:', err);
+  }
+}
+
 export async function POST(request: NextRequest) {
+  // Self-healing: ensure roleLevel column exists
+  await ensureRoleLevelColumn();
+
   try {
     const body = await request.json();
     const { email, password } = body;
