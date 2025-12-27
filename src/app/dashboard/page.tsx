@@ -5,6 +5,39 @@ import Link from 'next/link';
 import SubscriptionCard from '@/components/dashboard/SubscriptionCard';
 import { ROLE_LEVELS, getVisibleDashboardCards } from '@/lib/rbac';
 
+// Tooltip wrapper component for unauthorized access
+interface AuthorizedLinkProps {
+  href: string;
+  isAuthorized: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+function AuthorizedLink({ href, isAuthorized, children, className = '' }: AuthorizedLinkProps) {
+  if (isAuthorized) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      className={`relative group/auth cursor-not-allowed ${className}`}
+      style={{ opacity: 0.6 }}
+      onClick={(e) => e.preventDefault()}
+    >
+      {children}
+      {/* Tooltip */}
+      <div className="absolute z-50 hidden group-hover/auth:block bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-lg">
+        You are not authorized
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+      </div>
+    </div>
+  );
+}
+
 interface DashboardStats {
   vehicles: {
     total: number;
@@ -150,7 +183,8 @@ export default function ShowroomDashboardPage() {
   };
 
   // Stats card configuration with links and role visibility
-  const allStatsConfig = [
+  // All cards shown, authorization checked per card
+  const statsConfig = [
     {
       key: 'kendaraan',
       title: 'Total Kendaraan',
@@ -164,6 +198,7 @@ export default function ShowroomDashboardPage() {
       href: '/dashboard/vehicles',
       colorClass: 'hover:border-blue-400 hover:bg-blue-50/50',
       iconBg: 'bg-blue-100 group-hover:bg-blue-500 border-2 border-blue-200 group-hover:border-blue-500',
+      isAuthorized: canSeeKendaraan,
     },
     {
       key: 'analytics',
@@ -175,9 +210,10 @@ export default function ShowroomDashboardPage() {
       emoji: '📊',
       gradient: 'from-emerald-500 to-emerald-600',
       bgLight: 'bg-emerald-50',
-      href: '/dashboard/analytics',
+      href: '/dashboard/whatsapp-ai/analytics',
       colorClass: 'hover:border-emerald-400 hover:bg-emerald-50/50',
       iconBg: 'bg-emerald-100 group-hover:bg-emerald-500 border-2 border-emerald-200 group-hover:border-emerald-500',
+      isAuthorized: canSeeAnalytics,
     },
     {
       key: 'tim',
@@ -192,6 +228,7 @@ export default function ShowroomDashboardPage() {
       href: '/dashboard/users',
       colorClass: 'hover:border-violet-400 hover:bg-violet-50/50',
       iconBg: 'bg-violet-100 group-hover:bg-violet-500 border-2 border-violet-200 group-hover:border-violet-500',
+      isAuthorized: canSeeTim,
     },
     {
       key: 'invoice',
@@ -207,6 +244,7 @@ export default function ShowroomDashboardPage() {
       href: '/dashboard/invoices',
       colorClass: 'hover:border-amber-400 hover:bg-amber-50/50',
       iconBg: 'bg-amber-100 group-hover:bg-amber-500 border-2 border-amber-200 group-hover:border-amber-500',
+      isAuthorized: canSeeInvoice,
     },
     {
       key: 'blog',
@@ -221,11 +259,9 @@ export default function ShowroomDashboardPage() {
       href: '/dashboard/blog',
       colorClass: 'hover:border-rose-400 hover:bg-rose-50/50',
       iconBg: 'bg-rose-100 group-hover:bg-rose-500 border-2 border-rose-200 group-hover:border-rose-500',
+      isAuthorized: canSeeBlog,
     },
   ];
-
-  // Filter stats based on role visibility
-  const statsConfig = allStatsConfig.filter(stat => visibleCards.includes(stat.key));
 
   return (
     <div className="flex flex-col gap-3 min-h-[calc(100vh-90px)] -mt-2">
@@ -243,17 +279,14 @@ export default function ShowroomDashboardPage() {
         </span>
       </div>
 
-      {/* Stats Grid - Cards with Colored Icons (filtered by role) */}
-      <div className={`grid gap-2 md:gap-3 flex-shrink-0 ${
-        statsConfig.length <= 2 ? 'grid-cols-2' :
-        statsConfig.length === 3 ? 'grid-cols-3' :
-        'grid-cols-2 md:grid-cols-4'
-      }`}>
+      {/* Stats Grid - Cards with Colored Icons (all cards shown, tooltip for unauthorized) */}
+      <div className="grid gap-2 md:gap-3 flex-shrink-0 grid-cols-2 md:grid-cols-5">
         {statsConfig.map((stat) => (
-          <Link
+          <AuthorizedLink
             key={stat.key}
             href={stat.href}
-            className={`group bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all p-2 md:p-3 ${stat.colorClass}`}
+            isAuthorized={stat.isAuthorized}
+            className={`group bg-white rounded-xl border border-gray-200 ${stat.isAuthorized ? 'hover:shadow-lg' : ''} transition-all p-2 md:p-3 ${stat.isAuthorized ? stat.colorClass : ''}`}
           >
             {/* Mobile: Vertical layout, Desktop: Horizontal */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -283,7 +316,7 @@ export default function ShowroomDashboardPage() {
                 )}
               </div>
             </div>
-          </Link>
+          </AuthorizedLink>
         ))}
       </div>
 
@@ -487,7 +520,7 @@ export default function ShowroomDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions - Horizontal scroll on mobile, Grid on desktop (filtered by role) */}
+      {/* Quick Actions - Horizontal scroll on mobile, Grid on desktop (all shown, tooltip for unauthorized) */}
       <div className="bg-white rounded-lg border border-gray-200 flex-shrink-0 mt-2">
         <div className="px-3 md:px-4 py-2 border-b border-gray-100">
           <h3 className="text-sm md:text-base font-bold text-gray-800">Aksi Cepat</h3>
@@ -495,50 +528,46 @@ export default function ShowroomDashboardPage() {
         <div className="p-2 md:p-3">
           {/* Mobile: Horizontal scroll, Desktop: Grid */}
           <div className="flex md:grid md:grid-cols-4 gap-2 md:gap-3 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
-            {canSeeKendaraan && (
-              <Link
-                href="/dashboard/vehicles"
-                className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all group border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg min-w-[70px] md:min-w-0"
-              >
-                <div className="w-9 h-9 md:w-12 md:h-12 bg-blue-100 group-hover:bg-blue-200 rounded-xl flex items-center justify-center transition-colors border border-blue-300 flex-shrink-0">
-                  <span className="text-lg md:text-2xl">🚗</span>
-                </div>
-                <span className="text-[10px] md:text-sm font-semibold text-blue-800 group-hover:text-blue-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Kendaraan</span>
-              </Link>
-            )}
-            {canSeeTim && (
-              <Link
-                href="/dashboard/users"
-                className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-violet-50 hover:bg-violet-100 transition-all group border-2 border-violet-200 hover:border-violet-400 hover:shadow-lg min-w-[70px] md:min-w-0"
-              >
-                <div className="w-9 h-9 md:w-12 md:h-12 bg-violet-100 group-hover:bg-violet-200 rounded-xl flex items-center justify-center transition-colors border border-violet-300 flex-shrink-0">
-                  <span className="text-lg md:text-2xl">👥</span>
-                </div>
-                <span className="text-[10px] md:text-sm font-semibold text-violet-800 group-hover:text-violet-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Tim</span>
-              </Link>
-            )}
-            {canSeeInvoice && (
-              <Link
-                href="/dashboard/invoices"
-                className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-amber-50 hover:bg-amber-100 transition-all group border-2 border-amber-200 hover:border-amber-400 hover:shadow-lg min-w-[70px] md:min-w-0"
-              >
-                <div className="w-9 h-9 md:w-12 md:h-12 bg-amber-100 group-hover:bg-amber-200 rounded-xl flex items-center justify-center transition-colors border border-amber-300 flex-shrink-0">
-                  <span className="text-lg md:text-2xl">📄</span>
-                </div>
-                <span className="text-[10px] md:text-sm font-semibold text-amber-800 group-hover:text-amber-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Invoice</span>
-              </Link>
-            )}
-            {canSeeBlog && (
-              <Link
-                href="/dashboard/blog"
-                className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-rose-50 hover:bg-rose-100 transition-all group border-2 border-rose-200 hover:border-rose-400 hover:shadow-lg min-w-[70px] md:min-w-0"
-              >
-                <div className="w-9 h-9 md:w-12 md:h-12 bg-rose-100 group-hover:bg-rose-200 rounded-xl flex items-center justify-center transition-colors border border-rose-300 flex-shrink-0">
-                  <span className="text-lg md:text-2xl">📝</span>
-                </div>
-                <span className="text-[10px] md:text-sm font-semibold text-rose-800 group-hover:text-rose-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Blog</span>
-              </Link>
-            )}
+            <AuthorizedLink
+              href="/dashboard/vehicles"
+              isAuthorized={canSeeKendaraan}
+              className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-blue-50 ${canSeeKendaraan ? 'hover:bg-blue-100 hover:border-blue-400 hover:shadow-lg' : ''} transition-all group border-2 border-blue-200 min-w-[70px] md:min-w-0`}
+            >
+              <div className="w-9 h-9 md:w-12 md:h-12 bg-blue-100 group-hover:bg-blue-200 rounded-xl flex items-center justify-center transition-colors border border-blue-300 flex-shrink-0">
+                <span className="text-lg md:text-2xl">🚗</span>
+              </div>
+              <span className="text-[10px] md:text-sm font-semibold text-blue-800 group-hover:text-blue-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Kendaraan</span>
+            </AuthorizedLink>
+            <AuthorizedLink
+              href="/dashboard/users"
+              isAuthorized={canSeeTim}
+              className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-violet-50 ${canSeeTim ? 'hover:bg-violet-100 hover:border-violet-400 hover:shadow-lg' : ''} transition-all group border-2 border-violet-200 min-w-[70px] md:min-w-0`}
+            >
+              <div className="w-9 h-9 md:w-12 md:h-12 bg-violet-100 group-hover:bg-violet-200 rounded-xl flex items-center justify-center transition-colors border border-violet-300 flex-shrink-0">
+                <span className="text-lg md:text-2xl">👥</span>
+              </div>
+              <span className="text-[10px] md:text-sm font-semibold text-violet-800 group-hover:text-violet-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Tim</span>
+            </AuthorizedLink>
+            <AuthorizedLink
+              href="/dashboard/invoices"
+              isAuthorized={canSeeInvoice}
+              className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-amber-50 ${canSeeInvoice ? 'hover:bg-amber-100 hover:border-amber-400 hover:shadow-lg' : ''} transition-all group border-2 border-amber-200 min-w-[70px] md:min-w-0`}
+            >
+              <div className="w-9 h-9 md:w-12 md:h-12 bg-amber-100 group-hover:bg-amber-200 rounded-xl flex items-center justify-center transition-colors border border-amber-300 flex-shrink-0">
+                <span className="text-lg md:text-2xl">📄</span>
+              </div>
+              <span className="text-[10px] md:text-sm font-semibold text-amber-800 group-hover:text-amber-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Invoice</span>
+            </AuthorizedLink>
+            <AuthorizedLink
+              href="/dashboard/blog"
+              isAuthorized={canSeeBlog}
+              className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-rose-50 ${canSeeBlog ? 'hover:bg-rose-100 hover:border-rose-400 hover:shadow-lg' : ''} transition-all group border-2 border-rose-200 min-w-[70px] md:min-w-0`}
+            >
+              <div className="w-9 h-9 md:w-12 md:h-12 bg-rose-100 group-hover:bg-rose-200 rounded-xl flex items-center justify-center transition-colors border border-rose-300 flex-shrink-0">
+                <span className="text-lg md:text-2xl">📝</span>
+              </div>
+              <span className="text-[10px] md:text-sm font-semibold text-rose-800 group-hover:text-rose-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Blog</span>
+            </AuthorizedLink>
           </div>
         </div>
       </div>

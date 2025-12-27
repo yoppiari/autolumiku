@@ -7,6 +7,54 @@ import DashboardErrorBoundary from '@/components/dashboard/ErrorBoundary';
 import SessionManager from '@/components/auth/SessionManager';
 import { ROLE_LEVELS, canAccessPage } from '@/lib/rbac';
 
+// Tooltip wrapper component for unauthorized navigation items
+interface AuthorizedNavLinkProps {
+  href: string;
+  isAuthorized: boolean;
+  isActive: boolean;
+  children: React.ReactNode;
+}
+
+function AuthorizedNavLink({ href, isAuthorized, isActive, children }: AuthorizedNavLinkProps) {
+  if (isAuthorized) {
+    return (
+      <Link
+        href={href}
+        className={`
+          flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+          ${isActive
+            ? 'bg-blue-100 text-blue-700'
+            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+          }
+        `}
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      className="relative group/nav cursor-not-allowed"
+      onClick={(e) => e.preventDefault()}
+    >
+      <div
+        className={`
+          flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+          text-gray-400 opacity-60
+        `}
+      >
+        {children}
+      </div>
+      {/* Tooltip */}
+      <div className="absolute z-50 hidden group-hover/nav:block left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-lg">
+        You are not authorized
+        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+      </div>
+    </div>
+  );
+}
+
 interface NavItem {
   name: string;
   href: string;
@@ -113,14 +161,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Get user's role level
   const userRoleLevel = user?.roleLevel || ROLE_LEVELS.SALES;
 
-  // Filter navigation based on user's role
+  // Show all navigation items but with authorization check
   const navigation = useMemo(() => {
-    return allNavigation.filter((item) => {
+    return allNavigation.map((item) => {
       // Check minimum role
-      if (userRoleLevel < item.minRole) return false;
+      const hasMinRole = userRoleLevel >= item.minRole;
       // Check excluded roles
-      if (item.excludeRoles?.includes(userRoleLevel)) return false;
-      return true;
+      const isExcluded = item.excludeRoles?.includes(userRoleLevel) ?? false;
+      // Item is authorized if has min role and not excluded
+      const isAuthorized = hasMinRole && !isExcluded;
+      return { ...item, isAuthorized };
     });
   }, [userRoleLevel]);
 
@@ -176,7 +226,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </Link>
 
-          {/* Navigation */}
+          {/* Navigation - all items shown, tooltip for unauthorized */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => {
               // For /dashboard exact match, only highlight on exact path
@@ -185,20 +235,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 ? pathname === '/dashboard'
                 : pathname === item.href || pathname?.startsWith(item.href + '/');
               return (
-                <Link
+                <AuthorizedNavLink
                   key={item.name}
                   href={item.href}
-                  className={`
-                    flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                    ${isActive
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }
-                  `}
+                  isAuthorized={item.isAuthorized}
+                  isActive={isActive}
                 >
-                    <span className="mr-3 text-lg">{item.icon}</span>
-                    {item.name}
-                </Link>
+                  <span className="mr-3 text-lg">{item.icon}</span>
+                  {item.name}
+                </AuthorizedNavLink>
               );
             })}
           </nav>
