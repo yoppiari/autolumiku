@@ -134,18 +134,32 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    // Transform stats to expected format
+    const statsMap = stats.reduce(
+      (acc, s) => {
+        acc[s.status] = { count: s._count, total: Number(s._sum.grandTotal) || 0 };
+        return acc;
+      },
+      {} as Record<string, { count: number; total: number }>
+    );
+
+    const transformedStats = {
+      total: Object.values(statsMap).reduce((sum, s) => sum + s.count, 0),
+      totalAmount: Object.values(statsMap).reduce((sum, s) => sum + s.total, 0),
+      unpaid: statsMap['unpaid']?.count || 0,
+      unpaidAmount: statsMap['unpaid']?.total || 0,
+      partial: statsMap['partial']?.count || 0,
+      partialAmount: statsMap['partial']?.total || 0,
+      paid: statsMap['paid']?.count || 0,
+      paidAmount: statsMap['paid']?.total || 0,
+    };
+
     return NextResponse.json({
       success: true,
       data: {
         invoices,
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-        stats: stats.reduce(
-          (acc, s) => {
-            acc[s.status] = { count: s._count, total: s._sum.grandTotal || 0 };
-            return acc;
-          },
-          {} as Record<string, { count: number; total: number }>
-        ),
+        stats: transformedStats,
       },
     });
   } catch (error) {

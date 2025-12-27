@@ -314,12 +314,16 @@ export default function CreateInvoicePage() {
         paymentMethod: formData.paymentMethod,
         notes: formData.notes || undefined,
         termsConditions: formData.termsConditions || undefined,
-        // Credit details
+        // Credit details (wrapped in creditDetail object for API)
         ...(formData.paymentMethod === 'credit' && {
-          leasingPartnerId: formData.leasingPartnerId,
-          dpAmount: formData.dpAmount,
-          tenor: formData.tenor,
-          interestRate: formData.interestRate,
+          creditDetail: {
+            leasingPartnerId: formData.leasingPartnerId,
+            dpAmount: formData.dpAmount,
+            dpPercent: formData.vehiclePrice > 0 ? (formData.dpAmount / formData.vehiclePrice) * 100 : 0,
+            tenor: formData.tenor,
+            interestRate: formData.interestRate,
+            interestType: 'flat',
+          },
         }),
       };
 
