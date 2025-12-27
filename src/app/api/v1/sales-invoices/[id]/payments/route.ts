@@ -30,6 +30,10 @@ export async function GET(
     const { id } = await params;
     const tenantId = auth.user.tenantId;
 
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant ID required' }, { status: 400 });
+    }
+
     // Verify invoice belongs to tenant
     const invoice = await prisma.salesInvoice.findFirst({
       where: { id, tenantId },
@@ -80,6 +84,11 @@ export async function POST(
   try {
     const { id } = await params;
     const tenantId = auth.user.tenantId;
+
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant ID required' }, { status: 400 });
+    }
+
     const body = await request.json();
 
     const {
@@ -182,7 +191,7 @@ export async function POST(
 
         if (commissionConfig.type === 'fixed') {
           commissionAmount = commissionConfig.fixedAmount;
-        } else if (commissionConfig.type === 'percentage_price') {
+        } else if (commissionConfig.type === 'percentage_price' && commissionConfig.percentageRate) {
           rate = commissionConfig.percentageRate;
           commissionAmount = (invoice.grandTotal * rate) / 100;
         }

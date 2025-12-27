@@ -32,6 +32,10 @@ export async function GET(
     const { id } = await params;
     const tenantId = auth.user.tenantId;
 
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant ID required' }, { status: 400 });
+    }
+
     const invoice = await prisma.salesInvoice.findFirst({
       where: { id, tenantId },
       include: {
@@ -71,6 +75,11 @@ export async function PUT(
   try {
     const { id } = await params;
     const tenantId = auth.user.tenantId;
+
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant ID required' }, { status: 400 });
+    }
+
     const body = await request.json();
 
     // Check if invoice exists and is editable
@@ -196,6 +205,11 @@ export async function DELETE(
   try {
     const { id } = await params;
     const tenantId = auth.user.tenantId;
+
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Tenant ID required' }, { status: 400 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const { voidReason } = body;
 
