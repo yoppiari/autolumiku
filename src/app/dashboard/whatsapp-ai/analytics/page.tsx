@@ -102,17 +102,17 @@ export default function AnalyticsPage() {
           <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-xs md:text-sm flex-shrink-0">← Back</Link>
           <h1 className="text-sm md:text-xl font-bold text-gray-900 truncate">Analytics</h1>
         </div>
-        <div className="flex items-center gap-0.5 md:gap-1 flex-shrink-0">
+        <div className="flex items-center flex-shrink-0">
           {['today', 'week', 'month'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range as typeof timeRange)}
-              className={`px-2 md:px-3 py-1 rounded text-[10px] md:text-sm font-medium ${
+              className={`px-1.5 md:px-3 py-1 rounded text-[9px] md:text-sm font-medium ${
                 timeRange === range ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'
               }`}
             >
               <span className="hidden md:inline">{range.charAt(0).toUpperCase() + range.slice(1)}</span>
-              <span className="md:hidden">{range === 'today' ? 'Day' : range === 'week' ? 'Week' : 'Mon'}</span>
+              <span className="md:hidden">{range === 'today' ? '1D' : range === 'week' ? '1W' : '1M'}</span>
             </button>
           ))}
         </div>
