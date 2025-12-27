@@ -94,27 +94,27 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
   return (
     <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col">
       {/* Header - compact with badge close to title */}
-      <div className="px-2 py-1 border-b border-gray-100 flex items-center gap-2 flex-shrink-0">
-        <span className="text-sm flex-shrink-0">💳</span>
-        <span className="text-[10px] md:text-xs font-semibold text-gray-700">Subscription</span>
-        <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-semibold ${getStatusColor()}`}>
+      <div className="px-3 py-2 border-b border-gray-100 flex items-center gap-1.5 flex-shrink-0">
+        <span className="text-base flex-shrink-0">💳</span>
+        <span className="text-xs md:text-sm font-semibold text-gray-700">Subscription</span>
+        <span className={`px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-semibold ${getStatusColor()}`}>
           {getStatusLabel()}
         </span>
       </div>
 
-      <div className="p-2 flex-1 flex flex-col min-h-0">
-        {/* Period Info - compact */}
-        <div className="text-center mb-1">
-          <p className="text-[9px] text-gray-500">Berlaku hingga</p>
-          <p className="text-sm font-bold text-gray-900">{formatDate(subscription.currentPeriodEnd)}</p>
-          <p className="text-[10px] text-blue-600 font-medium">{days > 0 ? `${days} hari tersisa` : 'Berakhir'}</p>
+      <div className="p-3 flex-1 flex flex-col min-h-0">
+        {/* Period Info */}
+        <div className="text-center mb-2">
+          <p className="text-[10px] md:text-xs text-gray-500">Berlaku hingga</p>
+          <p className="text-base md:text-lg font-bold text-gray-900">{formatDate(subscription.currentPeriodEnd)}</p>
+          <p className="text-xs md:text-sm text-blue-600 font-medium">{days > 0 ? `${days} hari tersisa` : 'Berakhir'}</p>
         </div>
 
-        {/* Progress Bar - with margin */}
-        <div className="mx-2 my-1">
-          <div className="bg-gray-100 rounded-full h-1.5 overflow-hidden">
+        {/* Progress Bar - shorter width */}
+        <div className="mx-4 md:mx-6 my-2">
+          <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 rounded-full transition-all"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
               style={{ width: `${Math.max(0, Math.min(100, (days / 365) * 100))}%` }}
             ></div>
           </div>
@@ -122,16 +122,16 @@ export default function SubscriptionCard({ subscription }: SubscriptionCardProps
 
         {/* Warning */}
         {days > 0 && days <= 30 && (
-          <div className="bg-amber-50 rounded p-1 border border-amber-100 text-center my-1 mx-1">
-            <p className="text-[8px] text-amber-700 font-medium">Segera berakhir!</p>
+          <div className="bg-amber-50 rounded p-1.5 border border-amber-100 text-center my-1 mx-2">
+            <p className="text-[9px] md:text-[10px] text-amber-700 font-medium">Segera berakhir!</p>
           </div>
         )}
 
         {/* Features - 2 columns */}
-        <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 mt-auto">
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-auto pt-2">
           {['Unlimited kendaraan', 'WhatsApp AI', 'Custom domain', 'Support 24/7'].map((f) => (
-            <div key={f} className="flex items-center gap-0.5 text-[8px] md:text-[9px] text-gray-600">
-              <FaCheckCircle className="text-green-500 text-[6px] flex-shrink-0" />
+            <div key={f} className="flex items-center gap-1 text-[10px] md:text-xs text-gray-600">
+              <FaCheckCircle className="text-green-500 text-[8px] md:text-[10px] flex-shrink-0" />
               <span className="truncate">{f}</span>
             </div>
           ))}
