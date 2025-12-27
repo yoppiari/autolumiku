@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { StorageService } from '@/lib/services/storage.service';
 import { prisma } from '@/lib/prisma';
+import { authenticateRequest } from '@/lib/auth/middleware';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 /**
  * DELETE - Remove photo from vehicle
@@ -14,6 +16,23 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // RBAC: Block FINANCE role from accessing vehicles
+  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE) {
+    return NextResponse.json(
+      { error: 'Forbidden - Finance role cannot access vehicles' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { id: vehicleId, photoId } = await params;
 
@@ -78,6 +97,23 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // RBAC: Block FINANCE role from accessing vehicles
+  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE) {
+    return NextResponse.json(
+      { error: 'Forbidden - Finance role cannot access vehicles' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { id: vehicleId, photoId } = await params;
     const body = await request.json();

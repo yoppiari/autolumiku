@@ -7,8 +7,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FaPlus, FaSearch, FaFileInvoice, FaEye, FaChartLine } from 'react-icons/fa';
 import { SalesInvoice, INVOICE_STATUS, formatRupiah, formatDate } from '@/types/invoice';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 interface InvoiceStats {
   total: number;
@@ -22,6 +24,7 @@ interface InvoiceStats {
 }
 
 export default function InvoicesPage() {
+  const router = useRouter();
   const [invoices, setInvoices] = useState<SalesInvoice[]>([]);
   const [stats, setStats] = useState<InvoiceStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,16 +32,33 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [userRoleLevel, setUserRoleLevel] = useState(30);
+  const [userRoleLevel, setUserRoleLevel] = useState(ROLE_LEVELS.SALES);
+  const [accessDenied, setAccessDenied] = useState(false);
 
+  // Access guard: FINANCE (60+) only - block SALES
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      setUserRoleLevel(user.roleLevel || 30);
+      const roleLevel = user.roleLevel || ROLE_LEVELS.SALES;
+      setUserRoleLevel(roleLevel);
+
+      // SALES (30) cannot access invoices page
+      if (roleLevel < ROLE_LEVELS.FINANCE) {
+        setAccessDenied(true);
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
+        return;
+      }
     }
-    loadInvoices();
-  }, [page, statusFilter]);
+  }, [router]);
+
+  useEffect(() => {
+    if (!accessDenied) {
+      loadInvoices();
+    }
+  }, [page, statusFilter, accessDenied]);
 
   const loadInvoices = async () => {
     setIsLoading(true);
@@ -74,7 +94,22 @@ export default function InvoicesPage() {
     loadInvoices();
   };
 
-  const canCreate = userRoleLevel >= 60; // FINANCE and above
+  const canCreate = userRoleLevel >= ROLE_LEVELS.FINANCE;
+  const canVoid = userRoleLevel >= ROLE_LEVELS.MANAGER;
+
+  // Show access denied message briefly before redirect
+  if (accessDenied) {
+    return (
+      <div className="p-6 flex items-center justify-center h-[calc(100vh-64px)]">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Akses Ditolak</h2>
+          <p className="text-gray-600">Anda tidak memiliki akses ke halaman Invoice.</p>
+          <p className="text-sm text-gray-500 mt-2">Mengalihkan ke Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6">

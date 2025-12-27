@@ -9,6 +9,8 @@ import { StorageService } from '@/lib/services/storage.service';
 import { PhotoQualityService } from '@/lib/services/photo-quality.service';
 import { PlateDetectionService } from '@/lib/services/plate-detection.service';
 import { prisma } from '@/lib/prisma';
+import { authenticateRequest } from '@/lib/auth/middleware';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 /**
  * POST /api/v1/vehicles/[id]/photos
@@ -18,6 +20,23 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Authenticate request
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // RBAC: Block FINANCE role from accessing vehicles
+  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE) {
+    return NextResponse.json(
+      { error: 'Forbidden - Finance role cannot access vehicles' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { id: vehicleId } = await params;
     const body = await request.json();
@@ -131,7 +150,7 @@ export async function POST(
           validationMessage: quality.message,
           validationDetails: quality.details,
           caption: null,
-          uploadedBy: null, // TODO: Get from authenticated user session
+          uploadedBy: auth.user!.id,
         };
       } catch (error) {
         console.error(`Error processing photo ${index}:`, error);

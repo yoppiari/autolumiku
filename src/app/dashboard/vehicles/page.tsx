@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api-client';
 import VehicleImageCarousel from '@/components/ui/VehicleImageCarousel';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 type VehicleStatus = 'DRAFT' | 'AVAILABLE' | 'BOOKED' | 'SOLD' | 'DELETED';
 type ViewMode = 'grid' | 'list';
@@ -28,20 +30,42 @@ interface Vehicle {
 }
 
 export default function VehiclesPage() {
+  const router = useRouter();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [error, setError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'price'>('date');
 
+  // Access guard: Block FINANCE (60) - they cannot access vehicles
   useEffect(() => {
-    fetchVehicles();
-  }, []);
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES;
+
+      // FINANCE (60) cannot access vehicles page
+      if (roleLevel === ROLE_LEVELS.FINANCE) {
+        setAccessDenied(true);
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
+        return;
+      }
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!accessDenied) {
+      fetchVehicles();
+    }
+  }, [accessDenied]);
 
   useEffect(() => {
     applyFilters();
@@ -273,6 +297,20 @@ export default function VehiclesPage() {
       setDeleting(null);
     }
   };
+
+  // Show access denied message briefly before redirect
+  if (accessDenied) {
+    return (
+      <div className="p-6 flex items-center justify-center h-[calc(100vh-64px)]">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Akses Ditolak</h2>
+          <p className="text-gray-600">Anda tidak memiliki akses ke halaman Kendaraan.</p>
+          <p className="text-sm text-gray-500 mt-2">Mengalihkan ke Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

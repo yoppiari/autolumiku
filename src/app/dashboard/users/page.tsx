@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { FaSearch, FaPlus, FaEdit, FaTrash, FaUserCircle } from 'react-icons/fa';
 import { api } from '@/lib/api-client';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 interface User {
   id: string;
@@ -28,6 +30,7 @@ interface ProfilePicture {
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -39,6 +42,8 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [tenantId, setTenantId] = useState<string>('');
   const [profilePictures, setProfilePictures] = useState<Record<string, ProfilePicture>>({});
+  const [userRoleLevel, setUserRoleLevel] = useState<number>(ROLE_LEVELS.SALES);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -51,14 +56,26 @@ export default function UsersPage() {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
+  // Access guard: ADMIN (90+) only
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
+      const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES;
+      setUserRoleLevel(roleLevel);
+
+      if (roleLevel < ROLE_LEVELS.ADMIN) {
+        setAccessDenied(true);
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
+        return;
+      }
+
       setTenantId(parsedUser.tenantId);
       loadUsers(parsedUser.tenantId);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     applyFilters();
@@ -279,6 +296,20 @@ export default function UsersPage() {
         return role;
     }
   };
+
+  // Show access denied message briefly before redirect
+  if (accessDenied) {
+    return (
+      <div className="p-6 flex items-center justify-center h-[calc(100vh-64px)]">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Akses Ditolak</h2>
+          <p className="text-gray-600">Anda tidak memiliki akses ke halaman ini.</p>
+          <p className="text-sm text-gray-500 mt-2">Mengalihkan ke Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
