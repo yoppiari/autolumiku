@@ -297,15 +297,17 @@ export default function ShowroomDashboardPage() {
                       <div className="relative">
                         <svg className="w-20 h-20 md:w-28 md:h-28" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                          <circle
-                            cx="18" cy="18" r="14"
-                            fill="none"
-                            stroke="#22c55e"
-                            strokeWidth="3.5"
-                            strokeDasharray={`${(analytics?.performance.aiAccuracy || 0) * 0.88} 88`}
-                            strokeDashoffset="22"
-                            strokeLinecap="round"
-                          />
+                          {analytics?.performance.aiAccuracy && analytics.performance.aiAccuracy > 0 && (
+                            <circle
+                              cx="18" cy="18" r="14"
+                              fill="none"
+                              stroke="#22c55e"
+                              strokeWidth="3.5"
+                              strokeDasharray={`${analytics.performance.aiAccuracy * 0.88} 88`}
+                              strokeDashoffset="22"
+                              strokeLinecap="round"
+                            />
+                          )}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
                           <span className="text-base md:text-xl font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
