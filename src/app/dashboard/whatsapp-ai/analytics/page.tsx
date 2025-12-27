@@ -212,7 +212,7 @@ export default function AnalyticsPage() {
                       })()}
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={`text-xs md:text-lg font-bold ${totalCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>{totalCount}</span>
+                      <span className={`text-xs md:text-lg font-bold ${totalCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>{totalCount > 0 ? '100%' : '0%'}</span>
                     </div>
                   </div>
                   <div className="flex-1 space-y-0.5 md:space-y-1 min-w-0">
