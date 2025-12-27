@@ -1,12 +1,15 @@
 /**
  * Business Information Settings Page
  * Admin interface for managing showroom business info
+ * Access: ADMIN+ only (Super Admin, Owner, Admin)
  */
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 interface BusinessInfo {
   phoneNumber: string;
@@ -47,10 +50,12 @@ const defaultBusinessHours = {
 };
 
 export default function BusinessInfoPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [formData, setFormData] = useState<BusinessInfo>({
     phoneNumber: '',
@@ -72,14 +77,24 @@ export default function BusinessInfoPage() {
     },
   });
 
+  // Access guard: ADMIN+ only (Super Admin, Owner, Admin)
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
+      const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES;
+
+      // Only ADMIN (90), OWNER (100), SUPER_ADMIN (110) can access
+      if (roleLevel < ROLE_LEVELS.ADMIN) {
+        setAccessDenied(true);
+        router.push('/dashboard');
+        return;
+      }
+
       setUser(parsedUser);
       loadBusinessInfo(parsedUser.tenantId);
     }
-  }, []);
+  }, [router]);
 
   const loadBusinessInfo = async (tenantId: string) => {
     try {
@@ -136,6 +151,11 @@ export default function BusinessInfoPage() {
       setSaving(false);
     }
   };
+
+  // Show nothing if access denied
+  if (accessDenied) {
+    return null;
+  }
 
   if (loading) {
     return (

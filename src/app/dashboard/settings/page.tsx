@@ -1,23 +1,37 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { FaBuilding, FaCreditCard, FaChevronDown, FaChevronUp, FaCheckCircle, FaExclamationTriangle, FaTimesCircle } from 'react-icons/fa';
 import Link from 'next/link';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
+  // Access guard: ADMIN+ only (Super Admin, Owner, Admin)
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
+      const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES;
+
+      // Only ADMIN (90), OWNER (100), SUPER_ADMIN (110) can access
+      if (roleLevel < ROLE_LEVELS.ADMIN) {
+        setAccessDenied(true);
+        router.push('/dashboard');
+        return;
+      }
+
       setUser(parsedUser);
       loadSubscription(parsedUser.tenantId);
     }
-  }, []);
+  }, [router]);
 
   const loadSubscription = async (tenantId: string) => {
     try {
@@ -91,6 +105,11 @@ export default function SettingsPage() {
 
   const daysRemaining = getDaysRemaining();
   const monthsRemaining = Math.ceil(daysRemaining / 30);
+
+  // Show nothing while checking access or if access denied
+  if (accessDenied || !user) {
+    return null;
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
