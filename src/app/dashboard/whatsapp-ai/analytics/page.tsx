@@ -175,6 +175,16 @@ export default function AnalyticsPage() {
     }).format(amount);
   };
 
+  // Intent colors for donut chart
+  const intentColors: Record<string, string> = {
+    greeting: '#22c55e',
+    vehicle: '#3b82f6',
+    price: '#a855f7',
+    general: '#f59e0b',
+    closing: '#ef4444',
+    unknown: '#6b7280',
+  };
+
   // Access denied screen
   if (accessDenied) {
     return (
@@ -475,31 +485,162 @@ export default function AnalyticsPage() {
                 </div>
               </div>
 
-              {/* Performance Metrics */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Performance</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-green-600">{whatsappAnalytics.performance.aiAccuracy}%</div>
-                    <p className="text-sm text-gray-500 mt-1">Accuracy</p>
+              {/* Donut Charts Row - AI Performance, Intent Breakdown, AI Accuracy */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* AI Performance Donut */}
+                <div className="bg-white rounded-lg shadow p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4">AI Performance</h4>
+                  <div className="flex items-center justify-center py-4">
+                    <div className="relative">
+                      <svg className="w-32 h-32" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                        {/* Accuracy - Green */}
+                        <circle
+                          cx="18" cy="18" r="14"
+                          fill="none"
+                          stroke="#22c55e"
+                          strokeWidth="3.5"
+                          strokeDasharray={`${(whatsappAnalytics.performance.aiAccuracy / 100) * 88} 88`}
+                          strokeLinecap="round"
+                          transform="rotate(-90 18 18)"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-gray-700">{whatsappAnalytics.performance.aiAccuracy}%</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-600">{whatsappAnalytics.performance.resolutionRate}%</div>
-                    <p className="text-sm text-gray-500 mt-1">Resolution Rate</p>
+                  {/* Legend */}
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                      <span className="text-xs text-gray-600">Accuracy {whatsappAnalytics.performance.aiAccuracy}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-purple-500"></span>
+                      <span className="text-xs text-gray-600">Satisfaction {whatsappAnalytics.performance.customerSatisfaction}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                      <span className="text-xs text-gray-600">Resolution {whatsappAnalytics.performance.resolutionRate}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                      <span className="text-xs text-gray-600">Escalation {whatsappAnalytics.overview.escalationRate}%</span>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-purple-600">{whatsappAnalytics.performance.customerSatisfaction}%</div>
-                    <p className="text-sm text-gray-500 mt-1">Satisfaction</p>
+                </div>
+
+                {/* Intent Breakdown Donut */}
+                <div className="bg-white rounded-lg shadow p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4">Intent Breakdown</h4>
+                  <div className="flex items-center justify-center py-4">
+                    <div className="relative">
+                      <svg className="w-32 h-32" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                        {whatsappAnalytics.intentBreakdown && whatsappAnalytics.intentBreakdown.length > 0 ? (
+                          (() => {
+                            let offset = 0;
+                            return whatsappAnalytics.intentBreakdown.slice(0, 5).map((item, idx) => {
+                              const dashLength = (item.percentage / 100) * 88;
+                              const segment = (
+                                <circle
+                                  key={idx}
+                                  cx="18" cy="18" r="14"
+                                  fill="none"
+                                  stroke={intentColors[item.intent.toLowerCase()] || '#6b7280'}
+                                  strokeWidth="3.5"
+                                  strokeDasharray={`${dashLength} 88`}
+                                  strokeDashoffset={-offset}
+                                  strokeLinecap="round"
+                                  transform="rotate(-90 18 18)"
+                                />
+                              );
+                              offset += dashLength;
+                              return segment;
+                            });
+                          })()
+                        ) : null}
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-gray-700">
+                          {whatsappAnalytics.intentBreakdown?.reduce((sum, i) => sum + i.count, 0) || 0}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-orange-600">{whatsappAnalytics.overview.avgResponseTime}s</div>
-                    <p className="text-sm text-gray-500 mt-1">Avg Response Time</p>
+                  {/* Legend */}
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    {whatsappAnalytics.intentBreakdown?.slice(0, 6).map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: intentColors[item.intent.toLowerCase()] || '#6b7280' }}
+                        ></span>
+                        <span className="text-xs text-gray-600 capitalize">{item.intent} {item.percentage}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* AI Accuracy Donut */}
+                <div className="bg-white rounded-lg shadow p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4">AI Accuracy</h4>
+                  <div className="flex items-center justify-center py-4">
+                    <div className="relative">
+                      <svg className="w-32 h-32" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                        {/* Correct responses - Green */}
+                        <circle
+                          cx="18" cy="18" r="14"
+                          fill="none"
+                          stroke="#22c55e"
+                          strokeWidth="3.5"
+                          strokeDasharray={`${(whatsappAnalytics.performance.aiAccuracy / 100) * 88} 88`}
+                          strokeLinecap="round"
+                          transform="rotate(-90 18 18)"
+                        />
+                        {/* Wrong/Escalated - show remaining */}
+                        <circle
+                          cx="18" cy="18" r="14"
+                          fill="none"
+                          stroke="#ef4444"
+                          strokeWidth="3.5"
+                          strokeDasharray={`${((100 - whatsappAnalytics.performance.aiAccuracy) / 100) * 88} 88`}
+                          strokeDashoffset={`${-(whatsappAnalytics.performance.aiAccuracy / 100) * 88}`}
+                          strokeLinecap="round"
+                          transform="rotate(-90 18 18)"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-gray-700">{whatsappAnalytics.performance.aiAccuracy}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Legend */}
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                      <span className="text-xs text-gray-600">Correct {whatsappAnalytics.performance.aiAccuracy}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                      <span className="text-xs text-gray-600">Partial</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                      <span className="text-xs text-gray-600">Wrong {100 - whatsappAnalytics.performance.aiAccuracy}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-purple-500"></span>
+                      <span className="text-xs text-gray-600">Escalated</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Staff Activity */}
-              {whatsappAnalytics.staffActivity.length > 0 && (
+              {whatsappAnalytics.staffActivity && whatsappAnalytics.staffActivity.length > 0 && (
                 <div className="bg-white rounded-lg shadow">
                   <div className="p-4 border-b border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900">Staff Activity</h3>
@@ -529,6 +670,17 @@ export default function AnalyticsPage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Show placeholder if no staff activity */}
+              {(!whatsappAnalytics.staffActivity || whatsappAnalytics.staffActivity.length === 0) && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Staff Activity</h3>
+                  <div className="text-center py-8 text-gray-500">
+                    <div className="text-4xl mb-3">👥</div>
+                    <p className="text-sm">Belum ada aktivitas staff tercatat</p>
                   </div>
                 </div>
               )}
