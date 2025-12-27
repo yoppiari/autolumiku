@@ -368,23 +368,31 @@ export default function ShowroomDashboardPage() {
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2x2 grid */}
+                    {/* Legend - 2x3 grid with actual values */}
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Accuracy</span>
+                        <span className="text-[11px] text-gray-600">Accuracy {analytics?.performance?.aiAccuracy || 0}%</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Satisfaction</span>
+                        <span className="text-[11px] text-gray-600">Satisfaction {analytics?.performance?.customerSatisfaction || 0}%</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Resolution</span>
+                        <span className="text-[11px] text-gray-600">Resolution {analytics?.performance?.resolutionRate || 0}%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-orange-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Response {analytics?.overview?.aiResponseRate || 0}%</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Escalation</span>
+                        <span className="text-[11px] text-gray-600">Escalation {analytics?.overview?.escalationRate || 0}%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Avg Time {analytics?.overview?.avgResponseTime || 0}s</span>
                       </div>
                     </div>
                   </Link>
@@ -399,10 +407,12 @@ export default function ShowroomDashboardPage() {
                       <div className="relative">
                         <svg className="w-24 h-24 md:w-28 md:h-28" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                          {analytics?.intentBreakdown && analytics.intentBreakdown.length > 0 ? (
+                          {analytics?.intentBreakdown && analytics.intentBreakdown.length > 0 &&
+                           analytics.intentBreakdown.some(i => i.percentage > 0) ? (
                             (() => {
                               let offset = 0;
                               return analytics.intentBreakdown.slice(0, 5).map((item, idx) => {
+                                if (item.percentage <= 0) return null;
                                 const dashLength = (item.percentage / 100) * 88;
                                 const segment = (
                                   <circle
@@ -428,27 +438,31 @@ export default function ShowroomDashboardPage() {
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2 cols */}
+                    {/* Legend - 2x3 grid with actual values */}
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Price</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Greeting</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">General</span>
+                        <span className="text-[11px] text-gray-600">Greeting {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'greeting')?.percentage || 0}%</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Vehicle</span>
+                        <span className="text-[11px] text-gray-600">Vehicle {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'vehicle')?.percentage || 0}%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Price {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'price')?.percentage || 0}%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">General {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'general')?.percentage || 0}%</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Closing</span>
+                        <span className="text-[11px] text-gray-600">Closing {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'closing')?.percentage || 0}%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-gray-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Unknown {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'unknown')?.percentage || 0}%</span>
                       </div>
                     </div>
                   </Link>
@@ -483,23 +497,31 @@ export default function ShowroomDashboardPage() {
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2 cols */}
+                    {/* Legend - 2x3 grid with actual values */}
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Correct</span>
+                        <span className="text-[11px] text-gray-600">Correct {analytics?.performance?.aiAccuracy || 0}%</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Partial</span>
+                        <span className="text-[11px] text-gray-600">Partial 0%</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Wrong</span>
+                        <span className="text-[11px] text-gray-600">Wrong {100 - (analytics?.performance?.aiAccuracy || 0)}%</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[11px] text-gray-600">Escalated</span>
+                        <span className="text-[11px] text-gray-600">Escalated {analytics?.overview?.escalationRate || 0}%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Timeout 0%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">No Response 0%</span>
                       </div>
                     </div>
                   </Link>
