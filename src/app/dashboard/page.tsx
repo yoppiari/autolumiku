@@ -334,22 +334,22 @@ export default function ShowroomDashboardPage() {
             </div>
             <div className="p-3 md:p-4">
               {loadingAnalytics ? (
-                <div className="grid grid-cols-3 gap-3 md:gap-4">
+                <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-gray-50 rounded-lg animate-pulse h-40 md:h-48"></div>
+                    <div key={i} className="bg-gray-50 rounded-lg animate-pulse h-52 min-w-[200px] md:min-w-0 md:h-48"></div>
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-3 md:gap-4">
+                <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible scrollbar-hide">
                   {/* AI Performance Card */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
-                    className="bg-gray-50 rounded-lg p-3 md:p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
+                    className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col min-w-[200px] md:min-w-0"
                   >
-                    <h4 className="text-xs md:text-sm font-semibold text-gray-700 mb-2">AI Performance</h4>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">AI Performance</h4>
                     <div className="flex-1 flex items-center justify-center py-2">
                       <div className="relative">
-                        <svg className="w-20 h-20 md:w-28 md:h-28" viewBox="0 0 36 36">
+                        <svg className="w-24 h-24 md:w-28 md:h-28" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           {analytics?.performance.aiAccuracy && analytics.performance.aiAccuracy > 0 && (
                             <circle
@@ -364,27 +364,27 @@ export default function ShowroomDashboardPage() {
                           )}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-base md:text-xl font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
+                          <span className="text-lg md:text-xl font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
                         </div>
                       </div>
                     </div>
                     {/* Legend - 2x2 grid */}
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-2 flex-shrink-0">
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Accuracy</span>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Accuracy</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Satisfact.</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Satisfaction</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Resolution</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Resolution</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Escalation</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Escalation</span>
                       </div>
                     </div>
                   </Link>
@@ -392,12 +392,12 @@ export default function ShowroomDashboardPage() {
                   {/* Intent Breakdown Card */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
-                    className="bg-gray-50 rounded-lg p-3 md:p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
+                    className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col min-w-[200px] md:min-w-0"
                   >
-                    <h4 className="text-xs md:text-sm font-semibold text-gray-700 mb-2">Intent Breakdown</h4>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Intent Breakdown</h4>
                     <div className="flex-1 flex items-center justify-center py-2">
                       <div className="relative">
-                        <svg className="w-20 h-20 md:w-28 md:h-28" viewBox="0 0 36 36">
+                        <svg className="w-24 h-24 md:w-28 md:h-28" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           {analytics?.intentBreakdown && analytics.intentBreakdown.length > 0 ? (
                             (() => {
@@ -424,31 +424,31 @@ export default function ShowroomDashboardPage() {
                           ) : null}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-base md:text-xl font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.percentage, 0) || 0}%</span>
+                          <span className="text-lg md:text-xl font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.percentage, 0) || 0}%</span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 3 cols for 5 items */}
-                    <div className="grid grid-cols-3 gap-x-1 gap-y-1 mt-2 flex-shrink-0">
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Price</span>
+                    {/* Legend - 2 cols */}
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Price</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Greeting</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Greeting</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">General</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">General</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Vehicle</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Vehicle</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Closing</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Closing</span>
                       </div>
                     </div>
                   </Link>
@@ -456,12 +456,12 @@ export default function ShowroomDashboardPage() {
                   {/* AI Accuracy Card */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
-                    className="bg-gray-50 rounded-lg p-3 md:p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col"
+                    className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col min-w-[200px] md:min-w-0"
                   >
-                    <h4 className="text-xs md:text-sm font-semibold text-gray-700 mb-2">AI Accuracy</h4>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">AI Accuracy</h4>
                     <div className="flex-1 flex items-center justify-center py-2">
                       <div className="relative">
-                        <svg className="w-20 h-20 md:w-28 md:h-28" viewBox="0 0 36 36">
+                        <svg className="w-24 h-24 md:w-28 md:h-28" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           {/* Show accuracy segments when data exists */}
                           {analytics?.performance?.aiAccuracy && analytics.performance.aiAccuracy > 0 ? (
@@ -477,33 +477,29 @@ export default function ShowroomDashboardPage() {
                           ) : null}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-base md:text-xl font-bold text-gray-700">
+                          <span className="text-lg md:text-xl font-bold text-gray-700">
                             {analytics?.performance?.aiAccuracy || 0}%
                           </span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 3 cols for 5 items */}
-                    <div className="grid grid-cols-3 gap-x-1 gap-y-1 mt-2 flex-shrink-0">
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Correct</span>
+                    {/* Legend - 2 cols */}
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Correct</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Partial</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Partial</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Wrong</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Wrong</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Escalated</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0"></span>
-                        <span className="text-[9px] md:text-[10px] text-gray-600 truncate">Timeout</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
+                        <span className="text-[11px] text-gray-600">Escalated</span>
                       </div>
                     </div>
                   </Link>
