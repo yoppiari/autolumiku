@@ -1,7 +1,7 @@
 /**
  * POST /api/v1/analytics/export - Export Analytics Report
  *
- * Protected: Requires MANAGER+ role (roleLevel >= 70)
+ * Protected: Requires ADMIN+ role (roleLevel >= 90)
  * Exports analytics report to PDF or Excel format
  *
  * Query params:
@@ -47,11 +47,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // RBAC: Require MANAGER+ role (roleLevel >= 70), but exclude FINANCE
-  // Per Excel access matrix: Manager, Admin, Owner, Super Admin can access (not Finance)
-  if (auth.user.roleLevel < ROLE_LEVELS.MANAGER || auth.user.roleLevel === ROLE_LEVELS.FINANCE) {
+  // RBAC: Require ADMIN+ role (roleLevel >= 90)
+  // Per access matrix: Admin, Owner, Super Admin can access
+  if (auth.user.roleLevel < ROLE_LEVELS.ADMIN) {
     return NextResponse.json(
-      { error: 'Forbidden - Manager role or higher required for analytics export' },
+      { error: 'Forbidden - Admin role or higher required for analytics export' },
       { status: 403 }
     );
   }

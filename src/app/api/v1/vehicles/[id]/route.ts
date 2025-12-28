@@ -40,14 +40,8 @@ export async function GET(
     );
   }
 
-  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
-  // Per Excel access matrix: only Staff, Admin, Owner, Super Admin can access
-  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
-    return NextResponse.json(
-      { error: 'Forbidden - Your role cannot access vehicles' },
-      { status: 403 }
-    );
-  }
+  // RBAC: No exclusions - all authenticated roles can access vehicles
+  // Sales, Admin, Owner, Super Admin all have access
 
   try {
     const { id } = await params;
@@ -133,14 +127,8 @@ export async function PUT(
     );
   }
 
-  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
-  // Per Excel access matrix: only Staff, Admin, Owner, Super Admin can update
-  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
-    return NextResponse.json(
-      { error: 'Forbidden - Your role cannot access vehicles' },
-      { status: 403 }
-    );
-  }
+  // RBAC: No exclusions - all authenticated roles can update vehicles
+  // Sales, Admin, Owner, Super Admin all have access
 
   // Check permission - admin, owner, and sales/staff can update vehicles
   if (!['admin', 'super_admin', 'owner', 'staff', 'sales'].includes(auth.user.role.toLowerCase())) {
@@ -311,14 +299,8 @@ export async function DELETE(
     );
   }
 
-  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
-  // Per Excel access matrix: only Admin, Owner, Super Admin can delete
-  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
-    return NextResponse.json(
-      { error: 'Forbidden - Your role cannot access vehicles' },
-      { status: 403 }
-    );
-  }
+  // RBAC: No exclusions for checking access - permission check happens below
+  // Delete permission requires Admin+, but all roles pass this initial check
 
   // Check permission - only admin, owner, and super_admin can delete vehicles
   if (!['admin', 'super_admin', 'owner'].includes(auth.user.role.toLowerCase())) {

@@ -35,7 +35,7 @@ export default function InvoicesPage() {
   const [userRoleLevel, setUserRoleLevel] = useState(ROLE_LEVELS.SALES);
   const [accessDenied, setAccessDenied] = useState(false);
 
-  // Access guard: FINANCE (60+) only - block SALES
+  // Access guard: ADMIN (90+) only - block SALES
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -44,7 +44,7 @@ export default function InvoicesPage() {
       setUserRoleLevel(roleLevel);
 
       // SALES (30) cannot access invoices page
-      if (roleLevel < ROLE_LEVELS.FINANCE) {
+      if (roleLevel < ROLE_LEVELS.ADMIN) {
         setAccessDenied(true);
         setTimeout(() => {
           router.push('/dashboard');
@@ -94,8 +94,8 @@ export default function InvoicesPage() {
     loadInvoices();
   };
 
-  const canCreate = userRoleLevel >= ROLE_LEVELS.FINANCE;
-  const canVoid = userRoleLevel >= ROLE_LEVELS.MANAGER;
+  const canCreate = userRoleLevel >= ROLE_LEVELS.ADMIN;
+  const canVoid = userRoleLevel >= ROLE_LEVELS.ADMIN;
 
   // Show access denied message briefly before redirect
   if (accessDenied) {

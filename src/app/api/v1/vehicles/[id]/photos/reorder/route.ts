@@ -29,13 +29,8 @@ export async function PATCH(
     );
   }
 
-  // RBAC: Block FINANCE role from accessing vehicles
-  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE) {
-    return NextResponse.json(
-      { error: 'Forbidden - Finance role cannot access vehicles' },
-      { status: 403 }
-    );
-  }
+  // RBAC: All authenticated roles can access vehicle photos
+  // Sales, Admin, Owner, Super Admin all have access
 
   try {
     const { id: vehicleId } = await params;

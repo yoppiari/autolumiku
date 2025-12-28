@@ -9,7 +9,7 @@ import { verifyAccessToken, extractTokenFromHeader, type JWTPayload } from './jw
 
 /**
  * Compute roleLevel from role string
- * SUPER_ADMIN(110), OWNER(100), ADMIN(90), MANAGER(70), FINANCE(60), SALES/STAFF(30)
+ * SUPER_ADMIN(110), OWNER(100), ADMIN(90), SALES(30)
  */
 export function getRoleLevelFromRole(role: string): number {
   const normalizedRole = role.toUpperCase();
@@ -17,10 +17,7 @@ export function getRoleLevelFromRole(role: string): number {
     case 'SUPER_ADMIN': return 110;
     case 'OWNER': return 100;
     case 'ADMIN': return 90;
-    case 'MANAGER': return 70;
-    case 'FINANCE': return 60;
     case 'SALES': return 30;
-    case 'STAFF': return 30;
     default: return 30;
   }
 }
@@ -248,6 +245,16 @@ export function getUserPermissions(role: string): string[] {
         'analytics:read', 'audit:read', 'settings:update',
         'scraper:run', 'scraper:read',
       ];
+    case 'owner':
+      return [
+        'user:create', 'user:read', 'user:update', 'user:delete',
+        'inventory:create', 'inventory:read', 'inventory:update', 'inventory:delete',
+        'leads:read', 'leads:update',
+        'analytics:read',
+        'blog:create', 'blog:update', 'blog:delete',
+        'catalog:update',
+        'settings:update',
+      ];
     case 'admin':
       return [
         'user:create', 'user:read', 'user:update',
@@ -257,17 +264,9 @@ export function getUserPermissions(role: string): string[] {
         'blog:create', 'blog:update', 'blog:delete',
         'catalog:update',
       ];
-    case 'manager':
+    case 'sales':
       return [
-        'user:read',
-        'inventory:create', 'inventory:read', 'inventory:update',
-        'leads:read', 'leads:update',
-        'analytics:read',
-        'blog:create', 'blog:update',
-      ];
-    case 'staff':
-      return [
-        'inventory:read',
+        'inventory:read', 'inventory:create',
         'leads:read', 'leads:update',
       ];
     default:

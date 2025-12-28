@@ -2,28 +2,25 @@
  * Role-Based Access Control (RBAC) Utility
  * Centralized permission constants and helper functions for Prima Mobil dashboard
  *
- * OFFICIAL ACCESS MATRIX (from Excel criteria table):
- * ┌─────────────┬───────┬─────────┬─────────┬───────┬───────┬─────────────┐
- * │ Feature     │ Staff │ Finance │ Manager │ Admin │ Owner │ Super Admin │
- * ├─────────────┼───────┼─────────┼─────────┼───────┼───────┼─────────────┤
- * │ Kendaraan   │   Y   │    N    │    N    │   Y   │   Y   │      Y      │
- * │ Invoice     │   N   │    Y    │    Y    │   Y   │   Y   │      Y      │
- * │ Analytics   │   N   │    N    │    Y    │   Y   │   Y   │      Y      │
- * │ Tim         │   N   │    N    │    N    │   Y   │   Y   │      Y      │
- * │ WhatsApp AI │   N   │    N    │    N    │   Y   │   Y   │      Y      │
- * │ Blog (view) │   Y   │    Y    │    Y    │   Y   │   Y   │      Y      │
- * │ Blog (mgmt) │   N   │    N    │    N    │   Y   │   Y   │      Y      │
- * │ Settings    │   N   │    N    │    N    │   Y   │   Y   │      Y      │
- * └─────────────┴───────┴─────────┴─────────┴───────┴───────┴─────────────┘
+ * OFFICIAL ACCESS MATRIX:
+ * ┌─────────────┬───────┬───────┬───────┬─────────────┐
+ * │ Feature     │ Sales │ Admin │ Owner │ Super Admin │
+ * ├─────────────┼───────┼───────┼───────┼─────────────┤
+ * │ Kendaraan   │   Y   │   Y   │   Y   │      Y      │
+ * │ Tim         │   N   │   Y   │   Y   │      Y      │
+ * │ Analytics   │   N   │   Y   │   Y   │      Y      │
+ * │ WhatsApp AI │   N   │   Y   │   Y   │      Y      │
+ * │ Blog (view) │   Y   │   Y   │   Y   │      Y      │
+ * │ Blog (mgmt) │   N   │   Y   │   Y   │      Y      │
+ * │ Settings    │   N   │   Y   │   Y   │      Y      │
+ * └─────────────┴───────┴───────┴───────┴─────────────┘
  *
- * Role Levels: Staff=30, Finance=60, Manager=70, Admin=90, Owner=100, Super Admin=110
+ * Role Levels: Sales=30, Admin=90, Owner=100, Super Admin=110
  */
 
 // Role levels - higher number = more access
 export const ROLE_LEVELS = {
-  SALES: 30, // Staff - vehicle operations
-  FINANCE: 60, // Finance Accounting - invoice operations
-  MANAGER: 70, // Manager - analytics, oversight
+  SALES: 30, // Sales - vehicle operations
   ADMIN: 90, // Admin - team, whatsapp, blog management
   OWNER: 100, // Owner - full tenant access
   SUPER_ADMIN: 110, // Super Admin - platform access
@@ -40,7 +37,7 @@ export interface NavItem {
   excludeRoles?: number[]; // Specific roles to exclude (e.g., FINANCE from Kendaraan)
 }
 
-// Page access requirements based on Excel access matrix
+// Page access requirements
 export const PAGE_ACCESS: Record<string, { minRole: number; excludeRoles?: number[] }> = {
   // Dashboard - all roles can access
   '/dashboard': { minRole: ROLE_LEVELS.SALES },
@@ -48,22 +45,17 @@ export const PAGE_ACCESS: Record<string, { minRole: number; excludeRoles?: numbe
   // Tim/Users - Admin+ only
   '/dashboard/users': { minRole: ROLE_LEVELS.ADMIN },
 
-  // Kendaraan/Vehicles - Staff, Admin+; Manager and Finance excluded
-  '/dashboard/vehicles': {
-    minRole: ROLE_LEVELS.SALES,
-    excludeRoles: [ROLE_LEVELS.MANAGER, ROLE_LEVELS.FINANCE],
-  },
+  // Kendaraan/Vehicles - Sales and Admin+
+  '/dashboard/vehicles': { minRole: ROLE_LEVELS.SALES },
 
-  // Invoice - Finance+ (Staff excluded via minRole)
-  '/dashboard/invoices': { minRole: ROLE_LEVELS.FINANCE },
-  '/dashboard/invoices/create': { minRole: ROLE_LEVELS.FINANCE },
-  '/dashboard/invoices/ledger': { minRole: ROLE_LEVELS.FINANCE },
-  // Invoice report review - Manager+ only, Finance excluded
-  '/dashboard/invoices/report': { minRole: ROLE_LEVELS.MANAGER, excludeRoles: [ROLE_LEVELS.FINANCE] },
+  // Invoice - HIDDEN (not needed)
+  '/dashboard/invoices': { minRole: 9999 }, // Hidden
+  '/dashboard/invoices/create': { minRole: 9999 }, // Hidden
+  '/dashboard/invoices/ledger': { minRole: 9999 }, // Hidden
 
-  // WhatsApp AI - Admin+ only (not Manager)
+  // WhatsApp AI - Admin+ only
   '/dashboard/whatsapp-ai': { minRole: ROLE_LEVELS.ADMIN },
-  '/dashboard/whatsapp-ai/analytics': { minRole: ROLE_LEVELS.MANAGER }, // Analytics visible to Manager+
+  '/dashboard/whatsapp-ai/analytics': { minRole: ROLE_LEVELS.ADMIN }, // Analytics visible to Admin+
   '/dashboard/whatsapp-ai/config': { minRole: ROLE_LEVELS.ADMIN },
 
   // Settings - Admin+ only
@@ -121,45 +113,29 @@ export function isRoleExcluded(roleLevel: number, path: string): boolean {
   return access.excludeRoles?.includes(roleLevel) ?? false;
 }
 
-// Feature-specific permission checks based on Excel access matrix
+// Feature-specific permission checks
 export const permissions = {
   // Dashboard - all roles
   canViewDashboard: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
 
-  // Vehicles - Staff, Admin+ (exclude Manager and Finance)
-  canViewVehicles: (roleLevel: number) =>
-    roleLevel >= ROLE_LEVELS.SALES &&
-    roleLevel !== ROLE_LEVELS.FINANCE &&
-    roleLevel !== ROLE_LEVELS.MANAGER,
-  canCreateVehicle: (roleLevel: number) =>
-    roleLevel >= ROLE_LEVELS.SALES &&
-    roleLevel !== ROLE_LEVELS.FINANCE &&
-    roleLevel !== ROLE_LEVELS.MANAGER,
-  canEditVehicle: (roleLevel: number) =>
-    roleLevel >= ROLE_LEVELS.SALES &&
-    roleLevel !== ROLE_LEVELS.FINANCE &&
-    roleLevel !== ROLE_LEVELS.MANAGER,
-  canChangeVehicleStatus: (roleLevel: number) =>
-    roleLevel >= ROLE_LEVELS.SALES &&
-    roleLevel !== ROLE_LEVELS.FINANCE &&
-    roleLevel !== ROLE_LEVELS.MANAGER,
+  // Vehicles - Sales and Admin+
+  canViewVehicles: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
+  canCreateVehicle: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
+  canEditVehicle: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
+  canChangeVehicleStatus: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
 
-  // Invoice - Finance+ (Staff excluded)
-  canViewInvoice: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
-  canCreateInvoice: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
-  canEditInvoice: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
-  canRecordPayment: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
-  canExportInvoicePDF: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
-  canVoidInvoice: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
-  // Invoice Report - Manager+ but not Finance
-  canViewInvoiceReport: (roleLevel: number) =>
-    roleLevel >= ROLE_LEVELS.MANAGER && roleLevel !== ROLE_LEVELS.FINANCE,
+  // Invoice - HIDDEN
+  canViewInvoice: (roleLevel: number) => false,
+  canCreateInvoice: (roleLevel: number) => false,
+  canEditInvoice: (roleLevel: number) => false,
+  canRecordPayment: (roleLevel: number) => false,
+  canExportInvoicePDF: (roleLevel: number) => false,
+  canVoidInvoice: (roleLevel: number) => false,
+  canViewInvoiceReport: (roleLevel: number) => false,
 
-  // Analytics - Manager+ (Finance excluded)
-  canViewAnalytics: (roleLevel: number) =>
-    roleLevel >= ROLE_LEVELS.MANAGER && roleLevel !== ROLE_LEVELS.FINANCE,
-  canExportAnalytics: (roleLevel: number) =>
-    roleLevel >= ROLE_LEVELS.MANAGER && roleLevel !== ROLE_LEVELS.FINANCE,
+  // Analytics - Admin+ only
+  canViewAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
+  canExportAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
 
   // Team/Users - Admin+ only
   canViewTeam: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
@@ -172,10 +148,9 @@ export const permissions = {
   canViewSettings: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
   canManageSettings: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
 
-  // WhatsApp AI - Admin+ only (Manager cannot access)
+  // WhatsApp AI - Admin+ only
   canViewWhatsAppAI: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
-  canViewWhatsAppAnalytics: (roleLevel: number) =>
-    roleLevel >= ROLE_LEVELS.MANAGER && roleLevel !== ROLE_LEVELS.FINANCE,
+  canViewWhatsAppAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
   canConfigureWhatsAppAI: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
 
   // Blog - visible to all, manage by Admin+
@@ -193,39 +168,33 @@ export function getRoleName(roleLevel: number): string {
   if (roleLevel >= ROLE_LEVELS.SUPER_ADMIN) return 'Super Admin';
   if (roleLevel >= ROLE_LEVELS.OWNER) return 'Owner';
   if (roleLevel >= ROLE_LEVELS.ADMIN) return 'Admin';
-  if (roleLevel >= ROLE_LEVELS.MANAGER) return 'Manager';
-  if (roleLevel >= ROLE_LEVELS.FINANCE) return 'Finance';
-  return 'Staff';
+  return 'Sales';
 }
 
 /**
  * Dashboard card visibility based on role (Excel access matrix)
  *
- * Total Kendaraan: Staff √, Finance ×, Manager ×, Admin+ √
- * Analytics: Staff ×, Finance ×, Manager √, Admin+ √
- * Tim Showroom: Staff ×, Finance ×, Manager ×, Admin+ √
- * Invoice: Staff ×, Finance √, Manager √, Admin+ √
+ * Total Kendaraan: Sales √, Admin+ √
+ * Analytics: Sales ×, Admin+ √
+ * Tim Showroom: Sales ×, Admin+ √
+ * Invoice: HIDDEN for all roles
  */
 export function getVisibleDashboardCards(roleLevel: number): string[] {
   const cards: string[] = ['overview']; // Everyone can see overview
 
-  // Kendaraan - Staff and Admin+ only (not Manager, not Finance)
-  if (roleLevel !== ROLE_LEVELS.FINANCE && roleLevel !== ROLE_LEVELS.MANAGER) {
-    cards.push('kendaraan');
-  }
+  // Kendaraan - Sales and Admin+
+  cards.push('kendaraan');
 
-  // Invoice - Finance and above (not Staff)
-  if (roleLevel >= ROLE_LEVELS.FINANCE) {
-    cards.push('invoice');
-  }
+  // Invoice - HIDDEN for all roles
+  // (not added to cards)
 
   // Tim - Admin+ only
   if (roleLevel >= ROLE_LEVELS.ADMIN) {
     cards.push('tim');
   }
 
-  // Analytics - Manager+ only (not Finance)
-  if (roleLevel >= ROLE_LEVELS.MANAGER && roleLevel !== ROLE_LEVELS.FINANCE) {
+  // Analytics - Admin+ only
+  if (roleLevel >= ROLE_LEVELS.ADMIN) {
     cards.push('analytics');
   }
 

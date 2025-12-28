@@ -9,7 +9,7 @@ export interface User {
   firstName: string;
   lastName: string;
   fullName: string;
-  role: 'super_admin' | 'admin' | 'manager' | 'staff';
+  role: 'super_admin' | 'owner' | 'admin' | 'sales';
   roleLevel: number;
   tenantId: string | null;
   phoneNumber?: string;

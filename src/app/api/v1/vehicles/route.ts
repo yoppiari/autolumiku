@@ -29,14 +29,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
-  // Per Excel access matrix: only Staff, Admin, Owner, Super Admin can access
-  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
-    return NextResponse.json(
-      { error: 'Forbidden - Your role cannot access vehicles' },
-      { status: 403 }
-    );
-  }
+  // RBAC: No exclusions - all authenticated roles can access vehicles
+  // Sales, Admin, Owner, Super Admin all have access
 
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -307,14 +301,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // RBAC: Block FINANCE and MANAGER roles from accessing vehicles
-  // Per Excel access matrix: only Staff, Admin, Owner, Super Admin can create
-  if (auth.user.roleLevel === ROLE_LEVELS.FINANCE || auth.user.roleLevel === ROLE_LEVELS.MANAGER) {
-    return NextResponse.json(
-      { error: 'Forbidden - Your role cannot access vehicles' },
-      { status: 403 }
-    );
-  }
+  // RBAC: No exclusions - all authenticated roles can create vehicles
+  // Sales, Admin, Owner, Super Admin all have access
 
   // Check permission - admin, owner, and sales/staff can create vehicles
   if (!['admin', 'super_admin', 'owner', 'staff', 'sales'].includes(auth.user.role.toLowerCase())) {

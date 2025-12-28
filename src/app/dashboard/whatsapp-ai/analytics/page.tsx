@@ -1,7 +1,7 @@
 /**
  * WhatsApp AI Analytics Dashboard
  * Includes: Sales Department, Finance/Accounting, and WhatsApp AI metrics
- * Access: MANAGER (70+) only, Finance excluded
+ * Access: ADMIN (90+) only
  */
 
 'use client';
@@ -76,7 +76,7 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('week');
 
-  // Access guard: MANAGER (70+) only, exclude FINANCE
+  // Access guard: ADMIN (90+) only
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -84,8 +84,8 @@ export default function AnalyticsPage() {
       const roleLevel = user.roleLevel || ROLE_LEVELS.SALES;
       setUserRoleLevel(roleLevel);
 
-      // Block if below MANAGER or is FINANCE
-      if (roleLevel < ROLE_LEVELS.MANAGER || roleLevel === ROLE_LEVELS.FINANCE) {
+      // Block if below ADMIN
+      if (roleLevel < ROLE_LEVELS.ADMIN) {
         setAccessDenied(true);
         setTimeout(() => {
           router.push('/dashboard');

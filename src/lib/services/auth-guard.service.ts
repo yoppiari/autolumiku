@@ -110,7 +110,7 @@ export class AuthGuardService {
    * Check if user is showroom admin (not super admin)
    */
   static isShowroomAdmin(role: string): boolean {
-    return ['admin', 'manager', 'staff'].includes(role.toLowerCase());
+    return ['admin', 'owner', 'sales'].includes(role.toLowerCase());
   }
 
   /**

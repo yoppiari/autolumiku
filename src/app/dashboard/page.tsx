@@ -183,7 +183,7 @@ export default function ShowroomDashboardPage() {
   };
 
   // Stats card configuration with links and role visibility
-  // All cards shown, authorization checked per card
+  // Invoice feature is HIDDEN for all roles
   const statsConfig = [
     {
       key: 'kendaraan',
@@ -229,22 +229,6 @@ export default function ShowroomDashboardPage() {
       colorClass: 'hover:border-violet-400 hover:bg-violet-50/50',
       iconBg: 'bg-violet-100 group-hover:bg-violet-500 border-2 border-violet-200 group-hover:border-violet-500',
       isAuthorized: canSeeTim,
-    },
-    {
-      key: 'invoice',
-      title: 'Invoice',
-      value: stats?.sales.thisMonth || 0,
-      subValue: stats?.sales.changePercent || 0,
-      subLabel: 'vs bulan lalu',
-      subColor: (stats?.sales.changePercent || 0) >= 0 ? 'text-emerald-600' : 'text-red-600',
-      isPercent: true,
-      emoji: '📄',
-      gradient: 'from-amber-500 to-amber-600',
-      bgLight: 'bg-amber-50',
-      href: '/dashboard/invoices',
-      colorClass: 'hover:border-amber-400 hover:bg-amber-50/50',
-      iconBg: 'bg-amber-100 group-hover:bg-amber-500 border-2 border-amber-200 group-hover:border-amber-500',
-      isAuthorized: canSeeInvoice,
     },
     {
       key: 'blog',
@@ -309,7 +293,7 @@ export default function ShowroomDashboardPage() {
                 {!loadingStats && (
                   <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 truncate">
                     <span className={stat.subColor}>
-                      {stat.isPercent ? `${stat.subValue >= 0 ? '+' : ''}${stat.subValue}%` : `+${stat.subValue}`}
+                      +{stat.subValue}
                     </span>
                     {' '}{stat.subLabel}
                   </p>
@@ -558,7 +542,8 @@ export default function ShowroomDashboardPage() {
         </div>
         <div className="p-2 md:p-3">
           {/* Mobile: Horizontal scroll, Desktop: Grid */}
-          <div className="flex md:grid md:grid-cols-4 gap-2 md:gap-3 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
+          {/* Invoice feature HIDDEN for all roles */}
+          <div className="flex md:grid md:grid-cols-3 gap-2 md:gap-3 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
             <AuthorizedLink
               href="/dashboard/vehicles"
               isAuthorized={canSeeKendaraan}
@@ -578,16 +563,6 @@ export default function ShowroomDashboardPage() {
                 <span className="text-lg md:text-2xl">👥</span>
               </div>
               <span className="text-[10px] md:text-sm font-semibold text-violet-800 group-hover:text-violet-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Tim</span>
-            </AuthorizedLink>
-            <AuthorizedLink
-              href="/dashboard/invoices"
-              isAuthorized={canSeeInvoice}
-              className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-amber-50 ${canSeeInvoice ? 'hover:bg-amber-100 hover:border-amber-400 hover:shadow-lg' : ''} transition-all group border-2 border-amber-200 min-w-[70px] md:min-w-0`}
-            >
-              <div className="w-9 h-9 md:w-12 md:h-12 bg-amber-100 group-hover:bg-amber-200 rounded-xl flex items-center justify-center transition-colors border border-amber-300 flex-shrink-0">
-                <span className="text-lg md:text-2xl">📄</span>
-              </div>
-              <span className="text-[10px] md:text-sm font-semibold text-amber-800 group-hover:text-amber-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Invoice</span>
             </AuthorizedLink>
             <AuthorizedLink
               href="/dashboard/blog"

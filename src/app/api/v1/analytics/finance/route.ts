@@ -1,7 +1,7 @@
 /**
  * GET /api/v1/analytics/finance - Finance/Accounting Department Analytics
  *
- * Protected: Requires MANAGER+ role (roleLevel >= 70)
+ * Protected: Requires ADMIN+ role (roleLevel >= 90)
  * Returns invoice summary, payment collection, receivables, cash flow
  */
 
@@ -22,10 +22,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // RBAC: Require MANAGER+ role (roleLevel >= 70)
-  if (auth.user.roleLevel < ROLE_LEVELS.MANAGER) {
+  // RBAC: Require ADMIN+ role (roleLevel >= 90)
+  if (auth.user.roleLevel < ROLE_LEVELS.ADMIN) {
     return NextResponse.json(
-      { error: 'Forbidden - Manager role or higher required for analytics' },
+      { error: 'Forbidden - Admin role or higher required for analytics' },
       { status: 403 }
     );
   }

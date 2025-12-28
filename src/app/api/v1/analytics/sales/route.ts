@@ -1,7 +1,7 @@
 /**
  * GET /api/v1/analytics/sales - Sales Department Analytics
  *
- * Protected: Requires MANAGER+ role (roleLevel >= 70)
+ * Protected: Requires ADMIN+ role (roleLevel >= 90)
  * Returns sales performance, top performers, vehicle categories, revenue trends
  */
 
@@ -22,11 +22,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // RBAC: Require MANAGER+ role (roleLevel >= 70), but exclude FINANCE
-  // Per Excel access matrix: Manager, Admin, Owner, Super Admin can access (not Finance)
-  if (auth.user.roleLevel < ROLE_LEVELS.MANAGER || auth.user.roleLevel === ROLE_LEVELS.FINANCE) {
+  // RBAC: Require ADMIN+ role (roleLevel >= 90)
+  if (auth.user.roleLevel < ROLE_LEVELS.ADMIN) {
     return NextResponse.json(
-      { error: 'Forbidden - Manager role or higher required for analytics' },
+      { error: 'Forbidden - Admin role or higher required for analytics' },
       { status: 403 }
     );
   }
