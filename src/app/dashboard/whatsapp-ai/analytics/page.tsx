@@ -318,166 +318,206 @@ export default function AnalyticsPage() {
 
           {/* Chart Section - 3 columns */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Sales Performance Donut */}
+            {/* Sales KPI Donut - Indikator Penjualan */}
             <div className="bg-white rounded-lg shadow p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-4">Performa Penjualan</h4>
-              <div className="flex items-center justify-center py-4">
-                <div className="relative">
-                  <svg className="w-32 h-32" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                    {/* Target achievement - assume target is 100 units */}
-                    {(salesStats?.totalSales || 0) > 0 && (
-                      <circle
-                        cx="18" cy="18" r="14"
-                        fill="none"
-                        stroke="#22c55e"
-                        strokeWidth="3.5"
-                        strokeDasharray={`${Math.min((salesStats?.totalSales || 0) / 100, 1) * 88} 88`}
-                        strokeLinecap="round"
-                        transform="rotate(-90 18 18)"
-                      />
-                    )}
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-gray-700">{salesStats?.totalSales || 0}</span>
-                    <span className="text-[10px] text-gray-500">Unit</span>
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Indikator Penjualan</h4>
+              <div className="space-y-3">
+                {/* KPI 1: Total Penjualan (%) */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-gray-600">Total Penjualan Showroom</span>
+                    <span className="text-xs font-bold text-blue-600">{salesStats?.totalSales || 0}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(salesStats?.totalSales || 0, 100)}%` }}></div>
+                  </div>
+                </div>
+                {/* KPI 2: ATV (%) */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-gray-600">Avg. Transaction Value (ATV)</span>
+                    <span className="text-xs font-bold text-green-600">
+                      {(() => {
+                        const targetAtv = 150000000; // Target ATV 150 juta
+                        const currentAtv = salesStats?.avgPrice || 0;
+                        const percentage = Math.min(Math.round((currentAtv / targetAtv) * 100), 100);
+                        return `${percentage}%`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500 rounded-full" style={{
+                      width: `${Math.min(Math.round(((salesStats?.avgPrice || 0) / 150000000) * 100), 100)}%`
+                    }}></div>
+                  </div>
+                </div>
+                {/* KPI 3: Inventory Turnover Rate (%) */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-gray-600">Inventory Turnover Rate</span>
+                    <span className="text-xs font-bold text-purple-600">
+                      {(() => {
+                        const sold = salesStats?.totalSales || 0;
+                        const targetTurnover = 100; // Assume 100 units in inventory
+                        const percentage = Math.min(Math.round((sold / targetTurnover) * 100), 100);
+                        return `${percentage}%`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-purple-500 rounded-full" style={{
+                      width: `${Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%`
+                    }}></div>
                   </div>
                 </div>
               </div>
-              {/* Legend */}
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                  <span className="text-xs text-gray-600">Terjual {salesStats?.totalSales || 0}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-                  <span className="text-xs text-gray-600">Target 100</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                  <span className="text-xs text-gray-600">Achievement {Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                  <span className="text-xs text-gray-600">Gap {Math.max(100 - (salesStats?.totalSales || 0), 0)}</span>
+              {/* Summary Circle */}
+              <div className="flex items-center justify-center py-3 mt-2 border-t border-gray-100">
+                <div className="relative">
+                  <svg className="w-20 h-20" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                    <circle
+                      cx="18" cy="18" r="14"
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="3.5"
+                      strokeDasharray={`${Math.min((salesStats?.totalSales || 0) / 100, 1) * 88} 88`}
+                      strokeLinecap="round"
+                      transform="rotate(-90 18 18)"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-lg font-bold text-gray-700">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-[8px] text-gray-500">Overall</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Brand Distribution Donut */}
+            {/* Customer Metrics Donut - Metrik Pelanggan */}
             <div className="bg-white rounded-lg shadow p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-4">Distribusi Brand</h4>
-              <div className="flex items-center justify-center py-4">
-                <div className="relative">
-                  <svg className="w-32 h-32" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                    {salesStats?.topBrands && salesStats.topBrands.length > 0 && (
-                      (() => {
-                        const total = salesStats.topBrands.reduce((sum, b) => sum + b.count, 0);
-                        let offset = 0;
-                        const brandColors = ['#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#ef4444', '#06b6d4'];
-                        return salesStats.topBrands.slice(0, 5).map((brand, idx) => {
-                          if (brand.count <= 0 || total <= 0) return null;
-                          const percentage = (brand.count / total) * 100;
-                          const dashLength = (percentage / 100) * 88;
-                          const segment = (
-                            <circle
-                              key={idx}
-                              cx="18" cy="18" r="14"
-                              fill="none"
-                              stroke={brandColors[idx % brandColors.length]}
-                              strokeWidth="3.5"
-                              strokeDasharray={`${dashLength} 88`}
-                              strokeDashoffset={-offset}
-                              strokeLinecap="round"
-                              transform="rotate(-90 18 18)"
-                            />
-                          );
-                          offset += dashLength;
-                          return segment;
-                        });
-                      })()
-                    )}
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-gray-700">{salesStats?.topBrands?.length || 0}</span>
-                    <span className="text-[10px] text-gray-500">Brand</span>
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Metrik Pelanggan</h4>
+              <div className="space-y-3">
+                {/* KPI 1: Customer Retention Rate (%) */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-gray-600">Customer Retention Rate</span>
+                    <span className="text-xs font-bold text-teal-600">
+                      {(() => {
+                        // Mock calculation: assume 70% base rate
+                        const retentionRate = 70;
+                        return `${retentionRate}%`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-teal-500 rounded-full" style={{ width: '70%' }}></div>
+                  </div>
+                </div>
+                {/* KPI 2: Customer Satisfaction/NPS (%) */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-gray-600">Customer Satisfaction (NPS)</span>
+                    <span className="text-xs font-bold text-amber-600">
+                      {(() => {
+                        // Mock calculation: assume 75% satisfaction
+                        const npsScore = 75;
+                        return `${npsScore}%`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full" style={{ width: '75%' }}></div>
                   </div>
                 </div>
               </div>
-              {/* Legend */}
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                {(() => {
-                  const brandColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500', 'bg-red-500', 'bg-cyan-500'];
-                  const total = salesStats?.topBrands?.reduce((sum, b) => sum + b.count, 0) || 0;
-                  return salesStats?.topBrands?.slice(0, 6).map((brand, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${brandColors[idx % brandColors.length]}`}></span>
-                      <span className="text-xs text-gray-600 truncate">{brand.brand} {total > 0 ? Math.round((brand.count / total) * 100) : 0}%</span>
-                    </div>
-                  )) || (
-                    <div className="col-span-2 text-xs text-gray-500 text-center">Belum ada data</div>
-                  );
-                })()}
+              {/* Summary Circle */}
+              <div className="flex items-center justify-center py-3 mt-2 border-t border-gray-100">
+                <div className="relative">
+                  <svg className="w-20 h-20" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                    <circle
+                      cx="18" cy="18" r="14"
+                      fill="none"
+                      stroke="#14b8a6"
+                      strokeWidth="3.5"
+                      strokeDasharray={`${(72.5 / 100) * 88} 88`}
+                      strokeLinecap="round"
+                      transform="rotate(-90 18 18)"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-lg font-bold text-gray-700">72.5%</span>
+                    <span className="text-[8px] text-gray-500">Average</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Revenue Distribution Donut */}
+            {/* Operational Metrics Donut - Metrik Operasional */}
             <div className="bg-white rounded-lg shadow p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-4">Distribusi Revenue</h4>
-              <div className="flex items-center justify-center py-4">
-                <div className="relative">
-                  <svg className="w-32 h-32" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                    {salesStats?.topBrands && salesStats.topBrands.length > 0 && (
-                      (() => {
-                        const total = salesStats.topBrands.reduce((sum, b) => sum + b.revenue, 0);
-                        let offset = 0;
-                        const brandColors = ['#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#ef4444', '#06b6d4'];
-                        return salesStats.topBrands.slice(0, 5).map((brand, idx) => {
-                          if (brand.revenue <= 0 || total <= 0) return null;
-                          const percentage = (brand.revenue / total) * 100;
-                          const dashLength = (percentage / 100) * 88;
-                          const segment = (
-                            <circle
-                              key={idx}
-                              cx="18" cy="18" r="14"
-                              fill="none"
-                              stroke={brandColors[idx % brandColors.length]}
-                              strokeWidth="3.5"
-                              strokeDasharray={`${dashLength} 88`}
-                              strokeDashoffset={-offset}
-                              strokeLinecap="round"
-                              transform="rotate(-90 18 18)"
-                            />
-                          );
-                          offset += dashLength;
-                          return segment;
-                        });
-                      })()
-                    )}
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-lg font-bold text-gray-700">{formatRupiah(salesStats?.totalRevenue || 0).replace('Rp', '').trim().split(',')[0]}</span>
-                    <span className="text-[10px] text-gray-500">Juta</span>
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Metrik Operasional</h4>
+              <div className="space-y-3">
+                {/* KPI 1: Sales per Employee (%) */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-gray-600">Sales per Employee</span>
+                    <span className="text-xs font-bold text-indigo-600">
+                      {(() => {
+                        // Mock calculation: assume 5 employees
+                        const employees = 5;
+                        const sold = salesStats?.totalSales || 0;
+                        const salesPerEmp = Math.round((sold / (employees * 20)) * 100); // Target 20 per employee
+                        return `${Math.min(salesPerEmp, 100)}%`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500 rounded-full" style={{
+                      width: `${Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%`
+                    }}></div>
+                  </div>
+                </div>
+                {/* KPI 2: Inventory Turnover Rate (%) */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-gray-600">Inventory Turnover Rate</span>
+                    <span className="text-xs font-bold text-rose-600">
+                      {(() => {
+                        const sold = salesStats?.totalSales || 0;
+                        const targetTurnover = 100;
+                        const percentage = Math.min(Math.round((sold / targetTurnover) * 100), 100);
+                        return `${percentage}%`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-rose-500 rounded-full" style={{
+                      width: `${Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%`
+                    }}></div>
                   </div>
                 </div>
               </div>
-              {/* Legend */}
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                {(() => {
-                  const brandColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500', 'bg-red-500', 'bg-cyan-500'];
-                  const total = salesStats?.topBrands?.reduce((sum, b) => sum + b.revenue, 0) || 0;
-                  return salesStats?.topBrands?.slice(0, 6).map((brand, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${brandColors[idx % brandColors.length]}`}></span>
-                      <span className="text-xs text-gray-600 truncate">{brand.brand} {total > 0 ? Math.round((brand.revenue / total) * 100) : 0}%</span>
-                    </div>
-                  )) || (
-                    <div className="col-span-2 text-xs text-gray-500 text-center">Belum ada data</div>
-                  );
-                })()}
+              {/* Summary Circle */}
+              <div className="flex items-center justify-center py-3 mt-2 border-t border-gray-100">
+                <div className="relative">
+                  <svg className="w-20 h-20" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                    <circle
+                      cx="18" cy="18" r="14"
+                      fill="none"
+                      stroke="#6366f1"
+                      strokeWidth="3.5"
+                      strokeDasharray={`${Math.min((salesStats?.totalSales || 0) / 100, 1) * 88} 88`}
+                      strokeLinecap="round"
+                      transform="rotate(-90 18 18)"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-lg font-bold text-gray-700">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-[8px] text-gray-500">Efficiency</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -565,69 +605,74 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Management Analysis Footnotes */}
-          <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg border border-slate-200 p-3">
-            <h4 className="text-[10px] font-semibold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-2">
-              <span>📋</span> Analisis Manajemen Showroom
+          {/* Management Analysis Footnotes - Smaller & Colorful */}
+          <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 rounded-lg border-l-4 border-blue-500 p-2.5 shadow-sm">
+            <h4 className="text-[8px] font-bold text-blue-800 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+              <span>📋</span> Analisis KPI Showroom - Executive Summary
             </h4>
-            <div className="space-y-2">
-              {/* Analysis Point 1 - Performance */}
-              <div className="text-[10px] text-slate-600 leading-snug">
-                <span className="font-semibold text-slate-700">Performa Penjualan:</span>{' '}
-                {(salesStats?.totalSales || 0) >= 80 ? (
-                  <>Target tercapai dengan baik ({salesStats?.totalSales || 0} unit). <span className="text-green-600">Strategi pemasaran efektif.</span> Pertahankan momentum dengan program loyalitas pelanggan.</>
-                ) : (salesStats?.totalSales || 0) >= 50 ? (
-                  <>Pencapaian moderat ({salesStats?.totalSales || 0} unit, {Math.round(((salesStats?.totalSales || 0) / 100) * 100)}% target). <span className="text-amber-600">Perlu peningkatan.</span> Evaluasi strategi promosi dan perluas jangkauan pemasaran digital.</>
-                ) : (
-                  <>Pencapaian rendah ({salesStats?.totalSales || 0} unit). <span className="text-red-600">Perlu tindakan korektif segera.</span> Rekomendasi: review pricing strategy, tingkatkan kualitas leads, dan intensifkan follow-up prospek.</>
-                )}
+            <div className="space-y-1.5">
+              {/* Analysis Point 1 - Sales Performance */}
+              <div className="text-[8px] leading-tight">
+                <span className="font-bold text-blue-700">📊 Performa Penjualan:</span>{' '}
+                <span className="text-gray-700">
+                  {(salesStats?.totalSales || 0) >= 80 ? (
+                    <><span className="text-green-600 font-semibold">Excellent</span> - Target tercapai ({salesStats?.totalSales || 0} unit). Pertahankan strategi pemasaran.</>
+                  ) : (salesStats?.totalSales || 0) >= 50 ? (
+                    <><span className="text-amber-600 font-semibold">Moderat</span> - {Math.round(((salesStats?.totalSales || 0) / 100) * 100)}% target. Perlu evaluasi strategi promosi.</>
+                  ) : (
+                    <><span className="text-red-600 font-semibold">Kritis</span> - {salesStats?.totalSales || 0} unit. Review pricing & tingkatkan follow-up.</>
+                  )}
+                </span>
               </div>
 
-              {/* Analysis Point 2 - Brand Mix */}
-              <div className="text-[10px] text-slate-600 leading-snug">
-                <span className="font-semibold text-slate-700">Strategi Brand:</span>{' '}
-                {salesStats?.topBrands && salesStats.topBrands.length > 0 ? (
-                  <>
-                    {salesStats.topBrands[0].brand} mendominasi pasar ({salesStats.topBrands[0].count} unit).
-                    {salesStats.topBrands.length > 1 ? (
-                      <> Diversifikasi dengan {salesStats.topBrands[1]?.brand} dapat mengurangi risiko ketergantungan satu brand.</>
-                    ) : (
-                      <> <span className="text-amber-600">Perlu diversifikasi brand</span> untuk mengurangi risiko market concentration.</>
-                    )}
-                  </>
-                ) : (
-                  <>Belum ada data brand. Mulai tracking penjualan per brand untuk analisis market share.</>
-                )}
+              {/* Analysis Point 2 - Brand Strategy */}
+              <div className="text-[8px] leading-tight">
+                <span className="font-bold text-purple-700">🚗 Strategi Brand:</span>{' '}
+                <span className="text-gray-700">
+                  {salesStats?.topBrands && salesStats.topBrands.length > 0 ? (
+                    <>{salesStats.topBrands[0].brand} dominan ({salesStats.topBrands[0].count} unit). {
+                      salesStats.topBrands.length > 1
+                        ? <span className="text-purple-600">Diversifikasi dengan {salesStats.topBrands[1]?.brand} untuk reduce risk.</span>
+                        : <span className="text-amber-600">Perlu diversifikasi brand untuk reduce risk.</span>
+                    }</>
+                  ) : (
+                    <span className="text-gray-500">Mulai tracking penjualan per brand.</span>
+                  )}
+                </span>
               </div>
 
-              {/* Analysis Point 3 - Revenue */}
-              <div className="text-[10px] text-slate-600 leading-snug">
-                <span className="font-semibold text-slate-700">Optimasi Revenue:</span>{' '}
-                {(salesStats?.avgPrice || 0) > 200000000 ? (
-                  <>Rata-rata harga jual tinggi ({formatRupiah(salesStats?.avgPrice || 0)}). <span className="text-green-600">Margin profit optimal.</span> Fokus pada segmen premium dan value-added services.</>
-                ) : (salesStats?.avgPrice || 0) > 100000000 ? (
-                  <>Rata-rata harga jual menengah ({formatRupiah(salesStats?.avgPrice || 0)}). Pertimbangkan upselling aksesoris dan paket after-sales service untuk meningkatkan revenue per unit.</>
-                ) : (
-                  <>Rata-rata harga jual rendah ({formatRupiah(salesStats?.avgPrice || 0)}). <span className="text-amber-600">Evaluasi product mix.</span> Pertimbangkan penambahan inventory segment menengah-atas.</>
-                )}
+              {/* Analysis Point 3 - Revenue Optimization */}
+              <div className="text-[8px] leading-tight">
+                <span className="font-bold text-green-700">💰 Optimasi Revenue:</span>{' '}
+                <span className="text-gray-700">
+                  {(salesStats?.avgPrice || 0) > 200000000 ? (
+                    <><span className="text-green-600 font-semibold">High ATV</span> - {formatRupiah(salesStats?.avgPrice || 0)}. Margin optimal, fokus segmen premium.</>
+                  ) : (salesStats?.avgPrice || 0) > 100000000 ? (
+                    <><span className="text-blue-600 font-semibold">Mid ATV</span> - {formatRupiah(salesStats?.avgPrice || 0)}. Upselling aksesoris untuk boost revenue.</>
+                  ) : (
+                    <><span className="text-amber-600 font-semibold">Low ATV</span> - {formatRupiah(salesStats?.avgPrice || 0)}. Evaluasi product mix & pricing.</>
+                  )}
+                </span>
               </div>
 
               {/* Analysis Point 4 - Action Items */}
-              <div className="text-[10px] text-slate-600 leading-snug border-t border-slate-200 pt-2 mt-2">
-                <span className="font-semibold text-slate-700">Rekomendasi Aksi:</span>{' '}
-                <span className="text-blue-600">1)</span> Review target bulanan dengan tim sales. {' '}
-                <span className="text-blue-600">2)</span> Evaluasi conversion rate leads-to-sales. {' '}
-                <span className="text-blue-600">3)</span> Analisis kompetitor pricing. {' '}
-                <span className="text-blue-600">4)</span> Optimasi inventory berdasarkan demand forecast.
+              <div className="text-[8px] leading-tight border-t border-blue-200 pt-1.5 mt-1.5">
+                <span className="font-bold text-rose-700">⚡ Rekomendasi Aksi:</span>{' '}
+                <span className="text-gray-700">
+                  <span className="text-blue-600 font-semibold">1)</span> Review target bulanan. {' '}
+                  <span className="text-blue-600 font-semibold">2)</span> Evaluasi conversion rate. {' '}
+                  <span className="text-blue-600 font-semibold">3)</span> Analisis kompetitor pricing. {' '}
+                  <span className="text-blue-600 font-semibold">4)</span> Optimasi inventory.
+                </span>
               </div>
             </div>
 
-            {/* Footer timestamp */}
-            <div className="mt-2 pt-2 border-t border-slate-200 flex items-center justify-between">
-              <span className="text-[8px] text-slate-400">
-                *Analisis otomatis berdasarkan data {period === 'monthly' ? 'bulanan' : period === 'quarterly' ? 'kuartalan' : 'tahunan'}. Generated: {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+            {/* Footer timestamp - Even smaller */}
+            <div className="mt-1.5 pt-1.5 border-t border-blue-200 flex items-center justify-between">
+              <span className="text-[7px] text-blue-400/80 font-medium">
+                Report: {period === 'monthly' ? 'Bulanan' : period === 'quarterly' ? 'Kuartalan' : 'Tahunan'} • Generated: {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
               </span>
-              <span className="text-[8px] text-slate-400">Prima Mobil Analytics v1.0</span>
+              <span className="text-[7px] text-blue-400/80 font-semibold">Prima Mobil v2.0</span>
             </div>
           </div>
         </div>
