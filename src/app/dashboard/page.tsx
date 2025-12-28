@@ -104,16 +104,42 @@ interface AnalyticsData {
   }>;
 }
 
+interface RecentSale {
+  id: string;
+  displayId: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  soldAt: Date;
+  soldBy: string;
+  soldByName?: string;
+}
+
+interface LowStockItem {
+  id: string;
+  displayId: string;
+  make: string;
+  model: string;
+  year: number;
+  status: string;
+  price: number;
+}
+
 export default function ShowroomDashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
+  const [recentSales, setRecentSales] = useState<RecentSale[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([]);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [loadingKpi, setLoadingKpi] = useState(true);
+  const [loadingRecentSales, setLoadingRecentSales] = useState(true);
+  const [loadingLowStock, setLoadingLowStock] = useState(true);
   const [userRoleLevel, setUserRoleLevel] = useState<number>(ROLE_LEVELS.SALES);
 
   useEffect(() => {
@@ -126,6 +152,8 @@ export default function ShowroomDashboardPage() {
       loadDashboardStats(parsedUser.tenantId);
       loadAnalytics(parsedUser.tenantId);
       loadKpiData();
+      loadRecentSales();
+      loadLowStockItems();
     }
   }, []);
 
@@ -198,6 +226,42 @@ export default function ShowroomDashboardPage() {
     }
   };
 
+  const loadRecentSales = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/v1/vehicles?status=SOLD&limit=5&sortBy=updatedAt&sortOrder=desc', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRecentSales(data.data?.vehicles || []);
+      }
+    } catch (error) {
+      console.error('Failed to load recent sales:', error);
+    } finally {
+      setLoadingRecentSales(false);
+    }
+  };
+
+  const loadLowStockItems = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/v1/vehicles?status=AVAILABLE&limit=5&sortBy=price&sortOrder=asc', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Filter to only show items with price < 200M (indicating lower stock or older inventory)
+        const lowStock = (data.data?.vehicles || []).filter((v: any) => v.price < 200000000).slice(0, 5);
+        setLowStockItems(lowStock);
+      }
+    } catch (error) {
+      console.error('Failed to load low stock items:', error);
+    } finally {
+      setLoadingLowStock(false);
+    }
+  };
+
   // Intent colors for donut chart
   const intentColors: Record<string, string> = {
     greeting: '#22c55e',
@@ -218,6 +282,29 @@ export default function ShowroomDashboardPage() {
       closing: 'Closing',
     };
     return names[intent.toLowerCase()] || intent;
+  };
+
+  // Format currency helper
+  const formatRupiah = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Format date helper
+  const formatTanggal = (date: Date | string) => {
+    const d = new Date(date);
+    const now = new Date();
+    const diffTime = now.getTime() - d.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Hari ini';
+    if (diffDays === 1) return 'Kemarin';
+    if (diffDays < 7) return `${diffDays} hari lalu`;
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
   };
 
   // Stats card configuration with links and role visibility
@@ -627,6 +714,113 @@ export default function ShowroomDashboardPage() {
         {/* Right: Subscription - Show first on mobile */}
         <div className={canSeeAnalytics ? "md:col-span-1 order-1 md:order-2" : "order-1"}>
           {!loadingSubscription && <SubscriptionCard subscription={subscription} />}
+
+          {/* Recent Sales Activity */}
+          <div className="mt-3 md:mt-4">
+            <div className="bg-white rounded-lg shadow p-3 md:p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs md:text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                  <span>🚗</span> Recent Sales
+                </h4>
+                <Link href="/dashboard/vehicles?status=SOLD" className="text-[9px] md:text-[10px] text-blue-600 hover:text-blue-800 font-medium">
+                  View All →
+                </Link>
+              </div>
+
+              {loadingRecentSales ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 animate-pulse">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-3 bg-gray-200 rounded w-24 mb-1"></div>
+                        <div className="h-2 bg-gray-200 rounded w-16"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : recentSales.length > 0 ? (
+                <div className="space-y-2">
+                  {recentSales.slice(0, 5).map((sale) => (
+                    <div key={sale.id} className="flex items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100">
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs md:text-sm font-bold">🚙</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] md:text-xs font-semibold text-gray-900 truncate">
+                          {sale.make} {sale.model} ({sale.year})
+                        </p>
+                        <p className="text-[8px] md:text-[10px] text-gray-500 truncate">
+                          {formatRupiah(sale.price)} • {formatTanggal(sale.soldAt)}
+                        </p>
+                      </div>
+                      <div className="text-[8px] md:text-[10px] text-gray-400 flex-shrink-0">
+                        {sale.soldByName || 'Staff'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 md:py-6">
+                  <p className="text-[10px] md:text-xs text-gray-500">Belum ada penjualan</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Low Stock Alerts */}
+          <div className="mt-3 md:mt-4">
+            <div className="bg-white rounded-lg shadow p-3 md:p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs md:text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                  <span>⚠️</span> Low Stock Alerts
+                </h4>
+                <Link href="/dashboard/vehicles?status=AVAILABLE" className="text-[9px] md:text-[10px] text-blue-600 hover:text-blue-800 font-medium">
+                  View All →
+                </Link>
+              </div>
+
+              {loadingLowStock ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 animate-pulse">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-3 bg-gray-200 rounded w-24 mb-1"></div>
+                        <div className="h-2 bg-gray-200 rounded w-16"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : lowStockItems.length > 0 ? (
+                <div className="space-y-2">
+                  {lowStockItems.slice(0, 5).map((item) => (
+                    <div key={item.id} className="flex items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-amber-50 transition-colors border border-amber-200">
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs md:text-sm font-bold">📦</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] md:text-xs font-semibold text-gray-900 truncate">
+                          {item.make} {item.model} ({item.year})
+                        </p>
+                        <p className="text-[8px] md:text-[10px] text-gray-500 truncate">
+                          {formatRupiah(item.price)} • {item.displayId}
+                        </p>
+                      </div>
+                      <div className="px-2 py-0.5 md:px-2.5 md:py-1 bg-amber-100 text-amber-800 text-[8px] md:text-[10px] font-semibold rounded-full flex-shrink-0">
+                        Ready
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 md:py-6">
+                  <p className="text-[10px] md:text-xs text-gray-500">Stok aman</p>
+                  <p className="text-[8px] md:text-[10px] text-gray-400 mt-1">Semua unit tersedia</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
