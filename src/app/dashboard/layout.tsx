@@ -161,17 +161,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Get user's role level
   const userRoleLevel = user?.roleLevel || ROLE_LEVELS.SALES;
 
-  // Show all navigation items but with authorization check
+  // Show all navigation items but with authorization check using centralized RBAC
   const navigation = useMemo(() => {
-    return allNavigation.map((item) => {
-      // Check minimum role
-      const hasMinRole = userRoleLevel >= item.minRole;
-      // Check excluded roles
-      const isExcluded = item.excludeRoles?.includes(userRoleLevel) ?? false;
-      // Item is authorized if has min role and not excluded
-      const isAuthorized = hasMinRole && !isExcluded;
-      return { ...item, isAuthorized };
-    });
+    return allNavigation.map((item) => ({
+      ...item,
+      isAuthorized: canAccessPage(userRoleLevel, item.href)
+    }));
   }, [userRoleLevel]);
 
   return (
