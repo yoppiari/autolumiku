@@ -400,9 +400,9 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Footer Note */}
-              <div className="mt-3 pt-2.5 border-t border-gray-100">
-                <p className="text-[9px] text-gray-500 leading-tight">
-                  <span className="font-semibold text-blue-600">Target:</span> 80% inventory sold per month
+              <div className="mt-3 pt-2 border-t border-gray-100">
+                <p className="text-[8px] leading-snug" style={{ color: '#3b82f6' }}>
+                  Target: 80% inventory sold per month
                 </p>
               </div>
             </div>
@@ -461,9 +461,9 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Footer Note */}
-              <div className="mt-3 pt-2.5 border-t border-gray-100">
-                <p className="text-[9px] text-gray-500 leading-tight">
-                  <span className="font-semibold text-amber-600">Target:</span> NPS > 50% (Excellent)
+              <div className="mt-3 pt-2 border-t border-gray-100">
+                <p className="text-[8px] leading-snug" style={{ color: '#f59e0b' }}>
+                  Target: NPS &gt; 50% (Excellent)
                 </p>
               </div>
             </div>
@@ -522,9 +522,9 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Footer Note */}
-              <div className="mt-3 pt-2.5 border-t border-gray-100">
-                <p className="text-[9px] text-gray-500 leading-tight">
-                  <span className="font-semibold text-violet-600">Target:</span> 20 vehicles/employee/month
+              <div className="mt-3 pt-2 border-t border-gray-100">
+                <p className="text-[8px] leading-snug" style={{ color: '#8b5cf6' }}>
+                  Target: 20 vehicles/employee/month
                 </p>
               </div>
             </div>
