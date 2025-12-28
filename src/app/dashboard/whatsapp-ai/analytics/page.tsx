@@ -597,13 +597,13 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Management Analysis Footnotes */}
-          <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg border border-slate-200 p-4">
-            <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+          <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg border border-slate-200 p-3">
+            <h4 className="text-[10px] font-semibold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-2">
               <span>📋</span> Analisis Manajemen Showroom
             </h4>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {/* Analysis Point 1 - Performance */}
-              <div className="text-[11px] text-slate-600 leading-relaxed">
+              <div className="text-[10px] text-slate-600 leading-snug">
                 <span className="font-semibold text-slate-700">Performa Penjualan:</span>{' '}
                 {(salesStats?.totalSales || 0) >= 80 ? (
                   <>Target tercapai dengan baik ({salesStats?.totalSales || 0} unit). <span className="text-green-600">Strategi pemasaran efektif.</span> Pertahankan momentum dengan program loyalitas pelanggan.</>
@@ -615,7 +615,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Analysis Point 2 - Brand Mix */}
-              <div className="text-[11px] text-slate-600 leading-relaxed">
+              <div className="text-[10px] text-slate-600 leading-snug">
                 <span className="font-semibold text-slate-700">Strategi Brand:</span>{' '}
                 {salesStats?.topBrands && salesStats.topBrands.length > 0 ? (
                   <>
@@ -632,7 +632,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Analysis Point 3 - Revenue */}
-              <div className="text-[11px] text-slate-600 leading-relaxed">
+              <div className="text-[10px] text-slate-600 leading-snug">
                 <span className="font-semibold text-slate-700">Optimasi Revenue:</span>{' '}
                 {(salesStats?.avgPrice || 0) > 200000000 ? (
                   <>Rata-rata harga jual tinggi ({formatRupiah(salesStats?.avgPrice || 0)}). <span className="text-green-600">Margin profit optimal.</span> Fokus pada segmen premium dan value-added services.</>
@@ -644,7 +644,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Analysis Point 4 - Action Items */}
-              <div className="text-[11px] text-slate-600 leading-relaxed border-t border-slate-200 pt-2 mt-2">
+              <div className="text-[10px] text-slate-600 leading-snug border-t border-slate-200 pt-2 mt-2">
                 <span className="font-semibold text-slate-700">Rekomendasi Aksi:</span>{' '}
                 <span className="text-blue-600">1)</span> Review target bulanan dengan tim sales. {' '}
                 <span className="text-blue-600">2)</span> Evaluasi conversion rate leads-to-sales. {' '}
@@ -654,11 +654,11 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Footer timestamp */}
-            <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between">
-              <span className="text-[9px] text-slate-400">
+            <div className="mt-2 pt-2 border-t border-slate-200 flex items-center justify-between">
+              <span className="text-[8px] text-slate-400">
                 *Analisis otomatis berdasarkan data {period === 'monthly' ? 'bulanan' : period === 'quarterly' ? 'kuartalan' : 'tahunan'}. Generated: {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
               </span>
-              <span className="text-[9px] text-slate-400">Prima Mobil Analytics v1.0</span>
+              <span className="text-[8px] text-slate-400">Prima Mobil Analytics v1.0</span>
             </div>
           </div>
         </div>
@@ -1059,13 +1059,13 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Management Analysis Footnotes */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200 p-4">
-            <h4 className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-3 flex items-center gap-2">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200 p-3">
+            <h4 className="text-[10px] font-semibold text-amber-800 uppercase tracking-wide mb-2 flex items-center gap-2">
               <span>💰</span> Analisis Keuangan Showroom
             </h4>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {/* Analysis Point 1 - Collection Rate */}
-              <div className="text-[11px] text-slate-600 leading-relaxed">
+              <div className="text-[10px] text-slate-600 leading-snug">
                 <span className="font-semibold text-slate-700">Tingkat Koleksi:</span>{' '}
                 {(() => {
                   const rate = financeStats?.totalAmount ? Math.round((financeStats.paidAmount / financeStats.totalAmount) * 100) : 0;
@@ -1082,7 +1082,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Analysis Point 2 - Outstanding */}
-              <div className="text-[11px] text-slate-600 leading-relaxed">
+              <div className="text-[10px] text-slate-600 leading-snug">
                 <span className="font-semibold text-slate-700">Piutang Outstanding:</span>{' '}
                 {(financeStats?.pendingAmount || 0) > 0 ? (
                   <>
@@ -1099,7 +1099,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Analysis Point 3 - Invoice Health */}
-              <div className="text-[11px] text-slate-600 leading-relaxed">
+              <div className="text-[10px] text-slate-600 leading-snug">
                 <span className="font-semibold text-slate-700">Kesehatan Invoice:</span>{' '}
                 {(() => {
                   const paidCount = financeStats?.byStatus?.find(s => s.status === 'paid')?.count || 0;
@@ -1118,7 +1118,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Analysis Point 4 - Action Items */}
-              <div className="text-[11px] text-slate-600 leading-relaxed border-t border-amber-200 pt-2 mt-2">
+              <div className="text-[10px] text-slate-600 leading-snug border-t border-amber-200 pt-2 mt-2">
                 <span className="font-semibold text-slate-700">Rekomendasi Aksi:</span>{' '}
                 <span className="text-amber-600">1)</span> Review aging AR &gt;30 hari. {' '}
                 <span className="text-amber-600">2)</span> Follow-up invoice jatuh tempo minggu ini. {' '}
@@ -1128,11 +1128,11 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Footer timestamp */}
-            <div className="mt-3 pt-2 border-t border-amber-200 flex items-center justify-between">
-              <span className="text-[9px] text-amber-600/70">
+            <div className="mt-2 pt-2 border-t border-amber-200 flex items-center justify-between">
+              <span className="text-[8px] text-amber-600/70">
                 *Analisis otomatis berdasarkan data {period === 'monthly' ? 'bulanan' : period === 'quarterly' ? 'kuartalan' : 'tahunan'}. Generated: {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
               </span>
-              <span className="text-[9px] text-amber-600/70">Prima Mobil Finance v1.0</span>
+              <span className="text-[8px] text-amber-600/70">Prima Mobil Finance v1.0</span>
             </div>
           </div>
         </div>
