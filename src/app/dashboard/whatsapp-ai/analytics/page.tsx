@@ -349,7 +349,7 @@ export default function AnalyticsPage() {
             {/* KPI Penjualan */}
             <div className="bg-white rounded-lg shadow p-5">
               <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="text-lg">📊</span> KPI Penjualan
+                <span className="text-lg">📊</span> Metrix Penjualan
               </h4>
 
               {/* Main Donut Chart - Penjualan Showroom */}
@@ -410,7 +410,7 @@ export default function AnalyticsPage() {
             {/* KPI Pelanggan */}
             <div className="bg-white rounded-lg shadow p-5">
               <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="text-lg">👥</span> KPI Pelanggan
+                <span className="text-lg">👥</span> Metrix Pelanggan
               </h4>
 
               {/* Main Donut Chart - NPS (Net Promoter Score) */}
@@ -471,7 +471,7 @@ export default function AnalyticsPage() {
             {/* KPI Operasional */}
             <div className="bg-white rounded-lg shadow p-5">
               <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="text-lg">⚙️</span> KPI Operasional
+                <span className="text-lg">⚙️</span> Metrix Operasional
               </h4>
 
               {/* Main Donut Chart - Overall Efficiency */}
