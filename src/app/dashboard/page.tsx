@@ -370,6 +370,22 @@ export default function ShowroomDashboardPage() {
       iconBg: 'bg-rose-100 group-hover:bg-rose-500 border-2 border-rose-200 group-hover:border-rose-500',
       isAuthorized: canSeeBlog,
     },
+    {
+      key: 'quickactions',
+      title: 'Quick Actions',
+      value: null, // No value for quick actions
+      subValue: null,
+      subLabel: 'Aksi cepat',
+      subColor: 'text-gray-600',
+      emoji: '⚡',
+      gradient: 'from-amber-500 to-orange-600',
+      bgLight: 'bg-amber-50',
+      href: null, // No href, it's a widget
+      colorClass: 'hover:border-amber-400 hover:bg-amber-50/50',
+      iconBg: 'bg-amber-100 group-hover:bg-amber-500 border-2 border-amber-200 group-hover:border-amber-500',
+      isAuthorized: true, // Always show
+      isQuickActions: true, // Special flag for quick actions widget
+    },
   ];
 
   return (
@@ -391,41 +407,103 @@ export default function ShowroomDashboardPage() {
       {/* Stats Grid - Cards with Colored Icons (all cards shown, tooltip for unauthorized) */}
       <div className="grid gap-2 md:gap-3 flex-shrink-0 grid-cols-2 md:grid-cols-5">
         {statsConfig.map((stat) => (
-          <AuthorizedLink
-            key={stat.key}
-            href={stat.href}
-            isAuthorized={stat.isAuthorized}
-            className={`group bg-white rounded-xl border border-gray-200 ${stat.isAuthorized ? 'hover:shadow-lg' : ''} transition-all p-2 md:p-3 ${stat.isAuthorized ? stat.colorClass : ''}`}
-          >
-            {/* Mobile: Vertical layout, Desktop: Horizontal */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              {/* Icon - Top on mobile, Right on desktop */}
-              <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all shadow-sm mx-auto md:mx-0 md:order-2 mb-2 md:mb-0 ${stat.iconBg}`}>
-                <span className="text-xl md:text-3xl group-hover:scale-110 transition-transform">{stat.emoji}</span>
-              </div>
-              {/* Text - Below icon on mobile, Left on desktop */}
-              <div className="flex-1 min-w-0 text-center md:text-left md:order-1">
-                <p className="text-[9px] md:text-[10px] font-medium text-gray-500 uppercase tracking-wide truncate">
+          stat.isQuickActions ? (
+            // Quick Actions Widget
+            <div
+              key={stat.key}
+              className={`group bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all p-2 md:p-3 ${stat.colorClass}`}
+            >
+              {/* Header */}
+              <div className="flex flex-col items-center mb-2 md:mb-3">
+                <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all shadow-sm ${stat.iconBg}`}>
+                  <span className="text-xl md:text-3xl group-hover:scale-110 transition-transform">{stat.emoji}</span>
+                </div>
+                <p className="text-[9px] md:text-[10px] font-medium text-gray-500 uppercase tracking-wide text-center mt-1 md:mt-2">
                   {stat.title}
                 </p>
-                {loadingStats ? (
-                  <div className="h-5 md:h-6 w-8 md:w-10 bg-gray-100 animate-pulse rounded mt-1 mx-auto md:mx-0"></div>
-                ) : (
-                  <p className="text-xl md:text-2xl font-bold text-gray-900">
-                    {stat.value}
-                  </p>
-                )}
-                {!loadingStats && (
-                  <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 truncate">
-                    <span className={stat.subColor}>
-                      +{stat.subValue}
-                    </span>
-                    {' '}{stat.subLabel}
-                  </p>
-                )}
+              </div>
+
+              {/* Quick Actions Buttons Grid */}
+              <div className="grid grid-cols-2 gap-1.5 md:gap-2">
+                {/* Tambah Unit */}
+                <Link
+                  href="/dashboard/vehicles/new"
+                  className="flex flex-col items-center justify-center p-2 md:p-2.5 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 hover:border-blue-300 transition-all group/btn"
+                >
+                  <span className="text-base md:text-lg mb-0.5 md:mb-1 group-hover/btn:scale-110 transition-transform">➕</span>
+                  <span className="text-[8px] md:text-[9px] font-semibold text-blue-700 text-center leading-tight">Tambah</span>
+                  <span className="text-[7px] md:text-[8px] text-blue-600 text-center leading-tight">Unit</span>
+                </Link>
+
+                {/* Lihat Inventory */}
+                <Link
+                  href="/dashboard/vehicles?status=AVAILABLE"
+                  className="flex flex-col items-center justify-center p-2 md:p-2.5 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 border border-emerald-200 hover:border-emerald-300 transition-all group/btn"
+                >
+                  <span className="text-base md:text-lg mb-0.5 md:mb-1 group-hover/btn:scale-110 transition-transform">📦</span>
+                  <span className="text-[8px] md:text-[9px] font-semibold text-emerald-700 text-center leading-tight">Lihat</span>
+                  <span className="text-[7px] md:text-[8px] text-emerald-600 text-center leading-tight">Stok</span>
+                </Link>
+
+                {/* Edit Tim */}
+                <Link
+                  href="/dashboard/users"
+                  className="flex flex-col items-center justify-center p-2 md:p-2.5 rounded-lg bg-gradient-to-br from-violet-50 to-violet-100 hover:from-violet-100 hover:to-violet-200 border border-violet-200 hover:border-violet-300 transition-all group/btn"
+                >
+                  <span className="text-base md:text-lg mb-0.5 md:mb-1 group-hover/btn:scale-110 transition-transform">👥</span>
+                  <span className="text-[8px] md:text-[9px] font-semibold text-violet-700 text-center leading-tight">Edit</span>
+                  <span className="text-[7px] md:text-[8px] text-violet-600 text-center leading-tight">Tim</span>
+                </Link>
+
+                {/* Export Laporan */}
+                <Link
+                  href="/dashboard/whatsapp-ai/analytics"
+                  className="flex flex-col items-center justify-center p-2 md:p-2.5 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 border border-amber-200 hover:border-amber-300 transition-all group/btn"
+                >
+                  <span className="text-base md:text-lg mb-0.5 md:mb-1 group-hover/btn:scale-110 transition-transform">📊</span>
+                  <span className="text-[8px] md:text-[9px] font-semibold text-amber-700 text-center leading-tight">Lihat</span>
+                  <span className="text-[7px] md:text-[8px] text-amber-600 text-center leading-tight">Laporan</span>
+                </Link>
               </div>
             </div>
-          </AuthorizedLink>
+          ) : (
+            // Regular Stat Card
+            <AuthorizedLink
+              key={stat.key}
+              href={stat.href}
+              isAuthorized={stat.isAuthorized}
+              className={`group bg-white rounded-xl border border-gray-200 ${stat.isAuthorized ? 'hover:shadow-lg' : ''} transition-all p-2 md:p-3 ${stat.isAuthorized ? stat.colorClass : ''}`}
+            >
+              {/* Mobile: Vertical layout, Desktop: Horizontal */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                {/* Icon - Top on mobile, Right on desktop */}
+                <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all shadow-sm mx-auto md:mx-0 md:order-2 mb-2 md:mb-0 ${stat.iconBg}`}>
+                  <span className="text-xl md:text-3xl group-hover:scale-110 transition-transform">{stat.emoji}</span>
+                </div>
+                {/* Text - Below icon on mobile, Left on desktop */}
+                <div className="flex-1 min-w-0 text-center md:text-left md:order-1">
+                  <p className="text-[9px] md:text-[10px] font-medium text-gray-500 uppercase tracking-wide truncate">
+                    {stat.title}
+                  </p>
+                  {loadingStats ? (
+                    <div className="h-5 md:h-6 w-8 md:w-10 bg-gray-100 animate-pulse rounded mt-1 mx-auto md:mx-0"></div>
+                  ) : (
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
+                  )}
+                  {!loadingStats && (
+                    <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 truncate">
+                      <span className={stat.subColor}>
+                        +{stat.subValue}
+                      </span>
+                      {' '}{stat.subLabel}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </AuthorizedLink>
+          )
         ))}
       </div>
 
