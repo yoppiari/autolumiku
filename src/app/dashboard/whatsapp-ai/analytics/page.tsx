@@ -13,6 +13,24 @@ import { ROLE_LEVELS } from '@/lib/rbac';
 
 type Department = 'sales' | 'whatsapp';
 
+interface KPIData {
+  penjualanShowroom: number;
+  atv: number;
+  inventoryTurnover: number;
+  customerRetention: number;
+  nps: number;
+  salesPerEmployee: number;
+  efficiency: number;
+  raw: {
+    totalSold: number;
+    totalInventory: number;
+    totalRevenue: number;
+    avgPrice: number;
+    employeeCount: number;
+    leadConversion: number;
+  };
+}
+
 interface SalesStats {
   totalSales: number;
   totalRevenue: number;
@@ -62,6 +80,7 @@ export default function AnalyticsPage() {
   const [activeDepartment, setActiveDepartment] = useState<Department>('sales');
   const [isLoading, setIsLoading] = useState(true);
   const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
+  const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [whatsappAnalytics, setWhatsappAnalytics] = useState<WhatsAppAnalytics | null>(null);
   const [period, setPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('week');
@@ -100,6 +119,15 @@ export default function AnalyticsPage() {
       if (salesRes.ok) {
         const salesData = await salesRes.json();
         setSalesStats(salesData.data);
+      }
+
+      // Load KPI data (real calculations)
+      const kpiRes = await fetch('/api/v1/analytics/kpi', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (kpiRes.ok) {
+        const kpiResult = await kpiRes.json();
+        setKpiData(kpiResult.data);
       }
 
       // Load WhatsApp analytics
@@ -316,36 +344,35 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Chart Section - 3 columns with bigger donut charts */}
+          {/* Chart Section - 3 columns with bigger donut charts using REAL KPI data */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Sales KPI Donut - Indikator Penjualan */}
             <div className="bg-white rounded-lg shadow p-4">
               <h4 className="text-sm font-semibold text-gray-700 mb-3">Indikator Penjualan</h4>
 
-              {/* Big Donut Chart - Sales Penjualan Showroom */}
+              {/* Big Donut Chart - Penjualan Showroom (REAL DATA) */}
               <div className="flex items-center justify-center py-2">
                 <div className="relative w-36 h-36">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    {/* Penjualan Showroom % */}
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#3b82f6"
                       strokeWidth="3"
-                      strokeDasharray={`${Math.min((salesStats?.totalSales || 0), 100)} ${100 - Math.min((salesStats?.totalSales || 0), 100)}`}
+                      strokeDasharray={`${kpiData?.penjualanShowroom || 0} ${100 - (kpiData?.penjualanShowroom || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-blue-600">{Math.min(salesStats?.totalSales || 0, 100)}%</span>
+                    <span className="text-2xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
                     <span className="text-[9px] text-gray-600">Penjualan</span>
                   </div>
                 </div>
               </div>
 
-              {/* ATV Donut */}
+              {/* ATV Donut (REAL DATA) */}
               <div className="flex items-center justify-center py-2 border-t border-gray-100">
                 <div className="relative w-32 h-32">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
@@ -355,19 +382,19 @@ export default function AnalyticsPage() {
                       fill="none"
                       stroke="#22c55e"
                       strokeWidth="3"
-                      strokeDasharray={`${Math.min(Math.round(((salesStats?.avgPrice || 0) / 150000000) * 100), 100)} ${100 - Math.min(Math.round(((salesStats?.avgPrice || 0) / 150000000) * 100), 100)}`}
+                      strokeDasharray={`${kpiData?.atv || 0} ${100 - (kpiData?.atv || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-green-600">{Math.min(Math.round(((salesStats?.avgPrice || 0) / 150000000) * 100), 100)}%</span>
+                    <span className="text-xl font-bold text-green-600">{kpiData?.atv || 0}%</span>
                     <span className="text-[8px] text-gray-600">ATV</span>
                   </div>
                 </div>
               </div>
 
-              {/* Inventory Turnover Donut */}
+              {/* Inventory Turnover Donut (REAL DATA) */}
               <div className="flex items-center justify-center py-2 border-t border-gray-100">
                 <div className="relative w-32 h-32">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
@@ -377,13 +404,13 @@ export default function AnalyticsPage() {
                       fill="none"
                       stroke="#a855f7"
                       strokeWidth="3"
-                      strokeDasharray={`${Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)} ${100 - Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}`}
+                      strokeDasharray={`${kpiData?.inventoryTurnover || 0} ${100 - (kpiData?.inventoryTurnover || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-purple-600">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-xl font-bold text-purple-600">{kpiData?.inventoryTurnover || 0}%</span>
                     <span className="text-[8px] text-gray-600">Turnover</span>
                   </div>
                 </div>
@@ -394,95 +421,92 @@ export default function AnalyticsPage() {
                 <div>
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{salesStats?.totalSales || 0}%</span>
+                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.penjualanShowroom || 0}%</span>
                   </div>
                   <span className="text-[7px] text-gray-500">Penjualan</span>
                 </div>
                 <div>
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{Math.min(Math.round(((salesStats?.avgPrice || 0) / 150000000) * 100), 100)}%</span>
+                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.atv || 0}%</span>
                   </div>
                   <span className="text-[7px] text-gray-500">ATV</span>
                 </div>
                 <div>
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.inventoryTurnover || 0}%</span>
                   </div>
                   <span className="text-[7px] text-gray-500">Turnover</span>
                 </div>
               </div>
             </div>
 
-            {/* Customer Metrics Donut - Metrik Pelanggan */}
+            {/* Customer Metrics Donut - Metrik Pelanggan (REAL DATA) */}
             <div className="bg-white rounded-lg shadow p-4">
               <h4 className="text-sm font-semibold text-gray-700 mb-3">Metrik Pelanggan</h4>
 
-              {/* Customer Retention Rate Donut */}
+              {/* Customer Retention Rate Donut (REAL DATA) */}
               <div className="flex items-center justify-center py-2">
                 <div className="relative w-36 h-36">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    {/* Calculate real retention based on repeat customers */}
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#14b8a6"
                       strokeWidth="3"
-                      strokeDasharray={`${((salesStats?.totalSales || 0) > 0 ? 68 : 0)} ${((salesStats?.totalSales || 0) > 0 ? 32 : 100)}`}
+                      strokeDasharray={`${kpiData?.customerRetention || 0} ${100 - (kpiData?.customerRetention || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-teal-600">{(salesStats?.totalSales || 0) > 0 ? '68' : '0'}%</span>
+                    <span className="text-2xl font-bold text-teal-600">{kpiData?.customerRetention || 0}%</span>
                     <span className="text-[9px] text-gray-600">Retention</span>
                   </div>
                 </div>
               </div>
 
-              {/* Customer Satisfaction/NPS Donut */}
+              {/* Customer Satisfaction/NPS Donut (REAL DATA) */}
               <div className="flex items-center justify-center py-2 border-t border-gray-100">
                 <div className="relative w-32 h-32">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    {/* NPS based on sales performance - better sales = happier customers */}
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#f59e0b"
                       strokeWidth="3"
-                      strokeDasharray={`${Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 85), 100)} ${100 - Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 85), 100)}`}
+                      strokeDasharray={`${kpiData?.nps || 0} ${100 - (kpiData?.nps || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-amber-600">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 85), 100)}%</span>
+                    <span className="text-xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
                     <span className="text-[8px] text-gray-600">NPS</span>
                   </div>
                 </div>
               </div>
 
-              {/* Overall Average Donut */}
+              {/* Overall Average Donut (REAL DATA) */}
               <div className="flex items-center justify-center py-2 border-t border-gray-100">
                 <div className="relative w-32 h-32">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    {/* Average of retention and NPS */}
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#06b6d4"
                       strokeWidth="3"
-                      strokeDasharray={`${Math.min(Math.round((((salesStats?.totalSales || 0) > 0 ? 68 : 0) + Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 85), 100)) / 2), 100)} ${100 - Math.min(Math.round((((salesStats?.totalSales || 0) > 0 ? 68 : 0) + Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 85), 100)) / 2), 100)}`}
+                      strokeDasharray={`${Math.round(((kpiData?.customerRetention || 0) + (kpiData?.nps || 0)) / 2)} ${100 - Math.round(((kpiData?.customerRetention || 0) + (kpiData?.nps || 0)) / 2)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-cyan-600">{Math.round((((salesStats?.totalSales || 0) > 0 ? 68 : 0) + Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 85), 100)) / 2)}%</span>
+                    <span className="text-xl font-bold text-cyan-600">{Math.round(((kpiData?.customerRetention || 0) + (kpiData?.nps || 0)) / 2)}%</span>
                     <span className="text-[8px] text-gray-600">Average</span>
                   </div>
                 </div>
@@ -493,95 +517,92 @@ export default function AnalyticsPage() {
                 <div>
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{(salesStats?.totalSales || 0) > 0 ? '68' : '0'}%</span>
+                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.customerRetention || 0}%</span>
                   </div>
                   <span className="text-[7px] text-gray-500">Retention</span>
                 </div>
                 <div>
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 85), 100)}%</span>
+                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.nps || 0}%</span>
                   </div>
                   <span className="text-[7px] text-gray-500">NPS</span>
                 </div>
                 <div>
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{Math.round((((salesStats?.totalSales || 0) > 0 ? 68 : 0) + Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 85), 100)) / 2)}%</span>
+                    <span className="text-[8px] font-semibold text-gray-700">{Math.round(((kpiData?.customerRetention || 0) + (kpiData?.nps || 0)) / 2)}%</span>
                   </div>
                   <span className="text-[7px] text-gray-500">Avg</span>
                 </div>
               </div>
             </div>
 
-            {/* Operational Metrics Donut - Metrik Operasional */}
+            {/* Operational Metrics Donut - Metrik Operasional (REAL DATA) */}
             <div className="bg-white rounded-lg shadow p-4">
               <h4 className="text-sm font-semibold text-gray-700 mb-3">Metrik Operasional</h4>
 
-              {/* Sales per Employee Donut */}
+              {/* Sales per Employee Donut (REAL DATA) */}
               <div className="flex items-center justify-center py-2">
                 <div className="relative w-36 h-36">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    {/* Sales per employee: assume 5 employees, target 20 units each */}
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#6366f1"
                       strokeWidth="3"
-                      strokeDasharray={`${Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)} ${100 - Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}`}
+                      strokeDasharray={`${kpiData?.salesPerEmployee || 0} ${100 - (kpiData?.salesPerEmployee || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-indigo-600">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-2xl font-bold text-indigo-600">{kpiData?.salesPerEmployee || 0}%</span>
                     <span className="text-[9px] text-gray-600">Sales/Emp</span>
                   </div>
                 </div>
               </div>
 
-              {/* Inventory Turnover Rate Donut */}
+              {/* Inventory Turnover Rate Donut (REAL DATA) */}
               <div className="flex items-center justify-center py-2 border-t border-gray-100">
                 <div className="relative w-32 h-32">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    {/* Turnover rate: sold vs target 100 */}
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#f43f5e"
                       strokeWidth="3"
-                      strokeDasharray={`${Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)} ${100 - Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}`}
+                      strokeDasharray={`${kpiData?.inventoryTurnover || 0} ${100 - (kpiData?.inventoryTurnover || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-rose-600">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-xl font-bold text-rose-600">{kpiData?.inventoryTurnover || 0}%</span>
                     <span className="text-[8px] text-gray-600">Turnover</span>
                   </div>
                 </div>
               </div>
 
-              {/* Overall Efficiency Donut */}
+              {/* Overall Efficiency Donut (REAL DATA) */}
               <div className="flex items-center justify-center py-2 border-t border-gray-100">
                 <div className="relative w-32 h-32">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    {/* Overall operational efficiency */}
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#8b5cf6"
                       strokeWidth="3"
-                      strokeDasharray={`${Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)} ${100 - Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}`}
+                      strokeDasharray={`${kpiData?.efficiency || 0} ${100 - (kpiData?.efficiency || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-violet-600">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
                     <span className="text-[8px] text-gray-600">Efficiency</span>
                   </div>
                 </div>
@@ -592,21 +613,21 @@ export default function AnalyticsPage() {
                 <div>
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.salesPerEmployee || 0}%</span>
                   </div>
                   <span className="text-[7px] text-gray-500">Sales/Emp</span>
                 </div>
                 <div>
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.inventoryTurnover || 0}%</span>
                   </div>
                   <span className="text-[7px] text-gray-500">Turnover</span>
                 </div>
                 <div>
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="w-2 h-2 rounded-full bg-violet-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{Math.min(Math.round(((salesStats?.totalSales || 0) / 100) * 100), 100)}%</span>
+                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.efficiency || 0}%</span>
                   </div>
                   <span className="text-[7px] text-gray-500">Efficiency</span>
                 </div>
