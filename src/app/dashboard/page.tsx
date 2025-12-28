@@ -58,6 +58,24 @@ interface DashboardStats {
   };
 }
 
+interface KPIData {
+  penjualanShowroom: number;
+  atv: number;
+  inventoryTurnover: number;
+  customerRetention: number;
+  nps: number;
+  salesPerEmployee: number;
+  efficiency: number;
+  raw: {
+    totalSold: number;
+    totalInventory: number;
+    totalRevenue: number;
+    avgPrice: number;
+    employeeCount: number;
+    leadConversion: number;
+  };
+}
+
 interface AnalyticsData {
   overview: {
     totalConversations: number;
@@ -91,9 +109,11 @@ export default function ShowroomDashboardPage() {
   const [subscription, setSubscription] = useState<any>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+  const [loadingKpi, setLoadingKpi] = useState(true);
   const [userRoleLevel, setUserRoleLevel] = useState<number>(ROLE_LEVELS.SALES);
 
   useEffect(() => {
@@ -105,6 +125,7 @@ export default function ShowroomDashboardPage() {
       loadSubscription(parsedUser.tenantId);
       loadDashboardStats(parsedUser.tenantId);
       loadAnalytics(parsedUser.tenantId);
+      loadKpiData();
     }
   }, []);
 
@@ -157,6 +178,23 @@ export default function ShowroomDashboardPage() {
       console.error('Failed to load analytics:', error);
     } finally {
       setLoadingAnalytics(false);
+    }
+  };
+
+  const loadKpiData = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/v1/analytics/kpi', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setKpiData(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to load KPI data:', error);
+    } finally {
+      setLoadingKpi(false);
     }
   };
 
@@ -338,188 +376,195 @@ export default function ShowroomDashboardPage() {
                 </div>
               ) : (
                 <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible scrollbar-hide">
-                  {/* AI Performance Card */}
+                  {/* Metrix Penjualan */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
                     className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col min-w-[220px] md:min-w-0"
                   >
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 md:mb-4">AI Performance</h4>
-                    <div className="flex items-center justify-center py-3 md:py-4">
-                      <div className="relative">
-                        <svg className="w-28 h-28 md:w-32 md:h-32" viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                          {analytics?.performance.aiAccuracy && analytics.performance.aiAccuracy > 0 && (
-                            <circle
-                              cx="18" cy="18" r="14"
-                              fill="none"
-                              stroke="#22c55e"
-                              strokeWidth="3.5"
-                              strokeDasharray={`${(analytics.performance.aiAccuracy / 100) * 88} 88`}
-                              strokeLinecap="round"
-                              transform="rotate(-90 18 18)"
-                            />
-                          )}
+                    <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
+                      <span className="text-lg">📊</span> Metrix Penjualan
+                    </h4>
+
+                    {/* Main Donut Chart - Penjualan Showroom */}
+                    <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
+                      <div className="relative w-28 h-28 md:w-32 md:h-32">
+                        <svg className="w-full h-full" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                          <circle
+                            cx="18" cy="18" r="15.9155"
+                            fill="none"
+                            stroke="#3b82f6"
+                            strokeWidth="3.5"
+                            strokeDasharray={`${kpiData?.penjualanShowroom || 0} ${100 - (kpiData?.penjualanShowroom || 0)}`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 18 18)"
+                          />
                         </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xl md:text-2xl font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-2xl md:text-3xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
+                          <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">Target Bulanan</span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2 column grid matching analytics page */}
-                    <div className="grid grid-cols-2 gap-1.5 md:gap-2 mt-3 md:mt-4">
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Accuracy {analytics?.performance?.aiAccuracy || 0}%</span>
+
+                    {/* Indicators List */}
+                    <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-green-500"></span>
+                          <span className="text-[10px] md:text-xs text-gray-700 font-medium">ATV</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.atv || 0}%</span>
                       </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Satisfaction {analytics?.performance?.customerSatisfaction || 0}%</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-purple-500"></span>
+                          <span className="text-[10px] md:text-xs text-gray-700 font-medium">Inventory Turnover</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
                       </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Resolution {analytics?.performance?.resolutionRate || 0}%</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-blue-500"></span>
+                          <span className="text-[10px] md:text-xs text-gray-700 font-medium">Penjualan Showroom</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.penjualanShowroom || 0}%</span>
                       </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-orange-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Response {analytics?.overview?.aiResponseRate || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Escalation {analytics?.overview?.escalationRate || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-cyan-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Avg Time {analytics?.overview?.avgResponseTime || 0}s</span>
-                      </div>
+                    </div>
+
+                    {/* Footer Note */}
+                    <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
+                      <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#3b82f6' }}>
+                        Target: 80% inventory sold per month
+                      </p>
                     </div>
                   </Link>
 
-                  {/* Intent Breakdown Card */}
+                  {/* Metrix Pelanggan */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
                     className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col min-w-[220px] md:min-w-0"
                   >
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 md:mb-4">Intent Breakdown</h4>
-                    <div className="flex items-center justify-center py-3 md:py-4">
-                      <div className="relative">
-                        <svg className="w-28 h-28 md:w-32 md:h-32" viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                          {analytics?.intentBreakdown && analytics.intentBreakdown.length > 0 &&
-                           analytics.intentBreakdown.some(i => i.percentage > 0) ? (
-                            (() => {
-                              let offset = 0;
-                              return analytics.intentBreakdown.slice(0, 5).map((item, idx) => {
-                                if (item.percentage <= 0) return null;
-                                const dashLength = (item.percentage / 100) * 88;
-                                const segment = (
-                                  <circle
-                                    key={idx}
-                                    cx="18" cy="18" r="14"
-                                    fill="none"
-                                    stroke={intentColors[item.intent.toLowerCase()] || '#6b7280'}
-                                    strokeWidth="3.5"
-                                    strokeDasharray={`${dashLength} 88`}
-                                    strokeDashoffset={-offset}
-                                    strokeLinecap="round"
-                                    transform="rotate(-90 18 18)"
-                                  />
-                                );
-                                offset += dashLength;
-                                return segment;
-                              });
-                            })()
-                          ) : null}
+                    <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
+                      <span className="text-lg">👥</span> Metrix Pelanggan
+                    </h4>
+
+                    {/* Main Donut Chart - NPS (Net Promoter Score) */}
+                    <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
+                      <div className="relative w-28 h-28 md:w-32 md:h-32">
+                        <svg className="w-full h-full" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                          <circle
+                            cx="18" cy="18" r="15.9155"
+                            fill="none"
+                            stroke="#f59e0b"
+                            strokeWidth="3.5"
+                            strokeDasharray={`${kpiData?.nps || 0} ${100 - (kpiData?.nps || 0)}`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 18 18)"
+                          />
                         </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xl md:text-2xl font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.percentage, 0) || 0}%</span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-2xl md:text-3xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
+                          <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">NPS Score</span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2 column grid matching analytics page */}
-                    <div className="grid grid-cols-2 gap-1.5 md:gap-2 mt-3 md:mt-4">
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Greeting {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'greeting')?.percentage || 0}%</span>
+
+                    {/* Indicators List */}
+                    <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-teal-500"></span>
+                          <span className="text-[10px] md:text-xs text-gray-700 font-medium">Customer Retention</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.customerRetention || 0}%</span>
                       </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Vehicle {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'vehicle')?.percentage || 0}%</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-amber-500"></span>
+                          <span className="text-[10px] md:text-xs text-gray-700 font-medium">NPS (Satisfaction)</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.nps || 0}%</span>
                       </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Price {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'price')?.percentage || 0}%</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-cyan-500"></span>
+                          <span className="text-[10px] md:text-xs text-gray-700 font-medium">Lead Conversion</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.raw?.leadConversion || 0}%</span>
                       </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-amber-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">General {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'general')?.percentage || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Closing {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'closing')?.percentage || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-gray-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Unknown {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'unknown')?.percentage || 0}%</span>
-                      </div>
+                    </div>
+
+                    {/* Footer Note */}
+                    <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
+                      <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#f59e0b' }}>
+                        Target: NPS &gt; 50% (Excellent)
+                      </p>
                     </div>
                   </Link>
 
-                  {/* AI Accuracy Card */}
+                  {/* Metrix Operasional */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
                     className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col min-w-[220px] md:min-w-0"
                   >
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 md:mb-4">AI Accuracy</h4>
-                    <div className="flex items-center justify-center py-3 md:py-4">
-                      <div className="relative">
-                        <svg className="w-28 h-28 md:w-32 md:h-32" viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                          {/* Show accuracy segments when data exists */}
-                          {analytics?.performance?.aiAccuracy && analytics.performance.aiAccuracy > 0 ? (
-                            <circle
-                              cx="18" cy="18" r="14"
-                              fill="none"
-                              stroke="#22c55e"
-                              strokeWidth="3.5"
-                              strokeDasharray={`${(analytics.performance.aiAccuracy / 100) * 88} 88`}
-                              strokeLinecap="round"
-                              transform="rotate(-90 18 18)"
-                            />
-                          ) : null}
+                    <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
+                      <span className="text-lg">⚙️</span> Metrix Operasional
+                    </h4>
+
+                    {/* Main Donut Chart - Overall Efficiency */}
+                    <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
+                      <div className="relative w-28 h-28 md:w-32 md:h-32">
+                        <svg className="w-full h-full" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                          <circle
+                            cx="18" cy="18" r="15.9155"
+                            fill="none"
+                            stroke="#8b5cf6"
+                            strokeWidth="3.5"
+                            strokeDasharray={`${kpiData?.efficiency || 0} ${100 - (kpiData?.efficiency || 0)}`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 18 18)"
+                          />
                         </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xl md:text-2xl font-bold text-gray-700">
-                            {analytics?.performance?.aiAccuracy || 0}%
-                          </span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-2xl md:text-3xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
+                          <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">Efficiency</span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2 column grid matching analytics page */}
-                    <div className="grid grid-cols-2 gap-1.5 md:gap-2 mt-3 md:mt-4">
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Correct {analytics?.performance?.aiAccuracy || 0}%</span>
+
+                    {/* Indicators List */}
+                    <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-indigo-500"></span>
+                          <span className="text-[10px] md:text-xs text-gray-700 font-medium">Sales per Employee</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.salesPerEmployee || 0}%</span>
                       </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-amber-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Partial 0%</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-violet-500"></span>
+                          <span className="text-[10px] md:text-xs text-gray-700 font-medium">Overall Efficiency</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.efficiency || 0}%</span>
                       </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Wrong {100 - (analytics?.performance?.aiAccuracy || 0)}%</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-rose-500"></span>
+                          <span className="text-[10px] md:text-xs text-gray-700 font-medium">Inventory Velocity</span>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
                       </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Escalated {analytics?.overview?.escalationRate || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">Timeout 0%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-cyan-500 flex-shrink-0"></span>
-                        <span className="text-[10px] md:text-xs text-gray-600">No Response 0%</span>
-                      </div>
+                    </div>
+
+                    {/* Footer Note */}
+                    <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
+                      <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#8b5cf6' }}>
+                        Target: 20 vehicles/employee/month
+                      </p>
                     </div>
                   </Link>
                 </div>
