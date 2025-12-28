@@ -344,293 +344,188 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Chart Section - 3 columns with bigger donut charts using REAL KPI data */}
+          {/* Chart Section - 3 Main KPI Metrics with indicators in list format */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Sales KPI Donut - Indikator Penjualan */}
-            <div className="bg-white rounded-lg shadow p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Indikator Penjualan</h4>
+            {/* KPI Penjualan */}
+            <div className="bg-white rounded-lg shadow p-5">
+              <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="text-lg">📊</span> KPI Penjualan
+              </h4>
 
-              {/* Big Donut Chart - Penjualan Showroom (REAL DATA) */}
-              <div className="flex items-center justify-center py-2">
-                <div className="relative w-36 h-36">
+              {/* Main Donut Chart - Penjualan Showroom */}
+              <div className="flex items-center justify-center py-3 mb-3">
+                <div className="relative w-40 h-40">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#3b82f6"
-                      strokeWidth="3"
+                      strokeWidth="3.5"
                       strokeDasharray={`${kpiData?.penjualanShowroom || 0} ${100 - (kpiData?.penjualanShowroom || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
-                    <span className="text-[9px] text-gray-600">Penjualan</span>
+                    <span className="text-3xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
+                    <span className="text-[10px] text-gray-600 font-medium">Target Bulanan</span>
                   </div>
                 </div>
               </div>
 
-              {/* ATV Donut (REAL DATA) */}
-              <div className="flex items-center justify-center py-2 border-t border-gray-100">
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="15.9155"
-                      fill="none"
-                      stroke="#22c55e"
-                      strokeWidth="3"
-                      strokeDasharray={`${kpiData?.atv || 0} ${100 - (kpiData?.atv || 0)}`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 18 18)"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-green-600">{kpiData?.atv || 0}%</span>
-                    <span className="text-[8px] text-gray-600">ATV</span>
+              {/* Indicators List */}
+              <div className="space-y-2.5 border-t border-gray-100 pt-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    <span className="text-xs text-gray-700 font-medium">ATV</span>
                   </div>
+                  <span className="text-xs font-bold text-gray-900">{kpiData?.atv || 0}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                    <span className="text-xs text-gray-700 font-medium">Inventory Turnover</span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    <span className="text-xs text-gray-700 font-medium">Penjualan Showroom</span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-900">{kpiData?.penjualanShowroom || 0}%</span>
                 </div>
               </div>
 
-              {/* Inventory Turnover Donut (REAL DATA) */}
-              <div className="flex items-center justify-center py-2 border-t border-gray-100">
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="15.9155"
-                      fill="none"
-                      stroke="#a855f7"
-                      strokeWidth="3"
-                      strokeDasharray={`${kpiData?.inventoryTurnover || 0} ${100 - (kpiData?.inventoryTurnover || 0)}`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 18 18)"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-purple-600">{kpiData?.inventoryTurnover || 0}%</span>
-                    <span className="text-[8px] text-gray-600">Turnover</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Legend */}
-              <div className="grid grid-cols-3 gap-1 mt-2 text-center">
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.penjualanShowroom || 0}%</span>
-                  </div>
-                  <span className="text-[7px] text-gray-500">Penjualan</span>
-                </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.atv || 0}%</span>
-                  </div>
-                  <span className="text-[7px] text-gray-500">ATV</span>
-                </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.inventoryTurnover || 0}%</span>
-                  </div>
-                  <span className="text-[7px] text-gray-500">Turnover</span>
-                </div>
+              {/* Footer Note */}
+              <div className="mt-3 pt-2.5 border-t border-gray-100">
+                <p className="text-[9px] text-gray-500 leading-tight">
+                  <span className="font-semibold text-blue-600">Target:</span> 80% inventory sold per month
+                </p>
               </div>
             </div>
 
-            {/* Customer Metrics Donut - Metrik Pelanggan (REAL DATA) */}
-            <div className="bg-white rounded-lg shadow p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Metrik Pelanggan</h4>
+            {/* KPI Pelanggan */}
+            <div className="bg-white rounded-lg shadow p-5">
+              <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="text-lg">👥</span> KPI Pelanggan
+              </h4>
 
-              {/* Customer Retention Rate Donut (REAL DATA) */}
-              <div className="flex items-center justify-center py-2">
-                <div className="relative w-36 h-36">
+              {/* Main Donut Chart - NPS (Net Promoter Score) */}
+              <div className="flex items-center justify-center py-3 mb-3">
+                <div className="relative w-40 h-40">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="15.9155"
-                      fill="none"
-                      stroke="#14b8a6"
-                      strokeWidth="3"
-                      strokeDasharray={`${kpiData?.customerRetention || 0} ${100 - (kpiData?.customerRetention || 0)}`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 18 18)"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-teal-600">{kpiData?.customerRetention || 0}%</span>
-                    <span className="text-[9px] text-gray-600">Retention</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Customer Satisfaction/NPS Donut (REAL DATA) */}
-              <div className="flex items-center justify-center py-2 border-t border-gray-100">
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#f59e0b"
-                      strokeWidth="3"
+                      strokeWidth="3.5"
                       strokeDasharray={`${kpiData?.nps || 0} ${100 - (kpiData?.nps || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
-                    <span className="text-[8px] text-gray-600">NPS</span>
+                    <span className="text-3xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
+                    <span className="text-[10px] text-gray-600 font-medium">NPS Score</span>
                   </div>
                 </div>
               </div>
 
-              {/* Overall Average Donut (REAL DATA) */}
-              <div className="flex items-center justify-center py-2 border-t border-gray-100">
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="15.9155"
-                      fill="none"
-                      stroke="#06b6d4"
-                      strokeWidth="3"
-                      strokeDasharray={`${Math.round(((kpiData?.customerRetention || 0) + (kpiData?.nps || 0)) / 2)} ${100 - Math.round(((kpiData?.customerRetention || 0) + (kpiData?.nps || 0)) / 2)}`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 18 18)"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-cyan-600">{Math.round(((kpiData?.customerRetention || 0) + (kpiData?.nps || 0)) / 2)}%</span>
-                    <span className="text-[8px] text-gray-600">Average</span>
+              {/* Indicators List */}
+              <div className="space-y-2.5 border-t border-gray-100 pt-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+                    <span className="text-xs text-gray-700 font-medium">Customer Retention</span>
                   </div>
+                  <span className="text-xs font-bold text-gray-900">{kpiData?.customerRetention || 0}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span className="text-xs text-gray-700 font-medium">NPS (Satisfaction)</span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-900">{kpiData?.nps || 0}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                    <span className="text-xs text-gray-700 font-medium">Lead Conversion</span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-900">{kpiData?.raw?.leadConversion || 0}%</span>
                 </div>
               </div>
 
-              {/* Legend */}
-              <div className="grid grid-cols-3 gap-1 mt-2 text-center">
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.customerRetention || 0}%</span>
-                  </div>
-                  <span className="text-[7px] text-gray-500">Retention</span>
-                </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.nps || 0}%</span>
-                  </div>
-                  <span className="text-[7px] text-gray-500">NPS</span>
-                </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{Math.round(((kpiData?.customerRetention || 0) + (kpiData?.nps || 0)) / 2)}%</span>
-                  </div>
-                  <span className="text-[7px] text-gray-500">Avg</span>
-                </div>
+              {/* Footer Note */}
+              <div className="mt-3 pt-2.5 border-t border-gray-100">
+                <p className="text-[9px] text-gray-500 leading-tight">
+                  <span className="font-semibold text-amber-600">Target:</span> NPS > 50% (Excellent)
+                </p>
               </div>
             </div>
 
-            {/* Operational Metrics Donut - Metrik Operasional (REAL DATA) */}
-            <div className="bg-white rounded-lg shadow p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Metrik Operasional</h4>
+            {/* KPI Operasional */}
+            <div className="bg-white rounded-lg shadow p-5">
+              <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="text-lg">⚙️</span> KPI Operasional
+              </h4>
 
-              {/* Sales per Employee Donut (REAL DATA) */}
-              <div className="flex items-center justify-center py-2">
-                <div className="relative w-36 h-36">
+              {/* Main Donut Chart - Overall Efficiency */}
+              <div className="flex items-center justify-center py-3 mb-3">
+                <div className="relative w-40 h-40">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="15.9155"
-                      fill="none"
-                      stroke="#6366f1"
-                      strokeWidth="3"
-                      strokeDasharray={`${kpiData?.salesPerEmployee || 0} ${100 - (kpiData?.salesPerEmployee || 0)}`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 18 18)"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-indigo-600">{kpiData?.salesPerEmployee || 0}%</span>
-                    <span className="text-[9px] text-gray-600">Sales/Emp</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Inventory Turnover Rate Donut (REAL DATA) */}
-              <div className="flex items-center justify-center py-2 border-t border-gray-100">
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="15.9155"
-                      fill="none"
-                      stroke="#f43f5e"
-                      strokeWidth="3"
-                      strokeDasharray={`${kpiData?.inventoryTurnover || 0} ${100 - (kpiData?.inventoryTurnover || 0)}`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 18 18)"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-rose-600">{kpiData?.inventoryTurnover || 0}%</span>
-                    <span className="text-[8px] text-gray-600">Turnover</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Overall Efficiency Donut (REAL DATA) */}
-              <div className="flex items-center justify-center py-2 border-t border-gray-100">
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                     <circle
                       cx="18" cy="18" r="15.9155"
                       fill="none"
                       stroke="#8b5cf6"
-                      strokeWidth="3"
+                      strokeWidth="3.5"
                       strokeDasharray={`${kpiData?.efficiency || 0} ${100 - (kpiData?.efficiency || 0)}`}
                       strokeLinecap="round"
                       transform="rotate(-90 18 18)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
-                    <span className="text-[8px] text-gray-600">Efficiency</span>
+                    <span className="text-3xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
+                    <span className="text-[10px] text-gray-600 font-medium">Efficiency</span>
                   </div>
                 </div>
               </div>
 
-              {/* Legend */}
-              <div className="grid grid-cols-3 gap-1 mt-2 text-center">
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.salesPerEmployee || 0}%</span>
+              {/* Indicators List */}
+              <div className="space-y-2.5 border-t border-gray-100 pt-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                    <span className="text-xs text-gray-700 font-medium">Sales per Employee</span>
                   </div>
-                  <span className="text-[7px] text-gray-500">Sales/Emp</span>
+                  <span className="text-xs font-bold text-gray-900">{kpiData?.salesPerEmployee || 0}%</span>
                 </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.inventoryTurnover || 0}%</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-violet-500"></span>
+                    <span className="text-xs text-gray-700 font-medium">Overall Efficiency</span>
                   </div>
-                  <span className="text-[7px] text-gray-500">Turnover</span>
+                  <span className="text-xs font-bold text-gray-900">{kpiData?.efficiency || 0}%</span>
                 </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-violet-500"></span>
-                    <span className="text-[8px] font-semibold text-gray-700">{kpiData?.efficiency || 0}%</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                    <span className="text-xs text-gray-700 font-medium">Inventory Velocity</span>
                   </div>
-                  <span className="text-[7px] text-gray-500">Efficiency</span>
+                  <span className="text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
                 </div>
+              </div>
+
+              {/* Footer Note */}
+              <div className="mt-3 pt-2.5 border-t border-gray-100">
+                <p className="text-[9px] text-gray-500 leading-tight">
+                  <span className="font-semibold text-violet-600">Target:</span> 20 vehicles/employee/month
+                </p>
               </div>
             </div>
           </div>
