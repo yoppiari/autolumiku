@@ -435,7 +435,7 @@ export default function ShowroomDashboardPage() {
                     {/* Footer Note */}
                     <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
                       <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#3b82f6' }}>
-                        Target: 80% inventory sold per month
+                        Target: 20% inventory sold per month (2-5 vehicles)
                       </p>
                     </div>
                   </Link>
@@ -563,7 +563,7 @@ export default function ShowroomDashboardPage() {
                     {/* Footer Note */}
                     <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
                       <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#8b5cf6' }}>
-                        Target: 20 vehicles/employee/month
+                        Target: 2 vehicles/employee/month
                       </p>
                     </div>
                   </Link>

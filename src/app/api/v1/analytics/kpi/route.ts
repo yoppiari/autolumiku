@@ -125,9 +125,9 @@ export async function GET(request: NextRequest) {
     // ===== CALCULATE KPIs =====
 
     // KPI 1: Penjualan Showroom % (vs monthly target)
-    // Target: 80% of inventory should be sold per month
+    // Target: 20% of inventory should be sold per month (2-5 vehicles/month)
     const totalVehicles = totalSold + totalInventory;
-    const monthlyTarget = totalVehicles * 0.8;
+    const monthlyTarget = totalVehicles * 0.2;
     const penjualanShowroom = monthlyTarget > 0 ? Math.min((totalSold / monthlyTarget) * 100, 100) : 0;
 
     // KPI 2: ATV % (vs industry average)
@@ -152,8 +152,8 @@ export async function GET(request: NextRequest) {
     );
 
     // KPI 6: Sales per Employee %
-    // Target: 20 vehicles per employee per month
-    const targetPerEmployee = 20;
+    // Target: 2 vehicles per employee per month
+    const targetPerEmployee = 2;
     const salesPerEmployee = employees > 0
       ? Math.min((totalSold / (employees * targetPerEmployee)) * 100, 100)
       : 0;
