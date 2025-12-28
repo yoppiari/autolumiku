@@ -10,6 +10,7 @@ export interface User {
   lastName: string;
   fullName: string;
   role: 'super_admin' | 'admin' | 'manager' | 'staff';
+  roleLevel: number;
   tenantId: string | null;
   phoneNumber?: string;
   createdAt: string;
@@ -52,11 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedToken = localStorage.getItem('authToken');
 
         if (storedUser && storedToken) {
-          const userData: User = JSON.parse(storedUser);
+          let userData: User = JSON.parse(storedUser);
 
           // Compute fullName if not present (backward compatibility)
           if (!userData.fullName && userData.firstName && userData.lastName) {
             userData.fullName = `${userData.firstName} ${userData.lastName}`;
+          }
+
+          // Compute roleLevel if not present (backward compatibility)
+          if (!userData.roleLevel) {
+            // Import getRoleLevelFromRole dynamically since this is client-side
+            const { getRoleLevelFromRole } = await import('@/lib/auth/middleware');
+            userData.roleLevel = getRoleLevelFromRole(userData.role);
+            // Update localStorage with the computed roleLevel
+            localStorage.setItem('user', JSON.stringify(userData));
           }
 
           // Validate tenant ID format (must be UUID or null)
@@ -113,10 +123,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const result = await response.json();
-    const userData = {
+    
+    // Ensure roleLevel is included (backward compatibility)
+    let userData = {
       ...result.data.user,
       fullName: `${result.data.user.firstName} ${result.data.user.lastName}`,
     };
+    
+    // Compute roleLevel if not present in response
+    if (!userData.roleLevel) {
+      const { getRoleLevelFromRole } = await import('@/lib/auth/middleware');
+      userData.roleLevel = getRoleLevelFromRole(userData.role);
+    }
+    
     const accessToken = result.data.accessToken;
 
     setUser(userData);
@@ -152,11 +171,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/v1/auth/me');
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Ensure roleLevel is included (backward compatibility)
+        let userData = data.user;
+        if (!userData.roleLevel) {
+          const { getRoleLevelFromRole } = await import('@/lib/auth/middleware');
+          userData.roleLevel = getRoleLevelFromRole(userData.role);
+        }
+        
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
 
-        if (data.user.tenantId) {
-          const tenantResponse = await fetch(`/api/v1/tenants/${data.user.tenantId}`);
+        if (userData.tenantId) {
+          const tenantResponse = await fetch(`/api/v1/tenants/${userData.tenantId}`);
           if (tenantResponse.ok) {
             const tenantData = await tenantResponse.json();
             setTenant(tenantData.data);

@@ -336,7 +336,7 @@ export default function ShowroomDashboardPage() {
               {loadingAnalytics ? (
                 <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-gray-50 rounded-lg animate-pulse h-[280px] min-w-[200px] md:min-w-0"></div>
+                    <div key={i} className="bg-gray-50 rounded-lg animate-pulse h-[300px] md:h-[320px] min-w-[220px] md:min-w-0"></div>
                   ))}
                 </div>
               ) : (
@@ -344,12 +344,12 @@ export default function ShowroomDashboardPage() {
                   {/* AI Performance Card */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
-                    className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col min-w-[200px] md:min-w-0 h-[280px]"
+                    className="bg-gray-50 rounded-lg p-3 md:p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col min-w-[220px] md:min-w-0 h-[300px] md:h-[320px]"
                   >
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">AI Performance</h4>
-                    <div className="flex items-center justify-center h-[120px]">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">AI Performance</h4>
+                    <div className="flex items-center justify-center h-[100px] md:h-[120px]">
                       <div className="relative">
-                        <svg className="w-28 h-28" viewBox="0 0 36 36">
+                        <svg className="w-24 h-24 md:w-28 md:h-28" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           {analytics?.performance.aiAccuracy && analytics.performance.aiAccuracy > 0 && (
                             <circle
@@ -364,48 +364,57 @@ export default function ShowroomDashboardPage() {
                           )}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xl font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
+                          <span className="text-lg md:text-xl font-bold text-gray-700">{analytics?.performance.aiAccuracy || 0}%</span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2x3 grid with actual values */}
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-auto">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Accuracy {analytics?.performance?.aiAccuracy || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Satisfaction {analytics?.performance?.customerSatisfaction || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Resolution {analytics?.performance?.resolutionRate || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-orange-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Response {analytics?.overview?.aiResponseRate || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Escalation {analytics?.overview?.escalationRate || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Avg Time {analytics?.overview?.avgResponseTime || 0}s</span>
-                      </div>
+                    {/* Legend - Clean badge style */}
+                    <div className="flex flex-wrap gap-1.5 mt-auto justify-center">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200">
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span className="text-[10px] md:text-xs text-green-700 font-medium">{analytics?.performance?.aiAccuracy || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50 border border-purple-200">
+                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                        <span className="text-[10px] md:text-xs text-purple-700 font-medium">{analytics?.performance?.customerSatisfaction || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200">
+                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span className="text-[10px] md:text-xs text-blue-700 font-medium">{analytics?.performance?.resolutionRate || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 border border-orange-200">
+                        <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                        <span className="text-[10px] md:text-xs text-orange-700 font-medium">{analytics?.overview?.aiResponseRate || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 border border-red-200">
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span className="text-[10px] md:text-xs text-red-700 font-medium">{analytics?.overview?.escalationRate || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-50 border border-cyan-200">
+                        <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                        <span className="text-[10px] md:text-xs text-cyan-700 font-medium">{analytics?.overview?.avgResponseTime || 0}s</span>
+                      </span>
+                    </div>
+                    {/* Labels */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 justify-center text-[9px] md:text-[10px] text-gray-400">
+                      <span>Accuracy</span>
+                      <span>Satisfaction</span>
+                      <span>Resolution</span>
+                      <span>Response</span>
+                      <span>Escalation</span>
+                      <span>Avg Time</span>
                     </div>
                   </Link>
 
                   {/* Intent Breakdown Card */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
-                    className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col min-w-[200px] md:min-w-0 h-[280px]"
+                    className="bg-gray-50 rounded-lg p-3 md:p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col min-w-[220px] md:min-w-0 h-[300px] md:h-[320px]"
                   >
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Intent Breakdown</h4>
-                    <div className="flex items-center justify-center h-[120px]">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Intent Breakdown</h4>
+                    <div className="flex items-center justify-center h-[100px] md:h-[120px]">
                       <div className="relative">
-                        <svg className="w-28 h-28" viewBox="0 0 36 36">
+                        <svg className="w-24 h-24 md:w-28 md:h-28" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           {analytics?.intentBreakdown && analytics.intentBreakdown.length > 0 &&
                            analytics.intentBreakdown.some(i => i.percentage > 0) ? (
@@ -434,48 +443,57 @@ export default function ShowroomDashboardPage() {
                           ) : null}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xl font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.percentage, 0) || 0}%</span>
+                          <span className="text-lg md:text-xl font-bold text-gray-700">{analytics?.intentBreakdown?.reduce((sum, i) => sum + i.percentage, 0) || 0}%</span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2x3 grid with actual values */}
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-auto">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Greeting {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'greeting')?.percentage || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Vehicle {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'vehicle')?.percentage || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Price {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'price')?.percentage || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">General {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'general')?.percentage || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Closing {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'closing')?.percentage || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-gray-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Unknown {analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'unknown')?.percentage || 0}%</span>
-                      </div>
+                    {/* Legend - Clean badge style */}
+                    <div className="flex flex-wrap gap-1.5 mt-auto justify-center">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200">
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span className="text-[10px] md:text-xs text-green-700 font-medium">{analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'greeting')?.percentage || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200">
+                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span className="text-[10px] md:text-xs text-blue-700 font-medium">{analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'vehicle')?.percentage || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50 border border-purple-200">
+                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                        <span className="text-[10px] md:text-xs text-purple-700 font-medium">{analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'price')?.percentage || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200">
+                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span className="text-[10px] md:text-xs text-amber-700 font-medium">{analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'general')?.percentage || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 border border-red-200">
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span className="text-[10px] md:text-xs text-red-700 font-medium">{analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'closing')?.percentage || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300">
+                        <span className="w-2 h-2 rounded-full bg-gray-500"></span>
+                        <span className="text-[10px] md:text-xs text-gray-700 font-medium">{analytics?.intentBreakdown?.find(i => i.intent.toLowerCase() === 'unknown')?.percentage || 0}%</span>
+                      </span>
+                    </div>
+                    {/* Labels */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 justify-center text-[9px] md:text-[10px] text-gray-400">
+                      <span>Greeting</span>
+                      <span>Vehicle</span>
+                      <span>Price</span>
+                      <span>General</span>
+                      <span>Closing</span>
+                      <span>Unknown</span>
                     </div>
                   </Link>
 
                   {/* AI Accuracy Card */}
                   <Link
                     href="/dashboard/whatsapp-ai/analytics"
-                    className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col min-w-[200px] md:min-w-0 h-[280px]"
+                    className="bg-gray-50 rounded-lg p-3 md:p-4 hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-sm flex flex-col min-w-[220px] md:min-w-0 h-[300px] md:h-[320px]"
                   >
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">AI Accuracy</h4>
-                    <div className="flex items-center justify-center h-[120px]">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">AI Accuracy</h4>
+                    <div className="flex items-center justify-center h-[100px] md:h-[120px]">
                       <div className="relative">
-                        <svg className="w-28 h-28" viewBox="0 0 36 36">
+                        <svg className="w-24 h-24 md:w-28 md:h-28" viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
                           {/* Show accuracy segments when data exists */}
                           {analytics?.performance?.aiAccuracy && analytics.performance.aiAccuracy > 0 ? (
@@ -491,38 +509,47 @@ export default function ShowroomDashboardPage() {
                           ) : null}
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xl font-bold text-gray-700">
+                          <span className="text-lg md:text-xl font-bold text-gray-700">
                             {analytics?.performance?.aiAccuracy || 0}%
                           </span>
                         </div>
                       </div>
                     </div>
-                    {/* Legend - 2x3 grid with actual values */}
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-auto">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Correct {analytics?.performance?.aiAccuracy || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Partial 0%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Wrong {100 - (analytics?.performance?.aiAccuracy || 0)}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Escalated {analytics?.overview?.escalationRate || 0}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">Timeout 0%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 flex-shrink-0"></span>
-                        <span className="text-[10px] text-gray-600">No Response 0%</span>
-                      </div>
+                    {/* Legend - Clean badge style */}
+                    <div className="flex flex-wrap gap-1.5 mt-auto justify-center">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200">
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span className="text-[10px] md:text-xs text-green-700 font-medium">{analytics?.performance?.aiAccuracy || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200">
+                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span className="text-[10px] md:text-xs text-amber-700 font-medium">0%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 border border-red-200">
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span className="text-[10px] md:text-xs text-red-700 font-medium">{100 - (analytics?.performance?.aiAccuracy || 0)}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50 border border-purple-200">
+                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                        <span className="text-[10px] md:text-xs text-purple-700 font-medium">{analytics?.overview?.escalationRate || 0}%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200">
+                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span className="text-[10px] md:text-xs text-blue-700 font-medium">0%</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-50 border border-cyan-200">
+                        <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                        <span className="text-[10px] md:text-xs text-cyan-700 font-medium">0%</span>
+                      </span>
+                    </div>
+                    {/* Labels */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 justify-center text-[9px] md:text-[10px] text-gray-400">
+                      <span>Correct</span>
+                      <span>Partial</span>
+                      <span>Wrong</span>
+                      <span>Escalated</span>
+                      <span>Timeout</span>
+                      <span>No Response</span>
                     </div>
                   </Link>
                 </div>
