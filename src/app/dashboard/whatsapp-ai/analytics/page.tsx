@@ -202,101 +202,110 @@ export default function AnalyticsPage() {
   return (
     <div className="p-4 md:p-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 text-sm">← Back</Link>
+      <div className="mb-4 md:mb-6">
+        {/* Back link - separate row on mobile */}
+        <Link href="/dashboard/whatsapp-ai" className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm mb-2 md:mb-0">
+          ← Back
+        </Link>
+
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">Analytics & Reports</h1>
             <p className="text-sm text-gray-500 mt-1">Laporan performa untuk manajemen Prima Mobil</p>
           </div>
-        </div>
-        <div className="flex items-center gap-2 mt-3 md:mt-0">
-          {/* Period Filter - for Sales/Finance */}
-          {(activeDepartment === 'sales' || activeDepartment === 'finance') && (
-            <>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value as 'monthly' | 'quarterly' | 'yearly')}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="monthly">Bulanan</option>
-                <option value="quarterly">Kuartalan</option>
-                <option value="yearly">Tahunan</option>
-              </select>
-              <button
-                onClick={() => handleExport('excel')}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Excel
-              </button>
-              <button
-                onClick={() => handleExport('pdf')}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                PDF
-              </button>
-            </>
-          )}
-          {/* Time Range - for WhatsApp */}
-          {activeDepartment === 'whatsapp' && (
-            <div className="flex items-center gap-1">
-              {['today', 'week', 'month'].map((range) => (
-                <button
-                  key={range}
-                  onClick={() => setTimeRange(range as typeof timeRange)}
-                  className={`px-3 py-2 rounded text-sm font-medium ${
-                    timeRange === range ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'
-                  }`}
+
+          {/* Period Filter & Export Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Period Filter - for Sales/Finance */}
+            {(activeDepartment === 'sales' || activeDepartment === 'finance') && (
+              <>
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value as 'monthly' | 'quarterly' | 'yearly')}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 >
-                  {range.charAt(0).toUpperCase() + range.slice(1)}
+                  <option value="monthly">Bulanan</option>
+                  <option value="quarterly">Kuartalan</option>
+                  <option value="yearly">Tahunan</option>
+                </select>
+                <button
+                  onClick={() => handleExport('excel')}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Excel
                 </button>
-              ))}
-            </div>
-          )}
+                <button
+                  onClick={() => handleExport('pdf')}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  PDF
+                </button>
+              </>
+            )}
+            {/* Time Range - for WhatsApp */}
+            {activeDepartment === 'whatsapp' && (
+              <div className="flex items-center gap-1">
+                {['today', 'week', 'month'].map((range) => (
+                  <button
+                    key={range}
+                    onClick={() => setTimeRange(range as typeof timeRange)}
+                    className={`px-3 py-2 rounded text-sm font-medium ${
+                      timeRange === range ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {range.charAt(0).toUpperCase() + range.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Department Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="flex space-x-8" aria-label="Tabs">
+      {/* Department Tabs - Scrollable on mobile */}
+      <div className="border-b border-gray-200 mb-6 -mx-4 px-4 md:mx-0 md:px-0">
+        <nav className="flex overflow-x-auto scrollbar-hide" aria-label="Tabs">
           <button
             onClick={() => setActiveDepartment('sales')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+            className={`py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
               activeDepartment === 'sales'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             <span className="text-lg">📊</span>
-            Sales Department
+            <span className="hidden sm:inline">Sales Department</span>
+            <span className="sm:hidden">Sales</span>
           </button>
           <button
             onClick={() => setActiveDepartment('finance')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+            className={`py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
               activeDepartment === 'finance'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             <span className="text-lg">💰</span>
-            Finance / Accounting
+            <span className="hidden sm:inline">Finance / Accounting</span>
+            <span className="sm:hidden">Finance</span>
           </button>
           <button
             onClick={() => setActiveDepartment('whatsapp')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+            className={`py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
               activeDepartment === 'whatsapp'
                 ? 'border-green-500 text-green-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             <span className="text-lg">💬</span>
-            WhatsApp AI
+            <span className="hidden sm:inline">WhatsApp AI</span>
+            <span className="sm:hidden">WhatsApp</span>
           </button>
         </nav>
       </div>
