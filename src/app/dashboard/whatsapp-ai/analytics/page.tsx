@@ -321,26 +321,26 @@ export default function AnalyticsPage() {
       {!isLoading && activeDepartment === 'sales' && (
         <div className="space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-sm text-gray-500">Total Penjualan</p>
-              <p className="text-2xl font-bold text-gray-900">{salesStats?.totalSales || 0}</p>
-              <p className="text-xs text-green-600 mt-1">Unit terjual</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className="bg-white rounded-lg shadow p-3 md:p-4">
+              <p className="text-xs md:text-sm text-gray-500">Total Penjualan</p>
+              <p className="text-xl md:text-2xl font-bold text-gray-900">{salesStats?.totalSales || 0}</p>
+              <p className="text-[10px] md:text-xs text-green-600 mt-1">Unit terjual</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-sm text-gray-500">Total Revenue</p>
-              <p className="text-2xl font-bold text-blue-600">{formatRupiah(salesStats?.totalRevenue || 0)}</p>
-              <p className="text-xs text-gray-500 mt-1">Omzet keseluruhan</p>
+            <div className="bg-white rounded-lg shadow p-3 md:p-4">
+              <p className="text-xs md:text-sm text-gray-500">Total Revenue</p>
+              <p className="text-xl md:text-2xl font-bold text-blue-600">{formatRupiah(salesStats?.totalRevenue || 0)}</p>
+              <p className="text-[10px] md:text-xs text-gray-500 mt-1">Omzet keseluruhan</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-sm text-gray-500">Rata-rata Harga</p>
-              <p className="text-2xl font-bold text-gray-900">{formatRupiah(salesStats?.avgPrice || 0)}</p>
-              <p className="text-xs text-gray-500 mt-1">Per unit</p>
+            <div className="bg-white rounded-lg shadow p-3 md:p-4">
+              <p className="text-xs md:text-sm text-gray-500">Total Inventory</p>
+              <p className="text-xl md:text-2xl font-bold text-gray-900">{kpiData?.raw.totalInventory || 0}</p>
+              <p className="text-[10px] md:text-xs text-gray-500 mt-1">Stok tersedia</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-sm text-gray-500">Top Brand</p>
-              <p className="text-2xl font-bold text-purple-600">{salesStats?.topBrands?.[0]?.brand || '-'}</p>
-              <p className="text-xs text-gray-500 mt-1">{salesStats?.topBrands?.[0]?.count || 0} unit</p>
+            <div className="bg-white rounded-lg shadow p-3 md:p-4">
+              <p className="text-xs md:text-sm text-gray-500">Top Brand</p>
+              <p className="text-xl md:text-2xl font-bold text-purple-600">{salesStats?.topBrands?.[0]?.brand || '-'}</p>
+              <p className="text-[10px] md:text-xs text-gray-500 mt-1">{salesStats?.topBrands?.[0]?.count || 0} unit</p>
             </div>
           </div>
 

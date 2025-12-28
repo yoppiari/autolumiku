@@ -355,6 +355,56 @@ export default function ShowroomDashboardPage() {
               </Link>
             </div>
             <div className="p-3 md:p-4">
+              {/* Summary Cards - Quick Stats for Owner */}
+              {loadingKpi ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-white rounded-lg shadow p-3 md:p-4 animate-pulse">
+                      <div className="h-3 bg-gray-200 rounded w-20 mb-2"></div>
+                      <div className="h-6 bg-gray-200 rounded w-16 mb-1"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+                  <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                    <p className="text-xs md:text-sm text-gray-500">Total Penjualan</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">{kpiData?.raw.totalSold || 0}</p>
+                    <p className="text-[10px] md:text-xs text-green-600 mt-1">Unit terjual</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                    <p className="text-xs md:text-sm text-gray-500">Total Revenue</p>
+                    <p className="text-xl md:text-2xl font-bold text-blue-600">
+                      {new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(kpiData?.raw.totalRevenue || 0)}
+                    </p>
+                    <p className="text-[10px] md:text-xs text-gray-500 mt-1">Omzet keseluruhan</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                    <p className="text-xs md:text-sm text-gray-500">Total Inventory</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">{kpiData?.raw.totalInventory || 0}</p>
+                    <p className="text-[10px] md:text-xs text-gray-500 mt-1">Stok tersedia</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                    <p className="text-xs md:text-sm text-gray-500">Avg Price</p>
+                    <p className="text-xl md:text-2xl font-bold text-purple-600">
+                      {new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(kpiData?.raw.avgPrice || 0)}
+                    </p>
+                    <p className="text-[10px] md:text-xs text-gray-500 mt-1">Per unit</p>
+                  </div>
+                </div>
+              )}
+
               {loadingAnalytics ? (
                 <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible">
                   {[1, 2, 3].map((i) => (
