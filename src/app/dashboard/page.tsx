@@ -534,49 +534,6 @@ export default function ShowroomDashboardPage() {
           {!loadingSubscription && <SubscriptionCard subscription={subscription} />}
         </div>
       </div>
-
-      {/* Quick Actions - Horizontal scroll on mobile, Grid on desktop (all shown, tooltip for unauthorized) */}
-      <div className="bg-white rounded-lg border border-gray-200 flex-shrink-0 mt-2">
-        <div className="px-3 md:px-4 py-2 border-b border-gray-100">
-          <h3 className="text-sm md:text-base font-bold text-gray-800">Aksi Cepat</h3>
-        </div>
-        <div className="p-2 md:p-3">
-          {/* Mobile: Horizontal scroll, Desktop: Grid */}
-          {/* Invoice feature HIDDEN for all roles */}
-          <div className="flex md:grid md:grid-cols-3 gap-2 md:gap-3 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
-            <AuthorizedLink
-              href="/dashboard/vehicles"
-              isAuthorized={canSeeKendaraan}
-              className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-blue-50 ${canSeeKendaraan ? 'hover:bg-blue-100 hover:border-blue-400 hover:shadow-lg' : ''} transition-all group border-2 border-blue-200 min-w-[70px] md:min-w-0`}
-            >
-              <div className="w-9 h-9 md:w-12 md:h-12 bg-blue-100 group-hover:bg-blue-200 rounded-xl flex items-center justify-center transition-colors border border-blue-300 flex-shrink-0">
-                <span className="text-lg md:text-2xl">🚗</span>
-              </div>
-              <span className="text-[10px] md:text-sm font-semibold text-blue-800 group-hover:text-blue-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Kendaraan</span>
-            </AuthorizedLink>
-            <AuthorizedLink
-              href="/dashboard/users"
-              isAuthorized={canSeeTim}
-              className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-violet-50 ${canSeeTim ? 'hover:bg-violet-100 hover:border-violet-400 hover:shadow-lg' : ''} transition-all group border-2 border-violet-200 min-w-[70px] md:min-w-0`}
-            >
-              <div className="w-9 h-9 md:w-12 md:h-12 bg-violet-100 group-hover:bg-violet-200 rounded-xl flex items-center justify-center transition-colors border border-violet-300 flex-shrink-0">
-                <span className="text-lg md:text-2xl">👥</span>
-              </div>
-              <span className="text-[10px] md:text-sm font-semibold text-violet-800 group-hover:text-violet-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Tim</span>
-            </AuthorizedLink>
-            <AuthorizedLink
-              href="/dashboard/blog"
-              isAuthorized={canSeeBlog}
-              className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 p-2 md:p-3 rounded-xl bg-rose-50 ${canSeeBlog ? 'hover:bg-rose-100 hover:border-rose-400 hover:shadow-lg' : ''} transition-all group border-2 border-rose-200 min-w-[70px] md:min-w-0`}
-            >
-              <div className="w-9 h-9 md:w-12 md:h-12 bg-rose-100 group-hover:bg-rose-200 rounded-xl flex items-center justify-center transition-colors border border-rose-300 flex-shrink-0">
-                <span className="text-lg md:text-2xl">📝</span>
-              </div>
-              <span className="text-[10px] md:text-sm font-semibold text-rose-800 group-hover:text-rose-900 text-center md:text-left whitespace-nowrap md:whitespace-normal">Blog</span>
-            </AuthorizedLink>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
