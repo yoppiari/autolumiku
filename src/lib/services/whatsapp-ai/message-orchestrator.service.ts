@@ -9,10 +9,12 @@
 
 import { prisma } from "@/lib/prisma";
 import { AimeowClientService } from "../aimeow/aimeow-client.service";
+import { StorageService } from "../storage.service";
 import { IntentClassifierService, MessageIntent } from "./intent-classifier.service";
 import { WhatsAppAIChatService } from "./chat.service";
 import { StaffCommandService } from "./staff-command.service";
 import { AIHealthMonitorService } from "./ai-health-monitor.service";
+import { processCommand } from "./command-handler.service";
 
 // ==================== TYPES ====================
 
@@ -123,6 +125,20 @@ export class MessageOrchestratorService {
         conversation.id,
         incoming
       );
+
+      // 2.5. CHECK FOR WHATSAPP AI COMMANDS (before normal flow)
+      const commandCheck = await this.checkAndProcessCommand(incoming, conversation.id);
+      if (commandCheck.isCommand) {
+        console.log(`[Orchestrator] 🤖 WhatsApp AI Command detected and processed`);
+        // Command was handled, return the result
+        return {
+          success: commandCheck.result.success,
+          conversationId: conversation.id,
+          intent: "system_command" as MessageIntent,
+          responseMessage: commandCheck.result.message,
+          escalated: false,
+        };
+      }
 
       // 3. Check AI health status before processing customer messages
       const aiHealth = await AIHealthMonitorService.canProcessAI(incoming.tenantId);
@@ -1052,6 +1068,151 @@ export class MessageOrchestratorService {
     let digits = phone.replace(/\D/g, "");
     if (digits.startsWith("0")) digits = "62" + digits.substring(1);
     return digits;
+  }
+
+  /**
+   * Check and process WhatsApp AI Commands
+   * Returns true if message was a command and was processed
+   */
+  private static async checkAndProcessCommand(
+    incoming: IncomingMessage,
+    conversationId: string
+  ): Promise<{ isCommand: boolean; result?: any }> {
+    const message = incoming.message.toLowerCase().trim();
+
+    // Check if message matches command patterns
+    const commandPatterns = [
+      // Universal commands (all roles)
+      /^(rubah|ubah|edit)/i,
+      /^upload$/i,
+      /^(inventory|stok)/i,
+      /^status$/i,
+      /^(statistik|stats)/i,
+
+      // PDF commands (admin+ only)
+      /^sales report$/i,
+      /^whatsapp ai$/i,
+      /^metrix penjualan$/i,
+      /^metrix pelanggan$/i,
+      /^metrix operational$/i,
+      /^tren penjualan$/i,
+      /^staff performance$/i,
+      /^recent sales$/i,
+      /^low stock alert$/i,
+      /^total penjualan showroom$/i,
+      /^total revenue$/i,
+      /^total inventory$/i,
+      /^average price$/i,
+      /^(penjualan|sales)$/i,
+    ];
+
+    const isCommand = commandPatterns.some(pattern => pattern.test(message));
+
+    if (!isCommand) {
+      return { isCommand: false };
+    }
+
+    console.log(`[Orchestrator] 🔔 Command detected: ${message}`);
+
+    // Find user by phone number
+    const user = await prisma.user.findFirst({
+      where: {
+        tenantId: incoming.tenantId,
+        phone: incoming.from,
+      },
+      select: {
+        id: true,
+        role: true,
+        roleLevel: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    if (!user) {
+      console.log(`[Orchestrator] ⚠️ No user found with phone: ${incoming.from}`);
+      return {
+        isCommand: true,
+        result: {
+          success: false,
+          message: 'Maaf, nomor WhatsApp Anda tidak terdaftar di sistem. Hubungi admin untuk registrasi.',
+          followUp: false,
+        },
+      };
+    }
+
+    console.log(`[Orchestrator] 👤 User found: ${user.firstName} ${user.lastName} (${user.role}, level ${user.roleLevel})`);
+
+    // Process command
+    try {
+      const result = await processCommand(message, {
+        tenantId: incoming.tenantId,
+        userRole: user.role,
+        userRoleLevel: user.roleLevel,
+        phoneNumber: incoming.from,
+        userId: user.id,
+      });
+
+      // If PDF was generated, send it via WhatsApp
+      if (result.pdfBuffer && result.filename) {
+        console.log(`[Orchestrator] 📄 Sending PDF: ${result.filename}`);
+
+        try {
+          // Generate unique filename with timestamp
+          const timestamp = Date.now();
+          const storageKey = `reports/${incoming.tenantId}/${timestamp}-${result.filename}`;
+
+          // Save PDF to storage
+          console.log(`[Orchestrator] 💾 Saving PDF to storage: ${storageKey}`);
+          const pdfUrl = await StorageService.uploadPhoto(
+            result.pdfBuffer,
+            storageKey,
+            'application/pdf'
+          );
+
+          // Get full public URL
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+          const fullPdfUrl = `${baseUrl}${pdfUrl}`;
+          console.log(`[Orchestrator] 📎 PDF URL: ${fullPdfUrl}`);
+
+          // Send PDF via WhatsApp
+          const clientId = incoming.accountId;
+          const to = incoming.from;
+
+          console.log(`[Orchestrator] 📤 Sending PDF via WhatsApp to ${to}`);
+          const sendResult = await AimeowClientService.sendDocument(
+            clientId,
+            to,
+            fullPdfUrl,
+            result.filename,
+            'Berikut adalah laporan yang Anda minta.'
+          );
+
+          if (sendResult.success) {
+            console.log(`[Orchestrator] ✅ PDF sent successfully via WhatsApp`);
+            result.message = result.message + '\n\n✅ PDF berhasil dikirim!';
+          } else {
+            console.error(`[Orchestrator] ❌ Failed to send PDF: ${sendResult.error}`);
+            result.message = result.message + `\n\n❌ Gagal mengirim PDF: ${sendResult.error}\n\nSilakan coba lagi.`;
+          }
+        } catch (error: any) {
+          console.error(`[Orchestrator] ❌ Error sending PDF:`, error);
+          result.message = result.message + `\n\n❌ Terjadi kesalahan saat mengirim PDF: ${error.message}\n\nSilakan coba lagi atau hubungi admin.`;
+        }
+      }
+
+      return { isCommand: true, result };
+    } catch (error) {
+      console.error(`[Orchestrator] ❌ Command processing error:`, error);
+      return {
+        isCommand: true,
+        result: {
+          success: false,
+          message: 'Maaf, terjadi kesalahan saat memproses command. Silakan coba lagi atau hubungi admin.',
+          followUp: false,
+        },
+      };
+    }
   }
 
   /**
