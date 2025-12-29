@@ -663,7 +663,13 @@ async function fetchWhatsAppAIData(context: CommandContext, days: number = 30) {
 // ============================================================================
 
 async function generateSalesReportPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    // Use built-in fonts to avoid font file loading issues in standalone build
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -736,7 +742,12 @@ async function generateSalesReportPDF(context: CommandContext): Promise<CommandR
 }
 
 async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -809,7 +820,12 @@ async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandRe
 }
 
 async function generateSalesMetricsPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -866,7 +882,12 @@ async function generateSalesMetricsPDF(context: CommandContext): Promise<Command
 }
 
 async function generateCustomerMetricsPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -927,7 +948,12 @@ async function generateCustomerMetricsPDF(context: CommandContext): Promise<Comm
 }
 
 async function generateOperationalMetricsPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -985,7 +1011,12 @@ async function generateOperationalMetricsPDF(context: CommandContext): Promise<C
 }
 
 async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -1038,7 +1069,12 @@ async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandR
 }
 
 async function generateStaffPerformancePDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -1095,7 +1131,12 @@ async function generateStaffPerformancePDF(context: CommandContext): Promise<Com
 }
 
 async function generateRecentSalesPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -1150,7 +1191,12 @@ async function generateRecentSalesPDF(context: CommandContext): Promise<CommandR
 }
 
 async function generateLowStockPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -1214,7 +1260,12 @@ async function generateLowStockPDF(context: CommandContext): Promise<CommandResu
 }
 
 async function generateTotalSalesPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -1265,7 +1316,12 @@ async function generateTotalSalesPDF(context: CommandContext): Promise<CommandRe
 }
 
 async function generateTotalRevenuePDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -1316,7 +1372,12 @@ async function generateTotalRevenuePDF(context: CommandContext): Promise<Command
 }
 
 async function generateTotalInventoryPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -1365,7 +1426,12 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
 }
 
 async function generateAveragePricePDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
@@ -1423,7 +1489,12 @@ async function generateAveragePricePDF(context: CommandContext): Promise<Command
 }
 
 async function generateSalesSummaryPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    font: 'Helvetica',
+    bufferPages: true,
+  });
   const chunks: Uint8Array[] = [];
 
   doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
