@@ -21,7 +21,7 @@ const PDFKit = require('pdfkit');
 async function generateOperationalMetricsPDF() {
   return new Promise((resolve, reject) => {
     const doc = new PDFKit({ size: 'A4', margin: 50 });
-    const chunks = [];
+    const chunks: Buffer[] = [];
 
     doc.on('data', chunk => chunks.push(chunk));
     doc.on('end', () => resolve({
