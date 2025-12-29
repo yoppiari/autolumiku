@@ -278,20 +278,23 @@ export default function ConversationsPage() {
 
   // Export staff contacts to vCard (like WhatsApp)
   const exportContactsToVCard = () => {
-    if (teamMembers.length === 0) {
-      alert('Tidak ada data staff untuk di-export');
-      return;
-    }
+    try {
+      console.log('Exporting vCard, teamMembers count:', teamMembers.length);
 
-    // Create vCard content for each staff member
-    const vCards = teamMembers.map((member, index) => {
-      const fullName = `${member.firstName} ${member.lastName || ''}`.trim();
-      const phone = member.phone || '';
-      const email = member.email || '';
-      const org = member.role || 'Staff';
+      if (teamMembers.length === 0) {
+        alert('Tidak ada data staff untuk di-export. Pastikan staff sudah terdaftar dengan nomor HP.');
+        return;
+      }
 
-      // vCard 3.0 format
-      return `BEGIN:VCARD
+      // Create vCard content for each staff member
+      const vCards = teamMembers.map((member, index) => {
+        const fullName = `${member.firstName} ${member.lastName || ''}`.trim();
+        const phone = member.phone || '';
+        const email = member.email || '';
+        const org = member.role || 'Staff';
+
+        // vCard 3.0 format
+        return `BEGIN:VCARD
 VERSION:3.0
 FN:${fullName}
 N:${member.lastName || ''};${member.firstName};;;
@@ -300,22 +303,29 @@ EMAIL;TYPE=WORK:${email}
 ORG:${org}
 TITLE:${org}
 END:VCARD`;
-    });
+      });
 
-    // Combine all vCards into one file
-    const vCardContent = vCards.join('\n');
+      // Combine all vCards into one file
+      const vCardContent = vCards.join('\n');
+      console.log('vCard content length:', vCardContent.length);
 
-    // Create blob and download
-    const blob = new Blob([vCardContent], { type: 'text/vcard;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    const timestamp = new Date().toISOString().split('T')[0];
-    link.setAttribute('href', url);
-    link.setAttribute('download', `staff-contacts-${timestamp}.vcf`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Create blob and download
+      const blob = new Blob([vCardContent], { type: 'text/vcard;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      const timestamp = new Date().toISOString().split('T')[0];
+      link.setAttribute('href', url);
+      link.setAttribute('download', `staff-contacts-${timestamp}.vcf`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log('vCard export completed successfully');
+    } catch (error) {
+      console.error('Error exporting vCard:', error);
+      alert('Gagal mengekspor kontak: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
   // Export staff contacts to CSV
