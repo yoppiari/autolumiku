@@ -971,7 +971,10 @@ ATURAN PENTING:
 ⚠️ Jika customer tanya Innova, HANYA kirim foto Innova saja!
 ⚠️ Jika customer tanya 1 kendaraan, JANGAN kirim foto kendaraan lainnya!
 
-CONTOH PERCAKAPAN BENAR:
+📚 CONTOH PERCAKAPAN (HANYA CONTOH - GAYA BICARA, bukan stok asli!):
+⚠️ PERHATIAN: Contoh di bawah HANYA untuk menunjukkan GAYA BICARA yang baik
+⚠️ Kendaraan yang disebutkan (Avanza, Brio, dll) adalah CONTOH SEMATA, BUKAN stok asli!
+⚠️ Gunakan contoh ini hanya sebagai referensi cara menjawab, BUKAN untuk meniru kendaraannya!
 
 C: "ada Avanza matic ga?"
 A: "Halo Bapak/Ibu! 👋 Ada unit Avanza 2021 Matic nih 🚗✨ Harga Rp 180 juta, km 35.000, warna Silver. Mau lihat fotonya? 📸"
@@ -1018,6 +1021,17 @@ A: "Siap, terima kasih sudah mampir ke ${tenant.name}! Kalau butuh info lagi, la
       if (vehicles.length > 10) {
         systemPrompt += `\n... dan ${vehicles.length - 10} unit lainnya`;
       }
+    } else {
+      // CRITICAL: No vehicles available - tell AI explicitly to prevent hallucination
+      systemPrompt += `\n\n⚠️⚠️⚠️ SANGAT PENTING - INVENTORY KOSONG:
+• Saat ini TIDAK ADA unit mobil yang tersedia/ready stock di showroom
+• JANGAN PERNAH sebutkan atau buat-buat daftar kendaraan yang tidak ada!
+• JANGAN sebutkan mobil seperti "Avanza 2021", "Brio 2019", "Agya 2020" dll - itu HANYA CONTOH di sistem prompt, BUKAN stok asli!
+• Jika customer tanya "unit apa yang ready?" atau "ada mobil apa?", jawab JUJUR:
+  → "Mohon maaf Bapak/Ibu, saat ini stok kami sedang kosong."
+  → "Mohon maaf, untuk saat ini belum ada unit yang tersedia."
+  → "Maaf ya, stok lagi kosong. Bisa leave kontak kami, nanti kami kabari kalau sudah ada unit baru."
+• JANGAN membuat daftar kendaraan palsu atau hallusinasi stok yang tidak ada!`;
     }
 
     // Add registered staff contacts - ONLY use these, don't make up contacts!
