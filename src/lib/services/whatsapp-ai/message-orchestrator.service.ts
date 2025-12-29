@@ -1185,43 +1185,32 @@ export class MessageOrchestratorService {
         userId: user.id,
       });
 
-      // If PDF was generated, send it via WhatsApp
+      // If PDF was generated, send it via WhatsApp using base64 (more secure)
       if (result.pdfBuffer && result.filename) {
         console.log(`[Orchestrator] 📄 Sending PDF: ${result.filename}`);
+        console.log(`[Orchestrator] 📊 PDF size: ${result.pdfBuffer.length} bytes`);
 
         try {
-          // Generate unique filename with timestamp
-          const timestamp = Date.now();
-          const storageKey = `reports/${incoming.tenantId}/${timestamp}-${result.filename}`;
+          // Encode PDF to base64 for secure transmission
+          // This avoids storing sensitive PDFs on public storage
+          const base64Pdf = result.pdfBuffer.toString('base64');
+          console.log(`[Orchestrator] 📦 PDF encoded to base64: ${base64Pdf.length} chars`);
 
-          // Save PDF to storage
-          console.log(`[Orchestrator] 💾 Saving PDF to storage: ${storageKey}`);
-          const pdfUrl = await StorageService.uploadPhoto(
-            result.pdfBuffer,
-            storageKey,
-            'application/pdf'
-          );
-
-          // Get full public URL
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
-          const fullPdfUrl = `${baseUrl}${pdfUrl}`;
-          console.log(`[Orchestrator] 📎 PDF URL: ${fullPdfUrl}`);
-
-          // Send PDF via WhatsApp
+          // Send PDF via WhatsApp using base64 encoding
           const clientId = incoming.accountId;
           const to = incoming.from;
 
-          console.log(`[Orchestrator] 📤 Sending PDF via WhatsApp to ${to}`);
-          const sendResult = await AimeowClientService.sendDocument(
+          console.log(`[Orchestrator] 📤 Sending PDF via WhatsApp to ${to} (base64 mode)`);
+          const sendResult = await AimeowClientService.sendDocumentBase64(
             clientId,
             to,
-            fullPdfUrl,
+            base64Pdf,
             result.filename,
             'Berikut adalah laporan yang Anda minta.'
           );
 
           if (sendResult.success) {
-            console.log(`[Orchestrator] ✅ PDF sent successfully via WhatsApp`);
+            console.log(`[Orchestrator] ✅ PDF sent successfully via WhatsApp (base64)`);
             result.message = result.message + '\n\n✅ PDF berhasil dikirim!';
           } else {
             console.error(`[Orchestrator] ❌ Failed to send PDF: ${sendResult.error}`);

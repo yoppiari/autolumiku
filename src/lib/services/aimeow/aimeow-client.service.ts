@@ -624,6 +624,105 @@ export class AimeowClientService {
   }
 
   /**
+   * Send document via WhatsApp using base64 encoded data
+   * More secure for sensitive documents (PDFs with evidence/critical data)
+   * @param clientId - Aimeow client ID (UUID format)
+   * @param to - Recipient phone number
+   * @param base64Data - Base64 encoded document data
+   * @param filename - Document filename
+   * @param caption - Optional caption for the document
+   */
+  static async sendDocumentBase64(
+    clientId: string,
+    to: string,
+    base64Data: string,
+    filename: string,
+    caption?: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Send Document Base64] 📄 Sending document to ${to}`);
+      console.log(`[Aimeow Send Document Base64] Filename: ${filename}`);
+      console.log(`[Aimeow Send Document Base64] Base64 size: ${base64Data.length} chars`);
+      console.log(`[Aimeow Send Document Base64] Caption: ${caption || 'none'}`);
+
+      // Validate base64 data
+      if (!base64Data || base64Data.trim() === '') {
+        console.error(`[Aimeow Send Document Base64] ❌ Invalid base64 data: empty or null`);
+        return { success: false, error: 'Base64 data is empty' };
+      }
+
+      // Validate filename
+      if (!filename || filename.trim() === '') {
+        console.error(`[Aimeow Send Document Base64] ❌ Invalid filename: empty or null`);
+        return { success: false, error: 'Filename is empty' };
+      }
+
+      // Validate clientId format - same as sendDocument
+      let apiClientId = clientId;
+      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
+        console.log(`[Aimeow Send Document Base64] ⚠️  ClientId in wrong format, fetching correct UUID...`);
+
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+            console.log(`[Aimeow Send Document Base64] ✅ Using correct UUID: ${apiClientId}`);
+          } else {
+            throw new Error("No connected client found on Aimeow");
+          }
+        }
+      }
+
+      // Build payload for base64 document sending
+      const payload: Record<string, any> = {
+        phone: to,
+        base64Data: base64Data,
+        filename: filename,
+        mimeType: 'application/pdf',
+      };
+
+      if (caption) {
+        payload.caption = caption;
+      }
+
+      console.log(`[Aimeow Send Document Base64] Using clientId: ${apiClientId}`);
+      console.log(`[Aimeow Send Document Base64] Sending base64 payload (${Math.round(base64Data.length / 1024)}KB)`);
+
+      // Send document using /send-document-base64 endpoint
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-document-base64`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Aimeow Send Document Base64] ❌ Endpoint failed: ${errorText}`);
+        throw new Error(`Failed to send document: ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log(`[Aimeow Send Document Base64] ✅ Success:`, data);
+
+      return {
+        success: true,
+        messageId: data.messageId || data.id || `doc_${Date.now()}`,
+      };
+    } catch (error: any) {
+      console.error(`[Aimeow Send Document Base64] ❌ Error:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
    * Send contact vCard via WhatsApp
    * @param clientId - Aimeow client ID (UUID format)
    * @param to - Recipient phone number
