@@ -753,93 +753,37 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <>
-              {/* Overview Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-lg shadow p-4">
-                  <p className="text-sm text-gray-500">Conversations</p>
-                  <p className="text-2xl font-bold text-gray-900">{whatsappAnalytics.overview.totalConversations}</p>
-                  <p className="text-xs text-green-600 mt-1">{whatsappAnalytics.overview.activeConversations} active</p>
+              {/* Business Metrics Cards - Unique data only */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                  <p className="text-xs md:text-sm text-gray-500">Conversations</p>
+                  <p className="text-xl md:text-2xl font-bold text-gray-900">{whatsappAnalytics.overview.totalConversations}</p>
+                  <p className="text-[10px] md:text-xs text-green-600 mt-1">{whatsappAnalytics.overview.activeConversations} active</p>
                 </div>
-                <div className="bg-white rounded-lg shadow p-4">
-                  <p className="text-sm text-gray-500">Messages</p>
-                  <p className="text-2xl font-bold text-blue-600">{whatsappAnalytics.overview.totalMessages}</p>
+                <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                  <p className="text-xs md:text-sm text-gray-500">Messages</p>
+                  <p className="text-xl md:text-2xl font-bold text-blue-600">{whatsappAnalytics.overview.totalMessages}</p>
                 </div>
-                <div className="bg-white rounded-lg shadow p-4">
-                  <p className="text-sm text-gray-500">AI Response Rate</p>
-                  <p className="text-2xl font-bold text-green-600">{whatsappAnalytics.overview.aiResponseRate}%</p>
+                <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                  <p className="text-xs md:text-sm text-gray-500">AI Response Rate</p>
+                  <p className="text-xl md:text-2xl font-bold text-green-600">{whatsappAnalytics.overview.aiResponseRate}%</p>
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-1">Auto-handled</p>
                 </div>
-                <div className="bg-white rounded-lg shadow p-4">
-                  <p className="text-sm text-gray-500">Escalation Rate</p>
-                  <p className="text-2xl font-bold text-red-600">{whatsappAnalytics.overview.escalationRate}%</p>
+                <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                  <p className="text-xs md:text-sm text-gray-500">Escalation Rate</p>
+                  <p className="text-xl md:text-2xl font-bold text-red-600">{whatsappAnalytics.overview.escalationRate}%</p>
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-1">Need human</p>
                 </div>
               </div>
 
-              {/* Donut Charts Row - AI Performance, Intent Breakdown, AI Accuracy */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* AI Performance Donut */}
+              {/* Intent Breakdown Only - Simplified */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg shadow p-4">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-4">AI Performance</h4>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4">Customer Intent Breakdown</h4>
                   <div className="flex items-center justify-center py-4">
                     <div className="relative">
                       <svg className="w-32 h-32" viewBox="0 0 36 36">
-                        {/* Background circle - gray */}
                         <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                        {/* Only show colored segments if value > 0 */}
-                        {whatsappAnalytics.performance.aiAccuracy > 0 && (
-                          <circle
-                            cx="18" cy="18" r="14"
-                            fill="none"
-                            stroke="#22c55e"
-                            strokeWidth="3.5"
-                            strokeDasharray={`${(whatsappAnalytics.performance.aiAccuracy / 100) * 88} 88`}
-                            strokeLinecap="round"
-                            transform="rotate(-90 18 18)"
-                          />
-                        )}
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-2xl font-bold text-gray-700">{whatsappAnalytics.performance.aiAccuracy}%</span>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Legend */}
-                  <div className="grid grid-cols-2 gap-2 mt-4">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                      <span className="text-xs text-gray-600">Accuracy {whatsappAnalytics.performance.aiAccuracy}%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-                      <span className="text-xs text-gray-600">Satisfaction {whatsappAnalytics.performance.customerSatisfaction}%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                      <span className="text-xs text-gray-600">Resolution {whatsappAnalytics.performance.resolutionRate}%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-                      <span className="text-xs text-gray-600">Response {whatsappAnalytics.overview.aiResponseRate}%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                      <span className="text-xs text-gray-600">Escalation {whatsappAnalytics.overview.escalationRate}%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-cyan-500"></span>
-                      <span className="text-xs text-gray-600">Avg Time {whatsappAnalytics.overview.avgResponseTime}s</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Intent Breakdown Donut */}
-                <div className="bg-white rounded-lg shadow p-4">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-4">Intent Breakdown</h4>
-                  <div className="flex items-center justify-center py-4">
-                    <div className="relative">
-                      <svg className="w-32 h-32" viewBox="0 0 36 36">
-                        {/* Background circle - gray */}
-                        <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                        {/* Only render segments if data exists and has percentage > 0 */}
                         {whatsappAnalytics.intentBreakdown && whatsappAnalytics.intentBreakdown.length > 0 &&
                          whatsappAnalytics.intentBreakdown.some(i => i.percentage > 0) ? (
                           (() => {
@@ -875,44 +819,33 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                   </div>
-                  {/* Legend - always show standard intents */}
                   <div className="grid grid-cols-2 gap-2 mt-4">
                     <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                      <span className="text-xs text-gray-600">Greeting {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'greeting')?.percentage || 0}%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                      <span className="text-xs text-gray-600">Vehicle {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'vehicle')?.percentage || 0}%</span>
+                      <span className="text-[10px] md:text-xs text-gray-600">Vehicle {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'vehicle')?.percentage || 0}%</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-                      <span className="text-xs text-gray-600">Price {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'price')?.percentage || 0}%</span>
+                      <span className="text-[10px] md:text-xs text-gray-600">Price {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'price')?.percentage || 0}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-600">Greeting {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'greeting')?.percentage || 0}%</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                      <span className="text-xs text-gray-600">General {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'general')?.percentage || 0}%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                      <span className="text-xs text-gray-600">Closing {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'closing')?.percentage || 0}%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-gray-500"></span>
-                      <span className="text-xs text-gray-600">Unknown {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'unknown')?.percentage || 0}%</span>
+                      <span className="text-[10px] md:text-xs text-gray-600">General {whatsappAnalytics.intentBreakdown?.find(i => i.intent.toLowerCase() === 'general')?.percentage || 0}%</span>
                     </div>
                   </div>
                 </div>
 
-                {/* AI Accuracy Donut */}
+                {/* AI Performance Summary - Simplified */}
                 <div className="bg-white rounded-lg shadow p-4">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-4">AI Accuracy</h4>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4">AI Performance</h4>
                   <div className="flex items-center justify-center py-4">
                     <div className="relative">
                       <svg className="w-32 h-32" viewBox="0 0 36 36">
-                        {/* Background circle - gray */}
                         <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
-                        {/* Only show colored segments if values > 0 */}
                         {whatsappAnalytics.performance.aiAccuracy > 0 && (
                           <circle
                             cx="18" cy="18" r="14"
@@ -924,100 +857,72 @@ export default function AnalyticsPage() {
                             transform="rotate(-90 18 18)"
                           />
                         )}
-                        {/* Wrong segment - only if accuracy < 100 and there's some data */}
-                        {whatsappAnalytics.performance.aiAccuracy < 100 && whatsappAnalytics.overview.totalMessages > 0 && (
-                          <circle
-                            cx="18" cy="18" r="14"
-                            fill="none"
-                            stroke="#ef4444"
-                            strokeWidth="3.5"
-                            strokeDasharray={`${((100 - whatsappAnalytics.performance.aiAccuracy) / 100) * 88} 88`}
-                            strokeDashoffset={`${-(whatsappAnalytics.performance.aiAccuracy / 100) * 88}`}
-                            strokeLinecap="round"
-                            transform="rotate(-90 18 18)"
-                          />
-                        )}
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-2xl font-bold text-gray-700">{whatsappAnalytics.performance.aiAccuracy}%</span>
                       </div>
                     </div>
                   </div>
-                  {/* Legend - standardized colors matching other charts */}
                   <div className="grid grid-cols-2 gap-2 mt-4">
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                      <span className="text-xs text-gray-600">Correct {whatsappAnalytics.performance.aiAccuracy}%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                      <span className="text-xs text-gray-600">Partial 0%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                      <span className="text-xs text-gray-600">Wrong {100 - whatsappAnalytics.performance.aiAccuracy}%</span>
+                      <span className="text-[10px] md:text-xs text-gray-600">Accuracy {whatsappAnalytics.performance.aiAccuracy}%</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-                      <span className="text-xs text-gray-600">Escalated {whatsappAnalytics.overview.escalationRate}%</span>
+                      <span className="text-[10px] md:text-xs text-gray-600">Satisfaction {whatsappAnalytics.performance.customerSatisfaction}%</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                      <span className="text-xs text-gray-600">Timeout 0%</span>
+                      <span className="text-[10px] md:text-xs text-gray-600">Resolution {whatsappAnalytics.performance.resolutionRate}%</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-cyan-500"></span>
-                      <span className="text-xs text-gray-600">No Response 0%</span>
+                      <span className="text-[10px] md:text-xs text-gray-600">Avg Time {whatsappAnalytics.overview.avgResponseTime}s</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Staff Activity - Always show table with proper structure */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Staff Activity</h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff Phone</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Commands</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Success Rate</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Last Active</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {whatsappAnalytics.staffActivity && whatsappAnalytics.staffActivity.length > 0 ? (
-                        whatsappAnalytics.staffActivity.map((staff, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{staff.staffPhone}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">{staff.commandCount}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                staff.successRate >= 80 ? 'bg-green-100 text-green-800' :
-                                staff.successRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {staff.successRate}%
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">{staff.lastActive}</td>
-                          </tr>
-                        ))
+              {/* Executive Summary */}
+              <div className="bg-gradient-to-br from-green-50 via-white to-blue-50 rounded-lg border-l-4 border-green-500 p-3 md:p-4 shadow-sm">
+                <h4 className="text-xs md:text-sm font-bold text-green-900 uppercase tracking-wide mb-2 md:mb-2.5 flex items-center gap-2">
+                  <span className="text-base md:text-lg">📋</span>
+                  <span className="leading-tight">Analisis WhatsApp AI</span>
+                  <span className="text-green-600 font-normal mx-1">•</span>
+                  <span className="text-green-700 font-semibold">Business Impact</span>
+                </h4>
+                <div className="space-y-2">
+                  <div className="text-[10px] md:text-xs leading-snug">
+                    <span className="font-bold text-green-700">💬 Conversations:</span>{' '}
+                    <span className="text-gray-700">
+                      {whatsappAnalytics.overview.totalConversations} conversations bulan ini.{' '}
+                      {whatsappAnalytics.overview.aiResponseRate >= 80 ? (
+                        <span className="text-green-600 font-semibold">AI menangani {whatsappAnalytics.overview.aiResponseRate}% secara otomatis</span>
                       ) : (
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">0</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">0%</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">-</td>
-                        </tr>
+                        <span className="text-amber-600 font-semibold">{100 - whatsappAnalytics.overview.aiResponseRate}% butuh bantuan human</span>
                       )}
-                    </tbody>
-                  </table>
+                    </span>
+                  </div>
+                  <div className="text-[10px] md:text-xs leading-snug">
+                    <span className="font-bold text-blue-700">🎯 Top Intent:</span>{' '}
+                    <span className="text-gray-700">
+                      {(() => {
+                        const topIntent = whatsappAnalytics.intentBreakdown && whatsappAnalytics.intentBreakdown.length > 0
+                          ? whatsappAnalytics.intentBreakdown.sort((a, b) => b.percentage - a.percentage)[0]
+                          : null;
+                        return topIntent ? `${topIntent.intent} (${topIntent.percentage}%)` : 'Belum ada data';
+                      })()}
+                    </span>
+                  </div>
+                  <div className="text-[10px] md:text-xs leading-snug border-t border-green-200 pt-2 mt-2">
+                    <span className="font-bold text-rose-700">⚡ Rekomendasi:</span>{' '}
+                    <span className="text-gray-700">
+                      <span className="text-green-600 font-semibold">1)</span> {whatsappAnalytics.performance.aiAccuracy < 90 ? 'Tingkatkan training AI untuk improve accuracy.' : 'Accuracy sudah baik, pertahankan.'}{' '}
+                      <span className="text-green-600 font-semibold">2)</span> {whatsappAnalytics.overview.escalationRate > 20 ? 'Review escalation yang sering terjadi.' : 'Escalation rate terkendali.'}{' '}
+                      <span className="text-green-600 font-semibold">3)</span> Monitor response time untuk tetap di bawah 1 menit.
+                    </span>
+                  </div>
                 </div>
               </div>
             </>
