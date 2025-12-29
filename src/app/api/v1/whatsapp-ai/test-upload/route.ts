@@ -35,7 +35,13 @@ export async function GET(request: NextRequest) {
 
     // Check for match
     let matchedUser = null;
-    const userPhones = [];
+    const userPhones: Array<{
+      name: string;
+      email: string | null;
+      originalPhone: string | null;
+      normalizedPhone: string;
+      matches: boolean;
+    }> = [];
 
     for (const user of users) {
       let normalizedUserPhone = "";

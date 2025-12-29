@@ -186,7 +186,7 @@ export class VehicleDataExtractorService {
       const { make, model, year, price } = extractedData as any;
 
       if (!make || !model || !year || !price) {
-        const missing = [];
+        const missing: string[] = [];
         if (!make) missing.push('make/merk');
         if (!model) missing.push('model');
         if (!year) missing.push('year/tahun');
@@ -487,7 +487,7 @@ export class VehicleDataExtractorService {
 
     // Validate required fields
     if (!extractedData.make || !extractedData.model || !extractedData.year || !extractedData.price) {
-      const missing = [];
+      const missing: string[] = [];
       if (!extractedData.make) missing.push('merk');
       if (!extractedData.model) missing.push('model');
       if (!extractedData.year) missing.push('tahun');

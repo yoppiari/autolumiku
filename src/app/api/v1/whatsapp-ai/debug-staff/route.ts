@@ -29,7 +29,27 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const result = [];
+    const result: Array<{
+      tenant: {
+        id: string;
+        name: string | null;
+        slug: string | null;
+      };
+      whatsappBot: {
+        botPhone: string;
+        clientId: string;
+        status: string;
+      };
+      staff: Array<{
+        name: string;
+        email: string | null;
+        phone: string;
+        phoneNormalized: string | null;
+        role: string;
+        canUpload: boolean;
+      }>;
+      testUrl: string;
+    }> = [];
 
     for (const account of aimeowAccounts) {
       // Get all users in this tenant
