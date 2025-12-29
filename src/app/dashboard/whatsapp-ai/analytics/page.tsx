@@ -665,13 +665,16 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Management Analysis Footnotes - Smaller & Colorful */}
-          <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 rounded-lg border-l-4 border-blue-500 p-2.5 shadow-sm">
-            <h4 className="text-[8px] font-bold text-blue-800 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-              <span>📋</span> Analisis KPI Showroom - Executive Summary
+          <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 rounded-lg border-l-4 border-blue-500 p-3 md:p-4 shadow-sm">
+            <h4 className="text-xs md:text-sm font-bold text-blue-900 uppercase tracking-wide mb-2 md:mb-2.5 flex items-center gap-2">
+              <span className="text-base md:text-lg">📋</span>
+              <span className="leading-tight">Analisis KPI Showroom</span>
+              <span className="text-blue-600 font-normal mx-1">•</span>
+              <span className="text-blue-700 font-semibold">Executive Summary</span>
             </h4>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {/* Analysis Point 1 - Sales Performance */}
-              <div className="text-[8px] leading-tight">
+              <div className="text-[10px] md:text-xs leading-snug">
                 <span className="font-bold text-blue-700">📊 Performa Penjualan:</span>{' '}
                 <span className="text-gray-700">
                   {(salesStats?.totalSales || 0) >= 80 ? (
@@ -685,7 +688,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Analysis Point 2 - Brand Strategy */}
-              <div className="text-[8px] leading-tight">
+              <div className="text-[10px] md:text-xs leading-snug">
                 <span className="font-bold text-purple-700">🚗 Strategi Brand:</span>{' '}
                 <span className="text-gray-700">
                   {salesStats?.topBrands && salesStats.topBrands.length > 0 ? (
@@ -701,7 +704,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Analysis Point 3 - Revenue Optimization */}
-              <div className="text-[8px] leading-tight">
+              <div className="text-[10px] md:text-xs leading-snug">
                 <span className="font-bold text-green-700">💰 Optimasi Revenue:</span>{' '}
                 <span className="text-gray-700">
                   {(salesStats?.avgPrice || 0) > 200000000 ? (
@@ -715,7 +718,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Analysis Point 4 - Action Items */}
-              <div className="text-[8px] leading-tight border-t border-blue-200 pt-1.5 mt-1.5">
+              <div className="text-[10px] md:text-xs leading-snug border-t border-blue-200 pt-2 mt-2">
                 <span className="font-bold text-rose-700">⚡ Rekomendasi Aksi:</span>{' '}
                 <span className="text-gray-700">
                   <span className="text-blue-600 font-semibold">1)</span> Review target bulanan. {' '}
@@ -726,12 +729,12 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            {/* Footer timestamp - Even smaller */}
-            <div className="mt-1.5 pt-1.5 border-t border-blue-200 flex items-center justify-between">
-              <span className="text-[7px] text-blue-400/80 font-medium">
+            {/* Footer timestamp */}
+            <div className="mt-2 pt-2 border-t border-blue-200 flex items-center justify-between">
+              <span className="text-[9px] md:text-[10px] text-blue-400/80 font-medium">
                 Report: {period === 'monthly' ? 'Bulanan' : period === 'quarterly' ? 'Kuartalan' : 'Tahunan'} • Generated: {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
               </span>
-              <span className="text-[7px] text-blue-400/80 font-semibold">Prima Mobil v2.0</span>
+              <span className="text-[9px] md:text-[10px] text-blue-400/80 font-semibold">Prima Mobil v2.0</span>
             </div>
           </div>
         </div>
