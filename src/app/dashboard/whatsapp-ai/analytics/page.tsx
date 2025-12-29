@@ -148,8 +148,9 @@ export default function AnalyticsPage() {
   const handleExport = async (format: 'pdf' | 'excel') => {
     try {
       const token = localStorage.getItem('authToken');
+      // Always export Sales + WhatsApp AI together
       const response = await fetch(
-        `/api/v1/analytics/export?format=${format}&department=${activeDepartment}&period=${period}`,
+        `/api/v1/analytics/export?format=${format}&department=all&period=${period}`,
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -161,7 +162,7 @@ export default function AnalyticsPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `analytics-${activeDepartment}-${new Date().toISOString().split('T')[0]}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+        a.download = `analytics-sales-whatsapp-${new Date().toISOString().split('T')[0]}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
