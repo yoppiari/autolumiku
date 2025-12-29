@@ -404,198 +404,180 @@ export default function WhatsAppAIDashboard() {
           </div>
         )}
 
-        {/* Stats Overview - Compact */}
+        {/* Business Performance Summary - NO DUPLICATES */}
         {status.isConnected && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+          <div className="space-y-2">
+            {/* Executive Summary Card */}
+            <div className="bg-gradient-to-br from-green-50 via-white to-blue-50 rounded-lg border-l-4 border-green-500 p-3 shadow-sm">
+              <h4 className="text-xs md:text-sm font-bold text-green-900 uppercase tracking-wide mb-2 flex items-center gap-2">
+                <span className="text-base md:text-lg">📋</span>
+                <span className="leading-tight">Executive Summary</span>
+                <span className="text-green-600 font-normal mx-1">•</span>
+                <span className="text-green-700 font-semibold">WhatsApp AI Performance</span>
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                <div className="text-[10px] md:text-xs leading-snug">
+                  <span className="font-bold text-green-700">💬 Conversations:</span>{' '}
+                  <span className="text-gray-700">{stats.total || 0} hari ini ({stats.active || 0} active)</span>
+                </div>
+                <div className="text-[10px] md:text-xs leading-snug">
+                  <span className="font-bold text-blue-700">🤖 AI Automation:</span>{' '}
+                  <span className="text-gray-700">
+                    {status.aiResponseRate >= 80 ? (
+                      <span className="text-green-600 font-semibold">Excellent ({status.aiResponseRate}% auto)</span>
+                    ) : status.aiResponseRate >= 60 ? (
+                      <span className="text-amber-600 font-semibold">Good ({status.aiResponseRate}% auto)</span>
+                    ) : (
+                      <span className="text-red-600 font-semibold">Perlu improve</span>
+                    )}
+                  </span>
+                </div>
+                <div className="text-[10px] md:text-xs leading-snug">
+                  <span className="font-bold text-purple-700">⚡ Response Speed:</span>{' '}
+                  <span className="text-gray-700">
+                    {stats.avgResponseTime < 60 ? (
+                      <span className="text-green-600 font-semibold">Cepat ({formatResponseTime(stats.avgResponseTime)})</span>
+                    ) : (
+                      <span className="text-amber-600 font-semibold">Perlu ditingkatkan</span>
+                    )}
+                  </span>
+                </div>
+                <div className="text-[10px] md:text-xs leading-snug border-t border-green-200 pt-1.5 mt-1">
+                  <span className="font-bold text-green-700">💰 Business Impact:</span>{' '}
+                  <span className="text-gray-700">
+                    AI menghemat ~<span className="font-semibold text-green-600">{Math.round((status.todayMessages || 0) * (status.aiResponseRate / 100) * 2)} menit</span> waktu staff hari ini
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Key Metrics - Only 3 cards, NO DUPLICATES */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-[10px] md:text-xs font-medium text-gray-500">Conversations</h3>
+                  <span className="text-sm">💬</span>
+                </div>
+                <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.total || 0}</div>
+                <p className="text-[10px] md:text-xs text-gray-500">{stats.active || 0} active</p>
+              </div>
+
+              <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-[10px] md:text-xs font-medium text-gray-500">Messages</h3>
+                  <span className="text-sm">📨</span>
+                </div>
+                <div className="text-xl md:text-2xl font-bold text-purple-600">{status.todayMessages}</div>
+                <p className="text-[10px] md:text-xs text-gray-500">Today's chats</p>
+              </div>
+
+              <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-[10px] md:text-xs font-medium text-gray-500">AI Automation</h3>
+                  <span className="text-sm">🤖</span>
+                </div>
+                <div className="text-xl md:text-2xl font-bold text-green-600">{status.aiResponseRate}%</div>
+                <p className="text-[10px] md:text-xs text-gray-500">Auto-handled</p>
+              </div>
+            </div>
+
+            {/* Performance Status - Simple, owner-focused indicators */}
             <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-medium text-gray-500">Conversations</h3>
-                <span className="text-sm">💬</span>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs md:text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <span>📊</span> Performance Status
+                </h4>
+                <Link href="/dashboard/whatsapp-ai/analytics" className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium">
+                  View Details →
+                </Link>
               </div>
-              <div className="text-lg font-bold text-blue-600">{stats.total}</div>
-              <p className="text-xs text-gray-500">{stats.active} active</p>
-            </div>
 
-            <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-medium text-gray-500">Messages</h3>
-                <span className="text-sm">📨</span>
-              </div>
-              <div className="text-lg font-bold text-purple-600">{status.todayMessages}</div>
-              <p className="text-xs text-gray-500">
-                {stats.customerChats} cust · {stats.staffCommands} staff
-              </p>
-            </div>
+              <div className="space-y-2.5">
+                {/* AI Automation Status */}
+                {(() => {
+                  const aiAutomation = status.aiResponseRate || 0;
+                  const isExcellent = aiAutomation >= 80;
+                  const isGood = aiAutomation >= 60;
 
-            <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-medium text-gray-500">AI Automation</h3>
-                <span className="text-sm">🤖</span>
-              </div>
-              <div className="text-lg font-bold text-green-600">{status.aiResponseRate}%</div>
-              <p className="text-xs text-gray-500">
-                {stats.escalated} escalated
-              </p>
-            </div>
-
-            <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-medium text-gray-500">Response</h3>
-                <span className="text-sm">⚡</span>
-              </div>
-              <div className="text-lg font-bold text-orange-600">
-                {formatResponseTime(stats.avgResponseTime)}
-              </div>
-              <p className="text-xs text-gray-500">
-                {stats.aiAccuracy}% accuracy
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Performance Summary Chart */}
-        {status.isConnected && (
-          <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 mb-2">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-gray-900">📊 Performance Summary</h3>
-              <Link href="/dashboard/whatsapp-ai/analytics" className="text-xs text-blue-600 hover:text-blue-800">
-                Lihat Detail →
-              </Link>
-            </div>
-
-            {(() => {
-              // Calculate metrics with proper validation
-              const totalConversations = stats.total || 0;
-              const todayMessages = status.todayMessages || 0;
-              const aiAutomation = status.aiResponseRate || 0;
-              const aiAccuracy = stats.aiAccuracy || 0;
-              const escalated = stats.escalated || 0;
-              const totalMessages = stats.customerChats + stats.staffCommands;
-
-              // Bar width calculations (relative to sensible baselines)
-              // For count metrics: use logarithmic scale capped at 100%
-              const conversationBarWidth = totalConversations > 0
-                ? Math.min(Math.log10(totalConversations + 1) / Math.log10(1000) * 100, 100)
-                : 0;
-              const messagesBarWidth = todayMessages > 0
-                ? Math.min(Math.log10(todayMessages + 1) / Math.log10(1000) * 100, 100)
-                : 0;
-
-              // Health Score calculation (only if we have meaningful data)
-              const hasData = totalConversations > 0 || todayMessages > 0 || totalMessages > 0;
-
-              // Weighted health score:
-              // - AI Automation Rate (40%): Higher is better
-              // - AI Accuracy (40%): Higher is better
-              // - Escalation Rate (20%): Lower is better (inverted)
-              const escalationPenalty = totalConversations > 0
-                ? Math.min((escalated / totalConversations) * 100, 100)
-                : 0;
-
-              const healthScore = hasData
-                ? Math.round(
-                    (aiAutomation * 0.4) +
-                    (aiAccuracy * 0.4) +
-                    ((100 - escalationPenalty) * 0.2)
-                  )
-                : 0;
-
-              const radius = 45;
-              const circumference = 2 * Math.PI * radius;
-              const offset = circumference - (healthScore / 100) * circumference;
-              const scoreColor = !hasData ? '#9ca3af' : healthScore >= 80 ? '#22c55e' : healthScore >= 60 ? '#eab308' : '#ef4444';
-
-              return (
-                <>
-                  {/* Visual Metrics */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* Left: Horizontal Bar Chart */}
-                    <div className="space-y-1.5">
-                      {/* Conversations Bar */}
-                      <div>
-                        <div className="flex items-center justify-between text-xs mb-0.5">
-                          <span className="text-gray-600">💬 Conversations</span>
-                          <span className="font-semibold text-blue-600">{totalConversations}</span>
+                  return (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm mt-0.5">{isExcellent ? '✅' : isGood ? '⚠️' : '❌'}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] md:text-xs font-medium text-gray-700">AI Automation</span>
+                          <span className={`text-[10px] md:text-xs font-bold ${isExcellent ? 'text-green-600' : isGood ? 'text-amber-600' : 'text-red-600'}`}>
+                            {isExcellent ? 'Excellent' : isGood ? 'Good' : 'Perlu improve'} ({aiAutomation}%)
+                          </span>
                         </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${conversationBarWidth}%` }}></div>
-                        </div>
-                      </div>
-
-                      {/* Messages Bar */}
-                      <div>
-                        <div className="flex items-center justify-between text-xs mb-0.5">
-                          <span className="text-gray-600">📨 Today Messages</span>
-                          <span className="font-semibold text-purple-600">{todayMessages}</span>
-                        </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-purple-500 rounded-full" style={{ width: `${messagesBarWidth}%` }}></div>
-                        </div>
-                      </div>
-
-                      {/* AI Automation Bar */}
-                      <div>
-                        <div className="flex items-center justify-between text-xs mb-0.5">
-                          <span className="text-gray-600">🤖 AI Automation</span>
-                          <span className="font-semibold text-green-600">{aiAutomation}%</span>
-                        </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-green-500 rounded-full" style={{ width: `${aiAutomation}%` }}></div>
-                        </div>
-                      </div>
-
-                      {/* Accuracy Bar */}
-                      <div>
-                        <div className="flex items-center justify-between text-xs mb-0.5">
-                          <span className="text-gray-600">🎯 AI Accuracy</span>
-                          <span className="font-semibold text-orange-600">{aiAccuracy}%</span>
-                        </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500 rounded-full" style={{ width: `${aiAccuracy}%` }}></div>
-                        </div>
+                        <p className="text-[9px] md:text-[10px] text-gray-500 mt-0.5">
+                          {isExcellent
+                            ? `${aiAutomation}% percakapan ditangani otomatis oleh AI`
+                            : `${aiAutomation}% percakapan ditangani otomatis, ${100 - aiAutomation}% butuh respon staff`}
+                        </p>
                       </div>
                     </div>
+                  );
+                })()}
 
-                    {/* Right: Donut Chart - Overall Health Score */}
-                    <div className="flex items-center justify-center">
-                      <div className="relative">
-                        <svg width="80" height="80" className="transform -rotate-90">
-                          <circle cx="40" cy="40" r="30" fill="none" stroke="#e5e7eb" strokeWidth="6" />
-                          <circle cx="40" cy="40" r="30" fill="none" stroke={scoreColor} strokeWidth="6" strokeLinecap="round"
-                            strokeDasharray={2 * Math.PI * 30} strokeDashoffset={2 * Math.PI * 30 - (healthScore / 100) * 2 * Math.PI * 30} />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-lg font-bold" style={{ color: scoreColor }}>{hasData ? `${healthScore}%` : '-'}</span>
-                          <span className="text-[10px] text-gray-500">Health</span>
+                {/* Response Quality Status */}
+                {(() => {
+                  const aiAccuracy = stats.aiAccuracy || 0;
+                  const isExcellent = aiAccuracy >= 85;
+                  const isGood = aiAccuracy >= 70;
+
+                  return (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm mt-0.5">{isExcellent ? '✅' : isGood ? '⚠️' : '❌'}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] md:text-xs font-medium text-gray-700">Response Quality</span>
+                          <span className={`text-[10px] md:text-xs font-bold ${isExcellent ? 'text-green-600' : isGood ? 'text-amber-600' : 'text-red-600'}`}>
+                            {isExcellent ? 'Excellent' : isGood ? 'Good' : 'Perlu improve'} ({aiAccuracy}%)
+                          </span>
                         </div>
+                        <p className="text-[9px] md:text-[10px] text-gray-500 mt-0.5">
+                          {isExcellent
+                            ? `Akurasi respon AI sangat baik`
+                            : isGood
+                            ? `Akurasi respon AI baik, masih perlu sedikit improvement`
+                            : `Akurasi respon AI perlu ditingkatkan`}
+                        </p>
                       </div>
                     </div>
-                  </div>
+                  );
+                })()}
 
-                  {/* Bottom: Quick Stats Row */}
-                  <div className="mt-2 pt-2 border-t border-gray-100">
-                    <div className="grid grid-cols-4 gap-1 text-center">
-                      <div className="bg-blue-50 rounded p-1">
-                        <div className="text-sm font-bold text-blue-600">{stats.active || 0}</div>
-                        <div className="text-[10px] text-gray-500">Active</div>
-                      </div>
-                      <div className="bg-purple-50 rounded p-1">
-                        <div className="text-sm font-bold text-purple-600">{stats.customerChats || 0}</div>
-                        <div className="text-[10px] text-gray-500">Customers</div>
-                      </div>
-                      <div className="bg-green-50 rounded p-1">
-                        <div className="text-sm font-bold text-green-600">{stats.staffCommands || 0}</div>
-                        <div className="text-[10px] text-gray-500">Staff</div>
-                      </div>
-                      <div className="bg-orange-50 rounded p-1">
-                        <div className="text-sm font-bold text-orange-600">{formatResponseTime(stats.avgResponseTime || 0)}</div>
-                        <div className="text-[10px] text-gray-500">Response</div>
+                {/* Customer Satisfaction Status */}
+                {(() => {
+                  const escalated = stats.escalated || 0;
+                  const totalConversations = stats.total || 0;
+                  const escalationRate = totalConversations > 0 ? (escalated / totalConversations) * 100 : 0;
+                  const isExcellent = escalationRate <= 5;
+                  const isGood = escalationRate <= 15;
+
+                  return (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm mt-0.5">{isExcellent ? '✅' : isGood ? '⚠️' : '❌'}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] md:text-xs font-medium text-gray-700">Customer Satisfaction</span>
+                          <span className={`text-[10px] md:text-xs font-bold ${isExcellent ? 'text-green-600' : isGood ? 'text-amber-600' : 'text-red-600'}`}>
+                            {isExcellent ? 'Excellent' : isGood ? 'Good' : 'Perlu perhatian'} ({escalated} escalated)
+                          </span>
+                        </div>
+                        <p className="text-[9px] md:text-[10px] text-gray-500 mt-0.5">
+                          {isExcellent
+                            ? `Tingkat eskalasi rendah (${escalationRate.toFixed(1)}%) - pelanggan puas dengan respon AI`
+                            : isGood
+                            ? `${escalated} percakapan perlu bantuan staff (${escalationRate.toFixed(1)}%)`
+                            : `${escalated} percakapan butuh eskalasi (${escalationRate.toFixed(1)}%) - perlu review`}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                </>
-              );
-            })()}
+                  );
+                })()}
+              </div>
+            </div>
           </div>
         )}
 
