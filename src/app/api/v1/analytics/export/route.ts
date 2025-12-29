@@ -17,6 +17,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';
 import PDFDocument from 'pdfkit';
 import * as XLSX from 'xlsx';
+import { createPDFDocument } from '@/lib/services/whatsapp-ai/pdf-init';
 
 export const dynamic = 'force-dynamic';
 
@@ -420,7 +421,7 @@ export async function POST(request: NextRequest) {
     // Generate based on format
     if (format === 'pdf') {
       // PDF Generation with Sales + WhatsApp AI
-      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      const doc = createPDFDocument();
       const chunks: Uint8Array[] = [];
 
       doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
