@@ -1114,33 +1114,31 @@ export class MessageOrchestratorService {
   ): Promise<{ isCommand: boolean; result?: any }> {
     const message = incoming.message.toLowerCase().trim();
 
-    // Check if message matches command patterns
-    const commandPatterns = [
-      // Universal commands (all roles)
-      /^(rubah|ubah|edit)/i,
-      /^upload$/i,
-      /^(inventory|stok)/i,
-      /^status$/i,
-      /^(statistik|stats)/i,
+    // Check if message contains command keywords (more flexible matching)
+    const isUniversalCommand = message.includes('rubah') || message.includes('ubah') || message.includes('edit') ||
+                              message === 'upload' ||
+                              message.includes('inventory') || message.includes('stok') ||
+                              message === 'status' ||
+                              message.includes('statistik') || message.includes('stats');
 
-      // PDF commands (admin+ only)
-      /^sales report$/i,
-      /^whatsapp ai$/i,
-      /^metrix penjualan$/i,
-      /^metrix pelanggan$/i,
-      /^metrix operational$/i,
-      /^tren penjualan$/i,
-      /^staff performance$/i,
-      /^recent sales$/i,
-      /^low stock alert$/i,
-      /^total penjualan showroom$/i,
-      /^total revenue$/i,
-      /^total inventory$/i,
-      /^average price$/i,
-      /^(penjualan|sales)$/i,
-    ];
+    const isPDFCommand = message.includes('sales report') ||
+                        message.includes('whatsapp ai') ||
+                        message.includes('metrix penjualan') ||
+                        message.includes('metrix pelanggan') ||
+                        message.includes('metrix operational') ||
+                        message.includes('tren penjualan') ||
+                        message.includes('staff performance') ||
+                        message.includes('recent sales') ||
+                        message.includes('low stock alert') ||
+                        message.includes('low stock') ||
+                        message.includes('total penjualan') || message.includes('total penjualan showroom') ||
+                        message.includes('total revenue') ||
+                        message.includes('total inventory') ||
+                        message.includes('average price') ||
+                        message.includes('penjualan') || message.includes('sales');
 
-    const isCommand = commandPatterns.some(pattern => pattern.test(message));
+    // Check if it's a command
+    const isCommand = isUniversalCommand || isPDFCommand;
 
     if (!isCommand) {
       return { isCommand: false };
