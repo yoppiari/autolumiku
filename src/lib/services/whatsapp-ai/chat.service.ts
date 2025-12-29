@@ -810,6 +810,15 @@ export class WhatsAppAIChatService {
 
     // Check if greeting
     if (/^(halo|hai|hello|hi|sore|pagi|siang|malam|selamat)/i.test(msg)) {
+      // Be honest about inventory status
+      if (vehicles.length === 0) {
+        return {
+          message: `Halo! Terima kasih sudah menghubungi ${tenantName}.\n\n` +
+            `Mohon maaf, saat ini stok kami sedang kosong. 🙏\n\n` +
+            `Bisa leave kontak kamu? Nanti kami kabari kalau sudah ada unit baru yang ready. 😊`,
+          shouldEscalate: false,
+        };
+      }
       return {
         message: `Halo! Terima kasih sudah menghubungi ${tenantName}.\n\n` +
           `Saat ini ada ${vehicles.length} unit mobil ready stock. Lagi cari mobil apa nih? Bisa sebutkan merk, budget, atau kebutuhannya ya!`,
@@ -855,10 +864,11 @@ export class WhatsAppAIChatService {
       };
     }
 
-    // Ultimate fallback
+    // No vehicles available - be honest
     return {
-      message: `Maaf, ada kendala teknis nih 🙏 Bisa diulang pertanyaannya?`,
-      shouldEscalate: true,
+      message: `Mohon maaf ya, saat ini stok kami sedang kosong. 🙏\n\n` +
+        `Bisa sebutkan jenis mobil yang dicari? Nanti kalau sudah ada unit yang cocok, kami kabari. 😊`,
+      shouldEscalate: false,
     };
   }
 
@@ -1046,6 +1056,51 @@ A: "Siap, terima kasih sudah mampir ke ${tenant.name}! Kalau butuh info lagi, la
       // No staff registered - tell AI to not give any contact
       systemPrompt += `\n\n⚠️ PENTING: Belum ada staff terdaftar. Kalau customer mau hubungi langsung, bilang "Silakan lanjutkan percakapan di sini, tim kami akan membantu Anda." JANGAN buat-buat nomor telepon!`;
     }
+
+    // CRITICAL: DATA INTEGRITY RULES - 100% REAL DATA ONLY
+    systemPrompt += `
+
+🔐🔐🔐 DATA INTEGRITY - ATURAN KRUSIAL TENTANG DATA 🔐🔐🔐
+
+⚠️⚠️⚠️ PERINGATAN PENTING - BACA DENGAN TELITI ⚠️⚠️⚠️
+
+SEMUA DATA YANG DIBERIKAN KE CUSTOMER HARUS 100% DATA ASLI DARI DATABASE!
+
+🚫 DILARANG KERAS:
+1. JANGAN PERNAH membuat data kendaraan palsu/fake/dummy
+2. JANGAN PERNAH menyalin contoh dari sistem prompt seolah-olah stok asli
+3. JANGAN PERNAH mengarang spesifikasi, harga, kilometer, tahun, warna
+4. JANGAN PERNAH memberikan nomor telepon staff yang tidak terdaftar
+5. JANGAN PERNAH membuat info test drive, promo, diskon yang tidak ada di sistem
+6. JANGAN PERNAH hallusinasi data apapun - semua harus ada di database!
+
+✅ WAJIB:
+1. HANYA berikan info kendaraan yang ADA di "📋 INVENTORY TERSEDIA" di atas
+2. HANYA berikan kontak staff yang ADA di "📞 KONTAK STAFF RESMI" di atas
+3. Jika tidak ada data, JUJUR bilang "tidak ada" atau "kosong"
+4. Data yang disebutkan HARUS sesuai PERSIS dengan database (harga, km, tahun, dll)
+
+🎯 PRINSIP UTAMA:
+"Hanya berikan informasi yang ada di sistem. Jika tidak ada, katakan dengan jujur bahwa tidak ada."
+
+Pertanyaan untuk memverifikasi:
+❌ "Ada Avanza ga?" → JANGAN jawab jika tidak ada di inventory
+✅ "Ada Avanza ga?" → Cek inventory, jika ADA, sebutkan data PERSIS dari database
+✗ "Ada Avanza ga?" → Jika TIDAK ADA, jawab "Mohon maaf, saat ini tidak ada stok Avanza"
+
+❌ DILARANG: "Ada beberapa unit nih: [membuat daftar palsu]"
+✅ BENAR: "Mohon maaf, saat ini stok kami sedang kosong."
+
+📋 SUMBER DATA YATA (HANYA dari sumber ini):
+1. Inventory kendaraan → dari query database prisma.vehicle
+2. Info staff → dari query database prisma.user
+3. Harga → dari field price di database (JANGAN bikin harga sendiri!)
+4. Kilometer → dari field mileage di database (JANGAN ngira-ngira!)
+5. Tahun → dari field year di database (JANGAN asal tulis!)
+6. Warna → dari field color di database (JANGAN tebak-tebakan!)
+
+⚠️ SANKSI: Jika terbukti memberikan data palsu, percakapan akan dianggap GAGAL!`;
+
 
     // Add sender identity information
     if (senderInfo) {
