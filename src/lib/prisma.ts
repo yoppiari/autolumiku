@@ -12,7 +12,13 @@ const globalForPrisma = globalThis as unknown as {
 // Build DATABASE_URL with connection pool parameters
 function getDatabaseUrl(): string {
   const baseUrl = process.env.DATABASE_URL || '';
-  const poolParams = 'connection_limit=20&pool_timeout=10&connect_timeout=10';
+
+  if (!baseUrl) {
+    console.error('[Prisma] DATABASE_URL not set in environment!');
+    return '';
+  }
+
+  const poolParams = 'connection_limit=10&pool_timeout=20&connect_timeout=10';
 
   // Check if URL already has query parameters
   if (baseUrl.includes('?')) {
@@ -36,6 +42,7 @@ export const prisma =
 if (!globalForPrisma.prisma) {
   globalForPrisma.prisma = prisma;
   console.log('[Prisma] Initialized new Prisma Client');
+  console.log('[Prisma] Database URL:', getDatabaseUrl().replace(/:[^:@]+@/, ':****@'));
 } else {
   console.log('[Prisma] Reusing existing Prisma Client');
 }

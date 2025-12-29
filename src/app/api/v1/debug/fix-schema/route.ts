@@ -13,7 +13,27 @@ export async function GET(request: NextRequest) {
     timestamp: new Date().toISOString(),
     fixes: [],
     tests: {},
+    connectionStatus: 'unknown',
   };
+
+  // First, test database connection
+  try {
+    await prisma.$connect();
+    results.connectionStatus = 'connected';
+    console.log('[Fix-Schema] Database connected successfully');
+  } catch (error: any) {
+    results.connectionStatus = 'failed';
+    results.connectionError = error.message;
+
+    console.error('[Fix-Schema] Database connection failed:', error.message);
+    console.error('[Fix-Schema] DATABASE_URL:', process.env.DATABASE_URL?.replace(/:[^:@]+@/, ':****@'));
+
+    return NextResponse.json({
+      ...results,
+      error: 'Database connection failed. Please check DATABASE_URL and ensure database service is running.',
+      hint: 'DATABASE_URL format should be: postgresql://user:password@host:port/database?schema=public',
+    }, { status: 503 });
+  }
 
   // Fix 1: Create showrooms table if missing (must be first for FK references)
   try {
@@ -303,6 +323,14 @@ export async function GET(request: NextRequest) {
     results.tests.prismaVehicleQuery?.success === true;
 
   results.loginShouldWork = results.allTestsPassed && results.hasShowroomId;
+
+  // Disconnect from database
+  try {
+    await prisma.$disconnect();
+    console.log('[Fix-Schema] Database disconnected successfully');
+  } catch (err) {
+    console.error('[Fix-Schema] Error disconnecting from database:', err);
+  }
 
   return NextResponse.json(results);
 }
