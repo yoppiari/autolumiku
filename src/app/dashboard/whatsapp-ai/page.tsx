@@ -527,19 +527,6 @@ export default function WhatsAppAIDashboard() {
                 })()}
               </div>
             </div>
-
-            {/* Action Links */}
-            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-green-200">
-              <Link href="/dashboard/whatsapp-ai/analytics" className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
-                📊 View Analytics
-              </Link>
-              <Link href="/dashboard/whatsapp-ai/conversations" className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
-                💬 View Conversations
-              </Link>
-              <Link href="/dashboard/whatsapp-ai/config" className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
-                ⚙️ Configure
-              </Link>
-            </div>
           </div>
         )}
 
