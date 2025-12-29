@@ -97,12 +97,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // ===== 4. CUSTOMER RETENTION (Estimated based on industry average) =====
-    // Since we don't have customer tracking yet, estimate based on sales performance
-    // Industry average: 40-50% for automotive
-    const baseRetentionRate = 45; // Base industry average
-    const salesBonus = Math.min(totalSold / 20, 1) * 10; // Up to 10% bonus for good sales
-    const customerRetention = baseRetentionRate + salesBonus;
+    // ===== 4. CUSTOMER RETENTION (Based on actual repeat purchases) =====
+    // Since we don't have customer tracking yet, use actual sales data
+    // When no sales data exists, return 0 instead of industry average
+    let customerRetention = 0;
+    if (totalSold > 0) {
+      // TODO: Calculate real retention rate when customer tracking is implemented
+      // For now: 0% because we don't track repeat customers yet
+      customerRetention = 0;
+    }
 
     // ===== 5. GET LEADS DATA (for NPS calculation) =====
     let leadConversion = 0;
@@ -118,8 +121,8 @@ export async function GET(request: NextRequest) {
       const totalLeads = leads.length;
       leadConversion = totalLeads > 0 ? (totalSold / totalLeads) * 100 : 0;
     } catch {
-      // Leads table might not exist, use estimate
-      leadConversion = totalSold > 0 ? 15 : 0; // Industry average ~15%
+      // Leads table might not exist or no leads data
+      leadConversion = 0; // No data = 0%
     }
 
     // ===== CALCULATE KPIs =====
