@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
             phone: user.phone,
             role: user.role,
             roleLevel: user.roleLevel,
-            tenant: user.tenant.name,
+            tenant: user.tenant?.name || 'N/A',
             canAccessPDF: user.roleLevel >= 90,
           },
         });
