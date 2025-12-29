@@ -18,12 +18,12 @@ import { prisma } from "@/lib/prisma";
 
 const PDFKit = require('pdfkit');
 
-async function generateOperationalMetricsPDF() {
+async function generateOperationalMetricsPDF(): Promise<{ pdfBuffer: Buffer; filename: string }> {
   return new Promise((resolve, reject) => {
     const doc = new PDFKit({ size: 'A4', margin: 50 });
     const chunks: Buffer[] = [];
 
-    doc.on('data', chunk => chunks.push(chunk));
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
     doc.on('end', () => resolve({
       pdfBuffer: Buffer.concat(chunks),
       filename: 'Operational-Metrics.pdf'

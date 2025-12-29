@@ -44,6 +44,24 @@ export interface ProcessingResult {
 const recentMessages = new Map<string, { timestamp: number; messageId: string }>();
 const DUPLICATE_WINDOW_MS = 3000; // 3 seconds window for duplicate detection
 
+/**
+ * Normalize phone number for consistent matching
+ * Handles various formats: 62812... vs 0812...
+ */
+function normalizePhoneNumber(phone: string): string {
+  if (!phone) return phone;
+
+  // Remove all non-digit characters
+  let normalized = phone.replace(/\D/g, '');
+
+  // If starts with 62 (country code), convert to 0
+  if (normalized.startsWith('62')) {
+    normalized = '0' + normalized.slice(2);
+  }
+
+  return normalized;
+}
+
 export class MessageOrchestratorService {
   /**
    * Process incoming WhatsApp message
@@ -122,10 +140,25 @@ export class MessageOrchestratorService {
       );
 
       // 1.5. Lookup user by phone number (for ALL messages, not just commands)
+      // Normalize phone number to handle format differences (628... vs 08...)
+      const normalizedPhone = normalizePhoneNumber(incoming.from);
+      console.log(`[Orchestrator] 🔍 Phone lookup: incoming.from="${incoming.from}" → normalized="${normalizedPhone}"`);
+
+      // Try both formats: with 0 prefix and with 62 prefix
+      const digits = incoming.from.replace(/\D/g, '');
+      const phoneWith0 = digits.startsWith('62') ? '0' + digits.slice(2) : digits;
+      const phoneWith62 = digits.startsWith('0') ? '62' + digits.slice(1) : digits;
+
+      console.log(`[Orchestrator] 🔍 Trying phone formats: 0-prefix="${phoneWith0}", 62-prefix="${phoneWith62}", exact="${incoming.from}"`);
+
       const user = await prisma.user.findFirst({
         where: {
           tenantId: incoming.tenantId,
-          phone: incoming.from,
+          OR: [
+            { phone: phoneWith0 },
+            { phone: phoneWith62 },
+            { phone: incoming.from }, // Try exact match as well
+          ],
         },
         select: {
           id: true,
@@ -139,7 +172,7 @@ export class MessageOrchestratorService {
 
       // Log user identification
       if (user) {
-        console.log(`[Orchestrator] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role}, Level: ${user.roleLevel})`);
+        console.log(`[Orchestrator] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role}, Level: ${user.roleLevel}, DB phone: ${user.phone})`);
 
         // Update conversation with user info if not already set
         if (!conversation.isStaff && (user.roleLevel >= 90 || ['ADMIN', 'OWNER', 'SUPER_ADMIN'].includes(user.role.toUpperCase()))) {
@@ -152,7 +185,7 @@ export class MessageOrchestratorService {
           console.log(`[Orchestrator] ✅ Conversation marked as staff for ${user.firstName} ${user.lastName}`);
         }
       } else {
-        console.log(`[Orchestrator] ⚠️ User not found for phone: ${incoming.from}`);
+        console.log(`[Orchestrator] ⚠️ User not found for phone: ${incoming.from} (normalized: ${normalizedPhone})`);
       }
 
       // 2. Save incoming message
