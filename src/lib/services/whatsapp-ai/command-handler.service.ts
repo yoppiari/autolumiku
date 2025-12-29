@@ -134,6 +134,7 @@ function isPDFCommand(cmd: string): boolean {
     'metrix penjualan',
     'metrix pelanggan',
     'metrix operational',
+    'operational metrics',
     'tren penjualan',
     'staff performance',
     'recent sales',
@@ -142,8 +143,15 @@ function isPDFCommand(cmd: string): boolean {
     'total revenue',
     'total inventory',
     'average price',
+    'sales summary',
     'penjualan',
     'sales',
+    'report pdf',
+    'pdf report',
+    'kirim report',
+    'kirim pdf',
+    'report',
+    'pdf',
   ];
   return pdfCommands.some(c => cmd.includes(c));
 }
@@ -411,6 +419,7 @@ async function handlePDFCommand(
     'metrix penjualan': generateSalesMetricsPDF,
     'metrix pelanggan': generateCustomerMetricsPDF,
     'metrix operational': generateOperationalMetricsPDF,
+    'operational metrics': generateOperationalMetricsPDF,
     'tren penjualan': generateSalesTrendsPDF,
     'staff performance': generateStaffPerformancePDF,
     'recent sales': generateRecentSalesPDF,
@@ -419,6 +428,7 @@ async function handlePDFCommand(
     'total revenue': generateTotalRevenuePDF,
     'total inventory': generateTotalInventoryPDF,
     'average price': generateAveragePricePDF,
+    'sales summary': generateSalesSummaryPDF,
     'penjualan': generateSalesSummaryPDF,
     'sales': generateSalesSummaryPDF,
   };
@@ -430,9 +440,44 @@ async function handlePDFCommand(
     }
   }
 
+  // Generic 'report' or 'pdf' without specific type - send list of available reports
+  if (cmd.includes('report') || cmd.includes('pdf')) {
+    return {
+      success: true,
+      message: `📊 *PDF Report Tersedia*
+
+Silakan pilih report yang diinginkan:
+
+📈 *Sales & Revenue:*
+• Sales Report
+• Total Penjualan
+• Total Revenue
+• Sales Summary
+• Metrik Penjualan
+• Tren Penjualan
+
+📦 *Inventory:*
+• Low Stock Alert
+• Total Inventory
+• Average Price
+
+👥 *Staff & Customers:*
+• Staff Performance
+• Recent Sales
+• Metrik Pelanggan
+
+🤖 *WhatsApp AI:*
+• WhatsApp AI Analytics
+• Metrik Operational
+
+Ketik nama report untuk mendapatkan PDF. Contoh: "sales report", "low stock alert", "sales summary"`,
+      followUp: true,
+    };
+  }
+
   return {
     success: false,
-    message: 'Report tidak ditemukan.',
+    message: 'Report tidak ditemukan. Ketik "report" atau "pdf" untuk melihat daftar report yang tersedia.',
     followUp: true,
   };
 }

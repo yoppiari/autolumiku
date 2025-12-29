@@ -1123,19 +1123,20 @@ export class MessageOrchestratorService {
 
     const isPDFCommand = message.includes('sales report') ||
                         message.includes('whatsapp ai') ||
-                        message.includes('metrix penjualan') ||
-                        message.includes('metrix pelanggan') ||
-                        message.includes('metrix operational') ||
+                        message.includes('metrics penjualan') || message.includes('metrix penjualan') ||
+                        message.includes('metrics pelanggan') || message.includes('metrix pelanggan') ||
+                        message.includes('metrics operational') || message.includes('metrix operational') || message.includes('operational metrics') ||
                         message.includes('tren penjualan') ||
                         message.includes('staff performance') ||
                         message.includes('recent sales') ||
-                        message.includes('low stock alert') ||
-                        message.includes('low stock') ||
+                        message.includes('low stock alert') || message.includes('low stock') ||
                         message.includes('total penjualan') || message.includes('total penjualan showroom') ||
                         message.includes('total revenue') ||
                         message.includes('total inventory') ||
                         message.includes('average price') ||
-                        message.includes('penjualan') || message.includes('sales');
+                        message.includes('sales summary') ||
+                        message.includes('penjualan') || message.includes('sales') ||
+                        message.includes('report pdf') || message.includes('pdf report') || message.includes('kirim report') || message.includes('kirim pdf');
 
     // Check if it's a command
     const isCommand = isUniversalCommand || isPDFCommand;
