@@ -421,6 +421,7 @@ export async function POST(request: NextRequest) {
 
     // Generate based on format
     if (format === 'pdf') {
+      console.log('[Analytics Export] 🎨 Using NEW professional PDF generator');
       // Use new professional PDF Generator with charts and detailed analysis
       const generator = new AnalyticsPDFGenerator();
 
@@ -432,8 +433,18 @@ export async function POST(request: NextRequest) {
         endDate: now,
       };
 
+      console.log('[Analytics Export] 📊 Report data prepared:', {
+        tenant: reportData.tenantName,
+        hasSalesData: !!reportData.salesData,
+        hasWhatsappData: !!reportData.whatsappData,
+        salesCount: reportData.salesData?.summary?.totalSalesCount || 0,
+        whatsappConvos: reportData.whatsappData?.overview?.totalConversations || 0,
+      });
+
       const pdfBuffer = await generator.generate(reportData);
       const filename = `analytics-sales-whatsapp-${new Date().toISOString().split('T')[0]}.pdf`;
+
+      console.log('[Analytics Export] ✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
 
       return new NextResponse(new Uint8Array(pdfBuffer), {
         status: 200,

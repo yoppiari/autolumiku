@@ -62,40 +62,40 @@ export class AnalyticsPDFGenerator {
   }
 
   async generate(data: ReportData): Promise<Buffer> {
+    console.log('[AnalyticsPDFGenerator] 🚀 Starting professional PDF generation');
+    console.log('[AnalyticsPDFGenerator] 📊 Tenant:', data.tenantName);
+    console.log('[AnalyticsPDFGenerator] 📅 Period:', data.startDate, 'to', data.endDate);
+    console.log('[AnalyticsPDFGenerator] 🚗 Sales data:', data.salesData ? 'YES' : 'NO');
+    console.log('[AnalyticsPDFGenerator] 💬 WhatsApp data:', data.whatsappData ? 'YES' : 'NO');
+
     this.doc.addPage();
 
     // Cover Page with Executive Summary
+    console.log('[AnalyticsPDFGenerator] 📄 Generating cover page...');
     this.generateCoverPage(data);
 
     // Table of Contents
     this.doc.addPage();
+    console.log('[AnalyticsPDFGenerator] 📑 Generating table of contents...');
     this.generateTableOfContents(data);
 
-    // Executive Summary (only if sales data available)
-    if (data.salesData) {
-      this.doc.addPage();
-      this.generateExecutiveSummary(data);
-    }
+    // Executive Summary - ALWAYS SHOW even if no data (show zeros)
+    this.doc.addPage();
+    this.generateExecutiveSummary(data);
 
-    // Sales Analysis Section (only if sales data available)
-    if (data.salesData) {
-      this.doc.addPage();
-      this.generateSalesAnalysis(data);
-    }
+    // Sales Analysis Section - ALWAYS SHOW even if no data (show empty chart)
+    this.doc.addPage();
+    this.generateSalesAnalysis(data);
 
-    // Performance Metrics Section (only if sales data available)
-    if (data.salesData) {
-      this.doc.addPage();
-      this.generatePerformanceMetrics(data);
-    }
+    // Performance Metrics Section - ALWAYS SHOW even if no data (show 0 KPIs)
+    this.doc.addPage();
+    this.generatePerformanceMetrics(data);
 
-    // WhatsApp AI Analytics
-    if (data.whatsappData) {
-      this.doc.addPage();
-      this.generateWhatsAppAnalytics(data);
-    }
+    // WhatsApp AI Analytics - ALWAYS SHOW even if no data (show 0 metrics)
+    this.doc.addPage();
+    this.generateWhatsAppAnalytics(data);
 
-    // Recommendations & Action Items
+    // Recommendations & Action Items - ALWAYS SHOW
     this.doc.addPage();
     this.generateRecommendations(data);
 
@@ -109,7 +109,12 @@ export class AnalyticsPDFGenerator {
       this.doc.on('end', resolve);
     });
 
-    return Buffer.concat(this.chunks);
+    const pdfBuffer = Buffer.concat(this.chunks);
+    console.log('[AnalyticsPDFGenerator] ✅ PDF generation completed!');
+    console.log('[AnalyticsPDFGenerator] 📦 PDF size:', pdfBuffer.length, 'bytes');
+    console.log('[AnalyticsPDFGenerator] 📄 Total pages generated');
+
+    return pdfBuffer;
   }
 
   private generateCoverPage(data: ReportData) {
@@ -135,75 +140,77 @@ export class AnalyticsPDFGenerator {
       .fillColor('#93c5fd')
       .text(`Dibuat: ${this.formatDate(new Date())}`, doc.page.width / 2, 125, { align: 'center' });
 
-    // Key Metrics Cards (only if sales data available)
-    if (data.salesData) {
-      const startY = 180;
-      const cardWidth = (doc.page.width - 80) / 2;
-      const cardHeight = 70;
-      const gap = 15;
+    // Key Metrics Cards - ALWAYS SHOW (use 0 values if no data)
+    const startY = 180;
+    const cardWidth = (doc.page.width - 80) / 2;
+    const cardHeight = 70;
+    const gap = 15;
 
-      // Sales Card
-      this.drawMetricCard(
-        40,
-        startY,
-        cardWidth,
-        cardHeight,
-        '#dbeafe',
-        '#1e40af',
-        'TOTAL PENJUALAN',
-        `${data.salesData.summary.totalSalesCount} UNIT`,
-        'Rp ' + this.formatNumber(data.salesData.summary.totalSalesValue)
-      );
+    // Get data or use defaults (0)
+    const salesCount = data.salesData?.summary?.totalSalesCount || 0;
+    const salesValue = data.salesData?.summary?.totalSalesValue || 0;
+    const totalVehicles = data.salesData?.summary?.totalVehicles || 0;
+    const employees = data.salesData?.summary?.employees || 0;
 
-      // Revenue Card
-      this.drawMetricCard(
-        40 + cardWidth + gap,
-        startY,
-        cardWidth,
-        cardHeight,
-        '#dcfce7',
-        '#15803d',
-        'TOTAL REVENUE',
-        'Rp ' + this.formatNumber(data.salesData.summary.totalSalesValue),
-        'Omzet Keseluruhan'
-      );
+    // Sales Card
+    this.drawMetricCard(
+      40,
+      startY,
+      cardWidth,
+      cardHeight,
+      '#dbeafe',
+      '#1e40af',
+      'TOTAL PENJUALAN',
+      `${salesCount} UNIT`,
+      'Rp ' + this.formatNumber(salesValue)
+    );
 
-      // Conversion Rate Card
-      const conversionRate = data.salesData.summary.totalVehicles > 0
-        ? Math.round((data.salesData.summary.totalSalesCount / (data.salesData.summary.totalSalesCount + data.salesData.summary.totalVehicles)) * 100)
-        : 0;
+    // Revenue Card
+    this.drawMetricCard(
+      40 + cardWidth + gap,
+      startY,
+      cardWidth,
+      cardHeight,
+      '#dcfce7',
+      '#15803d',
+      'TOTAL REVENUE',
+      'Rp ' + this.formatNumber(salesValue),
+      'Omzet Keseluruhan'
+    );
 
-      this.drawMetricCard(
-        40,
-        startY + cardHeight + gap,
-        cardWidth,
-        cardHeight,
-        '#fef3c7',
-        '#b45309',
-        'CONVERSION RATE',
-        `${conversionRate}%`,
-        'Penjualan : Stok'
-      );
+    // Conversion Rate Card
+    const conversionRate = totalVehicles > 0
+      ? Math.round((salesCount / (salesCount + totalVehicles)) * 100)
+      : 0;
 
-      // Employee Productivity Card
-      this.drawMetricCard(
-        40 + cardWidth + gap,
-        startY + cardHeight + gap,
-        cardWidth,
-        cardHeight,
-        '#f3e8ff',
-        '#7c3aed',
-        'PRODUKTIVITAS',
-        `${data.salesData.kpis.salesPerEmployee}%`,
-        'Penjualan per Karyawan'
-      );
+    this.drawMetricCard(
+      40,
+      startY + cardHeight + gap,
+      cardWidth,
+      cardHeight,
+      '#fef3c7',
+      '#b45309',
+      'CONVERSION RATE',
+      `${conversionRate}%`,
+      'Penjualan : Stok'
+    );
 
-      this.yPos = startY + cardHeight * 2 + gap * 2 + 20;
-    } else {
-      // Show message when no sales data available
-      doc.fontSize(14).fillColor('#64748b').text('Tidak ada data penjualan untuk periode ini', 80, 200, { align: 'center' });
-      this.yPos = 250;
-    }
+    // Employee Productivity Card
+    const salesPerEmployee = data.salesData?.kpis?.salesPerEmployee || 0;
+
+    this.drawMetricCard(
+      40 + cardWidth + gap,
+      startY + cardHeight + gap,
+      cardWidth,
+      cardHeight,
+      '#f3e8ff',
+      '#7c3aed',
+      'PRODUKTIVITAS',
+      `${salesPerEmployee}%`,
+      'Penjualan per Karyawan'
+    );
+
+    this.yPos = startY + cardHeight * 2 + gap * 2 + 20;
   }
 
   private drawMetricCard(
@@ -255,12 +262,6 @@ export class AnalyticsPDFGenerator {
   private generateExecutiveSummary(data: ReportData) {
     const { doc } = this;
 
-    // Guard clause - only proceed if sales data exists
-    if (!data.salesData) {
-      doc.fontSize(14).fillColor('#64748b').text('Tidak ada data penjualan untuk executive summary', 80, 80);
-      return;
-    }
-
     doc.fillColor('#1e40af')
       .fontSize(18)
       .font('Helvetica-Bold')
@@ -268,7 +269,7 @@ export class AnalyticsPDFGenerator {
 
     doc.moveDown(2);
 
-    // Business Overview
+    // Business Overview - ALWAYS SHOW (use 0 if no data)
     doc.fillColor('#334155')
       .fontSize(12)
       .font('Helvetica-Bold')
@@ -276,13 +277,18 @@ export class AnalyticsPDFGenerator {
 
     doc.moveDown(1);
 
+    // Get data or use defaults (0)
+    const salesCount = data.salesData?.summary?.totalSalesCount || 0;
+    const salesValue = data.salesData?.summary?.totalSalesValue || 0;
+    const avgPrice = data.salesData?.kpis?.avgPrice || 0;
+    const inventoryTurnover = data.salesData?.kpis?.inventoryTurnover || 0;
+    const topPerformer = data.salesData?.topPerformers?.[0]?.name || '-';
+
     const summary = [
-      `Total penjualan periode ini: ${data.salesData.summary.totalSalesCount} unit dengan nilai Rp ${this.formatNumber(data.salesData.summary.totalSalesValue)}`,
-      `Rata-rata harga per unit: Rp ${this.formatNumber(data.salesData.kpis.avgPrice)}`,
-      `Conversion rate stok: ${data.salesData.kpis.inventoryTurnover}%`,
-      data.salesData.summary.totalSalesCount > 0
-        ? `Top performer: ${data.salesData.topPerformers[0]?.name || '-'}`
-        : 'Belum ada data penjualan',
+      `Total penjualan periode ini: ${salesCount} unit dengan nilai Rp ${this.formatNumber(salesValue)}`,
+      `Rata-rata harga per unit: Rp ${this.formatNumber(avgPrice)}`,
+      `Conversion rate stok: ${inventoryTurnover}%`,
+      salesCount > 0 ? `Top performer: ${topPerformer}` : 'Belum ada data penjualan',
     ];
 
     summary.forEach((line) => {
@@ -295,7 +301,7 @@ export class AnalyticsPDFGenerator {
 
     doc.moveDown(2);
 
-    // Key Insights
+    // Key Insights - ALWAYS SHOW
     doc.fontSize(12)
       .fillColor('#334155')
       .font('Helvetica-Bold')
@@ -318,98 +324,106 @@ export class AnalyticsPDFGenerator {
       text: string;
     }> = [];
 
-    // Sales Performance Insights (only if sales data available)
-    if (data.salesData) {
-      if (data.salesData.summary.totalSalesCount === 0) {
-        insights.push({
-          color: '#fef3c7',
-          icon: '⚠️',
-          title: 'BELUM ADA PENJUALAN',
-          text: 'Periode ini belum ada penjualan tercatat. Perlu review strategi marketing dan promosi.',
-        });
-      } else if (data.salesData.summary.totalSalesCount < 5) {
-        insights.push({
-          color: '#fee2e2',
-          icon: '📉',
-          title: 'PENJUALAN RENDAH',
-          text: `Hanya ${data.salesData.summary.totalSalesCount} unit terjual. Pertimbangkan increase promosi dan aktivitas sales.`,
-        });
-      } else {
-        insights.push({
-          color: '#dcfce7',
-          icon: '✅',
-          title: 'PENJUALAN BAIK',
-          text: `${data.salesData.summary.totalSalesCount} unit terjual dengan nilai Rp ${this.formatNumber(data.salesData.summary.totalSalesValue)}. Performa positif!`,
-        });
-      }
+    // Sales Performance Insights - ALWAYS SHOW
+    const salesCount = data.salesData?.summary?.totalSalesCount || 0;
+    const salesValue = data.salesData?.summary?.totalSalesValue || 0;
+    const inventoryTurnover = data.salesData?.kpis?.inventoryTurnover || 0;
+    const atv = data.salesData?.kpis?.atv || 0;
 
-      // Inventory Insight
-      if (data.salesData.kpis.inventoryTurnover < 20) {
-        insights.push({
-          color: '#fef3c7',
-          icon: '📦',
-          title: 'STOK TINGGI',
-          text: `Inventory turnover ${data.salesData.kpis.inventoryTurnover}%. Stok belum berputar optimal. Perlu evaluasi merek yang kurang laku.`,
-        });
-      } else {
-        insights.push({
-          color: '#dcfce7',
-          icon: '🔄',
-          title: 'STOK OPTIMAL',
-          text: `Inventory turnover ${data.salesData.kpis.inventoryTurnover}%. Stok berputar dengan baik.`,
-        });
-      }
-
-      // ATV Insight
-      if (data.salesData.kpis.atv >= 80) {
-        insights.push({
-          color: '#dcfce7',
-          icon: '💰',
-          title: 'HARGA KOMPETITIF',
-          text: `ATV ${data.salesData.kpis.atv}% dari rata-rata industri. Harga jual di atas rata-rata.`,
-        });
-      } else if (data.salesData.kpis.atv >= 60) {
-        insights.push({
-          color: '#fef9c3',
-          icon: '📊',
-          title: 'HARGA WAJAR',
-          text: `ATV ${data.salesData.kpis.atv}% dari rata-rata industri. Harga masuk kategori wajar.`,
-        });
-      } else {
-        insights.push({
-          color: '#fee2e2',
-          icon: '⚠️',
-          title: 'HARGA PERLU DITINGKATKAN',
-          text: `ATV ${data.salesData.kpis.atv}% dari rata-rata industri. Pertimbangkan strategi pricing yang lebih agresif.`,
-        });
-      }
+    if (salesCount === 0) {
+      insights.push({
+        color: '#fef3c7',
+        icon: '⚠️',
+        title: 'BELUM ADA PENJUALAN',
+        text: 'Periode ini belum ada penjualan tercatat. Perlu review strategi marketing dan promosi.',
+      });
+    } else if (salesCount < 5) {
+      insights.push({
+        color: '#fee2e2',
+        icon: '📉',
+        title: 'PENJUALAN RENDAH',
+        text: `Hanya ${salesCount} unit terjual. Pertimbangkan increase promosi dan aktivitas sales.`,
+      });
+    } else {
+      insights.push({
+        color: '#dcfce7',
+        icon: '✅',
+        title: 'PENJUALAN BAIK',
+        text: `${salesCount} unit terjual dengan nilai Rp ${this.formatNumber(salesValue)}. Performa positif!`,
+      });
     }
 
-    // WhatsApp AI Insight
-    if (data.whatsappData) {
-      const aiAccuracy = data.whatsappData.overview.aiAccuracy;
-      if (aiAccuracy >= 80) {
-        insights.push({
-          color: '#dcfce7',
-          icon: '🤖',
-          title: 'AI SANGAT BAIK',
-          text: `AI accuracy ${aiAccuracy}%. Respon AI sangat membantu reduce beban staff.`,
-        });
-      } else if (aiAccuracy >= 60) {
-        insights.push({
-          color: '#fef9c3',
-          icon: '🤖',
-          title: 'AI CUKUP BAIK',
-          text: `AI accuracy ${aiAccuracy}%. Masih ada room untuk improvement.`,
-        });
-      } else {
-        insights.push({
-          color: '#fee2e2',
-          icon: '🤖',
-          title: 'AI PERLU IMPROVEMENT',
-          text: `AI accuracy hanya ${aiAccuracy}%. Perlu review dan improve respon AI.`,
-        });
-      }
+    // Inventory Insight - ALWAYS SHOW
+    if (inventoryTurnover < 20) {
+      insights.push({
+        color: '#fef3c7',
+        icon: '📦',
+        title: 'STOK TINGGI',
+        text: `Inventory turnover ${inventoryTurnover}%. Stok belum berputar optimal. Perlu evaluasi merek yang kurang laku.`,
+      });
+    } else {
+      insights.push({
+        color: '#dcfce7',
+        icon: '🔄',
+        title: 'STOK OPTIMAL',
+        text: `Inventory turnover ${inventoryTurnover}%. Stok berputar dengan baik.`,
+      });
+    }
+
+    // ATV Insight - ALWAYS SHOW
+    if (atv >= 80) {
+      insights.push({
+        color: '#dcfce7',
+        icon: '💰',
+        title: 'HARGA KOMPETITIF',
+        text: `ATV ${atv}% dari rata-rata industri. Harga jual di atas rata-rata.`,
+      });
+    } else if (atv >= 60) {
+      insights.push({
+        color: '#fef9c3',
+        icon: '📊',
+        title: 'HARGA WAJAR',
+        text: `ATV ${atv}% dari rata-rata industri. Harga masuk kategori wajar.`,
+      });
+    } else {
+      insights.push({
+        color: '#fee2e2',
+        icon: '⚠️',
+        title: 'HARGA PERLU DITINGKATKAN',
+        text: `ATV ${atv}% dari rata-rata industri. Pertimbangkan strategi pricing yang lebih agresif.`,
+      });
+    }
+
+    // WhatsApp AI Insight - ALWAYS SHOW
+    const aiAccuracy = data.whatsappData?.overview?.aiAccuracy || 0;
+    if (aiAccuracy >= 80) {
+      insights.push({
+        color: '#dcfce7',
+        icon: '🤖',
+        title: 'AI SANGAT BAIK',
+        text: `AI accuracy ${aiAccuracy}%. Respon AI sangat membantu reduce beban staff.`,
+      });
+    } else if (aiAccuracy >= 60) {
+      insights.push({
+        color: '#fef9c3',
+        icon: '🤖',
+        title: 'AI CUKUP BAIK',
+        text: `AI accuracy ${aiAccuracy}%. Masih ada room untuk improvement.`,
+      });
+    } else if (aiAccuracy > 0) {
+      insights.push({
+        color: '#fee2e2',
+        icon: '🤖',
+        title: 'AI PERLU IMPROVEMENT',
+        text: `AI accuracy hanya ${aiAccuracy}%. Perlu review dan improve respon AI.`,
+      });
+    } else {
+      insights.push({
+        color: '#f3f4f6',
+        icon: '🤖',
+        title: 'BELUM ADA DATA AI',
+        text: 'Belum ada data percakapan WhatsApp AI untuk periode ini.',
+      });
     }
 
     return insights;
@@ -441,12 +455,6 @@ export class AnalyticsPDFGenerator {
   private generateSalesAnalysis(data: ReportData) {
     const { doc } = this;
 
-    // Guard clause - only proceed if sales data exists
-    if (!data.salesData) {
-      doc.fontSize(14).fillColor('#64748b').text('Tidak ada data penjualan untuk analisis', 80, 80);
-      return;
-    }
-
     doc.fillColor('#1e40af')
       .fontSize(18)
       .font('Helvetica-Bold')
@@ -454,7 +462,7 @@ export class AnalyticsPDFGenerator {
 
     doc.moveDown(2);
 
-    // Sales by Make
+    // Sales by Make - ALWAYS SHOW (use empty array if no data)
     doc.fontSize(14)
       .fillColor('#334155')
       .font('Helvetica-Bold')
@@ -462,30 +470,36 @@ export class AnalyticsPDFGenerator {
 
     doc.moveDown(1);
 
-    if (data.salesData.byMake.length === 0) {
-      doc.fontSize(10)
-        .fillColor('#94a3b8')
-        .text('Belum ada data penjualan', 80, doc.y);
+    const byMake = data.salesData?.byMake || [];
+
+    // Table Header - ALWAYS SHOW
+    const tableTop = doc.y;
+    const colWidths = [200, 80, 100, 80];
+
+    doc.fillColor('#f1f5f9').rect(80, tableTop, 460, 20).fill();
+
+    doc.fillColor('#1e293b')
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .text('Merek', 85, tableTop + 13);
+    doc.text('Qty', 285, tableTop + 13);
+    doc.text('Nilai', 365, tableTop + 13);
+    doc.text('%', 445, tableTop + 13);
+
+    // Table Rows
+    let y = tableTop + 20;
+    const totalValue = byMake.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
+
+    if (byMake.length === 0) {
+      // Show "No data" message row
+      doc.fillColor('#ffffff').rect(80, y, 460, 25).fill();
+      doc.fillColor('#94a3b8')
+        .fontSize(9)
+        .font('Helvetica-Oblique')
+        .text('Tidak ada penjualan untuk periode ini', 85, y + 15);
+      y += 25;
     } else {
-      // Table Header
-      const tableTop = doc.y;
-      const colWidths = [200, 80, 100, 80];
-
-      doc.fillColor('#f1f5f9').rect(80, tableTop, 460, 20).fill();
-
-      doc.fillColor('#1e293b')
-        .fontSize(10)
-        .font('Helvetica-Bold')
-        .text('Merek', 85, tableTop + 13);
-      doc.text('Qty', 285, tableTop + 13);
-      doc.text('Nilai', 365, tableTop + 13);
-      doc.text('%', 445, tableTop + 13);
-
-      // Table Rows
-      let y = tableTop + 20;
-      const totalValue = data.salesData.byMake.reduce((sum, item) => sum + item.value, 0);
-
-      data.salesData.byMake.forEach((item, idx) => {
+      byMake.forEach((item: any, idx: number) => {
         const bgColor = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
         doc.fillColor(bgColor).rect(80, y, 460, 25).fill();
 
@@ -504,7 +518,7 @@ export class AnalyticsPDFGenerator {
 
       // Simple Bar Chart for Sales by Make
       y += 10;
-      this.drawBarChart(data.salesData.byMake, 80, y, 460, 100);
+      this.drawBarChart(byMake, 80, y, 460, 100);
     }
 
     doc.moveDown(2);
@@ -552,12 +566,6 @@ export class AnalyticsPDFGenerator {
   private generatePerformanceMetrics(data: ReportData) {
     const { doc } = this;
 
-    // Guard clause - only proceed if sales data exists
-    if (!data.salesData) {
-      doc.fontSize(14).fillColor('#64748b').text('Tidak ada data penjualan untuk performance metrics', 80, 80);
-      return;
-    }
-
     doc.fillColor('#1e40af')
       .fontSize(18)
       .font('Helvetica-Bold')
@@ -565,33 +573,42 @@ export class AnalyticsPDFGenerator {
 
     doc.moveDown(2);
 
+    // Get KPIs or use defaults (0)
+    const inventoryTurnover = data.salesData?.kpis?.inventoryTurnover || 0;
+    const atv = data.salesData?.kpis?.atv || 0;
+    const avgPrice = data.salesData?.kpis?.avgPrice || 0;
+    const salesPerEmployee = data.salesData?.kpis?.salesPerEmployee || 0;
+    const totalSalesCount = data.salesData?.summary?.totalSalesCount || 0;
+    const totalVehicles = data.salesData?.summary?.totalVehicles || 0;
+    const employees = data.salesData?.summary?.employees || 0;
+
     const kpis = [
       {
         name: 'Inventory Turnover',
-        value: data.salesData.kpis.inventoryTurnover,
+        value: inventoryTurnover,
         unit: '%',
         target: 20,
-        status: data.salesData.kpis.inventoryTurnover >= 20 ? 'good' : 'warning',
+        status: inventoryTurnover >= 20 ? 'good' : 'warning',
         calculation: `(Total Sales / (Total Sales + Total Stok)) × 100`,
-        explanation: `(${data.salesData.summary.totalSalesCount} / (${data.salesData.summary.totalSalesCount} + ${data.salesData.summary.totalVehicles})) × 100 = ${data.salesData.kpis.inventoryTurnover}%`,
+        explanation: `(${totalSalesCount} / (${totalSalesCount} + ${totalVehicles})) × 100 = ${inventoryTurnover}%`,
       },
       {
         name: 'Average Transaction Value (ATV)',
-        value: data.salesData.kpis.atv,
+        value: atv,
         unit: '%',
         target: 80,
-        status: data.salesData.kpis.atv >= 80 ? 'good' : 'warning',
+        status: atv >= 80 ? 'good' : 'warning',
         calculation: `(Avg Price / Industry Average) × 100`,
-        explanation: `(Rp ${this.formatNumber(data.salesData.kpis.avgPrice)} / Rp 150.000.000) × 100 = ${data.salesData.kpis.atv}%`,
+        explanation: `(Rp ${this.formatNumber(avgPrice)} / Rp 150.000.000) × 100 = ${atv}%`,
       },
       {
         name: 'Sales per Employee',
-        value: data.salesData.kpis.salesPerEmployee,
+        value: salesPerEmployee,
         unit: '%',
         target: 80,
-        status: data.salesData.kpis.salesPerEmployee >= 80 ? 'good' : 'warning',
+        status: salesPerEmployee >= 80 ? 'good' : 'warning',
         calculation: `(Total Sales / (Karyawan × 2)) × 100`,
-        explanation: `(${data.salesData.summary.totalSalesCount} / (${data.salesData.summary.employees} × 2)) × 100 = ${data.salesData.kpis.salesPerEmployee}%`,
+        explanation: `(${totalSalesCount} / (${employees} × 2)) × 100 = ${salesPerEmployee}%`,
       },
     ];
 
@@ -666,23 +683,23 @@ export class AnalyticsPDFGenerator {
 
     doc.moveDown(2);
 
-    if (!data.whatsappData) {
-      doc.fontSize(10)
-        .fillColor('#94a3b8')
-        .text('Data WhatsApp AI tidak tersedia', 80, doc.y);
-      return;
-    }
+    // ALWAYS SHOW - use defaults if no data
+    const totalConversations = data.whatsappData?.overview?.totalConversations || 0;
+    const activeConversations = data.whatsappData?.overview?.activeConversations || 0;
+    const escalatedConversations = data.whatsappData?.overview?.escalatedConversations || 0;
+    const aiResponseRate = data.whatsappData?.overview?.aiResponseRate || 0;
+    const avgResponseTime = data.whatsappData?.overview?.avgResponseTime || 0;
+    const aiAccuracy = data.whatsappData?.overview?.aiAccuracy || 0;
+    const intentBreakdown = data.whatsappData?.intentBreakdown || [];
 
-    const { whatsappData } = data;
-
-    // Overview Metrics
+    // Overview Metrics - ALWAYS SHOW
     const metrics = [
-      { label: 'Total Conversations', value: whatsappData.overview.totalConversations.toString() },
-      { label: 'Active Conversations', value: whatsappData.overview.activeConversations.toString() },
-      { label: 'Escalated to Staff', value: whatsappData.overview.escalatedConversations.toString() },
-      { label: 'AI Response Rate', value: `${whatsappData.overview.aiResponseRate}%` },
-      { label: 'Avg Response Time', value: `${whatsappData.overview.avgResponseTime} detik` },
-      { label: 'AI Accuracy', value: `${whatsappData.overview.aiAccuracy}%` },
+      { label: 'Total Conversations', value: totalConversations.toString() },
+      { label: 'Active Conversations', value: activeConversations.toString() },
+      { label: 'Escalated to Staff', value: escalatedConversations.toString() },
+      { label: 'AI Response Rate', value: `${aiResponseRate}%` },
+      { label: 'Avg Response Time', value: `${avgResponseTime} detik` },
+      { label: 'AI Accuracy', value: `${aiAccuracy}%` },
     ];
 
     metrics.forEach((metric, idx) => {
@@ -706,7 +723,7 @@ export class AnalyticsPDFGenerator {
 
     doc.moveDown(2);
 
-    // Intent Breakdown
+    // Intent Breakdown - ALWAYS SHOW
     doc.fontSize(14)
       .fillColor('#334155')
       .font('Helvetica-Bold')
@@ -714,7 +731,13 @@ export class AnalyticsPDFGenerator {
 
     doc.moveDown(1);
 
-    this.drawDonutChart(whatsappData.intentBreakdown, 80, doc.y, 200, 100);
+    if (intentBreakdown.length === 0) {
+      doc.fontSize(10)
+        .fillColor('#94a3b8')
+        .text('Tidak ada data percakapan untuk periode ini', 80, doc.y);
+    } else {
+      this.drawDonutChart(intentBreakdown, 80, doc.y, 200, 100);
+    }
   }
 
   private drawDonutChart(
@@ -808,48 +831,67 @@ export class AnalyticsPDFGenerator {
       description: string;
     }> = [];
 
-    // Sales Recommendations (only if sales data available)
-    if (data.salesData) {
-      if (data.salesData.summary.totalSalesCount === 0) {
-        recommendations.push({
-          priority: 'high',
-          title: 'TINGKATKAN AKTIVITAS MARKETING',
-          description: 'Belum ada penjualan periode ini. Perlu increase promosi, advertising, dan aktivitas sales. Pertimbangkan: - Promo diskon khusus - Bundle deals - Follow up leads yang belum convert',
-        });
-      }
+    // Sales Recommendations - ALWAYS SHOW
+    const salesCount = data.salesData?.summary?.totalSalesCount || 0;
+    const inventoryTurnover = data.salesData?.kpis?.inventoryTurnover || 0;
+    const salesPerEmployee = data.salesData?.kpis?.salesPerEmployee || 0;
+    const byMake = data.salesData?.byMake || [];
 
-      if (data.salesData.kpis.inventoryTurnover < 20) {
-        recommendations.push({
-          priority: 'medium',
-          title: 'EVALUASI MEREK KURANG LAKU',
-          description: `Inventory turnover hanya ${data.salesData.kpis.inventoryTurnover}%. Review merek yang stok tinggi dan pertimbangkan: - Clearance sale untuk stok lama - Promo khusus merek slow-moving - Bundling dengan merek fast-moving`,
-        });
-      }
-
-      if (data.salesData.kpis.salesPerEmployee < 80) {
-        recommendations.push({
-          priority: 'medium',
-          title: 'TRAINING & MOTIVASI SALES STAFF',
-          description: `Productivitas sales ${data.salesData.kpis.salesPerEmployee}%. Pertimbangkan: - Training teknik negosiasi - Incentive program untuk target - Coaching dari top performer - Review dan improve sales script`,
-        });
-      }
-
-      if (data.salesData.byMake.length > 0) {
-        const topMake = data.salesData.byMake[0];
-        recommendations.push({
-          priority: 'low',
-          title: `FOCUS PADA ${topMake.make.toUpperCase()}`,
-          description: `${topMake.make} adalah merek terlaris (${topMake.count} unit). Pertimbangkan: - Increase stok varian ${topMake.make} - Special promo untuk ${topMake.make} - Training sales khusus produk ${topMake.make}`,
-        });
-      }
+    if (salesCount === 0) {
+      recommendations.push({
+        priority: 'high',
+        title: 'TINGKATKAN AKTIVITAS MARKETING',
+        description: 'Belum ada penjualan periode ini. Perlu increase promosi, advertising, dan aktivitas sales. Pertimbangkan: - Promo diskon khusus - Bundle deals - Follow up leads yang belum convert',
+      });
     }
 
-    // WhatsApp AI Recommendations
-    if (data.whatsappData && data.whatsappData.overview.aiAccuracy < 80) {
+    if (inventoryTurnover < 20) {
+      recommendations.push({
+        priority: 'medium',
+        title: 'EVALUASI MEREK KURANG LAKU',
+        description: `Inventory turnover hanya ${inventoryTurnover}%. Review merek yang stok tinggi dan pertimbangkan: - Clearance sale untuk stok lama - Promo khusus merek slow-moving - Bundling dengan merek fast-moving`,
+      });
+    }
+
+    if (salesPerEmployee < 80) {
+      recommendations.push({
+        priority: 'medium',
+        title: 'TRAINING & MOTIVASI SALES STAFF',
+        description: `Productivitas sales ${salesPerEmployee}%. Pertimbangkan: - Training teknik negosiasi - Incentive program untuk target - Coaching dari top performer - Review dan improve sales script`,
+      });
+    }
+
+    if (byMake.length > 0) {
+      const topMake = byMake[0];
+      recommendations.push({
+        priority: 'low',
+        title: `FOCUS PADA ${topMake.make.toUpperCase()}`,
+        description: `${topMake.make} adalah merek terlaris (${topMake.count} unit). Pertimbangkan: - Increase stok varian ${topMake.make} - Special promo untuk ${topMake.make} - Training sales khusus produk ${topMake.make}`,
+      });
+    }
+
+    // WhatsApp AI Recommendations - ALWAYS SHOW
+    const aiAccuracy = data.whatsappData?.overview?.aiAccuracy || 0;
+    if (aiAccuracy < 80 && aiAccuracy > 0) {
       recommendations.push({
         priority: 'high',
         title: 'IMPROVE AI ACCURACY',
-        description: `AI accuracy hanya ${data.whatsappData.overview.aiAccuracy}%. Banyak percakapan di-escalate ke staff. Action: - Review percakapan yang failed - Improve prompt AI - Tambah knowledge base - Update FAQ dan product info`,
+        description: `AI accuracy hanya ${aiAccuracy}%. Banyak percakapan di-escalate ke staff. Action: - Review percakapan yang failed - Improve prompt AI - Tambah knowledge base - Update FAQ dan product info`,
+      });
+    } else if (aiAccuracy === 0) {
+      recommendations.push({
+        priority: 'low',
+        title: 'MONITOR AI PERFORMANCE',
+        description: 'Belum ada data percakapan AI. Mulai monitor performa AI ketika ada percakapan masuk untuk ensure accuracy tetap tinggi.',
+      });
+    }
+
+    // Always add general recommendations if list is short
+    if (recommendations.length < 3) {
+      recommendations.push({
+        priority: 'low',
+        title: 'MONITOR METRICS HARIAN',
+        description: 'Review dashboard analytics harian untuk track performa dan identify trends. Early detection memungkinkan corrective action lebih cepat.',
       });
     }
 
