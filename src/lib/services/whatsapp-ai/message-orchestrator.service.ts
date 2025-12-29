@@ -1231,7 +1231,7 @@ export class MessageOrchestratorService {
 
           // Send PDF via WhatsApp using base64 encoding
           const to = incoming.from;
-          const clientId = incoming.accountId;
+          const clientId = incoming.clientId; // Use Aimeow client UUID, NOT Prisma account ID
 
           console.log(`[Orchestrator] 📤 Sending PDF via WhatsApp to ${to} (base64 mode)`);
           const sendResult = await AimeowClientService.sendDocumentBase64(
