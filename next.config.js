@@ -13,6 +13,18 @@ const nextConfig = {
     return 'autolumiku-v1-stable'
   },
 
+  // Webpack configuration to include PDFKit font files in standalone build
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Include PDFKit font data files
+      config.externals = config.externals || [];
+      config.externals.push({
+        'pdfkit': 'commonjs pdfkit',
+      });
+    }
+    return config;
+  },
+
   // NOTE: URL decoding for dynamic routes is now handled in middleware.ts
   // NOTE: Do NOT add 'env' block here!
   // Server-side code can already access process.env directly.
