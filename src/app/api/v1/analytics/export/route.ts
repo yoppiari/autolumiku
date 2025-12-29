@@ -18,6 +18,7 @@ import { ROLE_LEVELS } from '@/lib/rbac';
 import PDFDocument from 'pdfkit';
 import * as XLSX from 'xlsx';
 import { createPDFDocument } from '@/lib/services/whatsapp-ai/pdf-init';
+import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
 
 export const dynamic = 'force-dynamic';
 
@@ -420,256 +421,21 @@ export async function POST(request: NextRequest) {
 
     // Generate based on format
     if (format === 'pdf') {
-      // PDF Generation with Sales + WhatsApp AI
-      const doc = createPDFDocument();
-      const chunks: Uint8Array[] = [];
+      // Use new professional PDF Generator with charts and detailed analysis
+      const generator = new AnalyticsPDFGenerator();
 
-      doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
+      const reportData = {
+        tenantName: tenant?.name || 'Prima Mobil',
+        salesData,
+        whatsappData,
+        startDate,
+        endDate: now,
+      };
 
-      // Cover page
-      doc.fontSize(24).font('Helvetica-Bold').text('Laporan Analytics', { align: 'center' });
-      doc.moveDown();
-      doc.fontSize(16).font('Helvetica').text(tenant?.name || 'Prima Mobil', { align: 'center' });
-      doc.moveDown();
-      doc.fontSize(12).text(`Periode: ${formatDate(startDate)} - ${formatDate(now)}`, { align: 'center' });
-      doc.moveDown();
-      doc.fontSize(10).fillColor('#666666')
-        .text(`Dibuat pada: ${formatDate(now)}`, { align: 'center' });
-      doc.moveDown(2);
-      doc.fontSize(14).fillColor('#000000').text('Sales Report & WhatsApp AI Analytics', { align: 'center' });
-
-      // Sales section
-      if (salesData) {
-        doc.addPage();
-        doc.fontSize(18).font('Helvetica-Bold').text('Laporan Penjualan', { underline: true });
-        doc.moveDown();
-
-        // Summary
-        doc.fontSize(12).font('Helvetica');
-        doc.text(`Total Penjualan: ${salesData.summary.totalSalesCount} unit`);
-        doc.text(`Total Nilai: ${formatCurrency(salesData.summary.totalSalesValue)}`);
-
-        if (salesData.summary.totalSalesCount > 0) {
-          const avg = salesData.summary.totalSalesValue / salesData.summary.totalSalesCount;
-          doc.text(`Rata-rata per Unit: ${formatCurrency(avg)}`);
-        }
-
-        doc.moveDown();
-
-        // By Make
-        doc.fontSize(14).font('Helvetica-Bold').text('Penjualan per Merek:');
-        doc.moveDown(0.5);
-
-        salesData.byMake.forEach((item) => {
-          doc.fontSize(11).font('Helvetica');
-          doc.text(`${item.make}: ${item.count} unit (${formatCurrency(item.value)})`);
-        });
-
-        doc.moveDown();
-
-        // KPIs with explanations
-        doc.fontSize(14).font('Helvetica-Bold').text('Key Performance Indicators (KPI):');
-        doc.moveDown(0.5);
-
-        doc.fontSize(11).font('Helvetica');
-        const kpis = salesData.kpis;
-
-        // Inventory Turnover
-        const itStatus = kpis.inventoryTurnover >= 20 ? 'BAIK' : kpis.inventoryTurnover >= 10 ? 'CUKUP' : 'PERLU IMPROVEMENT';
-        const itColor = kpis.inventoryTurnover >= 20 ? 'green' : kpis.inventoryTurnover >= 10 ? 'blue' : 'red';
-        doc.text(`Inventory Turnover: ${kpis.inventoryTurnover}% (${itStatus})`);
-        doc.fontSize(9).fillColor('#666666').text(`   Penjelasan: ${kpis.inventoryTurnover >= 20 ? 'Excellent - Inventory berputar dengan baik' : kpis.inventoryTurnover >= 10 ? 'Cukup baik - Perlu monitor' : 'Perlu improvement - Stok terlalu banyak'}`);
-        doc.fillColor('#000000');
-        doc.moveDown(0.3);
-
-        // ATV
-        doc.fontSize(11).font('Helvetica');
-        const atvStatus = kpis.atv >= 80 ? 'BAIK' : kpis.atv >= 60 ? 'CUKUP' : 'DI BAWAH RATA-RATA';
-        doc.text(`Average Transaction Value (ATV): ${kpis.atv}% (${atvStatus})`);
-        doc.fontSize(9).fillColor('#666666').text(`   Penjelasan: ${kpis.avgPrice >= 150000000 ? 'Di atas rata-rata industri' : kpis.avgPrice >= 100000000 ? 'Sekitar rata-rata industri' : 'Di bawah rata-rata industri'}`);
-        doc.fillColor('#000000');
-        doc.moveDown(0.3);
-
-        // Sales per Employee
-        doc.fontSize(11).font('Helvetica');
-        const speStatus = kpis.salesPerEmployee >= 80 ? 'EXCELLENT' : kpis.salesPerEmployee >= 60 ? 'BAIK' : 'PERLU IMPROVEMENT';
-        doc.text(`Sales per Employee: ${kpis.salesPerEmployee}% (${speStatus})`);
-        doc.fontSize(9).fillColor('#666666').text(`   Penjelasan: ${kpis.salesPerEmployee >= 80 ? 'Productivitas sangat baik' : kpis.salesPerEmployee >= 60 ? 'Productivitas baik' : 'Perlu training dan motivasi'}`);
-        doc.fillColor('#000000');
-        doc.moveDown();
-
-        // Top Performers
-        if (salesData.topPerformers.length > 0) {
-          doc.fontSize(14).font('Helvetica-Bold').text('Top Sales Performers:');
-          doc.moveDown(0.5);
-
-          salesData.topPerformers.slice(0, 10).forEach((staff, idx) => {
-            doc.fontSize(11).font('Helvetica-Bold');
-            doc.text(`${idx + 1}. ${staff.name}`);
-            doc.fontSize(10).font('Helvetica').text(`   ${staff.count} unit terjual - ${formatCurrency(staff.value)}`);
-            doc.moveDown(0.3);
-          });
-        }
-
-        doc.moveDown();
-
-        // Recent sales
-        if (salesData.vehicles.length > 0) {
-          doc.fontSize(14).font('Helvetica-Bold').text('Transaksi Terbaru:');
-          doc.moveDown(0.5);
-
-          salesData.vehicles.slice(0, 10).forEach((v, idx) => {
-            doc.fontSize(10).font('Helvetica');
-            doc.text(`${idx + 1}. ${v.make} ${v.model} (${v.year}) - ${formatCurrency(v.price)}`);
-          });
-        }
-      }
-
-      // WhatsApp AI section
-      if (whatsappData) {
-        doc.addPage();
-        doc.fontSize(18).font('Helvetica-Bold').text('WhatsApp AI Analytics', { underline: true });
-        doc.moveDown();
-
-        // Overview
-        doc.fontSize(14).font('Helvetica-Bold').text('Overview:');
-        doc.moveDown(0.5);
-        doc.fontSize(11).font('Helvetica');
-        doc.text(`Total Percakapan: ${whatsappData.overview.totalConversations}`);
-        doc.text(`Percakapan Aktif: ${whatsappData.overview.activeConversations}`);
-        doc.text(`Pesan Pelanggan: ${whatsappData.overview.customerMessages}`);
-        doc.text(`Respon AI: ${whatsappData.overview.aiResponses}`);
-        doc.text(`Respon Staff: ${whatsappData.overview.staffResponses}`);
-        doc.moveDown();
-
-        // Performance Metrics
-        doc.fontSize(14).font('Helvetica-Bold').text('Metrik Performa:');
-        doc.moveDown(0.5);
-        doc.fontSize(11).font('Helvetica');
-        doc.text(`AI Response Rate: ${whatsappData.overview.aiResponseRate}%`);
-        doc.text(`AI Accuracy: ${whatsappData.overview.aiAccuracy}%`);
-        doc.text(`Escalated Conversations: ${whatsappData.overview.escalatedConversations}`);
-        doc.text(`Rata-rata Response Time: ${whatsappData.overview.avgResponseTime} detik`);
-        doc.moveDown();
-
-        // Intent Breakdown
-        doc.fontSize(14).font('Helvetica-Bold').text('Breakdown Intent Pelanggan:');
-        doc.moveDown(0.5);
-        whatsappData.intentBreakdown.forEach((item) => {
-          doc.fontSize(11).font('Helvetica');
-          doc.text(`${item.intent.charAt(0).toUpperCase() + item.intent.slice(1)}: ${item.count} (${item.percentage}%)`);
-        });
-        doc.moveDown();
-
-        // Top Conversations
-        if (whatsappData.topConversations.length > 0) {
-          doc.fontSize(14).font('Helvetica-Bold').text('Percakapan Teratas:');
-          doc.moveDown(0.5);
-          whatsappData.topConversations.slice(0, 15).forEach((c, idx) => {
-            doc.fontSize(9).font('Helvetica');
-            const date = new Date(c.startedAt).toLocaleDateString('id-ID');
-            doc.text(`${idx + 1}. ${c.phone} - ${c.status} (${date})`);
-          });
-        }
-      }
-
-      // Recommendations Section
-      doc.addPage();
-      doc.fontSize(18).font('Helvetica-Bold').text('Rekomendasi untuk Owner & Manajemen', { underline: true });
-      doc.moveDown();
-
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000000').text('📊 SUMMARY');
-      doc.moveDown(0.3);
-      doc.fontSize(10).font('Helvetica').fillColor('#333333');
-
-      const recommendations: string[] = [];
-
-      // Sales recommendations
-      if (salesData) {
-        const kpis = salesData.kpis;
-
-        if (kpis.inventoryTurnover < 10) {
-          recommendations.push('• Inventory: Pertimbangkan untuk reduce stok dan fokus pada jenis kendaraan yang laku cepat');
-        }
-        if (kpis.salesPerEmployee < 60) {
-          recommendations.push('• Productivitas Sales: Lakukan training motivasi dan evaluasi performa tim sales');
-        }
-        if (kpis.avgPrice < 100000000) {
-          recommendations.push('• ATV: Fokus pada kendaraan dengan margin lebih tinggi untuk meningkatkan rata-rata harga penjualan');
-        }
-      }
-
-      // WhatsApp AI recommendations
-      if (whatsappData) {
-        if (whatsappData.overview.aiAccuracy < 80) {
-          recommendations.push('• AI Accuracy: Review dan perbaiki respon AI yang sering di-escalate');
-        }
-        if (whatsappData.overview.escalatedConversations > whatsappData.overview.totalConversations * 0.2) {
-          recommendations.push('• WhatsApp AI: Tingkatkan kualitas respon AI untuk reduce beban staff');
-        }
-        if (whatsappData.overview.avgResponseTime > 30) {
-          recommendations.push('• Response Speed: Optimalkan AI response time untuk better customer experience');
-        }
-
-        const priceIntent = whatsappData.intentBreakdown.find(i => i.intent === 'price');
-        if (priceIntent && priceIntent.percentage > 40) {
-          recommendations.push('• Customer Intent: Banyak calon pelanggan tanya harga - pertimbangkan strategi harga yang lebih kompetitif');
-        }
-      }
-
-      if (recommendations.length === 0) {
-        recommendations.push('• Performa showroom dalam kondisi BAIK. Pertahankan strategi saat ini.');
-        recommendations.push('• Terus monitor KPI secara berkala untuk maintain performance.');
-      }
-
-      recommendations.forEach((rec) => {
-        doc.text(rec);
-      });
-
-      doc.moveDown();
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000000').text('🎯 FOCUS AREA');
-      doc.moveDown(0.3);
-      doc.fontSize(10).font('Helvetica').fillColor('#333333');
-
-      const focusAreas: string[] = [];
-      if (salesData && salesData.topPerformers.length > 0) {
-        focusAreas.push(`• Top Performer: ${salesData.topPerformers[0].name} - pelajari strategi dan replicate ke tim lain`);
-      }
-      if (salesData && salesData.byMake.length > 0) {
-        focusAreas.push(`• Brand Terlaris: ${salesData.byMake[0].make} - pertimbangkan increase stok merek ini`);
-      }
-      if (whatsappData && whatsappData.intentBreakdown.length > 0) {
-        const topIntent = whatsappData.intentBreakdown[0];
-        focusAreas.push(`• Top Customer Intent: ${topIntent.intent} - siapkan respon AI yang lebih spesifik`);
-      }
-      focusAreas.push('• Review conversasi yang escalated untuk improvement AI responses');
-      focusAreas.push('• Monitor dan follow up leads yang belum convert');
-
-      focusAreas.forEach((area) => {
-        doc.text(area);
-      });
-
-      // Footer
-      doc.addPage();
-      doc.fontSize(10).font('Helvetica').fillColor('#666666');
-      doc.text('Laporan ini dibuat secara otomatis oleh sistem AutoLumiKu.', { align: 'center' });
-      doc.moveDown();
-      doc.text('Sales Report & WhatsApp AI Analytics', { align: 'center' });
-      doc.moveDown();
-      doc.text('Untuk pertanyaan, hubungi tim support.', { align: 'center' });
-
-      // Finalize PDF
-      doc.end();
-
-      // Wait for PDF to be generated
-      await new Promise<void>((resolve) => {
-        doc.on('end', resolve);
-      });
-
-      const pdfBuffer = Buffer.concat(chunks);
+      const pdfBuffer = await generator.generate(reportData);
       const filename = `analytics-sales-whatsapp-${new Date().toISOString().split('T')[0]}.pdf`;
 
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(new Uint8Array(pdfBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
