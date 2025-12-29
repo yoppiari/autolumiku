@@ -276,6 +276,54 @@ export default function ConversationsPage() {
     loadMessages(conversation.id);
   };
 
+  // Export conversations to CSV
+  const exportToCSV = () => {
+    // Get filtered conversations based on current filter
+    const dataToExport = filterType === 'all'
+      ? conversations.filter(c => !(c.isEscalated && c.status === 'closed'))
+      : filterType === 'customer'
+      ? conversations.filter(c => !c.isStaff && !(c.isEscalated && c.status === 'closed'))
+      : filterType === 'staff'
+      ? conversations.filter(c => c.isStaff)
+      : conversations.filter(c => c.isEscalated && c.status !== 'closed');
+
+    if (dataToExport.length === 0) {
+      alert('Tidak ada data untuk di-export');
+      return;
+    }
+
+    // Create CSV content
+    const headers = ['No', 'No. HP', 'Nama', 'Tipe', 'Status', 'Intent', 'Pesan Terakhir', 'Jumlah Pesan', 'Escalated'];
+    const rows = dataToExport.map((conv, index) => [
+      index + 1,
+      conv.customerPhone,
+      conv.customerName || '-',
+      conv.isStaff ? 'Staff' : 'Customer',
+      conv.status,
+      conv.lastIntent || '-',
+      new Date(conv.lastMessageAt).toLocaleString('id-ID'),
+      conv.messageCount,
+      conv.isEscalated ? 'Ya' : 'Tidak',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `conversations-${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -864,6 +912,16 @@ export default function ConversationsPage() {
           </div>
           <p className="text-gray-500 text-[10px] md:text-xs mt-0.5 hidden sm:block">Monitor customer chats dan staff commands</p>
         </div>
+        <button
+          onClick={exportToCSV}
+          className="px-3 py-1.5 bg-green-600 text-white text-xs md:text-sm rounded-lg hover:bg-green-700 flex items-center gap-1.5 shadow-sm transition-colors"
+          title="Export conversations ke CSV"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span className="hidden sm:inline">Export CSV</span>
+        </button>
       </div>
 
       {/* Main Content - Mobile: stack, Desktop: side-by-side */}

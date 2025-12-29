@@ -148,6 +148,12 @@ export default function AnalyticsPage() {
   const handleExport = async (format: 'pdf' | 'excel') => {
     try {
       const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Token tidak ditemukan. Silakan login kembali.');
+        window.location.href = '/login';
+        return;
+      }
+
       // Always export Sales + WhatsApp AI together
       const response = await fetch(
         `/api/v1/analytics/export?format=${format}&department=all&period=${period}`,
@@ -168,11 +174,14 @@ export default function AnalyticsPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        alert('Gagal mengekspor laporan');
+        // Get error details from response
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Export failed:', errorData);
+        alert(`Gagal mengekspor laporan: ${errorData.error || errorData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Export error:', error);
-      alert('Terjadi kesalahan saat mengekspor');
+      alert(`Terjadi kesalahan saat mengekspor: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
