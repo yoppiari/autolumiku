@@ -276,6 +276,48 @@ export default function ConversationsPage() {
     loadMessages(conversation.id);
   };
 
+  // Export staff contacts to vCard (like WhatsApp)
+  const exportContactsToVCard = () => {
+    if (teamMembers.length === 0) {
+      alert('Tidak ada data staff untuk di-export');
+      return;
+    }
+
+    // Create vCard content for each staff member
+    const vCards = teamMembers.map((member, index) => {
+      const fullName = `${member.firstName} ${member.lastName || ''}`.trim();
+      const phone = member.phone || '';
+      const email = member.email || '';
+      const org = member.role || 'Staff';
+
+      // vCard 3.0 format
+      return `BEGIN:VCARD
+VERSION:3.0
+FN:${fullName}
+N:${member.lastName || ''};${member.firstName};;;
+TEL;TYPE=CELL:${phone}
+EMAIL;TYPE=WORK:${email}
+ORG:${org}
+TITLE:${org}
+END:VCARD`;
+    });
+
+    // Combine all vCards into one file
+    const vCardContent = vCards.join('\n');
+
+    // Create blob and download
+    const blob = new Blob([vCardContent], { type: 'text/vcard;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `staff-contacts-${timestamp}.vcf`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Export staff contacts to CSV
   const exportContactsToCSV = () => {
     if (teamMembers.length === 0) {
@@ -950,14 +992,14 @@ export default function ConversationsPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={exportContactsToCSV}
-            className="px-3 py-1.5 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 shadow-sm transition-colors"
-            title="Export staff contacts ke CSV"
+            onClick={exportContactsToVCard}
+            className="px-3 py-1.5 bg-purple-600 text-white text-xs md:text-sm rounded-lg hover:bg-purple-700 flex items-center gap-1.5 shadow-sm transition-colors"
+            title="Export staff contacts ke vCard (WhatsApp format)"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            <span className="hidden sm:inline">Export Contacts</span>
+            <span className="hidden sm:inline">Export vCard</span>
           </button>
           <button
             onClick={exportToCSV}
