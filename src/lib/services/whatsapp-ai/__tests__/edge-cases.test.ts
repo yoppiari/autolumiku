@@ -170,7 +170,7 @@ function extractUsingRegex(text: string): VehicleDataExtractionResult {
 
   // Validate required fields
   if (!extractedData.make || !extractedData.model || !extractedData.year || !extractedData.price) {
-    const missing = [];
+    const missing: string[] = [];
     if (!extractedData.make) missing.push('merk');
     if (!extractedData.model) missing.push('model');
     if (!extractedData.year) missing.push('tahun');
