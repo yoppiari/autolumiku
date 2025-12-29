@@ -276,6 +276,42 @@ export default function ConversationsPage() {
     loadMessages(conversation.id);
   };
 
+  // Export staff contacts to CSV
+  const exportContactsToCSV = () => {
+    if (teamMembers.length === 0) {
+      alert('Tidak ada data staff untuk di-export');
+      return;
+    }
+
+    // Create CSV content for staff contacts
+    const headers = ['No', 'Nama Depan', 'Nama Belakang', 'Role', 'No HP', 'Email'];
+    const rows = teamMembers.map((member, index) => [
+      index + 1,
+      member.firstName,
+      member.lastName || '-',
+      member.role || '-',
+      member.phone || '-',
+      member.email || '-',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `staff-contacts-${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Export conversations to CSV
   const exportToCSV = () => {
     // Get filtered conversations based on current filter
@@ -912,16 +948,28 @@ export default function ConversationsPage() {
           </div>
           <p className="text-gray-500 text-[10px] md:text-xs mt-0.5 hidden sm:block">Monitor customer chats dan staff commands</p>
         </div>
-        <button
-          onClick={exportToCSV}
-          className="px-3 py-1.5 bg-green-600 text-white text-xs md:text-sm rounded-lg hover:bg-green-700 flex items-center gap-1.5 shadow-sm transition-colors"
-          title="Export conversations ke CSV"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span className="hidden sm:inline">Export CSV</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={exportContactsToCSV}
+            className="px-3 py-1.5 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5 shadow-sm transition-colors"
+            title="Export staff contacts ke CSV"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span className="hidden sm:inline">Export Contacts</span>
+          </button>
+          <button
+            onClick={exportToCSV}
+            className="px-3 py-1.5 bg-green-600 text-white text-xs md:text-sm rounded-lg hover:bg-green-700 flex items-center gap-1.5 shadow-sm transition-colors"
+            title="Export conversations ke CSV"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content - Mobile: stack, Desktop: side-by-side */}
