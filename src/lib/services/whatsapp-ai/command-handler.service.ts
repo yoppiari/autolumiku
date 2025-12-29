@@ -128,6 +128,12 @@ function isUniversalCommand(cmd: string): boolean {
  * Check if command is PDF report command
  */
 function isPDFCommand(cmd: string): boolean {
+  // Single word triggers
+  if (cmd === 'report' || cmd === 'pdf') {
+    return true;
+  }
+
+  // Multi-word triggers
   const pdfCommands = [
     'sales report',
     'whatsapp ai',
@@ -135,6 +141,7 @@ function isPDFCommand(cmd: string): boolean {
     'metrix pelanggan',
     'metrix operational',
     'operational metrics',
+    'operational metric',
     'tren penjualan',
     'staff performance',
     'recent sales',
@@ -144,16 +151,25 @@ function isPDFCommand(cmd: string): boolean {
     'total inventory',
     'average price',
     'sales summary',
-    'penjualan',
-    'sales',
     'report pdf',
     'pdf report',
     'kirim report',
     'kirim pdf',
-    'report',
-    'pdf',
+    'kirim pdf nya',
+    'kirim reportnya',
+    'kirim pdfnya',
   ];
-  return pdfCommands.some(c => cmd.includes(c));
+
+  // Check for direct matches
+  if (pdfCommands.some(c => cmd.includes(c))) {
+    return true;
+  }
+
+  // Regex patterns for more specific matching
+  return /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics)\b/i.test(cmd) ||
+         /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(cmd) ||
+         /\b(customer|pelanggan)\s+metrics\b/i.test(cmd) ||
+         /\b(total)\s+(penjualan|revenue|inventory)\b/i.test(cmd);
 }
 
 /**

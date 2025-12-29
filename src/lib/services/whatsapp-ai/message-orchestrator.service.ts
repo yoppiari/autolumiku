@@ -1122,22 +1122,40 @@ export class MessageOrchestratorService {
                               message === 'status' ||
                               message.includes('statistik') || message.includes('stats');
 
-    const isPDFCommand = message.includes('sales report') ||
+    // PDF Commands - MUST match specific patterns to avoid false positives
+    // Single word triggers:
+    const isPDFCommand = message === 'report' ||
+                        message === 'pdf' ||
+                        message.includes('report pdf') ||
+                        message.includes('pdf report') ||
+                        message.includes('kirim report') ||
+                        message.includes('kirim pdf') ||
+                        message.includes('kirim pdf nya') ||
+                        message.includes('kirim reportnya') ||
+                        message.includes('kirim pdfnya') ||
+                        // Specific report names:
+                        message.includes('sales report') ||
                         message.includes('whatsapp ai') ||
                         message.includes('metrics penjualan') || message.includes('metrix penjualan') ||
                         message.includes('metrics pelanggan') || message.includes('metrix pelanggan') ||
-                        message.includes('metrics operational') || message.includes('metrix operational') || message.includes('operational metrics') ||
+                        message.includes('metrics operational') || message.includes('metrix operational') ||
+                        message.includes('operational metrics') ||
+                        message.includes('operational metric') ||
                         message.includes('tren penjualan') ||
                         message.includes('staff performance') ||
                         message.includes('recent sales') ||
-                        message.includes('low stock alert') || message.includes('low stock') ||
-                        message.includes('total penjualan') || message.includes('total penjualan showroom') ||
+                        message.includes('low stock alert') ||
+                        message.includes('low stock') ||
+                        message.includes('total penjualan') ||
+                        message.includes('total penjualan showroom') ||
                         message.includes('total revenue') ||
                         message.includes('total inventory') ||
                         message.includes('average price') ||
                         message.includes('sales summary') ||
-                        message.includes('penjualan') || message.includes('sales') ||
-                        message.includes('report pdf') || message.includes('pdf report') || message.includes('kirim report') || message.includes('kirim pdf');
+                        // More specific "penjualan"/"sales" patterns (not just any mention):
+                        /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics)\b/i.test(message) ||
+                        /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(message) ||
+                        /\b(customer|pelanggan)\s+metrics\b/i.test(message);
 
     // Check if it's a command
     const isCommand = isUniversalCommand || isPDFCommand;
@@ -1148,11 +1166,16 @@ export class MessageOrchestratorService {
 
     console.log(`[Orchestrator] 🔔 Command detected: ${message}`);
 
-    // Find user by phone number
-    const user = await prisma.user.findFirst({
+    // Find user by phone number with flexible matching
+    // Normalize phone for matching (handle 62, +62, 0 prefixes)
+    const normalizedInput = this.normalizePhone(incoming.from);
+    console.log(`[Orchestrator] Looking for user with phone: ${incoming.from} (normalized: ${normalizedInput})`);
+
+    // Get all users in tenant with staff roles
+    const allUsers = await prisma.user.findMany({
       where: {
         tenantId: incoming.tenantId,
-        phone: incoming.from,
+        phone: { not: null }, // Must have phone number
       },
       select: {
         id: true,
@@ -1160,11 +1183,19 @@ export class MessageOrchestratorService {
         roleLevel: true,
         firstName: true,
         lastName: true,
+        phone: true,
       },
     });
 
+    // Find matching user by normalized phone
+    const user = allUsers.find(u => {
+      if (!u.phone) return false;
+      const normalizedUserPhone = this.normalizePhone(u.phone);
+      return normalizedUserPhone === normalizedInput;
+    });
+
     if (!user) {
-      console.log(`[Orchestrator] ⚠️ No user found with phone: ${incoming.from}`);
+      console.log(`[Orchestrator] ⚠️ No user found with phone: ${incoming.from} (tried ${allUsers.length} users)`);
       return {
         isCommand: true,
         result: {
@@ -1175,7 +1206,7 @@ export class MessageOrchestratorService {
       };
     }
 
-    console.log(`[Orchestrator] 👤 User found: ${user.firstName} ${user.lastName} (${user.role}, level ${user.roleLevel})`);
+    console.log(`[Orchestrator] 👤 User found: ${user.firstName} ${user.lastName} (${user.role}, level ${user.roleLevel}, phone: ${user.phone})`);
 
     // Process command
     try {
@@ -1200,6 +1231,7 @@ export class MessageOrchestratorService {
 
           // Send PDF via WhatsApp using base64 encoding
           const to = incoming.from;
+          const clientId = incoming.accountId;
 
           console.log(`[Orchestrator] 📤 Sending PDF via WhatsApp to ${to} (base64 mode)`);
           const sendResult = await AimeowClientService.sendDocumentBase64(
