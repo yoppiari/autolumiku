@@ -370,22 +370,6 @@ export default function ShowroomDashboardPage() {
       iconBg: 'bg-rose-100 group-hover:bg-rose-500 border-2 border-rose-200 group-hover:border-rose-500',
       isAuthorized: canSeeBlog,
     },
-    {
-      key: 'quickactions',
-      title: 'Quick Actions',
-      value: null, // No value for quick actions
-      subValue: null,
-      subLabel: 'Aksi cepat',
-      subColor: 'text-gray-600',
-      emoji: '⚡',
-      gradient: 'from-amber-500 to-orange-600',
-      bgLight: 'bg-amber-50',
-      href: null, // No href, it's a widget
-      colorClass: 'hover:border-amber-400 hover:bg-amber-50/50',
-      iconBg: 'bg-amber-100 group-hover:bg-amber-500 border-2 border-amber-200 group-hover:border-amber-500',
-      isAuthorized: true, // Always show
-      isQuickActions: true, // Special flag for quick actions widget
-    },
   ];
 
   return (
@@ -405,96 +389,44 @@ export default function ShowroomDashboardPage() {
       </div>
 
       {/* Stats Grid - Cards with Colored Icons (all cards shown, tooltip for unauthorized) */}
-      <div className="grid gap-2 md:gap-3 flex-shrink-0 grid-cols-2 md:grid-cols-5">
-        {statsConfig.map((stat) => {
-          // Handle Quick Actions widget separately (no href)
-          if ('isQuickActions' in stat && stat.isQuickActions) {
-            return (
-              <div
-                key={stat.key}
-                className={`group bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all p-2 md:p-3 ${stat.colorClass}`}
-              >
-                {/* Quick Actions Buttons - Vertical Stack */}
-                <div className="flex flex-col gap-1.5 md:gap-2">
-                  {/* Tambah Unit */}
-                  <Link
-                    href="/dashboard/vehicles/new"
-                    className="flex items-center gap-2 md:gap-2.5 p-2 md:p-2.5 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 hover:border-blue-300 transition-all group/btn"
-                  >
-                    <span className="text-base md:text-lg group-hover/btn:scale-110 transition-transform flex-shrink-0">➕</span>
-                    <span className="text-[10px] md:text-xs font-semibold text-blue-700 leading-tight">Tambah Unit</span>
-                  </Link>
-
-                  {/* Lihat Inventory */}
-                  <Link
-                    href="/dashboard/vehicles?status=AVAILABLE"
-                    className="flex items-center gap-2 md:gap-2.5 p-2 md:p-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 border border-emerald-200 hover:border-emerald-300 transition-all group/btn"
-                  >
-                    <span className="text-base md:text-lg group-hover/btn:scale-110 transition-transform flex-shrink-0">📦</span>
-                    <span className="text-[10px] md:text-xs font-semibold text-emerald-700 leading-tight">Lihat Stok</span>
-                  </Link>
-
-                  {/* Edit Tim */}
-                  <Link
-                    href="/dashboard/users"
-                    className="flex items-center gap-2 md:gap-2.5 p-2 md:p-2.5 rounded-lg bg-gradient-to-r from-violet-50 to-violet-100 hover:from-violet-100 hover:to-violet-200 border border-violet-200 hover:border-violet-300 transition-all group/btn"
-                  >
-                    <span className="text-base md:text-lg group-hover/btn:scale-110 transition-transform flex-shrink-0">👥</span>
-                    <span className="text-[10px] md:text-xs font-semibold text-violet-700 leading-tight">Edit Tim</span>
-                  </Link>
-
-                  {/* Lihat Laporan */}
-                  <Link
-                    href="/dashboard/whatsapp-ai/analytics"
-                    className="flex items-center gap-2 md:gap-2.5 p-2 md:p-2.5 rounded-lg bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 border border-amber-200 hover:border-amber-300 transition-all group/btn"
-                  >
-                    <span className="text-base md:text-lg group-hover/btn:scale-110 transition-transform flex-shrink-0">📊</span>
-                    <span className="text-[10px] md:text-xs font-semibold text-amber-700 leading-tight">Lihat Laporan</span>
-                  </Link>
-                </div>
+      <div className="grid gap-2 md:gap-3 flex-shrink-0 grid-cols-2 md:grid-cols-4">
+        {statsConfig.map((stat) => (
+          <AuthorizedLink
+            key={stat.key}
+            href={stat.href}
+            isAuthorized={stat.isAuthorized}
+            className={`group bg-white rounded-xl border border-gray-200 ${stat.isAuthorized ? 'hover:shadow-lg' : ''} transition-all p-2 md:p-3 ${stat.isAuthorized ? stat.colorClass : ''}`}
+          >
+            {/* Mobile: Vertical layout, Desktop: Horizontal */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              {/* Icon - Top on mobile, Right on desktop */}
+              <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all shadow-sm mx-auto md:mx-0 md:order-2 mb-2 md:mb-0 ${stat.iconBg}`}>
+                <span className="text-xl md:text-3xl group-hover:scale-110 transition-transform">{stat.emoji}</span>
               </div>
-            );
-          }
-
-          // Regular Stat Card (with href)
-          return (
-            <AuthorizedLink
-              key={stat.key}
-              href={stat.href!}
-              isAuthorized={stat.isAuthorized}
-              className={`group bg-white rounded-xl border border-gray-200 ${stat.isAuthorized ? 'hover:shadow-lg' : ''} transition-all p-2 md:p-3 ${stat.isAuthorized ? stat.colorClass : ''}`}
-            >
-              {/* Mobile: Vertical layout, Desktop: Horizontal */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                {/* Icon - Top on mobile, Right on desktop */}
-                <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all shadow-sm mx-auto md:mx-0 md:order-2 mb-2 md:mb-0 ${stat.iconBg}`}>
-                  <span className="text-xl md:text-3xl group-hover:scale-110 transition-transform">{stat.emoji}</span>
-                </div>
-                {/* Text - Below icon on mobile, Left on desktop */}
-                <div className="flex-1 min-w-0 text-center md:text-left md:order-1">
-                  <p className="text-[9px] md:text-[10px] font-medium text-gray-500 uppercase tracking-wide truncate">
-                    {stat.title}
+              {/* Text - Below icon on mobile, Left on desktop */}
+              <div className="flex-1 min-w-0 text-center md:text-left md:order-1">
+                <p className="text-[9px] md:text-[10px] font-medium text-gray-500 uppercase tracking-wide truncate">
+                  {stat.title}
+                </p>
+                {loadingStats ? (
+                  <div className="h-5 md:h-6 w-8 md:w-10 bg-gray-100 animate-pulse rounded mt-1 mx-auto md:mx-0"></div>
+                ) : (
+                  <p className="text-xl md:text-2xl font-bold text-gray-900">
+                    {stat.value}
                   </p>
-                  {loadingStats ? (
-                    <div className="h-5 md:h-6 w-8 md:w-10 bg-gray-100 animate-pulse rounded mt-1 mx-auto md:mx-0"></div>
-                  ) : (
-                    <p className="text-xl md:text-2xl font-bold text-gray-900">
-                      {stat.value}
-                    </p>
-                  )}
-                  {!loadingStats && (
-                    <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 truncate">
-                      <span className={stat.subColor}>
-                        +{stat.subValue}
-                      </span>
-                      {' '}{stat.subLabel}
-                    </p>
-                  )}
-                </div>
+                )}
+                {!loadingStats && (
+                  <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 truncate">
+                    <span className={stat.subColor}>
+                      +{stat.subValue}
+                    </span>
+                    {' '}{stat.subLabel}
+                  </p>
+                )}
               </div>
-            </AuthorizedLink>
-          );
-        })}
+            </div>
+          </AuthorizedLink>
+        ))}
       </div>
 
       {/* Main Content - Analytics & Subscription Row */}
