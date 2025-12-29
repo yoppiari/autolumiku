@@ -120,6 +120,40 @@ export class MessageOrchestratorService {
         incoming.from
       );
 
+      // 1.5. Lookup user by phone number (for ALL messages, not just commands)
+      const user = await prisma.user.findFirst({
+        where: {
+          tenantId: incoming.tenantId,
+          phone: incoming.from,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          roleLevel: true,
+          phone: true,
+        },
+      });
+
+      // Log user identification
+      if (user) {
+        console.log(`[Orchestrator] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role}, Level: ${user.roleLevel})`);
+
+        // Update conversation with user info if not already set
+        if (!conversation.isStaff && (user.roleLevel >= 90 || ['ADMIN', 'OWNER', 'SUPER_ADMIN'].includes(user.role.toUpperCase()))) {
+          await prisma.whatsAppConversation.update({
+            where: { id: conversation.id },
+            data: {
+              isStaff: true,
+            },
+          });
+          console.log(`[Orchestrator] ✅ Conversation marked as staff for ${user.firstName} ${user.lastName}`);
+        }
+      } else {
+        console.log(`[Orchestrator] ⚠️ User not found for phone: ${incoming.from}`);
+      }
+
       // 2. Save incoming message
       const incomingMsg = await this.saveIncomingMessage(
         conversation.id,
@@ -1605,7 +1639,7 @@ export class MessageOrchestratorService {
     intent: MessageIntent,
     message: string,
     isStaff: boolean = false,
-    staffInfo?: { name: string; role: string; phone: string }
+    staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string }
   ): Promise<{
     message: string;
     escalated: boolean;
@@ -1613,6 +1647,32 @@ export class MessageOrchestratorService {
     uploadRequest?: any;
     editRequest?: any;
   }> {
+    // Lookup user by phone number for personalized responses
+    let user = null;
+    if (conversation.customerPhone) {
+      try {
+        user = await prisma.user.findFirst({
+          where: {
+            tenantId: conversation.tenantId,
+            phone: conversation.customerPhone,
+          },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            roleLevel: true,
+            phone: true,
+          },
+        });
+        if (user) {
+          console.log(`[handleCustomerInquiry] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role})`);
+        }
+      } catch (e) {
+        console.error('[handleCustomerInquiry] Error looking up user:', e);
+      }
+    }
+
     try {
       // Get conversation history (limit to 5 for faster response)
       const messageHistory = await WhatsAppAIChatService.getConversationHistory(
@@ -1626,6 +1686,21 @@ export class MessageOrchestratorService {
       if (isEscalated) {
         console.log(`[Orchestrator] ⚡ Escalated conversation - using priority response mode`);
       }
+
+      // Prepare staff info if user is identified
+      let enhancedStaffInfo = staffInfo;
+      if (user) {
+        enhancedStaffInfo = {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          roleLevel: user.roleLevel,
+          phone: user.phone || conversation.customerPhone,
+          userId: user.id,
+        };
+        console.log(`[Orchestrator] 📤 Passing user info to AI: ${user.firstName} ${user.lastName} (${user.role})`);
+      }
+
       const aiResponse = await WhatsAppAIChatService.generateResponse(
         {
           tenantId: conversation.tenantId,
@@ -1635,7 +1710,7 @@ export class MessageOrchestratorService {
           intent,
           messageHistory,
           isStaff,
-          staffInfo,
+          staffInfo: enhancedStaffInfo,
           isEscalated, // Escalated conversations get faster, more direct responses
         },
         message

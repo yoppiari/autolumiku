@@ -9,7 +9,13 @@
       "Bash(git add:*)",
       "Bash(npx tsc:*)",
       "Bash(npm install:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(npx tsx test-commands.ts)",
+      "Bash(grep:*)",
+      "Bash(bash:*)",
+      "Bash(curl:*)",
+      "Bash(Saya mengenali Anda sebagai Owner Prima Mobil...\"\n\nFiles changed:\n- src/lib/services/whatsapp-ai/message-orchestrator.service.ts \\(modified\\)\n- src/lib/services/whatsapp-ai/chat.service.ts \\(modified\\)\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

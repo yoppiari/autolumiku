@@ -22,9 +22,13 @@ export interface ChatContext {
   }>;
   isStaff?: boolean;
   staffInfo?: {
-    name: string;
-    role: string;
-    phone: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string; // Legacy support
+    role?: string;
+    roleLevel?: number;
+    phone?: string;
+    userId?: string;
   };
   isEscalated?: boolean; // Escalated conversations get faster, more direct responses
 }
@@ -254,7 +258,8 @@ export class WhatsAppAIChatService {
           const fallbackResult = await this.generateSmartFallback(
             userMessage,
             context.messageHistory,
-            context.tenantId
+            context.tenantId,
+            context
           );
           aiResponse = {
             ...aiResponse,
@@ -443,7 +448,8 @@ export class WhatsAppAIChatService {
       const smartFallback = await this.generateSmartFallback(
         userMessage,
         context.messageHistory,
-        context.tenantId
+        context.tenantId,
+        context
       );
 
       return {
@@ -463,7 +469,8 @@ export class WhatsAppAIChatService {
   private static async generateSmartFallback(
     userMessage: string,
     messageHistory: Array<{ role: "user" | "assistant"; content: string }>,
-    tenantId: string
+    tenantId: string,
+    context?: ChatContext // Add context for staff info
   ): Promise<{ message: string; shouldEscalate: boolean; images?: Array<{ imageUrl: string; caption?: string }> }> {
     const msg = userMessage.toLowerCase().trim();
 
@@ -527,8 +534,32 @@ export class WhatsAppAIChatService {
         vehiclePreview += `\n_Ketik nama mobil untuk info lebih lengkap!_`;
       }
 
+      // Check if user is identified (staff/admin/owner)
+      let personalizedGreeting = "";
+      if (context && context.staffInfo && (context.staffInfo.firstName || context.staffInfo.name)) {
+        const userName = context.staffInfo.firstName || context.staffInfo.name;
+        const userRole = context.staffInfo.role || '';
+        const roleLabel = userRole.toUpperCase() === 'OWNER' ? 'Owner' :
+                         userRole.toUpperCase() === 'ADMIN' ? 'Admin' :
+                         userRole.toUpperCase() === 'SUPER_ADMIN' ? 'Super Admin' :
+                         userRole.toUpperCase() === 'SALES' ? 'Sales' : 'Staff';
+
+        console.log(`[SmartFallback] 👤 Personalized greeting for ${userName} (${roleLabel})`);
+
+        personalizedGreeting = `${timeGreeting}, ${userName}! 👋\n\n`;
+        personalizedGreeting += `Selamat datang kembali di ${tenantName}!\n`;
+        personalizedGreeting += `Saya mengenali Anda sebagai ${roleLabel} Prima Mobil. `;
+        personalizedGreeting += `Ada yang bisa saya bantu hari ini?${vehiclePreview}`;
+      } else {
+        // Generic greeting for unidentified users
+        personalizedGreeting = `${timeGreeting}! 👋\n\n`;
+        personalizedGreeting += `Halo, selamat datang di ${tenantName}!\n\n`;
+        personalizedGreeting += `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian dan mendapatkan informasi yang Anda butuhkan.\n\n`;
+        personalizedGreeting += `Ada yang bisa kami bantu?${vehiclePreview}`;
+      }
+
       return {
-        message: `${timeGreeting}! 👋\n\nHalo, selamat datang di ${tenantName}!\n\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian dan mendapatkan informasi yang Anda butuhkan.\n\nAda yang bisa kami bantu?${vehiclePreview}`,
+        message: personalizedGreeting,
         shouldEscalate: false,
       };
     }
@@ -839,7 +870,7 @@ export class WhatsAppAIChatService {
     tenant: any,
     config: any,
     intent: MessageIntent,
-    senderInfo?: { isStaff: boolean; staffInfo?: { name: string; role: string; phone: string }; customerPhone: string; isEscalated?: boolean }
+    senderInfo?: { isStaff: boolean; staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string }; customerPhone: string; isEscalated?: boolean }
   ): Promise<string> {
     // Get current time in Indonesia (WIB - UTC+7)
     const now = new Date();
