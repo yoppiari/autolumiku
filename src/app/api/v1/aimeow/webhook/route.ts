@@ -526,6 +526,7 @@ async function handleIncomingMessage(
 
       const processingPromise = MessageOrchestratorService.processIncomingMessage({
         accountId: account.id,
+        clientId: account.id, // Aimeow client ID is the same as account ID
         tenantId: account.tenantId,
         from,
         message: messageText,

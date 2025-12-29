@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
     // Simulate incoming message
     const result = await MessageOrchestratorService.processIncomingMessage({
       accountId: account.id,
+      clientId: account.id, // Aimeow client ID is the same as account ID
       tenantId,
       from: testPhone,
       message: testMessage,
