@@ -624,6 +624,98 @@ export class AimeowClientService {
   }
 
   /**
+   * Send contact vCard via WhatsApp
+   * @param clientId - Aimeow client ID (UUID format)
+   * @param to - Recipient phone number
+   * @param vCardUrl - URL to the vCard (.vcf) file
+   * @param displayName - Contact name to display
+   * @param phoneNumber - Contact phone number for WhatsApp click-to-chat
+   */
+  static async sendContact(
+    clientId: string,
+    to: string,
+    vCardUrl: string,
+    displayName: string,
+    phoneNumber: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Send Contact] 📇 Sending contact to ${to}`);
+      console.log(`[Aimeow Send Contact] Contact: ${displayName} (${phoneNumber})`);
+
+      // Validate clientId format
+      let apiClientId = clientId;
+      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
+        console.log(`[Aimeow Send Contact] ⚠️ ClientId in wrong format, fetching correct UUID...`);
+
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
+
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+            console.log(`[Aimeow Send Contact] ✅ Using correct UUID: ${apiClientId}`);
+          } else {
+            throw new Error("No connected client found on Aimeow");
+          }
+        }
+      }
+
+      // Build payload for contact sending
+      const payload = {
+        phone: to,
+        contact: {
+          displayName: displayName,
+          vCard: vCardUrl,
+        },
+      };
+
+      console.log(`[Aimeow Send Contact] Using clientId: ${apiClientId}`);
+      console.log(`[Aimeow Send Contact] Payload:`, JSON.stringify(payload, null, 2));
+
+      // Send contact using /send-contact endpoint (if available) or fallback to send as document
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        // If send-contact endpoint doesn't exist, send as document
+        console.log(`[Aimeow Send Contact] ⚠️ send-contact endpoint not available, sending as document`);
+        return await this.sendDocument(
+          apiClientId,
+          to,
+          vCardUrl,
+          `${displayName}.vcf`,
+          `📇 *Kontak ${displayName}*\n\nKlik file ini untuk simpan ke kontak.\n\n📱 WhatsApp: https://wa.me/${phoneNumber.replace(/\D/g, '')}`
+        );
+      }
+
+      const data = await response.json();
+      console.log(`[Aimeow Send Contact] ✅ Success:`, data);
+
+      return {
+        success: true,
+        messageId: data.messageId || data.id || `contact_${Date.now()}`,
+      };
+    } catch (error: any) {
+      console.error(`[Aimeow Send Contact] ❌ Error:`, error);
+      // Fallback: send as document
+      console.log(`[Aimeow Send Contact] 🔄 Fallback: sending as document`);
+      return await this.sendDocument(
+        clientId,
+        to,
+        vCardUrl,
+        `${displayName}.vcf`,
+        `📇 *Kontak ${displayName}*\n\nKlik file ini untuk simpan ke kontak.\n\n📱 WhatsApp: https://wa.me/${phoneNumber.replace(/\D/g, '')}`
+      );
+    }
+  }
+
+  /**
    * Send multiple images via WhatsApp
    */
   static async sendImages(

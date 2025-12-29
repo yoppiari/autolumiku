@@ -1233,6 +1233,44 @@ export class MessageOrchestratorService {
         }
       }
 
+      // If vCard was generated, send it via WhatsApp
+      if (result.vCardUrl && result.contactInfo) {
+        console.log(`[Orchestrator] 📇 Sending vCard: ${result.vCardFilename}`);
+
+        try {
+          // Get full public URL
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+          const fullVCardUrl = result.vCardUrl.startsWith('http')
+            ? result.vCardUrl
+            : `${baseUrl}${result.vCardUrl}`;
+          console.log(`[Orchestrator] 📎 vCard URL: ${fullVCardUrl}`);
+
+          // Send vCard via WhatsApp
+          const clientId = incoming.accountId;
+          const to = incoming.from;
+
+          console.log(`[Orchestrator] 📤 Sending vCard via WhatsApp to ${to}`);
+          const sendResult = await AimeowClientService.sendContact(
+            clientId,
+            to,
+            fullVCardUrl,
+            result.contactInfo.name,
+            result.contactInfo.phone
+          );
+
+          if (sendResult.success) {
+            console.log(`[Orchestrator] ✅ vCard sent successfully via WhatsApp`);
+            result.message = result.message + '\n\n✅ Kontak berhasil dikirim! Klik file vCard untuk menyimpan ke kontak.';
+          } else {
+            console.error(`[Orchestrator] ❌ Failed to send vCard: ${sendResult.error}`);
+            result.message = result.message + `\n\n❌ Gagal mengirim kontak: ${sendResult.error}\n\nSilakan coba lagi.`;
+          }
+        } catch (error: any) {
+          console.error(`[Orchestrator] ❌ Error sending vCard:`, error);
+          result.message = result.message + `\n\n❌ Terjadi kesalahan saat mengirim kontak: ${error.message}\n\nSilakan coba lagi atau hubungi admin.`;
+        }
+      }
+
       return { isCommand: true, result };
     } catch (error) {
       console.error(`[Orchestrator] ❌ Command processing error:`, error);

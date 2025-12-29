@@ -2,7 +2,7 @@
  * WhatsApp AI Command Handler Service
  *
  * Handles WhatsApp AI commands for:
- * - Universal commands (ALL roles): rubah, upload, inventory, status, statistik
+ * - Universal commands (ALL roles): rubah, upload, inventory, status, statistik, kontak
  * - PDF report commands (ADMIN+ only): 14 report types
  *
  * Role-based access control:
@@ -13,6 +13,8 @@
 import { prisma } from '@/lib/prisma';
 import PDFDocument from 'pdfkit';
 import { ROLE_LEVELS } from '@/lib/rbac';
+import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
+import { StorageService } from '../storage.service';
 
 interface CommandContext {
   tenantId: string;
@@ -27,6 +29,12 @@ interface CommandResult {
   message?: string;
   pdfBuffer?: Buffer;
   filename?: string;
+  vCardUrl?: string;
+  vCardFilename?: string;
+  contactInfo?: {
+    name: string;
+    phone: string;
+  };
   followUp?: boolean;
 }
 
@@ -96,6 +104,7 @@ function isUniversalCommand(cmd: string): boolean {
     'inventory', 'stok',
     'status',
     'statistik', 'stats',
+    'kontak', 'contact',
   ];
   return universalCommands.some(c => cmd.includes(c));
 }
@@ -265,9 +274,110 @@ async function handleUniversalCommand(
     };
   }
 
+  // Send contact command
+  if (cmd.includes('kontak') || cmd.includes('contact')) {
+    return await handleContactCommand(cmd, context);
+  }
+
   return {
     success: false,
     message: 'Command tidak dikenali.',
+    followUp: true,
+  };
+}
+
+/**
+ * Handle contact commands (send staff contact to customer)
+ */
+async function handleContactCommand(
+  cmd: string,
+  context: CommandContext
+): Promise<CommandResult> {
+  const { tenantId } = context;
+
+  // Parse command: "kirim kontak sales" or "kirim kontak admin" or "kirim kontak owner"
+  let targetRole: string | null = null;
+
+  if (cmd.includes('owner')) {
+    targetRole = 'OWNER';
+  } else if (cmd.includes('admin')) {
+    targetRole = 'ADMIN';
+  } else if (cmd.includes('sales') || cmd.includes('staff')) {
+    targetRole = 'SALES';
+  }
+
+  if (!targetRole) {
+    // List available contacts
+    const tenants = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { name: true },
+    });
+
+    return {
+      success: true,
+      message: `📇 *Kontak ${tenants?.name || 'Showroom'}*\n\nPilih kontak yang ingin dikirim:\n\n1. 📋 *Kirim Kontak Owner*\n   Ketik: "kirim kontak owner"\n\n2. 📋 *Kirim Kontak Admin*\n   Ketik: "kirim kontak admin"\n\n3. 📋 *Kirim Kontak Sales*\n   Ketik: "kirim kontak sales"\n\nKontak akan dikirim dalam format vCard yang bisa langsung disimpan ke HP.`,
+      followUp: true,
+    };
+  }
+
+  // Fetch user by role
+  const user = await prisma.user.findFirst({
+    where: {
+      tenantId,
+      role: targetRole,
+      phone: { not: null },
+    },
+    select: {
+      firstName: true,
+      lastName: true,
+      phone: true,
+      role: true,
+    },
+  });
+
+  if (!user || !user.phone) {
+    return {
+      success: false,
+      message: `❌ Maaf, tidak ditemukan kontak untuk role ${targetRole}.\n\nSilakan hubungi admin untuk informasi lebih lanjut.`,
+      followUp: true,
+    };
+  }
+
+  // Generate vCard
+  const vCardBuffer = generateVCardBuffer({
+    firstName: user.firstName,
+    lastName: user.lastName || '',
+    phone: user.phone,
+    role: user.role,
+    organization: 'Prima Mobil',
+  });
+
+  const vCardFilename = generateVCardFilename({
+    firstName: user.firstName,
+    lastName: user.lastName || '',
+    phone: user.phone,
+    role: user.role,
+  });
+
+  // Upload vCard to storage
+  const timestamp = Date.now();
+  const storageKey = `contacts/${tenantId}/${timestamp}-${vCardFilename}`;
+  const vCardUrl = await StorageService.uploadPhoto(
+    vCardBuffer,
+    storageKey,
+    'text/vcard'
+  );
+
+  // Return contact info for sending
+  return {
+    success: true,
+    message: `📇 *Kontak ${user.role}*\n\nNama: ${user.firstName} ${user.lastName || ''}\nRole: ${user.role}\n\n✅ vCard berhasil dibuat! Mengirim kontak...`,
+    vCardUrl,
+    vCardFilename,
+    contactInfo: {
+      name: `${user.firstName} ${user.lastName || ''}`.trim(),
+      phone: user.phone,
+    },
     followUp: true,
   };
 }
