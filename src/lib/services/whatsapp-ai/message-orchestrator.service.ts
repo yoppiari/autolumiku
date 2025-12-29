@@ -20,6 +20,7 @@ import { processCommand } from "./command-handler.service";
 
 export interface IncomingMessage {
   accountId: string;
+  clientId: string; // Aimeow client UUID (required for sendDocumentBase64)
   tenantId: string;
   from: string;
   message: string;
@@ -1198,7 +1199,6 @@ export class MessageOrchestratorService {
           console.log(`[Orchestrator] 📦 PDF encoded to base64: ${base64Pdf.length} chars`);
 
           // Send PDF via WhatsApp using base64 encoding
-          const clientId = incoming.accountId;
           const to = incoming.from;
 
           console.log(`[Orchestrator] 📤 Sending PDF via WhatsApp to ${to} (base64 mode)`);

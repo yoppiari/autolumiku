@@ -410,6 +410,7 @@ async function handleIncomingMessage(account: any, data: any) {
     // This handles: intent classification, AI response, staff commands, database save, dan auto-reply
     const result = await MessageOrchestratorService.processIncomingMessage({
       accountId: account.id,
+      clientId: account.clientId, // Aimeow client UUID (required for sendDocumentBase64)
       tenantId: account.tenantId,
       from,
       message,
