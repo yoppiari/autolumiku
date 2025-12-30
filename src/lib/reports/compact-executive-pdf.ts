@@ -373,38 +373,36 @@ export class CompactExecutivePDF {
     const { doc } = this;
     const centerX = x + size / 2;
     const centerY = y + size / 2;
-    const radius = size / 2 - 10;
-    const innerRadius = radius * 0.5;
+    const radius = (size / 2 - 10);
 
     const total = data.reduce((sum: number, item: any) => sum + item.count, 0);
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+    // Draw pie slices using simple paths
     let startAngle = 0;
 
     data.forEach((item: any, idx: number) => {
-      const percentage = total > 0 ? item.count / total : 0;
-      const angle = percentage * 2 * Math.PI;
+      if (total === 0) return;
 
-      // Draw outer arc
-      doc.save();
-      const midAngle = startAngle + angle / 2;
+      const percentage = item.count / total;
+      const angle = percentage * 2 * Math.PI;
       const endAngle = startAngle + angle;
 
-      doc.path(`M ${centerX} ${centerY}`)
-        .lineTo(
-          centerX + radius * Math.cos(startAngle),
-          centerY + radius * Math.sin(startAngle)
-        )
-        .arc(centerX, centerY, radius, startAngle, endAngle)
-        .lineTo(centerX, centerY)
+      // Calculate points for the pie slice
+      const startX = centerX + radius * Math.cos(startAngle);
+      const startY = centerY + radius * Math.sin(startAngle);
+      const endX = centerX + radius * Math.cos(endAngle);
+      const endY = centerY + radius * Math.sin(endAngle);
+
+      // Draw the pie slice path
+      doc.path(`M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${angle > Math.PI ? 1 : 0} ${endX} ${endY} Z`)
         .fill(colors[idx % colors.length]);
 
-      doc.restore();
-
-      startAngle += angle;
+      startAngle = endAngle;
     });
 
     // Draw white circle in center (donut hole)
+    const innerRadius = radius * 0.5;
     doc.fillColor('#ffffff')
       .circle(centerX, centerY, innerRadius)
       .fill();

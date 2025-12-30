@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
           take: 3,
         },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { lastMessageAt: 'desc' },
       take: 5,
     });
 
