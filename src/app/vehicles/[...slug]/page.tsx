@@ -187,7 +187,7 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
 
             {/* Gallery */}
             <div className="mb-8">
-              <VehicleGallery photos={vehicleData.photos} vehicleName={`${vehicle.make} ${vehicle.model} ${vehicle.year}`} />
+              <VehicleGallery photos={vehicleData.photos} vehicleTitle={`${vehicle.make} ${vehicle.model} ${vehicle.year}`} displayId={vehicle.displayId} status={vehicle.status} />
             </div>
 
             {/* Action Buttons */}
@@ -203,8 +203,8 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
               </a>
               <ShareButton
                 title={`${vehicle.make} ${vehicle.model} ${vehicle.year}`}
+                text={`${vehicle.make} ${vehicle.model} ${vehicle.year} - ${formatPrice(vehicleData.price)}`}
                 url={typeof window !== 'undefined' ? window.location.href : ''}
-                description={`${vehicle.make} ${vehicle.model} ${vehicle.year} - ${formatPrice(vehicleData.price)}`}
               />
             </div>
 
@@ -249,7 +249,19 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
         </main>
 
         {/* Footer */}
-        <GlobalFooter />
+        <GlobalFooter
+          tenant={{
+            name: tenant.name,
+            phoneNumber: tenant.phoneNumber,
+            phoneNumberSecondary: tenant.phoneNumberSecondary,
+            whatsappNumber: tenant.whatsappNumber,
+            email: tenant.email,
+            address: tenant.address,
+            city: tenant.city,
+            province: tenant.province,
+            primaryColor: tenant.primaryColor,
+          }}
+        />
       </div>
     </ThemeProvider>
   );
