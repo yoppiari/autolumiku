@@ -253,6 +253,11 @@ export class MessageOrchestratorService {
         /^(tolong|help)\s*$/i,                       // tolong, help (alone)
         /^(menu|fitur)$/i,                           // menu, fitur (alone)
         /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
+        // Command escape patterns - allow users to exit upload flow with commands
+        /^(upload|inventory|stok|status|statistik|stats|laporan|report|pdf)$/i,  // single word commands
+        /^(rubah|ubah|edit)\b/i,                     // edit commands
+        /^(report|pdf)\b/i,                          // pdf report commands
+        /^(sales|whatsapp\s+ai|metrics|tren|staff|recent|low\s*stock|total)/i,  // pdf keywords
       ];
 
       // Confirmation patterns - user confirming they sent photos/data (should be acknowledged, not parsed as vehicle data)

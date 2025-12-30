@@ -478,23 +478,19 @@ export class StaffCommandService {
       missingLabels.push("Transmisi");
     }
 
-    // 6. KM (WAJIB, bukan optional)
-    if (!vehicleData?.mileage && vehicleData?.mileage !== 0) {
-      missingFields.push("mileage");
-      missingLabels.push("KM");
-    }
+    // 6. KM (OPTIONAL - bisa diisi nanti lewat edit command)
+    // KM tidak diminta lagi, user bisa mengisi melalui "edit" command setelah kendaraan dibuat
 
     // Merk boleh kosong jika model sudah dikenali (auto-detect dari model)
     // contoh: "Brio" → Honda Brio
 
-    // Data lengkap = semua 6 field terisi
+    // Data lengkap = 5 field wajib (tanpa KM)
     const hasMinimumData =
       vehicleData?.model &&
       vehicleData?.year &&
       vehicleData?.price &&
       vehicleData?.color && vehicleData?.color !== "Unknown" &&
-      vehicleData?.transmission && vehicleData?.transmission !== "Unknown" &&
-      (vehicleData?.mileage || vehicleData?.mileage === 0);
+      vehicleData?.transmission && vehicleData?.transmission !== "Unknown";
 
     let askMessage = "";
     if (missingLabels.length > 0) {
@@ -522,7 +518,6 @@ export class StaffCommandService {
       const examples: string[] = [];
       if (missingFields.includes("color")) examples.push("hitam");
       if (missingFields.includes("transmission")) examples.push("matic");
-      if (missingFields.includes("mileage")) examples.push("km 30rb");
       if (missingFields.includes("year")) examples.push("2020");
       if (missingFields.includes("price")) examples.push("120jt");
       if (missingFields.includes("model")) examples.push("Brio");
