@@ -228,17 +228,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (department === 'finance' || department === 'all') {
-      // Get invoice data
-      const invoices = await prisma.salesInvoice.findMany({
-        where: { tenantId },
-        select: {
-          invoiceNumber: true,
-          status: true,
-          grandTotal: true,
-          paidAmount: true,
-          dueDate: true,
-        },
-      });
+      // Get invoice data - wrap in try/catch in case table doesn't exist
+      try {
+        const invoices = await prisma.salesInvoice.findMany({
+          where: { tenantId },
+          select: {
+            invoiceNumber: true,
+            status: true,
+            grandTotal: true,
+            paidAmount: true,
+            dueDate: true,
+          },
+        });
 
       const summary = {
         total: invoices.length,
@@ -284,6 +285,11 @@ export async function POST(request: NextRequest) {
       });
 
       financeData = { summary };
+      } catch (error) {
+        console.error('[Analytics Export] Sales invoices table does not exist, skipping finance data:', error);
+        // Set financeData to null/empty when table doesn't exist
+        financeData = null;
+      }
     }
 
     if (department === 'whatsapp-ai' || department === 'all') {
