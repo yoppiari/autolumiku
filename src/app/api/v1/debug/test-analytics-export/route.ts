@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
 
 export async function GET(request: NextRequest) {
   const results: any = {
@@ -33,84 +34,138 @@ export async function GET(request: NextRequest) {
       throw new Error('No tenant found in database');
     }
 
-    // Test vehicle query
-    results.steps.push({ step: '3. Test Vehicle Query', status: 'running' });
-    const vehicles = await prisma.vehicle.findMany({
-      where: { tenantId: tenant.id, status: 'SOLD' },
-      take: 5,
-      select: { make: true, model: true, price: true },
+    // Prepare report data
+    results.steps.push({ step: '3. Prepare Report Data', status: 'running' });
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
+
+    const soldVehicles = await prisma.vehicle.findMany({
+      where: {
+        tenantId: tenant.id,
+        status: 'SOLD',
+        updatedAt: { gte: startDate },
+      },
+      select: {
+        make: true,
+        model: true,
+        price: true,
+        createdBy: true,
+      },
     });
+
+    const totalSalesValue = soldVehicles.reduce((sum, v) => sum + Number(v.price), 0);
+    const totalSalesCount = soldVehicles.length;
+
+    const byMake: Record<string, { count: number; value: number }> = {};
+    soldVehicles.forEach((v) => {
+      const make = v.make || 'Other';
+      if (!byMake[make]) byMake[make] = { count: 0, value: 0 };
+      byMake[make].count++;
+      byMake[make].value += Number(v.price);
+    });
+
+    const totalVehicles = await prisma.vehicle.count({
+      where: {
+        tenantId: tenant.id,
+        status: { in: ['AVAILABLE', 'BOOKED'] },
+      },
+    });
+
+    const inventoryTurnover = totalSalesCount / (totalSalesCount + totalVehicles) * 100;
+    const avgPrice = totalSalesCount > 0 ? totalSalesValue / totalSalesCount : 0;
+    const industryAvgPrice = 150000000;
+    const atv = Math.min((avgPrice / industryAvgPrice) * 100, 100);
+
+    const salesStaff = await prisma.user.findMany({
+      where: {
+        tenantId: tenant.id,
+        role: { in: ['SALES', 'sales', 'STAFF', 'staff'] },
+      },
+      select: { id: true, firstName: true, lastName: true },
+    });
+
+    const employees = salesStaff.length;
+    const salesPerEmployee = employees > 0
+      ? Math.min((totalSalesCount / (employees * 2)) * 100, 100)
+      : 0;
+
+    const salesData = {
+      summary: { totalSalesCount, totalSalesValue, totalVehicles, employees },
+      vehicles: soldVehicles.map((v) => ({ ...v, price: Number(v.price) })),
+      byMake: Object.entries(byMake).map(([make, data]) => ({ make, ...data })),
+      topPerformers: [],
+      kpis: {
+        inventoryTurnover: Math.round(inventoryTurnover),
+        atv: Math.round(atv),
+        salesPerEmployee: Math.round(salesPerEmployee),
+        avgPrice,
+      },
+    };
+
     results.steps[2].status = 'ok';
-    results.steps[2].data = { count: vehicles.length };
+    results.steps[2].data = {
+      salesCount: totalSalesCount,
+      salesValue: totalSalesValue,
+      totalVehicles,
+    };
 
-    // Test WhatsApp conversation query
-    results.steps.push({ step: '4. Test WhatsApp Conversation Query', status: 'running' });
-    try {
-      const conversations = await prisma.whatsAppConversation.findMany({
-        where: { tenantId: tenant.id },
-        take: 5,
-        include: { messages: true },
-      });
-      results.steps[3].status = 'ok';
-      results.steps[3].data = { count: conversations.length };
-    } catch (err: any) {
-      results.steps[3].status = 'warning';
-      results.steps[3].error = err.message;
-    }
+    // Test AnalyticsPDFGenerator
+    results.steps.push({ step: '4. Test AnalyticsPDFGenerator', status: 'running' });
+    const generator = new AnalyticsPDFGenerator();
+    results.steps[3].status = 'ok';
+    results.steps[3].data = { message: 'Generator created successfully' };
 
-    // Test PDF document creation
-    results.steps.push({ step: '5. Test PDF Document Creation', status: 'running' });
-    const PDFDocument = require('pdfkit');
-    const doc = new PDFDocument({ size: 'A4', margin: 50 });
-    const chunks: Buffer[] = [];
+    // Generate PDF
+    results.steps.push({ step: '5. Generate PDF', status: 'running' });
+    const reportData = {
+      tenantName: tenant.name,
+      salesData,
+      whatsappData: null,
+      startDate,
+      endDate,
+    };
 
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-    doc.on('end', () => {
-      results.steps.push({ step: '6. PDF Generated', status: 'ok', size: chunks.length });
-    });
-    doc.on('error', (err: any) => {
-      results.steps.push({ step: '6. PDF Generation', status: 'error', error: err.message });
-    });
-
-    doc.fontSize(20).text('Test PDF Document');
-    doc.end();
-
-    // Wait for PDF to complete
-    await new Promise<void>((resolve, reject) => {
-      doc.on('end', resolve);
-      doc.on('error', reject);
-    });
-
+    const pdfBuffer = await generator.generate(reportData);
     results.steps[4].status = 'ok';
-    results.steps[4].data = { pdfSize: chunks.length };
-
-    // Test Excel creation
-    results.steps.push({ step: '7. Test Excel Creation', status: 'running' });
-    const XLSX = require('xlsx');
-    const workbook = XLSX.utils.book_new();
-    const sheet = XLSX.utils.aoa_to_sheet([
-      ['Test', 'Data'],
-      ['Row 1', 'Value 1'],
-      ['Row 2', 'Value 2'],
-    ]);
-    XLSX.utils.book_append_sheet(workbook, sheet, 'Test');
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-    results.steps[5].status = 'ok';
-    results.steps[5].data = { excelSize: excelBuffer.length };
+    results.steps[4].data = {
+      pdfSize: pdfBuffer.length,
+      pdfSizeKB: (pdfBuffer.length / 1024).toFixed(2) + ' KB',
+    };
 
     results.success = true;
-    results.message = 'All tests passed! Analytics export should work.';
+    results.message = 'Analytics PDF generation successful!';
+    results.pdfSize = pdfBuffer.length;
+
+    // Return the PDF for download
+    const filename = `analytics-test-${new Date().toISOString().split('T')[0]}.pdf`;
+    return new NextResponse(new Uint8Array(pdfBuffer), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'X-Test-Results': JSON.stringify({
+          success: true,
+          steps: results.steps,
+        }),
+      },
+    });
 
   } catch (error: any) {
     results.steps.push({
       step: 'ERROR',
       status: 'failed',
       error: error.message,
-      stack: error.stack?.split('\n').slice(0, 10).join('\n'),
+      name: error.name,
+      stack: error.stack?.split('\n').slice(0, 30).join('\n'),
     });
     results.success = false;
     results.message = 'Analytics export test failed: ' + error.message;
+
+    console.error('[Analytics Export Test] Error:', error);
+    console.error('[Analytics Export Test] Stack:', error.stack);
+
+    return NextResponse.json(results, { status: 500 });
   } finally {
     try {
       await prisma.$disconnect();
@@ -118,6 +173,4 @@ export async function GET(request: NextRequest) {
       // Ignore disconnect errors
     }
   }
-
-  return NextResponse.json(results);
 }
