@@ -166,6 +166,7 @@ If no plates visible or uncertain, return: { "detected": false, "plates": [] }`,
 
   /**
    * Create branding overlay for license plate cover
+   * Clean design without text - just solid color with subtle stripe
    */
   private static async createBrandingOverlay(
     width: number,
@@ -176,10 +177,7 @@ If no plates visible or uncertain, return: { "detected": false, "plates": [] }`,
     const overlayWidth = Math.max(width, 100);
     const overlayHeight = Math.max(height, 30);
 
-    // Calculate font size based on dimensions
-    const fontSize = Math.min(Math.floor(overlayHeight * 0.5), Math.floor(overlayWidth / tenantName.length * 1.5));
-
-    // Create SVG overlay with branding
+    // Create clean SVG overlay WITHOUT text - just solid color
     const svg = `
       <svg width="${overlayWidth}" height="${overlayHeight}">
         <defs>
@@ -190,18 +188,6 @@ If no plates visible or uncertain, return: { "detected": false, "plates": [] }`,
         </defs>
         <rect width="100%" height="100%" fill="#000000"/>
         <rect y="${overlayHeight - 4}" width="100%" height="4" fill="url(#stripe)"/>
-        <text
-          x="50%"
-          y="45%"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          fill="white"
-          font-family="Arial Black, Arial, sans-serif"
-          font-weight="bold"
-          font-size="${fontSize}px"
-          font-style="italic"
-          letter-spacing="2px"
-        >${tenantName}</text>
       </svg>
     `;
 
