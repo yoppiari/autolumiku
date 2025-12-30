@@ -423,6 +423,21 @@ async function handleIncomingMessage(account: any, data: any) {
       console.log(
         `[Webhook] Message processed successfully - Intent: ${result.intent}, Escalated: ${result.escalated}`
       );
+
+      // Send response message to user if processing succeeded
+      if (result.responseMessage) {
+        console.log("[Webhook] 📤 Sending response message to user");
+        try {
+          await AimeowClientService.sendMessage({
+            clientId: account.clientId,
+            to: from,
+            message: result.responseMessage,
+          });
+          console.log("[Webhook] ✅ Response message sent successfully");
+        } catch (sendError) {
+          console.error("[Webhook] ❌ Failed to send response message:", sendError);
+        }
+      }
     } else {
       console.error(`[Webhook] Failed to process message:`, result.error);
     }

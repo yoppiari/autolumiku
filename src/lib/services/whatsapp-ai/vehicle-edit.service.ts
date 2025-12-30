@@ -12,6 +12,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { UploadNotificationService } from "./upload-notification.service";
+import { generateVehicleUrl } from "@/lib/utils/vehicle-slug";
 
 // ==================== TYPES ====================
 
@@ -272,6 +273,13 @@ export class VehicleEditService {
       // 7. Format success message
       const vehicleName = `${vehicle.make} ${vehicle.model} ${vehicle.year}`;
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+      const vehicleUrl = generateVehicleUrl({
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        displayId: vehicle.displayId || vehicle.id.substring(0, 8),
+        baseUrl,
+      });
       let message: string;
 
       if (changes.length === 1) {
@@ -283,7 +291,7 @@ export class VehicleEditService {
           `✅ Berhasil update ${vehicleName}!\n\n` +
           `${change.fieldLabel}: ${formattedOld} → ${formattedNew}\n` +
           `ID: ${vehicle.displayId || vehicle.id}\n\n` +
-          `🌐 Website:\n${baseUrl}/vehicles/${vehicle.id}\n\n` +
+          `🌐 Website:\n${vehicleUrl}\n\n` +
           `📊 Dashboard:\n${baseUrl}/dashboard/vehicles/${vehicle.id}`;
       } else {
         // Multi-field changes
@@ -296,7 +304,7 @@ export class VehicleEditService {
           `✅ Berhasil update ${vehicleName}!\n\n` +
           `Perubahan:\n${changeLines.join("\n")}\n\n` +
           `ID: ${vehicle.displayId || vehicle.id}\n\n` +
-          `🌐 Website:\n${baseUrl}/vehicles/${vehicle.id}\n\n` +
+          `🌐 Website:\n${vehicleUrl}\n\n` +
           `📊 Dashboard:\n${baseUrl}/dashboard/vehicles/${vehicle.id}`;
       }
 

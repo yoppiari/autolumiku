@@ -6,6 +6,7 @@
 import { MetadataRoute } from 'next';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { generateVehicleSlug } from '@/lib/utils/vehicle-slug';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const headersList = headers();
@@ -80,9 +81,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: 'hourly',
         priority: 0.9,
       },
-      // Individual vehicle pages
+      // Individual vehicle pages (SEO-friendly URLs)
       ...vehicles.map((vehicle) => ({
-        url: `${baseUrl}/vehicles/${vehicle.id}`,
+        url: `${baseUrl}/vehicles/${generateVehicleSlug({
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          displayId: vehicle.displayId || vehicle.id.substring(0, 8),
+        })}`,
         lastModified: vehicle.updatedAt,
         changeFrequency: 'weekly' as const,
         priority: 0.8,

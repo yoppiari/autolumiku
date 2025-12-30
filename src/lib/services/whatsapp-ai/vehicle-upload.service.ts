@@ -12,6 +12,7 @@ import { ImageProcessingService } from "@/lib/services/image-processing.service"
 import { StorageService } from "@/lib/services/storage.service";
 import { UploadNotificationService } from "./upload-notification.service";
 import { PlateDetectionService } from "@/lib/services/plate-detection.service";
+import { generateVehicleUrl } from "@/lib/utils/vehicle-slug";
 
 // In-memory lock to prevent race condition on concurrent vehicle creation
 const uploadLocks = new Map<string, number>();
@@ -461,7 +462,14 @@ export class WhatsAppVehicleUploadService {
         message += `${aiResult.priceAnalysis.recommendation}\n\n`;
       }
 
-      message += `🔗 Cek di website:\nprimamobil.id/vehicles/${vehicle.id}`;
+      // Generate SEO-friendly URL
+      const vehicleUrl = generateVehicleUrl({
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        displayId: displayId || vehicle.id.substring(0, 8),
+      });
+      message += `🔗 Cek di website:\n${vehicleUrl}`;
 
       // 🔔 NOTIFY ALL STAFF - Upload Berhasil
       UploadNotificationService.notifyUploadSuccess(tenantId, staffPhone, {
