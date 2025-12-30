@@ -17,6 +17,7 @@ import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
 import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
 import { CompactExecutivePDF } from '@/lib/reports/compact-executive-pdf';
+import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -145,10 +146,17 @@ function isPDFCommand(cmd: string): boolean {
     'operational metrics',
     'operational metric',
     'tren penjualan',
+    'customer metrics',
+    'customer metric',
+    'sales trends',
+    'sales trend',
+    'total penjualan showroom',
+    'total penjualan',
+    'total sales',
+    'sales total',
     'staff performance',
     'recent sales',
     'low stock alert',
-    'total penjualan showroom',
     'total revenue',
     'total inventory',
     'average price',
@@ -1111,11 +1119,6 @@ async function generateOperationalMetricsPDF(context: CommandContext): Promise<C
 }
 
 async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = createPDFDocument();
-  const chunks: Uint8Array[] = [];
-
-  doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
-
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
     select: { name: true },
@@ -1123,40 +1126,61 @@ async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandR
 
   const salesData = await fetchSalesData(context, 30);
 
-  // Cover
-  doc.fontSize(24).font('Helvetica-Bold').text('Tren Penjualan', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(16).font('Helvetica').text(tenant?.name || 'Prima Mobil', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text(`Periode: 30 Hari Terakhir`, { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(10).fillColor('#666666').text(`Dibuat pada: ${formatDate(new Date())}`, { align: 'center' });
+  // Calculate trends
+  const totalSales = salesData.summary.totalSalesCount;
+  const totalRevenue = salesData.summary.totalSalesValue;
+  const avgDailySales = salesData.salesByDay.length > 0
+    ? totalSales / salesData.salesByDay.length
+    : 0;
 
-  // Trends
-  doc.addPage();
-  doc.fontSize(18).font('Helvetica-Bold').fillColor('#000000').text('Tren Harian', { underline: true });
-  doc.moveDown();
+  // Use NEW professional WhatsApp Command PDF
+  const generator = new WhatsAppCommandPDF();
 
-  if (salesData.salesByDay.length > 0) {
-    salesData.salesByDay.slice(0, 30).forEach((day) => {
-      doc.fontSize(11).font('Helvetica');
-      doc.text(`${day.day}: ${day.count} unit (${formatCurrency(day.value)})`);
-      doc.moveDown(0.2);
-    });
-  } else {
-    doc.fontSize(12).font('Helvetica').text('Tidak ada data tren penjualan.');
-  }
+  const metrics = [
+    {
+      label: 'Total Penjualan (30 Hari)',
+      value: `${totalSales}`,
+      unit: 'Unit',
+      color: '#3b82f6',
+      formula: 'SUM(sales) WHERE date >= NOW() - 30 DAYS',
+      calculation: `${totalSales} unit terjual dalam 30 hari`,
+    },
+    {
+      label: 'Rata-rata Harian',
+      value: `${avgDailySales.toFixed(1)}`,
+      unit: 'Unit/Hari',
+      color: '#10b981',
+      formula: 'AVG(daily sales)',
+      calculation: `${totalSales} unit / ${salesData.salesByDay.length} hari = ${avgDailySales.toFixed(1)} unit/hari`,
+    },
+    {
+      label: 'Total Revenue',
+      value: formatCurrency(totalRevenue),
+      color: '#f59e0b',
+      formula: 'SUM(price) WHERE date >= NOW() - 30 DAYS',
+      calculation: formatCurrency(totalRevenue),
+    },
+  ];
 
-  doc.end();
+  const reportData = {
+    title: 'Tren Penjualan Showroom',
+    subtitle: 'Analisis Tren 30 Hari Terakhir',
+    tenantName: tenant?.name || 'Prima Mobil',
+    date: new Date(),
+    metrics,
+    showChart: true,
+    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
+      label: item.make,
+      value: item.count,
+      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+    })),
+  };
 
-  await new Promise<void>((resolve) => {
-    doc.on('end', resolve);
-  });
+  const pdfBuffer = await generator.generate(reportData);
 
-  const pdfBuffer = Buffer.concat(chunks);
   return {
     success: true,
-    message: '✅ Tren Penjualan berhasil dibuat. Mengirim PDF...',
+    message: '✅ Tren Penjualan (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `tren-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1340,50 +1364,63 @@ async function generateLowStockPDF(context: CommandContext): Promise<CommandResu
 }
 
 async function generateTotalSalesPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = createPDFDocument();
-  const chunks: Uint8Array[] = [];
-
-  doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
-
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
     select: { name: true },
   });
 
   const salesData = await fetchSalesData(context, 30);
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - 30);
 
-  // Cover
-  doc.fontSize(24).font('Helvetica-Bold').text('Total Penjualan Showroom', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(16).font('Helvetica').text(tenant?.name || 'Prima Mobil', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text(`Periode: 30 Hari Terakhir`, { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(10).fillColor('#666666').text(`Dibuat pada: ${formatDate(new Date())}`, { align: 'center' });
+  // Use NEW professional WhatsApp Command PDF
+  const generator = new WhatsAppCommandPDF();
 
-  // Total Sales
-  doc.addPage();
-  doc.fontSize(18).font('Helvetica-Bold').fillColor('#000000').text('Total Penjualan', { underline: true });
-  doc.moveDown();
+  const metrics = [
+    {
+      label: 'Total Penjualan',
+      value: `${salesData.summary.totalSalesCount}`,
+      unit: 'Unit',
+      color: '#3b82f6',
+      formula: 'COUNT(vehicle WHERE status = SOLD)',
+      calculation: `${salesData.summary.totalSalesCount} unit terjual`,
+    },
+    {
+      label: 'Total Revenue',
+      value: formatCurrency(salesData.summary.totalSalesValue),
+      color: '#10b981',
+      formula: 'SUM(price) WHERE status = SOLD',
+      calculation: formatCurrency(salesData.summary.totalSalesValue),
+    },
+    {
+      label: 'Rata-rata Harga',
+      value: formatCurrency(salesData.avgPrice),
+      color: '#f59e0b',
+      formula: 'AVG(price) WHERE status = SOLD',
+      calculation: `${formatCurrency(salesData.summary.totalSalesValue)} / ${salesData.summary.totalSalesCount} = ${formatCurrency(salesData.avgPrice)}`,
+    },
+  ];
 
-  doc.fontSize(24).font('Helvetica-Bold').text(`${salesData.summary.totalSalesCount} Unit`, { align: 'center' });
-  doc.moveDown();
+  const reportData = {
+    title: 'Total Penjualan Showroom',
+    subtitle: `Periode: 30 Hari Terakhir`,
+    tenantName: tenant?.name || 'Prima Mobil',
+    date: new Date(),
+    metrics,
+    showChart: true,
+    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
+      label: item.make,
+      value: item.count,
+      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+    })),
+  };
 
-  doc.fontSize(14).font('Helvetica').text(`Total Nilai: ${formatCurrency(salesData.summary.totalSalesValue)}`, { align: 'center' });
-  doc.moveDown();
+  const pdfBuffer = await generator.generate(reportData);
 
-  doc.fontSize(12).font('Helvetica').text(`Rata-rata per Unit: ${formatCurrency(salesData.avgPrice)}`, { align: 'center' });
-
-  doc.end();
-
-  await new Promise<void>((resolve) => {
-    doc.on('end', resolve);
-  });
-
-  const pdfBuffer = Buffer.concat(chunks);
   return {
     success: true,
-    message: '✅ Total Penjualan berhasil dibuat. Mengirim PDF...',
+    message: '✅ Total Penjualan (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `total-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1442,11 +1479,6 @@ async function generateTotalRevenuePDF(context: CommandContext): Promise<Command
 }
 
 async function generateTotalInventoryPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = createPDFDocument();
-  const chunks: Uint8Array[] = [];
-
-  doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
-
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
     select: { name: true },
@@ -1454,36 +1486,48 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
 
   const inventoryData = await fetchInventoryData(context);
 
-  // Cover
-  doc.fontSize(24).font('Helvetica-Bold').text('Total Inventory', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(16).font('Helvetica').text(tenant?.name || 'Prima Mobil', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(10).fillColor('#666666').text(`Dibuat pada: ${formatDate(new Date())}`, { align: 'center' });
+  // Use NEW professional WhatsApp Command PDF
+  const generator = new WhatsAppCommandPDF();
 
-  // Inventory
-  doc.addPage();
-  doc.fontSize(18).font('Helvetica-Bold').fillColor('#000000').text('Total Inventory', { underline: true });
-  doc.moveDown();
+  const metrics = [
+    {
+      label: 'Total Stok',
+      value: `${inventoryData.totalStock}`,
+      unit: 'Unit',
+      color: '#3b82f6',
+      formula: 'COUNT(vehicle) WHERE status IN (AVAILABLE, BOOKED)',
+      calculation: `${inventoryData.totalStock} unit tersedia`,
+    },
+    {
+      label: 'Total Nilai Stok',
+      value: formatCurrency(inventoryData.totalValue),
+      color: '#10b981',
+      formula: 'SUM(price) WHERE status IN (AVAILABLE, BOOKED)',
+      calculation: formatCurrency(inventoryData.totalValue),
+    },
+    {
+      label: 'Rata-rata Hari di Stok',
+      value: `${inventoryData.avgDaysInStock}`,
+      unit: 'Hari',
+      color: '#f59e0b',
+      formula: 'AVG(days since added) WHERE status IN (AVAILABLE, BOOKED)',
+      calculation: `Rata-rata ${inventoryData.avgDaysInStock} hari`,
+    },
+  ];
 
-  doc.fontSize(32).font('Helvetica-Bold').text(`${inventoryData.totalStock} Unit`, { align: 'center' });
-  doc.moveDown();
+  const reportData = {
+    title: 'Total Inventory Showroom',
+    subtitle: 'Stok Kendaraan Tersedia',
+    tenantName: tenant?.name || 'Prima Mobil',
+    date: new Date(),
+    metrics,
+  };
 
-  doc.fontSize(14).font('Helvetica').text(`Total Value: ${formatCurrency(inventoryData.totalValue)}`, { align: 'center' });
-  doc.moveDown();
+  const pdfBuffer = await generator.generate(reportData);
 
-  doc.fontSize(12).font('Helvetica').text(`Rata-rata hari di stok: ${inventoryData.avgDaysInStock} hari`, { align: 'center' });
-
-  doc.end();
-
-  await new Promise<void>((resolve) => {
-    doc.on('end', resolve);
-  });
-
-  const pdfBuffer = Buffer.concat(chunks);
   return {
     success: true,
-    message: '✅ Total Inventory berhasil dibuat. Mengirim PDF...',
+    message: '✅ Total Inventory (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `total-inventory-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
