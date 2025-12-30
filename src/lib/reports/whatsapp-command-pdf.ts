@@ -69,6 +69,9 @@ export class WhatsAppCommandPDF {
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
 
+    // Maximum Y position before footer (prevent overflow)
+    const maxY = pageHeight - 40;
+
     // Header - Increased height to prevent date cutoff
     doc.fillColor('#1e40af').rect(0, 0, pageWidth, 55).fill();
 
@@ -104,8 +107,8 @@ export class WhatsAppCommandPDF {
 
     let y = startY + 2 * (cardHeight + gap) + 8;
 
-    // Chart section - ALWAYS show if showChart is true, even with 0 data
-    if (config.showChart) {
+    // Chart section - ONLY if space allows and showChart is true
+    if (y + 137 < maxY && config.showChart) {
       doc.fontSize(11)
         .fillColor('#1e40af')
         .font('Helvetica-Bold')
@@ -136,16 +139,11 @@ export class WhatsAppCommandPDF {
         doc.fillColor('#64748b')
           .fontSize(9)
           .font('Helvetica-Oblique')
-          .text('Belum ada data untuk ditampilkan', legendX, legendY + 8);
+          .text('Belum ada data', legendX, legendY + 8);
       }
 
-      y += 115; // Reduced space for chart
-    } else {
-      y += 10;
+      y += 115;
     }
-
-    // Note: Detailed formulas moved to Page 2 to prevent overflow
-    // Page 1 now only shows: Header + Metrics + Chart
 
     // Footer Page 1
     doc.fillColor('#f1f5f9')
