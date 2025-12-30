@@ -63,6 +63,7 @@ export async function middleware(request: NextRequest) {
   // - Static files (but NOT _next/static/ with encoded brackets - handled above)
   // - Next.js internals
   // - Catalog routes (already in correct format)
+  // - Vehicle detail pages (SEO-friendly URLs)
   // NOTE: /uploads/ is now handled above via rewrite to /api/uploads/
   // BUT: For custom domains, we still need to set tenant headers even for these routes
   const shouldSkipRewrite =
@@ -73,6 +74,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/team') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/catalog/') ||
+    pathname.startsWith('/vehicles/') ||
     pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff|woff2|ttf|eot)$/);
 
   // If not a custom domain and should skip, return early
