@@ -5,7 +5,7 @@
  */
 
 import PDFDocument from 'pdfkit';
-import { prisma } from '@/lib/prisma';
+import { createPDFDocument } from '@/lib/services/whatsapp-ai/pdf-init';
 
 interface SalesData {
   summary: {
@@ -51,12 +51,8 @@ export class AnalyticsPDFGenerator {
   private yPos: number = 0;
 
   constructor() {
-    this.doc = new PDFDocument({
-      size: 'A4',
-      margin: 40,
-      bufferPages: true,
-      autoFirstPage: false,
-    });
+    this.doc = createPDFDocument();
+    this.doc.info['Producer'] = 'AutoLumiKu Analytics';
 
     this.doc.on('data', (chunk: Buffer) => this.chunks.push(chunk));
   }

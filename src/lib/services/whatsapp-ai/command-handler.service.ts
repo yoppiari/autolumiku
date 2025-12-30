@@ -120,16 +120,21 @@ function isUniversalCommand(cmd: string): boolean {
 
 /**
  * Check if command is PDF report command
+ * Uses exact phrase matching to prevent false positives (e.g., "inventory" shouldn't match "total inventory")
  */
 function isPDFCommand(cmd: string): boolean {
-  // Single word triggers
-  if (cmd === 'report' || cmd === 'pdf') {
+  const normalizedCmd = cmd.toLowerCase().trim();
+
+  // Single word triggers (exact match)
+  if (normalizedCmd === 'report' || normalizedCmd === 'pdf') {
     return true;
   }
 
-  // Multi-word triggers
-  const pdfCommands = [
+  // Multi-word triggers - use exact phrase matching with word boundaries
+  // This prevents "inventory" from matching "total inventory"
+  const pdfPhrases = [
     'sales report',
+    'whatsapp ai analytics',
     'whatsapp ai',
     'metrix penjualan',
     'metrix pelanggan',
@@ -161,12 +166,16 @@ function isPDFCommand(cmd: string): boolean {
     'kirim pdfnya',
   ];
 
-  // Check for direct matches
-  if (pdfCommands.some(c => cmd.includes(c))) {
-    return true;
+  // Check for exact phrase matches (with word boundaries)
+  for (const phrase of pdfPhrases) {
+    // Create regex with word boundaries to match exact phrase
+    const regex = new RegExp(`\\b${phrase}\\b`, 'i');
+    if (regex.test(normalizedCmd)) {
+      return true;
+    }
   }
 
-  // Regex patterns for more specific matching
+  // Additional regex patterns for variations
   return /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics)\b/i.test(cmd) ||
          /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(cmd) ||
          /\b(customer|pelanggan)\s+metrics\b/i.test(cmd) ||
