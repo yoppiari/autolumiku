@@ -119,24 +119,24 @@ export class AnalyticsPDFGenerator {
       `${salesCount} Unit`, 'COUNT(vehicle) WHERE status = SOLD');
 
     this.drawMetricCard(20 + cardWidth + gap, startY, cardWidth, cardHeight, '#10b981',
-      this.formatCurrency(salesValue), 'SUM(price) WHERE status = SOLD');
+      'TOTAL REVENUE', this.formatCurrency(salesValue), 'SUM(price) WHERE status = SOLD');
 
     this.drawMetricCard(20 + (cardWidth + gap) * 2, startY, cardWidth, cardHeight, '#f59e0b',
-      this.formatCurrency(avgPrice), 'AVG(price) WHERE status = SOLD');
+      'RATA-RATA HARGA', this.formatCurrency(avgPrice), 'AVG(price) WHERE status = SOLD');
 
     // Row 2 - Inventory & KPIs
     const y2 = startY + cardHeight + gap;
     this.drawMetricCard(20, y2, cardWidth, cardHeight, '#8b5cf6',
-      `${inventoryCount} Unit`, 'COUNT(vehicle) WHERE status = AVAILABLE');
+      'TOTAL STOK', `${inventoryCount} Unit`, 'COUNT(vehicle) WHERE status = AVAILABLE');
 
     const inventoryTurnover = data.salesData?.kpis?.inventoryTurnover || 0;
     const atv = data.salesData?.kpis?.atv || 0;
 
     this.drawMetricCard(20 + cardWidth + gap, y2, cardWidth, cardHeight, '#ef4444',
-      `${inventoryTurnover}%`, '(sold / (sold + stock)) * 100');
+      'INVENTORY TURNOVER', `${inventoryTurnover}%`, '(sold / (sold + stock)) * 100');
 
     this.drawMetricCard(20 + (cardWidth + gap) * 2, y2, cardWidth, cardHeight, '#ec4899',
-      `${atv}%`, '(avgPrice / 150M) * 100');
+      'ATV', `${atv}%`, '(avgPrice / 150M) * 100');
 
     let chartY = y2 + cardHeight + gap + 10;
 
