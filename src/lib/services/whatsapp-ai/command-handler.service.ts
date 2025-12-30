@@ -1052,8 +1052,8 @@ async function generateCustomerMetricsPDF(context: CommandContext): Promise<Comm
     tenantName: tenant?.name || 'Prima Mobil',
     date: new Date(),
     metrics,
-    showChart: whatsappData?.intentBreakdown.length > 0,
-    chartData: whatsappData?.intentBreakdown.slice(0, 5).map((item, idx) => ({
+    showChart: (whatsappData?.intentBreakdown?.length || 0) > 0,
+    chartData: (whatsappData?.intentBreakdown || []).slice(0, 5).map((item, idx) => ({
       label: item.intent.charAt(0).toUpperCase() + item.intent.slice(1),
       value: item.count,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
