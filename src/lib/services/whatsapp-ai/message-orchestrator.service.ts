@@ -254,10 +254,24 @@ export class MessageOrchestratorService {
         /^(menu|fitur)$/i,                           // menu, fitur (alone)
         /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
         // Command escape patterns - allow users to exit upload flow with commands
+        // Basic commands
         /^(upload|inventory|stok|status|statistik|stats|laporan|report|pdf)$/i,  // single word commands
-        /^(rubah|ubah|edit)\b/i,                     // edit commands
-        /^(report|pdf)\b/i,                          // pdf report commands
-        /^(sales|whatsapp\s+ai|metrics|tren|staff|recent|low\s*stock|total)/i,  // pdf keywords
+        // Edit commands
+        /^(rubah|ubah|edit|ganti)\b/i,               // edit commands (tambah "ganti")
+        // PDF report keywords - semua jenis report
+        /\b(sales\s*report|sales\s*summary|sales\s*metrics)\b/i,  // sales reports
+        /\b(whatsapp\s*ai|whatsapp\s*analytics)\b/i,            // whatsapp ai
+        /\b(metrics|metrix)\s*(penjualan|pelanggan|operational|customer)\b/i,  // metrics
+        /\b(sales\s*trends|tren\s*penjualan)\b/i,              // trends
+        /\b(staff\s*performance)\b/i,                         // staff performance
+        /\b(recent\s*sales)\b/i,                              // recent sales
+        /\b(low\s*stock|low\s*stock\s*alert)\b/i,            // low stock
+        /\btotal\s*(penjualan|sales|revenue|inventory)\b/i,   // totals
+        /\b(average\s*price|avg\s*price)\b/i,                // average price
+        /\b(customer\s*metrics|metrix\s*pelanggan)\b/i,      // customer metrics
+        /\b(operational\s*metrics|operational\s*metrix)\b/i, // operational
+        // Single keywords untuk trigger PDF
+        /^(sales|report|pdf|metrics|tren|staff|recent|low|total|average|customer|operational)$/i,
       ];
 
       // Confirmation patterns - user confirming they sent photos/data (should be acknowledged, not parsed as vehicle data)
