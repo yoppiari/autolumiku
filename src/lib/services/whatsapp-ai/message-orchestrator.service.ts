@@ -1039,20 +1039,25 @@ export class MessageOrchestratorService {
                         message.includes('operational metrics') ||
                         message.includes('operational metric') ||
                         message.includes('tren penjualan') ||
+                        // English keywords (add missing aliases):
+                        message.includes('customer metrics') || message.includes('customer metric') ||
+                        message.includes('sales trends') || message.includes('sales trend') ||
+                        message.includes('total sales') || message.includes('sales total') ||
+                        message.includes('total penjualan') ||
+                        message.includes('total penjualan showroom') ||
                         message.includes('staff performance') ||
                         message.includes('recent sales') ||
                         message.includes('low stock alert') ||
                         message.includes('low stock') ||
-                        message.includes('total penjualan') ||
-                        message.includes('total penjualan showroom') ||
                         message.includes('total revenue') ||
                         message.includes('total inventory') ||
                         message.includes('average price') ||
                         message.includes('sales summary') ||
                         // More specific "penjualan"/"sales" patterns (not just any mention):
-                        /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics)\b/i.test(message) ||
+                        /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics|trends?|totals?)\b/i.test(message) ||
                         /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(message) ||
-                        /\b(customer|pelanggan)\s+metrics\b/i.test(message);
+                        /\b(customer|pelanggan)\s+metrics\b/i.test(message) ||
+                        /\btotal\s+(sales|penjualan)\b/i.test(message);
 
     // Check if it's a command
     const isCommand = isUniversalCommand || isPDFCommand;

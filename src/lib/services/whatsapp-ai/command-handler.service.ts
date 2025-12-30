@@ -17,7 +17,7 @@ import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
 import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
 import { CompactExecutivePDF } from '@/lib/reports/compact-executive-pdf';
-import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
+import { WhatsAppCommandPDF } from '@/lib/reports/whatsapp-command-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -1000,11 +1000,6 @@ async function generateSalesMetricsPDF(context: CommandContext): Promise<Command
 }
 
 async function generateCustomerMetricsPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = createPDFDocument();
-  const chunks: Uint8Array[] = [];
-
-  doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
-
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
     select: { name: true },
@@ -1012,48 +1007,64 @@ async function generateCustomerMetricsPDF(context: CommandContext): Promise<Comm
 
   const whatsappData = await fetchWhatsAppAIData(context, 30);
 
-  // Cover
-  doc.fontSize(24).font('Helvetica-Bold').text('Metrik Pelanggan', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(16).font('Helvetica').text(tenant?.name || 'Prima Mobil', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text(`Periode: 30 Hari Terakhir`, { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(10).fillColor('#666666').text(`Dibuat pada: ${formatDate(new Date())}`, { align: 'center' });
+  // Use NEW professional WhatsApp Command PDF
+  const generator = new WhatsAppCommandPDF();
 
-  if (whatsappData) {
-    doc.addPage();
-    doc.fontSize(18).font('Helvetica-Bold').fillColor('#000000').text('Customer Engagement', { underline: true });
-    doc.moveDown();
+  const metrics = whatsappData ? [
+    {
+      label: 'Total Percakapan',
+      value: `${whatsappData.overview.totalConversations}`,
+      unit: 'Percakapan',
+      color: '#3b82f6',
+      formula: 'COUNT(conversations) WHERE date >= NOW() - 30 DAYS',
+      calculation: `${whatsappData.overview.totalConversations} percakapan dalam 30 hari`,
+    },
+    {
+      label: 'Percakapan Aktif',
+      value: `${whatsappData.overview.activeConversations}`,
+      unit: 'Percakapan',
+      color: '#10b981',
+      formula: 'COUNT(conversations) WHERE state = active',
+      calculation: `${whatsappData.overview.activeConversations} percakapan aktif`,
+    },
+    {
+      label: 'Total Pesan Pelanggan',
+      value: `${whatsappData.overview.customerMessages}`,
+      unit: 'Pesan',
+      color: '#f59e0b',
+      formula: 'COUNT(messages) WHERE direction = incoming',
+      calculation: `${whatsappData.overview.customerMessages} pesan dari pelanggan`,
+    },
+  ] : [
+    {
+      label: 'Data Tidak Tersedia',
+      value: '0',
+      unit: 'N/A',
+      color: '#9ca3af',
+      formula: 'N/A',
+      calculation: 'Data WhatsApp belum tersedia',
+    },
+  ];
 
-    doc.fontSize(12).font('Helvetica');
-    doc.text(`Total Percakapan: ${whatsappData.overview.totalConversations}`);
-    doc.text(`Percakapan Aktif: ${whatsappData.overview.activeConversations}`);
-    doc.text(`Total Pesan Pelanggan: ${whatsappData.overview.customerMessages}`);
-    doc.moveDown();
+  const reportData = {
+    title: 'Metrik Pelanggan',
+    subtitle: 'Customer Engagement Analytics',
+    tenantName: tenant?.name || 'Prima Mobil',
+    date: new Date(),
+    metrics,
+    showChart: whatsappData?.intentBreakdown.length > 0,
+    chartData: whatsappData?.intentBreakdown.slice(0, 5).map((item, idx) => ({
+      label: item.intent.charAt(0).toUpperCase() + item.intent.slice(1),
+      value: item.count,
+      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+    })),
+  };
 
-    doc.fontSize(14).font('Helvetica-Bold').text('Customer Intent Breakdown');
-    doc.moveDown(0.5);
+  const pdfBuffer = await generator.generate(reportData);
 
-    whatsappData.intentBreakdown.forEach((item) => {
-      doc.fontSize(12).font('Helvetica');
-      doc.text(`${item.intent.charAt(0).toUpperCase() + item.intent.slice(1)}: ${item.count} (${item.percentage}%)`);
-    });
-  } else {
-    doc.addPage();
-    doc.fontSize(12).font('Helvetica').text('Data pelanggan tidak tersedia.');
-  }
-
-  doc.end();
-
-  await new Promise<void>((resolve) => {
-    doc.on('end', resolve);
-  });
-
-  const pdfBuffer = Buffer.concat(chunks);
   return {
     success: true,
-    message: '✅ Metrik Pelanggan berhasil dibuat. Mengirim PDF...',
+    message: '✅ Metrik Pelanggan (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `metrik-pelanggan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
