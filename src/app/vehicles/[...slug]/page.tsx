@@ -143,11 +143,13 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
   };
 
   const formatPrice = (price: number) => {
-    const inMillions = price / 1000000;
-    if (inMillions >= 1) {
-      return `Rp ${inMillions.toLocaleString('id-ID', { maximumFractionDigits: 2 })} Juta`;
-    }
-    return `Rp ${(price / 1000).toLocaleString('id-ID')} Ribu`;
+    // Format as full IDR number (e.g., 79.000.000)
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
   };
 
   const whatsappNumber = aiWhatsappNumber || '6281234567890';
@@ -214,7 +216,7 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
                 </div>
 
                 <div className="mb-8">
-                  <p className="text-3xl font-bold text-primary">
+                  <p className="text-4xl font-bold text-blue-600">
                     {formatPrice(vehicleData.price)}
                   </p>
                 </div>
