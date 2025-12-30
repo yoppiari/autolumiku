@@ -37,7 +37,7 @@ interface PageProps {
 /**
  * Parse vehicle slug and extract displayId
  * Examples:
- * - honda-city-2006-pm-pst-001 → displayId: "pm-pst-001"
+ * - honda-city-2006-pm-pst-001 → displayId: "PM-PST-001" (convert to uppercase)
  * - toyota-avanza-g-2021-PST-075 → displayId: "PST-075"
  * - 978e0b31-4d57-4bb9-92b3-219b12f3b32a (UUID) → isUuid: true
  *
@@ -66,13 +66,13 @@ function parseVehicleSlug(slug: string[]): { displayId: string | null; isUuid: b
     // Take at least the last 3 segments for displayId
     const minSegments = Math.max(3, slug.length - 4);
     const displayIdParts = slug.slice(-minSegments);
-    const displayId = displayIdParts.join('-').replace(/\.(pdf|jpg|png|html?)$/i, '').toLowerCase();
+    const displayId = displayIdParts.join('-').replace(/\.(pdf|jpg|png|html?)$/i, '').toUpperCase();
     return { displayId, isUuid: false };
   }
 
-  // Get everything after the year
+  // Get everything after the year and convert to UPPERCASE (for database matching)
   const yearIndex = (yearMatch.index ?? 0) + yearMatch[0].length;
-  const displayId = fullSlug.substring(yearIndex).replace(/\.(pdf|jpg|png|html?)$/i, '').toLowerCase();
+  const displayId = fullSlug.substring(yearIndex).replace(/\.(pdf|jpg|png|html?)$/i, '').toUpperCase();
 
   return { displayId, isUuid: false };
 }
