@@ -175,14 +175,16 @@ export class MessageOrchestratorService {
         console.log(`[Orchestrator] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role}, Level: ${user.roleLevel}, DB phone: ${user.phone})`);
 
         // Update conversation with user info if not already set
-        if (!conversation.isStaff && (user.roleLevel >= 90 || ['ADMIN', 'OWNER', 'SUPER_ADMIN'].includes(user.role.toUpperCase()))) {
+        // ALL registered users (STAFF/SALES, ADMIN, OWNER, SUPER_ADMIN) should be marked as isStaff
+        const validStaffRoles = ['SALES', 'STAFF', 'ADMIN', 'OWNER', 'SUPER_ADMIN'];
+        if (!conversation.isStaff && (user.roleLevel >= 30 || validStaffRoles.includes(user.role.toUpperCase()))) {
           await prisma.whatsAppConversation.update({
             where: { id: conversation.id },
             data: {
               isStaff: true,
             },
           });
-          console.log(`[Orchestrator] ✅ Conversation marked as staff for ${user.firstName} ${user.lastName}`);
+          console.log(`[Orchestrator] ✅ Conversation marked as staff for ${user.firstName} ${user.lastName} (${user.role})`);
         }
       } else {
         console.log(`[Orchestrator] ⚠️ User not found for phone: ${incoming.from} (normalized: ${normalizedPhone})`);
@@ -1153,7 +1155,8 @@ export class MessageOrchestratorService {
                               message === 'upload' ||
                               message.includes('inventory') || message.includes('stok') ||
                               message === 'status' ||
-                              message.includes('statistik') || message.includes('stats');
+                              message.includes('statistik') || message.includes('stats') ||
+                              message.includes('laporan'); // Tambah "laporan" sebagai command
 
     // PDF Commands - MUST match specific patterns to avoid false positives
     // Single word triggers:
@@ -1200,9 +1203,12 @@ export class MessageOrchestratorService {
     console.log(`[Orchestrator] 🔔 Command detected: ${message}`);
 
     // Find user by phone number with flexible matching
-    // Normalize phone for matching (handle 62, +62, 0 prefixes)
-    const normalizedInput = this.normalizePhone(incoming.from);
-    console.log(`[Orchestrator] Looking for user with phone: ${incoming.from} (normalized: ${normalizedInput})`);
+    // Use the same normalization as main user lookup (convert 62... to 0...)
+    const digits = incoming.from.replace(/\D/g, '');
+    const phoneWith0 = digits.startsWith('62') ? '0' + digits.slice(2) : digits;
+    const phoneWith62 = digits.startsWith('0') ? '62' + digits.slice(1) : digits;
+
+    console.log(`[Orchestrator] 🔍 Looking for user with phone formats: 0-prefix="${phoneWith0}", 62-prefix="${phoneWith62}", exact="${incoming.from}"`);
 
     // Get all users in tenant with staff roles
     const allUsers = await prisma.user.findMany({
@@ -1220,11 +1226,10 @@ export class MessageOrchestratorService {
       },
     });
 
-    // Find matching user by normalized phone
+    // Find matching user by trying all phone formats
     const user = allUsers.find(u => {
       if (!u.phone) return false;
-      const normalizedUserPhone = this.normalizePhone(u.phone);
-      return normalizedUserPhone === normalizedInput;
+      return u.phone === phoneWith0 || u.phone === phoneWith62 || u.phone === incoming.from;
     });
 
     if (!user) {
@@ -1239,7 +1244,7 @@ export class MessageOrchestratorService {
       };
     }
 
-    console.log(`[Orchestrator] 👤 User found: ${user.firstName} ${user.lastName} (${user.role}, level ${user.roleLevel}, phone: ${user.phone})`);
+    console.log(`[Orchestrator] 👤 User found: ${user.firstName} ${user.lastName} (${user.role}, level ${user.roleLevel}, DB phone: ${user.phone})`);
 
     // Process command
     try {
