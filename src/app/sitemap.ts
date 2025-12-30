@@ -41,6 +41,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
       select: {
         id: true,
+        make: true,
+        model: true,
+        year: true,
+        displayId: true,
         updatedAt: true,
       },
       orderBy: {
