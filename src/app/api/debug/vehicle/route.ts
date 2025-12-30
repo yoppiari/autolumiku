@@ -14,9 +14,27 @@ export async function GET(request: NextRequest) {
       searchBy = `vehicleId: ${vehicleId}`;
       vehicle = await prisma.vehicle.findUnique({
         where: { id: vehicleId },
-        include: {
-          tenant: true,
+        select: {
+          id: true,
+          displayId: true,
+          make: true,
+          model: true,
+          year: true,
+          price: true,
+          status: true,
+          tenant: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+            },
+          },
           photos: {
+            select: {
+              id: true,
+              thumbnailUrl: true,
+              displayOrder: true,
+            },
             orderBy: { displayOrder: 'asc' },
             take: 20,
           },
@@ -26,9 +44,27 @@ export async function GET(request: NextRequest) {
       searchBy = `displayId: ${displayId}`;
       vehicle = await prisma.vehicle.findUnique({
         where: { displayId: displayId.toUpperCase() },
-        include: {
-          tenant: true,
+        select: {
+          id: true,
+          displayId: true,
+          make: true,
+          model: true,
+          year: true,
+          price: true,
+          status: true,
+          tenant: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+            },
+          },
           photos: {
+            select: {
+              id: true,
+              thumbnailUrl: true,
+              displayOrder: true,
+            },
             orderBy: { displayOrder: 'asc' },
             take: 20,
           },
@@ -74,10 +110,11 @@ export async function GET(request: NextRequest) {
         make: vehicle.make,
         model: vehicle.model,
         year: vehicle.year,
-        price: vehicle.price,
+        price: vehicle.price ? Number(vehicle.price) : 0,
         status: vehicle.status,
-        tenantSlug: vehicle.tenant.slug,
-        photoCount: vehicle.photos.length,
+        tenantSlug: vehicle.tenant?.slug,
+        tenantName: vehicle.tenant?.name,
+        photoCount: vehicle.photos?.length || 0,
       },
     });
   } catch (error: any) {
