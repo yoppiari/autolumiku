@@ -441,10 +441,23 @@ export async function POST(request: NextRequest) {
         whatsappConvos: reportData.whatsappData?.overview?.totalConversations || 0,
       });
 
-      const pdfBuffer = await generator.generate(reportData);
-      const filename = `analytics-sales-whatsapp-${new Date().toISOString().split('T')[0]}.pdf`;
+      let pdfBuffer: Buffer;
+      try {
+        pdfBuffer = await generator.generate(reportData);
+        console.log('[Analytics Export] ✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+      } catch (pdfError) {
+        console.error('[Analytics Export] ❌ PDF generation failed:', pdfError);
+        return NextResponse.json(
+          {
+            error: 'Failed to generate PDF report',
+            details: pdfError instanceof Error ? pdfError.message : 'Unknown PDF generation error',
+            stack: pdfError instanceof Error ? pdfError.stack : undefined,
+          },
+          { status: 500 }
+        );
+      }
 
-      console.log('[Analytics Export] ✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+      const filename = `analytics-sales-whatsapp-${new Date().toISOString().split('T')[0]}.pdf`;
 
       return new NextResponse(new Uint8Array(pdfBuffer), {
         status: 200,
