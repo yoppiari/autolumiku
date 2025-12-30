@@ -119,7 +119,7 @@ function isUniversalCommand(cmd: string): boolean {
     'upload',
     'inventory', 'stok',
     'status',
-    'statistik', 'stats',
+    'statistik', 'stats', 'laporan', // Tambah "laporan" untuk command statistik
     'kontak', 'contact',
   ];
   return universalCommands.some(c => cmd.includes(c));
@@ -279,7 +279,7 @@ async function handleUniversalCommand(
   }
 
   // Statistics check
-  if (cmd.includes('statistik') || cmd.includes('stats')) {
+  if (cmd.includes('statistik') || cmd.includes('stats') || cmd.includes('laporan')) {
     // For sales: show their own performance
     // For admin+: show overall stats
     const now = new Date();
