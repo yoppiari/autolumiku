@@ -204,54 +204,70 @@ async function handleUniversalCommand(
 
   // Inventory/Stock check
   if (cmd.includes('inventory') || cmd.includes('stok')) {
-    const vehicles = await prisma.vehicle.findMany({
-      where: {
-        tenantId,
-        status: { in: ['AVAILABLE', 'BOOKED'] },
-      },
-      take: 10,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        displayId: true,
-        make: true,
-        model: true,
-        year: true,
-        price: true,
-        status: true,
-      },
-    });
+    console.log(`[CommandHandler] 📦 Processing STOK command: ${cmd}`);
 
-    if (vehicles.length === 0) {
+    try {
+      const vehicles = await prisma.vehicle.findMany({
+        where: {
+          tenantId,
+          status: { in: ['AVAILABLE', 'BOOKED'] },
+        },
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          displayId: true,
+          make: true,
+          model: true,
+          year: true,
+          price: true,
+          status: true,
+        },
+      });
+
+      console.log(`[CommandHandler] 📦 Found ${vehicles.length} vehicles in stock`);
+
+      if (vehicles.length === 0) {
+        const message = '📦 INVENTORY SHOWROOM\n\nTidak ada kendaraan tersedia saat ini.\n\nTotal stok: 0 unit';
+        console.log(`[CommandHandler] 📦 Returning empty stock message`);
+        return {
+          success: true,
+          message,
+          followUp: true,
+        };
+      }
+
+      const totalStock = await prisma.vehicle.count({
+        where: {
+          tenantId,
+          status: { in: ['AVAILABLE', 'BOOKED'] },
+        },
+      });
+
+      let message = `📦 INVENTORY SHOWROOM\n\nTotal stok: ${totalStock} unit\n\n10 Kendaraan terbaru:\n`;
+      vehicles.forEach((v, idx) => {
+        message += `${idx + 1}. ${v.make} ${v.model} (${v.year})\n`;
+        message += `   ${formatCurrency(Number(v.price))} - ${v.status}\n`;
+        message += `   ID: ${v.displayId}\n\n`;
+      });
+
+      message += totalStock > 10
+        ? `\n...dan ${totalStock - 10} unit lainnya.\n\nLihat full inventory di: https://primamobil.id/dashboard/vehicles`
+        : `\n\nLihat full inventory di: https://primamobil.id/dashboard/vehicles`;
+
+      console.log(`[CommandHandler] 📦 Returning stock list with ${totalStock} total units`);
       return {
         success: true,
-        message: '📦 INVENTORY SHOWROOM\n\nTidak ada kendaraan tersedia saat ini.\n\nTotal stok: 0 unit',
+        message,
+        followUp: true,
+      };
+    } catch (error) {
+      console.error(`[CommandHandler] ❌ Error in STOK command:`, error);
+      return {
+        success: false,
+        message: 'Maaf, terjadi kesalahan saat mengambil data stok. Silakan coba lagi.',
         followUp: true,
       };
     }
-
-    const totalStock = await prisma.vehicle.count({
-      where: {
-        tenantId,
-        status: { in: ['AVAILABLE', 'BOOKED'] },
-      },
-    });
-
-    let message = `📦 INVENTORY SHOWROOM\n\nTotal stok: ${totalStock} unit\n\n10 Kendaraan terbaru:\n`;
-    vehicles.forEach((v, idx) => {
-      message += `${idx + 1}. ${v.make} ${v.model} (${v.year})\n`;
-      message += `   ${formatCurrency(Number(v.price))} - ${v.status}\n`;
-      message += `   ID: ${v.displayId}\n\n`;
-    });
-
-    message += totalStock > 10
-      ? `\n...dan ${totalStock - 10} unit lainnya.\n\nLihat full inventory di: https://primamobil.id/dashboard/vehicles`
-      : `\n\nLihat full inventory di: https://primamobil.id/dashboard/vehicles`;
-
-    return {
-      success: true,
-      message,
-      followUp: true,
-    };
   }
 
   // Status check
