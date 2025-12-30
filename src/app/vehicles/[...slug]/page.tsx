@@ -39,17 +39,24 @@ interface PageProps {
  * Examples:
  * - honda-city-2006-pm-pst-001 → displayId: "pm-pst-001"
  * - toyota-avanza-g-2021-PST-075 → displayId: "PST-075"
+ * - 978e0b31-4d57-4bb9-92b3-219b12f3b32a (UUID) → isUuid: true
  *
  * Format: {make}-{model}-{year}-{displayId}
  * DisplayId may contain hyphens, so we need to find where year ends
  */
-function parseVehicleSlug(slug: string[]): { displayId: string | null } {
+function parseVehicleSlug(slug: string[]): { displayId: string | null; isUuid: boolean } {
   if (!slug || slug.length === 0) {
-    return { displayId: null };
+    return { displayId: null, isUuid: false };
   }
 
   // Join all slug segments
   const fullSlug = slug.join('-');
+
+  // Check if it's a UUID format (legacy URLs)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (slug.length === 1 && uuidRegex.test(slug[0])) {
+    return { displayId: slug[0], isUuid: true };
+  }
 
   // Find the year (4 digits) - everything after it is the displayId
   const yearMatch = fullSlug.match(/-(\d{4})-/);
@@ -60,14 +67,14 @@ function parseVehicleSlug(slug: string[]): { displayId: string | null } {
     const minSegments = Math.max(3, slug.length - 4);
     const displayIdParts = slug.slice(-minSegments);
     const displayId = displayIdParts.join('-').replace(/\.(pdf|jpg|png|html?)$/i, '').toLowerCase();
-    return { displayId };
+    return { displayId, isUuid: false };
   }
 
   // Get everything after the year
   const yearIndex = (yearMatch.index ?? 0) + yearMatch[0].length;
   const displayId = fullSlug.substring(yearIndex).replace(/\.(pdf|jpg|png|html?)$/i, '').toLowerCase();
 
-  return { displayId };
+  return { displayId, isUuid: false };
 }
 
 export default async function VehicleDetailPageSEO({ params }: PageProps) {
@@ -75,16 +82,16 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
   const headersList = headers();
   const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
 
-  // Parse slug to get displayId
-  const { displayId } = parseVehicleSlug(slug);
+  // Parse slug to get displayId or check if it's UUID
+  const { displayId, isUuid } = parseVehicleSlug(slug);
 
   if (!displayId) {
     return notFound();
   }
 
-  // Fetch vehicle by displayId
+  // Fetch vehicle by displayId or UUID (for legacy URLs)
   const vehicle = await prisma.vehicle.findUnique({
-    where: { displayId },
+    where: isUuid ? { id: displayId } : { displayId },
     include: {
       tenant: true,
       photos: {
@@ -285,7 +292,7 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = params;
-  const { displayId } = parseVehicleSlug(slug);
+  const { displayId, isUuid } = parseVehicleSlug(slug);
 
   if (!displayId) {
     return {
@@ -294,7 +301,7 @@ export async function generateMetadata({ params }: PageProps) {
   }
 
   const vehicle = await prisma.vehicle.findUnique({
-    where: { displayId },
+    where: isUuid ? { id: displayId } : { displayId },
     include: { tenant: true },
   });
 
