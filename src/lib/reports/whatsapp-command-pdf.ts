@@ -163,6 +163,9 @@ export class WhatsAppCommandPDF {
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
 
+    // Maximum Y position before footer (prevent overflow)
+    const maxY = pageHeight - 40; // Leave space for footer
+
     // Header
     doc.fillColor('#1e40af')
       .fontSize(11)
@@ -177,7 +180,7 @@ export class WhatsAppCommandPDF {
     let y = 50;
 
     // Global formula/calculation if provided
-    if (config.formula || config.calculation) {
+    if (y + 47 < maxY && (config.formula || config.calculation)) {
       doc.fillColor('#f0fdf4')
         .rect(20, y, pageWidth - 40, 40)
         .fill();
@@ -208,14 +211,14 @@ export class WhatsAppCommandPDF {
       y += 47;
     }
 
-    // Metric formulas - show ONLY first 3 to prevent overflow (was 5)
-    const metricsWithFormulas = config.metrics.filter(m => m.formula || m.calculation).slice(0, 3);
+    // Metric formulas - show ONLY first 2 (reduced from 3)
+    const metricsWithFormulas = config.metrics.filter(m => m.formula || m.calculation).slice(0, 2);
 
-    if (metricsWithFormulas.length > 0) {
+    if (y + 12 + (metricsWithFormulas.length * 43) < maxY && metricsWithFormulas.length > 0) {
       doc.fontSize(10)
         .fillColor('#1e40af')
         .font('Helvetica-Bold')
-        .text('RUMUSAN PER METRIK (Top 3)', 20, y);
+        .text('RUMUSAN PER METRIK', 20, y);
 
       y += 12;
 
@@ -259,10 +262,10 @@ export class WhatsAppCommandPDF {
       });
     }
 
-    // Single insight box (was 2)
-    y += 8;
+    // Single insight box - ONLY if space allows
+    if (y + 50 < maxY && config.metrics.length > 0) {
+      y += 8;
 
-    if (config.metrics.length > 0) {
       const topMetric = config.metrics[0];
       this.drawInsightBox(20, y, pageWidth - 40, 35, '#dcfce7', '✅', 'INSIGHT UTAMA',
         `${topMetric.label}: ${topMetric.value} ${topMetric.unit || ''}`);

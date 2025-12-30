@@ -493,11 +493,14 @@ async function handlePDFCommand(
   };
 
   // Find matching generator
+  console.log(`[Command Handler] 🔍 Looking for PDF generator for command: "${cmd}"`);
   for (const [keyword, generator] of Object.entries(pdfGenerators)) {
     if (cmd.includes(keyword)) {
+      console.log(`[Command Handler] ✅ Found match: "${keyword}" → calling generator`);
       return await generator(context);
     }
   }
+  console.log(`[Command Handler] ❌ No PDF generator match found for: "${cmd}"`);
 
   // Generic 'report' or 'pdf' without specific type - send list of available reports
   if (cmd.includes('report') || cmd.includes('pdf')) {

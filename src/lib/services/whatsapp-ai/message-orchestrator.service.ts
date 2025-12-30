@@ -1067,6 +1067,7 @@ export class MessageOrchestratorService {
     }
 
     console.log(`[Orchestrator] 🔔 Command detected: ${message}`);
+    console.log(`[Orchestrator] 📋 isPDFCommand:`, isPDFCommand, `isUniversalCommand:`, isUniversalCommand);
 
     // Find user by phone number with flexible matching
     // Use the same normalization as main user lookup (convert 62... to 0...)
@@ -1114,6 +1115,7 @@ export class MessageOrchestratorService {
 
     // Process command
     try {
+      console.log(`[Orchestrator] ⚙️ Calling processCommand with: "${message}"`);
       const result = await processCommand(message, {
         tenantId: incoming.tenantId,
         userRole: user.role,
@@ -1121,6 +1123,7 @@ export class MessageOrchestratorService {
         phoneNumber: incoming.from,
         userId: user.id,
       });
+      console.log(`[Orchestrator] ✅ processCommand result:`, result.success, result.message ? result.message.substring(0, 100) : '');
 
       // If PDF was generated, send it via WhatsApp using base64 (more secure)
       if (result.pdfBuffer && result.filename) {
