@@ -556,7 +556,23 @@ async function handleIncomingMessage(
       conversationId: result.conversationId,
       intent: result.intent,
       escalated: result.escalated,
+      responseMessage: result.responseMessage?.substring(0, 100),
     });
+
+    // Send response message to user if processing succeeded
+    if (result.success && result.responseMessage) {
+      console.log("[Aimeow Webhook] 📤 Sending response message to user");
+      try {
+        await AimeowClientService.sendMessage({
+          clientId: account.clientId,
+          to: from,
+          message: result.responseMessage,
+        });
+        console.log("[Aimeow Webhook] ✅ Response message sent successfully");
+      } catch (sendError) {
+        console.error("[Aimeow Webhook] ❌ Failed to send response message:", sendError);
+      }
+    }
 
     // If processing failed, send error response to user
     if (!result.success) {
