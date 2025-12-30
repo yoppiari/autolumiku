@@ -792,6 +792,11 @@ export default function ShowroomDashboardPage() {
                     </div>
                   ))}
                 </div>
+              ) : (stats?.vehicles?.total ?? 0) === 0 ? (
+                <div className="text-center py-4 md:py-6">
+                  <p className="text-[10px] md:text-xs text-red-600 font-medium">🚫 Stock Empty</p>
+                  <p className="text-[8px] md:text-[10px] text-gray-500 mt-1">Stock kosong, semua unit belum tersedia</p>
+                </div>
               ) : lowStockItems.length > 0 ? (
                 <div className="space-y-2">
                   {lowStockItems.slice(0, 5).map((item) => (
