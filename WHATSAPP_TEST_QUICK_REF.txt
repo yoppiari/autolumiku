@@ -1,0 +1,208 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                  WHATSAPP AI PARALLEL PROCESSING - QUICK REF                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+🎯 WHAT TO TEST
+═══════════════
+
+✅ Core Concept: Commands should work DURING upload flow, not interrupt it
+✅ Key Behavior: Upload state is PRESERVED when commands execute
+✅ Success Criteria: Upload continues normally after command completes
+
+📋 6 PARALLEL SCENARIOS
+═══════════════════════
+
+1️⃣  UPLOAD + SALES REPORT
+    Start: "Upload Brio 2020"
+    During: Provide some data (color, price, etc.)
+    Command: "sales report"
+    Continue: Provide more data (KM, transmission)
+    Result: PDF sent + upload still active
+
+2️⃣  UPLOAD + LOW STOCK
+    Start: "Upload Avanza 2019"
+    During: Any stage of data collection
+    Command: "stok" or "inventory"
+    Continue: Continue providing vehicle data
+    Result: Stock report + upload preserved
+
+3️⃣  UPLOAD + EDIT VEHICLE
+    Start: "Upload NMAX 2022"
+    During: Mid-upload conversation
+    Command: "ganti [vehicle]" or "edit [vehicle]"
+    After edit: Cancel or complete edit
+    Continue: Resume upload with next data point
+    Result: Edit works + upload not lost
+
+4️⃣  UPLOAD + STATUS CHECK
+    Start: "Upload Pajero 2021"
+    During: Data collection phase
+    Command: "status"
+    Continue: Provide missing vehicle details
+    Result: Status report + upload continues
+
+5️⃣  UPLOAD + SALES METRICS
+    Start: "Upload Jazz 2020"
+    During: Any upload stage
+    Command: "metrics penjualan"
+    Continue: Continue upload flow
+    Result: PDF sent + upload intact
+
+6️⃣  UPLOAD + STAFF PERFORMANCE
+    Start: "Upload Ertiga 2023"
+    During: Providing vehicle data
+    Command: "laporan staff" or "staff performance"
+    Continue: Continue with upload details
+    Result: PDF sent + upload preserved
+
+🚀 AVAILABLE COMMANDS
+═══════════════════════
+
+📊 PDF REPORTS (Admin/Owner Only):
+   • "sales report"           → Sales Summary PDF
+   • "whatsapp ai"            → WhatsApp Analytics PDF
+   • "metrics penjualan"      → Sales Metrics PDF
+   • "metrics pelanggan"      → Customer Metrics PDF
+   • "metrics operational"    → Operational Metrics PDF
+   • "laporan staff"          → Staff Performance PDF
+   • "laporan inventory"      → Inventory Report PDF
+
+🔧 UNIVERSAL TOOLS (All Staff):
+   • "upload"                 → Start vehicle upload
+   • "stok" / "inventory"     → Check stock levels
+   • "status"                 → System status
+   • "statistik" / "laporan"  → Statistics overview
+   • "edit" / "ubah" / "ganti" → Edit vehicles
+
+🧪 TEST SEQUENCE
+═══════════════
+
+Step 1: Verify User Registration
+─────────────────────────────────
+curl "https://primamobil.id/api/v1/debug/check-user?phone=628YOURNUMBER"
+
+Expected:
+  "found": true,
+  "canAccessPDF": true,
+  "canAccessTools": true
+
+Step 2: Test Each Scenario
+──────────────────────────
+Follow the 6 scenarios in order
+Verify PDF is sent
+Verify upload continues
+Check no errors in logs
+
+Step 3: Test Edge Cases
+───────────────────────
+• Multiple commands in one upload
+• Command at start of upload
+• Command right before completion
+• Staff role using basic tools
+
+Step 4: Document Results
+────────────────────────
+Fill out WHATSAPP_PARALLEL_TEST_GUIDE.md
+Report any issues found
+Attach server logs
+
+🔍 DEBUG COMMANDS
+══════════════════
+
+# Test PDF generation
+curl "https://primamobil.id/api/v1/debug/test-whatsapp-sales-summary" -o test.pdf
+
+# Check user registration (0-prefix)
+curl "https://primamobil.id/api/v1/debug/check-user?phone=081234567890"
+
+# Check user registration (62-prefix)
+curl "https://primamobil.id/api/v1/debug/check-user?phone=6281234567890"
+
+# Monitor server logs (SSH)
+journalctl -u nextjs -f | grep -E "Orchestrator|Command|PARALLEL"
+
+✅ SUCCESS INDICATORS
+═════════════════════
+
+Server Logs Should Show:
+  [Orchestrator] 🤖 WhatsApp AI Command detected - processing with PARALLEL mode
+  [Orchestrator] 📊 Current conversation state: upload_vehicle
+  [CommandHandler] Processing command: [command name]
+  [PDF] Generating PDF...
+  ✅ PDF generated successfully
+
+User Should See:
+  ⭐ PDF document received in WhatsApp
+  ⭐ Upload flow continues smoothly
+  ⭐ No "start over" or "flow interrupted" messages
+  ⭐ Can continue providing vehicle data
+
+⚠️ COMMON ISSUES
+═════════════════
+
+Issue: Command not recognized
+Fix: Check user roleLevel >= 90 for PDF commands
+     Verify command spelling matches exactly
+
+Issue: Upload state lost
+Fix: Verify commit 40da9b9 is deployed
+     Check logs show "PARALLEL mode"
+
+Issue: PDF not sending
+Fix: Test PDF generation endpoint
+     Check Aimeow configuration
+     Verify WhatsApp API credits
+
+Issue: User not found
+Fix: Test phone number format
+     Verify user registration in dashboard
+     Check phone matching logic
+
+📝 KEY CHANGES IN DEPLOYMENT
+═════════════════════════════
+
+✓ Parallel Processing Architecture (commit 40da9b9)
+  • Commands checked FIRST (line 201)
+  • Upload state preserved during commands
+  • No confirmation patterns needed
+  • Escape patterns only for greetings
+
+✓ Phone Number Normalization (commit 0d2d86c)
+  • 3-format matching: 08..., 62..., exact
+  • OR query for flexible lookup
+  • Debug endpoint for testing
+
+✓ Role-Based Access Control (commit 99d9f89)
+  • SALES (30+) → basic tools
+  • ADMIN (90+) → PDF reports
+  • "laporan" command added
+
+✓ KM Optional (commit 6af9f26)
+  • KM removed from required fields
+  • Can be edited later
+  • Upload no longer blocks on KM
+
+🎓 TEST TIPS
+════════════
+
+1. Test with REAL WhatsApp number
+2. Use OWNER/ADMIN account for PDF commands
+3. Use SALES account for basic commands
+4. Test in order: Scenario 1 → 6
+5. Wait for each response before next command
+6. Document any deviations from expected behavior
+7. Collect server logs for debugging
+
+📞 NEED HELP?
+═════════════
+
+If issues found:
+1. Document exact steps taken
+2. Copy server logs
+3. Screenshot WhatsApp conversation
+4. Check WHATSAPP_PARALLEL_TEST_GUIDE.md for solutions
+5. Report in GitHub issues or team chat
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  READY TO TEST? Start with Scenario 1 and work through each one! 🚀          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
