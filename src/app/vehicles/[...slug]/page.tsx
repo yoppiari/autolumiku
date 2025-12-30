@@ -3,14 +3,14 @@
  * Route: /vehicles/[make]-[model]-[year]-[displayId]
  * Example: /vehicles/honda-city-2006-pm-pst-001
  *
- * This route provides SEO-friendly URLs while maintaining ID-based lookup
+ * Professional layout with gallery on left, sticky details on right
  */
 
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import { CatalogEngineService } from '@/lib/services/catalog/catalog-engine.service';
+import { prisma } from '@/lib/prisma';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import ThemeProvider from '@/components/catalog/ThemeProvider';
@@ -26,7 +26,6 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
-import { prisma } from '@/lib/prisma';
 
 interface PageProps {
   params: {
@@ -85,18 +84,11 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
   // Parse slug to get displayId or check if it's UUID
   const { displayId, isUuid } = parseVehicleSlug(slug);
 
-  // DEBUG LOGGING
-  console.log('[Vehicle Page] slug:', slug);
-  console.log('[Vehicle Page] displayId:', displayId);
-  console.log('[Vehicle Page] isUuid:', isUuid);
-
   if (!displayId) {
-    console.log('[Vehicle Page] ❌ No displayId extracted');
     return notFound();
   }
 
   // Fetch vehicle by displayId or UUID (for legacy URLs)
-  console.log('[Vehicle Page] Querying vehicle with:', isUuid ? { id: displayId } : { displayId });
   const vehicle = await prisma.vehicle.findUnique({
     where: isUuid ? { id: displayId } : { displayId },
     include: {
@@ -108,10 +100,7 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
     },
   });
 
-  console.log('[Vehicle Page] Vehicle found:', !!vehicle);
-
   if (!vehicle) {
-    console.log('[Vehicle Page] ❌ Vehicle not found in database');
     return notFound();
   }
 
@@ -141,6 +130,7 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
     licensePlate: vehicle.licensePlate || null,
     description: vehicle.descriptionId || null,
     status: vehicle.status,
+    variant: vehicle.variant || null,
     photos: vehicle.photos.map(p => ({
       id: p.id,
       originalUrl: p.largeUrl || p.mediumUrl || p.originalUrl,
@@ -160,26 +150,13 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
     return `Rp ${(price / 1000).toLocaleString('id-ID')} Ribu`;
   };
 
-  const formatWhatsAppMessage = (v: typeof vehicleData) => {
-    const price = formatPrice(v.price);
-    return `Halo, saya tertarik dengan ${v.make} ${v.model} ${v.year} yang dijual Rp ${price}.\n\nLink: ${typeof window !== 'undefined' ? window.location.href : ''}\n\nApakah unit ini masih tersedia?`;
-  };
-
-  const specs = [
-    { icon: Calendar, label: 'Tahun', value: vehicle.year.toString() },
-    { icon: Droplets, label: 'Bahan Bakar', value: vehicle.fuelType || '-' },
-    { icon: Zap, label: 'Transmisi', value: vehicle.transmissionType || '-' },
-    { icon: Gauge, label: 'Odometer', value: vehicle.mileage ? `${vehicle.mileage.toLocaleString('id-ID')} km` : '-' },
-    { icon: Palette, label: 'Warna', value: vehicle.color || '-' },
-  ];
-
   const whatsappNumber = aiWhatsappNumber || '6281234567890';
-  const message = formatWhatsAppMessage(vehicleData);
+  const message = `Halo, saya tertarik dengan ${vehicleData.year} ${vehicleData.make} ${vehicleData.model}${vehicleData.variant ? ` ${vehicleData.variant}` : ''} (ID: ${vehicleData.displayId || vehicleData.id.substring(0, 8)}). Bisa info lebih lanjut?`;
   const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/^0/, '62')}?text=${encodeURIComponent(message)}`;
 
   return (
     <ThemeProvider tenantId={tenant.id}>
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen bg-background flex flex-col">
         {/* Header */}
         <CatalogHeader
           branding={{
@@ -192,96 +169,130 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
           isCustomDomain={isCustomDomain}
         />
 
-        {/* Back Button */}
-        <div className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <Link
-              href={isCustomDomain ? '/' : `/catalog/${tenant.slug}`}
-              className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Kembali ke Katalog
-            </Link>
+        <main className="flex-1 container mx-auto px-4 py-8">
+          {/* Breadcrumb / Back Button */}
+          <div className="mb-6">
+            <Button asChild variant="ghost" className="pl-0 hover:bg-transparent hover:text-primary">
+              <Link href={isCustomDomain ? '/' : `/catalog/${tenant.slug}`} className="flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Kembali ke Koleksi
+              </Link>
+            </Button>
           </div>
-        </div>
 
-        {/* Vehicle Details */}
-        <main className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Title & Price */}
-            <div className="mb-8">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                {vehicle.make} {vehicle.model} {vehicle.year}
-              </h1>
-              <p className="text-3xl sm:text-4xl font-bold text-blue-600">
-                {formatPrice(vehicleData.price)}
-              </p>
-            </div>
-
-            {/* Gallery */}
-            <div className="mb-8">
-              <VehicleGallery photos={vehicleData.photos} vehicleTitle={`${vehicle.make} ${vehicle.model} ${vehicle.year}`} displayId={vehicle.displayId} status={vehicle.status} />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-4 mb-8">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <FaWhatsapp className="w-5 h-5 mr-2" />
-                Hubungi via WhatsApp
-              </a>
-              <ShareButton
-                title={`${vehicle.make} ${vehicle.model} ${vehicle.year}`}
-                text={`${vehicle.make} ${vehicle.model} ${vehicle.year} - ${formatPrice(vehicleData.price)}`}
-                url={typeof window !== 'undefined' ? window.location.href : ''}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Gallery */}
+            <div className="lg:col-span-2">
+              <VehicleGallery
+                photos={vehicleData.photos}
+                vehicleTitle={`${vehicleData.year} ${vehicleData.make} ${vehicleData.model}`}
+                displayId={vehicleData.displayId}
+                status={vehicleData.status}
               />
-            </div>
 
-            {/* Specifications */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Spesifikasi</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                {specs.map((spec, idx) => (
-                  <div key={idx} className="bg-white p-4 rounded-lg border">
-                    <spec.icon className="w-5 h-5 text-blue-600 mb-2" />
-                    <p className="text-xs text-gray-600 mb-1">{spec.label}</p>
-                    <p className="font-semibold text-gray-900">{spec.value}</p>
+              {/* Description - Desktop */}
+              {vehicleData.description && (
+                <div className="hidden lg:block mt-8 bg-card rounded-lg border p-6">
+                  <h3 className="text-lg font-semibold mb-4">Deskripsi</h3>
+                  <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
+                    {vehicleData.description}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Description */}
-            {vehicleData.description && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Deskripsi</h2>
-                <div className="bg-white p-6 rounded-lg border">
-                  <p className="text-gray-700 whitespace-pre-wrap">{vehicleData.description}</p>
+            {/* Right Column - Details */}
+            <div className="space-y-6">
+              <div className="bg-card rounded-lg border p-6 shadow-sm lg:sticky lg:top-24">
+                <div className="mb-6">
+                  <h1 className="text-2xl font-bold text-foreground mb-2">
+                    {vehicleData.year} {vehicleData.make} {vehicleData.model}
+                  </h1>
+                  {vehicleData.variant && (
+                    <p className="text-lg text-muted-foreground">{vehicleData.variant}</p>
+                  )}
+                </div>
+
+                <div className="mb-8">
+                  <p className="text-3xl font-bold text-primary">
+                    {formatPrice(vehicleData.price)}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Calendar className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tahun</p>
+                      <p className="font-medium">{vehicleData.year}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Gauge className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Kilometer</p>
+                      <p className="font-medium">{vehicleData.odometer ? `${vehicleData.odometer.toLocaleString('id-ID')} km` : '-'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Zap className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Transmisi</p>
+                      <p className="font-medium">{vehicleData.transmission}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Droplets className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Bahan Bakar</p>
+                      <p className="font-medium">{vehicleData.fuelType}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg col-span-2">
+                    <Palette className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Warna</p>
+                      <p className="font-medium">{vehicleData.color}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Button
+                    asChild
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    size="lg"
+                  >
+                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                      <FaWhatsapp className="w-5 h-5 mr-2" />
+                      Hubungi via WhatsApp
+                    </a>
+                  </Button>
+
+                  <ShareButton
+                    title={`${vehicleData.year} ${vehicleData.make} ${vehicleData.model}${vehicleData.variant ? ` ${vehicleData.variant}` : ''}`}
+                    text={`Lihat ${vehicleData.year} ${vehicleData.make} ${vehicleData.model} di ${tenant.name}`}
+                  />
                 </div>
               </div>
-            )}
 
-            {/* Status Badge */}
-            <div className="mb-8">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                vehicle.status === 'AVAILABLE' ? 'bg-green-100 text-green-800' :
-                vehicle.status === 'SOLD' ? 'bg-red-100 text-red-800' :
-                vehicle.status === 'BOOKED' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {vehicle.status === 'AVAILABLE' ? 'Tersedia' :
-                 vehicle.status === 'SOLD' ? 'Terjual' :
-                 vehicle.status === 'BOOKED' ? 'Booked' : vehicle.status}
-              </span>
+              {/* Description - Mobile */}
+              {vehicleData.description && (
+                <div className="lg:hidden bg-card rounded-lg border p-6">
+                  <h3 className="text-lg font-semibold mb-4">Deskripsi</h3>
+                  <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
+                    {vehicleData.description}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </main>
 
-        {/* Footer */}
         <GlobalFooter
           tenant={{
             name: tenant.name,
