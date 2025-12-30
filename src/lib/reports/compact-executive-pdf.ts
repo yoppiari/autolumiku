@@ -1,7 +1,7 @@
 /**
- * Compact Executive Summary PDF Generator
- * Creates a professional 2-page executive summary for showroom analytics
- * Optimized for owner/management review - no wasted space
+ * Compact Executive Summary PDF Generator - FIXED VERSION
+ * Creates a TRUE 2-page executive summary with donut chart
+ * Optimized for owner/management review
  */
 
 import PDFDocument from 'pdfkit';
@@ -37,7 +37,7 @@ export class CompactExecutivePDF {
   constructor() {
     this.doc = new PDFDocument({
       size: 'A4',
-      margin: 30,
+      margin: 20,
       bufferPages: true,
       autoFirstPage: false,
     });
@@ -46,8 +46,7 @@ export class CompactExecutivePDF {
   }
 
   async generate(data: ReportData): Promise<Buffer> {
-    console.log('[CompactExecutivePDF] 🚀 Starting 2-page executive summary generation');
-    console.log('[CompactExecutivePDF] 📊 Tenant:', data.tenantName);
+    console.log('[CompactExecutivePDF] 🚀 Generating TRUE 2-page executive summary');
 
     // Get data or use defaults
     const salesCount = data.salesData?.summary?.totalSalesCount || 0;
@@ -61,9 +60,9 @@ export class CompactExecutivePDF {
     const byMake = data.salesData?.byMake || [];
     const topPerformers = data.salesData?.topPerformers || [];
 
-    // PAGE 1: Executive Dashboard
+    // PAGE 1: Executive Dashboard - COMPACT
     this.doc.addPage();
-    this.generatePage1(data, {
+    this.generatePage1Compact(data, {
       salesCount,
       salesValue,
       totalVehicles,
@@ -73,9 +72,9 @@ export class CompactExecutivePDF {
       topPerformers,
     });
 
-    // PAGE 2: KPIs & Insights
+    // PAGE 2: KPIs & Insights - COMPACT
     this.doc.addPage();
-    this.generatePage2(data, {
+    this.generatePage2Compact(data, {
       salesCount,
       salesValue,
       totalVehicles,
@@ -94,216 +93,195 @@ export class CompactExecutivePDF {
     });
 
     const pdfBuffer = Buffer.concat(this.chunks);
-    console.log('[CompactExecutivePDF] ✅ 2-page PDF generated:', pdfBuffer.length, 'bytes');
+    console.log('[CompactExecutivePDF] ✅ TRUE 2-page PDF generated:', pdfBuffer.length, 'bytes');
 
     return pdfBuffer;
   }
 
-  private generatePage1(data: ReportData, metrics: any) {
+  private generatePage1Compact(data: ReportData, metrics: any) {
     const { doc } = this;
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
 
-    // Header with gradient background
-    doc.fillColor('#1e40af').rect(0, 0, pageWidth, 70).fill();
+    // Header - more compact
+    doc.fillColor('#1e40af').rect(0, 0, pageWidth, 50).fill();
 
     doc.fillColor('#ffffff')
-      .fontSize(22)
+      .fontSize(18)
       .font('Helvetica-Bold')
-      .text('LAPORAN EXECUTIVE', 30, 20);
+      .text('LAPORAN EXECUTIVE', 20, 15);
 
-    doc.fontSize(14)
+    doc.fontSize(12)
       .font('Helvetica')
-      .text(data.tenantName.toUpperCase(), 30, 45);
+      .text(data.tenantName.toUpperCase(), 20, 32);
 
-    doc.fontSize(10)
+    doc.fontSize(8)
       .fillColor('#93c5fd')
-      .text(`${this.formatDate(data.startDate)} - ${this.formatDate(data.endDate)}`, pageWidth - 30, 25, { align: 'right' });
-    doc.text(`Dicetak: ${this.formatDate(new Date())}`, pageWidth - 30, 40, { align: 'right' });
+      .text(`${this.formatDate(data.startDate)} - ${this.formatDate(data.endDate)}`, pageWidth - 20, 20, { align: 'right' });
+    doc.text(`Dicetak: ${this.formatDate(new Date())}`, pageWidth - 20, 30, { align: 'right' });
 
-    // Key Metrics Cards - Top Row (4 cards)
-    const cardWidth = (pageWidth - 60) / 4 - 10;
-    const cardHeight = 75;
-    const startY = 85;
-    const gap = 10;
+    // Key Metrics Cards - Top Row (4 cards) - COMPACT
+    const cardWidth = (pageWidth - 40) / 4 - 6;
+    const cardHeight = 60;
+    const startY = 58;
+    const gap = 6;
 
     // Card 1: Total Sales
-    this.drawCompactCard(30, startY, cardWidth, cardHeight,
+    this.drawCompactCard(20, startY, cardWidth, cardHeight,
       '#3b82f6', '#ffffff',
       'PENJUALAN',
       `${metrics.salesCount}`,
-      'UNIT',
-      metrics.salesCount > 0 ? '✅' : '⚠️'
+      'UNIT'
     );
 
     // Card 2: Revenue
-    this.drawCompactCard(30 + cardWidth + gap, startY, cardWidth, cardHeight,
+    this.drawCompactCard(20 + cardWidth + gap, startY, cardWidth, cardHeight,
       '#10b981', '#ffffff',
       'REVENUE',
       this.formatCompactNumber(metrics.salesValue),
-      'Rp',
-      '💰'
+      'Rp'
     );
 
     // Card 3: Stok
-    this.drawCompactCard(30 + (cardWidth + gap) * 2, startY, cardWidth, cardHeight,
+    this.drawCompactCard(20 + (cardWidth + gap) * 2, startY, cardWidth, cardHeight,
       '#f59e0b', '#ffffff',
       'STOK',
       `${metrics.totalVehicles}`,
-      'UNIT',
-      '📦'
+      'UNIT'
     );
 
     // Card 4: Conversion Rate
     const conversionRate = (metrics.salesCount / (metrics.salesCount + metrics.totalVehicles)) * 100;
-    this.drawCompactCard(30 + (cardWidth + gap) * 3, startY, cardWidth, cardHeight,
+    this.drawCompactCard(20 + (cardWidth + gap) * 3, startY, cardWidth, cardHeight,
       conversionRate >= 20 ? '#10b981' : conversionRate >= 10 ? '#f59e0b' : '#ef4444',
       '#ffffff',
       'CONVERSION',
       `${conversionRate.toFixed(0)}%`,
-      '',
-      conversionRate >= 20 ? '✅' : '⚠️'
+      ''
     );
 
-    // Section: Top Performing Brands - with Chart
-    let y = startY + cardHeight + 15;
+    // DONUT CHART - Sales by Make
+    let y = startY + cardHeight + 10;
 
-    doc.fontSize(12)
+    doc.fontSize(11)
       .fillColor('#1e40af')
       .font('Helvetica-Bold')
-      .text('TOP PERFORMING BRANDS', 30, y);
+      .text('DISTRIBUSI PENJUALAN PER MEREK (DONUT CHART)', 20, y);
 
-    y += 20;
+    y += 25;
 
     if (metrics.byMake.length > 0) {
-      // Draw horizontal bar chart
-      const maxCount = Math.max(...metrics.byMake.map((m: any) => m.count));
-      const barStartX = 100;
-      const barY = y;
-      const barHeight = 18;
-      const maxBarWidth = pageWidth - 150;
+      // Draw donut chart on left side
+      this.drawDonutChart(20, y, 150, metrics.byMake);
+
+      // Draw legend on right side
+      const legendX = 180;
+      let legendY = y;
+      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
       metrics.byMake.slice(0, 5).forEach((item: any, idx: number) => {
-        const barWidth = maxCount > 0 ? (item.count / maxCount) * maxBarWidth : 0;
-        const color = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5];
+        const color = colors[idx % colors.length];
 
-        // Label
-        doc.fillColor('#374151')
-          .fontSize(10)
-          .font('Helvetica')
-          .text(item.make, 30, barY + 4);
+        // Color box
+        doc.fillColor(color).rect(legendX, legendY, 12, 12).fill();
 
-        // Bar background
-        doc.fillColor('#f3f4f6').rect(barStartX, barY, maxBarWidth, barHeight).fill();
-
-        // Bar
-        doc.fillColor(color).rect(barStartX, barY, Math.max(barWidth, 2), barHeight).fill();
-
-        // Value
-        doc.fillColor('#6b7280')
+        // Text
+        doc.fillColor('#1e293b')
           .fontSize(9)
-          .text(`${item.count} unit`, barStartX + maxBarWidth + 10, barY + 4);
+          .font('Helvetica')
+          .text(`${item.make}: ${item.count} unit (${this.formatNumber(item.value)})`, legendX + 18, legendY + 8);
 
-        y += barHeight + 4;
+        legendY += 18;
       });
     } else {
       doc.fillColor('#9ca3af')
-        .fontSize(10)
+        .fontSize(9)
         .font('Helvetica-Oblique')
-        .text('Belum ada data penjualan', 30, y);
+        .text('Belum ada data penjualan', 20, y);
       y += 20;
     }
 
-    // Section: Top Performer
-    y += 10;
+    // Top Salesperson - Compact
+    y = 270;
 
-    doc.fontSize(12)
+    doc.fontSize(11)
       .fillColor('#1e40af')
       .font('Helvetica-Bold')
-      .text('TOP SALESPERSON', 30, y);
+      .text('TOP SALESPERSON', 20, y);
 
-    y += 20;
+    y += 15;
 
     if (metrics.topPerformers.length > 0) {
       const top = metrics.topPerformers[0];
-      doc.fillColor('#ffffff')
-        .rect(30, y, pageWidth - 60, 40)
+      doc.fillColor('#f0f9ff')
+        .rect(20, y, pageWidth - 40, 40)
         .fill();
 
-      doc.fillColor('#dbeafe')
-        .rect(30, y, 6, 40)
-        .fill();
-
-      doc.fillColor('#1e40af')
-        .fontSize(14)
-        .font('Helvetica-Bold')
-        .text('🏆', 40, y + 12);
+      doc.fillColor('#3b82f6')
+        .fontSize(20)
+        .text('🏆', 25, y + 12);
 
       doc.fillColor('#1e293b')
-        .fontSize(12)
+        .fontSize(11)
         .font('Helvetica-Bold')
-        .text(top.name, 60, y + 10);
+        .text(top.name, 50, y + 10);
 
       doc.fillColor('#64748b')
-        .fontSize(10)
+        .fontSize(9)
         .font('Helvetica')
-        .text(`${top.count} unit terjual`, 60, y + 25);
+        .text(`${top.count} unit terjual`, 50, y + 23);
 
       doc.fillColor('#10b981')
-        .fontSize(12)
+        .fontSize(11)
         .font('Helvetica-Bold')
-        .text(this.formatCompactNumber(top.value), pageWidth - 90, y + 18);
-
-      y += 50;
+        .text(this.formatCompactNumber(top.value), pageWidth - 60, y + 18);
     } else {
       doc.fillColor('#9ca3af')
-        .fontSize(10)
+        .fontSize(9)
         .font('Helvetica-Oblique')
-        .text('Belum ada data performa staff', 30, y);
-      y += 20;
+        .text('Belum ada data performa staff', 20, y);
     }
 
-    // Footer for Page 1
+    // Footer Page 1
     doc.fillColor('#f1f5f9')
-      .rect(30, pageHeight - 25, pageWidth - 60, 20)
+      .rect(20, pageHeight - 20, pageWidth - 40, 15)
       .fill();
 
     doc.fillColor('#94a3b8')
-      .fontSize(8)
+      .fontSize(7)
       .font('Helvetica')
-      .text('Executive Summary - Page 1 of 2', pageWidth / 2, pageHeight - 18, { align: 'center' });
+      .text('Page 1 of 2 | Executive Summary', pageWidth / 2, pageHeight - 14, { align: 'center' });
   }
 
-  private generatePage2(data: ReportData, metrics: any) {
+  private generatePage2Compact(data: ReportData, metrics: any) {
     const { doc } = this;
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
 
     // Header
     doc.fillColor('#1e40af')
-      .fontSize(14)
+      .fontSize(11)
       .font('Helvetica-Bold')
-      .text('KPI PERFORMANCE & INSIGHTS', 30, 30);
+      .text('KPI PERFORMANCE & INSIGHTS', 20, 20);
 
-    doc.moveTo(30, 50)
-      .lineTo(pageWidth - 30, 50)
-      .lineWidth(1)
+    doc.moveTo(20, 35)
+      .lineTo(pageWidth - 20, 35)
+      .lineWidth(0.5)
       .stroke('#e5e7eb');
 
-    let y = 65;
+    let y = 45;
 
-    // KPI 1: Inventory Turnover
-    y = this.drawKPIRow(doc, y, pageWidth,
+    // 3 KPIs in compact format - each 40px tall
+    y = this.drawCompactKPI(doc, y, pageWidth,
       'INVENTORY TURNOVER',
       `${metrics.inventoryTurnover}%`,
-      metrics.inventoryTurnover >= 20 ? '✅ BAIK' : '⚠️ PERLU ATTENTION',
+      metrics.inventoryTurnover >= 20 ? '✅ BAIK' : '⚠️ ATTENTION',
       `(Total Sales / (Total Sales + Stok)) × 100`,
       `(${metrics.salesCount} / (${metrics.salesCount} + ${metrics.totalVehicles})) × 100 = ${metrics.inventoryTurnover}%`,
       metrics.inventoryTurnover >= 20 ? '#10b981' : '#f59e0b'
     );
 
-    // KPI 2: Average Transaction Value
-    y = this.drawKPIRow(doc, y, pageWidth,
+    y = this.drawCompactKPI(doc, y, pageWidth,
       'AVERAGE TRANSACTION VALUE',
       `${metrics.atv}%`,
       metrics.atv >= 80 ? '✅ KOMPETITIF' : metrics.atv >= 60 ? '📊 WAJAR' : '⚠️ DI BAWAH RATA-RATA',
@@ -312,8 +290,7 @@ export class CompactExecutivePDF {
       metrics.atv >= 80 ? '#10b981' : metrics.atv >= 60 ? '#f59e0b' : '#ef4444'
     );
 
-    // KPI 3: Sales per Employee
-    y = this.drawKPIRow(doc, y, pageWidth,
+    y = this.drawCompactKPI(doc, y, pageWidth,
       'SALES PER EMPLOYEE',
       `${metrics.salesPerEmployee}%`,
       metrics.salesPerEmployee >= 80 ? '✅ SANGAT BAIK' : metrics.salesPerEmployee >= 60 ? '📊 BAIK' : '⚠️ PERLU TRAINING',
@@ -322,62 +299,43 @@ export class CompactExecutivePDF {
       metrics.salesPerEmployee >= 80 ? '#10b981' : metrics.salesPerEmployee >= 60 ? '#f59e0b' : '#ef4444'
     );
 
-    // Key Insights Section
-    y += 15;
+    // Insights Section - Compact
+    y += 8;
 
-    doc.fillColor('#1e40af')
-      .fontSize(14)
+    doc.fontSize(11)
+      .fillColor('#1e40af')
       .font('Helvetica-Bold')
-      .text('KEY INSIGHTS', 30, y);
+      .text('KEY INSIGHTS', 20, y);
 
-    y += 20;
+    y += 12;
 
     const insights = this.generateInsights(metrics);
 
-    insights.forEach((insight) => {
-      if (y + 35 > pageHeight - 40) {
-        // Skip if would overflow
-        return;
+    // Draw 3 insights in 2 columns
+    insights.slice(0, 4).forEach((insight, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const xOffset = col === 0 ? 20 : pageWidth / 2 + 10;
+      const yOffset = y + (row * 45);
+
+      if (yOffset + 40 < pageHeight - 30) {
+        this.drawInsightBoxCompact(xOffset, yOffset, pageWidth / 2 - 30, 40, insight.color, insight.icon, insight.title, insight.text);
       }
-
-      this.drawInsightBox(30, y, pageWidth - 60, 35, insight.color, insight.icon, insight.title, insight.text);
-      y += 40;
     });
-
-    // Recommendations
-    if (y + 60 < pageHeight - 40) {
-      y += 10;
-
-      doc.fillColor('#1e40af')
-        .fontSize(14)
-        .font('Helvetica-Bold')
-        .text('REKOMENDASI', 30, y);
-
-      y += 20;
-
-      const recommendations = this.generateRecommendations(metrics);
-
-      recommendations.slice(0, 2).forEach((rec) => {
-        if (y + 35 > pageHeight - 40) return;
-
-        this.drawRecommendationBox(30, y, pageWidth - 60, 30, rec.priority, rec.text);
-        y += 35;
-      });
-    }
 
     // Footer
     doc.fillColor('#f1f5f9')
-      .rect(30, pageHeight - 25, pageWidth - 60, 20)
+      .rect(20, pageHeight - 20, pageWidth - 40, 15)
       .fill();
 
     doc.fillColor('#94a3b8')
-      .fontSize(8)
+      .fontSize(7)
       .font('Helvetica')
-      .text('Executive Summary - Page 2 of 2', pageWidth / 2, pageHeight - 18, { align: 'center' });
+      .text('Page 2 of 2 | Executive Summary', pageWidth / 2, pageHeight - 14, { align: 'center' });
 
     doc.fillColor('#94a3b8')
-      .fontSize(7)
-      .text(`Generated by AutoLumiKu | ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, pageHeight - 12, { align: 'center' });
+      .fontSize(6)
+      .text(`Generated by AutoLumiKu | ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, pageHeight - 9, { align: 'center' });
   }
 
   private drawCompactCard(
@@ -389,33 +347,81 @@ export class CompactExecutivePDF {
     textColor: string,
     title: string,
     value: string,
-    unit: string,
-    icon: string
+    unit: string
   ) {
     const { doc } = this;
 
     doc.fillColor(bgColor).rect(x, y, width, height).fill();
 
     doc.fillColor(textColor)
-      .fontSize(18)
-      .text(icon, x + 8, y + 8);
-
-    doc.fontSize(8)
+      .fontSize(7)
       .font('Helvetica-Bold')
-      .text(title, x + 30, y + 10);
+      .text(title, x + 5, y + 8);
 
-    doc.fontSize(14)
+    doc.fontSize(16)
       .font('Helvetica-Bold')
-      .text(value, x + 8, y + 30);
+      .text(value, x + 5, y + 20);
 
     if (unit) {
-      doc.fontSize(10)
+      doc.fontSize(8)
         .font('Helvetica')
-        .text(unit, x + 8, y + 50);
+        .text(unit, x + 5, y + 40);
     }
   }
 
-  private drawKPIRow(
+  private drawDonutChart(x: number, y: number, size: number, data: any[]) {
+    const { doc } = this;
+    const centerX = x + size / 2;
+    const centerY = y + size / 2;
+    const radius = size / 2 - 10;
+    const innerRadius = radius * 0.5;
+
+    const total = data.reduce((sum: number, item: any) => sum + item.count, 0);
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+    let startAngle = 0;
+
+    data.forEach((item: any, idx: number) => {
+      const percentage = total > 0 ? item.count / total : 0;
+      const angle = percentage * 2 * Math.PI;
+
+      // Draw outer arc
+      doc.save();
+      const midAngle = startAngle + angle / 2;
+      const endAngle = startAngle + angle;
+
+      doc.path(`M ${centerX} ${centerY}`)
+        .lineTo(
+          centerX + radius * Math.cos(startAngle),
+          centerY + radius * Math.sin(startAngle)
+        )
+        .arc(centerX, centerY, radius, startAngle, endAngle)
+        .lineTo(centerX, centerY)
+        .fill(colors[idx % colors.length]);
+
+      doc.restore();
+
+      startAngle += angle;
+    });
+
+    // Draw white circle in center (donut hole)
+    doc.fillColor('#ffffff')
+      .circle(centerX, centerY, innerRadius)
+      .fill();
+
+    // Total in center
+    doc.fillColor('#1e293b')
+      .fontSize(12)
+      .font('Helvetica-Bold')
+      .text(`${total}`, centerX, centerY - 5, { align: 'center', width: size });
+
+    doc.fillColor('#64748b')
+      .fontSize(7)
+      .font('Helvetica')
+      .text('TOTAL', centerX, centerY + 8, { align: 'center', width: size });
+  }
+
+  private drawCompactKPI(
     doc: PDFKit.PDFDocument,
     y: number,
     pageWidth: number,
@@ -426,55 +432,49 @@ export class CompactExecutivePDF {
     calculation: string,
     color: string
   ): number {
-    // KPI Box
+    // KPI Box - compact 40px height
     doc.fillColor('#f9fafb')
-      .rect(30, y, pageWidth - 60, 55)
+      .rect(20, y, pageWidth - 40, 40)
       .fill();
 
     // Left colored bar
     doc.fillColor(color)
-      .rect(30, y, 5, 55)
+      .rect(20, y, 4, 40)
       .fill();
 
     // Title & Value
     doc.fillColor('#1e293b')
-      .fontSize(11)
+      .fontSize(9)
       .font('Helvetica-Bold')
-      .text(title, 45, y + 8);
+      .text(title, 30, y + 6);
 
     doc.fillColor(color)
-      .fontSize(14)
+      .fontSize(12)
       .font('Helvetica-Bold')
-      .text(value, pageWidth - 150, y + 6);
+      .text(value, pageWidth - 120, y + 5);
 
     // Status
     doc.fillColor('#64748b')
-      .fontSize(9)
+      .fontSize(8)
       .font('Helvetica')
-      .text(status, pageWidth - 150, y + 22);
+      .text(status, pageWidth - 120, y + 18);
 
     // Formula (small)
     doc.fillColor('#94a3b8')
-      .fontSize(7)
+      .fontSize(6)
       .font('Helvetica-Oblique')
-      .text(`Rumus: ${formula}`, 45, y + 25);
+      .text(`Rumus: ${formula}`, 30, y + 22);
 
     // Calculation (small)
     doc.fillColor('#6b7280')
-      .fontSize(7)
+      .fontSize(6)
       .font('Helvetica')
-      .text(`Hitung: ${calculation}`, 45, y + 35);
+      .text(`Hitung: ${calculation}`, 30, y + 31);
 
-    // Separator
-    doc.moveTo(45, y + 48)
-      .lineTo(pageWidth - 45, y + 48)
-      .lineWidth(0.5)
-      .stroke('#e5e7eb');
-
-    return y + 60;
+    return y + 43;
   }
 
-  private drawInsightBox(
+  private drawInsightBoxCompact(
     x: number,
     y: number,
     width: number,
@@ -488,43 +488,17 @@ export class CompactExecutivePDF {
 
     doc.fillColor(bgColor).rect(x, y, width, height).fill();
 
-    doc.fontSize(14).text(icon, x + 8, y + 10);
+    doc.fontSize(12).text(icon, x + 5, y + 8);
 
     doc.fillColor('#1e293b')
-      .fontSize(9)
+      .fontSize(8)
       .font('Helvetica-Bold')
-      .text(title, x + 30, y + 10);
+      .text(title, x + 22, y + 8);
 
     doc.fillColor('#475569')
-      .fontSize(8)
+      .fontSize(7)
       .font('Helvetica')
-      .text(text, x + 30, y + 22, { width: width - 40 });
-  }
-
-  private drawRecommendationBox(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    priority: string,
-    text: string
-  ) {
-    const { doc } = this;
-
-    const bgColor = priority === 'HIGH' ? '#fee2e2' : priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7';
-    const priorityColor = priority === 'HIGH' ? '#dc2626' : priority === 'MEDIUM' ? '#d97706' : '#059669';
-
-    doc.fillColor(bgColor).rect(x, y, width, height).fill();
-
-    doc.fillColor(priorityColor)
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text(`🔴 ${priority}`, x + 8, y + 10);
-
-    doc.fillColor('#1e293b')
-      .fontSize(8)
-      .font('Helvetica')
-      .text(text, x + 8, y + 22, { width: width - 20 });
+      .text(text, x + 22, y + 22, { width: width - 30 });
   }
 
   private generateInsights(metrics: any): Array<{
@@ -540,14 +514,14 @@ export class CompactExecutivePDF {
         color: '#fef3c7',
         icon: '⚠️',
         title: 'BELUM ADA PENJUALAN',
-        text: 'Periode ini belum ada penjualan. Perlu review strategi marketing & promosi.',
+        text: 'Periode ini belum ada penjualan. Perlu review strategi marketing.',
       });
     } else if (metrics.salesCount < 5) {
       insights.push({
         color: '#fee2e2',
         icon: '📉',
         title: 'PENJUALAN RENDAH',
-        text: `Hanya ${metrics.salesCount} unit terjual. Perlu increase promosi dan aktivitas sales.`,
+        text: `Hanya ${metrics.salesCount} unit terjual. Perlu increase promosi.`,
       });
     }
 
@@ -556,7 +530,7 @@ export class CompactExecutivePDF {
         color: '#fef3c7',
         icon: '📦',
         title: 'STOK TINGGI',
-        text: `Inventory turnover ${metrics.inventoryTurnover}%. Stok belum berputar optimal.`,
+        text: `Inventory turnover ${metrics.inventoryTurnover}%. Stok belum optimal.`,
       });
     }
 
@@ -565,58 +539,20 @@ export class CompactExecutivePDF {
         color: '#fee2e2',
         icon: '💡',
         title: 'HARGA PERLU DITINGKATKAN',
-        text: `ATV ${metrics.atv}% dari rata-rata industri. Pertimbangkan strategi pricing.`,
+        text: `ATV ${metrics.atv}% dari industri. Pertimbangkan pricing strategy.`,
       });
     }
 
-    // Add default insight if empty
     if (insights.length === 0) {
       insights.push({
         color: '#dcfce7',
         icon: '✅',
         title: 'PERFORMA BAIK',
-        text: `${metrics.salesCount} unit terjual dengan nilai Rp ${this.formatNumber(metrics.salesValue)}.`,
+        text: `${metrics.salesCount} unit terjual dengan Rp ${this.formatNumber(metrics.salesValue)}.`,
       });
     }
 
     return insights;
-  }
-
-  private generateRecommendations(metrics: any): Array<{
-    priority: string;
-    text: string;
-  }> {
-    const recommendations = [];
-
-    if (metrics.salesCount === 0) {
-      recommendations.push({
-        priority: 'HIGH',
-        text: 'TINGKATKAN AKTIVITAS MARKETING: Promo diskon khusus, bundle deals, follow up leads',
-      });
-    }
-
-    if (metrics.inventoryTurnover < 20) {
-      recommendations.push({
-        priority: 'MEDIUM',
-        text: 'EVALUASI MEREK KURANG LAKU: Clearance sale stok lama, promo khusus slow-moving',
-      });
-    }
-
-    if (metrics.salesPerEmployee < 80) {
-      recommendations.push({
-        priority: 'MEDIUM',
-        text: 'TRAINING SALES STAFF: Training negosiasi, incentive program, coaching dari top performer',
-      });
-    }
-
-    if (recommendations.length === 0) {
-      recommendations.push({
-        priority: 'LOW',
-        text: 'MONITOR METRICS HARIAN: Review dashboard untuk track performa dan identify trends',
-      });
-    }
-
-    return recommendations;
   }
 
   private formatDate(date: Date): string {
