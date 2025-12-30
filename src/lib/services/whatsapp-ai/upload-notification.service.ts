@@ -6,6 +6,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { AimeowClientService } from "../aimeow/aimeow-client.service";
+import { generateVehicleUrl, generateVehicleDashboardUrl } from "@/lib/utils/vehicle-slug";
 
 // ==================== TYPES ====================
 
@@ -139,6 +140,13 @@ export class UploadNotificationService {
         : "";
       const colorLine = v.color ? `• Warna: ${v.color}\n` : "";
 
+      const vehicleUrl = generateVehicleUrl({
+        make: v.make,
+        model: v.model,
+        year: v.year,
+        displayId: v.displayId || v.vehicleId?.substring(0, 8) || 'unknown',
+      });
+
       return (
         `🔔 *NOTIFIKASI UPLOAD MOBIL*\n` +
         `━━━━━━━━━━━━━\n\n` +
@@ -154,7 +162,7 @@ export class UploadNotificationService {
         `${notification.uploaderName || notification.uploaderPhone}\n\n` +
         `🕐 *Waktu:* ${timestamp}\n\n` +
         `🌐 *Lihat di Website:*\n` +
-        `https://primamobil.id/vehicles/${v.vehicleId}\n\n` +
+        `${vehicleUrl}\n\n` +
         `📊 *Dashboard:*\n` +
         `https://primamobil.id/dashboard/vehicles/${v.vehicleId}`
       );
