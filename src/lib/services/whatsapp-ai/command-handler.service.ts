@@ -77,12 +77,7 @@ export async function processCommand(
   // Normalize command
   const cmd = command.toLowerCase().trim();
 
-  // Universal Commands (ALL roles)
-  if (isUniversalCommand(cmd)) {
-    return await handleUniversalCommand(cmd, context);
-  }
-
-  // PDF Report Commands (ADMIN+ only)
+  // PDF Report Commands (ADMIN+ only) - CHECK FIRST to take precedence over universal
   if (isPDFCommand(cmd)) {
     // RBAC Check
     if (userRoleLevel < ROLE_LEVELS.ADMIN) {
@@ -93,6 +88,11 @@ export async function processCommand(
       };
     }
     return await handlePDFCommand(cmd, context);
+  }
+
+  // Universal Commands (ALL roles) - CHECK SECOND
+  if (isUniversalCommand(cmd)) {
+    return await handleUniversalCommand(cmd, context);
   }
 
   // Unknown command
