@@ -620,6 +620,10 @@ export class MessageOrchestratorService {
                 verifiedVia: "verify_command",
                 // Store original LID if present
                 ...(incoming.from.includes("@lid") && !currentCtx.originalLID && { originalLID: incoming.from }),
+                // CRITICAL FIX: Add LID to linkedLIDs so subsequent messages can find this conversation
+                ...(incoming.from.includes("@lid") && {
+                  linkedLIDs: Array.from(new Set([...(currentCtx.linkedLIDs || []), incoming.from]))
+                }),
               },
             },
           });

@@ -148,6 +148,8 @@ export default function AnalyticsPage() {
   const handleExport = async (format: 'pdf' | 'excel') => {
     try {
       const token = localStorage.getItem('authToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+
       if (!token) {
         alert('Token tidak ditemukan. Silakan login kembali.');
         window.location.href = '/login';
@@ -155,13 +157,54 @@ export default function AnalyticsPage() {
       }
 
       // Always export Sales + WhatsApp AI together
-      const response = await fetch(
+      let response = await fetch(
         `/api/v1/analytics/export?format=${format}&department=all&period=${period}`,
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
+      // Handle 401 - try to refresh token and retry
+      if (response.status === 401 && refreshToken) {
+        console.log('[Export] Token expired, attempting refresh...');
+
+        // Try to refresh the token
+        const refreshResponse = await fetch('/api/v1/auth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          if (refreshData.data) {
+            // Update tokens in localStorage
+            localStorage.setItem('authToken', refreshData.data.accessToken);
+            localStorage.setItem('refreshToken', refreshData.data.refreshToken);
+            localStorage.setItem('user', JSON.stringify(refreshData.data.user));
+
+            console.log('[Export] Token refreshed, retrying export...');
+
+            // Retry the original request with new token
+            response = await fetch(
+              `/api/v1/analytics/export?format=${format}&department=all&period=${period}`,
+              {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${refreshData.data.accessToken}` },
+              }
+            );
+          }
+        } else {
+          // Refresh failed - clear session and redirect
+          console.log('[Export] Token refresh failed');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          window.location.href = '/login?error=session_expired';
+          return;
+        }
+      }
 
       if (response.ok) {
         const blob = await response.blob();
@@ -177,7 +220,22 @@ export default function AnalyticsPage() {
         // Get error details from response
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Export failed:', errorData);
-        alert(`Gagal mengekspor laporan: ${errorData.error || errorData.message || 'Unknown error'}`);
+
+        // Provide user-friendly Indonesian error messages
+        let errorMessage = 'Gagal mengekspor laporan.';
+        if (response.status === 401) {
+          errorMessage = 'Sesi Anda telah berakhir. Silakan login kembali.';
+          // Redirect to login after showing message
+          setTimeout(() => {
+            window.location.href = '/login?error=session_expired';
+          }, 2000);
+        } else if (response.status === 403) {
+          errorMessage = 'Anda tidak memiliki izin untuk mengekspor laporan ini.';
+        } else if (errorData.error) {
+          errorMessage = `Gagal mengekspor laporan: ${errorData.error}`;
+        }
+
+        alert(errorMessage);
       }
     } catch (error) {
       console.error('Export error:', error);

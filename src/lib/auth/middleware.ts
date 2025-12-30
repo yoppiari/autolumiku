@@ -53,7 +53,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
     if (!token) {
       return {
         success: false,
-        error: 'No authentication token provided',
+        error: 'Sesi Anda telah berakhir. Silakan login kembali.',
       };
     }
 
@@ -62,7 +62,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
     if (!payload) {
       return {
         success: false,
-        error: 'Invalid or expired token',
+        error: 'Sesi Anda telah berakhir. Silakan refresh halaman atau login kembali.',
       };
     }
 
