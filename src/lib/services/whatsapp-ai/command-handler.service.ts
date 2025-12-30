@@ -16,6 +16,7 @@ import { ROLE_LEVELS } from '@/lib/rbac';
 import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
 import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
+import { CompactExecutivePDF } from '@/lib/reports/compact-executive-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -1534,8 +1535,8 @@ async function generateSalesSummaryPDF(context: CommandContext): Promise<Command
   const startDate = new Date();
   startDate.setDate(endDate.getDate() - 30);
 
-  // Use new professional PDF Generator with charts and detailed analysis
-  const generator = new AnalyticsPDFGenerator();
+  // Use COMPACT 2-page Executive PDF Generator
+  const generator = new CompactExecutivePDF();
 
   const reportData = {
     tenantName: tenant?.name || 'Prima Mobil',
@@ -1555,25 +1556,25 @@ async function generateSalesSummaryPDF(context: CommandContext): Promise<Command
         avgPrice,
       },
     },
-    whatsappData: null,
     startDate,
     endDate,
   };
 
-  console.log('[Sales Summary PDF] 📊 Report data prepared:', {
+  console.log('[Sales Summary PDF] 📊 Using COMPACT 2-page generator:', {
     tenant: reportData.tenantName,
     hasSalesData: !!reportData.salesData,
     salesCount: reportData.salesData?.summary?.totalSalesCount || 0,
+    generator: 'CompactExecutivePDF (2 pages)',
   });
 
   const pdfBuffer = await generator.generate(reportData);
-  const filename = `sales-summary-${new Date().toISOString().split('T')[0]}.pdf`;
+  const filename = `executive-summary-${new Date().toISOString().split('T')[0]}.pdf`;
 
-  console.log('[Sales Summary PDF] ✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+  console.log('[Sales Summary PDF] ✅ Compact 2-page PDF generated, size:', pdfBuffer.length, 'bytes');
 
   return {
     success: true,
-    message: '✅ Sales Summary berhasil dibuat. Mengirim PDF...',
+    message: '✅ Executive Summary (2 halaman) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename,
     followUp: true,
