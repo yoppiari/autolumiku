@@ -1558,77 +1558,92 @@ async function generateTotalRevenuePDF(context: CommandContext): Promise<Command
 }
 
 async function generateTotalInventoryPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true },
-  });
+  try {
+    console.log('[Total Inventory] Starting PDF generation...');
 
-  const inventoryData = await fetchInventoryData(context);
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: context.tenantId },
+      select: { name: true },
+    });
 
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
+    const inventoryData = await fetchInventoryData(context);
+    console.log('[Total Inventory] Data fetched:', inventoryData.totalStock, 'units');
 
-  // Group inventory by make for chart
-  const byMake: Record<string, number> = {};
-  inventoryData.vehicles.forEach((v) => {
-    const make = v.make || 'Other';
-    byMake[make] = (byMake[make] || 0) + 1;
-  });
-  const chartData = Object.entries(byMake)
-    .map(([make, count]) => ({ make, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-    .map((item, idx) => ({
-      label: item.make,
-      value: item.count,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    }));
+    // Use NEW professional WhatsApp Command PDF
+    const generator = new WhatsAppCommandPDF();
 
-  const metrics = [
-    {
-      label: 'Total Stok',
-      value: `${inventoryData.totalStock}`,
-      unit: 'Unit',
-      color: '#3b82f6',
-      formula: 'COUNT(vehicle) WHERE status IN (AVAILABLE, BOOKED)',
-      calculation: `${inventoryData.totalStock} unit tersedia`,
-    },
-    {
-      label: 'Total Nilai Stok',
-      value: formatCurrency(inventoryData.totalValue),
-      color: '#10b981',
-      formula: 'SUM(price) WHERE status IN (AVAILABLE, BOOKED)',
-      calculation: formatCurrency(inventoryData.totalValue),
-    },
-    {
-      label: 'Rata-rata Hari di Stok',
-      value: `${inventoryData.avgDaysInStock}`,
-      unit: 'Hari',
-      color: '#f59e0b',
-      formula: 'AVG(days since added) WHERE status IN (AVAILABLE, BOOKED)',
-      calculation: `Rata-rata ${inventoryData.avgDaysInStock} hari`,
-    },
-  ];
+    // Group inventory by make for chart
+    const byMake: Record<string, number> = {};
+    inventoryData.vehicles.forEach((v) => {
+      const make = v.make || 'Other';
+      byMake[make] = (byMake[make] || 0) + 1;
+    });
+    const chartData = Object.entries(byMake)
+      .map(([make, count]) => ({ make, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map((item, idx) => ({
+        label: item.make,
+        value: item.count,
+        color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+      }));
 
-  const reportData = {
-    title: 'Total Inventory Showroom',
-    subtitle: 'Stok Kendaraan Tersedia',
-    tenantName: tenant?.name || 'Prima Mobil',
-    date: new Date(),
-    metrics,
-    showChart: chartData.length > 0,
-    chartData,
-  };
+    console.log('[Total Inventory] Chart data prepared:', chartData.length, 'items');
 
-  const pdfBuffer = await generator.generate(reportData);
+    const metrics = [
+      {
+        label: 'Total Stok',
+        value: `${inventoryData.totalStock}`,
+        unit: 'Unit',
+        color: '#3b82f6',
+        formula: 'COUNT(vehicle) WHERE status IN (AVAILABLE, BOOKED)',
+        calculation: `${inventoryData.totalStock} unit tersedia`,
+      },
+      {
+        label: 'Total Nilai Stok',
+        value: formatCurrency(inventoryData.totalValue),
+        color: '#10b981',
+        formula: 'SUM(price) WHERE status IN (AVAILABLE, BOOKED)',
+        calculation: formatCurrency(inventoryData.totalValue),
+      },
+      {
+        label: 'Rata-rata Hari di Stok',
+        value: `${inventoryData.avgDaysInStock}`,
+        unit: 'Hari',
+        color: '#f59e0b',
+        formula: 'AVG(days since added) WHERE status IN (AVAILABLE, BOOKED)',
+        calculation: `Rata-rata ${inventoryData.avgDaysInStock} hari`,
+      },
+    ];
 
-  return {
-    success: true,
-    message: '✅ Total Inventory (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `total-inventory-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
+    const reportData = {
+      title: 'Total Inventory Showroom',
+      subtitle: 'Stok Kendaraan Tersedia',
+      tenantName: tenant?.name || 'Prima Mobil',
+      date: new Date(),
+      metrics,
+      showChart: chartData.length > 0,
+      chartData,
+    };
+
+    console.log('[Total Inventory] Generating PDF...');
+    const pdfBuffer = await generator.generate(reportData);
+    console.log('[Total Inventory] PDF generated successfully:', pdfBuffer.length, 'bytes');
+
+    return {
+      success: true,
+      message: '✅ Total Inventory (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+      pdfBuffer,
+      filename: `total-inventory-${new Date().toISOString().split('T')[0]}.pdf`,
+      followUp: true,
+    };
+  } catch (error) {
+    console.error('[Total Inventory] ERROR:', error);
+    return {
+      success: false,
+      message: `❌ Error generating Total Inventory PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    };
+  }
 }
 
 async function generateAveragePricePDF(context: CommandContext): Promise<CommandResult> {
