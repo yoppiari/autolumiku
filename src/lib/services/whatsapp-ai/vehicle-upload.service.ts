@@ -250,11 +250,10 @@ export class WhatsAppVehicleUploadService {
           aiConfidence: aiResult.aiConfidence,
           aiReasoning: aiResult.aiReasoning,
 
-          // Pricing (convert to BigInt for database - store in cents)
-          // vehicleData.price is in full IDR (e.g., 120000000 for 120 juta)
-          // Database stores in cents: 120000000 * 100 = 12000000000
-          price: BigInt(vehicleData.price * 100),
-          aiSuggestedPrice: BigInt(aiResult.aiSuggestedPrice || vehicleData.price * 100),
+          // Pricing (store in full IDR, NOT cents)
+          // vehicleData.price is already in full IDR (e.g., 79000000 for 79 juta)
+          price: BigInt(vehicleData.price),
+          aiSuggestedPrice: BigInt(aiResult.aiSuggestedPrice || vehicleData.price),
           priceConfidence: aiResult.priceConfidence || 0.8,
           priceAnalysis: aiResult.priceAnalysis || { recommendation: 'Harga sesuai pasar' },
 

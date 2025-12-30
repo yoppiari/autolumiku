@@ -219,9 +219,9 @@ export class VehicleEditService {
         // Get old value
         const oldValue = (vehicle as any)[dbField];
 
-        // Special handling for price (convert to BigInt cents)
+        // Special handling for price (store in full IDR, NOT cents)
         if (dbField === "price") {
-          updateData.price = BigInt(Math.round(validation.value * 100));
+          updateData.price = BigInt(Math.round(validation.value));
         } else {
           updateData[dbField] = validation.value;
         }

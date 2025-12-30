@@ -32,37 +32,45 @@ export async function POST(request: NextRequest) {
 
     const currentPrice = Number(vehicle.price);
 
-    // Check if price is unreasonably high (> 1 billion for used car)
+    // Calculate correct price (divide by 100 if looks like it was multiplied)
+    let correctPrice;
     if (currentPrice > 1000000000) {
-      const correctPrice = Math.round(currentPrice / 100);
-
-      await prisma.vehicle.update({
-        where: { id: vehicle.id },
-        data: { price: correctPrice },
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: 'Price fixed',
-        data: {
-          displayId: vehicle.displayId,
-          oldPrice: currentPrice,
-          newPrice: correctPrice,
-          oldFormatted: `Rp ${currentPrice.toLocaleString('id-ID')}`,
-          newFormatted: `Rp ${correctPrice.toLocaleString('id-ID')}`,
-        },
-      });
+      // Price > 1 billion is likely wrong (unless it's a supercar)
+      correctPrice = Math.round(currentPrice / 100);
     } else {
-      return NextResponse.json({
-        success: true,
-        message: 'Price is reasonable, no fix needed',
-        data: {
-          displayId: vehicle.displayId,
-          currentPrice: currentPrice,
-          formatted: `Rp ${currentPrice.toLocaleString('id-ID')}`,
-        },
-      });
+      correctPrice = currentPrice;
     }
+
+    // Always update to ensure correction
+    await prisma.vehicle.update({
+      where: { id: vehicle.id },
+      data: { price: correctPrice },
+    });
+
+    const priceChanged = currentPrice !== correctPrice;
+
+    return NextResponse.json({
+      success: true,
+      message: priceChanged ? 'Price fixed successfully' : 'Price was already correct',
+      data: {
+        displayId: vehicle.displayId,
+        oldPrice: currentPrice,
+        newPrice: correctPrice,
+        oldFormatted: new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(currentPrice),
+        newFormatted: new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(correctPrice),
+        priceChanged,
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({
       success: false,
