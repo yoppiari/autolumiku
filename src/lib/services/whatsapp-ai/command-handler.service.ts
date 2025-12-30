@@ -17,7 +17,7 @@ import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
 import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
 import { CompactExecutivePDF } from '@/lib/reports/compact-executive-pdf';
-import { WhatsAppCommandPDF } from '@/lib/reports/whatsapp-command-pdf';
+import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -44,15 +44,6 @@ interface CommandResult {
 }
 
 // Helper functions
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('id-ID', {
     day: '2-digit',

@@ -32,7 +32,7 @@ export class WhatsAppCommandPDF {
 
   constructor() {
     this.doc = new PDFDocument({
-      size: 'A4',
+      size: 'LETTER', // Changed from A4 to LETTER for better management review
       margin: 20,
       bufferPages: true,
       autoFirstPage: false,
@@ -69,8 +69,8 @@ export class WhatsAppCommandPDF {
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
 
-    // Header
-    doc.fillColor('#1e40af').rect(0, 0, pageWidth, 50).fill();
+    // Header - Increased height to prevent date cutoff
+    doc.fillColor('#1e40af').rect(0, 0, pageWidth, 55).fill();
 
     doc.fillColor('#ffffff')
       .fontSize(18)
@@ -79,17 +79,18 @@ export class WhatsAppCommandPDF {
 
     doc.fontSize(12)
       .font('Helvetica')
-      .text(config.tenantName.toUpperCase(), 20, 32);
+      .text(config.tenantName.toUpperCase(), 20, 35);
 
+    // Date positioned with more space to prevent cutoff
     doc.fontSize(8)
       .fillColor('#93c5fd')
-      .text(this.formatDate(config.date), pageWidth - 20, 20, { align: 'right' });
-    doc.text(`Dicetak: ${this.formatDate(new Date())}`, pageWidth - 20, 30, { align: 'right' });
+      .text(`Data: ${this.formatDate(config.date)}`, pageWidth - 25, 20, { align: 'right' });
+    doc.text(`Cetak: ${this.formatDate(new Date())}`, pageWidth - 25, 32, { align: 'right' });
 
     // Metrics Grid - Top row (6 cards in 2x3 grid)
     const cardWidth = (pageWidth - 40) / 3 - 8;
-    const cardHeight = 75;
-    const startY = 58;
+    const cardHeight = 70; // Reduced from 75 to save space
+    const startY = 63; // Adjusted for new header height
     const gap = 8;
 
     config.metrics.slice(0, 6).forEach((metric, idx) => {
@@ -101,104 +102,50 @@ export class WhatsAppCommandPDF {
       this.drawMetricCard(x, y, cardWidth, cardHeight, metric);
     });
 
-    let y = startY + 2 * (cardHeight + gap) + 10;
+    let y = startY + 2 * (cardHeight + gap) + 8;
 
-    // Chart section
-    if (config.showChart && config.chartData && config.chartData.length > 0) {
+    // Chart section - ALWAYS show if showChart is true, even with 0 data
+    if (config.showChart) {
       doc.fontSize(11)
         .fillColor('#1e40af')
         .font('Helvetica-Bold')
         .text('VISUALISASI DATA', 20, y);
 
-      y += 25;
+      y += 22;
 
-      // Draw donut chart on left
-      this.drawDonutChart(20, y, 110, config.chartData);
+      // Draw donut chart on left (even with 0/empty data)
+      const chartData = config.chartData && config.chartData.length > 0 ? config.chartData : [];
+      this.drawDonutChart(20, y, 100, chartData);
 
-      // Draw legend on right
-      const legendX = 140;
+      // Draw legend on right or "No Data" message
+      const legendX = 130;
       let legendY = y;
-      config.chartData.forEach((item) => {
-        doc.fillColor(item.color).rect(legendX, legendY, 10, 10).fill();
 
-        doc.fillColor('#1e293b')
-          .fontSize(9)
-          .font('Helvetica')
-          .text(`${item.label}: ${item.value}`, legendX + 15, legendY + 8);
+      if (chartData.length > 0) {
+        chartData.forEach((item) => {
+          doc.fillColor(item.color).rect(legendX, legendY, 10, 10).fill();
 
-        legendY += 18;
-      });
+          doc.fillColor('#1e293b')
+            .fontSize(9)
+            .font('Helvetica')
+            .text(`${item.label}: ${item.value}`, legendX + 15, legendY + 8);
 
-      y += 130;
-    } else {
-      y += 20;
-    }
-
-    // Formulas and calculations section BELOW chart
-    if (config.formula || config.calculation) {
-      doc.fillColor('#f9fafb')
-        .rect(20, y, pageWidth - 40, 50)
-        .fill();
-
-      doc.fillColor('#1e293b')
-        .fontSize(10)
-        .font('Helvetica-Bold')
-        .text('RUMUS PERHITUNGAN', 30, y + 10);
-
-      if (config.formula) {
+          legendY += 18;
+        });
+      } else {
         doc.fillColor('#64748b')
-          .fontSize(8)
+          .fontSize(9)
           .font('Helvetica-Oblique')
-          .text(`Rumus: ${config.formula}`, 30, y + 25);
+          .text('Belum ada data untuk ditampilkan', legendX, legendY + 8);
       }
 
-      if (config.calculation) {
-        doc.fillColor('#6b7280')
-          .fontSize(8)
-          .font('Helvetica')
-          .text(`Perhitungan: ${config.calculation}`, 30, y + 38);
-      }
-
-      y += 58;
+      y += 115; // Reduced space for chart
+    } else {
+      y += 10;
     }
 
-    // Metric formulas (first 3 metrics only to prevent overflow)
-    const metricsWithFormulas = config.metrics.filter(m => m.formula || m.calculation).slice(0, 3);
-    metricsWithFormulas.forEach((metric) => {
-      doc.fillColor('#f9fafb')
-        .rect(20, y, pageWidth - 40, 45)
-        .fill();
-
-      doc.fillColor(metric.color)
-        .rect(20, y, 4, 45)
-        .fill();
-
-      doc.fillColor('#1e293b')
-        .fontSize(9)
-        .font('Helvetica-Bold')
-        .text(metric.label, 30, y + 8);
-
-      doc.fillColor(metric.color)
-        .fontSize(14)
-        .font('Helvetica-Bold')
-        .text(metric.value, pageWidth - 120, y + 8);
-
-      if (metric.formula) {
-        doc.fillColor('#94a3b8')
-          .fontSize(7)
-          .font('Helvetica-Oblique')
-          .text(`Rumus: ${metric.formula}`, 30, y + 22);
-      }
-
-      if (metric.calculation) {
-        doc.fillColor('#6b7280')
-          .fontSize(7)
-          .font('Helvetica')
-          .text(`Hitung: ${metric.calculation}`, 30, y + 32);
-      }
-
-      y += 50;
-    });
+    // Note: Detailed formulas moved to Page 2 to prevent overflow
+    // Page 1 now only shows: Header + Metrics + Chart
 
     // Footer Page 1
     doc.fillColor('#f1f5f9')
@@ -208,7 +155,7 @@ export class WhatsAppCommandPDF {
     doc.fillColor('#94a3b8')
       .fontSize(7)
       .font('Helvetica')
-      .text('Page 1 of 2 | Professional Report', pageWidth / 2, pageHeight - 14, { align: 'center' });
+      .text('Page 1 of 2 | Laporan Profesional', pageWidth / 2, pageHeight - 14, { align: 'center' });
   }
 
   private generatePage2(config: ReportConfig) {
@@ -220,7 +167,7 @@ export class WhatsAppCommandPDF {
     doc.fillColor('#1e40af')
       .fontSize(11)
       .font('Helvetica-Bold')
-      .text('KEY INSIGHTS & RINGKASAN EKSEKUTIF', 20, 20);
+      .text('RUMUSAN PERHITUNGAN & ANALISIS DETAIL', 20, 20);
 
     doc.moveTo(20, 35)
       .lineTo(pageWidth - 20, 35)
@@ -229,68 +176,107 @@ export class WhatsAppCommandPDF {
 
     let y = 50;
 
-    // Top 3 metrics highlights
-    if (config.metrics.length > 0) {
-      doc.fontSize(10)
-        .fillColor('#1e40af')
-        .font('Helvetica-Bold')
-        .text('METRIK UTAMA', 20, y);
+    // Global formula/calculation if provided
+    if (config.formula || config.calculation) {
+      doc.fillColor('#f0fdf4')
+        .rect(20, y, pageWidth - 40, 45)
+        .fill();
 
-      y += 15;
-
-      config.metrics.slice(0, 3).forEach((metric, idx) => {
-        const color = ['#dcfce7', '#dbeafe', '#fef3c7'][idx];
-        const icon = ['✅', '📊', '💰'][idx];
-
-        this.drawInsightBox(20, y, pageWidth - 40, 35, color, icon, metric.label,
-          `${metric.value} ${metric.unit || ''}`);
-
-        y += 42;
-      });
-
-      y += 10;
-    }
-
-    // Summary table
-    doc.fontSize(10)
-      .fillColor('#1e40af')
-      .font('Helvetica-Bold')
-      .text('RINGKASAN DATA', 20, y);
-
-    y += 12;
-
-    // Table header
-    doc.fillColor('#1e40af')
-      .rect(20, y, pageWidth - 40, 20)
-      .fill();
-
-    doc.fillColor('#ffffff')
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text('METRIK', 25, y + 6);
-    doc.text('NILAI', pageWidth - 120, y + 6);
-
-    y += 20;
-
-    // Table rows
-    config.metrics.slice(0, 6).forEach((metric, idx) => {
-      const bgColor = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-
-      doc.fillColor(bgColor)
-        .rect(20, y, pageWidth - 40, 18)
+      doc.fillColor('#16a34a')
+        .rect(20, y, 4, 45)
         .fill();
 
       doc.fillColor('#1e293b')
-        .fontSize(8)
-        .font('Helvetica')
-        .text(metric.label, 25, y + 5);
-
-      doc.fillColor(metric.color)
+        .fontSize(9)
         .font('Helvetica-Bold')
-        .text(metric.value, pageWidth - 120, y + 5);
+        .text('RUMUS PERHITUNGAN GLOBAL', 30, y + 8);
 
-      y += 18;
-    });
+      if (config.formula) {
+        doc.fillColor('#64748b')
+          .fontSize(7)
+          .font('Helvetica-Oblique')
+          .text(`Rumus: ${config.formula}`, 30, y + 20);
+      }
+
+      if (config.calculation) {
+        doc.fillColor('#6b7280')
+          .fontSize(7)
+          .font('Helvetica')
+          .text(`Perhitungan: ${config.calculation}`, 30, y + 32);
+      }
+
+      y += 52;
+    }
+
+    // Metric formulas - show first 5 metrics with formulas
+    const metricsWithFormulas = config.metrics.filter(m => m.formula || m.calculation).slice(0, 5);
+
+    if (metricsWithFormulas.length > 0) {
+      doc.fontSize(10)
+        .fillColor('#1e40af')
+        .font('Helvetica-Bold')
+        .text('RUMUSAN PER METRIK', 20, y);
+
+      y += 12;
+
+      metricsWithFormulas.forEach((metric, idx) => {
+        // Alternating background colors
+        const bgColor = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+
+        doc.fillColor(bgColor)
+          .rect(20, y, pageWidth - 40, 42)
+          .fill();
+
+        doc.fillColor(metric.color)
+          .rect(20, y, 4, 42)
+          .fill();
+
+        doc.fillColor('#1e293b')
+          .fontSize(8)
+          .font('Helvetica-Bold')
+          .text(metric.label, 30, y + 6);
+
+        doc.fillColor(metric.color)
+          .fontSize(11)
+          .font('Helvetica-Bold')
+          .text(metric.value, pageWidth - 120, y + 6);
+
+        if (metric.formula) {
+          doc.fillColor('#94a3b8')
+            .fontSize(6)
+            .font('Helvetica-Oblique')
+            .text(`Rumus: ${metric.formula}`, 30, y + 18);
+        }
+
+        if (metric.calculation) {
+          doc.fillColor('#6b7280')
+            .fontSize(6)
+            .font('Helvetica')
+            .text(`Hitung: ${metric.calculation}`, 30, y + 28);
+        }
+
+        y += 47;
+      });
+    }
+
+    // Summary insights box
+    y += 8;
+
+    if (config.metrics.length > 0) {
+      const topMetric = config.metrics[0];
+      this.drawInsightBox(20, y, pageWidth - 40, 40, '#dcfce7', '✅', 'INSIGHT UTAMA',
+        `${topMetric.label}: ${topMetric.value} ${topMetric.unit || ''} - Performa terbaik`);
+
+      y += 47;
+
+      if (config.metrics.length > 1) {
+        const secondMetric = config.metrics[1];
+        this.drawInsightBox(20, y, pageWidth - 40, 40, '#dbeafe', '📊', 'METRIK KEDUA',
+          `${secondMetric.label}: ${secondMetric.value} ${secondMetric.unit || ''}`);
+
+        y += 47;
+      }
+    }
 
     // Footer
     doc.fillColor('#f1f5f9')
@@ -300,7 +286,7 @@ export class WhatsAppCommandPDF {
     doc.fillColor('#94a3b8')
       .fontSize(7)
       .font('Helvetica')
-      .text('Page 2 of 2 | Professional Report', pageWidth / 2, pageHeight - 14, { align: 'center' });
+      .text('Page 2 of 2 | Laporan Profesional', pageWidth / 2, pageHeight - 14, { align: 'center' });
 
     doc.fillColor('#94a3b8')
       .fontSize(6)
