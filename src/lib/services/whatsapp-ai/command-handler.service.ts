@@ -77,25 +77,38 @@ export async function processCommand(
   // Normalize command
   const cmd = command.toLowerCase().trim();
 
+  console.log(`[CommandHandler] 📥 Processing command: "${command}" -> normalized: "${cmd}"`);
+  console.log(`[CommandHandler] 👤 User role level: ${userRoleLevel}, Tenant: ${tenantId}`);
+
   // PDF Report Commands (ADMIN+ only) - CHECK FIRST to take precedence over universal
-  if (isPDFCommand(cmd)) {
+  const isPDF = isPDFCommand(cmd);
+  console.log(`[CommandHandler] 📄 isPDFCommand: ${isPDF}`);
+
+  if (isPDF) {
     // RBAC Check
     if (userRoleLevel < ROLE_LEVELS.ADMIN) {
+      console.log(`[CommandHandler] ❌ Access denied - user level ${userRoleLevel} < ADMIN ${ROLE_LEVELS.ADMIN}`);
       return {
         success: false,
         message: 'Maaf, fitur PDF Report hanya untuk Owner, Admin, dan Super Admin.',
         followUp: true,
       };
     }
+    console.log(`[CommandHandler] ✅ Routing to PDF handler`);
     return await handlePDFCommand(cmd, context);
   }
 
   // Universal Commands (ALL roles) - CHECK SECOND
-  if (isUniversalCommand(cmd)) {
+  const isUniversal = isUniversalCommand(cmd);
+  console.log(`[CommandHandler] 🔧 isUniversalCommand: ${isUniversal}`);
+
+  if (isUniversal) {
+    console.log(`[CommandHandler] ✅ Routing to Universal handler`);
     return await handleUniversalCommand(cmd, context);
   }
 
   // Unknown command
+  console.log(`[CommandHandler] ❌ Unknown command - returning help message`);
   return {
     success: false,
     message: 'Maaf, saya tidak mengerti command tersebut. Ketik "help" untuk daftar command yang tersedia.',
