@@ -8,11 +8,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { CompactExecutivePDF } from '@/lib/reports/compact-executive-pdf';
 
 // Import the function from command-handler
 async function generateSalesSummaryPDF(tenantId: string) {
-  const { AnalyticsPDFGenerator } = await import('@/lib/reports/analytics-pdf-generator');
-
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
     select: { name: true },
@@ -110,8 +109,8 @@ async function generateSalesSummaryPDF(tenantId: string) {
   const endDate = new Date();
   startDate.setDate(endDate.getDate() - 30);
 
-  // Use new professional PDF Generator
-  const generator = new AnalyticsPDFGenerator();
+  // Use COMPACT 2-page Executive PDF Generator
+  const generator = new CompactExecutivePDF();
 
   const reportData = {
     tenantName: tenant?.name || 'Prima Mobil',
@@ -131,20 +130,20 @@ async function generateSalesSummaryPDF(tenantId: string) {
         avgPrice,
       },
     },
-    whatsappData: null,
     startDate,
     endDate,
   };
 
-  console.log('[WhatsApp Sales Summary Test] 📊 Report data prepared:', {
+  console.log('[WhatsApp Sales Summary Test] 📊 Using COMPACT 2-page generator:', {
     tenant: reportData.tenantName,
     hasSalesData: !!reportData.salesData,
     salesCount: reportData.salesData?.summary?.totalSalesCount || 0,
+    generator: 'CompactExecutivePDF (2 pages)',
   });
 
   const pdfBuffer = await generator.generate(reportData);
 
-  console.log('[WhatsApp Sales Summary Test] ✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+  console.log('[WhatsApp Sales Summary Test] ✅ Compact 2-page PDF generated, size:', pdfBuffer.length, 'bytes');
 
   return pdfBuffer;
 }
@@ -187,8 +186,9 @@ export async function GET(request: NextRequest) {
           tenantName: tenant.name,
           pdfSize: pdfBuffer.length,
           pdfSizeKB: (pdfBuffer.length / 1024).toFixed(2) + ' KB',
-          generator: 'AnalyticsPDFGenerator (WhatsApp AI)',
-          message: 'This PDF is generated using the same function that WhatsApp AI uses for "sales summary" command',
+          generator: 'CompactExecutivePDF (2-Page)',
+          pages: 2,
+          message: 'This PDF uses the same CompactExecutivePDF that WhatsApp AI "sales summary" command uses',
         }),
       },
     });
