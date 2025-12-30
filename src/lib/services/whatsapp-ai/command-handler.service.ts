@@ -1138,7 +1138,12 @@ async function generateOperationalMetricsPDF(context: CommandContext): Promise<C
     tenantName: tenant?.name || 'Prima Mobil',
     date: new Date(),
     metrics,
-    showChart: false,
+    showChart: salesData.byMake.length > 0,
+    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
+      label: item.make,
+      value: item.count,
+      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+    })),
   };
 
   const pdfBuffer = await generator.generate(reportData);
@@ -1277,7 +1282,12 @@ async function generateStaffPerformancePDF(context: CommandContext): Promise<Com
     tenantName: tenant?.name || 'Prima Mobil',
     date: new Date(),
     metrics,
-    showChart: false,
+    showChart: staffData.topPerformers.length > 0,
+    chartData: staffData.topPerformers.slice(0, 5).map((performer, idx) => ({
+      label: performer.name,
+      value: performer.count,
+      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+    })),
   };
 
   const pdfBuffer = await generator.generate(reportData);
@@ -1368,6 +1378,22 @@ async function generateLowStockPDF(context: CommandContext): Promise<CommandResu
   const stockStatus = isLowStock ? 'CRITICAL' : isMediumStock ? 'WARNING' : 'SAFE';
   const stockColor = isLowStock ? '#ef4444' : isMediumStock ? '#f59e0b' : '#10b981';
 
+  // Group inventory by make for chart
+  const byMake: Record<string, number> = {};
+  inventoryData.vehicles.forEach((v) => {
+    const make = v.make || 'Other';
+    byMake[make] = (byMake[make] || 0) + 1;
+  });
+  const chartData = Object.entries(byMake)
+    .map(([make, count]) => ({ make, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map((item, idx) => ({
+      label: item.make,
+      value: item.count,
+      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+    }));
+
   const metrics = [
     {
       label: 'Total Stok Saat Ini',
@@ -1400,7 +1426,8 @@ async function generateLowStockPDF(context: CommandContext): Promise<CommandResu
     tenantName: tenant?.name || 'Prima Mobil',
     date: new Date(),
     metrics,
-    showChart: false,
+    showChart: chartData.length > 0,
+    chartData,
   };
 
   const pdfBuffer = await generator.generate(reportData);
@@ -1550,6 +1577,22 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
   // Use NEW professional WhatsApp Command PDF
   const generator = new WhatsAppCommandPDF();
 
+  // Group inventory by make for chart
+  const byMake: Record<string, number> = {};
+  inventoryData.vehicles.forEach((v) => {
+    const make = v.make || 'Other';
+    byMake[make] = (byMake[make] || 0) + 1;
+  });
+  const chartData = Object.entries(byMake)
+    .map(([make, count]) => ({ make, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map((item, idx) => ({
+      label: item.make,
+      value: item.count,
+      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+    }));
+
   const metrics = [
     {
       label: 'Total Stok',
@@ -1582,6 +1625,8 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
     tenantName: tenant?.name || 'Prima Mobil',
     date: new Date(),
     metrics,
+    showChart: chartData.length > 0,
+    chartData,
   };
 
   const pdfBuffer = await generator.generate(reportData);
