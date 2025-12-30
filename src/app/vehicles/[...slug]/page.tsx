@@ -72,7 +72,7 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
     include: {
       tenant: true,
       photos: {
-        orderBy: { position: 'asc' },
+        orderBy: { displayOrder: 'asc' },
         take: 20,
       },
     },
@@ -102,16 +102,17 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
     year: vehicle.year,
     price: vehicle.price ? Number(vehicle.price) : 0,
     color: vehicle.color || '-',
-    odometer: vehicle.odometer || null,
-    transmission: vehicle.transmission || '-',
+    odometer: vehicle.mileage || null,
+    transmission: vehicle.transmissionType || '-',
     fuelType: vehicle.fuelType || '-',
     licensePlate: vehicle.licensePlate || null,
-    description: vehicle.description || null,
+    description: vehicle.descriptionId || null,
     status: vehicle.status,
     photos: vehicle.photos.map(p => ({
       id: p.id,
-      url: p.url,
-      caption: p.caption,
+      originalUrl: p.largeUrl || p.mediumUrl || p.originalUrl,
+      thumbnailUrl: p.thumbnailUrl || p.largeUrl || p.mediumUrl || p.originalUrl,
+      displayOrder: p.displayOrder,
     })),
     createdAt: vehicle.createdAt,
     updatedAt: vehicle.updatedAt,
@@ -134,8 +135,8 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
   const specs = [
     { icon: Calendar, label: 'Tahun', value: vehicle.year.toString() },
     { icon: Droplets, label: 'Bahan Bakar', value: vehicle.fuelType || '-' },
-    { icon: Zap, label: 'Transmisi', value: vehicle.transmission || '-' },
-    { icon: Gauge, label: 'Odometer', value: vehicle.odometer ? `${vehicle.odometer.toLocaleString('id-ID')} km` : '-' },
+    { icon: Zap, label: 'Transmisi', value: vehicle.transmissionType || '-' },
+    { icon: Gauge, label: 'Odometer', value: vehicle.mileage ? `${vehicle.mileage.toLocaleString('id-ID')} km` : '-' },
     { icon: Palette, label: 'Warna', value: vehicle.color || '-' },
   ];
 
@@ -144,13 +145,17 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
   const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/^0/, '62')}?text=${encodeURIComponent(message)}`;
 
   return (
-    <ThemeProvider theme={tenant.catalogTheme || null}>
+    <ThemeProvider tenantId={tenant.id}>
       <div className="min-h-screen flex flex-col bg-gray-50">
         {/* Header */}
         <CatalogHeader
-          tenantName={tenant.name}
-          tenantSlug={tenant.slug}
-          logoUrl={tenant.logoUrl}
+          branding={{
+            name: tenant.name,
+            logoUrl: tenant.logoUrl,
+            primaryColor: tenant.primaryColor,
+            secondaryColor: tenant.secondaryColor,
+            slug: tenant.slug,
+          }}
           isCustomDomain={isCustomDomain}
         />
 
@@ -273,9 +278,9 @@ export async function generateMetadata({ params }: PageProps) {
 
   const tenant = vehicle.tenant;
   const title = `${vehicle.make} ${vehicle.model} ${vehicle.year} - ${tenant.name}`;
-  const description = vehicle.description
-    ? vehicle.description.substring(0, 160)
-    : `Lihat ${vehicle.make} ${vehicle.model} ${vehicle.year} di ${tenant.name}. ${vehicle.transmission || ''}, ${vehicle.fuelType || ''}, ${vehicle.color || ''}.`;
+  const description = vehicle.descriptionId
+    ? vehicle.descriptionId.substring(0, 160)
+    : `Lihat ${vehicle.make} ${vehicle.model} ${vehicle.year} di ${tenant.name}. ${vehicle.transmissionType || ''}, ${vehicle.fuelType || ''}, ${vehicle.color || ''}.`;
 
   return {
     title,
