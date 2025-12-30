@@ -446,22 +446,48 @@ async function handlePDFCommand(
   cmd: string,
   context: CommandContext
 ): Promise<CommandResult> {
-  // Map command to PDF generator function
+  // Map command to PDF generator function with multiple keyword aliases
   const pdfGenerators: Record<string, (ctx: CommandContext) => Promise<CommandResult>> = {
+    // Sales & Revenue
     'sales report': generateSalesReportPDF,
     'whatsapp ai': generateWhatsAppAIPDF,
     'metrix penjualan': generateSalesMetricsPDF,
+    'metrics penjualan': generateSalesMetricsPDF,
     'metrix pelanggan': generateCustomerMetricsPDF,
+    'metrics pelanggan': generateCustomerMetricsPDF,
+    'customer metrics': generateCustomerMetricsPDF, // Added alias
+    'customer metric': generateCustomerMetricsPDF,
     'metrix operational': generateOperationalMetricsPDF,
+    'metrics operational': generateOperationalMetricsPDF,
     'operational metrics': generateOperationalMetricsPDF,
+    'operational metric': generateOperationalMetricsPDF,
     'tren penjualan': generateSalesTrendsPDF,
+    'trends penjualan': generateSalesTrendsPDF,
+    'sales trends': generateSalesTrendsPDF, // Added alias
+    'sales trend': generateSalesTrendsPDF,
+    'penjualan trends': generateSalesTrendsPDF,
+
+    // Staff
     'staff performance': generateStaffPerformancePDF,
     'recent sales': generateRecentSalesPDF,
+
+    // Inventory
     'low stock alert': generateLowStockPDF,
-    'total penjualan showroom': generateTotalSalesPDF,
-    'total revenue': generateTotalRevenuePDF,
-    'total inventory': generateTotalInventoryPDF,
+    'low stock': generateLowStockPDF,
+    'total inventory': generateTotalInventoryPDF, // Added alias
+    'total stok': generateTotalInventoryPDF,
+    'stok total': generateTotalInventoryPDF,
     'average price': generateAveragePricePDF,
+    'avg price': generateAveragePricePDF,
+    'rata-rata harga': generateAveragePricePDF,
+
+    // Sales & Revenue
+    'total penjualan showroom': generateTotalSalesPDF,
+    'total penjualan': generateTotalSalesPDF, // Added alias
+    'total sales': generateTotalSalesPDF, // Added alias
+    'sales total': generateTotalSalesPDF,
+    'total revenue': generateTotalRevenuePDF,
+    'revenue total': generateTotalRevenuePDF,
     'sales summary': generateSalesSummaryPDF,
     'penjualan': generateSalesSummaryPDF,
     'sales': generateSalesSummaryPDF,
