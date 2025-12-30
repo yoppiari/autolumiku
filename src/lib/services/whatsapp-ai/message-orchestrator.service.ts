@@ -996,6 +996,25 @@ export class MessageOrchestratorService {
                               message.includes('statistik') || message.includes('stats') ||
                               message.includes('laporan'); // Tambah "laporan" sebagai command
 
+    // CRITICAL FIX: If incoming.from is LID, use verifiedStaffPhone from conversation for user lookup
+    // This fixes the issue where verify command links LID to real phone, but commands still use LID
+    let phoneForLookup = incoming.from;
+    if (incoming.from.includes('@lid')) {
+      const conversation = await prisma.whatsAppConversation.findUnique({
+        where: { id: conversationId },
+        select: {
+          contextData: true,
+          customerPhone: true,
+        },
+      });
+
+      const contextData = conversation?.contextData as Record<string, any> | null;
+      if (contextData?.verifiedStaffPhone) {
+        phoneForLookup = contextData.verifiedStaffPhone;
+        console.log(`[Orchestrator] 🔄 LID detected, using verifiedStaffPhone: ${incoming.from} -> ${phoneForLookup}`);
+      }
+    }
+
     // PDF Commands - MUST match specific patterns to avoid false positives
     // Single word triggers:
     const isPDFCommand = message === 'report' ||
@@ -1042,11 +1061,11 @@ export class MessageOrchestratorService {
 
     // Find user by phone number with flexible matching
     // Use the same normalization as main user lookup (convert 62... to 0...)
-    const digits = incoming.from.replace(/\D/g, '');
+    const digits = phoneForLookup.replace(/\D/g, '');
     const phoneWith0 = digits.startsWith('62') ? '0' + digits.slice(2) : digits;
     const phoneWith62 = digits.startsWith('0') ? '62' + digits.slice(1) : digits;
 
-    console.log(`[Orchestrator] 🔍 Looking for user with phone formats: 0-prefix="${phoneWith0}", 62-prefix="${phoneWith62}", exact="${incoming.from}"`);
+    console.log(`[Orchestrator] 🔍 Looking for user with phone formats: 0-prefix="${phoneWith0}", 62-prefix="${phoneWith62}", exact="${phoneForLookup}"`);
 
     // Get all users in tenant with staff roles
     const allUsers = await prisma.user.findMany({
@@ -1067,11 +1086,11 @@ export class MessageOrchestratorService {
     // Find matching user by trying all phone formats
     const user = allUsers.find(u => {
       if (!u.phone) return false;
-      return u.phone === phoneWith0 || u.phone === phoneWith62 || u.phone === incoming.from;
+      return u.phone === phoneWith0 || u.phone === phoneWith62 || u.phone === phoneForLookup;
     });
 
     if (!user) {
-      console.log(`[Orchestrator] ⚠️ No user found with phone: ${incoming.from} (tried ${allUsers.length} users)`);
+      console.log(`[Orchestrator] ⚠️ No user found with phone: ${phoneForLookup} (tried ${allUsers.length} users)`);
       return {
         isCommand: true,
         result: {
