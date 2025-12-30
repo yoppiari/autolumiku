@@ -85,11 +85,18 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
   // Parse slug to get displayId or check if it's UUID
   const { displayId, isUuid } = parseVehicleSlug(slug);
 
+  // DEBUG LOGGING
+  console.log('[Vehicle Page] slug:', slug);
+  console.log('[Vehicle Page] displayId:', displayId);
+  console.log('[Vehicle Page] isUuid:', isUuid);
+
   if (!displayId) {
+    console.log('[Vehicle Page] ❌ No displayId extracted');
     return notFound();
   }
 
   // Fetch vehicle by displayId or UUID (for legacy URLs)
+  console.log('[Vehicle Page] Querying vehicle with:', isUuid ? { id: displayId } : { displayId });
   const vehicle = await prisma.vehicle.findUnique({
     where: isUuid ? { id: displayId } : { displayId },
     include: {
@@ -101,7 +108,10 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
     },
   });
 
+  console.log('[Vehicle Page] Vehicle found:', !!vehicle);
+
   if (!vehicle) {
+    console.log('[Vehicle Page] ❌ Vehicle not found in database');
     return notFound();
   }
 
