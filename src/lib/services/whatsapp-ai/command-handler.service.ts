@@ -923,7 +923,7 @@ async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandRe
     tenantName: tenant?.name || 'Prima Mobil',
     date: new Date(),
     metrics,
-    showChart: whatsappData?.intentBreakdown.length > 0,
+    showChart: (whatsappData?.intentBreakdown?.length || 0) > 0,
     chartData: (whatsappData?.intentBreakdown || []).slice(0, 5).map((item, idx) => ({
       label: item.intent.charAt(0).toUpperCase() + item.intent.slice(1),
       value: item.count,
