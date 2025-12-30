@@ -15,6 +15,7 @@ import PDFDocument from 'pdfkit';
 import { ROLE_LEVELS } from '@/lib/rbac';
 import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
+import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -1505,61 +1506,76 @@ async function generateAveragePricePDF(context: CommandContext): Promise<Command
 }
 
 async function generateSalesSummaryPDF(context: CommandContext): Promise<CommandResult> {
-  const doc = createPDFDocument();
-  const chunks: Uint8Array[] = [];
-
-  doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
-
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
     select: { name: true },
   });
 
-  const salesData = await fetchSalesData(context, 30);
+  const salesDataRaw = await fetchSalesData(context, 30);
   const inventoryData = await fetchInventoryData(context);
   const staffData = await fetchStaffPerformance(context, 30);
 
-  // Cover
-  doc.fontSize(24).font('Helvetica-Bold').text('Sales Summary', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(16).font('Helvetica').text(tenant?.name || 'Prima Mobil', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text(`Periode: 30 Hari Terakhir`, { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(10).fillColor('#666666').text(`Dibuat pada: ${formatDate(new Date())}`, { align: 'center' });
+  // Calculate KPIs
+  const totalSalesCount = salesDataRaw.summary.totalSalesCount;
+  const totalSalesValue = salesDataRaw.summary.totalSalesValue;
+  const totalVehicles = inventoryData.totalStock;
+  const employees = staffData.totalStaff;
 
-  // Summary
-  doc.addPage();
-  doc.fontSize(18).font('Helvetica-Bold').fillColor('#000000').text('Ringkasan Sales', { underline: true });
-  doc.moveDown();
+  const inventoryTurnover = totalSalesCount / (totalSalesCount + totalVehicles) * 100;
+  const avgPrice = totalSalesCount > 0 ? totalSalesValue / totalSalesCount : 0;
+  const industryAvgPrice = 150000000;
+  const atv = Math.min((avgPrice / industryAvgPrice) * 100, 100);
+  const salesPerEmployee = employees > 0
+    ? Math.min((totalSalesCount / (employees * 2)) * 100, 100)
+    : 0;
 
-  doc.fontSize(12).font('Helvetica');
-  doc.text(`Total Penjualan: ${salesData.summary.totalSalesCount} unit`);
-  doc.text(`Total Revenue: ${formatCurrency(salesData.summary.totalSalesValue)}`);
-  doc.text(`Average Price: ${formatCurrency(salesData.avgPrice)}`);
-  doc.moveDown();
+  // Calculate date range
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - 30);
 
-  doc.text(`Total Stok: ${inventoryData.totalStock} unit`);
-  doc.text(`Total Staff: ${staffData.totalStaff}`);
-  doc.moveDown();
+  // Use new professional PDF Generator with charts and detailed analysis
+  const generator = new AnalyticsPDFGenerator();
 
-  if (staffData.topPerformers.length > 0) {
-    doc.fontSize(14).font('Helvetica-Bold').text('Top Performer');
-    doc.fontSize(12).font('Helvetica').text(`${staffData.topPerformers[0].name}: ${staffData.topPerformers[0].count} unit`);
-  }
+  const reportData = {
+    tenantName: tenant?.name || 'Prima Mobil',
+    salesData: {
+      summary: {
+        totalSalesCount,
+        totalSalesValue,
+        totalVehicles,
+        employees,
+      },
+      byMake: salesDataRaw.byMake,
+      topPerformers: staffData.topPerformers,
+      kpis: {
+        inventoryTurnover: Math.round(inventoryTurnover),
+        atv: Math.round(atv),
+        salesPerEmployee: Math.round(salesPerEmployee),
+        avgPrice,
+      },
+    },
+    whatsappData: null,
+    startDate,
+    endDate,
+  };
 
-  doc.end();
-
-  await new Promise<void>((resolve) => {
-    doc.on('end', resolve);
+  console.log('[Sales Summary PDF] 📊 Report data prepared:', {
+    tenant: reportData.tenantName,
+    hasSalesData: !!reportData.salesData,
+    salesCount: reportData.salesData?.summary?.totalSalesCount || 0,
   });
 
-  const pdfBuffer = Buffer.concat(chunks);
+  const pdfBuffer = await generator.generate(reportData);
+  const filename = `sales-summary-${new Date().toISOString().split('T')[0]}.pdf`;
+
+  console.log('[Sales Summary PDF] ✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+
   return {
     success: true,
     message: '✅ Sales Summary berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
-    filename: `sales-summary-${new Date().toISOString().split('T')[0]}.pdf`,
+    filename,
     followUp: true,
   };
 }
