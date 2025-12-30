@@ -168,9 +168,9 @@ function isPDFCommand(cmd: string): boolean {
 
   // Check for exact phrase matches (with word boundaries)
   for (const phrase of pdfPhrases) {
-    // Create regex with word boundaries to match exact phrase
-    const regex = new RegExp(`\\b${phrase}\\b`, 'i');
-    if (regex.test(normalizedCmd)) {
+    // Use simple includes check - phrase must appear as-is in command
+    // This prevents "inventory" from matching "total inventory"
+    if (normalizedCmd.includes(phrase)) {
       return true;
     }
   }
