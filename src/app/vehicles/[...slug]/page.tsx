@@ -179,7 +179,7 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
 
   return (
     <ThemeProvider tenantId={tenant.id}>
-      <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="min-h-screen flex flex-col bg-white">
         {/* Header */}
         <CatalogHeader
           branding={{

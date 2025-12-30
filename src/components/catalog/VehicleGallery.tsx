@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface VehiclePhoto {
@@ -19,6 +19,18 @@ interface VehicleGalleryProps {
 
 export default function VehicleGallery({ photos, vehicleTitle, displayId, status }: VehicleGalleryProps) {
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+
+    // Auto-rotate every 10 seconds
+    useEffect(() => {
+        if (photos.length <= 1 || isPaused) return;
+
+        const interval = setInterval(() => {
+            setSelectedIndex((prev) => (prev + 1) % photos.length);
+        }, 10000); // 10 seconds
+
+        return () => clearInterval(interval);
+    }, [photos.length, isPaused]);
 
     if (!photos || photos.length === 0) {
         return (
@@ -35,7 +47,11 @@ export default function VehicleGallery({ photos, vehicleTitle, displayId, status
     return (
         <div className="space-y-4">
             {/* Main Photo */}
-            <div className="bg-background rounded-lg border overflow-hidden aspect-video relative">
+            <div
+                className="bg-background rounded-lg border overflow-hidden aspect-video relative"
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+            >
                 <img
                     src={mainPhoto.originalUrl}
                     alt={`${vehicleTitle} - View ${selectedIndex + 1}`}
