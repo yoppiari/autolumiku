@@ -196,11 +196,15 @@ export class MessageOrchestratorService {
         incoming
       );
 
-      // 2.5. CHECK FOR WHATSAPP AI COMMANDS (before normal flow)
+      // 2.5. CHECK FOR WHATSAPP AI COMMANDS (parallel processing)
+      // Command diproses prioritas, tapi upload state TETAP dipertahankan
       const commandCheck = await this.checkAndProcessCommand(incoming, conversation.id);
       if (commandCheck.isCommand) {
-        console.log(`[Orchestrator] 🤖 WhatsApp AI Command detected and processed`);
-        // Command was handled, return the result
+        console.log(`[Orchestrator] 🤖 WhatsApp AI Command detected - processing with PARALLEL mode`);
+        console.log(`[Orchestrator] 📊 Current conversation state: ${conversation.conversationState}`);
+
+        // Command diproses dan response dikirim
+        // Upload state TIDAK di-reset, user bisa lanjut upload di pesan berikutnya
         return {
           success: commandCheck.result.success,
           conversationId: conversation.id,
@@ -242,8 +246,8 @@ export class MessageOrchestratorService {
         /^(yo|yoo|woi|woii|hoi|hoii)$/i,             // informal greetings
       ];
 
-      // Escape patterns - specific questions that should reset upload flow
-      // NOTE: Removed /\?$/ as it was too broad and matched valid vehicle data questions
+      // NOTE: Command keywords sudah diproses di awal (line 201-215)
+      // Escape patterns di sini hanya untuk pertanyaan biasa, bukan command
       const escapePatterns = [
         /^(kamu|anda|lu|lo)\s*(siapa|apa)\??$/i,     // kamu siapa?, anda siapa?
         /^(siapa)\s*(kamu|anda|ini|lu|lo)\??$/i,    // siapa kamu?, siapa ini?
@@ -253,46 +257,16 @@ export class MessageOrchestratorService {
         /^(tolong|help)\s*$/i,                       // tolong, help (alone)
         /^(menu|fitur)$/i,                           // menu, fitur (alone)
         /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
-        // Command escape patterns - allow users to exit upload flow with commands
-        // Basic commands
-        /^(upload|inventory|stok|status|statistik|stats|laporan|report|pdf)$/i,  // single word commands
-        // Edit commands
-        /^(rubah|ubah|edit|ganti)\b/i,               // edit commands (tambah "ganti")
-        // PDF report keywords - semua jenis report
-        /\b(sales\s*report|sales\s*summary|sales\s*metrics)\b/i,  // sales reports
-        /\b(whatsapp\s*ai|whatsapp\s*analytics)\b/i,            // whatsapp ai
-        /\b(metrics|metrix)\s*(penjualan|pelanggan|operational|customer)\b/i,  // metrics
-        /\b(sales\s*trends|tren\s*penjualan)\b/i,              // trends
-        /\b(staff\s*performance)\b/i,                         // staff performance
-        /\b(recent\s*sales)\b/i,                              // recent sales
-        /\b(low\s*stock|low\s*stock\s*alert)\b/i,            // low stock
-        /\btotal\s*(penjualan|sales|revenue|inventory)\b/i,   // totals
-        /\b(average\s*price|avg\s*price)\b/i,                // average price
-        /\b(customer\s*metrics|metrix\s*pelanggan)\b/i,      // customer metrics
-        /\b(operational\s*metrics|operational\s*metrix)\b/i, // operational
-        // Single keywords untuk trigger PDF
-        /^(sales|report|pdf|metrics|tren|staff|recent|low|total|average|customer|operational)$/i,
-      ];
-
-      // Confirmation patterns - user confirming they sent photos/data (should be acknowledged, not parsed as vehicle data)
-      const confirmationPatterns = [
-        /sudah\s*(saya\s*)?(kirim|upload|send)/i,    // sudah kirim, sudah saya kirim, sudah upload
-        /foto\s*(sudah|udah)\s*(di)?(kirim|upload|send)/i,  // foto sudah dikirim, foto udah kirim
-        /(mohon|tolong)\s*(di)?\s*proses/i,          // mohon diproses, tolong proses
-        /^(proses|process)\s*(ya|dong)?$/i,          // proses, proses ya
-        /apakah.*diinfo.*update/i,                   // apakah saya akan diinfo update
-        /kapan\s*(selesai|jadi)/i,                   // kapan selesai, kapan jadi
-        /^(ok|oke|siap|done|selesai)\s*(ya)?$/i,     // ok, oke, siap, done
       ];
 
       const normalizedMessage = (incoming.message || "").trim();
       const isGreeting = greetingPatterns.some(p => p.test(normalizedMessage));
       const isEscapeMessage = escapePatterns.some(p => p.test(normalizedMessage));
-      const isConfirmationMessage = confirmationPatterns.some(p => p.test(normalizedMessage));
 
-      if (conversation.conversationState === "upload_vehicle" && !isGreeting && !isEscapeMessage && !isConfirmationMessage && !normalizedMessage.toLowerCase().includes("batal")) {
+      if (conversation.conversationState === "upload_vehicle" && !isGreeting && !isEscapeMessage && !normalizedMessage.toLowerCase().includes("batal")) {
         // Staff is in middle of vehicle upload flow (and NOT sending a greeting, question, or cancel)
-        console.log(`[Orchestrator] Conversation in upload_vehicle state, treating message as vehicle data/photo`);
+        // NOTE: Command sudah diproses di awal, jadi code ini hanya untuk vehicle data/foto
+        console.log(`[Orchestrator] 💾 Upload vehicle flow - processing data/foto`);
 
         // IMPORTANT: If this is a photo, make sure it's treated as photo for upload
         if (hasMedia) {
@@ -331,161 +305,6 @@ export class MessageOrchestratorService {
           isStaff: conversation.isStaff || false,
           isCustomer: !conversation.isStaff,
           reason: "Greeting detected, reset upload flow",
-        };
-      } else if (conversation.conversationState === "upload_vehicle" && isConfirmationMessage) {
-        // User sent confirmation message like "sudah kirim" or "selesai" during upload flow
-        console.log(`[Orchestrator] 📝 Confirmation message detected in upload flow: "${normalizedMessage}"`);
-
-        const contextData = (conversation.contextData as Record<string, any>) || {};
-        const photosCollected = contextData.photos?.length || 0;
-        const vehicleData = contextData.vehicleData;
-
-        // Check if user wants to finish/complete the upload
-        // More flexible pattern - match at start of message, allow trailing words
-        const finishPatterns = [
-          /^(selesai|done|cukup|udah|sudah|beres|finish|ok|oke|yaudah|ya\s*udah)(\s|$|\.|\!)/i,
-          /^(itu\s+aja|segitu\s+aja|cukup\s+segitu)(\s|$|\.|\!)/i,
-        ];
-        const wantsToFinish = finishPatterns.some(p => p.test(normalizedMessage));
-
-        // If user wants to finish AND we have vehicle data, create vehicle without photos
-        if (wantsToFinish && vehicleData) {
-          console.log(`[Orchestrator] 🚗 User wants to finish upload - creating vehicle without photos`);
-
-          // Import and call the vehicle upload service
-          const { WhatsAppVehicleUploadService } = await import('./vehicle-upload.service');
-
-          try {
-            const uploadResult = await WhatsAppVehicleUploadService.createVehicle(
-              {
-                make: vehicleData.make,
-                model: vehicleData.model,
-                year: vehicleData.year,
-                price: vehicleData.price,
-                mileage: vehicleData.mileage || undefined, // Keep undefined if not provided
-                color: vehicleData.color || 'Unknown',
-                transmission: vehicleData.transmission || 'Manual',
-              },
-              photosCollected > 0 ? contextData.photos : [],
-              incoming.tenantId,
-              incoming.from
-            );
-
-            // Clear conversation state but preserve lastUploadedVehicleId and isStaff for edit feature
-            const currentContext = (conversation.contextData as Record<string, any>) || {};
-            await prisma.whatsAppConversation.update({
-              where: { id: conversation.id },
-              data: {
-                conversationState: null,
-                isStaff: true, // Preserve staff status for future edit requests
-                contextData: uploadResult.success ? {
-                  lastUploadedVehicleId: uploadResult.vehicleId,
-                  lastUploadedAt: new Date().toISOString(),
-                  verifiedStaffPhone: currentContext.verifiedStaffPhone || incoming.from,
-                } : {},
-              },
-            });
-
-            if (uploadResult.success) {
-              const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
-              const vehicleUrl = `${baseUrl}/dashboard/vehicles/${uploadResult.vehicleId}`;
-              const successMessage = uploadResult.message + `\n\n🔗 *Link Dashboard:*\n${vehicleUrl}`;
-
-              // IMPORTANT: Send response before returning (early return skips sendResponse at end)
-              await this.sendResponse(
-                incoming.accountId,
-                incoming.from,
-                successMessage,
-                conversation.id,
-                "staff_upload_vehicle" as MessageIntent
-              );
-
-              return {
-                success: true,
-                conversationId: conversation.id,
-                intent: "staff_upload_vehicle" as MessageIntent,
-                responseMessage: successMessage,
-                escalated: false,
-              };
-            } else {
-              const errorMessage = `❌ Gagal upload: ${uploadResult.message}`;
-
-              // Send error response
-              await this.sendResponse(
-                incoming.accountId,
-                incoming.from,
-                errorMessage,
-                conversation.id,
-                "staff_upload_vehicle" as MessageIntent
-              );
-
-              return {
-                success: false,
-                conversationId: conversation.id,
-                intent: "staff_upload_vehicle" as MessageIntent,
-                responseMessage: errorMessage,
-                escalated: true,
-              };
-            }
-          } catch (error: any) {
-            console.error(`[Orchestrator] Error creating vehicle:`, error);
-            const errorMessage = `❌ Terjadi kesalahan: ${error.message}`;
-
-            // Send error response
-            await this.sendResponse(
-              incoming.accountId,
-              incoming.from,
-              errorMessage,
-              conversation.id,
-              "staff_upload_vehicle" as MessageIntent
-            );
-
-            return {
-              success: false,
-              conversationId: conversation.id,
-              intent: "staff_upload_vehicle" as MessageIntent,
-              responseMessage: errorMessage,
-              escalated: true,
-            };
-          }
-        }
-
-        // Otherwise, provide status update
-        let statusMessage = "";
-        if (photosCollected > 0 && vehicleData) {
-          statusMessage = `✅ Data sudah lengkap!\n\n` +
-            `📷 ${photosCollected} foto\n` +
-            `🚗 ${vehicleData.make || ''} ${vehicleData.model || ''} ${vehicleData.year || ''}\n\n` +
-            `Ketik "selesai" untuk upload tanpa foto tambahan.`;
-        } else if (photosCollected > 0) {
-          statusMessage = `📷 ${photosCollected} foto sudah masuk!\n\n` +
-            `Tinggal kirim data mobilnya ya:\n` +
-            `Contoh: Brio 2020 120jt hitam matic`;
-        } else if (vehicleData) {
-          statusMessage = `🚗 Data mobil sudah masuk!\n\n` +
-            `${vehicleData.make || ''} ${vehicleData.model || ''} ${vehicleData.year || ''}\n\n` +
-            `Kirim foto atau ketik "selesai" untuk upload tanpa foto.`;
-        } else {
-          statusMessage = `📝 Belum ada data yang masuk.\n\n` +
-            `Silakan kirim foto + detail mobil ya!\n` +
-            `Contoh: upload Brio 2020 120jt hitam matic`;
-        }
-
-        // Send status update before returning
-        await this.sendResponse(
-          incoming.accountId,
-          incoming.from,
-          statusMessage,
-          conversation.id,
-          "staff_upload_vehicle" as MessageIntent
-        );
-
-        return {
-          success: true,
-          conversationId: conversation.id,
-          intent: "staff_upload_vehicle" as MessageIntent,
-          responseMessage: statusMessage,
-          escalated: false,
         };
       } else if (conversation.conversationState === "add_photo_to_vehicle" && hasMedia && incoming.mediaUrl) {
         // 📷 PHOTO ADDITION FLOW: Vehicle was created without photos, now adding photos
