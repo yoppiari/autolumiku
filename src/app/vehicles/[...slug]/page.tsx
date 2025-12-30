@@ -39,17 +39,33 @@ interface PageProps {
  * Examples:
  * - honda-city-2006-pm-pst-001 → displayId: "pm-pst-001"
  * - toyota-avanza-g-2021-PST-075 → displayId: "PST-075"
+ *
+ * Format: {make}-{model}-{year}-{displayId}
+ * DisplayId may contain hyphens, so we need to find where year ends
  */
 function parseVehicleSlug(slug: string[]): { displayId: string | null } {
   if (!slug || slug.length === 0) {
     return { displayId: null };
   }
 
-  // The last segment should be the displayId
-  const lastSegment = slug[slug.length - 1];
+  // Join all slug segments
+  const fullSlug = slug.join('-');
 
-  // Remove any file extension if present
-  const displayId = lastSegment.replace(/\.(pdf|jpg|png|html?)$/i, '').toLowerCase();
+  // Find the year (4 digits) - everything after it is the displayId
+  const yearMatch = fullSlug.match(/-(\d{4})-/);
+
+  if (!yearMatch) {
+    // If no year found, try to get the last segments (fallback)
+    // Take at least the last 3 segments for displayId
+    const minSegments = Math.max(3, slug.length - 4);
+    const displayIdParts = slug.slice(-minSegments);
+    const displayId = displayIdParts.join('-').replace(/\.(pdf|jpg|png|html?)$/i, '').toLowerCase();
+    return { displayId };
+  }
+
+  // Get everything after the year
+  const yearIndex = (yearMatch.index ?? 0) + yearMatch[0].length;
+  const displayId = fullSlug.substring(yearIndex).replace(/\.(pdf|jpg|png|html?)$/i, '').toLowerCase();
 
   return { displayId };
 }
