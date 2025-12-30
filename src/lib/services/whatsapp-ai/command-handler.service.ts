@@ -695,7 +695,17 @@ async function fetchInventoryData(context: CommandContext) {
     orderBy: { createdAt: 'asc' },
   });
 
+  console.log('[fetchInventoryData] Available vehicles:', available.length);
+  console.log('[fetchInventoryData] Vehicle prices:', available.map(v => ({
+    displayId: v.displayId,
+    price: v.price,
+    priceNumber: Number(v.price)
+  })));
+
   const totalValue = available.reduce((sum, v) => sum + Number(v.price), 0);
+  console.log('[fetchInventoryData] Total value calculated:', totalValue);
+  console.log('[fetchInventoryData] Total value formatted:', formatCurrency(totalValue));
+
   const avgDaysInStock = available.length > 0
     ? available.reduce((sum, v) => {
         const days = Math.floor((new Date().getTime() - new Date(v.createdAt).getTime()) / (1000 * 60 * 60 * 24));
