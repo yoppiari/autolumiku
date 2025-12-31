@@ -213,32 +213,36 @@ export class OnePageSalesPDF {
 
   private generateMetrics(data: any) {
     const pageWidth = 565; // A4 width in points
-    const boxWidth = (pageWidth - 40) / 4 - 6; // 4 boxes equal width
-    const boxHeight = 70;
+    const boxWidth = (pageWidth - 40) / 2 - 6; // 2 boxes per row (wider)
+    const boxHeight = 65;
     const startX = 20;
-    // FIX: Start metrics AFTER header + logo (header 60px + logo 35px + margin)
-    const y = 105;
+    const startY = 105; // After header + logo
     const gap = 6;
+    const rowGap = 10;
 
+    // Row 1
     // Box 1: Total Penjualan (Light Blue #4A90E2)
-    this.drawMetricBox(startX, y, boxWidth, boxHeight, '#4A90E2', 'TOTAL PENJUALAN',
+    this.drawMetricBox(startX, startY, boxWidth, boxHeight, '#4A90E2', 'TOTAL PENJUALAN',
       `${data.totalSales}`, 'Unit', false);
 
     // Box 2: Total Revenue (Green #50C878) - RIGHT ALIGN
-    this.drawMetricBox(startX + boxWidth + gap, y, boxWidth, boxHeight, '#50C878', 'TOTAL REVENUE',
+    this.drawMetricBox(startX + boxWidth + gap, startY, boxWidth, boxHeight, '#50C878', 'TOTAL REVENUE',
       this.formatNumber(data.totalRevenue), 'Rp ', true);
 
+    // Row 2
+    const row2Y = startY + boxHeight + rowGap;
+
     // Box 3: Rata-rata Harga (Orange #FFA500) - RIGHT ALIGN
-    this.drawMetricBox(startX + (boxWidth + gap) * 2, y, boxWidth, boxHeight, '#FFA500', 'RATA-RATA HARGA',
+    this.drawMetricBox(startX, row2Y, boxWidth, boxHeight, '#FFA500', 'RATA-RATA HARGA',
       this.formatNumber(data.avgPrice), 'Rp ', true);
 
     // Box 4: Top Sales Staff (Purple #9370DB) - SMALLER FONT FOR NAME
     const topStaffName = data.topStaff?.name || 'N/A';
     const topStaffCount = data.topStaff?.count ? `${data.topStaff.count} unit` : '';
-    this.drawMetricBox(startX + (boxWidth + gap) * 3, y, boxWidth, boxHeight, '#9370DB', 'TOP SALES STAFF',
+    this.drawMetricBox(startX + boxWidth + gap, row2Y, boxWidth, boxHeight, '#9370DB', 'TOP SALES STAFF',
       topStaffName, topStaffCount, false, true);
 
-    this.doc.y = y + boxHeight + 15;
+    this.doc.y = row2Y + boxHeight + 15;
   }
 
   private generateTopStaff(data: any) {
@@ -450,34 +454,34 @@ export class OnePageSalesPDF {
     doc.fillColor(color).rect(x, y, width, height).fill();
 
     // Label (uppercase, bold) - always centered
-    doc.fillColor('white').fontSize(9).font('Helvetica-Bold').text(
-      label.toUpperCase(), x + 5, y + 8, { width: width - 10, align: 'center' }
+    doc.fillColor('white').fontSize(10).font('Helvetica-Bold').text(
+      label.toUpperCase(), x + 8, y + 8, { width: width - 16, align: 'center' }
     );
 
     // Value - adjust font size for small text (sales names)
-    const valueFontSize = isSmallText ? 11 : 16;
-    const valueY = isSmallText ? y + 28 : y + 24;
+    const valueFontSize = isSmallText ? 14 : 20;
+    const valueY = y + 28;
 
     if (rightAlign) {
       // Currency: Unit on left, value on right, same line
       if (unit) {
-        doc.fillColor('white').fontSize(9).font('Helvetica-Bold').text(
-          unit, x + 8, valueY, { width: width - 16, align: 'left' }
+        doc.fillColor('white').fontSize(11).font('Helvetica-Bold').text(
+          unit.trim(), x + 10, valueY, { width: width - 20, align: 'left' }
         );
       }
 
       doc.fillColor('white').fontSize(valueFontSize).font('Helvetica-Bold').text(
-        value, x + 8, valueY, { width: width - 16, align: 'right' }
+        value, x + 10, valueY, { width: width - 20, align: 'right' }
       );
     } else {
       // Default: Center-aligned
       doc.fillColor('white').fontSize(valueFontSize).font('Helvetica-Bold').text(
-        value, x + 5, valueY, { width: width - 10, align: 'center' }
+        value, x + 8, valueY, { width: width - 16, align: 'center' }
       );
 
       if (unit) {
-        doc.fontSize(8).font('Helvetica').text(
-          unit, x + 5, y + 45, { width: width - 10, align: 'center' }
+        doc.fontSize(9).font('Helvetica').text(
+          unit, x + 8, y + 50, { width: width - 16, align: 'center' }
         );
       }
     }
