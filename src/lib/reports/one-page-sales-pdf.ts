@@ -307,15 +307,45 @@ export class OnePageSalesPDF {
 
     yPos = Math.max(barY, tableY) + 15;
 
-    // Footer - Analysis section with red bullets
+    // Generate actual analysis based on real data
+    const totalInventory = data.totalSales || 0;
+    const soldCount = data.inventoryStats?.sold || 0;
+    const availableCount = data.inventoryStats?.available || 0;
+    const topBrand = data.makeDistribution?.[0];
+    const soldPercentage = totalInventory > 0 ? (soldCount / totalInventory) * 100 : 0;
+
+    // Build analysis points based on actual data
+    const analysisPoints: string[] = [];
+
+    // Analysis 1: Sales performance
+    if (soldPercentage > 50) {
+      analysisPoints.push(`✅ KINERJA BAGUS: ${soldPercentage.toFixed(1)}% inventory terjual. Pertahankan strategi penjualan saat ini.`);
+    } else if (soldPercentage > 20) {
+      analysisPoints.push(`⚠️ KINERJA SEDANG: ${soldPercentage.toFixed(1)}% terjual. Perlu tingkatkan marketing & promosi.`);
+    } else {
+      analysisPoints.push(`🔴 KINERJA RENDAH: Hanya ${soldPercentage.toFixed(1)}% terjual dari ${totalInventory} unit. Segera evaluasi harga & strategi marketing.`);
+    }
+
+    // Analysis 2: Brand focus
+    if (topBrand && topBrand.percentage > 50) {
+      analysisPoints.push(`🎯 FOKUS BRAND: ${topBrand.make} mendominasi (${topBrand.percentage.toFixed(1)}%). Pertahankan stok ${topBrand.make} & tingkatkan variasi brand lain.`);
+    } else if (topBrand) {
+      analysisPoints.push(`📊 DISTRIBUSI SEIMBANG: Top brand (${topBrand.make}) ${topBrand.percentage.toFixed(1)}%. Portfolio brand sudah baik.`);
+    }
+
+    // Analysis 3: Inventory strategy
+    if (availableCount > 15) {
+      analysisPoints.push(`📦 STOK TINGGI: ${availableCount} unit available. Pertimbangkan diskon/promosi untuk mempercepat turnover.`);
+    } else if (availableCount < 5) {
+      analysisPoints.push(`⚡ STOK RENDAH: Hanya ${availableCount} unit available. Segera tambah stok untuk kehilangan opportunity.`);
+    } else {
+      analysisPoints.push(`✅ STOK OPTIMAL: ${availableCount} unit available. Level stok sehat.`);
+    }
+
+    // Footer - Analysis section with actual insights
     this.doc.fillColor('black').fontSize(11).font('Helvetica-Bold').text('Analisa Showroom', 20, yPos);
 
     yPos += 12;
-    const analysisPoints = [
-      'Bagaimana cara meningkatkan performa penjualan?',
-      'Apa strategi manajemen untuk keputusan bisnis?',
-      'Indikator yang baik: dipertahankan atau ditingkatkan?',
-    ];
 
     this.doc.fillColor('red').fontSize(8).font('Helvetica');
     analysisPoints.forEach((point) => {
