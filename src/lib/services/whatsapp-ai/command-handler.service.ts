@@ -388,7 +388,7 @@ async function handleContactCommand(
     // List available contacts
     const tenants = await prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { name: true },
+      select: { name: true, logoUrl: true },
     });
 
     return {
@@ -819,7 +819,7 @@ async function fetchWhatsAppAIData(context: CommandContext, days: number = 30) {
 async function generateSalesReportPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const salesData = await fetchSalesData(context, 30);
@@ -867,6 +867,7 @@ async function generateSalesReportPDF(context: CommandContext): Promise<CommandR
     title: 'Sales Report Showroom',
     subtitle: 'Laporan Penjualan Lengkap',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: salesData.byMake.length > 0,
@@ -891,7 +892,7 @@ async function generateSalesReportPDF(context: CommandContext): Promise<CommandR
 async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const whatsappData = await fetchWhatsAppAIData(context, 30);
@@ -947,6 +948,7 @@ async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandRe
     title: 'WhatsApp AI Analytics',
     subtitle: 'Analisis Performa AI & Customer Engagement',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: (whatsappData?.intentBreakdown?.length || 0) > 0,
@@ -971,7 +973,7 @@ async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandRe
 async function generateSalesMetricsPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const salesData = await fetchSalesData(context, 30);
@@ -1017,6 +1019,7 @@ async function generateSalesMetricsPDF(context: CommandContext): Promise<Command
     title: 'Metrik Penjualan Showroom',
     subtitle: 'KPI Penjualan & Inventory',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: salesData.byMake.length > 0,
@@ -1041,7 +1044,7 @@ async function generateSalesMetricsPDF(context: CommandContext): Promise<Command
 async function generateCustomerMetricsPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const whatsappData = await fetchWhatsAppAIData(context, 30);
@@ -1089,6 +1092,7 @@ async function generateCustomerMetricsPDF(context: CommandContext): Promise<Comm
     title: 'Metrik Pelanggan',
     subtitle: 'Customer Engagement Analytics',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: (whatsappData?.intentBreakdown?.length || 0) > 0,
@@ -1113,7 +1117,7 @@ async function generateCustomerMetricsPDF(context: CommandContext): Promise<Comm
 async function generateOperationalMetricsPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const salesData = await fetchSalesData(context, 30);
@@ -1162,6 +1166,7 @@ async function generateOperationalMetricsPDF(context: CommandContext): Promise<C
     title: 'Metrik Operational Showroom',
     subtitle: 'KPI Operational & Staff Performance',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: salesData.byMake.length > 0,
@@ -1186,7 +1191,7 @@ async function generateOperationalMetricsPDF(context: CommandContext): Promise<C
 async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const salesData = await fetchSalesData(context, 30);
@@ -1231,6 +1236,7 @@ async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandR
     title: 'Tren Penjualan Showroom',
     subtitle: 'Analisis Tren 30 Hari Terakhir',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: true,
@@ -1255,7 +1261,7 @@ async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandR
 async function generateStaffPerformancePDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const staffData = await fetchStaffPerformance(context, 30);
@@ -1306,6 +1312,7 @@ async function generateStaffPerformancePDF(context: CommandContext): Promise<Com
     title: 'Staff Performance Showroom',
     subtitle: 'Performa Sales Staff (30 Hari Terakhir)',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: staffData.topPerformers.length > 0,
@@ -1330,7 +1337,7 @@ async function generateStaffPerformancePDF(context: CommandContext): Promise<Com
 async function generateRecentSalesPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const salesData = await fetchSalesData(context, 7);
@@ -1367,6 +1374,7 @@ async function generateRecentSalesPDF(context: CommandContext): Promise<CommandR
     title: 'Recent Sales Showroom',
     subtitle: 'Penjualan 7 Hari Terakhir',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: salesData.byMake.length > 0,
@@ -1391,7 +1399,7 @@ async function generateRecentSalesPDF(context: CommandContext): Promise<CommandR
 async function generateLowStockPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const inventoryData = await fetchInventoryData(context);
@@ -1450,6 +1458,7 @@ async function generateLowStockPDF(context: CommandContext): Promise<CommandResu
     title: 'Low Stock Alert Showroom',
     subtitle: 'Monitoring Stok Kendaraan',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: chartData.length > 0,
@@ -1470,7 +1479,7 @@ async function generateLowStockPDF(context: CommandContext): Promise<CommandResu
 async function generateTotalSalesPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const salesData = await fetchSalesData(context, 30);
@@ -1510,6 +1519,7 @@ async function generateTotalSalesPDF(context: CommandContext): Promise<CommandRe
     title: 'Total Penjualan Showroom',
     subtitle: `Periode: 30 Hari Terakhir`,
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: true,
@@ -1534,7 +1544,7 @@ async function generateTotalSalesPDF(context: CommandContext): Promise<CommandRe
 async function generateTotalRevenuePDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const salesData = await fetchSalesData(context, 30);
@@ -1571,6 +1581,7 @@ async function generateTotalRevenuePDF(context: CommandContext): Promise<Command
     title: 'Total Revenue Showroom',
     subtitle: 'Laporan Pendapatan (30 Hari Terakhir)',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: salesData.byMake.length > 0,
@@ -1598,7 +1609,7 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: context.tenantId },
-      select: { name: true },
+      select: { name: true, logoUrl: true },
     });
 
     const inventoryData = await fetchInventoryData(context);
@@ -1655,6 +1666,7 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
       title: 'Total Inventory Showroom',
       subtitle: 'Stok Kendaraan Tersedia',
       tenantName: tenant?.name || 'Prima Mobil',
+      logoUrl: tenant?.logoUrl || undefined,
       date: new Date(),
       metrics,
       showChart: chartData.length > 0,
@@ -1684,7 +1696,7 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
 async function generateAveragePricePDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const salesData = await fetchSalesData(context, 30);
@@ -1732,6 +1744,7 @@ async function generateAveragePricePDF(context: CommandContext): Promise<Command
     title: 'Average Price Analysis',
     subtitle: 'Analisis Rata-rata Harga - 30 Hari Terakhir',
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
     showChart: salesData.byMake.length > 0,
@@ -1756,7 +1769,7 @@ async function generateAveragePricePDF(context: CommandContext): Promise<Command
 async function generateSalesSummaryPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
 
   const salesDataRaw = await fetchSalesData(context, 30);
@@ -1787,6 +1800,7 @@ async function generateSalesSummaryPDF(context: CommandContext): Promise<Command
 
   const reportData = {
     tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
     salesData: {
       summary: {
         totalSalesCount,

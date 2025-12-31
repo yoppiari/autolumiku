@@ -25,6 +25,7 @@ interface SalesData {
 
 interface ReportData {
   tenantName: string;
+  logoUrl?: string;
   salesData: SalesData | null;
   startDate: Date;
   endDate: Date;
@@ -111,9 +112,26 @@ export class CompactExecutivePDF {
       .font('Helvetica-Bold')
       .text('LAPORAN EXECUTIVE', 20, 15);
 
-    doc.fontSize(12)
-      .font('Helvetica')
-      .text(data.tenantName.toUpperCase(), 20, 32);
+    // Logo or tenant name
+    if (data.logoUrl) {
+      try {
+        // Display logo image (max width 80px, max height 30px)
+        doc.image(data.logoUrl, 20, 32, {
+          fit: [80, 30],
+        });
+      } catch (error) {
+        console.error('[CompactExecutivePDF] ❌ Failed to load logo:', error);
+        // Fallback to text if logo fails
+        doc.fontSize(12)
+          .font('Helvetica')
+          .text(data.tenantName.toUpperCase(), 20, 32);
+      }
+    } else {
+      // No logo, use tenant name text
+      doc.fontSize(12)
+        .font('Helvetica')
+        .text(data.tenantName.toUpperCase(), 20, 32);
+    }
 
     doc.fontSize(8)
       .fillColor('#93c5fd')

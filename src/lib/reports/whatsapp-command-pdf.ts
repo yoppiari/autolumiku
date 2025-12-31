@@ -9,6 +9,7 @@ interface ReportConfig {
   title: string;
   subtitle: string;
   tenantName: string;
+  logoUrl?: string;
   date: Date;
   metrics: Metric[];
   showChart?: boolean;
@@ -78,10 +79,26 @@ export class WhatsAppCommandPDF {
       .font('Helvetica-Bold')
       .text(config.title.toUpperCase(), 20, 10, { width: pageWidth - 120 });
 
-    // Tenant name (second line) - more space to prevent cutoff
-    doc.fontSize(10)
-      .font('Helvetica')
-      .text(config.tenantName.toUpperCase(), 20, 28, { width: pageWidth - 120 });
+    // Logo or tenant name (second line)
+    if (config.logoUrl) {
+      try {
+        // Display logo image (left side, max width 80px, max height 30px)
+        doc.image(config.logoUrl, 20, 28, {
+          fit: [80, 30],
+        });
+      } catch (error) {
+        console.error('[WhatsAppCommandPDF] ❌ Failed to load logo:', error);
+        // Fallback to text if logo fails
+        doc.fontSize(10)
+          .font('Helvetica')
+          .text(config.tenantName.toUpperCase(), 20, 28, { width: pageWidth - 120 });
+      }
+    } else {
+      // No logo, use tenant name text
+      doc.fontSize(10)
+        .font('Helvetica')
+        .text(config.tenantName.toUpperCase(), 20, 28, { width: pageWidth - 120 });
+    }
 
     // Date (right side) - positioned to not overlap with tenant name
     doc.fontSize(7)
