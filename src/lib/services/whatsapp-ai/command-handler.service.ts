@@ -16,7 +16,6 @@ import { ROLE_LEVELS } from '@/lib/rbac';
 import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
 import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
-import { CompactExecutivePDF } from '@/lib/reports/compact-executive-pdf';
 import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -1762,82 +1761,6 @@ async function generateAveragePricePDF(context: CommandContext): Promise<Command
     message: '✅ Average Price (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `average-price-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateSalesSummaryPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const salesDataRaw = await fetchSalesData(context, 30);
-  const inventoryData = await fetchInventoryData(context);
-  const staffData = await fetchStaffPerformance(context, 30);
-
-  // Calculate KPIs
-  const totalSalesCount = salesDataRaw.summary.totalSalesCount;
-  const totalSalesValue = salesDataRaw.summary.totalSalesValue;
-  const totalVehicles = inventoryData.totalStock;
-  const employees = staffData.totalStaff;
-
-  const inventoryTurnover = totalSalesCount / (totalSalesCount + totalVehicles) * 100;
-  const avgPrice = totalSalesCount > 0 ? totalSalesValue / totalSalesCount : 0;
-  const industryAvgPrice = 150000000;
-  const atv = Math.min((avgPrice / industryAvgPrice) * 100, 100);
-  const salesPerEmployee = employees > 0
-    ? Math.min((totalSalesCount / (employees * 2)) * 100, 100)
-    : 0;
-
-  // Calculate date range
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - 30);
-
-  // Use COMPACT 2-page Executive PDF Generator
-  const generator = new CompactExecutivePDF();
-
-  const reportData = {
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    salesData: {
-      summary: {
-        totalSalesCount,
-        totalSalesValue,
-        totalVehicles,
-        employees,
-      },
-      byMake: salesDataRaw.byMake,
-      topPerformers: staffData.topPerformers,
-      kpis: {
-        inventoryTurnover: Math.round(inventoryTurnover),
-        atv: Math.round(atv),
-        salesPerEmployee: Math.round(salesPerEmployee),
-        avgPrice,
-      },
-    },
-    startDate,
-    endDate,
-  };
-
-  console.log('[Sales Summary PDF] 📊 Using COMPACT 2-page generator:', {
-    tenant: reportData.tenantName,
-    hasSalesData: !!reportData.salesData,
-    salesCount: reportData.salesData?.summary?.totalSalesCount || 0,
-    generator: 'CompactExecutivePDF (2 pages)',
-  });
-
-  const pdfBuffer = await generator.generate(reportData);
-  const filename = `executive-summary-${new Date().toISOString().split('T')[0]}.pdf`;
-
-  console.log('[Sales Summary PDF] ✅ Compact 2-page PDF generated, size:', pdfBuffer.length, 'bytes');
-
-  return {
-    success: true,
-    message: '✅ Executive Summary (format profesional) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename,
     followUp: true,
   };
 }
