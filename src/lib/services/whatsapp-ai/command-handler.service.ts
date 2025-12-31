@@ -881,7 +881,7 @@ async function generateSalesReportPDF(context: CommandContext): Promise<CommandR
 
   return {
     success: true,
-    message: '✅ Sales Report (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Sales Report (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `sales-report-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -961,7 +961,7 @@ async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandRe
 
   return {
     success: true,
-    message: '✅ WhatsApp AI Analytics (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ WhatsApp AI Analytics (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `whatsapp-ai-analytics-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1031,7 +1031,7 @@ async function generateSalesMetricsPDF(context: CommandContext): Promise<Command
 
   return {
     success: true,
-    message: '✅ Metrik Penjualan (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Metrik Penjualan (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `metrik-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1103,7 +1103,7 @@ async function generateCustomerMetricsPDF(context: CommandContext): Promise<Comm
 
   return {
     success: true,
-    message: '✅ Metrik Pelanggan (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Metrik Pelanggan (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `metrik-pelanggan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1176,7 +1176,7 @@ async function generateOperationalMetricsPDF(context: CommandContext): Promise<C
 
   return {
     success: true,
-    message: '✅ Metrik Operational (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Metrik Operational (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `metrik-operational-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1245,7 +1245,7 @@ async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandR
 
   return {
     success: true,
-    message: '✅ Tren Penjualan (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Tren Penjualan (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `tren-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1320,7 +1320,7 @@ async function generateStaffPerformancePDF(context: CommandContext): Promise<Com
 
   return {
     success: true,
-    message: '✅ Staff Performance (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Staff Performance (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `staff-performance-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1381,7 +1381,7 @@ async function generateRecentSalesPDF(context: CommandContext): Promise<CommandR
 
   return {
     success: true,
-    message: '✅ Recent Sales (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Recent Sales (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `recent-sales-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1460,7 +1460,7 @@ async function generateLowStockPDF(context: CommandContext): Promise<CommandResu
 
   return {
     success: true,
-    message: '✅ Low Stock Alert (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Low Stock Alert (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `low-stock-alert-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1524,7 +1524,7 @@ async function generateTotalSalesPDF(context: CommandContext): Promise<CommandRe
 
   return {
     success: true,
-    message: '✅ Total Penjualan (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Total Penjualan (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `total-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1585,7 +1585,7 @@ async function generateTotalRevenuePDF(context: CommandContext): Promise<Command
 
   return {
     success: true,
-    message: '✅ Total Revenue (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Total Revenue (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `total-revenue-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1667,7 +1667,7 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
 
     return {
       success: true,
-      message: '✅ Total Inventory (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+      message: '✅ Total Inventory (format profesional) berhasil dibuat. Mengirim PDF...',
       pdfBuffer,
       filename: `total-inventory-${new Date().toISOString().split('T')[0]}.pdf`,
       followUp: true,
@@ -1746,7 +1746,7 @@ async function generateAveragePricePDF(context: CommandContext): Promise<Command
 
   return {
     success: true,
-    message: '✅ Average Price (2 halaman profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Average Price (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `average-price-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1821,7 +1821,7 @@ async function generateSalesSummaryPDF(context: CommandContext): Promise<Command
 
   return {
     success: true,
-    message: '✅ Executive Summary (2 halaman) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Executive Summary (format profesional) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename,
     followUp: true,

@@ -35,6 +35,7 @@ export type MessageIntent =
   | "staff_get_stats"
   | "staff_verify_identity"
   | "staff_edit_vehicle"
+  | "system_command"              // PDF/vCard commands that already sent their own response
   | "unknown";
 
 export interface IntentClassificationResult {

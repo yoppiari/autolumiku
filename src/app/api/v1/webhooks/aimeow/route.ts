@@ -425,7 +425,8 @@ async function handleIncomingMessage(account: any, data: any) {
       );
 
       // Send response message to user if processing succeeded
-      if (result.responseMessage) {
+      // CRITICAL FIX: Don't send responseMessage for system_command (PDF/vCard) because they already sent their own response
+      if (result.responseMessage && result.intent !== "system_command") {
         console.log("[Webhook] 📤 Sending response message to user");
         try {
           await AimeowClientService.sendMessage({
@@ -437,6 +438,8 @@ async function handleIncomingMessage(account: any, data: any) {
         } catch (sendError) {
           console.error("[Webhook] ❌ Failed to send response message:", sendError);
         }
+      } else if (result.intent === "system_command") {
+        console.log("[Webhook] ⏭️ Skipping responseMessage for system_command (PDF/vCard already sent)");
       }
     } else {
       console.error(`[Webhook] Failed to process message:`, result.error);
