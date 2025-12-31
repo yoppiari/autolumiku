@@ -79,20 +79,17 @@ export class OnePageSalesPDF {
       throw new Error(`Tenant not found: ${tenantName}`);
     }
 
-    // Fetch sales invoices with vehicle and sales user data
+    // Fetch sales invoices with snapshot data and sales user
     const salesInvoices = await prisma.salesInvoice.findMany({
       where: {
         tenantId: tenant.id,
         status: 'PAID', // Only count paid invoices as actual sales
         vehicleId: { not: null }, // Must have a vehicle
       },
-      include: {
-        vehicle: {
-          select: {
-            price: true,
-            make: true,
-          },
-        },
+      select: {
+        vehiclePrice: true, // Snapshot price at time of sale
+        vehicleMake: true,  // Snapshot make at time of sale
+        salesUserId: true,
         salesUser: {
           select: {
             name: true,
@@ -103,9 +100,7 @@ export class OnePageSalesPDF {
 
     // Calculate metrics from REAL data
     const totalSales = salesInvoices.length;
-    const totalRevenue = salesInvoices.reduce((sum, inv) => {
-      return sum + (inv.vehicle?.price ? Number(inv.vehicle.price) : 0);
-    }, 0);
+    const totalRevenue = salesInvoices.reduce((sum, inv) => sum + (inv.vehiclePrice || 0), 0);
     const avgPrice = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Group by sales staff
@@ -117,7 +112,7 @@ export class OnePageSalesPDF {
       }
       const data = staffSales.get(staffName)!;
       data.count++;
-      data.revenue += inv.vehicle?.price ? Number(inv.vehicle.price) : 0;
+      data.revenue += inv.vehiclePrice || 0;
     });
 
     // Find top sales staff
@@ -132,7 +127,7 @@ export class OnePageSalesPDF {
     // Group by make for chart
     const makeSales = new Map<string, number>();
     salesInvoices.forEach((inv) => {
-      const make = inv.vehicle?.make || 'Unknown';
+      const make = inv.vehicleMake || 'Unknown';
       makeSales.set(make, (makeSales.get(make) || 0) + 1);
     });
 
