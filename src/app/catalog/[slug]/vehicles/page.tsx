@@ -4,6 +4,10 @@
  * Shows all vehicles for the tenant
  */
 
+// Disable caching to always fetch fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import React from 'react';
 import Link from 'next/link';
 import { headers } from 'next/headers';
@@ -28,14 +32,36 @@ export default async function CatalogVehiclesPage({ params }: PageProps) {
   const headersList = headers();
   const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
   const tenantSlug = params.slug;
+  const tenantDomain = headersList.get('x-tenant-domain');
 
   try {
     console.log(`[VehiclesPage] Loading vehicles for tenant: ${tenantSlug}`);
 
-    // Fetch tenant
-    const tenant = await prisma.tenant.findUnique({
+    // Fetch tenant - try multiple lookup strategies (like home page)
+    let tenant = await prisma.tenant.findUnique({
       where: { slug: tenantSlug },
     });
+
+    // Fallback 1: Try without -id suffix (e.g., primamobil-id -> primamobil)
+    if (!tenant && tenantSlug.endsWith('-id')) {
+      const slugWithoutId = tenantSlug.replace(/-id$/, '');
+      tenant = await prisma.tenant.findUnique({
+        where: { slug: slugWithoutId },
+      });
+    }
+
+    // Fallback 2: Try by domain for custom domains
+    if (!tenant && isCustomDomain && tenantDomain) {
+      tenant = await prisma.tenant.findFirst({
+        where: {
+          OR: [
+            { domain: tenantDomain },
+            { domain: `www.${tenantDomain}` },
+            { domain: tenantDomain.replace('www.', '') },
+          ],
+        },
+      });
+    }
 
     if (!tenant) {
       console.log(`[VehiclesPage] Tenant not found: ${tenantSlug}`);
@@ -187,6 +213,12 @@ export default async function CatalogVehiclesPage({ params }: PageProps) {
   );
   } catch (error: any) {
     console.error('[VehiclesPage] Error:', error);
+    console.error('[VehiclesPage] Error details:', {
+      message: error?.message,
+      name: error?.name,
+      stack: error?.stack,
+      tenantSlug,
+    });
 
     // Return user-friendly error page
     return (
@@ -204,12 +236,11 @@ export default async function CatalogVehiclesPage({ params }: PageProps) {
           <Button onClick={() => window.location.reload()}>
             Reload Page
           </Button>
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md text-left text-xs">
-              <p className="font-bold">{error.name}: {error.message}</p>
-              <pre className="mt-2">{error.stack}</pre>
-            </div>
-          )}
+          <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md text-left text-xs">
+            <p className="font-bold">{error.name}: {error.message}</p>
+            <pre className="mt-2 break-all">{error.stack}</pre>
+            <p className="mt-2 text-blue-800">Tenant Slug: {tenantSlug}</p>
+          </div>
         </div>
       </div>
     );
