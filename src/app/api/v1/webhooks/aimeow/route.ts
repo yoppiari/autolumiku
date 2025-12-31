@@ -424,22 +424,11 @@ async function handleIncomingMessage(account: any, data: any) {
         `[Webhook] Message processed successfully - Intent: ${result.intent}, Escalated: ${result.escalated}`
       );
 
-      // Send response message to user if processing succeeded
-      // CRITICAL FIX: Don't send responseMessage for system_command (PDF/vCard) because they already sent their own response
-      if (result.responseMessage && result.intent !== "system_command") {
-        console.log("[Webhook] 📤 Sending response message to user");
-        try {
-          await AimeowClientService.sendMessage({
-            clientId: account.clientId,
-            to: from,
-            message: result.responseMessage,
-          });
-          console.log("[Webhook] ✅ Response message sent successfully");
-        } catch (sendError) {
-          console.error("[Webhook] ❌ Failed to send response message:", sendError);
-        }
-      } else if (result.intent === "system_command") {
-        console.log("[Webhook] ⏭️ Skipping responseMessage for system_command (PDF/vCard already sent)");
+      // CRITICAL FIX: Message Orchestrator ALREADY sends all responses via sendResponse()
+      // DO NOT send again from webhook - this causes double sending!
+      // Only log if responseMessage exists
+      if (result.responseMessage) {
+        console.log("[Webhook] ℹ️ responseMessage already sent by MessageOrchestrator, skipping webhook send");
       }
     } else {
       console.error(`[Webhook] Failed to process message:`, result.error);
