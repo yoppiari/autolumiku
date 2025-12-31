@@ -79,7 +79,7 @@ export class OnePageSalesPDF {
       throw new Error(`Tenant not found: ${tenantName}`);
     }
 
-    // Fetch sales invoices with snapshot data and sales user
+    // Fetch sales invoices with snapshot data
     const salesInvoices = await prisma.salesInvoice.findMany({
       where: {
         tenantId: tenant.id,
@@ -89,12 +89,7 @@ export class OnePageSalesPDF {
       select: {
         vehiclePrice: true, // Snapshot price at time of sale
         vehicleMake: true,  // Snapshot make at time of sale
-        salesUserId: true,
-        salesUser: {
-          select: {
-            name: true,
-          },
-        },
+        salesUserId: true,  // Sales staff ID (without relation)
       },
     });
 
@@ -103,14 +98,14 @@ export class OnePageSalesPDF {
     const totalRevenue = salesInvoices.reduce((sum, inv) => sum + (inv.vehiclePrice || 0), 0);
     const avgPrice = totalSales > 0 ? totalRevenue / totalSales : 0;
 
-    // Group by sales staff
+    // Group by sales staff (by ID only, since no relation)
     const staffSales = new Map<string, { count: number; revenue: number }>();
     salesInvoices.forEach((inv) => {
-      const staffName = inv.salesUser?.name || 'Unassigned';
-      if (!staffSales.has(staffName)) {
-        staffSales.set(staffName, { count: 0, revenue: 0 });
+      const staffId = inv.salesUserId || 'Unassigned';
+      if (!staffSales.has(staffId)) {
+        staffSales.set(staffId, { count: 0, revenue: 0 });
       }
-      const data = staffSales.get(staffName)!;
+      const data = staffSales.get(staffId)!;
       data.count++;
       data.revenue += inv.vehiclePrice || 0;
     });
