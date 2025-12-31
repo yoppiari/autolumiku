@@ -68,18 +68,42 @@ export async function middleware(request: NextRequest) {
   // BUT: For custom domains, we still need to set tenant headers even for these routes
   const shouldSkipRewrite =
     pathname.startsWith('/api/') ||
-    (pathname.startsWith('/_next/') && !(pathname.includes('%5B') || pathname.includes('%5D'))) ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/team') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/catalog/') ||
     pathname.startsWith('/vehicles/') ||
-    pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff|woff2|ttf|eot)$/);
+    pathname.match(/\.(ico|png|jpg|jpeg|svg|css|woff|woff2|ttf|eot)$/);
 
   // If not a custom domain and should skip, return early
   if (shouldSkipRewrite && !isCustomDomain) {
     return NextResponse.next();
+  }
+
+  // Handle _next/static chunks - add cache-busting headers
+  if (pathname.startsWith('/_next/static/')) {
+    const requestHeaders = new Headers(request.headers);
+
+    // Set tenant headers if custom domain
+    if (isCustomDomain) {
+      requestHeaders.set('x-tenant-domain', cleanHost);
+      requestHeaders.set('x-tenant-slug', tenantSlug);
+      requestHeaders.set('x-is-custom-domain', 'true');
+    }
+
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+
+    // CRITICAL: Prevent caching of _next/static chunks to avoid serving corrupted old chunks
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+
+    return response;
   }
 
   // If custom domain and should skip rewrite (like /dashboard), set headers but don't rewrite URL
