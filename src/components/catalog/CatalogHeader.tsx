@@ -81,24 +81,12 @@ export default function CatalogHeader({
 
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-24 md:h-28 transition-all duration-300">
-          {/* Logo & Name - Large & Prominent */}
+          {/* Logo & Name - Clean text-only design */}
           <Link href={getUrl('')} className="flex items-center gap-4 hover:opacity-90 transition-opacity group">
-            {branding.logoUrl ? (
-              <img
-                src={branding.logoUrl}
-                alt={branding.name}
-                className="h-10 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105 max-w-[200px] md:max-w-[280px]"
-              />
-            ) : (
-              <div
-                className="h-10 w-10 rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl bg-primary"
-              >
-                {branding.name.charAt(0)}
-              </div>
-            )}
-            <div className="hidden md:block">
-              {/* Hide text if logo exists to keep it clean, or show minimal */}
-              {!branding.logoUrl && <h1 className="text-2xl font-bold text-foreground tracking-tight">{branding.name}</h1>}
+            <div className="flex items-center justify-center">
+              <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">
+                {branding.name}
+              </h1>
             </div>
           </Link>
 

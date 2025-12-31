@@ -205,60 +205,60 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
 
             {/* Right Column - Details */}
             <div className="space-y-6">
-              <div className="bg-card rounded-lg border p-6 shadow-sm lg:sticky lg:top-24">
+              <div className="bg-gray-900 rounded-lg border border-gray-800 p-6 shadow-xl lg:sticky lg:top-24 text-white">
                 <div className="mb-6">
-                  <h1 className="text-2xl font-bold text-foreground mb-2">
+                  <h1 className="text-2xl font-bold text-white mb-2">
                     {vehicleData.year} {vehicleData.make} {vehicleData.model}
                   </h1>
                   {vehicleData.variant && (
-                    <p className="text-lg text-muted-foreground">{vehicleData.variant}</p>
+                    <p className="text-lg text-gray-300">{vehicleData.variant}</p>
                   )}
                 </div>
 
                 <div className="mb-8">
-                  <p className="text-4xl font-bold text-blue-600">
+                  <p className="text-4xl font-bold text-green-400">
                     {formatPrice(vehicleData.price)}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Calendar className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                    <Calendar className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Tahun</p>
-                      <p className="font-medium">{vehicleData.year}</p>
+                      <p className="text-xs text-gray-400">Tahun</p>
+                      <p className="font-medium text-white">{vehicleData.year}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Gauge className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                    <Gauge className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Kilometer</p>
-                      <p className="font-medium">{vehicleData.odometer ? `${vehicleData.odometer.toLocaleString('id-ID')} km` : '-'}</p>
+                      <p className="text-xs text-gray-400">Kilometer</p>
+                      <p className="font-medium text-white">{vehicleData.odometer ? `${vehicleData.odometer.toLocaleString('id-ID')} km` : '-'}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Zap className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                    <Zap className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Transmisi</p>
-                      <p className="font-medium">{vehicleData.transmission}</p>
+                      <p className="text-xs text-gray-400">Transmisi</p>
+                      <p className="font-medium text-white">{vehicleData.transmission}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Droplets className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                    <Droplets className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Bahan Bakar</p>
-                      <p className="font-medium">{vehicleData.fuelType}</p>
+                      <p className="text-xs text-gray-400">Bahan Bakar</p>
+                      <p className="font-medium text-white">{vehicleData.fuelType}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg col-span-2">
-                    <Palette className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg border border-gray-700 col-span-2">
+                    <Palette className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Warna</p>
-                      <p className="font-medium">{vehicleData.color}</p>
+                      <p className="text-xs text-gray-400">Warna</p>
+                      <p className="font-medium text-white">{vehicleData.color}</p>
                     </div>
                   </div>
                 </div>
