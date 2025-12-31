@@ -104,14 +104,14 @@ export class CatalogEngineService {
       where.make = make;
     }
 
-    // Price range filter
+    // Price range filter (prices are in raw IDR)
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.price = {};
       if (minPrice !== undefined) {
-        where.price.gte = BigInt(minPrice * 100000000); // Convert juta to cents
+        where.price.gte = BigInt(minPrice);
       }
       if (maxPrice !== undefined) {
-        where.price.lte = BigInt(maxPrice * 100000000);
+        where.price.lte = BigInt(maxPrice);
       }
     }
 

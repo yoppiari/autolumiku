@@ -41,7 +41,7 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const formatPrice = (price: bigint | number) => {
-    const rupiah = Number(price) / 100;
+    const rupiah = Number(price);
     return `Rp ${rupiah.toLocaleString('id-ID')}`;
   };
 

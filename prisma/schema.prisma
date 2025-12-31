@@ -675,8 +675,8 @@ model Vehicle {
   manuallyEdited Boolean @default(false) // User edited AI content
 
   // Pricing
-  price            BigInt // In IDR cents (Rp 250jt = 25000000000)
-  aiSuggestedPrice BigInt? // AI recommendation in IDR cents
+  price            BigInt // In raw IDR (Rp 250.000.000 = 250000000)
+  aiSuggestedPrice BigInt? // AI recommendation in raw IDR
   priceConfidence  Float? // 0-100 confidence score for pricing
   priceAnalysis    Json? // Market analysis data
 
@@ -1875,7 +1875,7 @@ model ScraperResult {
   make         String
   model        String
   year         Int
-  price        BigInt // IDR cents
+  price        BigInt // In raw IDR
   priceDisplay String
   location     String?
   url          String

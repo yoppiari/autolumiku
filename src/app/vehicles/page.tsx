@@ -70,6 +70,15 @@ export default async function VehiclesPage() {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Get WhatsApp number
+  const aimeowAccount = await prisma.aimeowAccount.findUnique({
+    where: { tenantId: tenant.id },
+    select: { phoneNumber: true, isActive: true },
+  });
+  const waNumber = aimeowAccount?.isActive && aimeowAccount?.phoneNumber
+    ? aimeowAccount.phoneNumber
+    : tenant.whatsappNumber;
+
   // Transform for component
   const transformedVehicles = vehicles.map((v) => ({
     id: v.id,
@@ -142,8 +151,9 @@ export default async function VehiclesPage() {
                 <PublicVehicleCard
                   key={vehicle.id}
                   vehicle={vehicle}
-                  tenantSlug={tenant.slug}
+                  slug={tenant.slug}
                   isCustomDomain={isCustomDomain}
+                  waNumber={waNumber || tenant.whatsappNumber || ''}
                 />
               ))}
             </div>

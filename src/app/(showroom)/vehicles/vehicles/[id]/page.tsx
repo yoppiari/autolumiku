@@ -64,8 +64,7 @@ export default function VehicleDetailPage({ params }: PageProps) {
   };
 
   const formatPrice = (price: number) => {
-    const rupiah = price / 100;
-    return `Rp ${rupiah.toLocaleString('id-ID')}`;
+    return `Rp ${price.toLocaleString('id-ID')}`;
   };
 
   const handleWhatsAppClick = () => {

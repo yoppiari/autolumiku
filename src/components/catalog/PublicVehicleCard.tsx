@@ -43,8 +43,7 @@ export default function PublicVehicleCard({
 
   // Helper to format price
   const formatPrice = (price: number) => {
-    const rupiah = price / 100;
-    return `Rp ${rupiah.toLocaleString('id-ID')}`;
+    return `Rp ${price.toLocaleString('id-ID')}`;
   };
 
   // Helper to generate URL based on domain context

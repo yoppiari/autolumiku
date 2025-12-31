@@ -148,8 +148,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
 
     const formatPrice = (price: bigint | number) => {
       const priceNumber = typeof price === 'bigint' ? Number(price) : price;
-      const rupiah = priceNumber / 100;
-      return `Rp ${rupiah.toLocaleString('id-ID')}`;
+      return `Rp ${priceNumber.toLocaleString('id-ID')}`;
     };
 
     const getExcerpt = (content: string | null, maxLength: number = 150): string => {

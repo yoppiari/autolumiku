@@ -41,8 +41,7 @@ export default function HomepageVehicleCard({
 }: HomepageVehicleCardProps) {
   // Format price in Rupiah
   const formatPrice = (price: number) => {
-    const rupiah = price / 100;
-    return `Rp ${rupiah.toLocaleString('id-ID')}`;
+    return `Rp ${price.toLocaleString('id-ID')}`;
   };
   const isSold = vehicle.status === 'SOLD';
 
