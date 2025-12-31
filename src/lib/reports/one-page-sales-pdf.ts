@@ -175,193 +175,184 @@ export class OnePageSalesPDF {
   }
 
   private generateMetrics(data: any) {
-    const boxWidth = 170;
-    const boxHeight = 80;
-    const startX = 50;
+    const pageWidth = 565; // A4 width in points
+    const boxWidth = (pageWidth - 40) / 4 - 6; // 4 boxes equal width
+    const boxHeight = 70;
+    const startX = 20;
     const y = this.doc.y;
+    const gap = 6;
 
-    // Box 1: Total Inventory
-    this.drawBox(startX, y, boxWidth, boxHeight, '#4CAF50');
-    this.doc.fontSize(12).fillColor('white').text('TOTAL INVENTORY', startX + 10, y + 15, {
-      width: boxWidth - 20,
-      align: 'center',
-    });
-    this.doc.fontSize(28).text(`${data.totalSales}`, startX + 10, y + 35, {
-      width: boxWidth - 20,
-      align: 'center',
-    });
-    this.doc.fontSize(12).text('Unit', startX + 10, y + 60, {
-      width: boxWidth - 20,
-      align: 'center',
-    });
+    // Box 1: Total Penjualan (Light Blue #4A90E2)
+    this.drawMetricBox(startX, y, boxWidth, boxHeight, '#4A90E2', 'TOTAL PENJUALAN',
+      `${data.totalSales}`, 'Unit');
 
-    // Box 2: Total Value
-    this.drawBox(startX + boxWidth + 20, y, boxWidth, boxHeight, '#2196F3');
-    this.doc.fontSize(12).fillColor('white').text('TOTAL VALUE', startX + boxWidth + 30, y + 15, {
-      width: boxWidth - 20,
-      align: 'center',
-    });
-    this.doc.fontSize(20).text(`Rp ${this.formatNumber(data.totalRevenue)}`, startX + boxWidth + 30, y + 35, {
-      width: boxWidth - 20,
-      align: 'center',
-    });
+    // Box 2: Total Revenue (Green #50C878)
+    this.drawMetricBox(startX + boxWidth + gap, y, boxWidth, boxHeight, '#50C878', 'TOTAL REVENUE',
+      `Rp ${this.formatNumber(data.totalRevenue)}`, '');
 
-    // Box 3: Average Price
-    this.drawBox(startX + (boxWidth + 20) * 2, y, boxWidth, boxHeight, '#FF9800');
-    this.doc.fontSize(12).fillColor('white').text('RATA-RATA HARGA', startX + (boxWidth + 20) * 2 + 10, y + 15, {
-      width: boxWidth - 20,
-      align: 'center',
-    });
-    this.doc.fontSize(20).text(`Rp ${this.formatNumber(data.avgPrice)}`, startX + (boxWidth + 20) * 2 + 10, y + 35, {
-      width: boxWidth - 20,
-      align: 'center',
-    });
+    // Box 3: Rata-rata Harga (Orange #FFA500)
+    this.drawMetricBox(startX + (boxWidth + gap) * 2, y, boxWidth, boxHeight, '#FFA500', 'RATA-RATA HARGA',
+      `Rp ${this.formatNumber(data.avgPrice)}`, '');
 
-    this.doc.y = y + boxHeight + 20;
+    // Box 4: Top Sales Staff (Purple #9370DB)
+    const topStaffName = data.topStaff?.name || 'N/A';
+    const topStaffCount = data.topStaff?.count ? `${data.topStaff.count} unit` : '';
+    this.drawMetricBox(startX + (boxWidth + gap) * 3, y, boxWidth, boxHeight, '#9370DB', 'TOP SALES STAFF',
+      topStaffName, topStaffCount);
+
+    this.doc.y = y + boxHeight + 15;
   }
 
   private generateTopStaff(data: any) {
-    const y = this.doc.y;
-
-    this.doc.fontSize(14).fillColor('black').text('TOP SALES STAFF', 50, y);
-
-    this.doc.rect(50, y + 15, 515, 50).fill('#f5f5f5').stroke();
-
-    if (data.topStaff) {
-      this.doc.fontSize(18).fillColor('black').text(data.topStaff.name, 70, y + 30);
-      this.doc.fontSize(14).fillColor('#666').text(
-        `${data.topStaff.count} unit • Rp ${this.formatNumber(data.topStaff.revenue)}`,
-        70,
-        y + 50
-      );
-    } else {
-      this.doc.fontSize(14).fillColor('#999').text('N/A', 70, y + 35);
-    }
-
-    this.doc.y = y + 80;
+    // REMOVED - Top Staff is now in the metrics bar
   }
 
   private generateInsights(data: any) {
-    const y = this.doc.y;
-
-    this.doc.fontSize(14).fillColor('black').text('INSIGHT INVENTORY', 50, y);
-
-    this.doc.rect(50, y + 15, 515, 40).fill('#E3F2FD').stroke();
-
-    this.doc.fontSize(12).fillColor('black').text(
-      `Total Inventory: ${data.totalSales} Unit`,
-      70,
-      y + 25
-    );
-    this.doc.fontSize(12).text(
-      `Tersedia: ${data.inventoryStats?.available || 0} | Terjual: ${data.inventoryStats?.sold || 0}`,
-      70,
-      y + 45
-    );
-
-    this.doc.y = y + 70;
+    // REMOVED - Insights are now in the formulas section
   }
 
   private generateChartSection(data: any) {
-    const y = this.doc.y;
-
-    this.doc.fontSize(14).fillColor('black').text('DISTRIBUSI BERDASARKAN BRAND', 50, y);
-
-    this.doc.rect(50, y + 15, 515, 80).fill('#fafafa').stroke();
-
-    // Display make distribution
-    let yPos = y + 25;
-    data.makeDistribution.slice(0, 4).forEach((item: any) => {
-      this.doc.fontSize(11).fillColor('black').text(
-        `${item.make}: ${item.percentage.toFixed(1)}% (${item.count} unit)`,
-        70,
-        yPos
-      );
-      yPos += 15;
-    });
-
-    this.doc.y = y + 110;
+    // REMOVED - Will be integrated into formulas section
   }
 
   private generateFormulas(data: any) {
+    const pageWidth = 565;
     const y = this.doc.y;
 
-    this.doc.fontSize(12).fillColor('black').text('RUMUSAN PERHITUNGAN:', 50, y);
+    // RUMUSAN PERHITUNGAN Section
+    this.doc.fontSize(12).fillColor('black').font('Helvetica-Bold').text('RUMUSAN PERHITUNGAN', 20, y);
 
-    let yPos = y + 20;
+    let yPos = y + 15;
 
-    // Formula 1: Total Inventory
-    this.doc.fontSize(10).fillColor('#333').text(
-      `• Total Inventory:`,
-      70,
-      yPos
+    // Table header
+    this.doc.fillColor('#E0E0E0').rect(20, yPos, pageWidth - 40, 20).fill();
+    this.doc.fillColor('black').fontSize(10).font('Helvetica-Bold').text('METRIK', 25, yPos + 5);
+    this.doc.text('RUMUSAN', pageWidth / 2, yPos + 5);
+
+    yPos += 25;
+
+    // Table rows - alternating colors
+    const formulas = [
+      { metric: 'Total Penjualan', formula: `COUNT(vehicle) WHERE status = 'AVAILABLE' OR 'SOLD'` },
+      { metric: 'Total Revenue', formula: 'SUM(price) FROM vehicle' },
+      { metric: 'Rata-rata Harga', formula: 'Total Revenue / Total Penjualan' },
+    ];
+
+    formulas.forEach((item, idx) => {
+      const bgColor = idx % 2 === 0 ? '#FFFFFF' : '#F5F5F5';
+      this.doc.fillColor(bgColor).rect(20, yPos, pageWidth - 40, 18).fill();
+      this.doc.fillColor('black').fontSize(9).font('Helvetica-Bold').text(item.metric, 25, yPos + 3);
+      this.doc.font('Helvetica').fontSize(8).text(item.formula, pageWidth / 2, yPos + 3);
+      yPos += 22;
+    });
+
+    // Insight Utama Section (light green background)
+    yPos += 5;
+    this.doc.fillColor('#E6F7E6').rect(20, yPos, pageWidth - 40, 18).fill();
+    this.doc.fillColor('black').fontSize(9).font('Helvetica-Bold').text('Insight Utama', 25, yPos + 3);
+    this.doc.font('Helvetica').fontSize(8).text(
+      `Total Penjualan: ${data.totalSales} Unit | Tersedia: ${data.inventoryStats?.available || 0} | Terjual: ${data.inventoryStats?.sold || 0}`,
+      pageWidth / 2, yPos + 3
     );
+
+    yPos += 25;
+
+    // Chart Section (Left) + Formulas Table (Right) - Side by side
+    const chartWidth = (pageWidth - 40) / 2 - 10;
+    const tableX = 20 + chartWidth + 10;
+
+    // Chart title
+    this.doc.fillColor('black').fontSize(11).font('Helvetica-Bold').text('DISTRIBUSI BRAND', 20, yPos);
+
+    // Simple bar chart representation (since drawing pie chart is complex in PDFKit)
+    let barY = yPos + 15;
+    const maxBarWidth = chartWidth - 40;
+
+    data.makeDistribution.slice(0, 3).forEach((item: any, idx: number) => {
+      const barWidth = (item.percentage / 100) * maxBarWidth;
+      const colors = ['#4A90E2', '#50C878', '#FFA500'];
+
+      // Label
+      this.doc.fillColor('black').fontSize(8).font('Helvetica').text(
+        `${item.make}`, 25, barY
+      );
+
+      // Bar
+      this.doc.fillColor(colors[idx % 3]).rect(70, barY - 2, Math.max(barWidth, 50), 10).fill();
+
+      // Percentage
+      this.doc.fillColor('red').fontSize(8).font('Helvetica-Bold').text(
+        `${item.percentage.toFixed(1)}%`, 70 + barWidth + 5, barY
+      );
+
+      barY += 15;
+    });
+
+    // Formulas table on right
+    this.doc.fillColor('black').fontSize(10).font('Helvetica-Bold').text('PENJELASAN DATA', tableX, yPos);
+
+    let tableY = yPos + 15;
+    const explanations = [
+      { indikator: `A: ${data.makeDistribution[0]?.make || '-'}`, percentage: `${data.makeDistribution[0]?.percentage.toFixed(1) || 0}%` },
+      { indikator: `B: ${data.makeDistribution[1]?.make || '-'}`, percentage: `${data.makeDistribution[1]?.percentage.toFixed(1) || 0}%` },
+      { indikator: `C: ${data.makeDistribution[2]?.make || '-'}`, percentage: `${data.makeDistribution[2]?.percentage.toFixed(1) || 0}%` },
+    ];
+
+    explanations.forEach((item) => {
+      this.doc.fillColor('black').fontSize(8).font('Helvetica').text(
+        `• ${item.indikator}: ${item.percentage}`, tableX, tableY
+      );
+      tableY += 12;
+    });
+
+    yPos = Math.max(barY, tableY) + 15;
+
+    // Footer - Analysis section with red bullets
+    this.doc.fillColor('black').fontSize(11).font('Helvetica-Bold').text('Analisa Showroom', 20, yPos);
+
     yPos += 12;
-    this.doc.fontSize(9).fillColor('#666').text(
-      `  R: COUNT(vehicle) FROM vehicle WHERE tenantId = {tenant_id}`,
-      70,
-      yPos
-    );
-    yPos += 12;
-    this.doc.fontSize(9).fillColor('#666').text(
-      `  H: ${data.totalSales} unit kendaraan`,
-      70,
-      yPos
-    );
+    const analysisPoints = [
+      'Bagaimana cara meningkatkan performa penjualan?',
+      'Apa strategi manajemen untuk keputusan bisnis?',
+      'Indikator yang baik: dipertahankan atau ditingkatkan?',
+    ];
 
-    yPos += 20;
+    this.doc.fillColor('red').fontSize(8).font('Helvetica');
+    analysisPoints.forEach((point) => {
+      this.doc.text(`• ${point}`, 25, yPos, { width: pageWidth - 50 });
+      yPos += this.doc.heightOfPoint(8) + 3;
+    });
 
-    // Formula 2: Total Value
-    this.doc.fontSize(10).fillColor('#333').text(
-      `• Total Value:`,
-      70,
-      yPos
-    );
-    yPos += 12;
-    this.doc.fontSize(9).fillColor('#666').text(
-      `  R: SUM(price) FROM vehicle`,
-      70,
-      yPos
-    );
-    yPos += 12;
-    this.doc.fontSize(9).fillColor('#666').text(
-      `  H: Rp ${this.formatNumber(data.totalRevenue)}`,
-      70,
-      yPos
-    );
-
-    yPos += 20;
-
-    // Formula 3: Rata-rata Harga
-    this.doc.fontSize(10).fillColor('#333').text(
-      `• Rata-rata Harga:`,
-      70,
-      yPos
-    );
-    yPos += 12;
-    this.doc.fontSize(9).fillColor('#666').text(
-      `  R: Total Value / Total Inventory`,
-      70,
-      yPos
-    );
-    yPos += 12;
-    this.doc.fontSize(9).fillColor('#666').text(
-      `  H: Rp ${this.formatNumber(data.avgPrice)}`,
-      70,
-      yPos
-    );
-
-    // Footer
-    this.doc.fontSize(8).fillColor('#999').text(
-      `Generated by ${data.tenant} • ${new Date().toLocaleString('id-ID')} • Data: Real-time from database`,
-      50,
-      750,
-      { align: 'center' }
+    // Final footer
+    yPos = 750;
+    this.doc.fillColor('#94a3b8').fontSize(7).font('Helvetica').text(
+      `Generated by ${this.currentTenant} | ${new Date().toLocaleString('id-ID')} | Data: Real-time from database`,
+      pageWidth / 2, yPos, { align: 'center' }
     );
   }
 
-  private drawBox(x: number, y: number, width: number, height: number, color: string) {
-    this.doc.rect(x, y, width, height).fill(color).stroke();
+  private drawMetricBox(x: number, y: number, width: number, height: number, color: string, label: string, value: string, unit: string) {
+    const { doc } = this;
+
+    // Draw colored box
+    doc.fillColor(color).rect(x, y, width, height).fill();
+
+    // Label (uppercase, bold)
+    doc.fillColor('white').fontSize(10).font('Helvetica-Bold').text(
+      label.toUpperCase(), x + 5, y + 10, { width: width - 10, align: 'center' }
+    );
+
+    // Value (larger, bold)
+    doc.fontSize(18).font('Helvetica-Bold').text(
+      value, x + 5, y + 25, { width: width - 10, align: 'center' }
+    );
+
+    // Unit (if provided)
+    if (unit) {
+      doc.fontSize(8).font('Helvetica').text(
+        unit, x + 5, y + 48, { width: width - 10, align: 'center' }
+      );
+    }
   }
 
   private formatNumber(num: number): string {
