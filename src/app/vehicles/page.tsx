@@ -50,7 +50,7 @@ export default async function VehiclesPage() {
     );
   }
 
-  // Fetch available vehicles
+  // Fetch available vehicles with main photo (displayOrder: 0 or first photo)
   const vehicles = await prisma.vehicle.findMany({
     where: {
       tenantId: tenant.id,
@@ -65,6 +65,7 @@ export default async function VehiclesPage() {
           largeUrl: true,
           originalUrl: true,
         },
+        take: 1,
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -79,20 +80,26 @@ export default async function VehiclesPage() {
     ? aimeowAccount.phoneNumber
     : tenant.whatsappNumber;
 
-  // Transform for component
+  // Transform for component - ensure photos array is never undefined
   const transformedVehicles = vehicles.map((v) => ({
     id: v.id,
     displayId: v.displayId,
     make: v.make,
     model: v.model,
     year: v.year,
+    variant: v.variant,
     price: v.price ? Number(v.price) : 0,
     mileage: v.mileage,
     transmissionType: v.transmissionType,
     fuelType: v.fuelType,
     color: v.color,
     status: v.status,
-    photos: v.photos,
+    photos: v.photos && v.photos.length > 0 ? v.photos : [{
+      originalUrl: '',
+      thumbnailUrl: '',
+      mediumUrl: '',
+      largeUrl: '',
+    }],
     createdAt: v.createdAt,
   }));
 
