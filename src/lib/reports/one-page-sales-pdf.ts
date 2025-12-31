@@ -298,7 +298,7 @@ export class OnePageSalesPDF {
     );
     yPos += 12;
     this.doc.fontSize(9).fillColor('#666').text(
-      `  R: COUNT(vehicle) WHERE tenantId = ${data.tenant}`,
+      `  R: COUNT(vehicle) FROM vehicle WHERE tenantId = {tenant_id}`,
       70,
       yPos
     );
