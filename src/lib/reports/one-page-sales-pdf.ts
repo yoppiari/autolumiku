@@ -79,35 +79,45 @@ export class OnePageSalesPDF {
       throw new Error(`Tenant not found: ${tenantName}`);
     }
 
-    // Fetch SOLD vehicles with sales data
-    const soldVehicles = await prisma.vehicle.findMany({
+    // Fetch sales invoices with vehicle and sales user data
+    const salesInvoices = await prisma.salesInvoice.findMany({
       where: {
         tenantId: tenant.id,
-        status: 'SOLD',
+        status: 'PAID', // Only count paid invoices as actual sales
+        vehicleId: { not: null }, // Must have a vehicle
       },
-      select: {
-        price: true,
-        soldDate: true,
-        soldBy: true,
-        make: true,
+      include: {
+        vehicle: {
+          select: {
+            price: true,
+            make: true,
+          },
+        },
+        salesUser: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
     // Calculate metrics from REAL data
-    const totalSales = soldVehicles.length;
-    const totalRevenue = soldVehicles.reduce((sum, v) => sum + (v.price || 0), 0);
+    const totalSales = salesInvoices.length;
+    const totalRevenue = salesInvoices.reduce((sum, inv) => {
+      return sum + (inv.vehicle?.price ? Number(inv.vehicle.price) : 0);
+    }, 0);
     const avgPrice = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Group by sales staff
     const staffSales = new Map<string, { count: number; revenue: number }>();
-    soldVehicles.forEach((v) => {
-      const staff = v.soldBy || 'Unassigned';
-      if (!staffSales.has(staff)) {
-        staffSales.set(staff, { count: 0, revenue: 0 });
+    salesInvoices.forEach((inv) => {
+      const staffName = inv.salesUser?.name || 'Unassigned';
+      if (!staffSales.has(staffName)) {
+        staffSales.set(staffName, { count: 0, revenue: 0 });
       }
-      const data = staffSales.get(staff)!;
+      const data = staffSales.get(staffName)!;
       data.count++;
-      data.revenue += v.price || 0;
+      data.revenue += inv.vehicle?.price ? Number(inv.vehicle.price) : 0;
     });
 
     // Find top sales staff
@@ -121,8 +131,8 @@ export class OnePageSalesPDF {
 
     // Group by make for chart
     const makeSales = new Map<string, number>();
-    soldVehicles.forEach((v) => {
-      const make = v.make || 'Unknown';
+    salesInvoices.forEach((inv) => {
+      const make = inv.vehicle?.make || 'Unknown';
       makeSales.set(make, (makeSales.get(make) || 0) + 1);
     });
 
