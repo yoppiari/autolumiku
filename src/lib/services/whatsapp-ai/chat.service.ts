@@ -564,6 +564,66 @@ export class WhatsAppAIChatService {
       };
     }
 
+    // ==================== FAMILY/MPV RECOMMENDATION HANDLER ====================
+    // Detect family size and recommend appropriate vehicles
+    const familyPatterns = [
+      /\b(anak|family|keluarga)\s*(\d+)\s*(orang|orangnya|sih)\b/i,
+      /\b(keluarga|family)\s*(kecil|besar)\b/i,
+      /\b(7\s*seater|7\s*penumpang|mpv)\b/i,
+      /\b(mobil\s*keluarga)\b/i,
+    ];
+    const isFamilyQuery = familyPatterns.some(p => p.test(msg));
+
+    if (isFamilyQuery) {
+      console.log(`[SmartFallback] 👨‍👩‍👧‍👦 Family query detected: "${msg}"`);
+
+      // Extract number of family members if mentioned
+      const familySizeMatch = msg.match(/anak\s*(\d+)/i);
+      const familySize = familySizeMatch ? parseInt(familySizeMatch[1]) : 2;
+
+      // Recommend MPV/7-seater vehicles based on budget
+      const budgetMatch = msg.match(/(\d+)\s*(jt|juta)/i);
+      const budget = budgetMatch ? parseInt(budgetMatch[1]) * 1000000 : 150000000; // Default 150jt
+
+      // Filter for MPV/7-seater vehicles within budget
+      const mpvVehicles = vehicles.filter(v => {
+        const price = Number(v.price);
+        const isMPV = [
+          'Innova', 'Avanza', 'Xenia', 'Ertiga', 'Xpander', 'Rush', 'Terios',
+          'Grand Livina', 'Livina', 'Spin', 'Apv', 'Luxio',
+          'Pregio', 'Travello', 'Elf'
+        ].some(model => v.model.includes(model) || v.make.includes(model));
+
+        return isMPV && price <= budget * 1.3; // Allow 30% over budget
+      });
+
+      if (mpvVehicles.length > 0) {
+        const list = mpvVehicles.slice(0, 3).map(v => {
+          const priceJuta = Math.round(Number(v.price) / 1000000);
+          return `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} juta (MPV)`;
+        }).join('\n');
+
+        return {
+          message: `Untuk keluarga dengan ${familySize} anak, rekomendasi saya MPV 7-seater ini cocok! 👨‍👩‍👧‍👦\n\n` +
+            `Kenapa MPV?\n` +
+            `• Kapasitas 7 penumpang, muat seluruh keluarga\n` +
+            `• Bagasi luas untuk bawaan anak-anak\n` +
+            `• Suspensi nyaman untuk perjalanan keluarga\n` +
+            `• Hemat bahan bakar\n\n` +
+            `Berikut pilihannya di budget sekitar Rp ${Math.round(budget/1000000)} juta:\n\n${list}\n\n` +
+            `Mau info detail yang mana? 😊`,
+          shouldEscalate: false,
+        };
+      } else {
+        return {
+          message: `Untuk keluarga dengan ${familySize} anak, saya sarankan MPV 7-seater seperti Innova, Avanza, atau Xpander 👨‍👩‍👧‍👦\n\n` +
+            `Sayangnya belum ada stok MPV saat ini 😔\n\n` +
+            `Mau info jenis mobil lain yang ada? 😊`,
+          shouldEscalate: false,
+        };
+      }
+    }
+
     // ==================== APPRECIATION/ACKNOWLEDGMENT HANDLER ====================
     // Detect positive acknowledgment phrases (mantap, keren, bagus, etc.)
     // These should NOT be treated as photo requests!
@@ -586,9 +646,26 @@ export class WhatsAppAIChatService {
       };
     }
 
+    // ==================== STOP COMMAND ====================
+    // Check if user wants to stop receiving photos
+    const stopPatterns = [
+      /^(stop|berhenti|cukup|udah|sudah|kagak|ndak|gak|nga)$/i,
+      /\b(stop|berhenti|cukup|jangan)\s*(kirim|kasi|tunjuk|lagi|terus)\b/i,
+      /\b(cukup|udah|sudah)\b.*(foto|gambar|itu)\b/i,
+    ];
+    const isStopCommand = stopPatterns.some(p => p.test(msg));
+
+    if (isStopCommand) {
+      console.log(`[SmartFallback] 🛑 Stop command detected: "${msg}"`);
+      return {
+        message: `Siap, saya stop! 👍\n\nAda yang lain bisa saya bantu? 😊`,
+        shouldEscalate: false,
+      };
+    }
+
     // ==================== PHOTO CONFIRMATION HANDLER (CRITICAL FIX) ====================
     // Handle photo confirmations FIRST before other fallbacks
-    // IMPORTANT: This MUST return a photo-related response, NEVER fall through!
+    // IMPORTANT: Check if photos were already sent recently to prevent spam
     const photoConfirmPatterns = [
       /^(boleh|ya|iya|mau|yup|bisa)$/i, // Removed "ok", "oke", "sip", "siap" as they can be appreciation
       /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
@@ -598,6 +675,19 @@ export class WhatsAppAIChatService {
       /^mana\s/i, // "mana fotonya", "mana gambarnya"
     ];
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
+
+    // Check if photos were already sent recently (last 3 messages)
+    const recentPhotos = messageHistory
+      .slice(-3)
+      .filter(m => m.role === "assistant" && (m.content.includes("Ini foto") || m.content.includes("Honda City 2006")));
+
+    if (recentPhotos.length > 0) {
+      console.log(`[SmartFallback] ⚠️ Photos already sent recently (${recentPhotos.length} times), skipping to prevent spam`);
+      return {
+        message: `Foto-foto sudah dikirim sebelumnya ya 😊\n\nAda pertanyaan lain tentang unit ini?`,
+        shouldEscalate: false,
+      };
+    }
 
     // Check if user explicitly asks for photos (contains "foto", "gambar", "mana fotonya" etc)
     const userExplicitlyAsksPhoto = msg.includes("foto") || msg.includes("gambar") ||
@@ -911,30 +1001,31 @@ export class WhatsAppAIChatService {
 - Jam: ${timeStr} WIB
 - Salam waktu yang tepat: "${timeGreeting}"
 
-🎯 ATURAN GREETING (SANGAT PENTING - HARUS HANGAT & NATURAL!):
+🎯 ATURAN GREETING (SANGAT PENTING - JANGAN DIULANG BERKALI-KALI!):
 
-1. OPENING GREETING (pesan pertama/halo):
-   → SELALU gunakan salam waktu yang SESUAI dengan jam saat ini!
-   → Greeting harus HANGAT, NATURAL, dan TIDAK MONOTON!
-   → VARIASIKAN greeting, jangan selalu sama persis!
-   → Contoh variasi greeting yang baik:
-      • "${timeGreeting}! Halo, terima kasih sudah menghubungi ${tenant.name}. Saya siap bantu carikan mobil yang pas untuk Anda. Lagi cari mobil apa nih?"
-      • "${timeGreeting}! Senang bisa bantu hari ini. Mau cari mobil apa? Bisa sebutkan merk, budget, atau kebutuhan Anda ya."
-      • "Hai, ${timeGreeting}! Selamat datang di ${tenant.name}. Mau lihat-lihat koleksi mobil kami atau sudah ada incaran tertentu?"
-   → JANGAN terlalu pendek seperti "Selamat pagi! Ada yang bisa kami bantu?" - terlalu kaku!
+1. OPENING GREETING (HANYA pada pesan pertama/pembuka):
+   → Gunakan salam waktu HANYA jika ini pesan PERTAMA dari customer!
+   → JANGAN gunakan "${timeGreeting}" di setiap respon - hanya di awal percakapan!
+   → Jika percakapan sudah berjalan, langsung saja ke topik tanpa greeting lagi!
 
 2. BALAS SALAM CUSTOMER:
-   → Jika customer bilang "selamat pagi" → balas "${timeGreeting}" (sesuai JAM SAAT INI, bukan ikut customer!)
-   → Jika customer bilang "selamat malam" tapi sekarang siang → balas "${timeGreeting}" yang benar
-   → SELALU sesuaikan dengan waktu SAAT INI, bukan waktu yang disebut customer!
+   → Jika customer bilang "selamat pagi" → balas "${timeGreeting}" (sesuai JAM SAAT INI)
+   → TAPI jangan balas greeting lagi di pesan berikutnya!
 
 3. CLOSING GREETING (customer pamit/selesai):
    → "Siap, terima kasih sudah mampir ke ${tenant.name}! Kalau butuh info lagi, langsung chat aja ya!"
 
+4. PENTING - CEGAH DUPLIKASI GREETING:
+   → JANGAN memulai respon dengan "${timeGreeting}" jika sudah pernah greeting sebelumnya!
+   → Untuk respon ke-2, ke-3, dst: langsung jawab pertanyaan tanpa greeting!
+   → Contoh SALAH (jangan ulang greeting): "Selamat pagi! Tentu, untuk Honda City..."
+   → Contoh BENAR (langsung topik): "Tentu, untuk Honda City 2006..."
+
 CONTOH GREETING BENAR (jam ${timeStr}):
-- Customer: "Halo" → "${timeGreeting}! Halo, terima kasih sudah menghubungi ${tenant.name}. Saya siap bantu carikan mobil yang pas buat Anda. Lagi cari mobil apa nih?"
-- Customer: "Pagi" → "Pagi juga! Senang bisa bantu. Mau cari mobil apa? Bisa sebutkan merk, budget, atau kebutuhannya ya."
-- Customer: "Terima kasih, sampai jumpa" → "Siap, terima kasih sudah mampir ke ${tenant.name}! Kalau butuh info lagi, langsung chat aja ya!"
+- Customer: "Halo" (pesan pertama) → "${timeGreeting}! Halo, terima kasih sudah menghubungi ${tenant.name}..."
+- Customer: "Info Honda City" (pesan ke-2) → "Tentu, untuk Honda City 2006..." (TANPA greeting!)
+- Customer: "Pagi" → "Pagi juga! Senang bisa bantu..."
+- Customer: "Terima kasih, sampai jumpa" → "Siap, terima kasih sudah mampir!"
 
 IDENTITAS & KEPRIBADIAN:
 - Profesional tapi TIDAK KAKU - seperti sales yang ramah dan bersahabat
