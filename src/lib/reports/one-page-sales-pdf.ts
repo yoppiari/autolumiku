@@ -79,21 +79,21 @@ export class OnePageSalesPDF {
       throw new Error(`Tenant not found: ${tenantName}`);
     }
 
-    // Fetch sales invoices with snapshot data
-    const salesInvoices = await prisma.salesInvoice.findMany({
+    // Fetch vehicles (as inventory data - sales invoices table not created yet)
+    const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId: tenant.id,
-        status: 'PAID', // Only count paid invoices as actual sales
-        vehicleId: { not: null }, // Must have a vehicle
+        // Tampilkan semua vehicle untuk inventory report
       },
       select: {
-        vehiclePrice: true, // Snapshot price at time of sale
-        vehicleMake: true,  // Snapshot make at time of sale
-        salesUserId: true,  // Sales staff ID
+        price: true,
+        make: true,
+        status: true,
+        createdAt: true,
       },
     });
 
-    // Fetch all users with SALES role to get names
+    // Fetch all users with SALES role for potential sales tracking
     const salesUsers = await prisma.user.findMany({
       where: {
         tenantId: tenant.id,
@@ -113,56 +113,44 @@ export class OnePageSalesPDF {
       userNameMap.set(user.id, fullName);
     });
 
-    // Calculate metrics from REAL data
-    const totalSales = salesInvoices.length;
-    const totalRevenue = salesInvoices.reduce((sum, inv) => sum + (inv.vehiclePrice || 0), 0);
-    const avgPrice = totalSales > 0 ? totalRevenue / totalSales : 0;
-
-    // Group by sales staff with real names
-    const staffSales = new Map<string, { count: number; revenue: number }>();
-    salesInvoices.forEach((inv) => {
-      const staffId = inv.salesUserId || 'Unassigned';
-      const staffName = inv.salesUserId ? (userNameMap.get(inv.salesUserId) || 'Unknown') : 'Unassigned';
-
-      if (!staffSales.has(staffName)) {
-        staffSales.set(staffName, { count: 0, revenue: 0 });
-      }
-      const data = staffSales.get(staffName)!;
-      data.count++;
-      data.revenue += inv.vehiclePrice || 0;
-    });
-
-    // Find top sales staff
-    const topStaffEntries = Array.from(staffSales.entries())
-      .sort((a, b) => b[1].revenue - a[1].revenue)
-      .slice(0, 1);
-
-    const topStaff = topStaffEntries.length > 0
-      ? { name: topStaffEntries[0][0], ...topStaffEntries[0][1] }
-      : null;
+    // Calculate metrics from vehicle inventory
+    const totalInventory = vehicles.length;
+    const availableCount = vehicles.filter(v => v.status === 'AVAILABLE').length;
+    const soldCount = vehicles.filter(v => v.status === 'SOLD').length;
+    const totalValue = vehicles.reduce((sum, v) => sum + (v.price ? Number(v.price) : 0), 0);
+    const avgPrice = vehicles.length > 0 ? totalValue / vehicles.length : 0;
 
     // Group by make for chart
-    const makeSales = new Map<string, number>();
-    salesInvoices.forEach((inv) => {
-      const make = inv.vehicleMake || 'Unknown';
-      makeSales.set(make, (makeSales.get(make) || 0) + 1);
+    const makeDistribution = new Map<string, number>();
+    vehicles.forEach((v) => {
+      const make = v.make || 'Unknown';
+      makeDistribution.set(make, (makeDistribution.get(make) || 0) + 1);
     });
+
+    // Get top sales staff (just show list of available sales staff)
+    const salesStaffList = Array.from(userNameMap.values());
 
     return {
       tenant: tenant.name,
-      totalSales,
-      totalRevenue,
+      totalSales: totalInventory, // Total inventory
+      totalRevenue: totalValue, // Total value of all vehicles
       avgPrice,
-      topStaff,
-      makeDistribution: Array.from(makeSales.entries()).map(([make, count]) => ({
+      topStaff: salesStaffList.length > 0 ? {
+        name: salesStaffList[0],
+        count: 0,
+        revenue: 0
+      } : null,
+      makeDistribution: Array.from(makeDistribution.entries()).map(([make, count]) => ({
         make,
         count,
-        percentage: totalSales > 0 ? (count / totalSales) * 100 : 0,
+        percentage: totalInventory > 0 ? (count / totalInventory) * 100 : 0,
       })),
-      allStaff: Array.from(staffSales.entries()).map(([name, data]) => ({
-        name,
-        ...data,
-      })),
+      allStaff: [],
+      inventoryStats: {
+        total: totalInventory,
+        available: availableCount,
+        sold: soldCount,
+      },
     };
   }
 
@@ -192,9 +180,9 @@ export class OnePageSalesPDF {
     const startX = 50;
     const y = this.doc.y;
 
-    // Box 1: Total Penjualan
+    // Box 1: Total Inventory
     this.drawBox(startX, y, boxWidth, boxHeight, '#4CAF50');
-    this.doc.fontSize(12).fillColor('white').text('TOTAL PENJUALAN', startX + 10, y + 15, {
+    this.doc.fontSize(12).fillColor('white').text('TOTAL INVENTORY', startX + 10, y + 15, {
       width: boxWidth - 20,
       align: 'center',
     });
@@ -207,9 +195,9 @@ export class OnePageSalesPDF {
       align: 'center',
     });
 
-    // Box 2: Total Revenue
+    // Box 2: Total Value
     this.drawBox(startX + boxWidth + 20, y, boxWidth, boxHeight, '#2196F3');
-    this.doc.fontSize(12).fillColor('white').text('TOTAL REVENUE', startX + boxWidth + 30, y + 15, {
+    this.doc.fontSize(12).fillColor('white').text('TOTAL VALUE', startX + boxWidth + 30, y + 15, {
       width: boxWidth - 20,
       align: 'center',
     });
@@ -218,7 +206,7 @@ export class OnePageSalesPDF {
       align: 'center',
     });
 
-    // Box 3: Rata-rata Harga
+    // Box 3: Average Price
     this.drawBox(startX + (boxWidth + 20) * 2, y, boxWidth, boxHeight, '#FF9800');
     this.doc.fontSize(12).fillColor('white').text('RATA-RATA HARGA', startX + (boxWidth + 20) * 2 + 10, y + 15, {
       width: boxWidth - 20,
@@ -256,17 +244,17 @@ export class OnePageSalesPDF {
   private generateInsights(data: any) {
     const y = this.doc.y;
 
-    this.doc.fontSize(14).fillColor('black').text('INSIGHT UTAMA', 50, y);
+    this.doc.fontSize(14).fillColor('black').text('INSIGHT INVENTORY', 50, y);
 
     this.doc.rect(50, y + 15, 515, 40).fill('#E3F2FD').stroke();
 
     this.doc.fontSize(12).fillColor('black').text(
-      `Total Penjualan: ${data.totalSales} Unit`,
+      `Total Inventory: ${data.totalSales} Unit`,
       70,
       y + 25
     );
     this.doc.fontSize(12).text(
-      `Total Revenue: Rp ${this.formatNumber(data.totalRevenue)}`,
+      `Tersedia: ${data.inventoryStats?.available || 0} | Terjual: ${data.inventoryStats?.sold || 0}`,
       70,
       y + 45
     );
@@ -302,36 +290,36 @@ export class OnePageSalesPDF {
 
     let yPos = y + 20;
 
-    // Formula 1: Total Penjualan
+    // Formula 1: Total Inventory
     this.doc.fontSize(10).fillColor('#333').text(
-      `• Total Penjualan:`,
+      `• Total Inventory:`,
       70,
       yPos
     );
     yPos += 12;
     this.doc.fontSize(9).fillColor('#666').text(
-      `  R: COUNT(vehicle) WHERE status = "SOLD"`,
+      `  R: COUNT(vehicle) WHERE tenantId = ${data.tenant}`,
       70,
       yPos
     );
     yPos += 12;
     this.doc.fontSize(9).fillColor('#666').text(
-      `  H: ${data.totalSales} unit terjual`,
+      `  H: ${data.totalSales} unit kendaraan`,
       70,
       yPos
     );
 
     yPos += 20;
 
-    // Formula 2: Total Revenue
+    // Formula 2: Total Value
     this.doc.fontSize(10).fillColor('#333').text(
-      `• Total Revenue:`,
+      `• Total Value:`,
       70,
       yPos
     );
     yPos += 12;
     this.doc.fontSize(9).fillColor('#666').text(
-      `  R: SUM(price) WHERE status = "SOLD"`,
+      `  R: SUM(price) FROM vehicle`,
       70,
       yPos
     );
@@ -352,7 +340,7 @@ export class OnePageSalesPDF {
     );
     yPos += 12;
     this.doc.fontSize(9).fillColor('#666').text(
-      `  R: Total Revenue / Total Penjualan`,
+      `  R: Total Value / Total Inventory`,
       70,
       yPos
     );
