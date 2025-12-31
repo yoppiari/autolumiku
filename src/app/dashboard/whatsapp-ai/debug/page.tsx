@@ -45,6 +45,8 @@ export default function WhatsAppDebugPage() {
   const [isCheckingOutbound, setIsCheckingOutbound] = useState(false);
   const [isFixingClientId, setIsFixingClientId] = useState(false);
   const [fixClientIdResult, setFixClientIdResult] = useState<string>('');
+  const [testingPDF, setTestingPDF] = useState(false);
+  const [pdfTestResult, setPdfTestResult] = useState<string>('');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -232,6 +234,34 @@ export default function WhatsAppDebugPage() {
       setError(err.message);
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const testOnePagePDF = async () => {
+    if (!tenantId) return;
+
+    setTestingPDF(true);
+    setPdfTestResult('');
+    setError('');
+
+    try {
+      // Get tenant name from localStorage
+      const storedUser = localStorage.getItem('user');
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      const tenantName = user?.tenantName || 'Prima Mobil';
+
+      // Open PDF in new tab
+      const pdfUrl = `/api/v1/debug/test-one-page-pdf?tenantName=${encodeURIComponent(tenantName)}`;
+      window.open(pdfUrl, '_blank');
+
+      setPdfTestResult('✅ PDF opened in new tab! Check if it generated successfully.');
+
+      setTimeout(() => setPdfTestResult(''), 5000);
+    } catch (err: any) {
+      console.error('PDF test error:', err);
+      setError(err.message);
+    } finally {
+      setTestingPDF(false);
     }
   };
 
@@ -536,6 +566,49 @@ export default function WhatsAppDebugPage() {
             </pre>
           </div>
         )}
+      </div>
+
+      {/* PDF Reports Test */}
+      <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">📄 Test PDF Reports</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Generate dan test PDF reports untuk memastikan format dan data real-time
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* One-Page Sales Report */}
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <h3 className="font-medium text-gray-900 mb-2">One-Page Sales Report</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              Format 1 halaman dengan metrics, insights, dan formulas. Data real-time dari database.
+            </p>
+            <button
+              onClick={testOnePagePDF}
+              disabled={testingPDF || !tenantId}
+              className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
+            >
+              {testingPDF ? 'Generating...' : '📊 Test One-Page PDF'}
+            </button>
+            {pdfTestResult && (
+              <p className="text-sm text-green-600 mt-2">{pdfTestResult}</p>
+            )}
+          </div>
+
+          {/* Placeholder for other reports */}
+          <div className="p-4 border border-dashed border-gray-300 rounded-lg">
+            <h3 className="font-medium text-gray-500 mb-2">Other Reports (Coming Soon)</h3>
+            <p className="text-sm text-gray-400 mb-3">
+              13 remaining reports will be converted to 1-page format
+            </p>
+            <div className="text-sm text-gray-400">
+              <p>• Compact Executive PDF</p>
+              <p>• Analytics PDF</p>
+              <p>• Invoice PDF</p>
+              <p>• WhatsApp Reports</p>
+              <p>• + 9 more...</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Recent Messages */}
