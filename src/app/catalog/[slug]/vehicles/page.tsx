@@ -29,42 +29,48 @@ export default async function CatalogVehiclesPage({ params }: PageProps) {
   const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
   const tenantSlug = params.slug;
 
-  // Fetch tenant
-  const tenant = await prisma.tenant.findUnique({
-    where: { slug: tenantSlug },
-  });
+  try {
+    console.log(`[VehiclesPage] Loading vehicles for tenant: ${tenantSlug}`);
 
-  if (!tenant) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Showroom Not Found</h1>
-          <p className="text-gray-600">The requested showroom could not be found.</p>
+    // Fetch tenant
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug: tenantSlug },
+    });
+
+    if (!tenant) {
+      console.log(`[VehiclesPage] Tenant not found: ${tenantSlug}`);
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Showroom Not Found</h1>
+            <p className="text-gray-600">The requested showroom could not be found.</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Fetch available vehicles with main photo (displayOrder: 0 or first photo)
-  const vehicles = await prisma.vehicle.findMany({
-    where: {
-      tenantId: tenant.id,
-      status: 'AVAILABLE',
-    },
-    include: {
-      photos: {
-        where: { displayOrder: 0 },
-        select: {
-          thumbnailUrl: true,
-          mediumUrl: true,
-          largeUrl: true,
-          originalUrl: true,
-        },
-        take: 1,
+    console.log(`[VehiclesPage] Tenant found: ${tenant.name} (ID: ${tenant.id})`);
+
+    // Fetch available vehicles with main photo (displayOrder: 0 or first photo)
+    const vehicles = await prisma.vehicle.findMany({
+      where: {
+        tenantId: tenant.id,
+        status: 'AVAILABLE',
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+      include: {
+        photos: {
+          where: { displayOrder: 0 },
+          select: {
+            thumbnailUrl: true,
+            mediumUrl: true,
+            largeUrl: true,
+            originalUrl: true,
+          },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
   // Get WhatsApp number
   const aimeowAccount = await prisma.aimeowAccount.findUnique({
@@ -179,6 +185,35 @@ export default async function CatalogVehiclesPage({ params }: PageProps) {
       </div>
     </ThemeProvider>
   );
+  } catch (error: any) {
+    console.error('[VehiclesPage] Error:', error);
+
+    // Return user-friendly error page
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
+            <p className="text-2xl">⚠️</p>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Error Loading Vehicles
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {error?.message || 'An unexpected error occurred. Please try again.'}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Reload Page
+          </Button>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md text-left text-xs">
+              <p className="font-bold">{error.name}: {error.message}</p>
+              <pre className="mt-2">{error.stack}</pre>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<{
