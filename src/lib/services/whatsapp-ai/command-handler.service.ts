@@ -17,6 +17,7 @@ import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
 import { OnePageSalesPDF } from '@/lib/reports/one-page-sales-pdf';
 import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
+import { SalesReportPDF } from '@/lib/reports/sales-report-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -189,9 +190,9 @@ function isPDFCommand(cmd: string): boolean {
 
   // Additional regex patterns for variations
   return /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics)\b/i.test(cmd) ||
-         /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(cmd) ||
-         /\b(customer|pelanggan)\s+metrics\b/i.test(cmd) ||
-         /\b(total)\s+(penjualan|revenue|inventory)\b/i.test(cmd);
+    /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(cmd) ||
+    /\b(customer|pelanggan)\s+metrics\b/i.test(cmd) ||
+    /\b(total)\s+(penjualan|revenue|inventory)\b/i.test(cmd);
 }
 
 /**
@@ -707,9 +708,9 @@ async function fetchInventoryData(context: CommandContext) {
 
   const avgDaysInStock = available.length > 0
     ? available.reduce((sum, v) => {
-        const days = Math.floor((new Date().getTime() - new Date(v.createdAt).getTime()) / (1000 * 60 * 60 * 24));
-        return sum + days;
-      }, 0) / available.length
+      const days = Math.floor((new Date().getTime() - new Date(v.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+      return sum + days;
+    }, 0) / available.length
     : 0;
 
   return {
@@ -821,19 +822,44 @@ async function generateSalesReportPDF(context: CommandContext): Promise<CommandR
     select: { name: true },
   });
 
-  // Use OnePageSalesPDF (professional format with photos, tables, full page)
-  const generator = new OnePageSalesPDF();
+  // Fetch sales data for the report
+  const salesData = await fetchSalesData(context, 30);
+  const staffData = await fetchStaffPerformance(context, 30);
 
-  const reportData = {
+  // Get top performer name
+  const topStaff = staffData.topPerformers.length > 0
+    ? staffData.topPerformers[0].name
+    : null;
+
+  // Use NEW SalesReportPDF with draft format
+  const generator = new SalesReportPDF();
+
+  const reportConfig = {
     tenantName: tenant?.name || 'Prima Mobil',
-    period: '30 Hari Terakhir',
+    date: new Date(),
+    metrics: {
+      totalPenjualan: salesData.summary.totalSalesCount,
+      totalRevenue: salesData.summary.totalSalesValue,
+      rataRataHarga: salesData.avgPrice,
+      topSalesStaff: topStaff,
+    },
+    chartData: salesData.byMake.slice(0, 5).map((item, idx) => {
+      const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+      const total = salesData.byMake.reduce((sum, m) => sum + m.count, 0);
+      return {
+        label: item.make,
+        value: item.count,
+        percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
+        color: colors[idx % colors.length],
+      };
+    }),
   };
 
-  const pdfBuffer = await generator.generate(reportData);
+  const pdfBuffer = await generator.generate(reportConfig);
 
   return {
     success: true,
-    message: '✅ Sales Report (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Sales Report (format draft baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `sales-report-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
