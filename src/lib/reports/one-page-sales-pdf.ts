@@ -39,8 +39,8 @@ export class OnePageSalesPDF {
     // Add single page
     this.doc.addPage();
 
-    // Header
-    this.generateHeader();
+    // Header (with logo)
+    await this.generateHeader();
 
     // Key Metrics Boxes
     this.generateMetrics(salesData);
@@ -73,11 +73,19 @@ export class OnePageSalesPDF {
     // Get tenant by name
     const tenant = await prisma.tenant.findFirst({
       where: { name: tenantName },
+      select: {
+        id: true,
+        name: true,
+        logoUrl: true,
+      },
     });
 
     if (!tenant) {
       throw new Error(`Tenant not found: ${tenantName}`);
     }
+
+    // Store logo URL for header
+    this.currentTenantLogo = tenant.logoUrl;
 
     // Fetch vehicles (as inventory data - sales invoices table not created yet)
     const vehicles = await prisma.vehicle.findMany({
@@ -154,21 +162,50 @@ export class OnePageSalesPDF {
     };
   }
 
-  private generateHeader() {
-    // Title
-    this.doc.fontSize(24).font('Helvetica-Bold').text('SALES REPORT', {
-      align: 'center',
-    });
+  private async generateHeader() {
+    const pageWidth = 565;
 
-    // Tenant name
-    this.doc.fontSize(12).font('Helvetica').text(this.currentTenant, {
-      align: 'center',
-    });
+    // Dark blue header bar
+    this.doc.fillColor('#1A237E').rect(0, 0, pageWidth, 60).fill();
 
-    this.doc.moveDown(0.5);
+    // Title - centered
+    this.doc.fillColor('white').fontSize(20).font('Helvetica-Bold')
+      .text('SALES REPORT', 20, 15, {
+        width: pageWidth - 40,
+        align: 'center',
+      });
+
+    // Logo or tenant name below title
+    const yPos = 38;
+
+    if (this.currentTenantLogo) {
+      try {
+        // Display logo image (max width 100px, max height 35px)
+        this.doc.image(this.currentTenantLogo, pageWidth / 2 - 50, yPos, {
+          fit: [100, 35],
+          align: 'center',
+        });
+      } catch (error) {
+        // Fallback to text if image fails to load
+        console.warn('[OnePageSalesPDF] Failed to load logo:', error);
+        this.doc.fillColor('white').fontSize(12).font('Helvetica')
+          .text(this.currentTenant, 20, yPos + 10, {
+            width: pageWidth - 40,
+            align: 'center',
+          });
+      }
+    } else {
+      // No logo - show tenant name text
+      this.doc.fillColor('white').fontSize(12).font('Helvetica')
+        .text(this.currentTenant, 20, yPos + 10, {
+          width: pageWidth - 40,
+          align: 'center',
+        });
+    }
   }
 
   private currentTenant: string = '';
+  private currentTenantLogo: string | null = null;
 
   private setCurrentTenant(name: string) {
     this.currentTenant = name;
