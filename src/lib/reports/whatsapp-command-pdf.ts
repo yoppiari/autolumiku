@@ -1,6 +1,6 @@
 /**
  * Unified Professional PDF Generator for WhatsApp AI Commands
- * Creates professional 2-page PDFs with formulas, charts, and real data
+ * Creates professional 1-page PDFs with formulas, charts, and real data
  */
 
 import PDFDocument from 'pdfkit';
@@ -42,15 +42,11 @@ export class WhatsAppCommandPDF {
   }
 
   async generate(config: ReportConfig): Promise<Buffer> {
-    console.log('[WhatsAppCommandPDF] 🚀 Generating:', config.title);
+    console.log('[WhatsAppCommandPDF] 🚀 Generating 1-page PDF:', config.title);
 
-    // PAGE 1: Executive Dashboard with Chart + Formulas Below
+    // SINGLE PAGE: Executive Dashboard with all sections
     this.doc.addPage();
-    this.generatePage1(config);
-
-    // PAGE 2: Key Insights Only
-    this.doc.addPage();
-    this.generatePage2(config);
+    this.generateSinglePage(config);
 
     this.doc.end();
 
@@ -59,9 +55,182 @@ export class WhatsAppCommandPDF {
     });
 
     const pdfBuffer = Buffer.concat(this.chunks);
-    console.log('[WhatsAppCommandPDF] ✅ PDF generated:', pdfBuffer.length, 'bytes');
+    console.log('[WhatsAppCommandPDF] ✅ 1-page PDF generated:', pdfBuffer.length, 'bytes');
 
     return pdfBuffer;
+  }
+
+  private generateSinglePage(config: ReportConfig) {
+    const { doc } = this;
+    const pageWidth = doc.page.width;
+    const pageHeight = doc.page.height;
+
+    // Maximum Y position before footer
+    const maxY = pageHeight - 50;
+
+    // Header - Compact
+    doc.fillColor('#1e40af').rect(0, 0, pageWidth, 45).fill();
+
+    doc.fillColor('#ffffff')
+      .fontSize(16)
+      .font('Helvetica-Bold')
+      .text(config.title.toUpperCase(), 20, 12);
+
+    doc.fontSize(11)
+      .font('Helvetica')
+      .text(config.tenantName.toUpperCase(), 20, 30);
+
+    // Date
+    doc.fontSize(7)
+      .fillColor('#93c5fd')
+      .text(`Data: ${this.formatDate(config.date)}`, pageWidth - 25, 15, { align: 'right' });
+    doc.text(`Cetak: ${this.formatDate(new Date())}`, pageWidth - 25, 25, { align: 'right' });
+
+    // Metrics Grid - Compact (6 cards in 2x3 grid)
+    const cardWidth = (pageWidth - 40) / 3 - 6;
+    const cardHeight = 55; // Reduced from 70
+    const startY = 53;
+    const gap = 6;
+
+    config.metrics.slice(0, 6).forEach((metric, idx) => {
+      const col = idx % 3;
+      const row = Math.floor(idx / 3);
+      const x = 20 + col * (cardWidth + gap);
+      const y = startY + row * (cardHeight + gap);
+
+      this.drawMetricCard(x, y, cardWidth, cardHeight, metric);
+    });
+
+    let y = startY + 2 * (cardHeight + gap) + 6;
+
+    // Chart section - Compact (if space allows)
+    if (y + 100 < maxY && config.showChart) {
+      doc.fontSize(10)
+        .fillColor('#1e40af')
+        .font('Helvetica-Bold')
+        .text('VISUALISASI DATA', 20, y);
+
+      y += 18;
+
+      // Draw donut chart
+      const chartData = config.chartData && config.chartData.length > 0 ? config.chartData : [];
+      this.drawDonutChart(20, y, 70, chartData); // Reduced size from 100 to 70
+
+      // Draw legend
+      const legendX = 100;
+      let legendY = y;
+
+      if (chartData.length > 0) {
+        chartData.forEach((item) => {
+          doc.fillColor(item.color).rect(legendX, legendY, 8, 8).fill();
+
+          doc.fillColor('#1e293b')
+            .fontSize(8)
+            .font('Helvetica')
+            .text(`${item.label}: ${item.value}`, legendX + 12, legendY + 7);
+
+          legendY += 14;
+        });
+      } else {
+        doc.fillColor('#64748b')
+          .fontSize(8)
+          .font('Helvetica-Oblique')
+          .text('Belum ada data', legendX, legendY + 7);
+      }
+
+      y += 85;
+    }
+
+    // Formulas Section - Compact
+    if (y + 80 < maxY) {
+      doc.fontSize(9)
+        .fillColor('#1e40af')
+        .font('Helvetica-Bold')
+        .text('RUMUSAN PERHITUNGAN', 20, y);
+
+      y += 14;
+
+      // Global formula/calculation
+      if (config.formula || config.calculation) {
+        doc.fillColor('#f0fdf4')
+          .rect(20, y, pageWidth - 40, 30)
+          .fill();
+
+        doc.fillColor('#16a34a')
+          .rect(20, y, 4, 30)
+          .fill();
+
+        doc.fillColor('#1e293b')
+          .fontSize(8)
+          .font('Helvetica-Bold')
+          .text('RUMUS GLOBAL', 30, y + 5);
+
+        if (config.formula) {
+          doc.fillColor('#64748b')
+            .fontSize(6)
+            .font('Helvetica-Oblique')
+            .text(`R: ${config.formula}`, 30, y + 14);
+        }
+
+        if (config.calculation) {
+          doc.fillColor('#6b7280')
+            .fontSize(6)
+            .font('Helvetica')
+            .text(`H: ${config.calculation}`, 30, y + 22);
+        }
+
+        y += 35;
+      }
+
+      // Metric formulas - Show first 2 only
+      const metricsWithFormulas = config.metrics.filter(m => m.formula || m.calculation).slice(0, 2);
+
+      metricsWithFormulas.forEach((metric, idx) => {
+        if (y + 35 > maxY) return;
+
+        const bgColor = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+
+        doc.fillColor(bgColor)
+          .rect(20, y, pageWidth - 40, 32)
+          .fill();
+
+        doc.fillColor(metric.color)
+          .rect(20, y, 4, 32)
+          .fill();
+
+        doc.fillColor('#1e293b')
+          .fontSize(7)
+          .font('Helvetica-Bold')
+          .text(metric.label, 30, y + 4);
+
+        if (metric.formula) {
+          doc.fillColor('#94a3b8')
+            .fontSize(6)
+            .font('Helvetica-Oblique')
+            .text(`R: ${metric.formula}`, 30, y + 13);
+        }
+
+        if (metric.calculation) {
+          doc.fillColor('#6b7280')
+            .fontSize(6)
+            .font('Helvetica')
+            .text(`H: ${metric.calculation}`, 30, y + 22);
+        }
+
+        y += 35;
+      });
+    }
+
+    // Footer - "Generated by {tenant}" NOT AutoLumiKu
+    doc.fillColor('#f1f5f9')
+      .rect(20, pageHeight - 25, pageWidth - 40, 20)
+      .fill();
+
+    doc.fillColor('#94a3b8')
+      .fontSize(7)
+      .font('Helvetica')
+      .text(`Generated by ${config.tenantName} | ${new Date().toLocaleString('id-ID')} | Data: Real-time from database`,
+        pageWidth / 2, pageHeight - 18, { align: 'center' });
   }
 
   private generatePage1(config: ReportConfig) {
