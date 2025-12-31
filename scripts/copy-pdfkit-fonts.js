@@ -15,8 +15,16 @@ console.log('Copying PDFKit font files...');
 
 // Create target directory if it doesn't exist
 if (!fs.existsSync(targetDir)) {
-  fs.mkdirSync(targetDir, { recursive: true });
-  console.log(`Created directory: ${targetDir}`);
+  try {
+    fs.mkdirSync(targetDir, { recursive: true });
+    console.log(`Created directory: ${targetDir}`);
+  } catch (err) {
+    console.warn(`⚠️  Could not create directory: ${targetDir}`);
+    console.warn(`⚠️  Continuing anyway - PDFKit fonts may not work`);
+    console.warn(`Error: ${err.message}`);
+    // Don't exit - let the build continue
+    process.exit(0);
+  }
 }
 
 // Copy font files
@@ -29,14 +37,20 @@ if (fs.existsSync(sourceDir)) {
       const sourcePath = path.join(sourceDir, file);
       const targetPath = path.join(targetDir, file);
 
-      fs.copyFileSync(sourcePath, targetPath);
-      copiedCount++;
-      console.log(`Copied: ${file}`);
+      try {
+        fs.copyFileSync(sourcePath, targetPath);
+        copiedCount++;
+        console.log(`Copied: ${file}`);
+      } catch (err) {
+        console.warn(`⚠️  Failed to copy ${file}: ${err.message}`);
+      }
     }
   });
 
   console.log(`✅ Copied ${copiedCount} PDFKit font files to ${targetDir}`);
 } else {
-  console.error(`❌ Source directory not found: ${sourceDir}`);
-  process.exit(1);
+  console.warn(`⚠️  Source directory not found: ${sourceDir}`);
+  console.warn(`⚠️  PDFKit fonts may not be available, but continuing build...`);
+  // Don't fail the build if fonts are missing
+  process.exit(0);
 }
