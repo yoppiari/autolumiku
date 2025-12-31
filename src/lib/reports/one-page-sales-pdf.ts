@@ -226,11 +226,11 @@ export class OnePageSalesPDF {
 
     // Box 2: Total Revenue (Green #50C878) - RIGHT ALIGN
     this.drawMetricBox(startX + boxWidth + gap, y, boxWidth, boxHeight, '#50C878', 'TOTAL REVENUE',
-      this.formatNumber(data.totalRevenue), 'Rp', true);
+      this.formatNumber(data.totalRevenue), 'Rp ', true);
 
     // Box 3: Rata-rata Harga (Orange #FFA500) - RIGHT ALIGN
     this.drawMetricBox(startX + (boxWidth + gap) * 2, y, boxWidth, boxHeight, '#FFA500', 'RATA-RATA HARGA',
-      this.formatNumber(data.avgPrice), 'Rp', true);
+      this.formatNumber(data.avgPrice), 'Rp ', true);
 
     // Box 4: Top Sales Staff (Purple #9370DB) - SMALLER FONT FOR NAME
     const topStaffName = data.topStaff?.name || 'N/A';
@@ -265,8 +265,8 @@ export class OnePageSalesPDF {
     // Table header
     this.doc.fillColor('#E0E0E0').rect(20, yPos, pageWidth - 40, 20).fill();
     this.doc.fillColor('black').fontSize(10).font('Helvetica-Bold').text('METRIK', 25, yPos + 5);
-    this.doc.text('RUMUSAN', 120, yPos + 5);
-    this.doc.text('PERHITUNGAN', pageWidth - 20, yPos + 5, { align: 'right' });
+    this.doc.text('RUMUSAN', 150, yPos + 5);
+    this.doc.text('PERHITUNGAN', pageWidth - 25, yPos + 5, { align: 'right' });
 
     yPos += 25;
 
@@ -293,7 +293,7 @@ export class OnePageSalesPDF {
       const bgColor = idx % 2 === 0 ? '#FFFFFF' : '#F5F5F5';
       this.doc.fillColor(bgColor).rect(20, yPos, pageWidth - 40, 22).fill();
       this.doc.fillColor('black').fontSize(9).font('Helvetica-Bold').text(item.metric, 25, yPos + 3);
-      this.doc.font('Helvetica').fontSize(7).text(item.formula, 120, yPos + 3);
+      this.doc.font('Helvetica').fontSize(7).text(item.formula, 150, yPos + 3);
       this.doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text(item.calculation, pageWidth - 25, yPos + 3, { align: 'right' });
       yPos += 26;
     });
@@ -324,25 +324,25 @@ export class OnePageSalesPDF {
       const barWidth = (item.percentage / 100) * maxBarWidth;
       const colors = ['#4A90E2', '#50C878', '#FFA500'];
 
-      // Label
-      this.doc.fillColor('black').fontSize(8).font('Helvetica').text(
-        `${item.make}`, 25, barY
+      // Label (brand name)
+      this.doc.fillColor('black').fontSize(8).font('Helvetica-Bold').text(
+        `${item.make}`, 25, barY + 2
       );
 
       // Bar
-      this.doc.fillColor(colors[idx % 3]).rect(70, barY - 2, Math.max(barWidth, 50), 10).fill();
+      this.doc.fillColor(colors[idx % 3]).rect(70, barY, Math.max(barWidth, 50), 8).fill();
 
-      // Percentage - BLACK TEXT
+      // Percentage - BLACK TEXT (aligned right after bar)
       this.doc.fillColor('black').fontSize(8).font('Helvetica-Bold').text(
-        `${item.percentage.toFixed(1)}%`, 70 + barWidth + 5, barY
+        `${item.percentage.toFixed(1)}%`, 70 + maxBarWidth + 10, barY
       );
 
-      // Show actual count from database
-      this.doc.fillColor('black').fontSize(7).font('Helvetica').text(
-        `(${item.count} unit)`, 70 + barWidth + 5, barY + 10
+      // Show actual count from database (on next line, below percentage)
+      this.doc.fillColor('#64748b').fontSize(7).font('Helvetica').text(
+        `${item.count} unit`, 70, barY + 11
       );
 
-      barY += 20; // Increased spacing for additional count line
+      barY += 22; // Spacing for each brand entry
     });
 
     // Formulas table on right - SHOW REAL CALCULATIONS
@@ -449,35 +449,35 @@ export class OnePageSalesPDF {
     // Draw colored box
     doc.fillColor(color).rect(x, y, width, height).fill();
 
-    // Label (uppercase, bold)
-    doc.fillColor('white').fontSize(10).font('Helvetica-Bold').text(
-      label.toUpperCase(), x + 5, y + 10, { width: width - 10, align: 'center' }
+    // Label (uppercase, bold) - always centered
+    doc.fillColor('white').fontSize(9).font('Helvetica-Bold').text(
+      label.toUpperCase(), x + 5, y + 8, { width: width - 10, align: 'center' }
     );
 
     // Value - adjust font size for small text (sales names)
-    const valueFontSize = isSmallText ? 11 : 18;
-    const valueY = isSmallText ? y + 30 : y + 25;
+    const valueFontSize = isSmallText ? 11 : 16;
+    const valueY = isSmallText ? y + 28 : y + 24;
 
     if (rightAlign) {
-      // Currency: Right-aligned with unit on left
-      doc.fillColor('white').fontSize(valueFontSize).font('Helvetica-Bold').text(
-        value, x + width - 5, valueY, { width: width - 10, align: 'right' }
-      );
-
+      // Currency: Unit on left, value on right, same line
       if (unit) {
-        doc.fontSize(8).font('Helvetica').text(
-          unit, x + 5, y + 48, { width: width - 10, align: 'left' }
+        doc.fillColor('white').fontSize(9).font('Helvetica-Bold').text(
+          unit, x + 8, valueY, { width: width - 16, align: 'left' }
         );
       }
+
+      doc.fillColor('white').fontSize(valueFontSize).font('Helvetica-Bold').text(
+        value, x + 8, valueY, { width: width - 16, align: 'right' }
+      );
     } else {
-      // Default: Center-aligned with unit below
+      // Default: Center-aligned
       doc.fillColor('white').fontSize(valueFontSize).font('Helvetica-Bold').text(
         value, x + 5, valueY, { width: width - 10, align: 'center' }
       );
 
       if (unit) {
         doc.fontSize(8).font('Helvetica').text(
-          unit, x + 5, y + 48, { width: width - 10, align: 'center' }
+          unit, x + 5, y + 45, { width: width - 10, align: 'center' }
         );
       }
     }
