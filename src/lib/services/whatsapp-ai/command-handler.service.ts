@@ -509,9 +509,9 @@ async function handlePDFCommand(
     'sales total': generateTotalSalesPDF,
     'total revenue': generateTotalRevenuePDF,
     'revenue total': generateTotalRevenuePDF,
-    'sales summary': generateSalesSummaryPDF,
-    'penjualan': generateSalesSummaryPDF,
-    'sales': generateSalesSummaryPDF,
+    'sales summary': generateSalesReportPDF,  // Use 1-page WhatsAppCommandPDF instead of CompactExecutivePDF
+    'penjualan': generateSalesReportPDF,      // Use 1-page WhatsAppCommandPDF instead of CompactExecutivePDF
+    'sales': generateSalesReportPDF,          // Use 1-page WhatsAppCommandPDF instead of CompactExecutivePDF
   };
 
   // Find matching generator
