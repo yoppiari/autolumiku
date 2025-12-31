@@ -89,8 +89,28 @@ export class OnePageSalesPDF {
       select: {
         vehiclePrice: true, // Snapshot price at time of sale
         vehicleMake: true,  // Snapshot make at time of sale
-        salesUserId: true,  // Sales staff ID (without relation)
+        salesUserId: true,  // Sales staff ID
       },
+    });
+
+    // Fetch all users with SALES role to get names
+    const salesUsers = await prisma.user.findMany({
+      where: {
+        tenantId: tenant.id,
+        role: 'SALES',
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    // Create map of userId -> name
+    const userNameMap = new Map<string, string>();
+    salesUsers.forEach((user) => {
+      const fullName = `${user.firstName} ${user.lastName}`.trim();
+      userNameMap.set(user.id, fullName);
     });
 
     // Calculate metrics from REAL data
@@ -98,14 +118,16 @@ export class OnePageSalesPDF {
     const totalRevenue = salesInvoices.reduce((sum, inv) => sum + (inv.vehiclePrice || 0), 0);
     const avgPrice = totalSales > 0 ? totalRevenue / totalSales : 0;
 
-    // Group by sales staff (by ID only, since no relation)
+    // Group by sales staff with real names
     const staffSales = new Map<string, { count: number; revenue: number }>();
     salesInvoices.forEach((inv) => {
       const staffId = inv.salesUserId || 'Unassigned';
-      if (!staffSales.has(staffId)) {
-        staffSales.set(staffId, { count: 0, revenue: 0 });
+      const staffName = inv.salesUserId ? (userNameMap.get(inv.salesUserId) || 'Unknown') : 'Unassigned';
+
+      if (!staffSales.has(staffName)) {
+        staffSales.set(staffName, { count: 0, revenue: 0 });
       }
-      const data = staffSales.get(staffId)!;
+      const data = staffSales.get(staffName)!;
       data.count++;
       data.revenue += inv.vehiclePrice || 0;
     });
