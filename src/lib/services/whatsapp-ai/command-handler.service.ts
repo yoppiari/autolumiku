@@ -15,7 +15,6 @@ import PDFDocument from 'pdfkit';
 import { ROLE_LEVELS } from '@/lib/rbac';
 import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
-import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
 import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
 import * as fs from 'fs';
 import * as path from 'path';

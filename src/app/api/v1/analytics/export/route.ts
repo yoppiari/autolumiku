@@ -18,7 +18,7 @@ import { ROLE_LEVELS } from '@/lib/rbac';
 import PDFDocument from 'pdfkit';
 import * as XLSX from 'xlsx';
 import { createPDFDocument } from '@/lib/services/whatsapp-ai/pdf-init';
-import { AnalyticsPDFGenerator } from '@/lib/reports/analytics-pdf-generator';
+import { WhatsAppCommandPDF } from '@/lib/reports/whatsapp-command-pdf';
 
 export const dynamic = 'force-dynamic';
 
@@ -427,24 +427,72 @@ export async function POST(request: NextRequest) {
 
     // Generate based on format
     if (format === 'pdf') {
-      console.log('[Analytics Export] 🎨 Using NEW professional PDF generator');
-      // Use new professional PDF Generator with charts and detailed analysis
-      const generator = new AnalyticsPDFGenerator();
+      console.log('[Analytics Export] 🎨 Using WhatsAppCommandPDF (1-page professional)');
+      // Use WhatsAppCommandPDF for consistent 1-page professional format
+      const generator = new WhatsAppCommandPDF();
+
+      // Convert complex data to simple metrics format
+      const metrics = [
+        {
+          label: 'Total Penjualan',
+          value: `${salesData?.summary?.totalSalesCount || 0}`,
+          unit: 'Unit',
+          color: '#3b82f6',
+        },
+        {
+          label: 'Total Revenue',
+          value: formatCurrency(salesData?.summary?.totalSalesValue || 0),
+          color: '#10b981',
+        },
+        {
+          label: 'Rata-rata Harga',
+          value: formatCurrency(salesData?.summary?.avgPrice || 0),
+          color: '#f59e0b',
+        },
+        {
+          label: 'Conversations',
+          value: `${whatsappData?.overview?.totalConversations || 0}`,
+          unit: 'Chat',
+          color: '#8b5cf6',
+        },
+        {
+          label: 'Staff Active',
+          value: `${salesData?.summary?.employees || 0}`,
+          unit: 'Staff',
+          color: '#ec4899',
+        },
+        {
+          label: 'Total Inventory',
+          value: `${salesData?.summary?.totalVehicles || 0}`,
+          unit: 'Unit',
+          color: '#6366f1',
+        },
+      ];
+
+      // Create chart data from sales by make
+      const chartData = (salesData?.byMake || [])
+        .slice(0, 5)
+        .map((item: any, idx: number) => ({
+          label: item.make,
+          value: item.count,
+          color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+        }));
 
       const reportData = {
+        title: 'Analytics Report',
+        subtitle: `Export: ${formatDate(startDate)} - ${formatDate(now)}`,
         tenantName: tenant?.name || 'Prima Mobil',
-        salesData,
-        whatsappData,
-        startDate,
-        endDate: now,
+        logoUrl: tenant?.logoUrl || undefined,
+        date: now,
+        metrics,
+        showChart: chartData.length > 0,
+        chartData,
       };
 
       console.log('[Analytics Export] 📊 Report data prepared:', {
         tenant: reportData.tenantName,
-        hasSalesData: !!reportData.salesData,
-        hasWhatsappData: !!reportData.whatsappData,
-        salesCount: reportData.salesData?.summary?.totalSalesCount || 0,
-        whatsappConvos: reportData.whatsappData?.overview?.totalConversations || 0,
+        metricsCount: metrics.length,
+        chartDataCount: chartData.length,
       });
 
       let pdfBuffer: Buffer;
