@@ -320,7 +320,7 @@ export class OnePageSalesPDF {
     this.doc.fillColor('red').fontSize(8).font('Helvetica');
     analysisPoints.forEach((point) => {
       this.doc.text(`• ${point}`, 25, yPos, { width: pageWidth - 50 });
-      yPos += this.doc.heightOfPoint(8) + 3;
+      yPos += 12; // Fixed line height for each analysis point
     });
 
     // Final footer
