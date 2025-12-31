@@ -18,12 +18,9 @@ const nextConfig = {
     serverComponentsExternalPackages: ['pg'],
   },
 
-  // Dynamic BUILD_ID based on timestamp to force cache invalidation
+  // Fixed BUILD_ID to prevent chunk hash inconsistencies
   generateBuildId: async () => {
-    // Use current date + git commit hash (if available) for unique build IDs
-    const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || process.env.HEROKU_SLUG_COMMIT?.slice(0, 7) || 'dev';
-    return `autolumiku-${date}-${commit}`;
+    return 'autolumiku-v1-stable'
   },
 
   // Webpack configuration to include PDFKit font files in standalone build

@@ -50,8 +50,8 @@ export async function GET(
       : 'application/octet-stream';
 
     // Return cached file with proper caching headers
-    // Convert Buffer to Response-compatible format
-    return new NextResponse(fileContent.buffer as ArrayBuffer, {
+    // Use Buffer directly - Next.js handles it correctly
+    return new NextResponse(fileContent, {
       status: 200,
       headers: {
         'Content-Type': contentType,
