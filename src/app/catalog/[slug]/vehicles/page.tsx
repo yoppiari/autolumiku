@@ -2,6 +2,7 @@
  * Vehicles Listing Page (Catalog Route)
  * Route: /catalog/[slug]/vehicles or custom domain /vehicles
  * Shows all vehicles for the tenant
+ * @version 2.0 - Fixed chunk loading
  */
 
 // Disable caching to always fetch fresh data
@@ -152,10 +153,10 @@ export default async function CatalogVehiclesPage({ params }: PageProps) {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  Koleksi Kendaraan
+                  Stok Kendaraan Tersedia
                 </h1>
                 <p className="text-muted-foreground">
-                  Menampilkan {transformedVehicles.length} unit tersedia
+                  Menampilkan {transformedVehicles.length} unit yang ready stok
                 </p>
               </div>
 
