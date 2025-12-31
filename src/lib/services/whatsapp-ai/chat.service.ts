@@ -792,13 +792,15 @@ export class WhatsAppAIChatService {
 
       let relevantVehicles = vehicles;
       if (budget > 0) {
-        relevantVehicles = vehicles.filter(v => Number(v.price) / 100 <= budget * 1.2);
+        // Fix: Price is already in Rupiah, no division needed
+        relevantVehicles = vehicles.filter(v => Number(v.price) <= budget * 1.2);
       }
 
       if (relevantVehicles.length > 0) {
         const list = relevantVehicles.slice(0, 3).map(v => {
-          const price = Math.round(Number(v.price) / 100 / 1000000);
-          return `• ${v.make} ${v.model} ${v.year} - Rp ${price} jt`;
+          // Fix: Price is already in Rupiah, convert to juta for display
+          const priceJuta = Math.round(Number(v.price) / 1000000);
+          return `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} juta`;
         }).join('\n');
 
         return {
@@ -1699,13 +1701,12 @@ CONTOH RESPON ESCALATED:
 
   /**
    * Format price to Indonesian format
-   * Note: Database stores prices in IDR cents (Rp 250jt = 25000000000)
-   * So we divide by 100 to get the actual Rupiah value
+   * Note: Database stores prices in full Rupiah (Rp 79jt = 79000000)
+   * No division needed - prices are already in correct format
    */
   private static formatPrice(price: number): string {
-    // Convert from cents to Rupiah
-    const priceInRupiah = Math.round(price / 100);
-    return new Intl.NumberFormat("id-ID").format(priceInRupiah);
+    // Price is already in Rupiah, just format it
+    return new Intl.NumberFormat("id-ID").format(Math.round(price));
   }
 
   /**
