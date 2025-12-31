@@ -15,6 +15,7 @@ import PDFDocument from 'pdfkit';
 import { ROLE_LEVELS } from '@/lib/rbac';
 import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
+import { OnePageSalesPDF } from '@/lib/reports/one-page-sales-pdf';
 import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -817,63 +818,15 @@ async function fetchWhatsAppAIData(context: CommandContext, days: number = 30) {
 async function generateSalesReportPDF(context: CommandContext): Promise<CommandResult> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
+    select: { name: true },
   });
 
-  const salesData = await fetchSalesData(context, 30);
-  const staffData = await fetchStaffPerformance(context, 30);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = [
-    {
-      label: 'Total Penjualan',
-      value: `${salesData.summary.totalSalesCount}`,
-      unit: 'Unit',
-      color: '#3b82f6',
-      formula: 'COUNT(vehicle) WHERE status = SOLD',
-      calculation: `${salesData.summary.totalSalesCount} unit terjual`,
-    },
-    {
-      label: 'Total Revenue',
-      value: formatCurrency(salesData.summary.totalSalesValue),
-      color: '#10b981',
-      formula: 'SUM(price) WHERE status = SOLD',
-      calculation: formatCurrency(salesData.summary.totalSalesValue),
-    },
-    {
-      label: 'Rata-rata Harga',
-      value: formatCurrency(salesData.avgPrice),
-      color: '#f59e0b',
-      formula: 'AVG(price) WHERE status = SOLD',
-      calculation: `${formatCurrency(salesData.summary.totalSalesValue)} / ${salesData.summary.totalSalesCount} = ${formatCurrency(salesData.avgPrice)}`,
-    },
-    {
-      label: 'Top Sales Staff',
-      value: staffData.topPerformers.length > 0 ? staffData.topPerformers[0].name : 'N/A',
-      unit: `${staffData.topPerformers.length > 0 ? staffData.topPerformers[0].count + ' unit' : ''}`,
-      color: '#8b5cf6',
-      formula: 'MAX(COUNT(sales)) GROUP BY staff',
-      calculation: staffData.topPerformers.length > 0
-        ? `${staffData.topPerformers[0].name} menjual ${staffData.topPerformers[0].count} unit`
-        : 'Belum ada data penjualan',
-    },
-  ];
+  // Use OnePageSalesPDF (professional format with photos, tables, full page)
+  const generator = new OnePageSalesPDF();
 
   const reportData = {
-    title: 'Sales Report Showroom',
-    subtitle: 'Laporan Penjualan Lengkap',
     tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    showChart: salesData.byMake.length > 0,
-    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
-      label: item.make,
-      value: item.count,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
+    period: '30 Hari Terakhir',
   };
 
   const pdfBuffer = await generator.generate(reportData);

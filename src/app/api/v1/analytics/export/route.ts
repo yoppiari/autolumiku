@@ -446,7 +446,11 @@ export async function POST(request: NextRequest) {
         },
         {
           label: 'Rata-rata Harga',
-          value: formatCurrency(salesData?.summary?.avgPrice || 0),
+          value: formatCurrency(
+            (salesData?.summary?.totalSalesCount || 0) > 0
+              ? (salesData?.summary?.totalSalesValue || 0) / (salesData?.summary?.totalSalesCount || 1)
+              : 0
+          ),
           color: '#f59e0b',
         },
         {
