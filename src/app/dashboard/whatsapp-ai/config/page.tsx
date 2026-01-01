@@ -58,6 +58,7 @@ export default function WhatsAppAIConfigPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [tenantId, setTenantId] = useState<string>('');
+  const [userRoleLevel, setUserRoleLevel] = useState<number>(0);
 
   // Load configuration
   useEffect(() => {
@@ -74,6 +75,7 @@ export default function WhatsAppAIConfigPage() {
         const parsedUser = JSON.parse(storedUser);
         const currentTenantId = parsedUser.tenantId;
         setTenantId(currentTenantId);
+        setUserRoleLevel(parsedUser.roleLevel || 30);
 
         const response = await fetch(`/api/v1/whatsapp-ai/config?tenantId=${currentTenantId}`);
         const data = await response.json();
@@ -96,6 +98,11 @@ export default function WhatsAppAIConfigPage() {
   // Save configuration
   const handleSave = async () => {
     if (!config || !tenantId) return;
+
+    if (userRoleLevel < 90) { // ROLE_LEVELS.ADMIN
+      alert('Akses Ditolak: Hanya Owner, Admin, dan Super Admin yang dapat mengubah konfigurasi AI.');
+      return;
+    }
 
     setIsSaving(true);
     setSaveMessage(null);
@@ -128,6 +135,11 @@ export default function WhatsAppAIConfigPage() {
 
   // Disconnect WhatsApp
   const handleDisconnect = async () => {
+    if (userRoleLevel < 90) { // ROLE_LEVELS.ADMIN
+      alert('Akses Ditolak: Hanya Owner, Admin, dan Super Admin yang dapat menonaktifkan WhatsApp.');
+      return;
+    }
+
     if (!confirm('Are you sure you want to disconnect WhatsApp? You will need to scan the QR code again to reconnect.')) {
       return;
     }
@@ -186,6 +198,17 @@ export default function WhatsAppAIConfigPage() {
         <h1 className="text-xl md:text-3xl font-bold text-gray-900">AI Configuration</h1>
         <p className="text-gray-600 text-xs md:text-base mt-1">Customize AI behavior dan features</p>
       </div>
+
+      {/* Read-only Warning for Sales */}
+      {userRoleLevel < 90 && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
+          <span className="text-2xl">🔒</span>
+          <div>
+            <p className="text-amber-800 font-semibold text-sm">Mode Lihat Saja (Read-Only)</p>
+            <p className="text-amber-700 text-xs">Anda dapat melihat konfigurasi ini, tetapi tidak memiliki izin untuk mengubahnya.</p>
+          </div>
+        </div>
+      )}
 
       {/* Save Message */}
       {saveMessage && (

@@ -64,14 +64,6 @@ export default function UsersPage() {
       const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES;
       setUserRoleLevel(roleLevel);
 
-      if (roleLevel < ROLE_LEVELS.ADMIN) {
-        setAccessDenied(true);
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 100);
-        return;
-      }
-
       setTenantId(parsedUser.tenantId);
       loadUsers(parsedUser.tenantId);
     }
@@ -289,8 +281,8 @@ export default function UsersPage() {
     }
   };
 
-  // Show access denied message briefly before redirect
-  if (accessDenied) {
+  // No access restrictions for viewing
+  if (false && accessDenied) {
     return (
       <div className="p-6 flex items-center justify-center h-[calc(100vh-64px)]">
         <div className="text-center">
@@ -312,8 +304,14 @@ export default function UsersPage() {
           <p className="text-gray-600 text-[10px] md:text-sm">Kelola staff dan anggota tim showroom</p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center px-2 md:px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-xs md:text-sm whitespace-nowrap"
+          onClick={() => {
+            if (userRoleLevel < ROLE_LEVELS.ADMIN) {
+              alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
+              return;
+            }
+            setShowCreateModal(true);
+          }}
+          className={`flex items-center px-2 md:px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-xs md:text-sm whitespace-nowrap ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-70 grayscale cursor-not-allowed' : ''}`}
         >
           <FaPlus className="mr-1 md:mr-2" />
           <span className="hidden md:inline">Tambah Staff</span>
@@ -523,20 +521,18 @@ export default function UsersPage() {
                       <td className="hidden md:table-cell px-4 py-2 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5">
                           <span
-                            className={`px-1.5 py-0.5 inline-flex text-xs leading-4 font-medium rounded ${
-                              user.emailVerified
+                            className={`px-1.5 py-0.5 inline-flex text-xs leading-4 font-medium rounded ${user.emailVerified
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-gray-100 text-gray-600'
-                            }`}
+                              }`}
                           >
                             {user.emailVerified ? '✓ Email' : '○ Email'}
                           </span>
                           <span
-                            className={`px-1.5 py-0.5 inline-flex text-xs leading-4 font-medium rounded ${
-                              user.phone
+                            className={`px-1.5 py-0.5 inline-flex text-xs leading-4 font-medium rounded ${user.phone
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-red-100 text-red-600'
-                            }`}
+                              }`}
                           >
                             {user.phone ? '✓ WhatsApp' : '✗ WhatsApp'}
                           </span>
@@ -547,14 +543,26 @@ export default function UsersPage() {
                       </td>
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap text-right text-[10px] md:text-xs font-medium">
                         <button
-                          onClick={() => handleEditUser(user)}
-                          className="text-blue-600 hover:text-blue-900 mr-2 md:mr-3"
+                          onClick={() => {
+                            if (userRoleLevel < ROLE_LEVELS.ADMIN) {
+                              alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
+                              return;
+                            }
+                            handleEditUser(user);
+                          }}
+                          className={`text-blue-600 hover:text-blue-900 mr-2 md:mr-3 ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                         >
                           <FaEdit className="inline" /> <span className="hidden md:inline">Edit</span>
                         </button>
                         <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-red-600 hover:text-red-900"
+                          onClick={() => {
+                            if (userRoleLevel < ROLE_LEVELS.ADMIN) {
+                              alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
+                              return;
+                            }
+                            handleDeleteUser(user.id);
+                          }}
+                          className={`text-red-600 hover:text-red-900 ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                         >
                           <FaTrash className="inline" /> <span className="hidden md:inline">Hapus</span>
                         </button>

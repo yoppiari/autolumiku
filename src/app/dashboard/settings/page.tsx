@@ -21,13 +21,6 @@ export default function SettingsPage() {
       const parsedUser = JSON.parse(storedUser);
       const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES;
 
-      // Only ADMIN (90), OWNER (100), SUPER_ADMIN (110) can access
-      if (roleLevel < ROLE_LEVELS.ADMIN) {
-        setAccessDenied(true);
-        router.push('/dashboard');
-        return;
-      }
-
       setUser(parsedUser);
       loadSubscription(parsedUser.tenantId);
     }
@@ -107,7 +100,8 @@ export default function SettingsPage() {
   const monthsRemaining = Math.ceil(daysRemaining / 30);
 
   // Show nothing while checking access or if access denied
-  if (accessDenied || !user) {
+  // No access restrictions for viewing
+  if (false && (accessDenied || !user)) {
     return null;
   }
 

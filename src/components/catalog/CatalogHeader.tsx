@@ -83,10 +83,10 @@ export default function CatalogHeader({
         <div className="flex items-center justify-between h-24 md:h-28 transition-all duration-300">
           {/* Logo & Name - Dynamic Logo/Text */}
           <Link href={getUrl('')} className="flex items-center gap-4 hover:opacity-90 transition-opacity group">
-            {branding.logoUrl ? (
+            {(branding.logoUrl || (tenantSlug === 'primamobil' || tenantSlug === 'prima-mobil' || branding.name.toLowerCase().includes('prima mobil'))) ? (
               <>
                 <img
-                  src={branding.logoUrl}
+                  src={branding.logoUrl || '/prima-mobil-logo.jpg'}
                   alt={branding.name}
                   className="h-10 md:h-12 w-auto object-contain"
                   onError={(e) => {
