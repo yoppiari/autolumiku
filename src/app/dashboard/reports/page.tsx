@@ -18,7 +18,7 @@ type ReportType = {
     category: 'sales' | 'whatsapp' | 'inventory' | 'performance';
 };
 
-type Period = '7d' | '30d' | '90d' | '1y' | 'mtd' | 'ytd';
+type Period = '7d' | '30d' | '90d' | '180d' | '1y';
 
 const REPORT_TYPES: ReportType[] = [
     // Sales Reports
@@ -137,11 +137,10 @@ const REPORT_TYPES: ReportType[] = [
 
 const PERIODS = [
     { value: '7d', label: '7 Hari' },
-    { value: '30d', label: '30 Hari' },
-    { value: '90d', label: '90 Hari' },
+    { value: '30d', label: '1 Bulan' },
+    { value: '90d', label: '3 Bulan' },
+    { value: '180d', label: '6 Bulan' },
     { value: '1y', label: '1 Tahun' },
-    { value: 'mtd', label: 'Bulan Ini' },
-    { value: 'ytd', label: 'Tahun Ini' },
 ];
 
 export default function ReportsPage() {
