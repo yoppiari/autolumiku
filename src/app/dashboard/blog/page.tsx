@@ -541,8 +541,14 @@ export default function BlogListPage() {
                       👁️
                     </button>
                     <button
-                      onClick={() => handleDelete(post.id, post.title)}
-                      className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                      onClick={() => {
+                        if (userRoleLevel < (ROLE_LEVELS?.ADMIN || 90)) {
+                          alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
+                          return;
+                        }
+                        handleDelete(post.id, post.title);
+                      }}
+                      className={`px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs ${userRoleLevel < (ROLE_LEVELS?.ADMIN || 90) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                     >
                       🗑️
                     </button>

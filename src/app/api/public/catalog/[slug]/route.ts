@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { BrandingService } from '@/lib/services/catalog/branding.service';
 import { CatalogEngineService } from '@/lib/services/catalog/catalog-engine.service';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
