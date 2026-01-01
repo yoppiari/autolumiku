@@ -25,6 +25,8 @@ export class BrandingService {
   static async getBrandingBySlugOrDomain(
     slugOrDomain: string
   ): Promise<(TenantBranding & { tenantId: string }) | null> {
+    if (!slugOrDomain) return null;
+
     // Build OR conditions with fallback for -id suffix
     const orConditions: any[] = [
       { slug: slugOrDomain },
@@ -84,6 +86,8 @@ export class BrandingService {
   static async getTenantIdBySlugOrDomain(
     slugOrDomain: string
   ): Promise<string | null> {
+    if (!slugOrDomain) return null;
+
     // Build OR conditions with fallback for -id suffix
     const orConditions: any[] = [
       { slug: slugOrDomain },

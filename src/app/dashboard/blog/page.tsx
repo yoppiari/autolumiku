@@ -57,6 +57,7 @@ const STATUS_COLORS: Record<BlogStatus, string> = {
 export default function BlogListPage() {
   const router = useRouter();
   const [tenantId, setTenantId] = useState<string>('');
+  const [userRoleLevel, setUserRoleLevel] = useState<number>(0);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -73,12 +74,12 @@ export default function BlogListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
-  // Load tenantId from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setTenantId(parsedUser.tenantId || '');
+      setUserRoleLevel(parsedUser.roleLevel || 0);
     }
   }, []);
 
@@ -220,15 +221,13 @@ export default function BlogListPage() {
         </div>
         <button
           onClick={() => {
-            const storedUser = localStorage.getItem('user');
-            const user = storedUser ? JSON.parse(storedUser) : null;
-            if (user?.roleLevel < (ROLE_LEVELS?.ADMIN || 90)) {
+            if (userRoleLevel < (ROLE_LEVELS?.ADMIN || 90)) {
               alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
               return;
             }
             router.push('/dashboard/blog/generate');
           }}
-          className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center gap-2 text-sm ${(localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).roleLevel : 0) < (ROLE_LEVELS?.ADMIN || 90) ? 'opacity-70 grayscale cursor-not-allowed' : ''}`}
+          className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center gap-2 text-sm ${userRoleLevel < (ROLE_LEVELS?.ADMIN || 90) ? 'opacity-70 grayscale cursor-not-allowed' : ''}`}
         >
           🤖 Generate New Post
         </button>
@@ -446,15 +445,13 @@ export default function BlogListPage() {
                           </button>
                           <button
                             onClick={() => {
-                              const storedUser = localStorage.getItem('user');
-                              const user = storedUser ? JSON.parse(storedUser) : null;
-                              if (user?.roleLevel < (ROLE_LEVELS?.ADMIN || 90)) {
+                              if (userRoleLevel < (ROLE_LEVELS?.ADMIN || 90)) {
                                 alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
                                 return;
                               }
                               handleDelete(post.id, post.title);
                             }}
-                            className={`text-red-600 hover:text-red-900 ${(localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).roleLevel : 0) < (ROLE_LEVELS?.ADMIN || 90) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                            className={`text-red-600 hover:text-red-900 ${userRoleLevel < (ROLE_LEVELS?.ADMIN || 90) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                             title="Delete"
                           >
                             🗑️

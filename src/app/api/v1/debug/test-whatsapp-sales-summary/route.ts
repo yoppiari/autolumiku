@@ -8,6 +8,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic';
 import { CompactExecutivePDF } from '@/lib/reports/compact-executive-pdf';
 
 // Import the function from command-handler

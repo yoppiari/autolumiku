@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { WhatsAppCommandPDF } from '@/lib/reports/whatsapp-command-pdf';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const results: any = {
     timestamp: new Date().toISOString(),

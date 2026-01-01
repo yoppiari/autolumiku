@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CompactExecutivePDF } from '@/lib/reports/compact-executive-pdf';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     console.log('[Compact PDF Test] Starting 2-page executive summary test...');

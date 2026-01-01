@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OnePageSalesPDF } from '@/lib/reports/one-page-sales-pdf';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

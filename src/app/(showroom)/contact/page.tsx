@@ -12,13 +12,16 @@ import { FaPhone, FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaClock, FaArrowLeft }
 import { prisma } from '@/lib/prisma';
 
 
+import { getTenantFromHeaders, getTenantBranding, getFullTenant } from '@/lib/tenant';
+
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug?: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const branding = await BrandingService.getBrandingBySlugOrDomain(slug);
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getTenantBranding();
 
   return {
     title: `Hubungi Kami - ${branding?.name || 'Showroom'}`,
@@ -26,35 +29,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ContactPage({ params }: PageProps) {
-  const { slug } = await params;
-
-  const branding = await BrandingService.getBrandingBySlugOrDomain(slug);
+export default async function ContactPage() {
+  const branding = await getTenantBranding();
   if (!branding) {
     return <div>Showroom not found</div>;
   }
 
-  // Get full business info
-  const tenant = await prisma.tenant.findUnique({
-    where: { slug: branding.slug },
-    select: {
-      name: true,
-      phoneNumber: true,
-      phoneNumberSecondary: true,
-      whatsappNumber: true,
-      email: true,
-      address: true,
-      city: true,
-      province: true,
-      postalCode: true,
-      googleMapsUrl: true,
-      latitude: true,
-      longitude: true,
-      businessHours: true,
-      socialMedia: true,
-    },
-  });
-
+  const tenant = await getFullTenant();
   if (!tenant) {
     return <div>Tenant not found</div>;
   }
@@ -86,7 +67,7 @@ export default async function ContactPage({ params }: PageProps) {
         {/* Breadcrumb */}
         <div className="mb-6">
           <Link
-            href={`/catalog/${slug}`}
+            href="/"
             className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
           >
             <FaArrowLeft size={16} />
@@ -255,7 +236,7 @@ export default async function ContactPage({ params }: PageProps) {
           googleMapsUrl: tenant.googleMapsUrl || undefined,
           socialMedia: socialMedia,
         }}
-        slug={slug}
+        slug={branding.slug}
       />
     </div>
   );

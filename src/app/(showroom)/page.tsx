@@ -8,6 +8,9 @@ import Link from 'next/link';
 import GlobalHeader from '@/components/showroom/GlobalHeader';
 import GlobalFooter from '@/components/showroom/GlobalFooter';
 import { getTenantFromHeaders, getFullTenant, getTenantBranding } from '@/lib/tenant';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 import { Button } from '@/components/ui/button';
 import {
   Card,

@@ -12,6 +12,8 @@ import GlobalFooter from '@/components/showroom/GlobalFooter';
 import VehicleCard from '@/components/catalog/VehicleCard';
 import { notFound } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Hasil Pencarian - Mobil Bekas',
   description: 'Hasil pencarian mobil bekas berkualitas',
@@ -220,11 +222,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       <Link
                         key={pageNum}
                         href={`/search?q=${encodeURIComponent(query)}&page=${pageNum}`}
-                        className={`px-4 py-2 rounded-lg ${
-                          pageNum === page
+                        className={`px-4 py-2 rounded-lg ${pageNum === page
                             ? 'bg-blue-600 text-white'
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                        }`}
+                          }`}
                       >
                         {pageNum}
                       </Link>
