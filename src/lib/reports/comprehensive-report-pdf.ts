@@ -54,6 +54,12 @@ export interface ReportData {
         sales: number;
         revenue: number;
         performance: 'Excellent' | 'Good' | 'Needs Improvement';
+        details?: {
+            displayId: string;
+            vehicle: string;
+            price: number;
+            date: Date;
+        }[];
     }[];
 
     // WhatsApp AI
@@ -492,10 +498,66 @@ export class ComprehensiveReportPDF {
         let y = this.drawMetricsGrid(metrics, 110);
 
         // Full staff table
-        y = this.drawSectionTitle('DETAIL PERFORMA', y + 15);
+        y = this.drawSectionTitle('RINGKASAN PERFORMA TEAM', y + 15);
         this.drawStaffTable(data.staffPerformance, y + 10);
+        y += (data.staffPerformance.length * 18) + 40;
+
+        // Individual Detail Sections for each staff
+        if (y > 600) {
+            this.doc.addPage();
+            y = 40;
+        }
+
+        y = this.drawSectionTitle('RINCIAN PENJUALAN PER STAFF', y);
+
+        data.staffPerformance.forEach((staff) => {
+            if (staff.details && staff.details.length > 0) {
+                if (y > 650) {
+                    this.doc.addPage();
+                    y = 40;
+                }
+
+                y = this.drawStaffDetailHeader(staff.name, y + 10);
+                y = this.drawStaffIndividualSalesTable(staff.details, y + 5);
+                y += 15;
+            }
+        });
 
         this.drawFooter(config.tenantName);
+    }
+
+    private drawStaffDetailHeader(name: string, y: number): number {
+        const { doc } = this;
+        doc.fillColor('#334155').fontSize(9).font('Helvetica-Bold').text(name.toUpperCase(), 25, y);
+        doc.fillColor('#94a3b8').rect(25, y + 12, 150, 1).fill();
+        return y + 18;
+    }
+
+    private drawStaffIndividualSalesTable(details: any[], y: number): number {
+        const { doc } = this;
+        const margin = 25;
+        const width = doc.page.width - margin * 2;
+
+        // Header
+        doc.fillColor('#f8fafc').rect(margin, y, width, 16).fill();
+        doc.fillColor('#64748b').fontSize(7).font('Helvetica-Bold')
+            .text('ID', margin + 5, y + 5, { width: 50 })
+            .text('KENDARAAN', margin + 60, y + 5, { width: 200 })
+            .text('HARGA', margin + 270, y + 5, { width: 100, align: 'right' })
+            .text('TANGGAL', margin + 380, y + 5, { width: 70, align: 'right' });
+
+        y += 20;
+
+        details.forEach((d) => {
+            doc.fillColor('#1e293b').fontSize(7).font('Helvetica')
+                .text(d.displayId, margin + 5, y, { width: 50 })
+                .text(d.vehicle, margin + 60, y, { width: 200 })
+                .text(formatCurrency(d.price), margin + 270, y, { width: 100, align: 'right' })
+                .text(new Date(d.date).toLocaleDateString('id-ID'), margin + 380, y, { width: 70, align: 'right' });
+            y += 14;
+        });
+
+        return y;
     }
 
     private generateRecentSales(config: ComprehensiveReportConfig) {
