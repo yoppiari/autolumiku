@@ -2,12 +2,12 @@
  * WhatsApp AI Command Handler Service
  *
  * Handles WhatsApp AI commands for:
- * - Universal commands (ALL roles): rubah, upload, inventory, status, statistik, kontak
- * - PDF report commands (ADMIN+ only): 14 report types
+ * - Basic Tools (STAFF/SALES+): upload, inventory, stats, status, edit
+ * - Full Access (ADMIN, OWNER, SUPER_ADMIN): All basic tools + PDF reports
  *
- * Role-based access control:
- * - ALL roles: Universal commands
- * - ADMIN+ only (roleLevel >= 90): PDF report commands
+ * Access Categories:
+ * - STAFF/SALES (Level 30): upload, inventory, stats, status, edit
+ * - ADMIN+ (Level 90+): All tools + PDF reports
  */
 
 import { prisma } from '@/lib/prisma';

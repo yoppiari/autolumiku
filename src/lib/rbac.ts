@@ -37,34 +37,29 @@ export interface NavItem {
   excludeRoles?: number[]; // Specific roles to exclude (e.g., FINANCE from Kendaraan)
 }
 
-// Page access requirements
+// Page access requirements - ALL roles can see all pages in navigation
 export const PAGE_ACCESS: Record<string, { minRole: number; excludeRoles?: number[] }> = {
   // Dashboard - all roles can access
   '/dashboard': { minRole: ROLE_LEVELS.SALES },
 
-  // Tim/Users - Admin+ only
-  '/dashboard/users': { minRole: ROLE_LEVELS.ADMIN },
+  // Tim/Users - visible to all
+  '/dashboard/users': { minRole: ROLE_LEVELS.SALES },
 
-  // Kendaraan/Vehicles - Sales and Admin+
+  // Kendaraan/Vehicles - visible to all
   '/dashboard/vehicles': { minRole: ROLE_LEVELS.SALES },
 
-  // Invoice - HIDDEN (not needed)
-  '/dashboard/invoices': { minRole: 9999 }, // Hidden
-  '/dashboard/invoices/create': { minRole: 9999 }, // Hidden
-  '/dashboard/invoices/ledger': { minRole: 9999 }, // Hidden
+  // WhatsApp AI - visible to all
+  '/dashboard/whatsapp-ai': { minRole: ROLE_LEVELS.SALES },
+  '/dashboard/whatsapp-ai/analytics': { minRole: ROLE_LEVELS.SALES },
+  '/dashboard/whatsapp-ai/config': { minRole: ROLE_LEVELS.SALES },
 
-  // WhatsApp AI - Admin+ only
-  '/dashboard/whatsapp-ai': { minRole: ROLE_LEVELS.ADMIN },
-  '/dashboard/whatsapp-ai/analytics': { minRole: ROLE_LEVELS.ADMIN }, // Analytics visible to Admin+
-  '/dashboard/whatsapp-ai/config': { minRole: ROLE_LEVELS.ADMIN },
+  // Settings - visible to all
+  '/dashboard/settings': { minRole: ROLE_LEVELS.SALES },
 
-  // Settings - Admin+ only
-  '/dashboard/settings': { minRole: ROLE_LEVELS.ADMIN },
-
-  // Blog - visible to all, but actions require different levels
-  '/dashboard/blog': { minRole: ROLE_LEVELS.SALES }, // All can view
-  '/dashboard/blog/create': { minRole: ROLE_LEVELS.ADMIN }, // Only Admin+ can create
-  '/dashboard/blog/edit': { minRole: ROLE_LEVELS.ADMIN }, // Only Admin+ can edit
+  // Blog - visible to all
+  '/dashboard/blog': { minRole: ROLE_LEVELS.SALES },
+  '/dashboard/blog/create': { minRole: ROLE_LEVELS.SALES },
+  '/dashboard/blog/edit': { minRole: ROLE_LEVELS.SALES },
 };
 
 /**
@@ -133,24 +128,24 @@ export const permissions = {
   canVoidInvoice: (roleLevel: number) => false,
   canViewInvoiceReport: (roleLevel: number) => false,
 
-  // Analytics - Admin+ only
-  canViewAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
+  // Analytics - Visible to all, but actions restricted
+  canViewAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
   canExportAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
 
-  // Team/Users - Admin+ only
-  canViewTeam: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
+  // Team/Users - Visible to all, but actions restricted
+  canViewTeam: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
   canManageTeam: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
   canAddStaff: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
   canEditStaff: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
   canDeleteStaff: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
 
-  // Settings - Admin+ only
-  canViewSettings: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
+  // Settings - Visible to all
+  canViewSettings: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
   canManageSettings: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
 
-  // WhatsApp AI - Admin+ only
-  canViewWhatsAppAI: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
-  canViewWhatsAppAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
+  // WhatsApp AI - Visible to all
+  canViewWhatsAppAI: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
+  canViewWhatsAppAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
   canConfigureWhatsAppAI: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
 
   // Blog - visible to all, manage by Admin+
@@ -168,7 +163,7 @@ export function getRoleName(roleLevel: number): string {
   if (roleLevel >= ROLE_LEVELS.SUPER_ADMIN) return 'Super Admin';
   if (roleLevel >= ROLE_LEVELS.OWNER) return 'Owner';
   if (roleLevel >= ROLE_LEVELS.ADMIN) return 'Admin';
-  return 'Sales';
+  return 'Staff/Sales';
 }
 
 /**
@@ -180,26 +175,6 @@ export function getRoleName(roleLevel: number): string {
  * Invoice: HIDDEN for all roles
  */
 export function getVisibleDashboardCards(roleLevel: number): string[] {
-  const cards: string[] = ['overview']; // Everyone can see overview
-
-  // Kendaraan - Sales and Admin+
-  cards.push('kendaraan');
-
-  // Invoice - HIDDEN for all roles
-  // (not added to cards)
-
-  // Tim - Admin+ only
-  if (roleLevel >= ROLE_LEVELS.ADMIN) {
-    cards.push('tim');
-  }
-
-  // Analytics - Admin+ only
-  if (roleLevel >= ROLE_LEVELS.ADMIN) {
-    cards.push('analytics');
-  }
-
-  // Blog card - visible to all
-  cards.push('blog');
-
-  return cards;
+  // Everyone can see all cards now as requested
+  return ['overview', 'kendaraan', 'tim', 'analytics', 'blog'];
 }

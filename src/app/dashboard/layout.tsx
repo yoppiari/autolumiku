@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import DashboardErrorBoundary from '@/components/dashboard/ErrorBoundary';
 import SessionManager from '@/components/auth/SessionManager';
-import { ROLE_LEVELS, canAccessPage } from '@/lib/rbac';
+import { ROLE_LEVELS, canAccessPage, getRoleName } from '@/lib/rbac';
 
 // Tooltip wrapper component for unauthorized navigation items
 interface AuthorizedNavLinkProps {
@@ -145,17 +145,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // NOTE: Invoice feature is HIDDEN for all roles
   const allNavigation: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠', minRole: ROLE_LEVELS.SALES },
-    // Kendaraan - Sales and Admin+
+    // Kendaraan - Visible to all
     { name: 'Kendaraan', href: '/dashboard/vehicles', icon: '🚗', minRole: ROLE_LEVELS.SALES },
     // Invoice - HIDDEN (not included in navigation)
-    // Tim - Admin+ only
-    { name: 'Tim', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.ADMIN },
-    // WhatsApp AI - Admin+ only
-    { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬', minRole: ROLE_LEVELS.ADMIN },
+    // Tim - Visible to all
+    { name: 'Tim', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.SALES },
+    // WhatsApp AI - Visible to all
+    { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬', minRole: ROLE_LEVELS.SALES },
     // Blog - visible to ALL roles
     { name: 'Blog', href: '/dashboard/blog', icon: '📝', minRole: ROLE_LEVELS.SALES },
-    // Pengaturan - Admin+ only
-    { name: 'Pengaturan', href: '/dashboard/settings', icon: '⚙️', minRole: ROLE_LEVELS.ADMIN },
+    // Pengaturan - Visible to all
+    { name: 'Pengaturan', href: '/dashboard/settings', icon: '⚙️', minRole: ROLE_LEVELS.SALES },
   ];
 
   // Get user's role level
@@ -171,124 +171,124 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <DashboardErrorBoundary>
-    <SessionManager
-      inactivityTimeout={60 * 60 * 1000}  // 60 minutes of inactivity
-      refreshInterval={50 * 60 * 1000}    // Refresh token every 50 minutes
-      warningTime={5 * 60 * 1000}         // Show warning 5 minutes before timeout
-    >
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        >
-          <div className="absolute inset-0 bg-gray-600 opacity-75"></div>
-        </div>
-      )}
+      <SessionManager
+        inactivityTimeout={60 * 60 * 1000}  // 60 minutes of inactivity
+        refreshInterval={50 * 60 * 1000}    // Refresh token every 50 minutes
+        warningTime={5 * 60 * 1000}         // Show warning 5 minutes before timeout
+      >
+        <div className="min-h-screen bg-gray-50">
+          {/* Mobile sidebar overlay */}
+          {isSidebarOpen && (
+            <div
+              className="fixed inset-0 z-40 lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <div className="absolute inset-0 bg-gray-600 opacity-75"></div>
+            </div>
+          )}
 
-      {/* Sidebar */}
-      <div className={`
+          {/* Sidebar */}
+          <div className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="flex flex-col h-full">
-          {/* Logo - Clickable to Dashboard */}
-          <Link
-            href="/dashboard"
-            className="flex items-center h-16 px-6 border-b border-gray-200 hover:bg-gray-50 transition-colors group"
-          >
-            <div className="flex items-center">
-              {tenant?.logoUrl ? (
-                <img
-                  src={tenant.logoUrl}
-                  alt={tenant.name || 'Tenant Logo'}
-                  className="w-8 h-8 object-contain rounded-lg group-hover:scale-105 transition-transform"
-                />
-              ) : (
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                  <span className="text-white font-bold text-sm">
-                    {tenant?.name?.[0] || 'A'}
-                  </span>
+            <div className="flex flex-col h-full">
+              {/* Logo - Clickable to Dashboard */}
+              <Link
+                href="/dashboard"
+                className="flex items-center h-16 px-6 border-b border-gray-200 hover:bg-gray-50 transition-colors group"
+              >
+                <div className="flex items-center">
+                  {tenant?.logoUrl ? (
+                    <img
+                      src={tenant.logoUrl}
+                      alt={tenant.name || 'Tenant Logo'}
+                      className="w-8 h-8 object-contain rounded-lg group-hover:scale-105 transition-transform"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                      <span className="text-white font-bold text-sm">
+                        {tenant?.name?.[0] || 'A'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="ml-3">
+                    <div className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {tenant?.name || 'autolumiku'}
+                    </div>
+                    <div className="text-xs text-gray-500">Showroom Dashboard</div>
+                  </div>
                 </div>
-              )}
-              <div className="ml-3">
-                <div className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  {tenant?.name || 'autolumiku'}
-                </div>
-                <div className="text-xs text-gray-500">Showroom Dashboard</div>
-              </div>
-            </div>
-          </Link>
+              </Link>
 
-          {/* Navigation - all items shown, tooltip for unauthorized */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {navigation.map((item) => {
-              // For /dashboard exact match, only highlight on exact path
-              // For other routes, highlight if path matches or starts with route
-              const isActive = item.href === '/dashboard'
-                ? pathname === '/dashboard'
-                : pathname === item.href || pathname?.startsWith(item.href + '/');
-              return (
-                <AuthorizedNavLink
-                  key={item.name}
-                  href={item.href}
-                  isAuthorized={item.isAuthorized}
-                  isActive={isActive}
+              {/* Navigation - all items shown, tooltip for unauthorized */}
+              <nav className="flex-1 px-4 py-6 space-y-2">
+                {navigation.map((item) => {
+                  // For /dashboard exact match, only highlight on exact path
+                  // For other routes, highlight if path matches or starts with route
+                  const isActive = item.href === '/dashboard'
+                    ? pathname === '/dashboard'
+                    : pathname === item.href || pathname?.startsWith(item.href + '/');
+                  return (
+                    <AuthorizedNavLink
+                      key={item.name}
+                      href={item.href}
+                      isAuthorized={item.isAuthorized}
+                      isActive={isActive}
+                    >
+                      <span className="mr-3 text-lg">{item.icon}</span>
+                      {item.name}
+                    </AuthorizedNavLink>
+                  );
+                })}
+              </nav>
+
+              {/* User menu */}
+              <div className="border-t border-gray-200 p-4">
+                <div className="flex items-center mb-4">
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.firstName?.[0] || 'U'}
+                    </span>
+                  </div>
+                  <div className="ml-3">
+                    <div className="text-sm font-medium text-gray-900">
+                      {user?.firstName} {user?.lastName}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {getRoleName(userRoleLevel)}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <span className="mr-3 text-lg">{item.icon}</span>
-                  {item.name}
-                </AuthorizedNavLink>
-              );
-            })}
-          </nav>
-
-          {/* User menu */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {user?.firstName?.[0] || 'U'}
-                </span>
-              </div>
-              <div className="ml-3">
-                <div className="text-sm font-medium text-gray-900">
-                  {user?.firstName} {user?.lastName}
-                </div>
-                <div className="text-xs text-gray-500 capitalize">
-                  {user?.role?.replace('_', ' ')}
-                </div>
+                  Keluar
+                </button>
               </div>
             </div>
+          </div>
+
+          {/* Main content */}
+          <div className="lg:pl-64">
+            {/* Mobile menu button - fixed position */}
             <button
-              onClick={handleLogout}
-              className="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden fixed top-4 left-4 z-30 p-2 rounded-md bg-white border border-gray-300 shadow-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              Keluar
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             </button>
+
+            {/* Page content */}
+            <main className="p-4 sm:p-6 lg:p-8">
+              {children}
+            </main>
           </div>
         </div>
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Mobile menu button - fixed position */}
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="lg:hidden fixed top-4 left-4 z-30 p-2 rounded-md bg-white border border-gray-300 shadow-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-
-        {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
-      </div>
-    </div>
-    </SessionManager>
+      </SessionManager>
     </DashboardErrorBoundary>
   );
 }
