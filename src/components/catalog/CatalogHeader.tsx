@@ -81,13 +81,31 @@ export default function CatalogHeader({
 
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-24 md:h-28 transition-all duration-300">
-          {/* Logo & Name - Clean text-only design */}
+          {/* Logo & Name - Dynamic Logo/Text */}
           <Link href={getUrl('')} className="flex items-center gap-4 hover:opacity-90 transition-opacity group">
-            <div className="flex items-center justify-center">
+            {branding.logoUrl ? (
+              <>
+                <img
+                  src={branding.logoUrl}
+                  alt={branding.name}
+                  className="h-10 md:h-12 w-auto object-contain"
+                  onError={(e) => {
+                    // Fallback if logo fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const h1 = target.parentElement?.querySelector('h1');
+                    if (h1) h1.classList.remove('hidden');
+                  }}
+                />
+                <h1 className="hidden text-xl md:text-2xl font-bold text-foreground tracking-tight">
+                  {branding.name}
+                </h1>
+              </>
+            ) : (
               <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">
                 {branding.name}
               </h1>
-            </div>
+            )}
           </Link>
 
           {/* Desktop Navigation */}
