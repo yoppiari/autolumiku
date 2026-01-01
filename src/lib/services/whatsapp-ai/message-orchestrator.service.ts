@@ -1162,7 +1162,8 @@ export class MessageOrchestratorService {
           userRole: user.role,
           userRoleLevel: user.roleLevel,
           phoneNumber: incoming.from,
-          userId: user.id
+          userId: user.id,
+          conversationId: conversationId
         });
 
         if (partResult.success) {
@@ -1197,6 +1198,7 @@ export class MessageOrchestratorService {
         userRoleLevel: user.roleLevel,
         phoneNumber: incoming.from,
         userId: user.id,
+        conversationId: conversationId
       };
 
       const result = await processCommand(message, commandOptions);

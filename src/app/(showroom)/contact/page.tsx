@@ -186,12 +186,20 @@ export default async function ContactPage() {
             </div>
 
             {/* Google Maps */}
-            {tenant.googleMapsUrl && (
+            {(tenant.googleMapsUrl || (tenant.latitude && tenant.longitude)) && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold mb-4">Peta Lokasi</h2>
                 <div className="aspect-video rounded-lg overflow-hidden">
                   <iframe
-                    src={tenant.googleMapsUrl.replace('/maps/place/', '/maps/embed/v1/place?key=').replace('?', '&')}
+                    src={
+                      tenant.latitude && tenant.longitude
+                        ? `https://www.google.com/maps?q=${tenant.latitude},${tenant.longitude}&output=embed`
+                        : tenant.googleMapsUrl?.includes('embed')
+                          ? tenant.googleMapsUrl
+                          : `https://www.google.com/maps?q=${encodeURIComponent(
+                            [tenant.address, tenant.city, tenant.province].filter(Boolean).join(', ')
+                          )}&output=embed`
+                    }
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
@@ -201,14 +209,16 @@ export default async function ContactPage() {
                     title="Google Maps Location"
                   ></iframe>
                 </div>
-                <a
-                  href={tenant.googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Buka di Google Maps
-                </a>
+                {tenant.googleMapsUrl && (
+                  <a
+                    href={tenant.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Buka di Google Maps
+                  </a>
+                )}
               </div>
             )}
 

@@ -783,11 +783,6 @@ export default function ShowroomDashboardPage() {
                     </div>
                   ))}
                 </div>
-              ) : (stats?.vehicles?.total ?? 0) === 0 ? (
-                <div className="text-center py-4 md:py-6">
-                  <p className="text-[10px] md:text-xs text-red-600 font-medium">🚫 Stock Empty</p>
-                  <p className="text-[8px] md:text-[10px] text-gray-500 mt-1">Stock kosong, semua unit belum tersedia</p>
-                </div>
               ) : lowStockItems.length > 0 ? (
                 <div className="space-y-2">
                   {lowStockItems.slice(0, 5).map((item) => (
@@ -810,9 +805,12 @@ export default function ShowroomDashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 md:py-6">
-                  <p className="text-[10px] md:text-xs text-gray-500">Stok aman</p>
-                  <p className="text-[8px] md:text-[10px] text-gray-400 mt-1">Semua unit tersedia</p>
+                <div className="text-center py-6 md:py-8 bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-xl md:text-2xl">✅</span>
+                  </div>
+                  <p className="text-xs md:text-sm font-bold text-gray-900">Stok aman</p>
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-1">Unit tersedia</p>
                 </div>
               )}
             </div>

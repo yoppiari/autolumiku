@@ -25,6 +25,8 @@ import { ReportDataService } from '@/lib/reports/report-data-service';
 import { VehicleInventoryPDF } from '@/lib/reports/vehicle-inventory-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
+import { StaffCommandService } from './staff-command.service';
+import { MessageIntent } from './intent-classifier.service';
 
 interface CommandContext {
   tenantId: string;
@@ -32,6 +34,7 @@ interface CommandContext {
   userRoleLevel: number;
   phoneNumber: string;
   userId: string;
+  conversationId?: string; // Optional but recommended for staff commands
 }
 
 interface CommandResult {
@@ -111,6 +114,13 @@ export async function processCommand(
   if (isUniversal) {
     console.log(`[CommandHandler] ✅ Routing to Universal handler`);
     return await handleUniversalCommand(cmd, context);
+  }
+
+  // Staff Operational Commands (STAFF+ only) - CHECK THIRD
+  const staffOperation = await handleStaffOperationCommand(cmd, context);
+  if (staffOperation) {
+    console.log(`[CommandHandler] ✅ Routing to Staff Operation handler`);
+    return staffOperation;
   }
 
   // Unknown command
@@ -278,6 +288,76 @@ async function handleUniversalCommand(
     message: helpMsg,
     followUp: true,
   };
+}
+
+/**
+ * Handle staff operational commands (upload, status, inventory, etc.)
+ */
+async function handleStaffOperationCommand(
+  cmd: string,
+  context: CommandContext
+): Promise<CommandResult | null> {
+  const { tenantId, phoneNumber, conversationId, userRoleLevel } = context;
+
+  // RBAC Check: Staff level 30+ only for operational tools
+  if (userRoleLevel < 30) return null;
+
+  // Identify intent from command keywords
+  let intent: MessageIntent | null = null;
+  const msg = cmd.toLowerCase().trim();
+
+  // Mapping based on IntentClassifier patterns
+  if (msg.startsWith('status') || msg.includes('update status') || msg.includes('ubah status')) {
+    intent = 'staff_update_status';
+  } else if (msg.includes('inventory') || msg.includes('stok') || msg.includes('stock')) {
+    intent = 'staff_check_inventory';
+  } else if (msg.includes('stats') || msg.includes('statistik') || msg.includes('laporan')) {
+    // Only if NOT a PDF command (which is checked before this function)
+    intent = 'staff_get_stats';
+  } else if (msg.includes('edit') || msg.includes('ubah') || msg.includes('rubah') || msg.includes('ganti')) {
+    intent = 'staff_edit_vehicle';
+  } else if (msg.startsWith('upload') || msg.startsWith('tambah') || msg.startsWith('input')) {
+    intent = 'staff_upload_vehicle';
+  }
+
+  if (!intent) return null;
+
+  console.log(`[CommandHandler] 🛠️ Identified staff intent: ${intent} for command: "${cmd}"`);
+
+  // Parse and execute command via StaffCommandService
+  try {
+    const parseResult = await StaffCommandService.parseCommand(cmd, intent);
+    if (!parseResult.isValid) {
+      return {
+        success: false,
+        message: parseResult.error || `Command ${intent} tidak valid.`,
+        followUp: true,
+      };
+    }
+
+    const executionResult = await StaffCommandService.executeCommand(
+      intent,
+      parseResult.params,
+      tenantId,
+      phoneNumber,
+      conversationId || "",
+      undefined,
+      true // Skip auth check because we already checked userRoleLevel
+    );
+
+    return {
+      success: executionResult.success,
+      message: executionResult.message,
+      followUp: true,
+    };
+  } catch (error: any) {
+    console.error(`[CommandHandler] ❌ Error executing staff command:`, error);
+    return {
+      success: false,
+      message: `Terjadi kesalahan saat memproses perintah: ${error.message}`,
+      followUp: true,
+    };
+  }
 }
 
 

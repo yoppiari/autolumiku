@@ -11,7 +11,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ROLE_LEVELS } from '@/lib/rbac';
 
-type Department = 'sales' | 'whatsapp';
+type Department = 'sales' | 'whatsapp' | 'reports';
+
+const intentColors: Record<string, string> = {
+  vehicle: '#3b82f6', // blue
+  price: '#8b5cf6',   // purple
+  greeting: '#22c55e', // green
+  general: '#f59e0b',  // amber
+  escalated: '#ef4444' // red
+};
 
 interface KPIData {
   penjualanShowroom: number;
@@ -145,10 +153,54 @@ export default function AnalyticsPage() {
           if (waData.success) setWhatsappAnalytics(waData.data);
         }
       }
-    } catch (error) {
-      console.error('Error loading analytics:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const handleDownloadReport = async (reportId: string) => {
+    try {
+      setDownloading(reportId);
+      const token = localStorage.getItem('authToken');
+
+      if (!token) {
+        alert('Token tidak ditemukan. Silakan login kembali.');
+        router.push('/login');
+        return;
+      }
+
+      // Track download for specific report types
+      console.log(`[Analytics] 📥 Generating report: ${reportId}`);
+
+      const response = await fetch(
+        `/api/v1/reports/${reportId}?period=month&format=pdf`,
+        {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${reportId}-${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const errData = await response.json();
+        alert(`Gagal download: ${errData.error || 'Terjadi kesalahan sistem'}`);
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Terjadi kesalahan saat mengunduh laporan.');
+    } finally {
+      setDownloading(null);
     }
   };
 
@@ -322,19 +374,6 @@ export default function AnalyticsPage() {
 
           {/* Period Filter & Export Buttons */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Report Center link hidden as per user request */}
-            {/* 
-            <Link
-              href="/dashboard/reports"
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Report Center
-            </Link>
-            */}
-
             {/* Period Filter - for Sales only */}
             {activeDepartment === 'sales' && (
               <>
@@ -410,6 +449,17 @@ export default function AnalyticsPage() {
             <span className="text-lg">💬</span>
             <span className="hidden sm:inline">WhatsApp AI</span>
             <span className="sm:hidden">WhatsApp</span>
+          </button>
+          <button
+            onClick={() => setActiveDepartment('reports')}
+            className={`py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${activeDepartment === 'reports'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+          >
+            <span className="text-lg">📁</span>
+            <span className="hidden sm:inline">Analytics & Report</span>
+            <span className="sm:hidden">Reports</span>
           </button>
         </nav>
       </div>
@@ -1040,6 +1090,137 @@ export default function AnalyticsPage() {
           )}
         </div>
       )}
+      {/* Reports Collection Tab */}
+      {!isLoading && activeDepartment === 'reports' && (
+        <div className="space-y-8 animate-in fade-in duration-500 pb-12">
+          {/* Sales & Revenue Reports (6) */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">💰</span>
+              <h3 className="text-lg font-bold text-gray-900">Sales & Revenue Reports</h3>
+              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">6 REPORTS</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰' },
+                { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊' },
+                { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈' },
+                { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋' },
+                { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐' },
+                { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑' },
+              ].map(report => (
+                <ReportCard key={report.id} report={report} onDownload={handleDownloadReport} downloading={downloading} />
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-gray-100" />
+
+          {/* Inventory & Stock Reports (4) */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">📦</span>
+              <h3 className="text-lg font-bold text-gray-900">Inventory & Stock Reports</h3>
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full">4 REPORTS</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Ringkasan stok kendaraan tersedia', icon: '📦' },
+                { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan stok kritis & stok lama', icon: '⚠️' },
+                { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Analisis harga jual vs harga stok', icon: '💵' },
+                { id: 'inventory-listing', name: 'Vehicle Inventory Listing', desc: 'Katalog stok lengkap dengan foto', icon: '🚙' },
+              ].map(report => (
+                <ReportCard key={report.id} report={report} onDownload={handleDownloadReport} downloading={downloading} />
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-gray-100" />
+
+          {/* Team & Performance (2) */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">🏆</span>
+              <h3 className="text-lg font-bold text-gray-900">Team & Performance</h3>
+              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full">2 REPORTS</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking & produktivitas tim sales', icon: '🏆' },
+                { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄' },
+              ].map(report => (
+                <ReportCard key={report.id} report={report} onDownload={handleDownloadReport} downloading={downloading} />
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-gray-100" />
+
+          {/* WhatsApp AI & Engagement (3) */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">🤖</span>
+              <h3 className="text-lg font-bold text-gray-900">WhatsApp AI & Engagement</h3>
+              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">3 REPORTS</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖' },
+                { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️' },
+                { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis ketertarikan & behavior', icon: '👥' },
+              ].map(report => (
+                <ReportCard key={report.id} report={report} onDownload={handleDownloadReport} downloading={downloading} />
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Shared Report Card Component
+ */
+function ReportCard({ report, onDownload, downloading }: {
+  report: { id: string; name: string; desc: string; icon: string };
+  onDownload: (id: string) => void;
+  downloading: string | null;
+}) {
+  const isDownloading = downloading === report.id;
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow group flex flex-col justify-between">
+      <div>
+        <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-xl mb-3 group-hover:bg-blue-50 transition-colors">
+          {report.icon}
+        </div>
+        <h4 className="text-sm font-bold text-gray-900 mb-1">{report.name}</h4>
+        <p className="text-[10px] text-gray-500 mb-4 line-clamp-2 leading-relaxed">{report.desc}</p>
+      </div>
+
+      <button
+        onClick={() => onDownload(report.id)}
+        disabled={!!downloading}
+        className={`w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${isDownloading
+            ? 'bg-blue-100 text-blue-600 cursor-not-allowed'
+            : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-sm'
+          }`}
+      >
+        {isDownloading ? (
+          <>
+            <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            Generating...
+          </>
+        ) : (
+          <>
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download PDF
+          </>
+        )}
+      </button>
     </div>
   );
 }

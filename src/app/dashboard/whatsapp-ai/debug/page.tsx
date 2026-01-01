@@ -326,7 +326,10 @@ export default function WhatsAppDebugPage() {
           <button
             onClick={loadLogs}
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className={`px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 font-medium ${error ? 'bg-red-600 hover:bg-red-700' :
+                logs ? 'bg-green-600 hover:bg-green-700' :
+                  'bg-blue-600 hover:bg-blue-700'
+              }`}
           >
             {isLoading ? 'Loading...' : '🔄 Refresh'}
           </button>
@@ -373,7 +376,10 @@ export default function WhatsAppDebugPage() {
               <button
                 onClick={setWebhookUrl}
                 disabled={isSettingWebhook}
-                className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className={`px-3 py-1 text-xs text-white rounded transition-colors disabled:opacity-50 font-medium ${webhookSetResult.includes('✅') ? 'bg-green-600 hover:bg-green-700' :
+                    error && error.includes('webhook') ? 'bg-red-600 hover:bg-red-700' :
+                      'bg-blue-600 hover:bg-blue-700'
+                  }`}
               >
                 {isSettingWebhook ? 'Setting...' : '🔧 Set Webhook'}
               </button>
@@ -493,7 +499,10 @@ export default function WhatsAppDebugPage() {
           <button
             onClick={checkOutbound}
             disabled={isCheckingOutbound}
-            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 text-sm"
+            className={`px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium ${outboundCheck?.summary?.failed > 0 ? 'bg-red-600 hover:bg-red-700' :
+                outboundCheck ? 'bg-green-600 hover:bg-green-700' :
+                  'bg-orange-600 hover:bg-orange-700'
+              }`}
           >
             {isCheckingOutbound ? 'Checking...' : '🔍 Check Outbound'}
           </button>
@@ -576,7 +585,10 @@ export default function WhatsAppDebugPage() {
         <button
           onClick={testSendMessage}
           disabled={isSendingTest || !tenantId}
-          className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
+          className={`px-6 py-3 text-white rounded-lg transition-colors font-medium disabled:opacity-50 ${sendTestResult?.success ? 'bg-green-600 hover:bg-green-700' :
+              sendTestResult?.success === false ? 'bg-red-600 hover:bg-red-700' :
+                'bg-purple-600 hover:bg-purple-700'
+            }`}
         >
           {isSendingTest ? 'Sending...' : '📤 Send Test Message'}
         </button>
@@ -633,7 +645,10 @@ export default function WhatsAppDebugPage() {
         <button
           onClick={runTest}
           disabled={isTesting || !tenantId}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+          className={`px-6 py-3 text-white rounded-lg transition-colors font-medium disabled:opacity-50 ${testResult?.success ? 'bg-green-600 hover:bg-green-700' :
+              testResult?.success === false ? 'bg-red-600 hover:bg-red-700' :
+                'bg-blue-600 hover:bg-blue-700'
+            }`}
         >
           {isTesting ? 'Testing...' : '▶️ Run Test'}
         </button>
@@ -665,7 +680,10 @@ export default function WhatsAppDebugPage() {
             <button
               onClick={testOnePagePDF}
               disabled={testingPDF || !tenantId}
-              className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
+              className={`w-full px-4 py-2 text-white rounded-lg transition-colors font-medium disabled:opacity-50 ${pdfTestResult.includes('✅') ? 'bg-green-600 hover:bg-green-700' :
+                  pdfTestResult.includes('❌') ? 'bg-red-600 hover:bg-red-700' :
+                    'bg-purple-600 hover:bg-purple-700'
+                }`}
             >
               {testingPDF ? 'Generating...' : '📊 Test One-Page PDF'}
             </button>
