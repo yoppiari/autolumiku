@@ -42,6 +42,7 @@ export default function VehiclesPage() {
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'price'>('date');
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
 
   // Access guard: All authenticated users can access vehicles
   // No role restrictions - all roles (Sales, Admin, Owner, Super Admin) can access
@@ -350,59 +351,84 @@ export default function VehiclesPage() {
         </div>
       </div>
 
-      {/* Filters - Compact, responsive */}
-      <div className="bg-white rounded-lg shadow p-2 mb-3 flex-shrink-0">
-        <div className="flex flex-wrap md:flex-nowrap items-center gap-1.5 md:gap-2">
-          {/* Search */}
-          <input
-            type="text"
-            placeholder="Cari mobil..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 min-w-[120px] px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+      {/* Filters - Auto-hide sidebar with hover expansion */}
+      <div
+        className="group fixed left-0 top-20 z-40 md:relative md:top-0 md:left-0 md:z-0 mb-3 flex-shrink-0"
+        onMouseEnter={() => setIsFilterExpanded(true)}
+        onMouseLeave={() => setIsFilterExpanded(false)}
+      >
+        <div className={`bg-white rounded-r-lg md:rounded-lg shadow-lg transition-all duration-300 ease-in-out ${isFilterExpanded ? 'w-72 md:w-auto' : 'w-12 md:w-auto'
+          }`}>
+          {/* Collapsed state - Icon only (desktop) */}
+          <div className={`md:hidden ${isFilterExpanded ? 'hidden' : 'flex flex-col items-center justify-center p-3 cursor-pointer'
+            }`}>
+            <span className="text-2xl mb-1">🔍</span>
+            <span className="text-[10px] font-medium text-gray-600 writing-mode-vertical transform rotate-0">Filter</span>
+          </div>
 
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
-            className="px-1.5 md:px-2 py-1.5 text-xs md:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 min-w-[70px] md:min-w-[110px]"
-          >
-            <option value="ALL">Semua</option>
-            <option value="DRAFT">Draft</option>
-            <option value="AVAILABLE">Tersedia</option>
-            <option value="BOOKED">Booking</option>
-            <option value="SOLD">Terjual</option>
-          </select>
+          {/* Expanded state - Full controls */}
+          <div className={`${isFilterExpanded ? 'block' : 'hidden md:block'
+            } p-2`}>
+            <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-2">
+              {/* Filter Header (mobile only when expanded) */}
+              <div className="md:hidden flex items-center justify-between pb-2 border-b border-gray-200">
+                <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                  <span>🔍</span> Filter Kendaraan
+                </h3>
+              </div>
 
-          {/* Sort - hidden on mobile to save space */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'date' | 'price')}
-            className="hidden md:block px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="date">Terbaru</option>
-            <option value="price">Harga</option>
-          </select>
+              {/* Search */}
+              <input
+                type="text"
+                placeholder="Cari mobil..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 min-w-[120px] px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
 
-          {/* View Toggle */}
-          <div className="flex border border-gray-300 rounded overflow-hidden flex-shrink-0">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-1.5 md:px-2 py-1.5 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-            >
-              <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-1.5 md:px-2 py-1.5 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-            >
-              <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z" />
-              </svg>
-            </button>
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
+                className="w-full md:w-auto px-2 py-1.5 text-xs md:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="DRAFT">Draft</option>
+                <option value="AVAILABLE">Tersedia</option>
+                <option value="BOOKED">Booking</option>
+                <option value="SOLD">Terjual</option>
+              </select>
+
+              {/* Sort */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'date' | 'price')}
+                className="w-full md:w-auto px-2 py-1.5 text-xs md:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="date">Terbaru</option>
+                <option value="price">Harga Tertinggi</option>
+              </select>
+
+              {/* View Toggle */}
+              <div className="flex border border-gray-300 rounded overflow-hidden w-full md:w-auto">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex-1 md:flex-none px-3 md:px-2 py-1.5 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+                >
+                  <svg className="w-4 h-4 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex-1 md:flex-none px-3 md:px-2 py-1.5 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+                >
+                  <svg className="w-4 h-4 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -410,8 +436,8 @@ export default function VehiclesPage() {
       {/* Resequence Status */}
       {resequenceStatus && (
         <div className={`mb-3 p-3 rounded-lg flex-shrink-0 ${resequenceStatus.includes('✅') ? 'bg-green-50 border border-green-200' :
-            resequenceStatus.includes('❌') ? 'bg-red-50 border border-red-200' :
-              'bg-blue-50 border border-blue-200'
+          resequenceStatus.includes('❌') ? 'bg-red-50 border border-red-200' :
+            'bg-blue-50 border border-blue-200'
           }`}>
           <div className="flex items-center gap-2">
             {!resequenceStatus.includes('✅') && !resequenceStatus.includes('❌') && (
@@ -421,8 +447,8 @@ export default function VehiclesPage() {
               </svg>
             )}
             <span className={`text-sm font-medium ${resequenceStatus.includes('✅') ? 'text-green-800' :
-                resequenceStatus.includes('❌') ? 'text-red-800' :
-                  'text-blue-800'
+              resequenceStatus.includes('❌') ? 'text-red-800' :
+                'text-blue-800'
               }`}>{resequenceStatus}</span>
           </div>
         </div>
