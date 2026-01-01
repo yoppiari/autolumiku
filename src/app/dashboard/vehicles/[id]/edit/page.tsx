@@ -111,7 +111,7 @@ export default function EditVehiclePage() {
           year: v.year || new Date().getFullYear(),
           variant: v.variant || '',
           descriptionId: v.descriptionId || '',
-          price: v.price / 100000000 || 0, // Convert cents to juta
+          price: v.price / 1000000 || 0, // Convert cents to juta
           mileage: v.mileage || 0,
           transmissionType: v.transmissionType || '',
           fuelType: v.fuelType || '',
@@ -128,9 +128,9 @@ export default function EditVehiclePage() {
 
         // Check for token expiry and redirect to login
         if (errorMessage.toLowerCase().includes('token') ||
-            errorMessage.toLowerCase().includes('unauthorized') ||
-            errorMessage.toLowerCase().includes('expired') ||
-            response.status === 401) {
+          errorMessage.toLowerCase().includes('unauthorized') ||
+          errorMessage.toLowerCase().includes('expired') ||
+          response.status === 401) {
           console.log('[Edit Page] Token expired, redirecting to login');
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
@@ -351,7 +351,7 @@ export default function EditVehiclePage() {
       const updateData = {
         ...formData,
         year: parseInt(String(formData.year), 10), // Ensure year is integer
-        price: Math.round(formData.price * 100000000), // Convert juta to cents
+        price: Math.round(formData.price * 1000000), // Convert juta to cents
         mileage: formData.mileage ? parseInt(String(formData.mileage), 10) : null, // Ensure mileage is integer
         userId: user.id,
       };
@@ -372,36 +372,36 @@ export default function EditVehiclePage() {
 
       // Success - now upload photos if any
       if (photos.length > 0) {
-          console.log(`📸 Uploading ${photos.length} photos for vehicle ${vehicleId}...`);
+        console.log(`📸 Uploading ${photos.length} photos for vehicle ${vehicleId}...`);
 
-          const photoData = photos.map((photo) => ({
-            base64: photo.base64,
-          }));
+        const photoData = photos.map((photo) => ({
+          base64: photo.base64,
+        }));
 
-          try {
-            const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
-              method: 'POST',
-              headers: getAuthHeaders(),
-              body: JSON.stringify({ photos: photoData }),
-            });
+        try {
+          const photoResponse = await fetch(`/api/v1/vehicles/${vehicleId}/photos`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ photos: photoData }),
+          });
 
-            const photoResult = await photoResponse.json();
+          const photoResult = await photoResponse.json();
 
-            if (!photoResponse.ok) {
-              console.error('❌ Photo upload failed:', photoResult);
-              setError(`Data berhasil disimpan, tapi gagal upload foto: ${photoResult.message || photoResult.error}`);
-              setSaving(false);
-              return;
-            }
-
-            console.log('✅ Photos uploaded successfully:', photoResult);
-          } catch (photoError) {
-            console.error('❌ Photo upload error:', photoError);
-            setError(`Data berhasil disimpan, tapi gagal upload foto: ${photoError instanceof Error ? photoError.message : 'Unknown error'}`);
+          if (!photoResponse.ok) {
+            console.error('❌ Photo upload failed:', photoResult);
+            setError(`Data berhasil disimpan, tapi gagal upload foto: ${photoResult.message || photoResult.error}`);
             setSaving(false);
             return;
           }
+
+          console.log('✅ Photos uploaded successfully:', photoResult);
+        } catch (photoError) {
+          console.error('❌ Photo upload error:', photoError);
+          setError(`Data berhasil disimpan, tapi gagal upload foto: ${photoError instanceof Error ? photoError.message : 'Unknown error'}`);
+          setSaving(false);
+          return;
         }
+      }
 
       // Success! Redirect to list
       router.push('/dashboard/vehicles');
@@ -481,16 +481,15 @@ export default function EditVehiclePage() {
         {/* Current Status Display */}
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-600 mb-1">Status Saat Ini:</p>
-          <span className={`inline-block px-4 py-2 rounded-full font-bold text-lg ${
-            formData.status === 'AVAILABLE' ? 'bg-green-100 text-green-800 border-2 border-green-400' :
+          <span className={`inline-block px-4 py-2 rounded-full font-bold text-lg ${formData.status === 'AVAILABLE' ? 'bg-green-100 text-green-800 border-2 border-green-400' :
             formData.status === 'BOOKED' ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-400' :
-            formData.status === 'SOLD' ? 'bg-red-100 text-red-800 border-2 border-red-400' :
-            'bg-gray-100 text-gray-800 border-2 border-gray-400'
-          }`}>
+              formData.status === 'SOLD' ? 'bg-red-100 text-red-800 border-2 border-red-400' :
+                'bg-gray-100 text-gray-800 border-2 border-gray-400'
+            }`}>
             {formData.status === 'AVAILABLE' ? '✅ Ready / Tersedia' :
-             formData.status === 'BOOKED' ? '📋 Booking / DP' :
-             formData.status === 'SOLD' ? '🎉 Sold / Terjual' :
-             '📝 Draft'}
+              formData.status === 'BOOKED' ? '📋 Booking / DP' :
+                formData.status === 'SOLD' ? '🎉 Sold / Terjual' :
+                  '📝 Draft'}
           </span>
         </div>
 
@@ -524,11 +523,10 @@ export default function EditVehiclePage() {
               }
             }}
             disabled={formData.status === 'AVAILABLE'}
-            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${
-              formData.status === 'AVAILABLE'
-                ? 'bg-green-200 text-green-600 cursor-not-allowed'
-                : 'bg-green-500 text-white hover:bg-green-600 shadow-md hover:shadow-lg'
-            }`}
+            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${formData.status === 'AVAILABLE'
+              ? 'bg-green-200 text-green-600 cursor-not-allowed'
+              : 'bg-green-500 text-white hover:bg-green-600 shadow-md hover:shadow-lg'
+              }`}
           >
             ✅ Ready
           </button>
@@ -561,11 +559,10 @@ export default function EditVehiclePage() {
               }
             }}
             disabled={formData.status === 'BOOKED'}
-            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${
-              formData.status === 'BOOKED'
-                ? 'bg-yellow-200 text-yellow-600 cursor-not-allowed'
-                : 'bg-yellow-500 text-white hover:bg-yellow-600 shadow-md hover:shadow-lg'
-            }`}
+            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${formData.status === 'BOOKED'
+              ? 'bg-yellow-200 text-yellow-600 cursor-not-allowed'
+              : 'bg-yellow-500 text-white hover:bg-yellow-600 shadow-md hover:shadow-lg'
+              }`}
           >
             📋 Booking
           </button>
@@ -612,11 +609,10 @@ export default function EditVehiclePage() {
               }
             }}
             disabled={formData.status === 'SOLD'}
-            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${
-              formData.status === 'SOLD'
-                ? 'bg-red-200 text-red-600 cursor-not-allowed'
-                : 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg'
-            }`}
+            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${formData.status === 'SOLD'
+              ? 'bg-red-200 text-red-600 cursor-not-allowed'
+              : 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg'
+              }`}
           >
             🎉 Sold
           </button>
@@ -662,9 +658,8 @@ export default function EditVehiclePage() {
                     onDragEnter={() => handleExistingDragEnter(index)}
                     onDragEnd={handleExistingDragEnd}
                     onDragOver={(e) => e.preventDefault()}
-                    className={`relative group cursor-move transition-all hover:scale-105 ${
-                      draggedExistingIndex === index ? 'opacity-50 scale-95' : ''
-                    }`}
+                    className={`relative group cursor-move transition-all hover:scale-105 ${draggedExistingIndex === index ? 'opacity-50 scale-95' : ''
+                      }`}
                   >
                     {/* Drag Handle */}
                     <div className="absolute top-1 left-1 bg-gray-800 bg-opacity-75 text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10">
@@ -690,11 +685,10 @@ export default function EditVehiclePage() {
 
                     {/* Quality Score Badge */}
                     {photo.qualityScore && (
-                      <div className={`absolute bottom-1 right-1 text-xs px-2 py-1 rounded font-semibold ${
-                        photo.validationStatus === 'VALID' ? 'bg-green-100 text-green-800' :
+                      <div className={`absolute bottom-1 right-1 text-xs px-2 py-1 rounded font-semibold ${photo.validationStatus === 'VALID' ? 'bg-green-100 text-green-800' :
                         photo.validationStatus === 'LOW_QUALITY' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
+                          'bg-red-100 text-red-800'
+                        }`}>
                         {photo.qualityScore}
                       </div>
                     )}
@@ -853,11 +847,10 @@ export default function EditVehiclePage() {
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                isDragging
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragging
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-300 hover:border-gray-400'
+                }`}
             >
               <svg
                 className="w-12 h-12 text-gray-400 mx-auto mb-4"
@@ -909,9 +902,8 @@ export default function EditVehiclePage() {
                       onDragEnter={() => handleDragEnter(index)}
                       onDragEnd={handleDragEnd}
                       onDragOver={(e) => e.preventDefault()}
-                      className={`relative group cursor-move transition-all ${
-                        draggedIndex === index ? 'opacity-50 scale-95' : ''
-                      }`}
+                      className={`relative group cursor-move transition-all ${draggedIndex === index ? 'opacity-50 scale-95' : ''
+                        }`}
                     >
                       {/* Drag Handle */}
                       <div className="absolute top-1 left-1 bg-gray-800 bg-opacity-75 text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10">

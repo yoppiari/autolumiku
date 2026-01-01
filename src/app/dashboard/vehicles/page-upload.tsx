@@ -293,8 +293,8 @@ export default function VehiclesPage() {
 
       // Check for token expiry and redirect to login
       if (errorMessage.toLowerCase().includes('token') ||
-          errorMessage.toLowerCase().includes('unauthorized') ||
-          errorMessage.toLowerCase().includes('expired')) {
+        errorMessage.toLowerCase().includes('unauthorized') ||
+        errorMessage.toLowerCase().includes('expired')) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         alert('Sesi login Anda telah berakhir. Silakan login kembali.');
@@ -421,8 +421,8 @@ export default function VehiclesPage() {
 
       // Check for token expiry and redirect to login
       if (errorMessage.toLowerCase().includes('token') ||
-          errorMessage.toLowerCase().includes('unauthorized') ||
-          errorMessage.toLowerCase().includes('expired')) {
+        errorMessage.toLowerCase().includes('unauthorized') ||
+        errorMessage.toLowerCase().includes('expired')) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         alert('Sesi login Anda telah berakhir. Silakan login kembali.');
@@ -437,7 +437,7 @@ export default function VehiclesPage() {
   };
 
   const formatPrice = (cents: number) => {
-    const rupiah = cents / 100000000;
+    const rupiah = cents / 1000000;
     return `Rp ${rupiah.toFixed(0)} juta`;
   };
 
@@ -489,13 +489,12 @@ export default function VehiclesPage() {
 
         {/* Price Analysis Alert */}
         <div
-          className={`mb-6 p-4 rounded-lg ${
-            priceColor === 'green'
-              ? 'bg-green-50 border border-green-200'
-              : priceColor === 'red'
+          className={`mb-6 p-4 rounded-lg ${priceColor === 'green'
+            ? 'bg-green-50 border border-green-200'
+            : priceColor === 'red'
               ? 'bg-red-50 border border-red-200'
               : 'bg-orange-50 border border-orange-200'
-          }`}
+            }`}
         >
           <div className="flex items-start">
             <div className="flex-shrink-0">
@@ -611,8 +610,8 @@ export default function VehiclesPage() {
                   <label className="block text-sm font-medium text-gray-700">Harga (Juta Rupiah)</label>
                   <input
                     type="number"
-                    value={(editedData.price || 0) / 100000000}
-                    onChange={(e) => setEditedData({ ...editedData, price: parseFloat(e.target.value) * 100000000 })}
+                    value={(editedData.price || 0) / 1000000}
+                    onChange={(e) => setEditedData({ ...editedData, price: parseFloat(e.target.value) * 1000000 })}
                     placeholder="130"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
                   />
@@ -755,9 +754,8 @@ export default function VehiclesPage() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`hidden sm:block border-2 border-dashed rounded-lg p-6 text-center mb-6 ${
-            isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-          }`}
+          className={`hidden sm:block border-2 border-dashed rounded-lg p-6 text-center mb-6 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+            }`}
         >
           <p className="text-sm text-gray-600">
             Atau <span className="font-semibold text-blue-600">drag & drop</span> foto di sini
@@ -794,9 +792,8 @@ export default function VehiclesPage() {
                   onDragEnter={() => handleDragEnter(index)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
-                  className={`relative aspect-square group cursor-move ${
-                    draggedIndex === index ? 'opacity-50 scale-95' : ''
-                  } transition-all duration-150`}
+                  className={`relative aspect-square group cursor-move ${draggedIndex === index ? 'opacity-50 scale-95' : ''
+                    } transition-all duration-150`}
                 >
                   <img
                     src={photo.preview}
@@ -816,7 +813,7 @@ export default function VehiclesPage() {
                       {/* Drag handle icon - Desktop only */}
                       <div className="hidden sm:flex bg-gray-800/70 text-white text-xs px-1 py-0.5 rounded items-center gap-0.5">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"/>
+                          <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
                         </svg>
                         #{index + 1}
                       </div>
@@ -937,11 +934,10 @@ export default function VehiclesPage() {
           <button
             onClick={() => handleGenerate()}
             disabled={isGenerating || !photos.length || !userDescription.trim()}
-            className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-colors ${
-              isGenerating || !photos.length || !userDescription.trim()
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
-            }`}
+            className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-colors ${isGenerating || !photos.length || !userDescription.trim()
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+              }`}
           >
             {isGenerating ? (
               <span className="flex items-center justify-center gap-2">

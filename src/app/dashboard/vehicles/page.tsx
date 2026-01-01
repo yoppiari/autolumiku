@@ -222,7 +222,7 @@ export default function VehiclesPage() {
   };
 
   const formatPrice = (cents: number) => {
-    const rupiah = cents / 100000000;
+    const rupiah = cents / 1000000;
     return `Rp ${rupiah.toFixed(0)} jt`;
   };
 
@@ -409,11 +409,10 @@ export default function VehiclesPage() {
 
       {/* Resequence Status */}
       {resequenceStatus && (
-        <div className={`mb-3 p-3 rounded-lg flex-shrink-0 ${
-          resequenceStatus.includes('✅') ? 'bg-green-50 border border-green-200' :
-          resequenceStatus.includes('❌') ? 'bg-red-50 border border-red-200' :
-          'bg-blue-50 border border-blue-200'
-        }`}>
+        <div className={`mb-3 p-3 rounded-lg flex-shrink-0 ${resequenceStatus.includes('✅') ? 'bg-green-50 border border-green-200' :
+            resequenceStatus.includes('❌') ? 'bg-red-50 border border-red-200' :
+              'bg-blue-50 border border-blue-200'
+          }`}>
           <div className="flex items-center gap-2">
             {!resequenceStatus.includes('✅') && !resequenceStatus.includes('❌') && (
               <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
@@ -421,11 +420,10 @@ export default function VehiclesPage() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
               </svg>
             )}
-            <span className={`text-sm font-medium ${
-              resequenceStatus.includes('✅') ? 'text-green-800' :
-              resequenceStatus.includes('❌') ? 'text-red-800' :
-              'text-blue-800'
-            }`}>{resequenceStatus}</span>
+            <span className={`text-sm font-medium ${resequenceStatus.includes('✅') ? 'text-green-800' :
+                resequenceStatus.includes('❌') ? 'text-red-800' :
+                  'text-blue-800'
+              }`}>{resequenceStatus}</span>
           </div>
         </div>
       )}
@@ -477,9 +475,8 @@ export default function VehiclesPage() {
             {filteredVehicles.map((vehicle) => (
               <div
                 key={vehicle.id}
-                className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow ${
-                  viewMode === 'list' ? 'flex gap-3' : ''
-                }`}
+                className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow ${viewMode === 'list' ? 'flex gap-3' : ''
+                  }`}
               >
                 {/* Image Carousel - Auto-rotate every 10 seconds */}
                 <div className={`relative ${viewMode === 'list' ? 'w-32 flex-shrink-0' : ''}`}>

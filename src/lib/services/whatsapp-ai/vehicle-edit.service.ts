@@ -699,7 +699,7 @@ export class VehicleEditService {
 
     switch (field) {
       case "price":
-        const priceNum = typeof value === "bigint" ? Number(value) / 100 : value;
+        const priceNum = typeof value === "bigint" ? Number(value) : value;
         return `Rp ${new Intl.NumberFormat("id-ID").format(priceNum)}`;
       case "mileage":
         return `${new Intl.NumberFormat("id-ID").format(value)} km`;
