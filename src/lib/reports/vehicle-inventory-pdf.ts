@@ -79,18 +79,25 @@ export class VehicleInventoryPDF {
     let y = 30; // Top margin untuk logo space
 
     // ==================== HEADER ====================
-    // Title at top (dengan margin untuk logo)
-    doc.fillColor('#1e40af')
-      .fontSize(16)
-      .font('Helvetica-Bold')
-      .text('LAPORAN PENJUALAN', margin, y, { width: contentWidth, align: 'center' });
+    // Logo (Actual Image)
+    const logoPath = 'd:/Project/auto/autolumiku/public/assets/images/logo-premium.jpg';
+    const logoWidth = 140;
+    const logoX = (pageWidth - logoWidth) / 2;
+    const logoY = 20;
 
-    y += 20;
+    try {
+      doc.image(logoPath, logoX, logoY, { width: logoWidth });
+      y = logoY + 45; // Adjust Y based on logo
+    } catch (e) {
+      console.error('[VehicleInventoryPDF] Logo load error:', e);
+      y = 30;
+    }
 
+    // Title 
     doc.fillColor('#1e40af')
       .fontSize(14)
       .font('Helvetica-Bold')
-      .text(config.tenantName.toUpperCase(), margin, y, { width: contentWidth, align: 'center' });
+      .text('LAPORAN INVENTORY KENDARAAN', margin, y, { width: contentWidth, align: 'center' });
 
     y += 18;
 

@@ -230,7 +230,6 @@ export class ReportDataService {
                         details: stats.details,
                     };
                 })
-                .filter((s) => s.sales > 0)
                 .sort((a, b) => b.sales - a.sales);
         }
 

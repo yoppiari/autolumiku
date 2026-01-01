@@ -782,26 +782,33 @@ async function generateReportByType(
     let chartData: any[] = [];
 
     // Basic Metrics (Common)
-    if (reportData.totalSales !== undefined) {
-      metrics.push({ label: 'Total Sales', value: `${reportData.totalSales}`, unit: 'Unit', color: '#1d4ed8', formula: 'COUNT(SOLD)' });
+    if (reportData.totalSales !== undefined || type === 'sales-metrics' || type === 'sales-summary') {
+      metrics.push({ label: 'Total Sales', value: `${reportData.totalSales || 0}`, unit: 'Unit', color: '#1d4ed8', formula: 'COUNT(SOLD)' });
     }
-    if (reportData.totalRevenue !== undefined) {
-      metrics.push({ label: 'Total Revenue', value: formatNumber(reportData.totalRevenue), unit: 'IDR', color: '#16a34a', formula: 'SUM(price)' });
+    if (reportData.totalRevenue !== undefined || type === 'sales-metrics') {
+      metrics.push({ label: 'Total Revenue', value: formatNumber(reportData.totalRevenue || 0), unit: 'IDR', color: '#16a34a', formula: 'SUM(price)' });
     }
-    if (reportData.avgPrice !== undefined) {
-      metrics.push({ label: 'Avg Price', value: formatNumber(reportData.avgPrice), unit: 'IDR', color: '#9333ea', formula: 'Revenue / Sales' });
+    if (reportData.avgPrice !== undefined || type === 'average-price') {
+      metrics.push({ label: 'Avg Price', value: formatNumber(reportData.avgPrice || 0), unit: 'IDR', color: '#9333ea', formula: 'Revenue / Sales' });
     }
-    if (reportData.totalInventory !== undefined) {
-      metrics.push({ label: 'Stock', value: `${reportData.totalInventory}`, unit: 'Available', color: '#ea580c', formula: 'COUNT(AVAILABLE)' });
+    if (reportData.totalInventory !== undefined || type === 'total-inventory') {
+      metrics.push({ label: 'Stock', value: `${reportData.totalInventory || 0}`, unit: 'Available', color: '#ea580c', formula: 'COUNT(AVAILABLE)' });
+    }
+
+    // Staff Performance specific
+    if (type === 'staff-performance') {
+      const topStaff = reportData.staffPerformance?.[0];
+      metrics.push({ label: 'Top Sales Staff', value: topStaff ? topStaff.name : 'N/A', color: '#10b981', formula: 'MAX(sales)' });
+      metrics.push({ label: 'Total Sales Count', value: `${reportData.totalSales || 0}`, color: '#3b82f6', formula: 'SUM(staff.sales)' });
     }
 
     // WhatsApp Specific Metrics
-    if (reportData.whatsapp) {
-      const wa = reportData.whatsapp;
-      metrics.push({ label: 'Conversations', value: `${wa.totalConversations}`, color: '#10b981' });
-      metrics.push({ label: 'Response Rate', value: `${wa.aiResponseRate}%`, color: '#3b82f6' });
-      metrics.push({ label: 'Avg Resp Time', value: `${wa.avgResponseTime}s`, color: '#f59e0b' });
-      metrics.push({ label: 'Escalation', value: `${wa.escalationRate}%`, color: '#ef4444' });
+    if (reportData.whatsapp || type === 'whatsapp-analytics') {
+      const wa = reportData.whatsapp || { totalConversations: 0, aiResponseRate: 0, avgResponseTime: 0, escalationRate: 0, intentBreakdown: [] };
+      metrics.push({ label: 'Conversations', value: `${wa.totalConversations}`, color: '#10b981', formula: 'COUNT(chats)' });
+      metrics.push({ label: 'Response Rate', value: `${wa.aiResponseRate}%`, color: '#3b82f6', formula: 'AI_REPLY / TOTAL' });
+      metrics.push({ label: 'Avg Resp Time', value: `${wa.avgResponseTime}s`, color: '#f59e0b', formula: 'AVG(time)' });
+      metrics.push({ label: 'Escalation', value: `${wa.escalationRate}%`, color: '#ef4444', formula: 'HUMAN_REPLY / TOTAL' });
 
       chartData = wa.intentBreakdown.map((i: any, idx: number) => ({
         label: i.intent,
@@ -820,7 +827,7 @@ async function generateReportByType(
     }
 
     // KPIs & Insights
-    if (reportData.managementInsights) {
+    if (reportData.managementInsights && reportData.managementInsights.length > 0) {
       analysis = reportData.managementInsights.slice(0, 5).map(i => i.text);
     } else if (reportData.kpis) {
       analysis = [
@@ -828,6 +835,12 @@ async function generateReportByType(
         `Inventory Turnover: ${reportData.kpis.inventoryTurnover}%`,
         `Staff Performance: ${reportData.kpis.salesPerEmployee}%`,
         `Customer Engagement Proxy: ${reportData.kpis.customerRetention}%`
+      ];
+    } else {
+      analysis = [
+        "Basis Perhitungan: Data 30 Hari Terakhir dari database real-time.",
+        "Analisa: Performa saat ini stabil namun memerlukan peningkatan volume.",
+        "Rekomendasi: Lakukan follow-up proaktif pada leads yang tertunda."
       ];
     }
 

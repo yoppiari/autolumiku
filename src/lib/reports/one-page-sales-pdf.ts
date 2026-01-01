@@ -163,48 +163,42 @@ export class OnePageSalesPDF {
   }
 
   private async generateHeader() {
-    const pageWidth = 565;
+    const pageWidth = 595; // A4 width
 
     // Dark blue header bar
-    this.doc.fillColor('#1A237E').rect(0, 0, pageWidth, 60).fill();
+    this.doc.fillColor('#1A237E').rect(0, 0, pageWidth, 120).fill();
 
     // Title - centered
-    this.doc.fillColor('white').fontSize(20).font('Helvetica-Bold')
-      .text('SALES REPORT', 20, 15, {
-        width: pageWidth - 40,
+    this.doc.fillColor('white').fontSize(18).font('Helvetica-Bold')
+      .text('SALES REPORT', 0, 20, {
+        width: pageWidth,
         align: 'center',
       });
 
-    // Logo or tenant name below title
-    const yPos = 38;
+    // Logo (Actual Image)
+    const logoPath = 'd:/Project/auto/autolumiku/public/assets/images/logo-premium.jpg';
+    const logoWidth = 160;
+    const logoX = (pageWidth - logoWidth) / 2;
+    const logoY = 45;
 
-    if (this.currentTenantLogo) {
-      try {
-        // Display logo image (max width 100px, max height 35px)
-        this.doc.image(this.currentTenantLogo, pageWidth / 2 - 50, yPos, {
-          fit: [100, 35],
-          align: 'center',
-        });
-      } catch (error) {
-        // Fallback to text if image fails to load
-        console.warn('[OnePageSalesPDF] Failed to load logo:', error);
-        this.doc.fillColor('white').fontSize(12).font('Helvetica')
-          .text(this.currentTenant, 20, yPos + 10, {
-            width: pageWidth - 40,
-            align: 'center',
-          });
-      }
-    } else {
-      // No logo - show tenant name text
+    try {
+      this.doc.image(logoPath, logoX, logoY, { width: logoWidth });
+    } catch (error) {
+      console.warn('[OnePageSalesPDF] Failed to load logo:', error);
       this.doc.fillColor('white').fontSize(12).font('Helvetica')
-        .text(this.currentTenant, 20, yPos + 10, {
-          width: pageWidth - 40,
+        .text(this.currentTenant.toUpperCase(), 0, logoY + 10, {
+          width: pageWidth,
           align: 'center',
         });
     }
+
+    // Subtitle / Period (Below Logo)
+    this.doc.fillColor('white').fontSize(9).font('Helvetica')
+      .text(this.currentPeriod, 0, 100, { width: pageWidth, align: 'center' });
   }
 
   private currentTenant: string = '';
+  private currentPeriod: string = '30 Hari Terakhir';
   private currentTenantLogo: string | null = null;
 
   private setCurrentTenant(name: string) {

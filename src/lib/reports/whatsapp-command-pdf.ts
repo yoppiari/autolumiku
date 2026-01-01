@@ -72,7 +72,7 @@ export class WhatsAppCommandPDF {
     const maxY = pageHeight - 50; // Max Y before footer
 
     // ==================== 1. FULL WIDTH HEADER (BLUE) ====================
-    const headerHeight = 100;
+    const headerHeight = 140; // Increased to prevent clipping
 
     // Blue Background
     doc.fillColor('#1e40af') // Dark Blue
@@ -81,35 +81,34 @@ export class WhatsAppCommandPDF {
 
     // Title (White, Centered)
     doc.fillColor('#ffffff')
-      .fontSize(20)
+      .fontSize(18)
       .font('Helvetica-Bold')
-      .text(`"${config.title.toUpperCase()}"`, 0, 30, { width: pageWidth, align: 'center' });
+      .text(`"${config.title.toUpperCase()}"`, 0, 25, { width: pageWidth, align: 'center' });
 
-    // Logo / Tenant Name (Below Title)
-    // Placeholder for Logo if URL exists, otherwise text
-    if (config.logoUrl) {
-      // In a real scenario, we'd fetch the image buffer. For now, text fallback.
-      // doc.image(config.logoUrl...)
+    // Logo (Actual Image)
+    const logoPath = 'd:/Project/auto/autolumiku/public/assets/images/logo-premium.jpg';
+    const logoWidth = 200;
+    const logoX = (pageWidth - logoWidth) / 2;
+    const logoY = 55;
+
+    try {
+      doc.image(logoPath, logoX, logoY, { width: logoWidth });
+    } catch (e) {
+      console.error('[WhatsAppCommandPDF] Logo load error:', e);
+      // Fallback to text box if image fails
+      doc.fillColor('#0f172a').rect(logoX, logoY, logoWidth, 40).fill();
+      doc.fillColor('#ffffff').fontSize(14).font('Helvetica-Bold').text(config.tenantName.toUpperCase(), logoX, logoY + 12, { width: logoWidth, align: 'center' });
     }
 
-    // Tenant Name Badge (Darker Blue/Black bg with Red/Warning accent style from image?)
-    // Image shows: "PRIMA MOBIL" logo. We simulate with styled text box.
-    const logoBoxWidth = 140;
-    const logoBoxHeight = 30;
-    const logoX = (pageWidth - logoBoxWidth) / 2;
-    const logoY = 60;
-
-    // Simulate Logo Box
-    doc.fillColor('#0f172a').rect(logoX, logoY, logoBoxWidth, logoBoxHeight).fill(); // Black bg
-    doc.fillColor('#ef4444').rect(logoX, logoY + 26, logoBoxWidth, 4).fill(); // Red underline stripe
+    // Subtitle / Period (Below Logo)
     doc.fillColor('#ffffff')
-      .fontSize(14)
-      .font('Helvetica-BoldOblique') // Italic bold for sporty look
-      .text(config.tenantName.toUpperCase(), logoX, logoY + 6, { width: logoBoxWidth, align: 'center' });
+      .fontSize(9)
+      .font('Helvetica')
+      .text(config.subtitle, 0, 115, { width: pageWidth, align: 'center' });
 
 
     // ==================== 2. METRICS ROW (4 Colored Cards) ====================
-    let currentY = headerHeight + 30;
+    let currentY = headerHeight + 25;
     const cardGap = 10;
     const cardWidth = (contentWidth - (cardGap * 3)) / 4;
     const cardHeight = 70;
@@ -168,11 +167,17 @@ export class WhatsAppCommandPDF {
     currentY += 20;
 
     // Table Rows (Metrics with formulas)
-    config.metrics.forEach((metric, idx) => {
+    const metricsToRow = config.metrics.length > 0 ? config.metrics : [
+      { label: 'Total Sales', value: '0', formula: 'COUNT(SOLD)' },
+      { label: 'Total Revenue', value: '0', formula: 'SUM(price)' },
+      { label: 'Stock Available', value: '0', formula: 'COUNT(AVAILABLE)' }
+    ];
+
+    metricsToRow.forEach((metric, idx) => {
       if (!metric.formula) return; // Skip if no formula
 
       // Alternating row bg (Light Yellowish like image)
-      doc.fillColor('#fefce8') // Very light yellow
+      doc.fillColor(idx % 2 === 0 ? '#fefce8' : '#ffffff')
         .rect(margin, currentY, contentWidth, rowHeight)
         .fill();
 
@@ -186,8 +191,7 @@ export class WhatsAppCommandPDF {
       doc.fillColor('#64748b')
         .fontSize(8)
         .font('Helvetica')
-        .text(`R: ${metric.formula}`, margin + 5, currentY + 18)
-        .text(`H: -`, margin + 5, currentY + 30); // Placeholder for "Hitungan" if needed
+        .text(`Rumusan: ${metric.formula}`, margin + 5, currentY + 18);
 
       // Result Value (Red/Bold on right)
       doc.fillColor('#dc2626') // Reddish text
@@ -198,7 +202,7 @@ export class WhatsAppCommandPDF {
       currentY += rowHeight + 2;
     });
 
-    currentY += 30;
+    currentY += 20;
 
 
     // ==================== 4. VISUALIZATION (Pie Chart) ====================
