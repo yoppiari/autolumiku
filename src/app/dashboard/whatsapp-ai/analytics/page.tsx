@@ -96,7 +96,7 @@ export default function AnalyticsPage() {
       setUserRoleLevel(roleLevel);
 
       loadAnalytics();
-      loadInsights(parsedUser.tenantId);
+      loadInsights(user.tenantId);
     }
   }, [router]);
 
