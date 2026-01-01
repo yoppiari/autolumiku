@@ -241,50 +241,50 @@ export async function POST(request: NextRequest) {
           },
         });
 
-      const summary = {
-        total: invoices.length,
-        draft: 0,
-        unpaid: 0,
-        partial: 0,
-        paid: 0,
-        voided: 0,
-        totalValue: 0,
-        collected: 0,
-        outstanding: 0,
-      };
+        const summary = {
+          total: invoices.length,
+          draft: 0,
+          unpaid: 0,
+          partial: 0,
+          paid: 0,
+          voided: 0,
+          totalValue: 0,
+          collected: 0,
+          outstanding: 0,
+        };
 
-      invoices.forEach((inv) => {
-        const total = Number(inv.grandTotal);
-        const paid = Number(inv.paidAmount || 0);
+        invoices.forEach((inv) => {
+          const total = Number(inv.grandTotal);
+          const paid = Number(inv.paidAmount || 0);
 
-        switch (inv.status) {
-          case 'draft':
-            summary.draft++;
-            break;
-          case 'unpaid':
-          case 'sent':
-            summary.unpaid++;
-            summary.totalValue += total;
-            summary.outstanding += total;
-            break;
-          case 'partial':
-            summary.partial++;
-            summary.totalValue += total;
-            summary.collected += paid;
-            summary.outstanding += total - paid;
-            break;
-          case 'paid':
-            summary.paid++;
-            summary.totalValue += total;
-            summary.collected += total;
-            break;
-          case 'void':
-            summary.voided++;
-            break;
-        }
-      });
+          switch (inv.status) {
+            case 'draft':
+              summary.draft++;
+              break;
+            case 'unpaid':
+            case 'sent':
+              summary.unpaid++;
+              summary.totalValue += total;
+              summary.outstanding += total;
+              break;
+            case 'partial':
+              summary.partial++;
+              summary.totalValue += total;
+              summary.collected += paid;
+              summary.outstanding += total - paid;
+              break;
+            case 'paid':
+              summary.paid++;
+              summary.totalValue += total;
+              summary.collected += total;
+              break;
+            case 'void':
+              summary.voided++;
+              break;
+          }
+        });
 
-      financeData = { summary };
+        financeData = { summary };
       } catch (error) {
         console.error('[Analytics Export] Sales invoices table does not exist, skipping finance data:', error);
         // Set financeData to null/empty when table doesn't exist
@@ -478,7 +478,7 @@ export async function POST(request: NextRequest) {
         .slice(0, 5)
         .map((item: any, idx: number) => ({
           label: item.make,
-          value: item.count,
+          value: `${item.count} unit`,
           color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
         }));
 

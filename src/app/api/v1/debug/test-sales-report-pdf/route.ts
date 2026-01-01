@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
         .slice(0, 5)
         .map((item, idx) => ({
           label: item.make,
-          value: item.count,
+          value: `${item.count} unit`,
           color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
         })),
     };

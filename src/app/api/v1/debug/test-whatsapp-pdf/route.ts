@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
       showChart: true,
       chartData: Object.entries(byMake).slice(0, 5).map(([make, data], idx) => ({
         label: make,
-        value: data.count,
+        value: `${data.count} unit`,
         color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
       })),
     };
