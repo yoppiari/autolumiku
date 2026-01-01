@@ -54,22 +54,56 @@ export async function GET(
       );
     }
 
-    // Validate UUID format
-    if (!isValidUUID(id)) {
-      return NextResponse.json(
-        { error: 'Invalid vehicle ID format', message: 'ID must be a valid UUID' },
-        { status: 400 }
-      );
-    }
+    let vehicle;
 
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id },
-      include: {
-        photos: {
-          orderBy: { displayOrder: 'asc' },
+    // Logic: If id is a valid UUID, find by ID. Otherwise, try as displayId or extract displayId from slug.
+    if (isValidUUID(id)) {
+      vehicle = await prisma.vehicle.findUnique({
+        where: { id },
+        include: {
+          photos: {
+            orderBy: { displayOrder: 'asc' },
+          },
         },
-      },
-    });
+      });
+    } else {
+      console.log(`[Vehicle API] 🔍 Non-UUID ID detected: ${id}. Attempting to resolve via displayId/slug...`);
+
+      // Try exact match as displayId first
+      vehicle = await prisma.vehicle.findUnique({
+        where: { displayId: id },
+        include: {
+          photos: {
+            orderBy: { displayOrder: 'asc' },
+          },
+        },
+      });
+
+      // If not found, try to resolve from slug format (make-model-year-displayId)
+      if (!vehicle && id.includes('-')) {
+        const parts = id.split('-');
+        // Try various tail lengths in case displayId contains hyphens (e.g. PM-PST-001)
+        // We know for sure it's at the end
+        const possibleIds = [
+          parts[parts.length - 1], // Last part
+          parts.slice(-2).join('-'), // Last two parts
+          parts.slice(-3).join('-'), // Last three parts
+        ].map(p => p.toUpperCase());
+
+        console.log(`[Vehicle API] 🧩 Slug detected, trying possible displayIds:`, possibleIds);
+
+        vehicle = await prisma.vehicle.findFirst({
+          where: {
+            displayId: { in: possibleIds }
+          },
+          include: {
+            photos: {
+              orderBy: { displayOrder: 'asc' },
+            },
+          },
+        });
+      }
+    }
 
     if (!vehicle) {
       return NextResponse.json(
@@ -142,11 +176,35 @@ export async function PUT(
     const { id } = await params;
 
     // Skip reserved routes
-    if (RESERVED_ROUTES.includes(id) || !isValidUUID(id)) {
+    if (RESERVED_ROUTES.includes(id)) {
       return NextResponse.json(
-        { error: 'Invalid vehicle ID format' },
+        { error: 'Invalid route' },
         { status: 400 }
       );
+    }
+
+    let targetId = id;
+
+    // If not UUID, resolve to actual internal ID first
+    if (!isValidUUID(id)) {
+      console.log(`[Vehicle API] 🔍 PUT: Non-UUID ID detected: ${id}. Resolving...`);
+      const resolved = await prisma.vehicle.findFirst({
+        where: {
+          OR: [
+            { displayId: id },
+            { displayId: id.toUpperCase() },
+            { displayId: id.split('-').pop()?.toUpperCase() },
+            { displayId: id.split('-').slice(-2).join('-').toUpperCase() }
+          ]
+        },
+        select: { id: true }
+      });
+
+      if (!resolved) {
+        return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
+      }
+      targetId = resolved.id;
+      console.log(`[Vehicle API] ✅ Resolved ${id} -> ${targetId}`);
     }
 
     let body;
@@ -166,7 +224,7 @@ export async function PUT(
 
     // Check if vehicle exists
     const existingVehicle = await prisma.vehicle.findUnique({
-      where: { id },
+      where: { id: targetId },
     });
 
     if (!existingVehicle) {
@@ -241,7 +299,7 @@ export async function PUT(
 
     // Update vehicle
     const vehicle = await prisma.vehicle.update({
-      where: { id },
+      where: { id: targetId },
       data: dataToUpdate,
       include: {
         photos: {
@@ -314,16 +372,38 @@ export async function DELETE(
     const { id } = await params;
 
     // Skip reserved routes
-    if (RESERVED_ROUTES.includes(id) || !isValidUUID(id)) {
+    if (RESERVED_ROUTES.includes(id)) {
       return NextResponse.json(
-        { error: 'Invalid vehicle ID format' },
+        { error: 'Invalid route' },
         { status: 400 }
       );
     }
 
+    let targetId = id;
+
+    // If not UUID, resolve to actual internal ID first
+    if (!isValidUUID(id)) {
+      const resolved = await prisma.vehicle.findFirst({
+        where: {
+          OR: [
+            { displayId: id },
+            { displayId: id.toUpperCase() },
+            { displayId: id.split('-').pop()?.toUpperCase() },
+            { displayId: id.split('-').slice(-2).join('-').toUpperCase() }
+          ]
+        },
+        select: { id: true }
+      });
+
+      if (!resolved) {
+        return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
+      }
+      targetId = resolved.id;
+    }
+
     // Check if vehicle exists
     const existingVehicle = await prisma.vehicle.findUnique({
-      where: { id },
+      where: { id: targetId },
     });
 
     if (!existingVehicle) {
@@ -343,7 +423,7 @@ export async function DELETE(
 
     // Soft delete by setting status to DELETED
     const vehicle = await prisma.vehicle.update({
-      where: { id },
+      where: { id: targetId },
       data: {
         status: VehicleStatus.DELETED,
         updatedBy: auth.user.id,

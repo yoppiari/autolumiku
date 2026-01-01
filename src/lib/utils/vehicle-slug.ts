@@ -27,6 +27,25 @@ export function generateVehicleSlug(vehicle: {
 }
 
 /**
+ * Resolve displayId from a vehicle slug
+ * Format: [make]-[model]-[year]-[displayId]
+ */
+export function resolveDisplayIdFromSlug(slug: string): string | null {
+  if (!slug) return null;
+  const parts = slug.split('-');
+  if (parts.length < 4) return null;
+
+  // The displayId is the last part (or last few parts if it contains hyphens)
+  // For now, assume it's the part after the year
+  const yearIndex = parts.findIndex(p => /^\d{4}$/.test(p));
+  if (yearIndex === -1 || yearIndex === parts.length - 1) {
+    return parts[parts.length - 1]; // Fallback to last part
+  }
+
+  return parts.slice(yearIndex + 1).join('-').toUpperCase();
+}
+
+/**
  * Generate full vehicle URL for public website
  * Example: https://primamobil.id/vehicles/honda-city-2006-pm-pst-001
  */
@@ -42,8 +61,17 @@ export function generateVehicleUrl(vehicle: {
 
 /**
  * Generate vehicle dashboard URL
- * Example: https://primamobil.id/dashboard/vehicles/[vehicleId]
+ * Format: https://primamobil.id/dashboard/vehicles/[slug]
  */
-export function generateVehicleDashboardUrl(vehicleId: string, baseUrl: string = 'https://primamobil.id'): string {
-  return `${baseUrl}/dashboard/vehicles/${vehicleId}`;
+export function generateVehicleDashboardUrl(vehicle: {
+  make: string;
+  model: string;
+  year: number;
+  displayId: string;
+} | string, baseUrl: string = 'https://primamobil.id'): string {
+  if (typeof vehicle === 'string') {
+    return `${baseUrl}/dashboard/vehicles/${vehicle}`;
+  }
+  const slug = generateVehicleSlug(vehicle);
+  return `${baseUrl}/dashboard/vehicles/${slug}`;
 }

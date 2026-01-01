@@ -147,6 +147,13 @@ export class UploadNotificationService {
         displayId: v.displayId || v.vehicleId?.substring(0, 8) || 'unknown',
       });
 
+      const dashboardUrl = generateVehicleDashboardUrl({
+        make: v.make,
+        model: v.model,
+        year: v.year,
+        displayId: v.displayId || v.vehicleId?.substring(0, 8) || 'unknown',
+      });
+
       return (
         `🔔 *NOTIFIKASI UPLOAD MOBIL*\n` +
         `━━━━━━━━━━━━━\n\n` +
@@ -164,7 +171,7 @@ export class UploadNotificationService {
         `🌐 *Lihat di Website:*\n` +
         `${vehicleUrl}\n\n` +
         `📊 *Dashboard:*\n` +
-        `https://primamobil.id/dashboard/vehicles/${v.vehicleId}`
+        `${dashboardUrl}`
       );
     } else {
       return (
