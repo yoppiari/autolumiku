@@ -156,27 +156,27 @@ export class SalesReportPDF {
 
     // ==================== RUMUSAN PERHITUNGAN SECTION ====================
     doc.fillColor('#1e293b')
-      .fontSize(10)
+      .fontSize(12)
       .font('Helvetica-Bold')
       .text('RUMUSAN PERHITUNGAN:', margin, y);
 
-    y += 16;
+    y += 20;
 
     // Formula table header
     doc.fillColor('#e2e8f0')
-      .roundedRect(margin, y, contentWidth, 18, 2)
+      .roundedRect(margin, y, contentWidth, 22, 2)
       .fill();
 
     doc.fillColor('#1e293b')
-      .fontSize(7)
+      .fontSize(8.5)
       .font('Helvetica-Bold')
-      .text('RUMUSAN PER METRIK', margin + 8, y + 5);
+      .text('RUMUSAN PER METRIK', margin + 8, y + 6);
 
     doc.fillColor('#1e293b')
-      .fontSize(7)
-      .text('Hasil', pageWidth - margin - 50, y + 5, { align: 'right', width: 45 });
+      .fontSize(8.5)
+      .text('Hasil', pageWidth - margin - 50, y + 6, { align: 'right', width: 45 });
 
-    y += 18;
+    y += 24;
 
     // Formula items dengan data REAL
     const totalPenjualan = config.metrics.totalPenjualan;
@@ -207,7 +207,7 @@ export class SalesReportPDF {
     formulas.forEach((formula, idx) => {
       const bgColor = idx % 2 === 0 ? '#fef9c3' : '#ffffff';
       const borderColor = '#eab308';
-      const rowHeight = 32;
+      const rowHeight = 42; // Increased height for larger text
 
       doc.fillColor(bgColor)
         .rect(margin, y, contentWidth, rowHeight)
@@ -220,29 +220,29 @@ export class SalesReportPDF {
 
       // Formula name
       doc.fillColor('#1e293b')
-        .fontSize(7)
+        .fontSize(9)
         .font('Helvetica-Bold')
-        .text(formula.name, margin + 10, y + 4);
+        .text(formula.name, margin + 10, y + 5);
 
       // Formula expression
       doc.fillColor('#64748b')
-        .fontSize(6)
+        .fontSize(7.5)
         .font('Helvetica-Oblique')
-        .text(`R: ${formula.formula}`, margin + 10, y + 13, { width: contentWidth - 100 });
+        .text(`R: ${formula.formula}`, margin + 10, y + 16, { width: contentWidth - 100 });
 
       // Calculation
       doc.fillColor('#64748b')
-        .fontSize(6)
+        .fontSize(7.5)
         .font('Helvetica')
-        .text(formula.calculation, margin + 10, y + 22, { width: contentWidth - 100 });
+        .text(formula.calculation, margin + 10, y + 27, { width: contentWidth - 100 });
 
       // Result - positioned to not overflow
       doc.fillColor('#dc2626')
-        .fontSize(9)
+        .fontSize(11)
         .font('Helvetica-Bold')
-        .text(formula.result.toString(), pageWidth - margin - 80, y + 10, {
+        .text(formula.result.toString(), pageWidth - margin - 90, y + 12, {
           align: 'right',
-          width: 75
+          width: 85
         });
 
       y += rowHeight;
@@ -398,22 +398,22 @@ export class SalesReportPDF {
 
     // ==================== ANALISA SHOWROOM SECTION ====================
     doc.fillColor('#1e293b')
-      .fontSize(10)
+      .fontSize(12)
       .font('Helvetica-Bold')
       .text('Analisa Showroom:', margin, y);
 
-    y += 12;
+    y += 16;
 
     // Dynamic analysis based on data
     const analysisItems = this.generateAnalysis(config);
 
     analysisItems.forEach((item) => {
       doc.fillColor('#b91c1c')
-        .fontSize(7)
+        .fontSize(9)
         .font('Helvetica')
         .text(`- ${item}`, margin, y, { width: contentWidth });
 
-      y += doc.heightOfString(`- ${item}`, { width: contentWidth }) + 2;
+      y += doc.heightOfString(`- ${item}`, { width: contentWidth }) + 4;
     });
 
     // ==================== FOOTER ====================
