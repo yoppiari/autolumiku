@@ -540,9 +540,9 @@ export class StaffCommandService {
       price: newData?.price || existingData?.price,
       mileage: newData?.mileage ?? existingData?.mileage ?? undefined,
       color: (newData?.color && newData?.color !== "Unknown") ? newData.color :
-             (existingData?.color && existingData?.color !== "Unknown") ? existingData.color : "Unknown",
+        (existingData?.color && existingData?.color !== "Unknown") ? existingData.color : "Unknown",
       transmission: (newData?.transmission && newData?.transmission !== "Unknown") ? newData.transmission :
-                   (existingData?.transmission && existingData?.transmission !== "Unknown") ? existingData.transmission : "Manual",
+        (existingData?.transmission && existingData?.transmission !== "Unknown") ? existingData.transmission : "Manual",
     };
   }
 
@@ -1536,18 +1536,18 @@ export class StaffCommandService {
       greeting = `${timeGreeting}, ${staffName}! Selamat datang di ${tenantName}!`;
     }
 
-    // Build professional staff menu - user-friendly format without "/" prefix
+    // Build professional staff menu - following premium template
     const message =
       `${greeting}\n\n` +
-      `Saat ini terdapat *${availableCount} unit* kendaraan tersedia di ${tenantName}.\n\n` +
+      `Selamat datang di showroom kami! Saya adalah Asisten virtual yang siap membantu Anda.\n\n` +
+      `Ada yang bisa kami bantu? Saat ini terdapat *${availableCount} unit* kendaraan tersedia di ${tenantName}.\n\n` +
       `*Layanan yang tersedia:*\n\n` +
       `📸 *Upload Kendaraan Baru*\n` +
-      `   Ketik: upload\n` +
-      `   Lalu kirim foto + info mobil\n` +
+      `   Ketik: upload [info mobil]\n` +
       `   Contoh: "upload Brio 2020 120jt hitam matic km 30rb"\n\n` +
       `📋 *Cek Stok Kendaraan*\n` +
       `   Ketik: inventory atau stok\n` +
-      `   Filter: inventory AVAILABLE\n\n` +
+      `   Filter: stok AVAILABLE atau stok Brio\n\n` +
       `📊 *Lihat Statistik*\n` +
       `   Ketik: stats atau laporan\n` +
       `   Period: stats today / stats week / stats month\n\n` +
@@ -1612,29 +1612,23 @@ export class StaffCommandService {
       {} as Record<string, number>
     );
 
-    let message = `📊 *Stok Showroom*${filter ? ` (${filter})` : ""}\n\n`;
-    message += `Total ada ${vehicles.length} unit 🚗\n\n`;
+    let message = `📋 *DAFTAR STOK KENDARAAN*\n`;
+    if (filter) message += `Filter: "${filter}"\n`;
+    message += `Total: ${vehicles.length} unit\n\n`;
 
-    // Status breakdown
-    Object.entries(byStatus).forEach(([status, count]) => {
-      const emoji = status === "AVAILABLE" ? "✅" : status === "BOOKED" ? "🔒" : status === "SOLD" ? "💰" : "🗑️";
-      message += `${emoji} ${status}: ${count}\n`;
+    vehicles.forEach((v, idx) => {
+      const statusEmoji = v.status === "AVAILABLE" ? "✅" : v.status === "BOOKED" ? "🔒" : "💰";
+      message += `${idx + 1}. *${v.make} ${v.model} ${v.year}*\n`;
+      message += `   ID: \`${v.displayId || v.id.slice(-6)}\`\n`;
+      message += `   Status: ${statusEmoji} ${v.status} | Rp ${this.formatPrice(Number(v.price), true)}\n\n`;
     });
 
-    // List vehicles (max 10)
-    message += `\n*${Math.min(vehicles.length, 10)} teratas:*\n`;
-    vehicles.slice(0, 10).forEach((v, idx) => {
-      const statusEmoji = v.status === "AVAILABLE" ? "✅" : v.status === "BOOKED" ? "🔒" : v.status === "SOLD" ? "💰" : "";
-      message += `\n${idx + 1}. ${v.make} ${v.model} ${v.year} ${statusEmoji}\n`;
-      message += `   Rp ${this.formatPrice(Number(v.price), true)} • ID: ${v.displayId || v.id.slice(-6)}\n`;
-    });
-
-    if (vehicles.length > 10) {
-      message += `\n... +${vehicles.length - 10} lagi`;
+    if (vehicles.length === 20) {
+      message += `_Menampilkan 20 unit terbaru..._\n`;
     }
 
-    // Offer to show photos
-    message += `\n\n📸 Mau lihat fotonya? Ketik nama mobil (misal: "foto avanza")`;
+    message += `Ketik \`status [ID] SOLD\` untuk update status.\n`;
+    message += `Apakah ada hal lain yang bisa kami bantu?`;
 
     return {
       success: true,
@@ -1695,21 +1689,24 @@ export class StaffCommandService {
     });
 
     const periodLabel = period === "today" ? "Hari Ini" : period === "week" ? "Minggu Ini" : "Bulan Ini";
-    let message = `📈 *Stats ${periodLabel}*\n\n`;
+    let message = `📈 *LAPORAN STATISTIK SHOWROOM*\n`;
+    message += `Periode: ${periodLabel}\n\n`;
 
-    message += `🚗 *Kendaraan*\n`;
-    message += `Total: ${totalVehicles} unit\n`;
-    message += `Baru masuk: ${newVehicles} unit\n\n`;
+    message += `🚗 *UNIT KENDARAAN*\n`;
+    message += `Total Stock: ${totalVehicles} unit\n`;
+    message += `Unit Baru: +${newVehicles} unit\n\n`;
 
-    message += `*Per Status:*\n`;
+    message += `*Ringkasan Status:*\n`;
     vehiclesByStatus.forEach((s) => {
       const emoji = s.status === "AVAILABLE" ? "✅" : s.status === "BOOKED" ? "🔒" : s.status === "SOLD" ? "💰" : "🗑️";
-      message += `${emoji} ${s.status}: ${s._count}\n`;
+      message += `${emoji} ${s.status}: ${s._count} unit\n`;
     });
 
-    message += `\n👥 *Leads*\n`;
-    message += `Total: ${totalLeads}\n`;
-    message += `Baru: ${newLeads} 🔥`;
+    message += `\n👥 *LEADS & CUSTOMER*\n`;
+    message += `Total Leads: ${totalLeads}\n`;
+    message += `Leads Baru: +${newLeads} 🔥\n\n`;
+
+    message += `Untuk laporan detail dalam format PDF, silakan ketik: "sales report pdf" atau "inventory report pdf".`;
 
     return {
       success: true,
@@ -1918,21 +1915,25 @@ export class StaffCommandService {
       { pattern: /(?:rubah|ganti|ubah)\s*(bensin|diesel|solar)\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[2] },
 
       // Price: "rubah harga 150jt", "update harga ke 200000000"
-      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
-        const val = m[1].toLowerCase();
-        if (val.includes('jt') || val.includes('juta')) {
-          return String(parseInt(val) * 1000000);
+      {
+        pattern: /(?:rubah|ganti|ubah|update|edit)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
+          const val = m[1].toLowerCase();
+          if (val.includes('jt') || val.includes('juta')) {
+            return String(parseInt(val) * 1000000);
+          }
+          return val;
         }
-        return val;
-      }},
+      },
 
       // Transmission: "rubah transmisi matic", "ganti ke manual", "ubah jadi AT"
-      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)?\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmissionType', valueExtractor: m => {
-        const val = m[1].toLowerCase();
-        if (val === 'matic' || val === 'at' || val === 'automatic' || val === 'cvt') return 'automatic';
-        if (val === 'manual' || val === 'mt') return 'manual';
-        return val;
-      }},
+      {
+        pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)?\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmissionType', valueExtractor: m => {
+          const val = m[1].toLowerCase();
+          if (val === 'matic' || val === 'at' || val === 'automatic' || val === 'cvt') return 'automatic';
+          if (val === 'manual' || val === 'mt') return 'manual';
+          return val;
+        }
+      },
 
       // Color: "rubah warna biru", "ganti warna ke hitam", "ubah warna jadi putih metalik"
       { pattern: /(?:rubah|ganti|ubah|update|edit)\s*warna\s*(?:ke|jadi|menjadi)?\s*(.+?)(?:\s+pm-|\s*$)/i, field: 'color', valueExtractor: m => m[1].trim() },
@@ -1941,11 +1942,13 @@ export class StaffCommandService {
       { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:cc|kapasitas\s*(?:mesin)?|engine|mesin)\s*(?:ke|jadi|menjadi)?\s*(\d+)\s*(?:cc)?/i, field: 'engineCapacity', valueExtractor: m => m[1] },
 
       // Condition: "rubah kondisi bekas", "ganti kondisi ke baru"
-      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*kondisi\s*(?:ke|jadi|menjadi)?\s*(baru|bekas|used|new)/i, field: 'condition', valueExtractor: m => {
-        const val = m[1].toLowerCase();
-        if (val === 'baru' || val === 'new') return 'new';
-        return 'used';
-      }},
+      {
+        pattern: /(?:rubah|ganti|ubah|update|edit)\s*kondisi\s*(?:ke|jadi|menjadi)?\s*(baru|bekas|used|new)/i, field: 'condition', valueExtractor: m => {
+          const val = m[1].toLowerCase();
+          if (val === 'baru' || val === 'new') return 'new';
+          return 'used';
+        }
+      },
     ];
 
     for (const { pattern, field, valueExtractor } of patterns) {

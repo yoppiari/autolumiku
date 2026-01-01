@@ -1008,21 +1008,15 @@ export class MessageOrchestratorService {
     const message = incoming.message.toLowerCase().trim();
 
     // Check if message contains command keywords (more flexible matching)
-    const isUniversalCommand = message.includes('rubah') || message.includes('ubah') || message.includes('edit') ||
-      message.includes('upload') || message.includes('tambah') || message.includes('input') ||
-      message.includes('inventory') || message.includes('stok') ||
-      message.includes('status') ||
-      message.includes('statistik') || message.includes('stats') ||
-      message.includes('laporan') ||
-      message.includes('laporan') ||
-      // Flexible help/usage triggers
-      message.includes('help') || message.includes('bantuan') ||
-      message.includes('panduan') || message.includes('cara pakai') ||
-      message.includes('cara guna') || message.includes('penggunaan') ||
-      message.includes('guide') || message.includes('manual') ||
-      message.includes('perintah') || message.includes('command') ||
-      message.includes('menu') || message.includes('fitur') ||
-      message.includes('tool');
+    // Check if message contains command keywords (Universal + Operational)
+    const isUniversalCommand = [
+      'help', 'bantuan', 'panduan', 'cara pakai', 'menu', 'fitur', 'perintah', 'command',
+      'halo', 'halo admin', 'halo owner', 'halo staff', 'hi', 'hello',
+      'upload', 'tambah', 'input',
+      'inventory', 'stok', 'stock',
+      'status', 'update', 'ubah', 'edit', 'rubah',
+      'statistik', 'stats', 'laporan'
+    ].some(k => message.includes(k));
 
     // CRITICAL FIX: If incoming.from is LID, use verifiedStaffPhone from conversation for user lookup
     // This fixes the issue where verify command links LID to real phone, but commands still use LID
@@ -1140,7 +1134,61 @@ export class MessageOrchestratorService {
 
     console.log(`[Orchestrator] 👤 User found: ${user.firstName} ${user.lastName} (${user.role}, level ${user.roleLevel}, DB phone: ${user.phone})`);
 
-    // Process command
+    // Multi-tasking Split Logic
+    const taskSplitters = [',', '.', ' lalu ', ' dan ', '\n'];
+    let commandParts = [incoming.message];
+
+    // Only split if it likely contains multiple distinct commands (e.g. "lalu", "dan", or multiple commas in a report request)
+    const hasSequentialKey = message.includes(' lalu ') || message.includes(' dan ') || (message.includes(',') && isPDFCommand);
+
+    if (hasSequentialKey) {
+      console.log(`[Orchestrator] 🧊 Multi-task message detected, attempting to split...`);
+      for (const splitter of taskSplitters) {
+        commandParts = commandParts.flatMap(p => p.split(splitter));
+      }
+      commandParts = commandParts.map(p => p.trim()).filter(p => p.length > 5); // Filter short/empty segments
+    }
+
+    if (commandParts.length > 1) {
+      console.log(`[Orchestrator] ⛓️ Processing ${commandParts.length} tasks sequentially...`);
+      let combinedMessage = '';
+      let combinedPDFs: Buffer[] = [];
+      let combinedFilenames: string[] = [];
+
+      for (const part of commandParts) {
+        console.log(`[Orchestrator] 🏃 Task Part: "${part}"`);
+        const partResult = await processCommand(part, {
+          tenantId: incoming.tenantId,
+          userRole: user.role,
+          userRoleLevel: user.roleLevel,
+          phoneNumber: incoming.from,
+          userId: user.id
+        });
+
+        if (partResult.success) {
+          combinedMessage += (combinedMessage ? '\n\n' : '') + partResult.message;
+          if (partResult.pdfBuffer) {
+            combinedPDFs.push(partResult.pdfBuffer);
+            combinedFilenames.push(partResult.filename || 'report.pdf');
+          }
+        }
+      }
+
+      if (combinedMessage) {
+        return {
+          isCommand: true,
+          result: {
+            success: true,
+            message: combinedMessage,
+            pdfBuffer: combinedPDFs.length === 1 ? combinedPDFs[0] : undefined, // Native support for 1 PDF, multiple needs loop in sender
+            filename: combinedFilenames.length === 1 ? combinedFilenames[0] : undefined,
+            followUp: true
+          }
+        };
+      }
+    }
+
+    // Single task processing (fallback or single command)
     try {
       console.log(`[Orchestrator] ⚙️ Calling processCommand with: "${message}"`);
       const commandOptions: any = {

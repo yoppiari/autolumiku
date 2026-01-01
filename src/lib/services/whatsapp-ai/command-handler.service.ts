@@ -17,8 +17,12 @@ import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
 import { StorageService } from '../storage.service';
 import { OnePageSalesPDF } from '@/lib/reports/one-page-sales-pdf';
 import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
-import { SalesReportPDF } from '@/lib/reports/sales-report-pdf';
-import { VehicleInventoryPDF, generateVehicleInventoryPDF } from '@/lib/reports/vehicle-inventory-pdf';
+import {
+  ComprehensiveReportPDF,
+  ReportType as ComprehensiveReportType,
+} from '@/lib/reports/comprehensive-report-pdf';
+import { ReportDataService } from '@/lib/reports/report-data-service';
+import { VehicleInventoryPDF } from '@/lib/reports/vehicle-inventory-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -123,14 +127,10 @@ export async function processCommand(
  */
 function isUniversalCommand(cmd: string): boolean {
   const universalCommands = [
-    'rubah', 'ubah', 'edit',
-    'upload',
-    'inventory', 'stok',
-    'status',
-    'statistik', 'stats', 'laporan', // Tambah "laporan" untuk command statistik
-    'kontak', 'contact',
-    // Help commands
+    // Help commands are universal
     'help', 'bantuan', 'panduan', 'cara', 'guide', 'menu', 'fitur', 'tool', 'perintah', 'penggunaan', 'command',
+    'halo', 'halo admin', 'halo owner', 'halo staff',
+    'hi', 'hello',
   ];
   return universalCommands.some(c => cmd.includes(c));
 }
@@ -211,219 +211,71 @@ async function handleUniversalCommand(
   cmd: string,
   context: CommandContext
 ): Promise<CommandResult> {
-  const { tenantId, phoneNumber } = context;
+  const { tenantId, userRoleLevel } = context;
 
-  // Edit vehicle
-  if (cmd.includes('rubah') || cmd.includes('ubah') || cmd.includes('edit')) {
-    // TODO: Implement edit flow
-    return {
-      success: true,
-      message: 'Untuk mengedit data kendaraan, silakan gunakan menu Edit di dashboard: https://primamobil.id/dashboard/vehicles\n\nContoh:\n- Edit: https://primamobil.id/dashboard/vehicles/[id-kendaraan]/edit',
-      followUp: true,
-    };
+  // Get time-based greeting (Selamat pagi/siang/sore/malam)
+  const now = new Date();
+  const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+  const hour = wibTime.getHours();
+  let timeGreeting = "Selamat malam";
+  if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+  else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+  else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
+  // Get tenant info
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { name: true },
+  });
+  const tenantName = tenant?.name || "Prima Mobil";
+
+  // Get active vehicle count
+  const availableCount = await prisma.vehicle.count({
+    where: { tenantId, status: "AVAILABLE" },
+  });
+
+  const isAdmin = userRoleLevel >= 90; // ADMIN/OWNER
+
+  let helpMsg = `${timeGreeting}, Halo!\n\n`;
+  helpMsg += `Selamat datang di showroom kami\n`;
+  helpMsg += `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n`;
+  helpMsg += `Ada yang bisa kami bantu?\n\n`;
+  helpMsg += `Saat ini terdapat *${availableCount} unit* kendaraan tersedia di ${tenantName}.\n\n`;
+
+  helpMsg += `Layanan yang tersedia:\n\n`;
+
+  helpMsg += `📸 *Upload Kendaraan Baru*\n`;
+  helpMsg += `   Ketik: upload\n`;
+  helpMsg += `   Lalu kirim foto + info mobil\n`;
+  helpMsg += `   Contoh: "upload Brio 2020 120jt hitam matic km 30rb"\n\n`;
+
+  helpMsg += `📋 *Cek Stok Kendaraan*\n`;
+  helpMsg += `   Ketik: inventory atau stok\n`;
+  helpMsg += `   Filter: inventory AVAILABLE\n\n`;
+
+  helpMsg += `📊 *Lihat Statistik*\n`;
+  helpMsg += `   Ketik: stats atau laporan\n`;
+  helpMsg += `   Period: stats today / stats week / stats month\n\n`;
+
+  helpMsg += `🔄 *Update Status Kendaraan*\n`;
+  helpMsg += `   Ketik: status [ID] [STATUS]\n`;
+  helpMsg += `   Contoh: status PM-PST-001 SOLD\n\n`;
+
+  if (isAdmin) {
+    helpMsg += `👮‍♂️ *MENU ADMIN & OWNER (PDF REPORTS)*\n`;
+    helpMsg += `Terdapat 15+ Laporan Management dalam format PDF.\n`;
+    helpMsg += `Ketik: "sales report", "stok report", atau "staff performance"\n\n`;
   }
 
-  // Upload vehicle
-  if (cmd.includes('upload')) {
-    return {
-      success: true,
-      message: 'Untuk upload kendaraan baru, silakan gunakan menu Upload di dashboard: https://primamobil.id/dashboard/vehicles/upload\n\nAnda akan diminta untuk:\n1. Input data kendaraan (merek, model, tahun, harga, dll)\n2. Upload foto kendaraan (max 10 foto)\n3. Submit untuk memproses',
-      followUp: true,
-    };
-  }
-
-  // Inventory/Stock check
-  if (cmd.includes('inventory') || cmd.includes('stok')) {
-    console.log(`[CommandHandler] 📦 Processing STOK command: ${cmd}`);
-
-    try {
-      const vehicles = await prisma.vehicle.findMany({
-        where: {
-          tenantId,
-          status: { in: ['AVAILABLE', 'BOOKED'] },
-        },
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          displayId: true,
-          make: true,
-          model: true,
-          year: true,
-          price: true,
-          status: true,
-        },
-      });
-
-      console.log(`[CommandHandler] 📦 Found ${vehicles.length} vehicles in stock`);
-
-      if (vehicles.length === 0) {
-        const message = '📦 INVENTORY SHOWROOM\n\nTidak ada kendaraan tersedia saat ini.\n\nTotal stok: 0 unit';
-        console.log(`[CommandHandler] 📦 Returning empty stock message`);
-        return {
-          success: true,
-          message,
-          followUp: true,
-        };
-      }
-
-      const totalStock = await prisma.vehicle.count({
-        where: {
-          tenantId,
-          status: { in: ['AVAILABLE', 'BOOKED'] },
-        },
-      });
-
-      let message = `📦 INVENTORY SHOWROOM\n\nTotal stok: ${totalStock} unit\n\n10 Kendaraan terbaru:\n`;
-      vehicles.forEach((v, idx) => {
-        message += `${idx + 1}. ${v.make} ${v.model} (${v.year})\n`;
-        message += `   ${formatCurrency(Number(v.price))} - ${v.status}\n`;
-        message += `   ID: ${v.displayId}\n\n`;
-      });
-
-      message += totalStock > 10
-        ? `\n...dan ${totalStock - 10} unit lainnya.\n\nLihat full inventory di: https://primamobil.id/dashboard/vehicles`
-        : `\n\nLihat full inventory di: https://primamobil.id/dashboard/vehicles`;
-
-      console.log(`[CommandHandler] 📦 Returning stock list with ${totalStock} total units`);
-      return {
-        success: true,
-        message,
-        followUp: true,
-      };
-    } catch (error) {
-      console.error(`[CommandHandler] ❌ Error in STOK command:`, error);
-      return {
-        success: false,
-        message: 'Maaf, terjadi kesalahan saat mengambil data stok. Silakan coba lagi.',
-        followUp: true,
-      };
-    }
-  }
-
-  // Status check
-  if (cmd.includes('status')) {
-    const totalVehicles = await prisma.vehicle.count({
-      where: { tenantId },
-    });
-
-    const available = await prisma.vehicle.count({
-      where: { tenantId, status: 'AVAILABLE' },
-    });
-
-    const sold = await prisma.vehicle.count({
-      where: { tenantId, status: 'SOLD' },
-    });
-
-    const booked = await prisma.vehicle.count({
-      where: { tenantId, status: 'BOOKED' },
-    });
-
-    return {
-      success: true,
-      message: `📊 STATUS SHOWROOM\n\nTotal Kendaraan: ${totalVehicles} unit\n✅ Tersedia: ${available} unit\n🔒 Terbook: ${booked} unit\n✅ Terjual: ${sold} unit\n\nLihat detail di: https://primamobil.id/dashboard`,
-      followUp: true,
-    };
-  }
-
-  // Statistics check
-  if (cmd.includes('statistik') || cmd.includes('stats') || cmd.includes('laporan')) {
-    // For sales: show their own performance
-    // For admin+: show overall stats
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const soldVehicles = await prisma.vehicle.findMany({
-      where: {
-        tenantId,
-        status: 'SOLD',
-        updatedAt: { gte: monthStart },
-      },
-      select: {
-        price: true,
-        createdBy: true,
-      },
-    });
-
-    const totalSales = soldVehicles.length;
-    const totalRevenue = soldVehicles.reduce((sum, v) => sum + Number(v.price), 0);
-
-    // User's own performance (if they're sales staff)
-    let ownStats = '';
-    if (context.userRoleLevel < ROLE_LEVELS.ADMIN) {
-      const ownSales = soldVehicles.filter(v => v.createdBy === context.userId).length;
-      ownStats = `\n📊 Performa Anda:\n   Unit terjual: ${ownSales}\n   Kontribusi: ${totalSales > 0 ? ((ownSales / totalSales) * 100).toFixed(1) : 0}%`;
-    }
-
-    return {
-      success: true,
-      message: `📈 STATISTIK BULAN INI (${formatDate(monthStart)} - ${formatDate(now)})\n\n✅ Total Penjualan: ${totalSales} unit\n💰 Total Revenue: ${formatCurrency(totalRevenue)}${ownStats}\n\nLihat detail analytics di: https://primamobil.id/dashboard/whatsapp-ai/analytics`,
-      followUp: true,
-    };
-  }
-
-  // Send contact command
-  if (cmd.includes('kontak') || cmd.includes('contact')) {
-    return await handleContactCommand(cmd, context);
-  }
-
-  // Help/Usage/Guide command
-  if (cmd.includes('help') || cmd.includes('bantuan') || cmd.includes('panduan') ||
-    cmd.includes('cara') || cmd.includes('guide') || cmd.includes('menu') ||
-    cmd.includes('fitur') || cmd.includes('tool') || cmd.includes('perintah') ||
-    cmd.includes('penggunaan') || cmd.includes('command')) {
-
-    const isSales = userRoleLevel <= 30; // SALES/STAFF
-    const isAdmin = userRoleLevel >= 90; // ADMIN/OWNER
-
-    let helpMsg = `🤖 *PANDUAN PENGGUNAAN WHATSAPP AI*\n\n`;
-    helpMsg += `Berikut adalah perintah yang bisa Anda gunakan:\n\n`;
-
-    // 1. Basic Tools (All Staff)
-    helpMsg += `📋 *MENU DASAR (STAFF)*\n`;
-    helpMsg += `• *Cek Stok*: Ketik "stok", "inventory", atau "stock"\n`;
-    helpMsg += `• *Cek Status*: Ketik "status" (rangkuman available/booked/sold)\n`;
-    helpMsg += `• *Statistik Saya*: Ketik "stats" atau "statistik"\n`;
-    helpMsg += `• *Upload Unit*: Ketik "upload" (ikuti petunjuk link)\n`;
-    helpMsg += `• *Edit Unit*: Ketik "edit" (ikuti petunjuk link)\n`;
-    helpMsg += `• *Kirim Kontak*: Ketik "kontak sales" atau "kontak admin"\n\n`;
-
-    // 2. Admin Tools (Admin only)
-    if (isAdmin) {
-      helpMsg += `👮‍♂️ *MENU ADMIN & OWNER*\n`;
-      helpMsg += `Terdapat total *15+ Laporan Management* yang tersedia:\n\n`;
-
-      helpMsg += `📊 *Sales & Revenue (6 Report)*\n`;
-      helpMsg += `• Ketik: "sales report", "laporan penjualan", "total revenue", atau "tren penjualan"\n\n`;
-
-      helpMsg += `📦 *Inventory & Stock (3 Report)*\n`;
-      helpMsg += `• Ketik: "stok report", "total inventory", atau "ave price"\n\n`;
-
-      helpMsg += `👥 *Team & Performance (3 Report)*\n`;
-      helpMsg += `• Ketik: "staff performance", "performa staff", atau "recent sales"\n\n`;
-
-      helpMsg += `🤖 *WhatsApp AI & Customer (3 Report)*\n`;
-      helpMsg += `• Ketik: "whatsapp analytics", "metrik operasional", atau "customer metrics"\n\n`;
-
-      helpMsg += `💡 *Kirim PDF*: Tambahkan kata "kirim pdf" untuk mendapatkan file. Contoh: "kirim sales report pdf"\n\n`;
-    }
-
-    helpMsg += `💡 *TIPS:*\n`;
-    helpMsg += `- Anda bisa mengetik dengan bahasa alami, contoh: "tampilkan laporan penjualan bulan ini" atau "gimana cara upload?"\n`;
-    helpMsg += `- Gunakan command ini kapan saja jika lupa perintah.`;
-
-    return {
-      success: true,
-      message: helpMsg,
-      followUp: true,
-    };
-  }
+  helpMsg += `Silakan ketik perintah yang diinginkan. Kami siap membantu!`;
 
   return {
-    success: false,
-    message: 'Command tidak dikenali. Ketik "help" atau "bantuan" untuk melihat daftar perintah.',
+    success: true,
+    message: helpMsg,
     followUp: true,
   };
 }
+
 
 /**
  * Handle contact commands (send staff contact to customer)
@@ -894,1057 +746,80 @@ async function fetchWhatsAppAIData(context: CommandContext, days: number = 30) {
 // PDF GENERATORS WITH REAL DATA
 // ============================================================================
 
-async function generateSalesReportPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  // Fetch sales data for the report
-  const salesData = await fetchSalesData(context, 30);
-  const staffData = await fetchStaffPerformance(context, 30);
-
-  // Get top performer name
-  const topStaff = staffData.topPerformers.length > 0
-    ? staffData.topPerformers[0].name
-    : 'Belum ada data';
-
-  const topStaffCount = staffData.topPerformers.length > 0
-    ? staffData.topPerformers[0].count
-    : 0;
-
-  // Use standardized WhatsAppCommandPDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = [
-    {
-      label: 'Total Penjualan',
-      value: `${salesData.summary.totalSalesCount}`,
-      unit: 'Unit',
-      color: '#3b82f6',
-      formula: 'COUNT(vehicle) WHERE status = SOLD',
-      calculation: `${salesData.summary.totalSalesCount} unit terjual dalam 30 hari`,
-    },
-    {
-      label: 'Total Revenue',
-      value: formatCurrency(salesData.summary.totalSalesValue),
-      color: '#10b981',
-      formula: 'SUM(price) WHERE status = SOLD',
-      calculation: formatCurrency(salesData.summary.totalSalesValue),
-    },
-    {
-      label: 'Rata-rata Harga',
-      value: formatCurrency(salesData.avgPrice),
-      color: '#f59e0b',
-      formula: 'AVG(price) WHERE status = SOLD',
-      calculation: `${formatCurrency(salesData.summary.totalSalesValue)} / ${salesData.summary.totalSalesCount}`,
-    },
-    {
-      label: 'Top Sales Staff',
-      value: topStaff,
-      unit: `${topStaffCount} Unit`,
-      color: '#8b5cf6',
-      formula: 'MAX(sales_count) BY staff',
-      calculation: `${topStaff} dengan ${topStaffCount} penjualan`,
-    }
-  ];
-
-  const analysis = [
-    `Total penjualan periode ini mencapai ${salesData.summary.totalSalesCount} unit dengan total revenue ${formatCurrency(salesData.summary.totalSalesValue)}.`,
-    `Performa rata-rata harga unit terjual adalah ${formatCurrency(salesData.avgPrice)}.`,
-    `Top sales performa diraih oleh ${topStaff} dengan kontribusi ${topStaffCount} unit.`
-  ];
-
-  if (salesData.byMake.length > 0) {
-    analysis.push(`Brand terlaris saat ini adalah ${salesData.byMake[0].make} dengan ${salesData.byMake[0].count} unit terjual.`);
-  }
-
-  const reportData = {
-    title: 'Sales Report Showroom',
-    subtitle: 'Laporan Penjualan Lengkap (30 Hari)',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: salesData.byMake.length > 0,
-    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
-      label: item.make,
-      value: `${item.count} unit`,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Sales Report (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `sales-report-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const whatsappData = await fetchWhatsAppAIData(context, 30);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = whatsappData ? [
-    {
-      label: 'Total Percakapan',
-      value: `${whatsappData.overview.totalConversations}`,
-      unit: 'Percakapan',
-      color: '#3b82f6',
-      formula: 'COUNT(conversations) WHERE date >= NOW() - 30 DAYS',
-      calculation: `${whatsappData.overview.totalConversations} percakapan`,
-    },
-    {
-      label: 'AI Response Rate',
-      value: `${whatsappData.overview.aiResponseRate}`,
-      unit: '%',
-      color: '#10b981',
-      formula: '(AI responses / Total responses) × 100',
-      calculation: `${whatsappData.overview.aiResponses} / ${whatsappData.overview.aiResponses + whatsappData.overview.staffResponses} × 100 = ${whatsappData.overview.aiResponseRate}%`,
-    },
-    {
-      label: 'AI Accuracy',
-      value: `${whatsappData.overview.aiAccuracy}`,
-      unit: '%',
-      color: '#f59e0b',
-      formula: '(Correct AI responses / Total AI responses) × 100',
-      calculation: `${whatsappData.overview.aiAccuracy}% akurasi`,
-    },
-    {
-      label: 'Percakapan Aktif',
-      value: `${whatsappData.overview.activeConversations}`,
-      unit: 'Percakapan',
-      color: '#8b5cf6',
-      formula: 'COUNT(conversations) WHERE state = active',
-      calculation: `${whatsappData.overview.activeConversations} percakapan aktif`,
-    },
-  ] : [
-    {
-      label: 'Data Tidak Tersedia',
-      value: '0',
-      unit: 'N/A',
-      color: '#9ca3af',
-      formula: 'N/A',
-      calculation: 'Data WhatsApp belum tersedia',
-    },
-  ];
-
-  const analysis = whatsappData ? [
-    `Akurasi AI saat ini sebesar ${whatsappData.overview.aiAccuracy}%, menunjukkan performa chatbot yang ${whatsappData.overview.aiAccuracy > 80 ? 'sangat handal' : 'cukup baik'}.`,
-    `Response rate mencapai ${whatsappData.overview.aiResponseRate}%, membantu tim sales menangani customer di luar jam kerja secara otomatis.`,
-    `Top intent pelanggan adalah "${whatsappData.intentBreakdown[0]?.intent || 'N/A'}", pastikan database unit selalu up-to-date untuk akurasi jawaban AI.`
-  ] : ['Data WhatsApp AI belum tersedia dalam 30 hari terakhir untuk melakukan analisa deeper.'];
-
-  const reportData = {
-    title: 'WhatsApp AI Analytics',
-    subtitle: 'Analisis Performa AI & Customer Engagement',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: (whatsappData?.intentBreakdown?.length || 0) > 0,
-    chartData: (whatsappData?.intentBreakdown || []).slice(0, 5).map((item, idx) => ({
-      label: item.intent.charAt(0).toUpperCase() + item.intent.slice(1),
-      value: `${item.count} interaction`,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ WhatsApp AI Analytics (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `whatsapp-ai-analytics-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateSalesMetricsPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const salesData = await fetchSalesData(context, 30);
-  const inventoryData = await fetchInventoryData(context);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = [
-    {
-      label: 'Total Penjualan',
-      value: `${salesData.summary.totalSalesCount}`,
-      unit: 'Unit',
-      color: '#3b82f6',
-      formula: 'COUNT(vehicle) WHERE status = SOLD',
-      calculation: `${salesData.summary.totalSalesCount} unit terjual`,
-    },
-    {
-      label: 'Total Revenue',
-      value: formatCurrency(salesData.summary.totalSalesValue),
-      color: '#10b981',
-      formula: 'SUM(price) WHERE status = SOLD',
-      calculation: formatCurrency(salesData.summary.totalSalesValue),
-    },
-    {
-      label: 'Total Stok',
-      value: `${inventoryData.totalStock}`,
-      unit: 'Unit',
-      color: '#f59e0b',
-      formula: 'COUNT(vehicle) WHERE status IN (AVAILABLE, BOOKED)',
-      calculation: `${inventoryData.totalStock} unit tersedia`,
-    },
-    {
-      label: 'Rata-rata Harga',
-      value: formatCurrency(salesData.avgPrice),
-      color: '#8b5cf6',
-      formula: 'AVG(price) WHERE status = SOLD',
-      calculation: `${formatCurrency(salesData.summary.totalSalesValue)} / ${salesData.summary.totalSalesCount} = ${formatCurrency(salesData.avgPrice)}`,
-    },
-  ];
-
-  const analysis = [
-    `Total penjualan tercatat ${salesData.summary.totalSalesCount} unit dengan rata-rata harga pasar ${formatCurrency(salesData.avgPrice)}.`,
-    `Terdapat ${inventoryData.totalStock} unit stok yang siap (Available/Booked), pastikan rotasi stok tetap terjaga.`,
-    `Brand "${salesData.byMake[0]?.make || 'N/A'}" mendominasi volume penjualan saat ini.`
-  ];
-
-  const reportData = {
-    title: 'Metrik Penjualan Showroom',
-    subtitle: 'KPI Penjualan & Inventory',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: salesData.byMake.length > 0,
-    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
-      label: item.make,
-      value: `${item.count} unit`,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Metrik Penjualan (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `metrik-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateCustomerMetricsPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const whatsappData = await fetchWhatsAppAIData(context, 30);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = whatsappData ? [
-    {
-      label: 'Total Percakapan',
-      value: `${whatsappData.overview.totalConversations}`,
-      unit: 'Percakapan',
-      color: '#3b82f6',
-      formula: 'COUNT(conversations) WHERE date >= NOW() - 30 DAYS',
-      calculation: `${whatsappData.overview.totalConversations} percakapan dalam 30 hari`,
-    },
-    {
-      label: 'Percakapan Aktif',
-      value: `${whatsappData.overview.activeConversations}`,
-      unit: 'Percakapan',
-      color: '#10b981',
-      formula: 'COUNT(conversations) WHERE state = active',
-      calculation: `${whatsappData.overview.activeConversations} percakapan aktif`,
-    },
-    {
-      label: 'Total Pesan Pelanggan',
-      value: `${whatsappData.overview.customerMessages}`,
-      unit: 'Pesan',
-      color: '#f59e0b',
-      formula: 'COUNT(messages) WHERE direction = incoming',
-      calculation: `${whatsappData.overview.customerMessages} pesan dari pelanggan`,
-    },
-  ] : [
-    {
-      label: 'Data Tidak Tersedia',
-      value: '0',
-      unit: 'N/A',
-      color: '#9ca3af',
-      formula: 'N/A',
-      calculation: 'Data WhatsApp belum tersedia',
-    },
-  ];
-
-  const analysis = whatsappData ? [
-    `Interaksi pelanggan didominasi oleh intent "${whatsappData.intentBreakdown[0]?.intent || 'N/A'}" (${whatsappData.intentBreakdown[0]?.percentage || 0}%).`,
-    `Total percakapan baru mencapai ${whatsappData.overview.totalConversations} dalam 30 hari terakhir.`,
-    `Fokus pada peningkatan response time di awal percakapan untuk menaikkan conversion rate.`
-  ] : ['Belum ada data interaksi pelanggan yang signifikan untuk dianalisa.'];
-
-  const reportData = {
-    title: 'Metrik Pelanggan',
-    subtitle: 'Customer Engagement Analytics',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: (whatsappData?.intentBreakdown?.length || 0) > 0,
-    chartData: (whatsappData?.intentBreakdown || []).slice(0, 5).map((item, idx) => ({
-      label: item.intent.charAt(0).toUpperCase() + item.intent.slice(1),
-      value: `${item.percentage}% volume`,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Metrik Pelanggan (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `metrik-pelanggan-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateOperationalMetricsPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const salesData = await fetchSalesData(context, 30);
-  const inventoryData = await fetchInventoryData(context);
-  const staffData = await fetchStaffPerformance(context, 30);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = [
-    {
-      label: 'Total Stok',
-      value: `${inventoryData.totalStock}`,
-      unit: 'Unit',
-      color: '#3b82f6',
-      formula: 'COUNT(vehicle) WHERE status IN (AVAILABLE, BOOKED)',
-      calculation: `${inventoryData.totalStock} unit tersedia`,
-    },
-    {
-      label: 'Total Staff',
-      value: `${staffData.totalStaff}`,
-      unit: 'Staff',
-      color: '#10b981',
-      formula: 'COUNT(users) WHERE role IN (SALES, STAFF)',
-      calculation: `${staffData.totalStaff} staff aktif`,
-    },
-    {
-      label: 'Staff dengan Penjualan',
-      value: `${staffData.topPerformers.length}`,
-      unit: 'Staff',
-      color: '#f59e0b',
-      formula: 'COUNT(DISTINCT staff) WHERE sales > 0',
-      calculation: `${staffData.topPerformers.length} staff dengan performa`,
-    },
-    {
-      label: 'Unit Terjual',
-      value: `${salesData.summary.totalSalesCount}`,
-      unit: 'Unit',
-      color: '#8b5cf6',
-      formula: 'COUNT(vehicle) WHERE status = SOLD',
-      calculation: `${salesData.summary.totalSalesCount} unit terjual`,
-    },
-  ];
-
-  const analysis = [
-    `Stok tersedia ${inventoryData.totalStock} unit dengan total staff aktif ${staffData.totalStaff} orang.`,
-    `Terdapat ${staffData.topPerformers.length} staff yang berhasil mencatat penjualan dalam 30 hari terakhir.`,
-    `Rasio unit terjual per staff aktif perlu ditingkatkan untuk mengoptimalkan operasional showroom.`
-  ];
-
-  const reportData = {
-    title: 'Metrik Operational Showroom',
-    subtitle: 'KPI Operational & Staff Performance',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: salesData.byMake.length > 0,
-    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
-      label: item.make,
-      value: `${item.count} unit terjual`,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Metrik Operational (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `metrik-operational-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const salesData = await fetchSalesData(context, 30);
-
-  // Calculate trends
-  const totalSales = salesData.summary.totalSalesCount;
-  const totalRevenue = salesData.summary.totalSalesValue;
-  const avgDailySales = salesData.salesByDay.length > 0
-    ? totalSales / salesData.salesByDay.length
-    : 0;
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = [
-    {
-      label: 'Total Penjualan (30 Hari)',
-      value: `${totalSales}`,
-      unit: 'Unit',
-      color: '#3b82f6',
-      formula: 'SUM(sales) WHERE date >= NOW() - 30 DAYS',
-      calculation: `${totalSales} unit terjual dalam 30 hari`,
-    },
-    {
-      label: 'Rata-rata Harian',
-      value: `${avgDailySales.toFixed(1)}`,
-      unit: 'Unit/Hari',
-      color: '#10b981',
-      formula: 'AVG(daily sales)',
-      calculation: `${totalSales} unit / ${salesData.salesByDay.length} hari = ${avgDailySales.toFixed(1)} unit/hari`,
-    },
-    {
-      label: 'Total Revenue',
-      value: formatCurrency(totalRevenue),
-      color: '#f59e0b',
-      formula: 'SUM(price) WHERE date >= NOW() - 30 DAYS',
-      calculation: formatCurrency(totalRevenue),
-    },
-  ];
-
-  const analysis = [
-    `Total penjualan 30 hari terakhir mencapai ${totalSales} unit dengan revenue ${formatCurrency(totalRevenue)}.`,
-    `Rata-rata penjualan harian stabil di angka ${avgDailySales.toFixed(1)} unit per hari.`,
-    `Tren penjualan menunjukkan brand "${salesData.byMake[0]?.make || 'Other'}" sebagai kontributor utama.`
-  ];
-
-  const reportData = {
-    title: 'Tren Penjualan Showroom',
-    subtitle: 'Analisis Tren 30 Hari Terakhir',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: true,
-    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
-      label: item.make,
-      value: `${item.count} unit (${Math.round((item.count / totalSales) * 100)}%)`,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Tren Penjualan (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `tren-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateStaffPerformancePDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const staffData = await fetchStaffPerformance(context, 30);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const topPerformer = staffData.topPerformers[0];
-  const totalStaffSales = staffData.topPerformers.reduce((sum, s) => sum + s.count, 0);
-  const totalStaffValue = staffData.topPerformers.reduce((sum, s) => sum + s.value, 0);
-
-  const metrics = [
-    {
-      label: 'Top Performer',
-      value: topPerformer ? topPerformer.name : 'N/A',
-      unit: topPerformer ? `${topPerformer.count} unit` : '',
-      color: '#3b82f6',
-      formula: 'MAX(COUNT(sales)) GROUP BY staff',
-      calculation: topPerformer ? `${topPerformer.name} dengan ${topPerformer.count} unit penjualan` : 'Belum ada data',
-    },
-    {
-      label: 'Total Staff Aktif',
-      value: `${staffData.topPerformers.length}`,
-      unit: 'Staff',
-      color: '#10b981',
-      formula: 'COUNT(DISTINCT staff) WHERE sales > 0',
-      calculation: `${staffData.topPerformers.length} staff dengan performa penjualan`,
-    },
-    {
-      label: 'Total Penjualan Staff',
-      value: `${totalStaffSales}`,
-      unit: 'Unit',
-      color: '#f59e0b',
-      formula: 'SUM(sales) WHERE sold_by IN (staff)',
-      calculation: `${totalStaffSales} unit terjual oleh staff`,
-    },
-    {
-      label: 'Rata-rata per Staff',
-      value: staffData.topPerformers.length > 0 ? `${(totalStaffSales / staffData.topPerformers.length).toFixed(1)}` : '0',
-      unit: 'Unit/Staff',
-      color: '#8b5cf6',
-      formula: 'AVG(sales) GROUP BY staff',
-      calculation: `${totalStaffSales} unit / ${staffData.topPerformers.length} staff = ${(totalStaffSales / staffData.topPerformers.length).toFixed(1)} unit/staff`,
-    },
-  ];
-
-  const analysis = topPerformer ? [
-    `Top performer periode ini adalah ${topPerformer.name} dengan total ${topPerformer.count} closing.`,
-    `Total kontribusi seluruh tim mencapai ${totalStaffSales} unit dalam 30 hari.`,
-    `Rata-rata produktivitas tim berada di angka ${(totalStaffSales / staffData.topPerformers.length).toFixed(1)} unit per staff aktif.`
-  ] : ['Belum ada data performa staff yang tercatat periode ini.'];
-
-  const reportData = {
-    title: 'Staff Performance Showroom',
-    subtitle: 'Performa Sales Staff (30 Hari Terakhir)',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: staffData.topPerformers.length > 0,
-    chartData: staffData.topPerformers.slice(0, 5).map((performer, idx) => ({
-      label: performer.name,
-      value: `${performer.count} closing`,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Staff Performance (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `staff-performance-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateRecentSalesPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const salesData = await fetchSalesData(context, 7);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = [
-    {
-      label: 'Penjualan 7 Hari Terakhir',
-      value: `${salesData.summary.totalSalesCount}`,
-      unit: 'Unit',
-      color: '#3b82f6',
-      formula: 'COUNT(vehicle) WHERE status = SOLD AND date >= NOW() - 7 DAYS',
-      calculation: `${salesData.summary.totalSalesCount} unit terjual dalam 7 hari`,
-    },
-    {
-      label: 'Total Revenue 7 Hari',
-      value: formatCurrency(salesData.summary.totalSalesValue),
-      color: '#10b981',
-      formula: 'SUM(price) WHERE status = SOLD AND date >= NOW() - 7 DAYS',
-      calculation: formatCurrency(salesData.summary.totalSalesValue),
-    },
-    {
-      label: 'Rata-rata Harga',
-      value: formatCurrency(salesData.avgPrice),
-      color: '#f59e0b',
-      formula: 'AVG(price) WHERE status = SOLD AND date >= NOW() - 7 DAYS',
-      calculation: `${formatCurrency(salesData.summary.totalSalesValue)} / ${salesData.summary.totalSalesCount} = ${formatCurrency(salesData.avgPrice)}`,
-    },
-  ];
-
-  const analysis = [
-    `Penjualan 7 hari terakhir sebanyak ${salesData.summary.totalSalesCount} unit dengan revenue ${formatCurrency(salesData.summary.totalSalesValue)}.`,
-    `Rata-rata harga unit terjual seminggu terakhir adalah ${formatCurrency(salesData.avgPrice)}.`,
-    `Brand "${salesData.byMake[0]?.make || 'N/A'}" paling banyak diminati dalam periode singkat ini.`
-  ];
-
-  const reportData = {
-    title: 'Recent Sales Showroom',
-    subtitle: 'Penjualan 7 Hari Terakhir',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: salesData.byMake.length > 0,
-    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
-      label: item.make,
-      value: `${item.count} unit`,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Recent Sales (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `recent-sales-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateLowStockPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const inventoryData = await fetchInventoryData(context);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const isLowStock = inventoryData.totalStock < 10;
-  const isMediumStock = inventoryData.totalStock < 20;
-  const stockStatus = isLowStock ? 'CRITICAL' : isMediumStock ? 'WARNING' : 'SAFE';
-  const stockColor = isLowStock ? '#ef4444' : isMediumStock ? '#f59e0b' : '#10b981';
-
-  // Group inventory by make for chart
-  const byMake: Record<string, number> = {};
-  inventoryData.vehicles.forEach((v) => {
-    const make = v.make || 'Other';
-    byMake[make] = (byMake[make] || 0) + 1;
-  });
-  const chartData = Object.entries(byMake)
-    .map(([make, count]) => ({ make, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-    .map((item, idx) => ({
-      label: item.make,
-      value: item.count,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    }));
-
-  const metrics = [
-    {
-      label: 'Total Stok Saat Ini',
-      value: `${inventoryData.totalStock}`,
-      unit: 'Unit',
-      color: stockColor,
-      formula: 'COUNT(vehicle) WHERE status IN (AVAILABLE, BOOKED)',
-      calculation: `${inventoryData.totalStock} unit tersedia`,
-    },
-    {
-      label: 'Status Stok',
-      value: stockStatus,
-      unit: isLowStock ? '⚠️ CRITICAL' : isMediumStock ? '⚠️ WARNING' : '✅ AMAN',
-      color: stockColor,
-      formula: 'IF(stock < 10, "CRITICAL", IF(stock < 20, "WARNING", "SAFE"))',
-      calculation: `Stok ${inventoryData.totalStock} unit: ${isLowStock ? 'Kritis - perlu restock segera' : isMediumStock ? 'Menipis - pertimbangkan restock' : 'Aman'}`,
-    },
-    {
-      label: 'Total Nilai Stok',
-      value: formatCurrency(inventoryData.totalValue),
-      color: '#3b82f6',
-      formula: 'SUM(price) WHERE status IN (AVAILABLE, BOOKED)',
-      calculation: formatCurrency(inventoryData.totalValue),
-    },
-  ];
-
-  const analysis = [
-    `Total stok saat ini adalah ${inventoryData.totalStock} unit dengan status ${stockStatus}.`,
-    isLowStock ? '⚠️ PERINGATAN: Stok sangat rendah. Segera lakukan pengadaan unit baru untuk menjaga ketersediaan.' : '✅ Stok masih dalam batas aman, namun tetap monitor pergerakan unit populer.',
-    `Total nilai aset inventory yang tersedia saat ini adalah ${formatCurrency(inventoryData.totalValue)}.`
-  ];
-
-  const reportData = {
-    title: 'Low Stock Alert Showroom',
-    subtitle: 'Monitoring Stok Kendaraan',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: chartData.length > 0,
-    chartData: chartData.map(c => ({ ...c, value: `${c.value} unit` })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Low Stock Alert (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `low-stock-alert-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateTotalSalesPDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const salesData = await fetchSalesData(context, 30);
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - 30);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = [
-    {
-      label: 'Total Penjualan',
-      value: `${salesData.summary.totalSalesCount}`,
-      unit: 'Unit',
-      color: '#3b82f6',
-      formula: 'COUNT(vehicle WHERE status = SOLD)',
-      calculation: `${salesData.summary.totalSalesCount} unit terjual`,
-    },
-    {
-      label: 'Total Revenue',
-      value: formatCurrency(salesData.summary.totalSalesValue),
-      color: '#10b981',
-      formula: 'SUM(price) WHERE status = SOLD',
-      calculation: formatCurrency(salesData.summary.totalSalesValue),
-    },
-    {
-      label: 'Rata-rata Harga',
-      value: formatCurrency(salesData.avgPrice),
-      color: '#f59e0b',
-      formula: 'AVG(price) WHERE status = SOLD',
-      calculation: `${formatCurrency(salesData.summary.totalSalesValue)} / ${salesData.summary.totalSalesCount} = ${formatCurrency(salesData.avgPrice)}`,
-    },
-  ];
-
-  const analysis = [
-    `Total penjualan periode ini mencapai ${salesData.summary.totalSalesCount} unit.`,
-    `Fokus penjualan saat ini berada pada brand "${salesData.byMake[0]?.make || 'N/A'}".`,
-    `Tingkatkan promosi untuk brand dengan stok tinggi namun volume penjualan rendah.`
-  ];
-
-  const reportData = {
-    title: 'Total Penjualan Showroom',
-    subtitle: 'Rekapitulasi Unit Terjual (30 Hari)',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: salesData.byMake.length > 0,
-    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
-      label: item.make,
-      value: `${item.count} unit`,
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Total Penjualan (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `total-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateTotalRevenuePDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const salesData = await fetchSalesData(context, 30);
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = [
-    {
-      label: 'Total Revenue',
-      value: formatCurrency(salesData.summary.totalSalesValue),
-      color: '#10b981',
-      formula: 'SUM(price) WHERE status = SOLD',
-      calculation: formatCurrency(salesData.summary.totalSalesValue),
-    },
-    {
-      label: 'Unit Terjual',
-      value: `${salesData.summary.totalSalesCount}`,
-      unit: 'Unit',
-      color: '#3b82f6',
-      formula: 'COUNT(vehicle) WHERE status = SOLD',
-      calculation: `${salesData.summary.totalSalesCount} unit terjual`,
-    },
-    {
-      label: 'Rata-rata per Unit',
-      value: formatCurrency(salesData.avgPrice),
-      color: '#f59e0b',
-      formula: 'AVG(price) WHERE status = SOLD',
-      calculation: `${formatCurrency(salesData.summary.totalSalesValue)} / ${salesData.summary.totalSalesCount} = ${formatCurrency(salesData.avgPrice)}`,
-    },
-  ];
-
-  const analysis = [
-    `Total revenue 30 hari terakhir mencapai ${formatCurrency(salesData.summary.totalSalesValue)}.`,
-    `Brand "${salesData.byMake[0]?.make || 'N/A'}" memberikan kontribusi revenue tertinggi sebesar ${formatCurrency(salesData.byMake[0]?.value || 0)}.`,
-    `Rata-rata revenue per unit terjual adalah ${formatCurrency(salesData.avgPrice)}.`
-  ];
-
-  const reportData = {
-    title: 'Total Revenue Showroom',
-    subtitle: 'Laporan Pendapatan (30 Hari Terakhir)',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: salesData.byMake.length > 0,
-    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
-      label: item.make,
-      value: formatCurrency(item.value),
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Total Revenue (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `total-revenue-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
-
-async function generateTotalInventoryPDF(context: CommandContext): Promise<CommandResult> {
+// ============================================================================
+// UNIFIED PDF GENERATOR
+// ============================================================================
+
+async function generateReportByType(
+  type: ComprehensiveReportType,
+  context: CommandContext
+): Promise<CommandResult> {
   try {
-    console.log('[Total Inventory] Starting PDF generation...');
+    console.log(`[Report Generator] 📊 Generating ${type} for tenant ${context.tenantId}`);
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: context.tenantId },
       select: { name: true, logoUrl: true },
     });
 
-    const inventoryData = await fetchInventoryData(context);
-    console.log('[Total Inventory] Data fetched:', inventoryData.totalStock, 'units');
+    // Calculate dates (last 30 days default)
+    const now = new Date();
+    const startDate = new Date();
+    startDate.setDate(now.getDate() - 30);
+    const periodLabel = '30 Hari Terakhir';
 
-    // Use NEW professional WhatsApp Command PDF
-    const generator = new WhatsAppCommandPDF();
+    // Gather data using shared service
+    const reportData = await ReportDataService.gather(type, context.tenantId, startDate, now);
 
-    // Group inventory by make for chart
-    const byMake: Record<string, number> = {};
-    inventoryData.vehicles.forEach((v) => {
-      const make = v.make || 'Other';
-      byMake[make] = (byMake[make] || 0) + 1;
-    });
-    const chartData = Object.entries(byMake)
-      .map(([make, count]) => ({ make, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5)
-      .map((item, idx) => ({
-        label: item.make,
-        value: item.count,
-        color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-      }));
-
-    console.log('[Total Inventory] Chart data prepared:', chartData.length, 'items');
-
-    const metrics = [
-      {
-        label: 'Total Stok',
-        value: `${inventoryData.totalStock}`,
-        unit: 'Unit',
-        color: '#3b82f6',
-        formula: 'COUNT(vehicle) WHERE status IN (AVAILABLE, BOOKED)',
-        calculation: `${inventoryData.totalStock} unit tersedia`,
-      },
-      {
-        label: 'Total Nilai Stok',
-        value: formatCurrency(inventoryData.totalValue),
-        color: '#10b981',
-        formula: 'SUM(price) WHERE status IN (AVAILABLE, BOOKED)',
-        calculation: formatCurrency(inventoryData.totalValue),
-      },
-      {
-        label: 'Rata-rata Hari di Stok',
-        value: `${inventoryData.avgDaysInStock}`,
-        unit: 'Hari',
-        color: '#f59e0b',
-        formula: 'AVG(days since added) WHERE status IN (AVAILABLE, BOOKED)',
-        calculation: `Rata-rata ${inventoryData.avgDaysInStock} hari`,
-      },
-    ];
-
-    const analysis = [
-      `Total stok unit tersedia saat ini adalah ${inventoryData.totalStock} unit.`,
-      `Total nilai aset inventory (Total Value) mencapai ${formatCurrency(inventoryData.totalValue)}.`,
-      `Rata-rata waktu unit berada di stok adalah ${inventoryData.avgDaysInStock} hari. Fokus pada unit dengan aging tinggi.`
-    ];
-
-    const reportData = {
-      title: 'Total Inventory Showroom',
-      subtitle: 'Stok Kendaraan Tersedia',
+    const config = {
+      type,
       tenantName: tenant?.name || 'Prima Mobil',
       logoUrl: tenant?.logoUrl || undefined,
-      date: new Date(),
-      metrics,
-      analysis,
-      showChart: chartData.length > 0,
-      chartData: chartData.map(c => ({ ...c, value: `${c.value} unit` })),
+      period: {
+        start: startDate,
+        end: now,
+        label: periodLabel,
+      },
+      data: reportData,
     };
 
-    console.log('[Total Inventory] Generating PDF...');
-    const pdfBuffer = await generator.generate(reportData);
-    console.log('[Total Inventory] PDF generated successfully:', pdfBuffer.length, 'bytes');
+    const generator = new ComprehensiveReportPDF();
+    const pdfBuffer = await generator.generate(config);
+
+    const filename = `${type}-${new Date().toISOString().split('T')[0]}.pdf`;
 
     return {
       success: true,
-      message: '✅ Total Inventory (format profesional) berhasil dibuat. Mengirim PDF...',
+      message: `✅ Report *${type.toUpperCase().replace('-', ' ')}* berhasil dibuat. Mengirim PDF...`,
       pdfBuffer,
-      filename: `total-inventory-${new Date().toISOString().split('T')[0]}.pdf`,
+      filename,
       followUp: true,
     };
   } catch (error) {
-    console.error('[Total Inventory] ERROR:', error);
+    console.error(`[Report Generator] ❌ Error generating ${type}:`, error);
     return {
       success: false,
-      message: `❌ Error generating Total Inventory PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      message: `Maaf, terjadi kesalahan saat membuat report: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      followUp: true,
     };
   }
 }
 
-async function generateAveragePricePDF(context: CommandContext): Promise<CommandResult> {
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: context.tenantId },
-    select: { name: true, logoUrl: true },
-  });
-
-  const salesData = await fetchSalesData(context, 30);
-  const inventoryData = await fetchInventoryData(context);
-
-  const avgStockPrice = inventoryData.totalStock > 0 ? inventoryData.totalValue / inventoryData.totalStock : 0;
-
-  // Use NEW professional WhatsApp Command PDF
-  const generator = new WhatsAppCommandPDF();
-
-  const metrics = [
-    {
-      label: 'Rata-rata Harga Penjualan',
-      value: formatCurrency(salesData.avgPrice),
-      color: '#10b981',
-      formula: 'AVG(price) WHERE status = SOLD AND date >= NOW() - 30 DAYS',
-      calculation: `${formatCurrency(salesData.summary.totalSalesValue)} / ${salesData.summary.totalSalesCount} = ${formatCurrency(salesData.avgPrice)}`,
-    },
-    {
-      label: 'Rata-rata Harga Stok',
-      value: formatCurrency(avgStockPrice),
-      color: '#3b82f6',
-      formula: 'SUM(price) / COUNT(vehicle) WHERE status IN (AVAILABLE, BOOKED)',
-      calculation: `${formatCurrency(inventoryData.totalValue)} / ${inventoryData.totalStock} = ${formatCurrency(avgStockPrice)}`,
-    },
-    {
-      label: 'Unit Terjual',
-      value: `${salesData.summary.totalSalesCount}`,
-      unit: 'Unit',
-      color: '#f59e0b',
-      formula: 'COUNT(vehicle) WHERE status = SOLD',
-      calculation: `${salesData.summary.totalSalesCount} unit terjual dalam 30 hari`,
-    },
-    {
-      label: 'Stok Tersedia',
-      value: `${inventoryData.totalStock}`,
-      unit: 'Unit',
-      color: '#8b5cf6',
-      formula: 'COUNT(vehicle) WHERE status IN (AVAILABLE, BOOKED)',
-      calculation: `${inventoryData.totalStock} unit tersedia`,
-    },
-  ];
-
-  const analysis = [
-    `Rata-rata harga unit terjual (Sales) adalah ${formatCurrency(salesData.avgPrice)}.`,
-    `Rata-rata harga unit yang masih tersedia (Stock) adalah ${formatCurrency(avgStockPrice)}.`,
-    `Gap harga antara stok dan sales menunjukkan segmentasi unit yang ${avgStockPrice > salesData.avgPrice ? 'lebih tinggi' : 'lebih rendah'} dari rata-rata penjualan.`
-  ];
-
-  const reportData = {
-    title: 'Average Price Showroom',
-    subtitle: 'Analisis Perbandingan Harga',
-    tenantName: tenant?.name || 'Prima Mobil',
-    logoUrl: tenant?.logoUrl || undefined,
-    date: new Date(),
-    metrics,
-    analysis,
-    showChart: true,
-    chartData: [
-      { label: 'Avg Sales Price', value: formatCurrency(salesData.avgPrice), color: '#10b981' },
-      { label: 'Avg Stock Price', value: formatCurrency(avgStockPrice), color: '#3b82f6' }
-    ],
-  };
-
-  const pdfBuffer = await generator.generate(reportData);
-
-  return {
-    success: true,
-    message: '✅ Average Price (format standar baru) berhasil dibuat. Mengirim PDF...',
-    pdfBuffer,
-    filename: `average-price-${new Date().toISOString().split('T')[0]}.pdf`,
-    followUp: true,
-  };
-}
+// Map each specific report command to the unified generator
+const generateSalesReportPDF = (ctx: CommandContext) => generateReportByType('sales-report', ctx);
+const generateWhatsAppAIPDF = (ctx: CommandContext) => generateReportByType('whatsapp-analytics', ctx);
+const generateSalesMetricsPDF = (ctx: CommandContext) => generateReportByType('sales-metrics', ctx);
+const generateCustomerMetricsPDF = (ctx: CommandContext) => generateReportByType('customer-metrics', ctx);
+const generateOperationalMetricsPDF = (ctx: CommandContext) => generateReportByType('operational-metrics', ctx);
+const generateSalesTrendsPDF = (ctx: CommandContext) => generateReportByType('sales-trends', ctx);
+const generateStaffPerformancePDF = (ctx: CommandContext) => generateReportByType('staff-performance', ctx);
+const generateRecentSalesPDF = (ctx: CommandContext) => generateReportByType('recent-sales', ctx);
+const generateLowStockPDF = (ctx: CommandContext) => generateReportByType('low-stock-alert', ctx);
+const generateTotalSalesPDF = (ctx: CommandContext) => generateReportByType('total-sales', ctx);
+const generateTotalRevenuePDF = (ctx: CommandContext) => generateReportByType('total-revenue', ctx);
+const generateTotalInventoryPDF = (ctx: CommandContext) => generateReportByType('total-inventory', ctx);
+const generateAveragePricePDF = (ctx: CommandContext) => generateReportByType('average-price', ctx);
+const generateSalesSummaryPDF = (ctx: CommandContext) => generateReportByType('sales-summary', ctx);
 
 // ============================================================================
 // VEHICLE INVENTORY LISTING PDF (New Format with Images Table)

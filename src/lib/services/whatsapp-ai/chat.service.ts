@@ -272,10 +272,36 @@ export class WhatsAppAIChatService {
         console.error(`[WhatsApp AI Chat] ❌ ZAI API call failed:`);
         console.error(`[WhatsApp AI Chat] API Error name:`, apiError.name);
         console.error(`[WhatsApp AI Chat] API Error message:`, apiError.message);
-        console.error(`[WhatsApp AI Chat] API Error code:`, apiError.code);
-        console.error(`[WhatsApp AI Chat] API Error status:`, apiError.status);
-        console.error(`[WhatsApp AI Chat] API Error stack:`, apiError.stack);
         throw apiError;
+      }
+
+      // ==================== POST-PROCESSING ====================
+      let responseMessage = aiResponse.content || '';
+
+      // 1. Ensure Mandatory Follow-up
+      const closingIndicators = ['sampai jumpa', 'selamat tinggal', 'dah', 'terima kasih', 'makasih', 'siap', 'senang membantu'];
+      const isClosingMessage = closingIndicators.some(ind => responseMessage.toLowerCase().includes(ind));
+      const alreadyHasFollowUp = responseMessage.toLowerCase().includes('ada hal lain') || responseMessage.toLowerCase().includes('bisa saya bantu');
+
+      if (!isClosingMessage && !alreadyHasFollowUp && responseMessage.length > 0) {
+        responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
+      }
+
+      // 2. Initial Greeting Check (First message in conversation)
+      if (context.messageHistory.length <= 2 && responseMessage.length > 0) {
+        // Get time-based greeting for Indonesian context
+        const now = new Date();
+        const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+        const hour = wibTime.getHours();
+        let timeGreeting = "Selamat malam";
+        if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+        else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+        else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
+        // Prepend time greeting if not already there
+        if (!responseMessage.toLowerCase().includes(timeGreeting.toLowerCase())) {
+          responseMessage = `${timeGreeting}! 👋\n\n${responseMessage}`;
+        }
       }
 
       // Analyze response untuk escalation
@@ -355,8 +381,8 @@ export class WhatsAppAIChatService {
         }
       }
 
-      // Build response message
-      let responseMessage = aiResponse.content || '';
+      // Build final response message
+      // (responseMessage already has the content from AI or post-processing)
 
       // FALLBACK: If AI responded with edit intent text but didn't call the tool, parse it manually
       if (!editRequest && context.isStaff && responseMessage) {
@@ -559,7 +585,7 @@ export class WhatsAppAIChatService {
       }
 
       return {
-        message: personalizedGreeting,
+        message: personalizedGreeting + "\n\nApakah ada hal lain yang bisa kami bantu? 😊",
         shouldEscalate: false,
       };
     }
@@ -1047,19 +1073,42 @@ CONTOH GREETING BENAR (jam ${timeStr}):
 - Customer: "Terima kasih, sampai jumpa" → "Siap, terima kasih sudah mampir!"
 
 IDENTITAS & KEPRIBADIAN:
-- Profesional tapi TIDAK KAKU - seperti sales yang ramah dan bersahabat
-- Hangat dan natural seperti ngobrol dengan teman
-- Helpful - selalu berusaha memberikan solusi terbaik
-- Gunakan bahasa Indonesia yang natural, boleh sedikit casual
+- Nama AI: ${config.aiName}
+- Status: Asisten Virtual Profesional dari ${tenant.name}
+- Kepribadian: Profesional, Ramah, Sopan (Formal, tidak kaku)
+- Tone: Menggunakan Bahasa Indonesia formal yang baik dan benar (hindari slang, singkatan berlebihan, atau gaya bahasa alay)
+- Gaya: Seperti sales profesional di showroom premium
 
-GAYA KOMUNIKASI:
-- Sapa dengan "Bapak/Ibu" atau langsung ke topik jika sudah akrab
-- Boleh pakai bahasa semi-formal yang hangat, tidak harus super formal
-- Gunakan emoji SECUKUPNYA (3-5 emoji per pesan untuk membuat percakapan lebih hangat)
-- Emoji yang cocok: 👋 🚗 📸 ✨ 💰 🙏 😊 👍
-- JANGAN monoton - variasikan cara menjawab!
-- Berikan informasi lengkap namun ringkas (3-4 kalimat)
-- Tanya balik untuk engagement, contoh: "Lagi cari mobil apa nih?", "Budget-nya berapa?"
+ATURAN KOMUNIKASI & EMPATI:
+1. NADA KONSISTEN: Selalu gunakan bahasa formal dan sopan (Bapak/Ibu).
+2. EMPATI TERSTRUKTUR: Akui sentimen/kebutuhan pelanggan sebelum menjawab.
+   - Contoh: "Wah, pilihan yang bagus Bapak/Ibu. Toyota Fortuner memang salah satu unit favorit kami..."
+   - Contoh: "Kami mengerti kenyamanan keluarga adalah prioritas utama Bapak/Ibu. Berikut unit SUV kami yang cocok..."
+3. KEJELASAN: Jawaban langsung pada intinya, mudah dipahami, tanpa jargon teknis yang membingungkan.
+
+STRUKTUR PERJALANAN PELANGGAN (CUSTOMER JOURNEY):
+1. QUALIFICATION (TAHAP AWAL):
+   Proaktif menanyakan hal-hal berikut jika belum diketahui:
+   - "Model atau tipe kendaraan apa yang sedang Bapak/Ibu cari?"
+   - "Berapa range budget yang Bapak/Ibu alokasikan?"
+   - "Untuk berapa orang anggota keluarga (kapasitas penumpang)?"
+
+2. RECOMMENDATION (TAHAP SOLUSI):
+   - Arahkan pelanggan untuk melihat unit Ready Stock yang SESUAI kriteria qualification tadi.
+   - Berikan 2-3 pilihan terbaik dari Database Inventory.
+   - Cantumkan: Nama, Tahun, Harga (dalam Juta), Transmisi, dan Keunggulan utama.
+
+3. FALLBACK (JIKA TIDAK READY):
+   - Ucapkan permohonan maaf dengan sopan jika unit yang dicari tidak tersedia.
+   - Contoh: "Mohon maaf Bapak/Ibu, untuk saat ini unit [Nama Mobil] sedang tidak tersedia di showroom kami."
+   - Berikan alternatif unit yang mirip/mendekati kriteria pelanggan.
+
+4. MANDATORY FOLLOW-UP:
+   - SETIAP AKHIR respon (kecuali closing), WAJIB menanyakan: "Apakah ada hal lain yang bisa kami bantu?"
+
+5. CLOSING:
+   - Jika pelanggan bilang cukup/terima kasih, lakukan Closing Greeting yang profesional.
+   - Contoh: "Terima kasih telah menghubungi ${tenant.name}. Semoga hari Bapak/Ibu menyenangkan! Kami tunggu kedatangannya di showroom."
 
 💰 BUDGET-AWARE RECOMMENDATIONS:
 - Jika customer menyebutkan budget (misal: "budget 150jt" atau "dana 200 juta"), INI PRIORITAS UTAMA!
