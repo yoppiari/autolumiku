@@ -126,6 +126,13 @@ const REPORT_TYPES: ReportType[] = [
         icon: '💵',
         category: 'inventory',
     },
+    {
+        id: 'management-insights',
+        name: 'Management Insights',
+        description: 'AI-powered business analysis and strategic advice',
+        icon: '🧠',
+        category: 'performance',
+    },
 ];
 
 const PERIODS = [

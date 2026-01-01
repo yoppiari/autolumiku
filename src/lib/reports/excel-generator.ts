@@ -129,6 +129,13 @@ export class ExcelGenerator {
                     Value: value
                 }));
 
+            case 'management-insights':
+                return (reportData.managementInsights || []).map((insight: string, idx: number) => ({
+                    No: idx + 1,
+                    Insight: insight,
+                    Category: 'Strategic Analysis'
+                }));
+
             default:
                 // Generic dump of what we have
                 const flatData: any[] = [];

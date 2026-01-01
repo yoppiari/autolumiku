@@ -22,7 +22,8 @@ export type ReportType =
     | 'total-revenue' // Revenue summary
     | 'total-inventory' // Current stock count
     | 'average-price' // Sales vs stock comparison
-    | 'sales-summary'; // Quick overview
+    | 'sales-summary' // Quick overview
+    | 'management-insights'; // Business highlights & advice
 
 export interface ComprehensiveReportConfig {
     type: ReportType;
@@ -43,6 +44,8 @@ export interface ReportData {
     totalInventory?: number;
     avgPrice?: number;
     avgStockPrice?: number;
+    totalLeads?: number;
+    totalCustomers?: number;
 
     // Trends (for charts)
     dailySales?: { date: Date; count: number; revenue: number }[];
@@ -114,6 +117,7 @@ export interface ReportData {
         price: number;
         daysInStock: number;
     }[];
+    managementInsights?: string[];
 }
 
 interface Metric {
@@ -199,6 +203,9 @@ export class ComprehensiveReportPDF {
                 break;
             case 'sales-summary':
                 this.generateSalesSummary(config);
+                break;
+            case 'management-insights':
+                this.generateManagementInsights(config);
                 break;
             default:
                 throw new Error(`Unknown report type: ${config.type}`);
@@ -363,13 +370,13 @@ export class ComprehensiveReportPDF {
                 color: '#f59e0b',
             },
             {
-                label: 'Total Pelanggan',
-                value: String(data.whatsapp?.totalConversations || 0),
+                label: 'Total Lead',
+                value: String(data.totalLeads || 0),
                 color: '#3b82f6',
             },
             {
-                label: 'Pelanggan Aktif',
-                value: String(data.whatsapp?.activeConversations || 0),
+                label: 'Pelanggan Terdaftar',
+                value: String(data.totalCustomers || 0),
                 color: '#8b5cf6',
             },
         ];
@@ -770,6 +777,77 @@ export class ComprehensiveReportPDF {
         }
 
         this.drawFooter(config.tenantName);
+    }
+
+    private generateManagementInsights(config: ComprehensiveReportConfig) {
+        const { data } = config;
+        this.drawHeader('MANAGEMENT INSIGHTS & ADVICE', config.period?.label || 'Analisis Bisnis', config);
+
+        const metrics: Metric[] = [
+            {
+                label: 'Business Health',
+                value: `${data.kpis?.efficiency || 0}%`,
+                color: '#10b981',
+                subtitle: 'Overall Score',
+            },
+            {
+                label: 'Revenue',
+                value: formatCurrency(data.totalRevenue || 0),
+                color: '#3b82f6',
+            },
+            {
+                label: 'Sales Volume',
+                value: String(data.totalSales || 0),
+                unit: 'Unit',
+                color: '#f59e0b',
+            },
+            {
+                label: 'Inventory Value',
+                value: formatCurrency((data.inventoryDetail || []).reduce((sum, v) => sum + v.price, 0)),
+                color: '#8b5cf6',
+            },
+        ];
+
+        let y = this.drawMetricsGrid(metrics, 110);
+
+        if (data.managementInsights && data.managementInsights.length > 0) {
+            y = this.drawSectionTitle('ANALISIS & REKOMENDASI STRATEGIS', y + 15);
+            y = this.drawInsightsList(data.managementInsights, y + 10);
+        } else {
+            this.drawNoData('Analisis sedang diproses...');
+        }
+
+        this.drawFooter(config.tenantName);
+    }
+
+    private drawInsightsList(insights: string[], y: number): number {
+        const { doc } = this;
+        const margin = 25;
+        const width = doc.page.width - margin * 2;
+
+        insights.forEach((insight, idx) => {
+            if (y > 650) {
+                this.doc.addPage();
+                y = 40;
+            }
+
+            // Bullet icon
+            doc.fillColor('#3b82f6').circle(margin + 10, y + 8, 8).fill();
+            doc.fillColor('#ffffff').fontSize(8).font('Helvetica-Bold').text(String(idx + 1), margin + 7, y + 4);
+
+            // Text
+            doc.fillColor('#334155').fontSize(9).font('Helvetica')
+                .text(insight, margin + 25, y + 3, {
+                    width: width - 40,
+                    lineGap: 2,
+                    align: 'justify'
+                });
+
+            const height = doc.heightOfString(insight, { width: width - 40, lineGap: 2 });
+            y += height + 15;
+        });
+
+        return y;
     }
 
     // ==================== DRAWING UTILITIES ====================

@@ -42,6 +42,7 @@ const VALID_REPORT_TYPES: ReportType[] = [
     'total-inventory',
     'average-price',
     'sales-summary',
+    'management-insights',
 ];
 
 export async function GET(
@@ -209,6 +210,8 @@ async function gatherReportData(
 ): Promise<ReportData> {
     const data: ReportData = {};
 
+    const needsAllData = reportType === 'management-insights';
+
     // Common data needed by most reports
     const needsSalesData = [
         'sales-report',
@@ -219,7 +222,7 @@ async function gatherReportData(
         'total-revenue',
         'average-price',
         'sales-summary',
-    ].includes(reportType);
+    ].includes(reportType) || needsAllData;
 
     const needsInventoryData = [
         'sales-report',
@@ -229,18 +232,18 @@ async function gatherReportData(
         'total-inventory',
         'average-price',
         'sales-summary',
-    ].includes(reportType);
+    ].includes(reportType) || needsAllData;
 
     const needsStaffData = [
         'sales-report',
         'staff-performance',
         'operational-metrics',
-    ].includes(reportType);
+    ].includes(reportType) || needsAllData;
 
     const needsWhatsAppData = [
         'whatsapp-analytics',
         'customer-metrics',
-    ].includes(reportType);
+    ].includes(reportType) || needsAllData;
 
     // Fetch sales data
     if (needsSalesData) {
@@ -539,13 +542,27 @@ async function gatherReportData(
         }
     }
 
+    // Fetch Lead & Customer Data for specialized reports
+    if (reportType === 'customer-metrics' || needsAllData) {
+        try {
+            const [leads, salesCustomers] = await Promise.all([
+                prisma.lead.count({ where: { tenantId, createdAt: { gte: startDate, lte: endDate } } }),
+                prisma.salesCustomer.count({ where: { tenantId, createdAt: { gte: startDate, lte: endDate } } }),
+            ]);
+            data.totalLeads = leads;
+            data.totalCustomers = salesCustomers;
+        } catch (e) {
+            console.warn('[Reports] Lead/Customer data fetch failed:', e);
+        }
+    }
+
     // Calculate KPIs
     const needsKPIs = [
         'sales-metrics',
         'customer-metrics',
         'operational-metrics',
         'sales-report',
-    ].includes(reportType);
+    ].includes(reportType) || needsAllData;
 
     if (needsKPIs) {
         const totalSalesValue = data.totalRevenue || 0;
@@ -581,6 +598,12 @@ async function gatherReportData(
             salesPerEmployee: Math.round(salesPerEmployee),
             efficiency: Math.round(efficiency),
         };
+    }
+
+    // Generate Management Insights if needed
+    if (reportType === 'management-insights' || needsAllData) {
+        const { InsightEngine } = await import('@/lib/reports/insight-engine');
+        data.managementInsights = InsightEngine.generate(data);
     }
 
     return data;
