@@ -4,6 +4,8 @@
  * Based on the new draft design format
  * 
  * REVISI: Fix pie chart labels, korelasi data real-time, layout tidak out of box
+ * REVISI 2: Font size adjustments, layout spacing
+ * REVISI 3: Logo implementation, always show chart, black analysis text, larger legend font
  */
 
 import PDFDocument from 'pdfkit';
@@ -71,38 +73,70 @@ export class SalesReportPDF {
     let y = 0;
 
     // ==================== HEADER ====================
-    const headerHeight = 50;
+    const headerHeight = 60; // Increased to accommodate Logo + Title
 
     // Blue header background
     doc.fillColor('#1e3a8a').rect(0, 0, pageWidth, headerHeight).fill();
 
-    // "SALES REPORT" title
-    doc.fillColor('#ffffff')
-      .fontSize(20)
-      .font('Helvetica-Bold')
-      .text('SALES REPORT', 0, 12, {
-        align: 'center',
-        width: pageWidth
-      });
+    // LOGO IMPLEMENTATION
+    const logoRelPath = 'public/prima-mobil-logo.jpg';
+    const fs = require('fs');
+    // Check both relative and absolute path just in case
+    const path = require('path');
+    const logoAbsPath = path.resolve(logoRelPath);
 
-    // Tenant name badge
-    const badgeText = config.tenantName.toUpperCase();
-    doc.fontSize(8);
-    const badgeWidth = doc.widthOfString(badgeText) + 20;
-    const badgeX = (pageWidth - badgeWidth) / 2;
-    const badgeY = 33;
+    let logoDrawn = false;
 
-    // Badge background
-    doc.fillColor('#dc2626')
-      .roundedRect(badgeX, badgeY, badgeWidth, 14, 3)
-      .fill();
+    try {
+      if (fs.existsSync(logoAbsPath)) {
+        // Draw Logo centered at TOP
+        const logoWidth = 100;
+        const logoHeight = 25; // Approximate aspect ratio
+        doc.image(logoAbsPath, (pageWidth - logoWidth) / 2, 8, { width: logoWidth });
+        logoDrawn = true;
 
-    doc.fillColor('#ffffff')
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text(badgeText, badgeX, badgeY + 3, { width: badgeWidth, align: 'center' });
+        // Title BELOW Logo
+        doc.fillColor('#ffffff')
+          .fontSize(16)
+          .font('Helvetica-Bold')
+          .text('SALES REPORT', 0, 36, {
+            align: 'center',
+            width: pageWidth
+          });
+      }
+    } catch (e) {
+      console.error('Error drawing logo:', e);
+    }
 
-    y = headerHeight + 8;
+    if (!logoDrawn) {
+      // Fallback: Original Design with Badge
+      doc.fillColor('#ffffff')
+        .fontSize(20)
+        .font('Helvetica-Bold')
+        .text('SALES REPORT', 0, 12, {
+          align: 'center',
+          width: pageWidth
+        });
+
+      // Tenant name badge
+      const badgeText = config.tenantName.toUpperCase();
+      doc.fontSize(8);
+      const badgeWidth = doc.widthOfString(badgeText) + 20;
+      const badgeX = (pageWidth - badgeWidth) / 2;
+      const badgeY = 33;
+
+      // Badge background
+      doc.fillColor('#dc2626')
+        .roundedRect(badgeX, badgeY, badgeWidth, 14, 3)
+        .fill();
+
+      doc.fillColor('#ffffff')
+        .fontSize(8)
+        .font('Helvetica-Bold')
+        .text(badgeText, badgeX, badgeY + 3, { width: badgeWidth, align: 'center' });
+    }
+
+    y = headerHeight + 10;
 
     // ==================== METRIC CARDS ====================
     const cardCount = 4;
@@ -306,42 +340,37 @@ export class SalesReportPDF {
       .lineTo(margin + contentWidth / 2, y + chartSectionHeight - 5)
       .stroke();
 
-    // Pie chart (left side) - with REAL data
+    // Pie chart (left side)
     const chartCenterX = margin + contentWidth / 4;
     const chartCenterY = y + 75;
     const chartRadius = 40;
 
     // Prepare chart data with real percentages
     let chartData = config.chartData || [];
-    if (chartData.length === 0 && totalPenjualan > 0) {
-      // Default: satu item jika tidak ada breakdown
-      chartData = [{ label: 'Total', value: totalPenjualan, percentage: 100, color: '#3b82f6' }];
+
+    // REVISI: Always show chart. If no data, show "Belum Ada Data" segment
+    if (chartData.length === 0) {
+      if (config.metrics.totalPenjualan > 0) {
+        chartData = [{ label: 'Total', value: config.metrics.totalPenjualan, percentage: 100, color: '#3b82f6' }];
+      } else {
+        // Default placeholder data so chart is always visible even with 0 sales
+        chartData = [{ label: 'Stock Report (Kosong/Belum Ada)', value: 1, percentage: 100, color: '#9ca3af' }]; // Grey color
+      }
     }
 
-    if (chartData.length > 0) {
-      this.drawPieChartWithLabels(chartCenterX, chartCenterY, chartRadius, chartData);
-    } else {
-      // No data placeholder
-      doc.fillColor('#e5e7eb')
-        .circle(chartCenterX, chartCenterY, chartRadius)
-        .fill();
-
-      doc.fillColor('#9ca3af')
-        .fontSize(8)
-        .font('Helvetica')
-        .text('No Data', chartCenterX - 15, chartCenterY - 4);
-    }
+    // Always draw pie chart
+    this.drawPieChartWithLabels(chartCenterX, chartCenterY, chartRadius, chartData);
 
     // Right side - Formula explanations dengan data REAL
     let formulaY = y + 25;
-    const formulaLineHeight = 11;
+    const formulaLineHeight = 13; // Increased slightly
 
     doc.fillColor('#1e293b')
-      .fontSize(6.5)
+      .fontSize(8.5) // Increased font size (from 6.5 -> 8.5 REVISI)
       .font('Helvetica')
       .text('Rumusan indikator chart:', rightSectionX, formulaY);
 
-    formulaY += formulaLineHeight;
+    formulaY += formulaLineHeight + 2;
 
     // Tampilkan rumusan untuk setiap segment chart
     if (chartData.length > 0) {
@@ -356,7 +385,7 @@ export class SalesReportPDF {
           .fill();
 
         doc.fillColor('#374151')
-          .fontSize(6)
+          .fontSize(8) // Increased font size (from 6/7 -> 8 REVISI)
           .font('Helvetica')
           .text(`${item.label}: ${item.value} unit / ${totalChartValue} total × 100 = ${pct}%`, rightSectionX + 12, formulaY, { width: contentWidth / 2 - 25 });
 
@@ -367,7 +396,7 @@ export class SalesReportPDF {
 
       // Summary
       doc.fillColor('#1e293b')
-        .fontSize(6.5)
+        .fontSize(8) // Increased size
         .font('Helvetica-Bold')
         .text('Hasil Perhitungan:', rightSectionX, formulaY);
 
@@ -381,17 +410,12 @@ export class SalesReportPDF {
           .fill();
 
         doc.fillColor('#374151')
-          .fontSize(6)
+          .fontSize(7.5) // Increased size
           .font('Helvetica-Bold')
           .text(`${item.label}: ${pct}%`, rightSectionX + 12, formulaY);
 
         formulaY += formulaLineHeight;
       });
-    } else {
-      doc.fillColor('#9ca3af')
-        .fontSize(6)
-        .font('Helvetica-Oblique')
-        .text('Belum ada data penjualan untuk ditampilkan.', rightSectionX, formulaY);
     }
 
     y += chartSectionHeight + 12;
@@ -408,7 +432,7 @@ export class SalesReportPDF {
     const analysisItems = this.generateAnalysis(config);
 
     analysisItems.forEach((item) => {
-      doc.fillColor('#b91c1c')
+      doc.fillColor('#000000') // REVISI: Changed to black
         .fontSize(9)
         .font('Helvetica')
         .text(`- ${item}`, margin, y, { width: contentWidth });
@@ -463,7 +487,8 @@ export class SalesReportPDF {
         .fill(item.color);
 
       // Draw percentage label OUTSIDE the pie
-      if (percentage > 0.03) { // Only show label if > 3%
+      // Show label if > 3% OR if it's the single placeholder item (percentage 100)
+      if (percentage > 0.03 || data.length === 1) {
         const midAngle = startAngle + angle / 2;
         const labelRadius = radius + 15; // Position label outside
         const labelX = centerX + labelRadius * Math.cos(midAngle);
@@ -481,22 +506,24 @@ export class SalesReportPDF {
     });
 
     // Draw white lines between slices
-    startAngle = -Math.PI / 2;
-    data.forEach((item) => {
-      if (total === 0) return;
+    if (data.length > 1) { // Only draw lines if multiple slices
+      startAngle = -Math.PI / 2;
+      data.forEach((item) => {
+        if (total === 0) return;
 
-      const x = centerX + radius * Math.cos(startAngle);
-      const y = centerY + radius * Math.sin(startAngle);
+        const x = centerX + radius * Math.cos(startAngle);
+        const y = centerY + radius * Math.sin(startAngle);
 
-      doc.strokeColor('#ffffff')
-        .lineWidth(1.5)
-        .moveTo(centerX, centerY)
-        .lineTo(x, y)
-        .stroke();
+        doc.strokeColor('#ffffff')
+          .lineWidth(1.5)
+          .moveTo(centerX, centerY)
+          .lineTo(x, y)
+          .stroke();
 
-      const percentage = item.value / total;
-      startAngle += percentage * 2 * Math.PI;
-    });
+        const percentage = item.value / total;
+        startAngle += percentage * 2 * Math.PI;
+      });
+    }
 
     // Legend below chart
     const legendY = centerY + radius + 25;
