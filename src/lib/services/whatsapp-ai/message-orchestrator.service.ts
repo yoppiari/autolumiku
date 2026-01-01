@@ -996,11 +996,12 @@ export class MessageOrchestratorService {
 
     // Check if message contains command keywords (more flexible matching)
     const isUniversalCommand = message.includes('rubah') || message.includes('ubah') || message.includes('edit') ||
-      message === 'upload' ||
+      message.includes('upload') || message.includes('tambah') || message.includes('input') ||
       message.includes('inventory') || message.includes('stok') ||
-      message === 'status' ||
+      message.includes('status') ||
       message.includes('statistik') || message.includes('stats') ||
-      message.includes('laporan'); // Tambah "laporan" sebagai command
+      message.includes('laporan') ||
+      message === 'help' || message === 'bantuan';
 
     // CRITICAL FIX: If incoming.from is LID, use verifiedStaffPhone from conversation for user lookup
     // This fixes the issue where verify command links LID to real phone, but commands still use LID
@@ -1790,7 +1791,7 @@ export class MessageOrchestratorService {
       const staffUsers = await prisma.user.findMany({
         where: {
           tenantId,
-          role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
+          role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
         },
         select: { id: true, phone: true, firstName: true, role: true },
       });
@@ -2050,7 +2051,7 @@ export class MessageOrchestratorService {
     const users = await prisma.user.findMany({
       where: {
         tenantId,
-        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
+        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
       },
       select: { id: true, phone: true },
     });
@@ -2113,7 +2114,7 @@ export class MessageOrchestratorService {
     const users = await prisma.user.findMany({
       where: {
         tenantId,
-        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
+        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
       },
       select: { id: true, phone: true, firstName: true, lastName: true, role: true },
     });
@@ -2171,7 +2172,7 @@ export class MessageOrchestratorService {
     const users = await prisma.user.findMany({
       where: {
         tenantId,
-        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF"] },
+        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
       },
       select: { id: true, phone: true, firstName: true, role: true },
     });
