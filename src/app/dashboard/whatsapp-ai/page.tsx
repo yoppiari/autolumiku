@@ -205,26 +205,32 @@ export default function WhatsAppAIDashboard() {
       </div>
 
       {/* Connection Status - With AI Controls inside */}
-      <div className={`p-3 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${
-        status.isConnected
+      <div className={`p-3 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${status.isConnected
           ? 'bg-green-50 border-green-300'
           : 'bg-yellow-50 border-yellow-300'
-      }`}>
+        }`}>
         {/* Mobile: Stack vertically, Desktop: Horizontal */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           {/* Connection Info */}
           <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center ${
-              status.isConnected ? 'bg-green-100' : 'bg-yellow-100'
-            }`}>
+            <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center ${status.isConnected ? 'bg-green-100' : 'bg-yellow-100'
+              }`}>
               <span className="text-xl">
                 {status.isConnected ? '✅' : '⚠️'}
               </span>
             </div>
             <div className="min-w-0">
-              <h2 className="text-base font-bold text-gray-900">
-                {status.isConnected ? 'WhatsApp Connected' : 'Setup Required'}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-gray-900">
+                  {status.isConnected ? 'WhatsApp Connected' : 'Setup Required'}
+                </h2>
+                {status.isConnected && (
+                  <div className={`flex items-center px-2 py-0.5 rounded-full text-white text-[10px] md:text-xs font-medium whitespace-nowrap ${getAIStatusColor(aiHealth?.status)}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full mr-1 ${aiHealth?.status === 'active' ? 'animate-pulse bg-white' : 'bg-white/60'}`}></span>
+                    {getAIStatusText(aiHealth?.status)}
+                  </div>
+                )}
+              </div>
               {status.isConnected ? (
                 <div className="text-xs text-gray-700">
                   <span className="font-medium">Phone:</span> {status.phoneNumber}
@@ -245,23 +251,13 @@ export default function WhatsAppAIDashboard() {
           {/* AI Controls - Below on mobile, Right side on desktop */}
           {status.isConnected ? (
             <div className="flex items-center space-x-2 md:space-x-3 flex-shrink-0">
-              {/* AI Health Status Badge */}
-              <div className={`flex items-center px-2 md:px-3 py-1.5 rounded-full text-white text-xs font-medium whitespace-nowrap ${getAIStatusColor(aiHealth?.status)}`}>
-                <span className={`w-2 h-2 rounded-full mr-1.5 md:mr-2 ${aiHealth?.status === 'active' ? 'animate-pulse bg-white' : 'bg-white/60'}`}></span>
-                {getAIStatusText(aiHealth?.status)}
-                {aiHealth && aiHealth.errorCount > 0 && aiHealth.status !== 'active' && (
-                  <span className="ml-1">({aiHealth.errorCount})</span>
-                )}
-              </div>
-
               {/* AI Toggle Button - Links to config page */}
               <Link
                 href="/dashboard/whatsapp-ai/config"
-                className={`relative inline-flex items-center px-3 md:px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm whitespace-nowrap ${
-                  aiHealth?.enabled !== false
+                className={`relative inline-flex items-center px-3 md:px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm whitespace-nowrap ${aiHealth?.enabled !== false
                     ? 'bg-purple-600 hover:bg-purple-700 text-white'
                     : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-                }`}
+                  }`}
               >
                 <span className="text-base md:text-lg mr-1.5 md:mr-2">🤖</span>
                 <span>
@@ -284,33 +280,31 @@ export default function WhatsAppAIDashboard() {
       <div className="flex-1 overflow-auto">
         {/* AI Health Alert - Show when not active */}
         {status.isConnected && aiHealth && aiHealth.status !== 'active' && (
-          <div className={`p-4 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${
-            aiHealth.status === 'disabled' ? 'bg-gray-50 border-gray-300' :
-            aiHealth.status === 'degraded' ? 'bg-yellow-50 border-yellow-300' :
-            'bg-red-50 border-red-300'
-          }`}>
+          <div className={`p-4 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${aiHealth.status === 'disabled' ? 'bg-gray-50 border-gray-300' :
+              aiHealth.status === 'degraded' ? 'bg-yellow-50 border-yellow-300' :
+                'bg-red-50 border-red-300'
+            }`}>
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  aiHealth.status === 'disabled' ? 'bg-gray-100' :
-                  aiHealth.status === 'degraded' ? 'bg-yellow-100' :
-                  'bg-red-100'
-                }`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${aiHealth.status === 'disabled' ? 'bg-gray-100' :
+                    aiHealth.status === 'degraded' ? 'bg-yellow-100' :
+                      'bg-red-100'
+                  }`}>
                   <span className="text-xl">
                     {aiHealth.status === 'disabled' ? '⏸️' :
-                     aiHealth.status === 'degraded' ? '⚠️' : '❌'}
+                      aiHealth.status === 'degraded' ? '⚠️' : '❌'}
                   </span>
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">
                     {aiHealth.status === 'disabled' ? 'AI Dinonaktifkan' :
-                     aiHealth.status === 'degraded' ? 'AI Mengalami Gangguan' :
-                     'AI Dalam Kondisi Error'}
+                      aiHealth.status === 'degraded' ? 'AI Mengalami Gangguan' :
+                        'AI Dalam Kondisi Error'}
                   </h3>
                   <p className="text-sm text-gray-700">
                     {aiHealth.statusMessage ||
-                     (aiHealth.status === 'disabled' ? 'AI dinonaktifkan secara manual' :
-                      `${aiHealth.errorCount} error berturut-turut terdeteksi`)}
+                      (aiHealth.status === 'disabled' ? 'AI dinonaktifkan secara manual' :
+                        `${aiHealth.errorCount} error berturut-turut terdeteksi`)}
                   </p>
                   {aiHealth.lastError && (
                     <p className="text-xs text-gray-500 mt-1 truncate max-w-md">
@@ -322,11 +316,10 @@ export default function WhatsAppAIDashboard() {
               <button
                 onClick={handleToggleAI}
                 disabled={isTogglingAI}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                  aiHealth.enabled
+                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${aiHealth.enabled
                     ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                     : 'bg-green-600 hover:bg-green-700 text-white'
-                } ${isTogglingAI ? 'opacity-50' : ''}`}
+                  } ${isTogglingAI ? 'opacity-50' : ''}`}
               >
                 {isTogglingAI ? 'Loading...' : (aiHealth.enabled ? 'Nonaktifkan' : 'Aktifkan AI')}
               </button>
@@ -412,21 +405,6 @@ export default function WhatsAppAIDashboard() {
               <span className="text-base md:text-lg">📋</span>
               <span className="leading-tight">WhatsApp AI - Executive Summary</span>
             </h4>
-
-            {/* Status Bar */}
-            <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3 pb-3 border-b border-green-200">
-              <span className="text-[10px] md:text-xs text-gray-700">
-                Status: <span className="font-bold text-green-600">✅ Connected</span>
-              </span>
-              <span className="text-gray-300">|</span>
-              <span className="text-[10px] md:text-xs text-gray-700">
-                AI: <span className="font-bold text-purple-600">ON ({status.aiResponseRate}% auto)</span>
-              </span>
-              <span className="text-gray-300">|</span>
-              <span className="text-[10px] md:text-xs text-gray-700">
-                Today: <span className="font-semibold">{new Date().toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-              </span>
-            </div>
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3 mb-3">
