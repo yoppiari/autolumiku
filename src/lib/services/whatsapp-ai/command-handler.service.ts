@@ -129,6 +129,8 @@ function isUniversalCommand(cmd: string): boolean {
     'status',
     'statistik', 'stats', 'laporan', // Tambah "laporan" untuk command statistik
     'kontak', 'contact',
+    // Help commands
+    'help', 'bantuan', 'panduan', 'cara', 'guide', 'menu', 'fitur', 'tool', 'perintah', 'penggunaan', 'command',
   ];
   return universalCommands.some(c => cmd.includes(c));
 }
@@ -364,9 +366,50 @@ async function handleUniversalCommand(
     return await handleContactCommand(cmd, context);
   }
 
+  // Help/Usage/Guide command
+  if (cmd.includes('help') || cmd.includes('bantuan') || cmd.includes('panduan') ||
+    cmd.includes('cara') || cmd.includes('guide') || cmd.includes('menu') ||
+    cmd.includes('fitur') || cmd.includes('tool') || cmd.includes('perintah') ||
+    cmd.includes('penggunaan') || cmd.includes('command')) {
+
+    const isSales = userRoleLevel <= 30; // SALES/STAFF
+    const isAdmin = userRoleLevel >= 90; // ADMIN/OWNER
+
+    let helpMsg = `🤖 *PANDUAN PENGGUNAAN WHATSAPP AI*\n\n`;
+    helpMsg += `Berikut adalah perintah yang bisa Anda gunakan:\n\n`;
+
+    // 1. Basic Tools (All Staff)
+    helpMsg += `📋 *MENU DASAR (STAFF)*\n`;
+    helpMsg += `• *Cek Stok*: Ketik "stok", "inventory", atau "stock"\n`;
+    helpMsg += `• *Cek Status*: Ketik "status" (rangkuman available/booked/sold)\n`;
+    helpMsg += `• *Statistik Saya*: Ketik "stats" atau "statistik"\n`;
+    helpMsg += `• *Upload Unit*: Ketik "upload" (ikuti petunjuk link)\n`;
+    helpMsg += `• *Edit Unit*: Ketik "edit" (ikuti petunjuk link)\n`;
+    helpMsg += `• *Kirim Kontak*: Ketik "kontak sales" atau "kontak admin"\n\n`;
+
+    // 2. Admin Tools (Admin only)
+    if (isAdmin) {
+      helpMsg += `👮‍♂️ *MENU ADMIN & OWNER*\n`;
+      helpMsg += `• *Sales Report*: Ketik "sales report", "laporan penjualan", atau "total sales"\n`;
+      helpMsg += `• *Inventory Report*: Ketik "inventory report" atau "total inventory"\n`;
+      helpMsg += `• *Staff Performance*: Ketik "staff performance" atau "laporan staff"\n`;
+      helpMsg += `• *Broadcast Report*: Tambahkan "kirim pdf" di akhir perintah\n\n`;
+    }
+
+    helpMsg += `💡 *TIPS:*\n`;
+    helpMsg += `- Anda bisa mengetik dengan bahasa alami, contoh: "tampilkan laporan penjualan bulan ini" atau "gimana cara upload?"\n`;
+    helpMsg += `- Gunakan command ini kapan saja jika lupa perintah.`;
+
+    return {
+      success: true,
+      message: helpMsg,
+      followUp: true,
+    };
+  }
+
   return {
     success: false,
-    message: 'Command tidak dikenali.',
+    message: 'Command tidak dikenali. Ketik "help" atau "bantuan" untuk melihat daftar perintah.',
     followUp: true,
   };
 }

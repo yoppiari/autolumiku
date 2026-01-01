@@ -207,6 +207,19 @@ export class MessageOrchestratorService {
 
         // Command diproses dan response dikirim
         // Upload state TIDAK di-reset, user bisa lanjut upload di pesan berikutnya
+
+        // CRITICAL FIX: Explicitly send the text response for commands!
+        // The webhook assumes we sent it, so we must do it here.
+        if (commandCheck.result.message) {
+          await this.sendResponse(
+            incoming.accountId,
+            incoming.from,
+            commandCheck.result.message,
+            conversation.id,
+            "system_command" as MessageIntent
+          );
+        }
+
         return {
           success: commandCheck.result.success,
           conversationId: conversation.id,
@@ -1001,7 +1014,15 @@ export class MessageOrchestratorService {
       message.includes('status') ||
       message.includes('statistik') || message.includes('stats') ||
       message.includes('laporan') ||
-      message === 'help' || message === 'bantuan';
+      message.includes('laporan') ||
+      // Flexible help/usage triggers
+      message.includes('help') || message.includes('bantuan') ||
+      message.includes('panduan') || message.includes('cara pakai') ||
+      message.includes('cara guna') || message.includes('penggunaan') ||
+      message.includes('guide') || message.includes('manual') ||
+      message.includes('perintah') || message.includes('command') ||
+      message.includes('menu') || message.includes('fitur') ||
+      message.includes('tool');
 
     // CRITICAL FIX: If incoming.from is LID, use verifiedStaffPhone from conversation for user lookup
     // This fixes the issue where verify command links LID to real phone, but commands still use LID
