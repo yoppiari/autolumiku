@@ -799,7 +799,7 @@ export class MessageOrchestratorService {
                   `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
                   `🎨 ${result.uploadRequest.color || '-'} | ⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
                   (result.uploadRequest.mileage ? `📍 ${result.uploadRequest.mileage.toLocaleString('id-ID')} km\n\n` : '\n') +
-                  `Silakan kirimkan 6 foto kendaraan:\n` +
+                  `Silakan kirimkan minimal 6 foto kendaraan:\n` +
                   `• Depan, belakang, samping\n` +
                   `• Dashboard, jok, bagasi`;
 
@@ -1189,13 +1189,16 @@ export class MessageOrchestratorService {
 
             console.log(`[Orchestrator] 👥 Found ${recipients.length} broadcast recipients`);
 
-            // Send to each recipient
+            // Send to each recipient with a small delay between messages
             for (const recipient of recipients) {
               if (!recipient.phone) continue;
 
               console.log(`[Orchestrator] 📤 Broadcasting to ${recipient.firstName} (${recipient.role}) at ${recipient.phone}`);
 
               try {
+                // Add a small delay (500ms) between broadcast messages to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 500));
+
                 await AimeowClientService.sendDocumentBase64(
                   clientId,
                   recipient.phone!, // ! assertion safe because of check above
@@ -1228,7 +1231,7 @@ export class MessageOrchestratorService {
           console.log(`[Orchestrator] 📎 vCard URL: ${fullVCardUrl}`);
 
           // Send vCard via WhatsApp
-          const clientId = incoming.accountId;
+          const clientId = incoming.clientId; // FIX: Use clientId (Aimeow UUID) instead of accountId (Prisma CUID)
           const to = incoming.from;
 
           console.log(`[Orchestrator] 📤 Sending vCard via WhatsApp to ${to}`);

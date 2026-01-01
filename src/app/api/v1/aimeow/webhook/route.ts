@@ -526,7 +526,7 @@ async function handleIncomingMessage(
 
       const processingPromise = MessageOrchestratorService.processIncomingMessage({
         accountId: account.id,
-        clientId: account.id, // Aimeow client ID is the same as account ID
+        clientId: account.clientId, // FIX: Use account.clientId (Aimeow UUID) instead of account.id (Prisma CUID)
         tenantId: account.tenantId,
         from,
         message: messageText,

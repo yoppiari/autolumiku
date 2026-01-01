@@ -305,40 +305,8 @@ export class AimeowClientService {
     try {
       const { clientId, to, message, mediaUrl } = params;
 
-      // If clientId is in JID format (6281298329132:17@s.whatsapp.net), we need to get the correct UUID
-      // Database might have wrong format - fetch from Aimeow API to get correct UUID
-      let apiClientId = clientId;
-      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
-        console.log(`[Aimeow Send] ⚠️  ClientId appears to be in wrong format: ${clientId}`);
-        console.log(`[Aimeow Send] Fetching correct UUID from Aimeow API...`);
-
-        // Fetch all clients and find the connected one
-        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
-        if (clientsResponse.ok) {
-          const clients = await clientsResponse.json();
-          const connectedClient = clients.find((c: any) => c.isConnected === true);
-
-          if (connectedClient) {
-            apiClientId = connectedClient.id;
-            console.log(`[Aimeow Send] ✅ Found correct UUID from API: ${apiClientId}`);
-
-            // Update database with correct clientId to fix future sends
-            try {
-              await prisma.aimeowAccount.update({
-                where: { clientId },
-                data: { clientId: apiClientId },
-              });
-              console.log(`[Aimeow Send] ✅ Updated database with correct UUID`);
-            } catch (dbError) {
-              console.warn(`[Aimeow Send] Failed to update database:`, dbError);
-            }
-          } else {
-            throw new Error("No connected client found on Aimeow. Please reconnect WhatsApp.");
-          }
-        } else {
-          throw new Error("Failed to fetch clients from Aimeow API");
-        }
-      }
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
       // Send text message - Aimeow API uses lowercase field names per Swagger docs
       const payload: any = {
@@ -657,24 +625,8 @@ export class AimeowClientService {
         return { success: false, error: 'Filename is empty' };
       }
 
-      // Validate clientId format - same as sendDocument
-      let apiClientId = clientId;
-      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
-        console.log(`[Aimeow Send Document Base64] ⚠️  ClientId in wrong format, fetching correct UUID...`);
-
-        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
-        if (clientsResponse.ok) {
-          const clients = await clientsResponse.json();
-          const connectedClient = clients.find((c: any) => c.isConnected === true);
-
-          if (connectedClient) {
-            apiClientId = connectedClient.id;
-            console.log(`[Aimeow Send Document Base64] ✅ Using correct UUID: ${apiClientId}`);
-          } else {
-            throw new Error("No connected client found on Aimeow");
-          }
-        }
-      }
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
       // Build payload for base64 document sending
       const payload: Record<string, any> = {
@@ -741,24 +693,8 @@ export class AimeowClientService {
       console.log(`[Aimeow Send Contact] 📇 Sending contact to ${to}`);
       console.log(`[Aimeow Send Contact] Contact: ${displayName} (${phoneNumber})`);
 
-      // Validate clientId format
-      let apiClientId = clientId;
-      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
-        console.log(`[Aimeow Send Contact] ⚠️ ClientId in wrong format, fetching correct UUID...`);
-
-        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
-        if (clientsResponse.ok) {
-          const clients = await clientsResponse.json();
-          const connectedClient = clients.find((c: any) => c.isConnected === true);
-
-          if (connectedClient) {
-            apiClientId = connectedClient.id;
-            console.log(`[Aimeow Send Contact] ✅ Using correct UUID: ${apiClientId}`);
-          } else {
-            throw new Error("No connected client found on Aimeow");
-          }
-        }
-      }
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
       // Build payload for contact sending
       const payload = {
@@ -826,33 +762,8 @@ export class AimeowClientService {
       console.log(`[Aimeow Send Images] Sending ${images.length} images to ${to}`);
       console.log(`[Aimeow Send Images] Original clientId: ${clientId}`);
 
-      // Validate clientId format - same as sendMessage
-      let apiClientId = clientId;
-      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
-        console.log(`[Aimeow Send Images] ⚠️ ClientId in wrong format, fetching correct UUID...`);
-
-        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
-        if (clientsResponse.ok) {
-          const clients = await clientsResponse.json();
-          const connectedClient = clients.find((c: any) => c.isConnected === true);
-
-          if (connectedClient) {
-            apiClientId = connectedClient.id;
-            console.log(`[Aimeow Send Images] ✅ Using correct UUID: ${apiClientId}`);
-
-            try {
-              await prisma.aimeowAccount.update({
-                where: { clientId },
-                data: { clientId: apiClientId },
-              });
-            } catch (dbError) {
-              console.warn(`[Aimeow Send Images] Failed to update DB:`, dbError);
-            }
-          } else {
-            throw new Error("No connected client found on Aimeow");
-          }
-        }
-      }
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
       const payload = {
         phone: to,
@@ -1234,24 +1145,8 @@ export class AimeowClientService {
       console.log(`[Aimeow Delete] 🗑️ Deleting message ${aimeowMessageId}`);
       console.log(`[Aimeow Delete] To: ${to}, ClientId: ${clientId}`);
 
-      // Get correct client UUID
-      let apiClientId = clientId;
-      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
-        console.log(`[Aimeow Delete] ⚠️ ClientId in wrong format, fetching correct UUID...`);
-
-        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
-        if (clientsResponse.ok) {
-          const clients = await clientsResponse.json();
-          const connectedClient = clients.find((c: any) => c.isConnected === true);
-
-          if (connectedClient) {
-            apiClientId = connectedClient.id;
-            console.log(`[Aimeow Delete] ✅ Using correct UUID: ${apiClientId}`);
-          } else {
-            throw new Error("No connected client found on Aimeow");
-          }
-        }
-      }
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
       // Prepare payload
       const payload = {
@@ -1304,10 +1199,6 @@ export class AimeowClientService {
     }
   }
 
-  /**
-   * Download media from Aimeow using message ID
-   * Tries multiple endpoint formats to get the media URL
-   */
   static async downloadMedia(
     clientId: string,
     mediaId: string
@@ -1315,18 +1206,8 @@ export class AimeowClientService {
     try {
       console.log(`[Aimeow Download] Downloading media: ${mediaId} for client: ${clientId}`);
 
-      // Get correct client UUID format
-      let apiClientId = clientId;
-      if (clientId.includes("@") || !clientId.includes("-")) {
-        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
-        if (clientsResponse.ok) {
-          const clients = await clientsResponse.json();
-          const connectedClient = clients.find((c: any) => c.isConnected === true);
-          if (connectedClient) {
-            apiClientId = connectedClient.id;
-          }
-        }
-      }
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
       // Try multiple endpoint formats
       const endpoints = [
@@ -1376,9 +1257,6 @@ export class AimeowClientService {
     }
   }
 
-  /**
-   * Get WhatsApp profile picture URL for a contact
-   */
   static async getProfilePicture(
     clientId: string,
     phone: string
@@ -1386,18 +1264,8 @@ export class AimeowClientService {
     try {
       console.log(`[Aimeow Profile] Getting profile picture for ${phone}`);
 
-      // Get correct client UUID format
-      let apiClientId = clientId;
-      if (clientId.includes("@") || !clientId.includes("-")) {
-        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
-        if (clientsResponse.ok) {
-          const clients = await clientsResponse.json();
-          const connectedClient = clients.find((c: any) => c.isConnected === true);
-          if (connectedClient) {
-            apiClientId = connectedClient.id;
-          }
-        }
-      }
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
       // Clean phone number - remove any suffix
       const cleanPhone = phone.replace(/@.*$/, '').replace(/[^0-9]/g, '');
@@ -1427,6 +1295,59 @@ export class AimeowClientService {
       console.error(`[Aimeow Profile] ❌ Error:`, error.message);
       return { success: false, hasPicture: false, error: error.message };
     }
+  }
+
+  /**
+   * Resolve a clientId to a valid Aimeow UUID.
+   * Handles:
+   * 1. JID format (628...:17@s.whatsapp.net)
+   * 2. Prisma CUID format (cm5...)
+   * 3. Fallback to first connected client
+   */
+  private static async resolveClientId(clientId: string): Promise<string> {
+    // 1. If it's already a UUID, return it
+    if (clientId.includes("-") && !clientId.includes("@")) {
+      return clientId;
+    }
+
+    console.log(`[Aimeow Resolve] ⚠️ ClientId needs resolution: ${clientId}`);
+
+    // 2. Try database lookup if it's a Prisma ID, JID, or stored clientId
+    try {
+      const account = await prisma.aimeowAccount.findFirst({
+        where: {
+          OR: [
+            { id: clientId },
+            { clientId: clientId },
+            { phoneNumber: clientId.split(":")[0].split("@")[0] }
+          ]
+        }
+      });
+
+      if (account && account.clientId.includes("-")) {
+        console.log(`[Aimeow Resolve] ✅ Resolved via DB: ${account.clientId}`);
+        return account.clientId;
+      }
+    } catch (err) {
+      console.warn(`[Aimeow Resolve] DB lookup failed:`, err);
+    }
+
+    // 3. Last resort: fetch all clients from API and pick connected one
+    try {
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+      if (response.ok) {
+        const clients = await response.json();
+        const connected = clients.find((c: any) => c.isConnected);
+        if (connected) {
+          console.log(`[Aimeow Resolve] ⚠️ Fallback to connected client: ${connected.id}`);
+          return connected.id;
+        }
+      }
+    } catch (err) {
+      console.error(`[Aimeow Resolve] API fallback failed:`, err);
+    }
+
+    return clientId; // Return original as last fallback
   }
 }
 
