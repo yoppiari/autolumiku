@@ -75,7 +75,15 @@ export default function WhatsAppAIConfigPage() {
         const parsedUser = JSON.parse(storedUser);
         const currentTenantId = parsedUser.tenantId;
         setTenantId(currentTenantId);
-        setUserRoleLevel(parsedUser.roleLevel || 30);
+
+        // Robust Role Check: If roleLevel is missing or low but role is ADMIN+, bump it
+        let level = parsedUser.roleLevel || 30;
+        const roleName = (parsedUser.role || '').toUpperCase();
+        if (level < 90 && ['ADMIN', 'OWNER', 'SUPER_ADMIN'].includes(roleName)) {
+          console.log('[Config] Upgrading role level based on name:', roleName);
+          level = 90; // Minimum Admin level
+        }
+        setUserRoleLevel(level);
 
         const response = await fetch(`/api/v1/whatsapp-ai/config?tenantId=${currentTenantId}`);
         const data = await response.json();

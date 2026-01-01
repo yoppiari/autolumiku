@@ -27,7 +27,13 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // ... auth logic
+  const auth = await authenticateRequest(request);
+  if (!auth.success || !auth.user) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
 
   try {
     const { id } = await params;
@@ -56,7 +62,8 @@ export async function GET(
       });
     } else {
       // Try exact match as displayId
-      vehicle = await prisma.vehicle.findUnique({
+      // Use findFirst instead of findUnique to avoid errors if displayId is not unique in DB
+      vehicle = await prisma.vehicle.findFirst({
         where: { displayId: searchId },
         include: {
           photos: {

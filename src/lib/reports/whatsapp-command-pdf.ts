@@ -17,6 +17,10 @@ interface ReportConfig {
   analysis?: string[];
   formula?: string;
   calculation?: string;
+  table?: {
+    headers: string[];
+    rows: string[][];
+  };
 }
 
 interface Metric {

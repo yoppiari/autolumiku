@@ -8,6 +8,9 @@ import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { generateVehicleSlug } from '@/lib/utils/vehicle-slug';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const headersList = headers();
   const tenantDomain = headersList.get('x-tenant-domain');
@@ -100,13 +103,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // Blog list page (if has posts)
       ...(blogPosts.length > 0
         ? [
-            {
-              url: `${baseUrl}/blog`,
-              lastModified: new Date(),
-              changeFrequency: 'daily' as const,
-              priority: 0.7,
-            },
-          ]
+          {
+            url: `${baseUrl}/blog`,
+            lastModified: new Date(),
+            changeFrequency: 'daily' as const,
+            priority: 0.7,
+          },
+        ]
         : []),
       // Individual blog posts
       ...blogPosts.map((post) => ({
