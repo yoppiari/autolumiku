@@ -275,7 +275,7 @@ export default function UsersPage() {
       case 'ADMIN':
         return 'Admin';
       case 'SALES':
-        return 'Sales';
+        return 'Staff/Sales';
       default:
         return role;
     }
@@ -353,7 +353,7 @@ export default function UsersPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
-          <p className="text-[10px] md:text-xs font-medium text-green-600">Sales</p>
+          <p className="text-[10px] md:text-xs font-medium text-green-600">Staff/Sales</p>
           {loading ? (
             <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
           ) : (
@@ -388,7 +388,7 @@ export default function UsersPage() {
             <option value="all">Semua Role</option>
             <option value="OWNER">Owner</option>
             <option value="ADMIN">Admin</option>
-            <option value="SALES">Sales</option>
+            <option value="SALES">Staff/Sales</option>
           </select>
         </div>
       </div>
@@ -401,21 +401,14 @@ export default function UsersPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-2 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Staff
+                  <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nama
                   </th>
-                  <th className="px-2 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <span className="hidden md:inline">WhatsApp</span>
-                    <span className="md:hidden">WA</span>
+                  <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
                   </th>
-                  <th className="px-2 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="hidden md:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="hidden md:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Bergabung
+                  <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Role Posisi
                   </th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Aksi
@@ -470,76 +463,34 @@ export default function UsersPage() {
                                 src={profilePictures[user.phone].pictureUrl!}
                                 alt={`${user.firstName} ${user.lastName}`}
                                 className="h-7 w-7 md:h-8 md:w-8 rounded-full object-cover"
-                                onError={(e) => {
-                                  // Fallback to initials if image fails to load
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  target.nextElementSibling?.classList.remove('hidden');
-                                }}
                               />
-                            ) : null}
-                            <div className={`h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex items-center justify-center ${user.phone && profilePictures[user.phone]?.hasPicture && profilePictures[user.phone]?.pictureUrl ? 'hidden' : ''}`}>
-                              <span className="text-blue-600 font-semibold text-[10px] md:text-xs">
-                                {user.firstName.charAt(0)}
-                                {user.lastName?.charAt(0) || ''}
-                              </span>
-                            </div>
-                            {user.phone && (
-                              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                            ) : (
+                              <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                <span className="text-blue-600 font-semibold text-[10px] md:text-xs">
+                                  {user.firstName.charAt(0)}
+                                  {user.lastName?.charAt(0) || ''}
+                                </span>
+                              </div>
                             )}
                           </div>
-                          <div className="ml-2 md:ml-3 min-w-0">
-                            <div className="text-xs md:text-sm font-medium text-gray-900 truncate max-w-[100px] md:max-w-none">
+                          <div className="ml-2 md:ml-3">
+                            <div className="text-xs md:text-sm font-medium text-gray-900">
                               {user.firstName} {user.lastName}
                             </div>
-                            <div className="text-[10px] md:text-xs text-gray-500 truncate max-w-[100px] md:max-w-none">{user.email}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap">
-                        {user.phone ? (
-                          <div className="flex items-center">
-                            <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1 md:mr-2 flex-shrink-0"></span>
-                            <span className="text-[10px] md:text-xs text-gray-900 truncate max-w-[60px] md:max-w-none">{user.phone}</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center">
-                            <span className="inline-block w-2 h-2 bg-red-400 rounded-full mr-1 md:mr-2 flex-shrink-0"></span>
-                            <span className="text-[10px] md:text-xs text-gray-400 italic">-</span>
-                          </div>
-                        )}
+                        <div className="text-xs md:text-sm text-gray-600">{user.email}</div>
                       </td>
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap">
                         <span
-                          className={`px-1.5 md:px-2 py-0.5 inline-flex text-[10px] md:text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(
+                          className={`px-2 py-0.5 inline-flex text-[10px] md:text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(
                             user.role
                           )}`}
                         >
                           {getRoleLabel(user.role)}
                         </span>
-                      </td>
-                      <td className="hidden md:table-cell px-4 py-2 whitespace-nowrap">
-                        <div className="flex flex-col gap-0.5">
-                          <span
-                            className={`px-1.5 py-0.5 inline-flex text-xs leading-4 font-medium rounded ${user.emailVerified
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-600'
-                              }`}
-                          >
-                            {user.emailVerified ? '✓ Email' : '○ Email'}
-                          </span>
-                          <span
-                            className={`px-1.5 py-0.5 inline-flex text-xs leading-4 font-medium rounded ${user.phone
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-600'
-                              }`}
-                          >
-                            {user.phone ? '✓ WhatsApp' : '✗ WhatsApp'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="hidden md:table-cell px-4 py-2 whitespace-nowrap text-xs text-gray-500">
-                        {formatDate(user.createdAt)}
                       </td>
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap text-right text-[10px] md:text-xs font-medium">
                         <button
@@ -763,12 +714,12 @@ export default function UsersPage() {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="SALES">Sales</option>
+                    <option value="SALES">Staff/Sales</option>
                     <option value="ADMIN">Admin</option>
                     <option value="OWNER">Owner</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    Sales tidak bisa akses fitur Analytics, Tim, dan Pengaturan
+                    Staff/Sales tidak bisa akses fitur Analytics, Tim, dan Pengaturan
                   </p>
                 </div>
 
@@ -893,12 +844,12 @@ export default function UsersPage() {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="SALES">Sales</option>
+                    <option value="SALES">Staff/Sales</option>
                     <option value="ADMIN">Admin</option>
                     <option value="OWNER">Owner</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    Sales tidak bisa akses fitur Analytics, Tim, dan Pengaturan
+                    Staff/Sales tidak bisa akses fitur Analytics, Tim, dan Pengaturan
                   </p>
                 </div>
 
