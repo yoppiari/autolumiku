@@ -322,6 +322,8 @@ export default function AnalyticsPage() {
 
           {/* Period Filter & Export Buttons */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Report Center link hidden as per user request */}
+            {/* 
             <Link
               href="/dashboard/reports"
               className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
@@ -331,6 +333,7 @@ export default function AnalyticsPage() {
               </svg>
               Report Center
             </Link>
+            */}
 
             {/* Period Filter - for Sales only */}
             {activeDepartment === 'sales' && (
