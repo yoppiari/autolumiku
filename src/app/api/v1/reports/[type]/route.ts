@@ -58,7 +58,7 @@ export async function GET(
     }
 
     // RBAC: Manager+ can view reports (roleLevel >= 80)
-    if (auth.user.roleLevel < ROLE_LEVELS.MANAGER) {
+    if (auth.user.roleLevel < 80) { // Using 80 for Manager as it's not in ROLE_LEVELS enum but used in docs
         return NextResponse.json(
             { error: 'Forbidden - Manager role or higher required' },
             { status: 403 }
@@ -177,7 +177,7 @@ export async function GET(
 
             const filename = `${reportType}-${new Date().toISOString().split('T')[0]}.xlsx`;
 
-            return new NextResponse(excelBuffer, {
+            return new NextResponse(new Uint8Array(excelBuffer), {
                 status: 200,
                 headers: {
                     'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -263,7 +263,7 @@ async function gatherReportData(
         });
 
         data.totalSales = soldVehicles.length;
-        data.totalRevenue = soldVehicles.reduce((sum, v) => sum + Number(v.price), 0);
+        data.totalRevenue = soldVehicles.reduce((sum, v) => sum + Number(v.price || 0), 0);
         data.avgPrice = data.totalSales > 0 ? data.totalRevenue / data.totalSales : 0;
 
         // Sales by brand
@@ -273,7 +273,7 @@ async function gatherReportData(
             const current = byBrand.get(brand) || { count: 0, revenue: 0 };
             byBrand.set(brand, {
                 count: current.count + 1,
-                revenue: current.revenue + Number(v.price),
+                revenue: current.revenue + Number(v.price || 0),
             });
         });
         data.salesByBrand = Array.from(byBrand.entries())
@@ -283,11 +283,11 @@ async function gatherReportData(
         // Recent sales detail
         if (reportType === 'recent-sales' || reportType === 'sales-report') {
             data.recentSalesDetail = soldVehicles.map((v) => ({
-                displayId: v.displayId,
+                displayId: v.displayId || 'N/A',
                 make: v.make,
                 model: v.model,
                 year: v.year,
-                price: Number(v.price),
+                price: Number(v.price || 0),
                 soldDate: v.updatedAt,
             }));
         }
@@ -336,11 +336,11 @@ async function gatherReportData(
 
         // Detailed inventory list for excel
         data.inventoryDetail = inventory.map(v => ({
-            displayId: v.displayId || v.id, // Fallback to id if displayId is null
+            displayId: v.displayId || 'Inventory',
             make: v.make,
             model: v.model,
             year: v.year,
-            price: Number(v.price),
+            price: Number(v.price || 0),
             daysInStock: Math.floor((Date.now() - v.createdAt.getTime()) / (24 * 60 * 60 * 1000))
         }));
 
@@ -352,12 +352,12 @@ async function gatherReportData(
                 .map((v) => {
                     const daysInStock = Math.floor((now - v.createdAt.getTime()) / dayMs);
                     return {
-                        displayId: v.displayId,
+                        displayId: v.displayId || 'STOCK',
                         make: v.make,
                         model: v.model,
                         year: v.year,
                         daysInStock,
-                        status: (daysInStock > 180 ? 'critical' : daysInStock > 90 ? 'warning' : 'ok') as 'critical' | 'warning',
+                        status: (daysInStock > 180 ? 'critical' : daysInStock > 90 ? 'warning' : 'ok') as any,
                     };
                 })
                 .filter((v) => v.status !== 'ok')

@@ -158,9 +158,6 @@ export class MessageOrchestratorService {
             { phone: phoneWith0 },
             { phone: phoneWith62 },
             { phone: incoming.from }, // Try exact match as well
-            { whatsappNumber: phoneWith0 },
-            { whatsappNumber: phoneWith62 },
-            { whatsappNumber: incoming.from },
           ],
         },
         select: {
@@ -658,13 +655,13 @@ export class MessageOrchestratorService {
         // Staff asking general questions - route to AI for natural response
         console.log(`[Orchestrator] Staff with customer intent - routing to AI for natural response`);
         // Get staff info for context
-        const staffInfo = isActuallyStaff ? (user || await this.getStaffInfo(incoming.from, incoming.tenantId)) : null;
+        const staffInfo = await this.getStaffInfo(incoming.from, incoming.tenantId);
         const result = await this.handleCustomerInquiry(
           conversation,
           classification.intent,
           incoming.message,
           true, // isStaff
-          staffInfo || undefined
+          staffInfo as any
         );
         responseMessage = result.message;
         escalated = result.escalated;
@@ -735,7 +732,7 @@ export class MessageOrchestratorService {
               classification.intent,
               incoming.message,
               !!isActuallyStaff,
-              staffInfo || undefined
+              staffInfo as any
             );
             responseMessage = result.message;
             escalated = result.escalated;
@@ -1121,13 +1118,15 @@ export class MessageOrchestratorService {
     // Process command
     try {
       console.log(`[Orchestrator] ⚙️ Calling processCommand with: "${message}"`);
-      const result = await processCommand(message, {
+      const commandOptions: any = {
         tenantId: incoming.tenantId,
         userRole: user.role,
         userRoleLevel: user.roleLevel,
         phoneNumber: incoming.from,
         userId: user.id,
-      });
+      };
+
+      const result = await processCommand(message, commandOptions);
       console.log(`[Orchestrator] ✅ processCommand result:`, result.success, result.message ? result.message.substring(0, 100) : '');
 
       // If PDF was generated, send it via WhatsApp using base64 (more secure)
@@ -1199,7 +1198,7 @@ export class MessageOrchestratorService {
               try {
                 await AimeowClientService.sendDocumentBase64(
                   clientId,
-                  recipient.phone,
+                  recipient.phone!, // ! assertion safe because of check above
                   base64Pdf,
                   result.filename,
                   `📢 Broadcast Report from ${user.firstName}: ${result.message}`

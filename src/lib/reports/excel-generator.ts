@@ -70,7 +70,7 @@ export class ExcelGenerator {
                 }));
 
             case 'whatsapp-analytics':
-                const waData = reportData.whatsapp || {};
+                const waData: any = reportData.whatsapp || {};
                 return [
                     { Metric: 'Total Conversations', Value: waData.totalConversations },
                     { Metric: 'Active Conversations', Value: waData.activeConversations },
