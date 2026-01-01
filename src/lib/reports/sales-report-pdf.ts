@@ -413,7 +413,7 @@ export class SalesReportPDF {
         .font('Helvetica')
         .text(`- ${item}`, margin, y, { width: contentWidth });
 
-      y += doc.heightOfString(`- ${item}`, { width: contentWidth, fontSize: 7 }) + 2;
+      y += doc.heightOfString(`- ${item}`, { width: contentWidth }) + 2;
     });
 
     // ==================== FOOTER ====================
@@ -520,25 +520,61 @@ export class SalesReportPDF {
   }
 
   private generateAnalysis(config: SalesReportConfig): string[] {
-    const { totalPenjualan, totalRevenue, rataRataHarga } = config.metrics;
+    const { totalPenjualan, totalRevenue, rataRataHarga, topSalesStaff } = config.metrics;
+    const chartData = config.chartData || [];
 
+    const analysis: string[] = [];
+
+    // === KONDISI: TIDAK ADA PENJUALAN ===
     if (totalPenjualan === 0) {
-      return [
-        'Belum ada penjualan tercatat. Fokus pada peningkatan lead generation dan follow-up customer.',
-        'Evaluasi strategi marketing dan pricing untuk meningkatkan konversi.',
-        'Pertimbangkan promosi atau diskon untuk menarik minat pembeli.'
-      ];
+      analysis.push('⚠️ PERLU DIPERBAIKI: Belum ada penjualan tercatat periode ini. Segera evaluasi strategi marketing, lead generation, dan follow-up customer.');
+      analysis.push('📋 LANGKAH SELANJUTNYA: (1) Review pricing strategy, (2) Tingkatkan aktivitas promosi digital/offline, (3) Training tim sales untuk closing skill.');
+      analysis.push('💡 SARAN: Pertimbangkan promo diskon atau bundling untuk menarik minat pembeli baru.');
+      return analysis;
     }
 
+    // === ANALISA PERFORMA PENJUALAN ===
+    const revenueFormatted = this.formatCurrencyShort(totalRevenue);
     const avgFormatted = this.formatCurrencyShort(rataRataHarga);
 
-    return [
-      `Dengan ${totalPenjualan} unit terjual dan revenue ${this.formatCurrencyShort(totalRevenue)}, fokus pada peningkatan volume penjualan.`,
-      `Rata-rata harga ${avgFormatted} per unit. Evaluasi apakah pricing sudah optimal untuk target market.`,
-      config.metrics.topSalesStaff
-        ? `${config.metrics.topSalesStaff} sebagai top performer - pertahankan dan jadikan benchmark untuk tim lain.`
-        : 'Identifikasi top performer dan buat sistem reward untuk meningkatkan motivasi tim sales.'
-    ];
+    // Performance assessment
+    if (totalPenjualan >= 10) {
+      analysis.push(`✅ PERTAHANKAN: Penjualan ${totalPenjualan} unit dengan revenue ${revenueFormatted} menunjukkan performa baik. Pertahankan strategi saat ini dan tingkatkan target.`);
+    } else if (totalPenjualan >= 5) {
+      analysis.push(`📈 TINGKATKAN: Penjualan ${totalPenjualan} unit cukup stabil. Fokus tingkatkan volume dengan memperluas jangkauan marketing dan database customer.`);
+    } else {
+      analysis.push(`⚠️ PERLU DIPERBAIKI: Penjualan ${totalPenjualan} unit masih di bawah optimal. Review strategi penjualan dan identifikasi hambatan konversi.`);
+    }
+
+    // === ANALISA PRICING ===
+    if (rataRataHarga > 200_000_000) {
+      analysis.push(`💰 PRICING: Rata-rata ${avgFormatted}/unit termasuk segment premium. Pastikan value proposition dan after-sales service sesuai ekspektasi customer premium.`);
+    } else if (rataRataHarga > 100_000_000) {
+      analysis.push(`💰 PRICING: Rata-rata ${avgFormatted}/unit di segment menengah. Evaluasi kompetitor dan pastikan pricing kompetitif dengan fitur yang ditawarkan.`);
+    } else {
+      analysis.push(`💰 PRICING: Rata-rata ${avgFormatted}/unit. Pertimbangkan upselling atau cross-selling untuk meningkatkan average transaction value.`);
+    }
+
+    // === ANALISA TOP PERFORMER ===
+    if (topSalesStaff) {
+      analysis.push(`👤 TOP PERFORMER: ${topSalesStaff} - Jadikan role model, share best practices ke tim, dan pertimbangkan insentif untuk mempertahankan motivasi.`);
+    } else {
+      analysis.push(`👤 TIM SALES: Belum ada data top performer. Implementasikan sistem tracking performa dan buat program reward untuk meningkatkan kompetisi sehat.`);
+    }
+
+    // === ANALISA DISTRIBUSI MERK (dari chart) ===
+    if (chartData.length > 0) {
+      const topBrand = chartData.reduce((max, item) => item.value > max.value ? item : max, chartData[0]);
+      const totalUnits = chartData.reduce((sum, item) => sum + item.value, 0);
+      const topPct = totalUnits > 0 ? ((topBrand.value / totalUnits) * 100).toFixed(0) : '0';
+
+      analysis.push(`🚗 BRAND FOKUS: ${topBrand.label} mendominasi (${topPct}%). Perkuat stok brand ini dan evaluasi kenapa brand lain kurang diminati.`);
+    }
+
+    // === SARAN LANGKAH SELANJUTNYA ===
+    analysis.push(`📋 LANGKAH SELANJUTNYA: (1) Target penjualan bulan depan: ${Math.max(totalPenjualan + 2, 5)} unit, (2) Follow-up leads yang pending, (3) Evaluasi stok vs permintaan pasar.`);
+
+    return analysis;
   }
 
   private formatCurrency(num: number): string {
