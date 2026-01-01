@@ -110,6 +110,10 @@ If no plates visible or uncertain, return: { "detected": false, "plates": [] }`,
       return imageBuffer;
     }
 
+    // Force disable covering - requested by user to "remove watermark"
+    console.log('[Plate Detection] Plate covering DISABLED by configuration');
+    return imageBuffer;
+
     try {
       const metadata = await sharp(imageBuffer).metadata();
       const imgWidth = metadata.width || 1920;

@@ -305,7 +305,7 @@ async function handleIncomingMessage(
 
     // Pattern 1: Numbers starting with 100/101/102 (known LID prefixes) that are long
     if (cleanNum.length >= 14 &&
-        (cleanNum.startsWith("100") || cleanNum.startsWith("101") || cleanNum.startsWith("102"))) {
+      (cleanNum.startsWith("100") || cleanNum.startsWith("101") || cleanNum.startsWith("102"))) {
       return true;
     }
 
@@ -757,7 +757,61 @@ async function autoFixClientIdMismatch(webhookClientId: string) {
       }
     }
 
-    // Strategy 2: If only ONE account exists in DB, use that (single-tenant mode)
+    // Strategy 2: Lookup the unknown clientId in Aimeow API to see if it exists and has a phone number
+    try {
+      console.log(`[Aimeow AutoFix] Looking up clientId ${webhookClientId} in Aimeow API...`);
+      const clientResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${webhookClientId}`, {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store',
+      });
+
+      if (clientResponse.ok) {
+        const clientData = await clientResponse.json();
+        const clientPhone = clientData.phone;
+
+        if (clientPhone) {
+          console.log(`[Aimeow AutoFix] ✅ Found client in API! Phone: ${clientPhone}`);
+
+          // Find account by this phone
+          const accountByPhone = await prisma.aimeowAccount.findFirst({
+            where: {
+              OR: [
+                { phoneNumber: clientPhone },
+                { phoneNumber: clientPhone.replace('62', '0') },
+                { phoneNumber: clientPhone.replace(/^0/, '62') },
+                { phoneNumber: `+${clientPhone}` },
+              ],
+            },
+            include: { aiConfig: true, tenant: true },
+          });
+
+          if (accountByPhone) {
+            console.log(`[Aimeow AutoFix] 🔄 Found account ${accountByPhone.id} matching phone ${clientPhone}. Updating clientId...`);
+
+            // Update the account with this new valid clientId
+            const updated = await prisma.aimeowAccount.update({
+              where: { id: accountByPhone.id },
+              data: {
+                clientId: webhookClientId, // Update to the ID from webhook/API
+                phoneNumber: clientPhone,
+                connectionStatus: "connected",
+                isActive: true,
+                lastConnectedAt: new Date(),
+              },
+              include: { aiConfig: true, tenant: true },
+            });
+
+            return updated;
+          } else {
+            console.warn(`[Aimeow AutoFix] Client found in API but no matching account in DB for phone ${clientPhone}`);
+          }
+        }
+      }
+    } catch (apiError: any) {
+      console.error(`[Aimeow AutoFix] API lookup failed: ${apiError.message}`);
+    }
+
+    // Strategy 3: Single Tenant Fallback (Original Strategy 2)
     const allAccounts = await prisma.aimeowAccount.findMany({
       include: { aiConfig: true, tenant: true },
     });
@@ -828,7 +882,7 @@ async function autoFixClientIdMismatch(webhookClientId: string) {
             // Find account that should be updated
             const accountToUpdate = allAccounts.find(
               (a) => a.phoneNumber === matchingClient.phone ||
-                     a.clientId.includes(matchingClient.phone?.substring(0, 6) || 'xxx')
+                a.clientId.includes(matchingClient.phone?.substring(0, 6) || 'xxx')
             );
 
             if (accountToUpdate) {

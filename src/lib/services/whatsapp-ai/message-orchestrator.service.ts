@@ -158,6 +158,9 @@ export class MessageOrchestratorService {
             { phone: phoneWith0 },
             { phone: phoneWith62 },
             { phone: incoming.from }, // Try exact match as well
+            { whatsappNumber: phoneWith0 },
+            { whatsappNumber: phoneWith62 },
+            { whatsappNumber: incoming.from },
           ],
         },
         select: {
@@ -167,21 +170,23 @@ export class MessageOrchestratorService {
           role: true,
           roleLevel: true,
           phone: true,
+          email: true,
         },
       });
 
       // Log user identification
       if (user) {
-        console.log(`[Orchestrator] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role}, Level: ${user.roleLevel}, DB phone: ${user.phone})`);
+        console.log(`[Orchestrator] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role}, Level: ${user.roleLevel}, Email: ${user.email})`);
 
         // Update conversation with user info if not already set
         // ALL registered users (STAFF/SALES, ADMIN, OWNER, SUPER_ADMIN) should be marked as isStaff
-        const validStaffRoles = ['SALES', 'STAFF', 'ADMIN', 'OWNER', 'SUPER_ADMIN'];
+        const validStaffRoles = ['SALES', 'STAFF', 'MANAGER', 'ADMIN', 'OWNER', 'SUPER_ADMIN'];
         if (!conversation.isStaff && (user.roleLevel >= 30 || validStaffRoles.includes(user.role.toUpperCase()))) {
           await prisma.whatsAppConversation.update({
             where: { id: conversation.id },
             data: {
               isStaff: true,
+              customerName: `${user.firstName} ${user.lastName}`.trim(),
             },
           });
           console.log(`[Orchestrator] ✅ Conversation marked as staff for ${user.firstName} ${user.lastName} (${user.role})`);
@@ -653,7 +658,7 @@ export class MessageOrchestratorService {
         // Staff asking general questions - route to AI for natural response
         console.log(`[Orchestrator] Staff with customer intent - routing to AI for natural response`);
         // Get staff info for context
-        const staffInfo = await this.getStaffInfo(incoming.from, incoming.tenantId);
+        const staffInfo = isActuallyStaff ? (user || await this.getStaffInfo(incoming.from, incoming.tenantId)) : null;
         const result = await this.handleCustomerInquiry(
           conversation,
           classification.intent,
@@ -722,14 +727,14 @@ export class MessageOrchestratorService {
           escalated = true; // Mark as escalated so staff knows to check manually
         } else {
           // AI is healthy or user is staff - proceed with AI processing
-          const staffInfo = isActuallyStaff ? await this.getStaffInfo(incoming.from, incoming.tenantId) : null;
+          const staffInfo = isActuallyStaff ? (user || await this.getStaffInfo(incoming.from, incoming.tenantId)) : null;
 
           try {
             const result = await this.handleCustomerInquiry(
               conversation,
               classification.intent,
               incoming.message,
-              isActuallyStaff,
+              !!isActuallyStaff,
               staffInfo || undefined
             );
             responseMessage = result.message;
@@ -745,127 +750,127 @@ export class MessageOrchestratorService {
               await AIHealthMonitorService.trackSuccess(incoming.tenantId);
             }
 
-        // Check if AI detected an upload request
-        if (result.uploadRequest) {
-          console.log(`[Orchestrator] 🚗 AI detected upload request:`, result.uploadRequest);
+            // Check if AI detected an upload request
+            if (result.uploadRequest) {
+              console.log(`[Orchestrator] 🚗 AI detected upload request:`, result.uploadRequest);
 
-          // FIXED: Trust conversation.isStaff status instead of re-checking with phone
-          // This fixes LID format issues where phone format changes between messages
-          const isStaff = conversation.isStaff || await this.isStaffMember(incoming.from, incoming.tenantId);
+              // FIXED: Trust conversation.isStaff status instead of re-checking with phone
+              // This fixes LID format issues where phone format changes between messages
+              const isStaff = conversation.isStaff || await this.isStaffMember(incoming.from, incoming.tenantId);
 
-          if (isStaff) {
-            console.log(`[Orchestrator] User is staff, initiating upload flow...`);
+              if (isStaff) {
+                console.log(`[Orchestrator] User is staff, initiating upload flow...`);
 
-            // Get current contextData to preserve existing fields like verifiedStaffPhone, linkedLIDs
-            const currentContext = (conversation.contextData as Record<string, any>) || {};
+                // Get current contextData to preserve existing fields like verifiedStaffPhone, linkedLIDs
+                const currentContext = (conversation.contextData as Record<string, any>) || {};
 
-            // IMPORTANT: Get the ACTUAL staff phone from User table for LID mapping
-            // This is critical when AI detects staff upload - we need to set verifiedStaffPhone here too!
-            const actualStaffPhone = await this.getStaffPhoneFromUser(incoming.from, incoming.tenantId);
-            const isLID = incoming.from.includes("@lid");
+                // IMPORTANT: Get the ACTUAL staff phone from User table for LID mapping
+                // This is critical when AI detects staff upload - we need to set verifiedStaffPhone here too!
+                const actualStaffPhone = await this.getStaffPhoneFromUser(incoming.from, incoming.tenantId);
+                const isLID = incoming.from.includes("@lid");
 
-            // Determine real phone for customerPhone (NEVER store LID)
-            const realPhoneForUpload = actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from);
+                // Determine real phone for customerPhone (NEVER store LID)
+                const realPhoneForUpload = actualStaffPhone || currentContext.verifiedStaffPhone || (isLID ? null : incoming.from);
 
-            // Store vehicle data in conversation context
-            await prisma.whatsAppConversation.update({
-              where: { id: conversation.id },
-              data: {
-                conversationState: "upload_vehicle",
-                isStaff: true,
-                conversationType: "staff",
-                // CRITICAL: Update customerPhone to real phone (not LID)
-                ...(realPhoneForUpload && { customerPhone: realPhoneForUpload }),
-                contextData: {
-                  ...currentContext, // Preserve existing fields
-                  // CRITICAL: Set verifiedStaffPhone here so LID lookup works on next message!
-                  verifiedStaffPhone: realPhoneForUpload,
-                  linkedLIDs: isLID
-                    ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
-                    : currentContext.linkedLIDs,
-                  ...(isLID && !currentContext.originalLID && { originalLID: incoming.from }),
-                  uploadStep: incoming.mediaUrl ? "has_photo_and_data" : "has_data_awaiting_photo",
-                  vehicleData: result.uploadRequest,
-                  photos: incoming.mediaUrl ? [incoming.mediaUrl] : [],
-                },
-              },
-            });
-
-            // Ask for photo (vehicle will be created when photo is sent)
-            responseMessage = `Oke data masuk! 👍\n\n` +
-              `🚗 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
-              `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
-              `🎨 ${result.uploadRequest.color || '-'} | ⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
-              (result.uploadRequest.mileage ? `📍 ${result.uploadRequest.mileage.toLocaleString('id-ID')} km\n\n` : '\n') +
-              `Silakan kirimkan 6 foto kendaraan:\n` +
-              `• Depan, belakang, samping\n` +
-              `• Dashboard, jok, bagasi`;
-
-            // If photo provided with message, add it to context
-            if (incoming.mediaUrl) {
-              await prisma.whatsAppConversation.update({
-                where: { id: conversation.id },
-                data: {
-                  // CRITICAL: Update customerPhone to real phone (not LID)
-                  ...(realPhoneForUpload && { customerPhone: realPhoneForUpload }),
-                  contextData: {
-                    ...currentContext, // Preserve existing fields
-                    // CRITICAL: Must include verifiedStaffPhone & linkedLIDs here too!
-                    verifiedStaffPhone: realPhoneForUpload,
-                    linkedLIDs: isLID
-                      ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
-                      : currentContext.linkedLIDs,
-                    ...(isLID && !currentContext.originalLID && { originalLID: incoming.from }),
-                    uploadStep: "has_photo_and_data",
-                    vehicleData: result.uploadRequest,
-                    photos: [incoming.mediaUrl],
+                // Store vehicle data in conversation context
+                await prisma.whatsAppConversation.update({
+                  where: { id: conversation.id },
+                  data: {
+                    conversationState: "upload_vehicle",
+                    isStaff: true,
+                    conversationType: "staff",
+                    // CRITICAL: Update customerPhone to real phone (not LID)
+                    ...(realPhoneForUpload && { customerPhone: realPhoneForUpload }),
+                    contextData: {
+                      ...currentContext, // Preserve existing fields
+                      // CRITICAL: Set verifiedStaffPhone here so LID lookup works on next message!
+                      verifiedStaffPhone: realPhoneForUpload,
+                      linkedLIDs: isLID
+                        ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
+                        : currentContext.linkedLIDs,
+                      ...(isLID && !currentContext.originalLID && { originalLID: incoming.from }),
+                      uploadStep: incoming.mediaUrl ? "has_photo_and_data" : "has_data_awaiting_photo",
+                      vehicleData: result.uploadRequest,
+                      photos: incoming.mediaUrl ? [incoming.mediaUrl] : [],
+                    },
                   },
-                },
-              });
+                });
 
-              responseMessage = `Nice! Data + 1 foto masuk! 👍\n\n` +
-                `🚗 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
-                `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
-                `🎨 ${result.uploadRequest.color || '-'} | ⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
-                `📷 Foto: 1/6\n\n` +
-                `Kirim 5 foto lagi ya~`;
+                // Ask for photo (vehicle will be created when photo is sent)
+                responseMessage = `Oke data masuk! 👍\n\n` +
+                  `🚗 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
+                  `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
+                  `🎨 ${result.uploadRequest.color || '-'} | ⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
+                  (result.uploadRequest.mileage ? `📍 ${result.uploadRequest.mileage.toLocaleString('id-ID')} km\n\n` : '\n') +
+                  `Silakan kirimkan 6 foto kendaraan:\n` +
+                  `• Depan, belakang, samping\n` +
+                  `• Dashboard, jok, bagasi`;
+
+                // If photo provided with message, add it to context
+                if (incoming.mediaUrl) {
+                  await prisma.whatsAppConversation.update({
+                    where: { id: conversation.id },
+                    data: {
+                      // CRITICAL: Update customerPhone to real phone (not LID)
+                      ...(realPhoneForUpload && { customerPhone: realPhoneForUpload }),
+                      contextData: {
+                        ...currentContext, // Preserve existing fields
+                        // CRITICAL: Must include verifiedStaffPhone & linkedLIDs here too!
+                        verifiedStaffPhone: realPhoneForUpload,
+                        linkedLIDs: isLID
+                          ? Array.from(new Set([...(currentContext.linkedLIDs || []), incoming.from]))
+                          : currentContext.linkedLIDs,
+                        ...(isLID && !currentContext.originalLID && { originalLID: incoming.from }),
+                        uploadStep: "has_photo_and_data",
+                        vehicleData: result.uploadRequest,
+                        photos: [incoming.mediaUrl],
+                      },
+                    },
+                  });
+
+                  responseMessage = `Nice! Data + 1 foto masuk! 👍\n\n` +
+                    `🚗 ${result.uploadRequest.make} ${result.uploadRequest.model} ${result.uploadRequest.year}\n` +
+                    `💰 Rp ${this.formatPrice(result.uploadRequest.price)}\n` +
+                    `🎨 ${result.uploadRequest.color || '-'} | ⚙️ ${result.uploadRequest.transmission || 'Manual'}\n` +
+                    `📷 Foto: 1/6\n\n` +
+                    `Kirim 5 foto lagi ya~`;
+                }
+              } else {
+                console.log(`[Orchestrator] User is NOT staff, ignoring upload request`);
+                responseMessage = `Maaf kak, upload cuma buat staff aja 😊\n\nAda yang bisa aku bantu?`;
+              }
             }
-          } else {
-            console.log(`[Orchestrator] User is NOT staff, ignoring upload request`);
-            responseMessage = `Maaf kak, upload cuma buat staff aja 😊\n\nAda yang bisa aku bantu?`;
-          }
-        }
 
-        // Check if AI detected an edit request
-        if (result.editRequest) {
-          console.log(`[Orchestrator] ✏️ AI detected edit request:`, result.editRequest);
+            // Check if AI detected an edit request
+            if (result.editRequest) {
+              console.log(`[Orchestrator] ✏️ AI detected edit request:`, result.editRequest);
 
-          const isStaff = conversation.isStaff || await this.isStaffMember(incoming.from, incoming.tenantId);
+              const isStaff = conversation.isStaff || await this.isStaffMember(incoming.from, incoming.tenantId);
 
-          if (isStaff) {
-            console.log(`[Orchestrator] User is staff, processing edit request...`);
+              if (isStaff) {
+                console.log(`[Orchestrator] User is staff, processing edit request...`);
 
-            // Import and use VehicleEditService
-            const { VehicleEditService } = await import('./vehicle-edit.service');
+                // Import and use VehicleEditService
+                const { VehicleEditService } = await import('./vehicle-edit.service');
 
-            const editResult = await VehicleEditService.editVehicle({
-              vehicleId: result.editRequest.vehicleId,
-              fields: [{
-                field: result.editRequest.field,
-                oldValue: result.editRequest.oldValue,
-                newValue: result.editRequest.newValue,
-              }],
-              staffPhone: incoming.from,
-              tenantId: incoming.tenantId,
-              conversationId: conversation.id,
-            });
+                const editResult = await VehicleEditService.editVehicle({
+                  vehicleId: result.editRequest.vehicleId,
+                  fields: [{
+                    field: result.editRequest.field,
+                    oldValue: result.editRequest.oldValue,
+                    newValue: result.editRequest.newValue,
+                  }],
+                  staffPhone: incoming.from,
+                  tenantId: incoming.tenantId,
+                  conversationId: conversation.id,
+                });
 
-            responseMessage = editResult.message;
-          } else {
-            console.log(`[Orchestrator] User is NOT staff, ignoring edit request`);
-            responseMessage = `Maaf kak, fitur edit cuma buat staff aja 😊\n\nAda yang bisa aku bantu?`;
-          }
-        }
+                responseMessage = editResult.message;
+              } else {
+                console.log(`[Orchestrator] User is NOT staff, ignoring edit request`);
+                responseMessage = `Maaf kak, fitur edit cuma buat staff aja 😊\n\nAda yang bisa aku bantu?`;
+              }
+            }
           } catch (aiError: any) {
             // Track AI error for health monitoring
             console.error(`[Orchestrator] AI error caught:`, aiError.message);
@@ -994,11 +999,11 @@ export class MessageOrchestratorService {
 
     // Check if message contains command keywords (more flexible matching)
     const isUniversalCommand = message.includes('rubah') || message.includes('ubah') || message.includes('edit') ||
-                              message === 'upload' ||
-                              message.includes('inventory') || message.includes('stok') ||
-                              message === 'status' ||
-                              message.includes('statistik') || message.includes('stats') ||
-                              message.includes('laporan'); // Tambah "laporan" sebagai command
+      message === 'upload' ||
+      message.includes('inventory') || message.includes('stok') ||
+      message === 'status' ||
+      message.includes('statistik') || message.includes('stats') ||
+      message.includes('laporan'); // Tambah "laporan" sebagai command
 
     // CRITICAL FIX: If incoming.from is LID, use verifiedStaffPhone from conversation for user lookup
     // This fixes the issue where verify command links LID to real phone, but commands still use LID
@@ -1022,42 +1027,42 @@ export class MessageOrchestratorService {
     // PDF Commands - MUST match specific patterns to avoid false positives
     // Single word triggers:
     const isPDFCommand = message === 'report' ||
-                        message === 'pdf' ||
-                        message.includes('report pdf') ||
-                        message.includes('pdf report') ||
-                        message.includes('kirim report') ||
-                        message.includes('kirim pdf') ||
-                        message.includes('kirim pdf nya') ||
-                        message.includes('kirim reportnya') ||
-                        message.includes('kirim pdfnya') ||
-                        // Specific report names:
-                        message.includes('sales report') ||
-                        message.includes('whatsapp ai') ||
-                        message.includes('metrics penjualan') || message.includes('metrix penjualan') ||
-                        message.includes('metrics pelanggan') || message.includes('metrix pelanggan') ||
-                        message.includes('metrics operational') || message.includes('metrix operational') ||
-                        message.includes('operational metrics') ||
-                        message.includes('operational metric') ||
-                        message.includes('tren penjualan') ||
-                        // English keywords (add missing aliases):
-                        message.includes('customer metrics') || message.includes('customer metric') ||
-                        message.includes('sales trends') || message.includes('sales trend') ||
-                        message.includes('total sales') || message.includes('sales total') ||
-                        message.includes('total penjualan') ||
-                        message.includes('total penjualan showroom') ||
-                        message.includes('staff performance') ||
-                        message.includes('recent sales') ||
-                        message.includes('low stock alert') ||
-                        message.includes('low stock') ||
-                        message.includes('total revenue') ||
-                        message.includes('total inventory') ||
-                        message.includes('average price') ||
-                        message.includes('sales summary') ||
-                        // More specific "penjualan"/"sales" patterns (not just any mention):
-                        /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics|trends?|totals?)\b/i.test(message) ||
-                        /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(message) ||
-                        /\b(customer|pelanggan)\s+metrics\b/i.test(message) ||
-                        /\btotal\s+(sales|penjualan)\b/i.test(message);
+      message === 'pdf' ||
+      message.includes('report pdf') ||
+      message.includes('pdf report') ||
+      message.includes('kirim report') ||
+      message.includes('kirim pdf') ||
+      message.includes('kirim pdf nya') ||
+      message.includes('kirim reportnya') ||
+      message.includes('kirim pdfnya') ||
+      // Specific report names:
+      message.includes('sales report') ||
+      message.includes('whatsapp ai') ||
+      message.includes('metrics penjualan') || message.includes('metrix penjualan') ||
+      message.includes('metrics pelanggan') || message.includes('metrix pelanggan') ||
+      message.includes('metrics operational') || message.includes('metrix operational') ||
+      message.includes('operational metrics') ||
+      message.includes('operational metric') ||
+      message.includes('tren penjualan') ||
+      // English keywords (add missing aliases):
+      message.includes('customer metrics') || message.includes('customer metric') ||
+      message.includes('sales trends') || message.includes('sales trend') ||
+      message.includes('total sales') || message.includes('sales total') ||
+      message.includes('total penjualan') ||
+      message.includes('total penjualan showroom') ||
+      message.includes('staff performance') ||
+      message.includes('recent sales') ||
+      message.includes('low stock alert') ||
+      message.includes('low stock') ||
+      message.includes('total revenue') ||
+      message.includes('total inventory') ||
+      message.includes('average price') ||
+      message.includes('sales summary') ||
+      // More specific "penjualan"/"sales" patterns (not just any mention):
+      /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics|trends?|totals?)\b/i.test(message) ||
+      /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(message) ||
+      /\b(customer|pelanggan)\s+metrics\b/i.test(message) ||
+      /\btotal\s+(sales|penjualan)\b/i.test(message);
 
     // Check if it's a command
     const isCommand = isUniversalCommand || isPDFCommand;

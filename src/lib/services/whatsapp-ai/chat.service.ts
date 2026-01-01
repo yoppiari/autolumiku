@@ -415,7 +415,7 @@ export class WhatsAppAIChatService {
       // Check conversation history for vehicle context
       const lastAiMsg = context.messageHistory.filter(m => m.role === "assistant").pop();
       const offeredPhotos = lastAiMsg?.content.toLowerCase().includes("foto") ||
-                            lastAiMsg?.content.toLowerCase().includes("lihat");
+        lastAiMsg?.content.toLowerCase().includes("lihat");
 
       if (isPhotoConfirmation && offeredPhotos) {
         console.log("[WhatsApp AI Chat] 🔄 AI failed but detected photo confirmation - trying direct photo fetch");
@@ -540,9 +540,9 @@ export class WhatsAppAIChatService {
         const userName = context.staffInfo.firstName || context.staffInfo.name;
         const userRole = context.staffInfo.role || '';
         const roleLabel = userRole.toUpperCase() === 'OWNER' ? 'Owner' :
-                         userRole.toUpperCase() === 'ADMIN' ? 'Admin' :
-                         userRole.toUpperCase() === 'SUPER_ADMIN' ? 'Super Admin' :
-                         userRole.toUpperCase() === 'SALES' ? 'Sales' : 'Staff';
+          userRole.toUpperCase() === 'ADMIN' ? 'Admin' :
+            userRole.toUpperCase() === 'SUPER_ADMIN' ? 'Super Admin' :
+              userRole.toUpperCase() === 'SALES' ? 'Sales' : 'Staff';
 
         console.log(`[SmartFallback] 👤 Personalized greeting for ${userName} (${roleLabel})`);
 
@@ -610,7 +610,7 @@ export class WhatsAppAIChatService {
             `• Bagasi luas untuk bawaan anak-anak\n` +
             `• Suspensi nyaman untuk perjalanan keluarga\n` +
             `• Hemat bahan bakar\n\n` +
-            `Berikut pilihannya di budget sekitar Rp ${Math.round(budget/1000000)} juta:\n\n${list}\n\n` +
+            `Berikut pilihannya di budget sekitar Rp ${Math.round(budget / 1000000)} juta:\n\n${list}\n\n` +
             `Mau info detail yang mana? 😊`,
           shouldEscalate: false,
         };
@@ -691,8 +691,8 @@ export class WhatsAppAIChatService {
 
     // Check if user explicitly asks for photos (contains "foto", "gambar", "mana fotonya" etc)
     const userExplicitlyAsksPhoto = msg.includes("foto") || msg.includes("gambar") ||
-                                     /mana.*(foto|gambar)/i.test(msg) ||
-                                     msg.startsWith("mana ");
+      /mana.*(foto|gambar)/i.test(msg) ||
+      msg.startsWith("mana ");
 
     console.log(`[SmartFallback] Photo check: msg="${msg}", isPhotoConfirmation=${isPhotoConfirmation}, explicit=${userExplicitlyAsksPhoto}`);
 
@@ -894,7 +894,7 @@ export class WhatsAppAIChatService {
         }).join('\n');
 
         return {
-          message: `Ada beberapa pilihan ${budget > 0 ? `di budget Rp ${budget/1000000} juta` : ''} nih! 💰✨\n\n${list}\n\nMau info detail yang mana? 😊`,
+          message: `Ada beberapa pilihan ${budget > 0 ? `di budget Rp ${budget / 1000000} juta` : ''} nih! 💰✨\n\n${list}\n\nMau info detail yang mana? 😊`,
           shouldEscalate: false,
         };
       }
@@ -999,12 +999,20 @@ export class WhatsAppAIChatService {
 ⏰ WAKTU SAAT INI (WIB - Jakarta):
 - Tanggal: ${dateStr}
 - Jam: ${timeStr} WIB
+⏰ WAKTU SAAT INI (WIB - Jakarta):
+- Tanggal: ${dateStr}
+- Jam: ${timeStr} WIB
 - Salam waktu yang tepat: "${timeGreeting}"
+
+👤 IDENTITAS PENGIRIM:
+${senderInfo?.isStaff ? `IDENTIFIKASI: STAFF (${senderInfo.staffInfo?.role || 'Internal'}) - ${senderInfo.staffInfo?.name || 'User'}` : `IDENTIFIKASI: CUSTOMER`}
 
 🎯 ATURAN GREETING (SANGAT PENTING - JANGAN DIULANG BERKALI-KALI!):
 
 1. OPENING GREETING (HANYA pada pesan pertama/pembuka):
-   → Gunakan salam waktu HANYA jika ini pesan PERTAMA dari customer!
+   → Jika CUSTOMER: "Selamat [Pagi/Siang/Sore] Bapak/Ibu!"
+   → Jika STAFF: "Halo [Nama Staff]! Ada yang bisa saya bantu untuk operasional hari ini?"
+   → Gunakan salam waktu HANYA jika ini pesan PERTAMA dari customer/staff!
    → JANGAN gunakan "${timeGreeting}" di setiap respon - hanya di awal percakapan!
    → Jika percakapan sudah berjalan, langsung saja ke topik tanpa greeting lagi!
 
@@ -1041,6 +1049,11 @@ GAYA KOMUNIKASI:
 - JANGAN monoton - variasikan cara menjawab!
 - Berikan informasi lengkap namun ringkas (3-4 kalimat)
 - Tanya balik untuk engagement, contoh: "Lagi cari mobil apa nih?", "Budget-nya berapa?"
+
+💰 BUDGET-AWARE RECOMMENDATIONS:
+- Jika customer menyebutkan budget (misal: "budget 150jt"), SEGERA cari stok yang harganya mendekati atau di bawah budget tersebut.
+- Jangan hanya bilang "ada", tapi berikan list singkat unit yang masuk budget.
+- Contoh: "Untuk budget 150jt, kami punya unit yang cocok banget nih: [List unit]. Mau info detail yang mana?"
 
 CARA MERESPONS:
 
@@ -1217,6 +1230,13 @@ WAJIB PANGGIL TOOL edit_vehicle jika staff minta edit! Contoh:
 - "update harga 150jt" → PANGGIL edit_vehicle(field="price", new_value="150000000")
 - "ganti transmisi ke matic" → PANGGIL edit_vehicle(field="transmission", new_value="automatic")
 - "rubah warna ke hitam" → PANGGIL edit_vehicle(field="color", new_value="hitam")
+
+🛠️ TROUBLESHOOTING TOOL UNTUK STAFF:
+Jika staff bingung cara pakai tool atau gagal upload/edit:
+1. Instruksikan untuk pakai format natural: "Coba ketik langsung aja, misal: upload Brio 2020 hitam matic 120jt"
+2. Jika butuh list command, bilang: "Ketik 'halo' atau 'help' untuk lihat menu lengkap staff ya."
+3. Jika foto gagal diproses: "Pastikan foto dikirim satu-satu ya kak, atau tunggu sebentar sampai ada balasan 'Foto diterima'."
+4. Jika ID mobil salah: "Coba cek ID-nya lagi di inventory (ketik 'stok') atau edit tanpa ID (sistem akan pakai unit terakhir)."
 
 ⚠️ SANGAT PENTING:
 - JANGAN hanya menjawab dengan teks seperti "Saya akan mengubah..."
@@ -1427,8 +1447,8 @@ CONTOH RESPON ESCALATED:
     // Check if previous AI message offered photos
     const lastAiMsg = recentHistory.filter(m => m.role === "assistant").pop();
     const offeredPhotos = lastAiMsg?.content.toLowerCase().includes("foto") ||
-                          lastAiMsg?.content.toLowerCase().includes("lihat") ||
-                          lastAiMsg?.content.toLowerCase().includes("gambar");
+      lastAiMsg?.content.toLowerCase().includes("lihat") ||
+      lastAiMsg?.content.toLowerCase().includes("gambar");
 
     if (isPhotoConfirmation && offeredPhotos) {
       // Extract vehicle name from last AI message for photo sending
@@ -1553,9 +1573,9 @@ CONTOH RESPON ESCALATED:
 
       const aiContent = lastAiMsg.content.toLowerCase();
       const offeredPhotos = aiContent.includes("foto") ||
-                            aiContent.includes("lihat") ||
-                            aiContent.includes("gambar") ||
-                            aiContent.includes("📸");
+        aiContent.includes("lihat") ||
+        aiContent.includes("gambar") ||
+        aiContent.includes("📸");
 
       if (!offeredPhotos) {
         console.log(`[WhatsApp AI Chat] Previous AI message didn't offer photos and user didn't explicitly ask`);
@@ -2367,8 +2387,8 @@ CONTOH RESPON ESCALATED:
 
     // Also check if AI response indicates it understood as edit
     const aiIndicatesEdit = aiResponse.toLowerCase().includes('mengubah') ||
-                           aiResponse.toLowerCase().includes('mengganti') ||
-                           aiResponse.toLowerCase().includes('update');
+      aiResponse.toLowerCase().includes('mengganti') ||
+      aiResponse.toLowerCase().includes('update');
     if (!aiIndicatesEdit && !hasEditKeyword) return null;
 
     // Extract vehicle ID if mentioned (PM-PST-XXX format)
@@ -2390,21 +2410,25 @@ CONTOH RESPON ESCALATED:
       { pattern: /tahun\s*(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
 
       // Price: "update harga 150jt", "ganti harga ke 200000000"
-      { pattern: /(?:rubah|ganti|ubah|update)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
-        const val = m[1].toLowerCase();
-        if (val.includes('jt') || val.includes('juta')) {
-          return String(parseInt(val) * 1000000);
+      {
+        pattern: /(?:rubah|ganti|ubah|update)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
+          const val = m[1].toLowerCase();
+          if (val.includes('jt') || val.includes('juta')) {
+            return String(parseInt(val) * 1000000);
+          }
+          return val;
         }
-        return val;
-      }},
+      },
 
       // Transmission: "ganti transmisi ke matic", "ubah ke manual"
-      { pattern: /(?:rubah|ganti|ubah)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmission', valueExtractor: m => {
-        const val = m[1].toLowerCase();
-        if (val === 'matic' || val === 'at' || val === 'automatic') return 'automatic';
-        if (val === 'manual' || val === 'mt') return 'manual';
-        return val;
-      }},
+      {
+        pattern: /(?:rubah|ganti|ubah)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmission', valueExtractor: m => {
+          const val = m[1].toLowerCase();
+          if (val === 'matic' || val === 'at' || val === 'automatic') return 'automatic';
+          if (val === 'manual' || val === 'mt') return 'manual';
+          return val;
+        }
+      },
 
       // Color: "ganti warna ke hitam", "ubah warna putih jadi merah"
       { pattern: /(?:rubah|ganti|ubah)\s*warna\s*(?:\w+\s*)?(?:ke|jadi|menjadi)\s*(\w+)/i, field: 'color', valueExtractor: m => m[1] },
