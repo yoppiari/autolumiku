@@ -143,9 +143,9 @@ export default function ReportsPage() {
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [downloading, setDownloading] = useState<string | null>(null);
 
-    const handleDownload = async (reportId: string) => {
+    const handleDownload = async (reportId: string, format: 'pdf' | 'excel') => {
         try {
-            setDownloading(reportId);
+            setDownloading(`${reportId}-${format}`);
             const token = localStorage.getItem('authToken');
 
             if (!token) {
@@ -155,7 +155,7 @@ export default function ReportsPage() {
             }
 
             const response = await fetch(
-                `/api/v1/reports/${reportId}?period=${selectedPeriod}&format=pdf`,
+                `/api/v1/reports/${reportId}?period=${selectedPeriod}&format=${format}`,
                 {
                     method: 'GET',
                     headers: { Authorization: `Bearer ${token}` },
@@ -167,7 +167,7 @@ export default function ReportsPage() {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${reportId}-${new Date().toISOString().split('T')[0]}.pdf`;
+                a.download = `${reportId}-${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -205,7 +205,7 @@ export default function ReportsPage() {
                             📊 Comprehensive Reports
                         </h1>
                         <p className="text-sm text-gray-500 mt-1">
-                            Download detailed business reports in PDF format
+                            Download detailed business reports in PDF or Excel format
                         </p>
                     </div>
 
@@ -240,8 +240,8 @@ export default function ReportsPage() {
                         key={cat.value}
                         onClick={() => setActiveCategory(cat.value)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeCategory === cat.value
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                     >
                         <span className="mr-2">{cat.icon}</span>
@@ -269,57 +269,47 @@ export default function ReportsPage() {
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => handleDownload(report.id)}
-                            disabled={downloading === report.id}
-                            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${downloading === report.id
-                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800'
-                                }`}
-                        >
-                            {downloading === report.id ? (
-                                <>
-                                    <svg
-                                        className="animate-spin h-4 w-4"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        />
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        />
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => handleDownload(report.id, 'pdf')}
+                                disabled={!!downloading}
+                                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${downloading === `${report.id}-pdf`
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                                    }`}
+                            >
+                                {downloading === `${report.id}-pdf` ? (
+                                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                     </svg>
-                                    Generating...
-                                </>
-                            ) : (
-                                <>
-                                    <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
+                                ) : (
+                                    <>
+                                        <span className="text-lg">📄</span> PDF
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={() => handleDownload(report.id, 'excel')}
+                                disabled={!!downloading}
+                                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${downloading === `${report.id}-excel`
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                                    }`}
+                            >
+                                {downloading === `${report.id}-excel` ? (
+                                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                     </svg>
-                                    Download PDF
-                                </>
-                            )}
-                        </button>
+                                ) : (
+                                    <>
+                                        <span className="text-lg">📊</span> Excel
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -341,6 +331,9 @@ export default function ReportsPage() {
                             </li>
                             <li>
                                 • Format PDF professional dengan chart dan tabel
+                            </li>
+                            <li>
+                                • Format Excel untuk analisis data lebih lanjut
                             </li>
                             <li>
                                 • Report dapat di-share dengan management atau stakeholder

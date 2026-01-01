@@ -98,6 +98,16 @@ export interface ReportData {
         soldDate: Date;
         salesPerson?: string;
     }[];
+
+    // Inventory detail for Excel export
+    inventoryDetail?: {
+        displayId: string;
+        make: string;
+        model: string;
+        year: number;
+        price: number;
+        daysInStock: number;
+    }[];
 }
 
 interface Metric {

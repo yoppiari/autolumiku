@@ -22,8 +22,10 @@ import {
     ReportType,
     ReportData
 } from '@/lib/reports/comprehensive-report-pdf';
+import { ExcelGenerator } from '@/lib/reports/excel-generator';
 
 export const dynamic = 'force-dynamic';
+
 
 const VALID_REPORT_TYPES: ReportType[] = [
     'sales-report',
@@ -157,11 +159,31 @@ export async function GET(
                 },
             });
         } else {
-            // Excel format (to be implemented)
-            return NextResponse.json(
-                { error: 'Excel format not yet implemented for individual reports' },
-                { status: 501 }
-            );
+            // Excel format
+            const config: ComprehensiveReportConfig = {
+                type: reportType,
+                tenantName: tenant?.name || 'Prima Mobil',
+                logoUrl: tenant?.logoUrl || undefined,
+                period: {
+                    start: startDate,
+                    end: now,
+                    label: periodLabel,
+                },
+                data: reportData,
+            };
+
+            const generator = new ExcelGenerator();
+            const excelBuffer = generator.generate(config);
+
+            const filename = `${reportType}-${new Date().toISOString().split('T')[0]}.xlsx`;
+
+            return new NextResponse(excelBuffer, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'Content-Disposition': `attachment; filename="${filename}"`,
+                },
+            });
         }
     } catch (error: any) {
         console.error(`[Reports API] Error generating ${params.type}:`, error);
@@ -311,6 +333,16 @@ async function gatherReportData(
         data.avgStockPrice = inventory.length > 0
             ? inventory.reduce((sum, v) => sum + Number(v.price), 0) / inventory.length
             : 0;
+
+        // Detailed inventory list for excel
+        data.inventoryDetail = inventory.map(v => ({
+            displayId: v.displayId || v.id, // Fallback to id if displayId is null
+            make: v.make,
+            model: v.model,
+            year: v.year,
+            price: Number(v.price),
+            daysInStock: Math.floor((Date.now() - v.createdAt.getTime()) / (24 * 60 * 60 * 1000))
+        }));
 
         // Low stock alerts (vehicles older than 90 days)
         if (reportType === 'low-stock-alert') {
