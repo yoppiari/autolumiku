@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * AIMEOW Comprehensive Test Suite
  * Covers all aspects of WhatsApp AI integration
@@ -257,7 +258,8 @@ function testIdentityJIDHandling(): TestResult {
 
 function testConversationContextAI(): TestResult {
   header('3. Conversation & Context AI (Core Value AIMEOW)', '🧠');
-  let passed = 0, failed = 0, warnings = 0;
+  let passed = 0, failed = 0;
+  const warnings = 0;
 
   subHeader('Conversation State Machine');
 
@@ -354,7 +356,8 @@ function testConversationContextAI(): TestResult {
 
 function testIntentBusinessLogic(): TestResult {
   header('4. Intent & Business Logic', '🎯');
-  let passed = 0, failed = 0, warnings = 0;
+  let passed = 0;
+  const failed = 0, warnings = 0;
 
   subHeader('Staff Command Patterns');
 
@@ -437,7 +440,8 @@ function testIntentBusinessLogic(): TestResult {
 
 function testPromptGuardrails(): TestResult {
   header('5. Prompt & Guardrails', '🛡️');
-  let passed = 0, failed = 0, warnings = 0;
+  let passed = 0, warnings = 0;
+  const failed = 0;
 
   subHeader('System Prompt Components');
 
@@ -512,7 +516,8 @@ function testPromptGuardrails(): TestResult {
 
 function testResponseQualityUX(): TestResult {
   header('6. Response Quality & UX', '✨');
-  let passed = 0, failed = 0, warnings = 0;
+  let passed = 0, warnings = 0;
+  const failed = 0;
 
   subHeader('Response Format Standards');
 
@@ -584,7 +589,8 @@ function testResponseQualityUX(): TestResult {
 
 function testErrorHandlingResilience(): TestResult {
   header('7. Error Handling & Resilience', '🔧');
-  let passed = 0, failed = 0, warnings = 0;
+  let passed = 0, warnings = 0;
+  const failed = 0;
 
   subHeader('Retry Logic');
 
@@ -661,7 +667,8 @@ function testErrorHandlingResilience(): TestResult {
 
 function testPerformanceLoad(): TestResult {
   header('8. Performance & Load', '⚡');
-  let passed = 0, failed = 0, warnings = 0;
+  let passed = 0;
+  const failed = 0, warnings = 0;
 
   subHeader('Timeout Configuration');
 
@@ -845,7 +852,8 @@ function testSecurityCompliance(): TestResult {
 
 function testEscalationHumanHandover(): TestResult {
   header('10. Eskalasi & Human Handover', '👥');
-  let passed = 0, failed = 0, warnings = 0;
+  let passed = 0, warnings = 0;
+  const failed = 0;
 
   subHeader('Escalation Triggers');
 
@@ -916,7 +924,8 @@ function testEscalationHumanHandover(): TestResult {
 
 function testMonitoringAnalytics(): TestResult {
   header('11. Monitoring & Analytics', '📊');
-  let passed = 0, failed = 0, warnings = 0;
+  let passed = 0;
+  const failed = 0, warnings = 0;
 
   subHeader('Logging Structure');
 
@@ -994,7 +1003,8 @@ function testMonitoringAnalytics(): TestResult {
 
 function testRegression(): TestResult {
   header('12. Regression Test', '🔄');
-  let passed = 0, failed = 0, warnings = 0;
+  let passed = 0, failed = 0;
+  const warnings = 0;
 
   subHeader('Critical Path: Customer Inquiry');
 
@@ -1179,3 +1189,5 @@ function runAllTests() {
 
 // Run
 runAllTests();
+
+export { };

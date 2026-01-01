@@ -463,7 +463,7 @@ async function handleContactCommand(
 /**
  * Handle PDF report commands (ADMIN+ only)
  */
-async function handlePDFCommand(
+export async function handlePDFCommand(
   cmd: string,
   context: CommandContext
 ): Promise<CommandResult> {

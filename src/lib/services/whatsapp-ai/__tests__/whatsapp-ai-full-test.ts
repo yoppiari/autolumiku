@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * WhatsApp AI Services - Full Test Suite
  * Tests ALL WhatsApp AI services:
@@ -432,7 +433,8 @@ async function testAIHealthMonitor() {
 
 async function testVehicleUploadEdit() {
   header('5. Vehicle Upload & Edit Service');
-  let passed = 0, failed = 0;
+  let passed = 0;
+  const failed = 0;
 
   subHeader('Upload Flow Structure');
 
@@ -487,7 +489,8 @@ async function testVehicleUploadEdit() {
 
 async function testMessageOrchestrator() {
   header('6. Message Orchestrator Service');
-  let passed = 0, failed = 0;
+  let passed = 0;
+  const failed = 0;
 
   subHeader('Message Processing Flow');
 
@@ -679,3 +682,5 @@ async function runAllTests() {
 
 // Run
 runAllTests();
+
+export { };

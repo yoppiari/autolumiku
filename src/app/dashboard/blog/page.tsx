@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 type BlogStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'ARCHIVED';
 type BlogCategory =
@@ -288,8 +289,8 @@ export default function BlogListPage() {
             <button
               onClick={() => setViewMode('table')}
               className={`px-3 py-1.5 text-sm rounded-lg ${viewMode === 'table'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
             >
               📊 Table
@@ -297,8 +298,8 @@ export default function BlogListPage() {
             <button
               onClick={() => setViewMode('grid')}
               className={`px-3 py-1.5 text-sm rounded-lg ${viewMode === 'grid'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
             >
               🎴 Grid
@@ -564,8 +565,8 @@ export default function BlogListPage() {
               }
               disabled={pagination.page === 1}
               className={`px-3 py-1.5 text-sm rounded-lg ${pagination.page === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                 }`}
             >
               ← Prev
@@ -578,8 +579,8 @@ export default function BlogListPage() {
                     key={pageNum}
                     onClick={() => setPagination({ ...pagination, page: pageNum })}
                     className={`px-3 py-1.5 text-sm rounded-lg ${pageNum === pagination.page
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                       }`}
                   >
                     {pageNum}
@@ -597,8 +598,8 @@ export default function BlogListPage() {
               }
               disabled={pagination.page === pagination.totalPages}
               className={`px-3 py-1.5 text-sm rounded-lg ${pagination.page === pagination.totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                 }`}
             >
               Next →

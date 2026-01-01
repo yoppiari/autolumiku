@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       period: new Date().toISOString().split('T')[0],
     });
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

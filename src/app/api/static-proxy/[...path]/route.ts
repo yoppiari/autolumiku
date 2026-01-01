@@ -46,12 +46,12 @@ export async function GET(
     const contentType = requestedPath.endsWith('.js')
       ? 'application/javascript; charset=utf-8'
       : requestedPath.endsWith('.css')
-      ? 'text/css; charset=utf-8'
-      : 'application/octet-stream';
+        ? 'text/css; charset=utf-8'
+        : 'application/octet-stream';
 
     // Return cached file with proper caching headers
     // Use Buffer directly - Next.js handles it correctly
-    return new NextResponse(fileContent, {
+    return new NextResponse(fileContent as any, {
       status: 200,
       headers: {
         'Content-Type': contentType,
