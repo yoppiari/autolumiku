@@ -255,6 +255,19 @@ export default function UsersPage() {
     });
   };
 
+  const formatPhoneNumber = (phone: string | null) => {
+    if (!phone) return '-';
+    // Format: 6281234567890 → +62 812-3456-7890
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('62')) {
+      const part1 = cleaned.substring(2, 6); // 8123
+      const part2 = cleaned.substring(6, 10); // 4567
+      const part3 = cleaned.substring(10, 14); // 890
+      return `+62 ${part1}-${part2}-${part3}`;
+    }
+    return phone;
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role.toUpperCase()) {
       case 'OWNER':
@@ -404,11 +417,11 @@ export default function UsersPage() {
                   <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nama
                   </th>
-                  <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                     Email
                   </th>
                   <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role Posisi
+                    Role
                   </th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Aksi
@@ -477,10 +490,15 @@ export default function UsersPage() {
                             <div className="text-xs md:text-sm font-medium text-gray-900">
                               {user.firstName} {user.lastName}
                             </div>
+                            {user.phone && (
+                              <div className="text-[9px] md:text-xs text-gray-500">
+                                {formatPhoneNumber(user.phone)}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-2 md:px-4 py-2 whitespace-nowrap">
+                      <td className="px-2 md:px-4 py-2 whitespace-nowrap hidden md:table-cell">
                         <div className="text-xs md:text-sm text-gray-600">{user.email}</div>
                       </td>
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap">
