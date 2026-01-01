@@ -921,6 +921,12 @@ async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandRe
     },
   ];
 
+  const analysis = whatsappData ? [
+    `Akurasi AI saat ini sebesar ${whatsappData.overview.aiAccuracy}%, menunjukkan performa chatbot yang ${whatsappData.overview.aiAccuracy > 80 ? 'sangat handal' : 'cukup baik'}.`,
+    `Response rate mencapai ${whatsappData.overview.aiResponseRate}%, membantu tim sales menangani customer di luar jam kerja secara otomatis.`,
+    `Top intent pelanggan adalah "${whatsappData.intentBreakdown[0]?.intent || 'N/A'}", pastikan database unit selalu up-to-date untuk akurasi jawaban AI.`
+  ] : ['Data WhatsApp AI belum tersedia dalam 30 hari terakhir untuk melakukan analisa deeper.'];
+
   const reportData = {
     title: 'WhatsApp AI Analytics',
     subtitle: 'Analisis Performa AI & Customer Engagement',
@@ -928,10 +934,11 @@ async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandRe
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
+    analysis,
     showChart: (whatsappData?.intentBreakdown?.length || 0) > 0,
     chartData: (whatsappData?.intentBreakdown || []).slice(0, 5).map((item, idx) => ({
       label: item.intent.charAt(0).toUpperCase() + item.intent.slice(1),
-      value: item.count,
+      value: `${item.count} interaction`,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
     })),
   };
@@ -940,7 +947,7 @@ async function generateWhatsAppAIPDF(context: CommandContext): Promise<CommandRe
 
   return {
     success: true,
-    message: '✅ WhatsApp AI Analytics (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ WhatsApp AI Analytics (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `whatsapp-ai-analytics-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -992,6 +999,12 @@ async function generateSalesMetricsPDF(context: CommandContext): Promise<Command
     },
   ];
 
+  const analysis = [
+    `Total penjualan tercatat ${salesData.summary.totalSalesCount} unit dengan rata-rata harga pasar ${formatCurrency(salesData.avgPrice)}.`,
+    `Terdapat ${inventoryData.totalStock} unit stok yang siap (Available/Booked), pastikan rotasi stok tetap terjaga.`,
+    `Brand "${salesData.byMake[0]?.make || 'N/A'}" mendominasi volume penjualan saat ini.`
+  ];
+
   const reportData = {
     title: 'Metrik Penjualan Showroom',
     subtitle: 'KPI Penjualan & Inventory',
@@ -999,10 +1012,11 @@ async function generateSalesMetricsPDF(context: CommandContext): Promise<Command
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
+    analysis,
     showChart: salesData.byMake.length > 0,
     chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
       label: item.make,
-      value: item.count,
+      value: `${item.count} unit`,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
     })),
   };
@@ -1011,7 +1025,7 @@ async function generateSalesMetricsPDF(context: CommandContext): Promise<Command
 
   return {
     success: true,
-    message: '✅ Metrik Penjualan (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Metrik Penjualan (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `metrik-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1065,6 +1079,12 @@ async function generateCustomerMetricsPDF(context: CommandContext): Promise<Comm
     },
   ];
 
+  const analysis = whatsappData ? [
+    `Interaksi pelanggan didominasi oleh intent "${whatsappData.intentBreakdown[0]?.intent || 'N/A'}" (${whatsappData.intentBreakdown[0]?.percentage || 0}%).`,
+    `Total percakapan baru mencapai ${whatsappData.overview.totalConversations} dalam 30 hari terakhir.`,
+    `Fokus pada peningkatan response time di awal percakapan untuk menaikkan conversion rate.`
+  ] : ['Belum ada data interaksi pelanggan yang signifikan untuk dianalisa.'];
+
   const reportData = {
     title: 'Metrik Pelanggan',
     subtitle: 'Customer Engagement Analytics',
@@ -1072,10 +1092,11 @@ async function generateCustomerMetricsPDF(context: CommandContext): Promise<Comm
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
+    analysis,
     showChart: (whatsappData?.intentBreakdown?.length || 0) > 0,
     chartData: (whatsappData?.intentBreakdown || []).slice(0, 5).map((item, idx) => ({
       label: item.intent.charAt(0).toUpperCase() + item.intent.slice(1),
-      value: item.count,
+      value: `${item.percentage}% volume`,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
     })),
   };
@@ -1084,7 +1105,7 @@ async function generateCustomerMetricsPDF(context: CommandContext): Promise<Comm
 
   return {
     success: true,
-    message: '✅ Metrik Pelanggan (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Metrik Pelanggan (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `metrik-pelanggan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1139,6 +1160,12 @@ async function generateOperationalMetricsPDF(context: CommandContext): Promise<C
     },
   ];
 
+  const analysis = [
+    `Stok tersedia ${inventoryData.totalStock} unit dengan total staff aktif ${staffData.totalStaff} orang.`,
+    `Terdapat ${staffData.topPerformers.length} staff yang berhasil mencatat penjualan dalam 30 hari terakhir.`,
+    `Rasio unit terjual per staff aktif perlu ditingkatkan untuk mengoptimalkan operasional showroom.`
+  ];
+
   const reportData = {
     title: 'Metrik Operational Showroom',
     subtitle: 'KPI Operational & Staff Performance',
@@ -1146,10 +1173,11 @@ async function generateOperationalMetricsPDF(context: CommandContext): Promise<C
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
+    analysis,
     showChart: salesData.byMake.length > 0,
     chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
       label: item.make,
-      value: item.count,
+      value: `${item.count} unit terjual`,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
     })),
   };
@@ -1158,7 +1186,7 @@ async function generateOperationalMetricsPDF(context: CommandContext): Promise<C
 
   return {
     success: true,
-    message: '✅ Metrik Operational (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Metrik Operational (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `metrik-operational-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1209,6 +1237,12 @@ async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandR
     },
   ];
 
+  const analysis = [
+    `Total penjualan 30 hari terakhir mencapai ${totalSales} unit dengan revenue ${formatCurrency(totalRevenue)}.`,
+    `Rata-rata penjualan harian stabil di angka ${avgDailySales.toFixed(1)} unit per hari.`,
+    `Tren penjualan menunjukkan brand "${salesData.byMake[0]?.make || 'Other'}" sebagai kontributor utama.`
+  ];
+
   const reportData = {
     title: 'Tren Penjualan Showroom',
     subtitle: 'Analisis Tren 30 Hari Terakhir',
@@ -1216,10 +1250,11 @@ async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandR
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
+    analysis,
     showChart: true,
     chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
       label: item.make,
-      value: item.count,
+      value: `${item.count} unit (${Math.round((item.count / totalSales) * 100)}%)`,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
     })),
   };
@@ -1228,7 +1263,7 @@ async function generateSalesTrendsPDF(context: CommandContext): Promise<CommandR
 
   return {
     success: true,
-    message: '✅ Tren Penjualan (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Tren Penjualan (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `tren-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1285,6 +1320,12 @@ async function generateStaffPerformancePDF(context: CommandContext): Promise<Com
     },
   ];
 
+  const analysis = topPerformer ? [
+    `Top performer periode ini adalah ${topPerformer.name} dengan total ${topPerformer.count} closing.`,
+    `Total kontribusi seluruh tim mencapai ${totalStaffSales} unit dalam 30 hari.`,
+    `Rata-rata produktivitas tim berada di angka ${(totalStaffSales / staffData.topPerformers.length).toFixed(1)} unit per staff aktif.`
+  ] : ['Belum ada data performa staff yang tercatat periode ini.'];
+
   const reportData = {
     title: 'Staff Performance Showroom',
     subtitle: 'Performa Sales Staff (30 Hari Terakhir)',
@@ -1292,10 +1333,11 @@ async function generateStaffPerformancePDF(context: CommandContext): Promise<Com
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
+    analysis,
     showChart: staffData.topPerformers.length > 0,
     chartData: staffData.topPerformers.slice(0, 5).map((performer, idx) => ({
       label: performer.name,
-      value: performer.count,
+      value: `${performer.count} closing`,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
     })),
   };
@@ -1304,7 +1346,7 @@ async function generateStaffPerformancePDF(context: CommandContext): Promise<Com
 
   return {
     success: true,
-    message: '✅ Staff Performance (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Staff Performance (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `staff-performance-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1347,6 +1389,12 @@ async function generateRecentSalesPDF(context: CommandContext): Promise<CommandR
     },
   ];
 
+  const analysis = [
+    `Penjualan 7 hari terakhir sebanyak ${salesData.summary.totalSalesCount} unit dengan revenue ${formatCurrency(salesData.summary.totalSalesValue)}.`,
+    `Rata-rata harga unit terjual seminggu terakhir adalah ${formatCurrency(salesData.avgPrice)}.`,
+    `Brand "${salesData.byMake[0]?.make || 'N/A'}" paling banyak diminati dalam periode singkat ini.`
+  ];
+
   const reportData = {
     title: 'Recent Sales Showroom',
     subtitle: 'Penjualan 7 Hari Terakhir',
@@ -1354,10 +1402,11 @@ async function generateRecentSalesPDF(context: CommandContext): Promise<CommandR
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
+    analysis,
     showChart: salesData.byMake.length > 0,
     chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
       label: item.make,
-      value: item.count,
+      value: `${item.count} unit`,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
     })),
   };
@@ -1366,7 +1415,7 @@ async function generateRecentSalesPDF(context: CommandContext): Promise<CommandR
 
   return {
     success: true,
-    message: '✅ Recent Sales (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Recent Sales (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `recent-sales-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1431,6 +1480,12 @@ async function generateLowStockPDF(context: CommandContext): Promise<CommandResu
     },
   ];
 
+  const analysis = [
+    `Total stok saat ini adalah ${inventoryData.totalStock} unit dengan status ${stockStatus}.`,
+    isLowStock ? '⚠️ PERINGATAN: Stok sangat rendah. Segera lakukan pengadaan unit baru untuk menjaga ketersediaan.' : '✅ Stok masih dalam batas aman, namun tetap monitor pergerakan unit populer.',
+    `Total nilai aset inventory yang tersedia saat ini adalah ${formatCurrency(inventoryData.totalValue)}.`
+  ];
+
   const reportData = {
     title: 'Low Stock Alert Showroom',
     subtitle: 'Monitoring Stok Kendaraan',
@@ -1438,15 +1493,16 @@ async function generateLowStockPDF(context: CommandContext): Promise<CommandResu
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
+    analysis,
     showChart: chartData.length > 0,
-    chartData,
+    chartData: chartData.map(c => ({ ...c, value: `${c.value} unit` })),
   };
 
   const pdfBuffer = await generator.generate(reportData);
 
   return {
     success: true,
-    message: '✅ Low Stock Alert (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Low Stock Alert (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `low-stock-alert-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1492,17 +1548,24 @@ async function generateTotalSalesPDF(context: CommandContext): Promise<CommandRe
     },
   ];
 
+  const analysis = [
+    `Total penjualan periode ini mencapai ${salesData.summary.totalSalesCount} unit.`,
+    `Fokus penjualan saat ini berada pada brand "${salesData.byMake[0]?.make || 'N/A'}".`,
+    `Tingkatkan promosi untuk brand dengan stok tinggi namun volume penjualan rendah.`
+  ];
+
   const reportData = {
     title: 'Total Penjualan Showroom',
-    subtitle: `Periode: 30 Hari Terakhir`,
+    subtitle: 'Rekapitulasi Unit Terjual (30 Hari)',
     tenantName: tenant?.name || 'Prima Mobil',
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
-    showChart: true,
+    analysis,
+    showChart: salesData.byMake.length > 0,
     chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
       label: item.make,
-      value: item.count,
+      value: `${item.count} unit`,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
     })),
   };
@@ -1511,7 +1574,7 @@ async function generateTotalSalesPDF(context: CommandContext): Promise<CommandRe
 
   return {
     success: true,
-    message: '✅ Total Penjualan (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Total Penjualan (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `total-penjualan-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1554,6 +1617,12 @@ async function generateTotalRevenuePDF(context: CommandContext): Promise<Command
     },
   ];
 
+  const analysis = [
+    `Total revenue 30 hari terakhir mencapai ${formatCurrency(salesData.summary.totalSalesValue)}.`,
+    `Brand "${salesData.byMake[0]?.make || 'N/A'}" memberikan kontribusi revenue tertinggi sebesar ${formatCurrency(salesData.byMake[0]?.value || 0)}.`,
+    `Rata-rata revenue per unit terjual adalah ${formatCurrency(salesData.avgPrice)}.`
+  ];
+
   const reportData = {
     title: 'Total Revenue Showroom',
     subtitle: 'Laporan Pendapatan (30 Hari Terakhir)',
@@ -1561,10 +1630,11 @@ async function generateTotalRevenuePDF(context: CommandContext): Promise<Command
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
+    analysis,
     showChart: salesData.byMake.length > 0,
     chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
       label: item.make,
-      value: item.value,
+      value: formatCurrency(item.value),
       color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
     })),
   };
@@ -1573,7 +1643,7 @@ async function generateTotalRevenuePDF(context: CommandContext): Promise<Command
 
   return {
     success: true,
-    message: '✅ Total Revenue (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Total Revenue (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `total-revenue-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
@@ -1639,6 +1709,12 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
       },
     ];
 
+    const analysis = [
+      `Total stok unit tersedia saat ini adalah ${inventoryData.totalStock} unit.`,
+      `Total nilai aset inventory (Total Value) mencapai ${formatCurrency(inventoryData.totalValue)}.`,
+      `Rata-rata waktu unit berada di stok adalah ${inventoryData.avgDaysInStock} hari. Fokus pada unit dengan aging tinggi.`
+    ];
+
     const reportData = {
       title: 'Total Inventory Showroom',
       subtitle: 'Stok Kendaraan Tersedia',
@@ -1646,8 +1722,9 @@ async function generateTotalInventoryPDF(context: CommandContext): Promise<Comma
       logoUrl: tenant?.logoUrl || undefined,
       date: new Date(),
       metrics,
+      analysis,
       showChart: chartData.length > 0,
-      chartData,
+      chartData: chartData.map(c => ({ ...c, value: `${c.value} unit` })),
     };
 
     console.log('[Total Inventory] Generating PDF...');
@@ -1717,29 +1794,34 @@ async function generateAveragePricePDF(context: CommandContext): Promise<Command
     },
   ];
 
+  const analysis = [
+    `Rata-rata harga unit terjual (Sales) adalah ${formatCurrency(salesData.avgPrice)}.`,
+    `Rata-rata harga unit yang masih tersedia (Stock) adalah ${formatCurrency(avgStockPrice)}.`,
+    `Gap harga antara stok dan sales menunjukkan segmentasi unit yang ${avgStockPrice > salesData.avgPrice ? 'lebih tinggi' : 'lebih rendah'} dari rata-rata penjualan.`
+  ];
+
   const reportData = {
-    title: 'Average Price Analysis',
-    subtitle: 'Analisis Rata-rata Harga - 30 Hari Terakhir',
+    title: 'Average Price Showroom',
+    subtitle: 'Analisis Perbandingan Harga',
     tenantName: tenant?.name || 'Prima Mobil',
     logoUrl: tenant?.logoUrl || undefined,
     date: new Date(),
     metrics,
-    showChart: salesData.byMake.length > 0,
-    chartData: salesData.byMake.slice(0, 5).map((item, idx) => ({
-      label: item.make,
-      value: item.count,
-      color: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    })),
+    analysis,
+    showChart: true,
+    chartData: [
+      { label: 'Avg Sales Price', value: formatCurrency(salesData.avgPrice), color: '#10b981' },
+      { label: 'Avg Stock Price', value: formatCurrency(avgStockPrice), color: '#3b82f6' }
+    ],
   };
 
   const pdfBuffer = await generator.generate(reportData);
 
   return {
     success: true,
-    message: '✅ Average Price (format profesional) berhasil dibuat. Mengirim PDF...',
+    message: '✅ Average Price (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `average-price-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
   };
 }
-
