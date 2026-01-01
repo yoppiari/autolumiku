@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createVehicleSlug } from '@/lib/utils';
 import { api } from '@/lib/api-client';
 import VehicleImageCarousel from '@/components/ui/VehicleImageCarousel';
 import { ROLE_LEVELS } from '@/lib/rbac';
@@ -552,10 +553,10 @@ export default function VehiclesPage() {
                     {vehicle.mileage?.toLocaleString()} km • {vehicle.color}
                   </div>
 
-                  <div className="flex gap-1 mt-2">
+                  <div className="flex items-center gap-2 mt-2">
                     <Link
-                      href={`/dashboard/vehicles/${vehicle.id}/edit`}
-                      className="flex-1 px-2 py-1 text-xs text-center bg-blue-600 text-white rounded hover:bg-blue-700"
+                      href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
+                      className="flex-1 px-2 py-1 text-xs text-center bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
                     >
                       Edit
                     </Link>
@@ -582,7 +583,8 @@ export default function VehiclesPage() {
             ))}
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

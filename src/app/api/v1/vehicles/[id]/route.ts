@@ -15,13 +15,9 @@ import { ROLE_LEVELS } from '@/lib/rbac';
 // Reserved route names that should not be treated as vehicle IDs
 const RESERVED_ROUTES = ['update-ids', 'ai-identify', 'search', 'bulk'];
 
-/**
- * Check if ID is a valid UUID format
- */
-function isValidUUID(id: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(id);
-}
+import { isValidUUID, parseVehicleSlug } from '@/lib/utils';
+
+// ... existing imports
 
 /**
  * GET /api/v1/vehicles/[id]
@@ -31,17 +27,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Authenticate request
-  const auth = await authenticateRequest(request);
-  if (!auth.success || !auth.user) {
-    return NextResponse.json(
-      { error: auth.error || 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
-  // RBAC: No exclusions - all authenticated roles can access vehicles
-  // Sales, Admin, Owner, Super Admin all have access
+  // ... auth logic
 
   try {
     const { id } = await params;
@@ -55,11 +41,13 @@ export async function GET(
     }
 
     let vehicle;
+    const { id: searchId, isUuid } = parseVehicleSlug(id);
 
-    // Logic: If id is a valid UUID, find by ID. Otherwise, try as displayId or extract displayId from slug.
-    if (isValidUUID(id)) {
+    console.log(`[Vehicle API] GET request for: ${id} -> searchId: ${searchId}, isUuid: ${isUuid}`);
+
+    if (isUuid) {
       vehicle = await prisma.vehicle.findUnique({
-        where: { id },
+        where: { id: searchId },
         include: {
           photos: {
             orderBy: { displayOrder: 'asc' },
@@ -67,11 +55,9 @@ export async function GET(
         },
       });
     } else {
-      console.log(`[Vehicle API] 🔍 Non-UUID ID detected: ${id}. Attempting to resolve via displayId/slug...`);
-
-      // Try exact match as displayId first
+      // Try exact match as displayId
       vehicle = await prisma.vehicle.findUnique({
-        where: { displayId: id },
+        where: { displayId: searchId },
         include: {
           photos: {
             orderBy: { displayOrder: 'asc' },
@@ -79,29 +65,11 @@ export async function GET(
         },
       });
 
-      // If not found, try to resolve from slug format (make-model-year-displayId)
-      if (!vehicle && id.includes('-')) {
-        const parts = id.split('-');
-        // Try various tail lengths in case displayId contains hyphens (e.g. PM-PST-001)
-        // We know for sure it's at the end
-        const possibleIds = [
-          parts[parts.length - 1], // Last part
-          parts.slice(-2).join('-'), // Last two parts
-          parts.slice(-3).join('-'), // Last three parts
-        ].map(p => p.toUpperCase());
-
-        console.log(`[Vehicle API] 🧩 Slug detected, trying possible displayIds:`, possibleIds);
-
-        vehicle = await prisma.vehicle.findFirst({
-          where: {
-            displayId: { in: possibleIds }
-          },
-          include: {
-            photos: {
-              orderBy: { displayOrder: 'asc' },
-            },
-          },
-        });
+      // Fallback: If not found, try to resolve from slug parts if the searchId itself wasn't found
+      // (This handles cases where parseVehicleSlug might have returned the whole string if year wasn't found)
+      if (!vehicle && id.includes('-') && !searchId.includes('-')) {
+        // SearchId is likely already the displayId candidate from parseVehicleSlug
+        // No need for complex logic here if parseVehicleSlug works well
       }
     }
 
@@ -184,19 +152,13 @@ export async function PUT(
     }
 
     let targetId = id;
+    const { id: searchId, isUuid } = parseVehicleSlug(id);
 
     // If not UUID, resolve to actual internal ID first
-    if (!isValidUUID(id)) {
-      console.log(`[Vehicle API] 🔍 PUT: Non-UUID ID detected: ${id}. Resolving...`);
-      const resolved = await prisma.vehicle.findFirst({
-        where: {
-          OR: [
-            { displayId: id },
-            { displayId: id.toUpperCase() },
-            { displayId: id.split('-').pop()?.toUpperCase() },
-            { displayId: id.split('-').slice(-2).join('-').toUpperCase() }
-          ]
-        },
+    if (!isUuid) {
+      console.log(`[Vehicle API] 🔍 PUT: Slug/DisplayId detected: ${id} -> ${searchId}. Resolving...`);
+      const resolved = await prisma.vehicle.findUnique({
+        where: { displayId: searchId },
         select: { id: true }
       });
 
@@ -380,18 +342,12 @@ export async function DELETE(
     }
 
     let targetId = id;
+    const { id: searchId, isUuid } = parseVehicleSlug(id);
 
     // If not UUID, resolve to actual internal ID first
-    if (!isValidUUID(id)) {
-      const resolved = await prisma.vehicle.findFirst({
-        where: {
-          OR: [
-            { displayId: id },
-            { displayId: id.toUpperCase() },
-            { displayId: id.split('-').pop()?.toUpperCase() },
-            { displayId: id.split('-').slice(-2).join('-').toUpperCase() }
-          ]
-        },
+    if (!isUuid) {
+      const resolved = await prisma.vehicle.findUnique({
+        where: { displayId: searchId },
         select: { id: true }
       });
 

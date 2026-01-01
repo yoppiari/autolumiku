@@ -9,6 +9,7 @@ import React from 'react';
 import Link from 'next/link';
 import { FaWhatsapp } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
+import { createVehicleSlug } from '@/lib/utils';
 import VehicleImageCarousel from '@/components/ui/VehicleImageCarousel';
 
 interface Photo {
@@ -46,12 +47,25 @@ export default function PublicVehicleCard({
     return `Rp ${price.toLocaleString('id-ID')}`;
   };
 
+  // Generate SEO-friendly slug for the vehicle link
+  const vehicleSlug = createVehicleSlug({
+    id: vehicle.id,
+    displayId: vehicle.displayId,
+    make: vehicle.make,
+    model: vehicle.model,
+    year: vehicle.year
+  });
+
   // Helper to generate URL based on domain context
   const getUrl = (path: string) => {
+    // Override path with slug-based path
+    // path input is ignored but kept for signature compatibility if reused
+    const vehiclePath = `/vehicles/${vehicleSlug}`;
+
     if (isCustomDomain) {
-      return path; // Clean URL for custom domain
+      return vehiclePath; // Clean URL for custom domain
     }
-    return `/catalog/${slug}${path}`; // Platform domain with catalog prefix
+    return `/catalog/${slug}${vehiclePath}`; // Platform domain with catalog prefix
   };
 
   const waMessage = encodeURIComponent(
@@ -63,7 +77,7 @@ export default function PublicVehicleCard({
     <div className="group">
       {/* Image Carousel */}
       <div className="mb-4">
-        <Link href={getUrl(`/vehicles/${vehicle.id}`)}>
+        <Link href={getUrl('')}>
           <VehicleImageCarousel
             photos={vehicle.photos}
             alt={`${vehicle.make} ${vehicle.model}`}
@@ -115,8 +129,9 @@ export default function PublicVehicleCard({
       </div>
 
       {/* Vehicle Info */}
+      {/* Vehicle Info */}
       <div className="space-y-2 px-1">
-        <Link href={getUrl(`/vehicles/${vehicle.id}`)}>
+        <Link href={getUrl('')}>
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
@@ -140,7 +155,7 @@ export default function PublicVehicleCard({
             variant="outline"
             size="sm"
           >
-            <Link href={getUrl(`/vehicles/${vehicle.id}`)}>Detail</Link>
+            <Link href={getUrl('')}>Detail</Link>
           </Button>
           {waNumber && !isSold && (
             <Button
