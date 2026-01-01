@@ -309,8 +309,14 @@ export class SalesReportPDF {
 
     y += 35;
 
+
     // ==================== DIAGRAM/CHART SECTION ====================
-    const chartSectionHeight = 145;
+    // REVISI (Final): User requested to replace the "Pie Chart" logic with a specific list of metrics.
+    // "diagram yang ditampilkan: - total penjualan, total revenue, rata-rata harga, dan top sales staff"
+    // Also remove sidebar and vertical line.
+
+    // Height can be smaller since it's just a list
+    const chartSectionHeight = 165;
 
     // Section border
     doc.strokeColor('#d1d5db')
@@ -318,122 +324,54 @@ export class SalesReportPDF {
       .roundedRect(margin, y, contentWidth, chartSectionHeight, 4)
       .stroke();
 
-    // Section headers
+    // Section header - changed title slightly to reflect content
     doc.fillColor('#1e293b')
       .fontSize(9)
       .font('Helvetica-Bold')
-      .text('Diagram/ Chart', margin + 10, y + 8);
+      .text('VISUALISASI PERFORMA', margin + 10, y + 8);
 
-    const rightSectionX = margin + contentWidth / 2 + 5;
-    doc.fillColor('#1e293b')
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .text('RUMUSAN PERHITUNGAN', rightSectionX, y + 8);
+    // Visualisation of the 4 metrics as horizontal bars/boxes
+    // We use the full width since the vertical line is removed
+    const visY = y + 35;
+    const visH = 24; // Height of each bar
+    const gap = 10;
 
-    // Divider line
-    doc.strokeColor('#e5e7eb')
-      .lineWidth(1)
-      .moveTo(margin + contentWidth / 2, y + 5)
-      .lineTo(margin + contentWidth / 2, y + chartSectionHeight - 5)
-      .stroke();
+    // Data mapping
+    const visItems = [
+      { label: 'Total Penjualan', value: `${config.metrics.totalPenjualan} Unit`, color: '#3b82f6' },
+      { label: 'Total Revenue', value: this.formatCurrencyShort(config.metrics.totalRevenue), color: '#16a34a' },
+      { label: 'Rata-rata Harga', value: this.formatCurrencyShort(config.metrics.rataRataHarga), color: '#a855f7' },
+      { label: 'Top Sales Staff', value: config.metrics.topSalesStaff || '-', color: '#f97316' }
+    ];
 
-    // Pie chart (left side)
-    const chartCenterX = margin + contentWidth / 4;
-    const chartCenterY = y + 75;
-    const chartRadius = 40;
+    visItems.forEach((item, idx) => {
+      const rowY = visY + (idx * (visH + gap));
+      const rowX = margin + 20;
+      // Use almost full width
+      const maxBarWidth = contentWidth - 40;
 
-    // Prepare chart data with real percentages
-    let chartData = config.chartData || [];
-
-    // REVISI: Fixed Empty State
-    const isEmptyData = chartData.length === 0 && config.metrics.totalPenjualan === 0;
-
-    if (chartData.length === 0) {
-      if (config.metrics.totalPenjualan > 0) {
-        chartData = [{ label: 'Total', value: config.metrics.totalPenjualan, percentage: 100, color: '#3b82f6' }];
-      } else {
-        // Placeholder for 0 sales - only show color as requested
-        chartData = [{ label: 'Data Belum Tersedia', value: 1, percentage: 100, color: '#9ca3af' }];
-      }
-    }
-
-    // Always draw pie chart
-    this.drawPieChartWithLabels(chartCenterX, chartCenterY, chartRadius, chartData, isEmptyData);
-
-    // Right side - Formula explanations dengan data REAL
-    let formulaY = y + 25;
-    const formulaLineHeight = 13;
-
-    doc.fillColor('#1e293b')
-      .fontSize(8.5)
-      .font('Helvetica')
-      .text('Rumusan indikator chart:', rightSectionX, formulaY);
-
-    formulaY += formulaLineHeight + 2;
-
-    // Tampilkan rumusan untuk setiap segment chart
-    if (chartData.length > 0) {
-      const totalChartValue = chartData.reduce((sum, d) => sum + d.value, 0);
-
-      chartData.slice(0, 4).forEach((item, idx) => {
-        // If empty data, only show simple label or nothing if requested. 
-        if (isEmptyData) {
-          // Just show color dot and "Belum Ada Data" text, no percentage
-          doc.fillColor(item.color)
-            .circle(rightSectionX + 5, formulaY + 3, 3)
-            .fill();
-
-          doc.fillColor('#374151')
-            .fontSize(8)
-            .font('Helvetica')
-            .text(`Belum ada data penjualan`, rightSectionX + 12, formulaY);
-
-          formulaY += formulaLineHeight;
-          return;
-        }
-
-        const pct = totalChartValue > 0 ? ((item.value / totalChartValue) * 100).toFixed(1) : '0';
-
-        // Color indicator
-        doc.fillColor(item.color)
-          .circle(rightSectionX + 5, formulaY + 3, 3)
-          .fill();
-
-        doc.fillColor('#374151')
-          .fontSize(8)
-          .font('Helvetica')
-          .text(`${item.label}: ${item.value} unit / ${totalChartValue} total × 100 = ${pct}%`, rightSectionX + 12, formulaY, { width: contentWidth / 2 - 25 });
-
-        formulaY += formulaLineHeight;
-      });
-
-      formulaY += 5;
-
-      // Summary
-      doc.fillColor('#1e293b')
+      // Label above bar
+      doc.fillColor('#475569')
         .fontSize(8)
+        .font('Helvetica')
+        .text(item.label, rowX, rowY - 11);
+
+      // Bar background (light gray)
+      doc.fillColor('#f8fafc')
+        .roundedRect(rowX, rowY, maxBarWidth, visH, 3)
+        .fill();
+
+      // Bar indicator (just a colored strip on the left to indicate category)
+      doc.fillColor(item.color)
+        .roundedRect(rowX, rowY, 5, visH, 3) // Left strip
+        .fill();
+
+      // Value Text inside bar (Left aligned next to strip)
+      doc.fillColor('#1e293b')
+        .fontSize(10)
         .font('Helvetica-Bold')
-        .text('Hasil Perhitungan:', rightSectionX, formulaY);
-
-      formulaY += formulaLineHeight;
-
-      chartData.slice(0, 4).forEach((item) => {
-        if (isEmptyData) return; // Hide percentage list for empty data
-
-        const pct = totalChartValue > 0 ? ((item.value / totalChartValue) * 100).toFixed(1) : '0';
-
-        doc.fillColor(item.color)
-          .circle(rightSectionX + 5, formulaY + 3, 3)
-          .fill();
-
-        doc.fillColor('#374151')
-          .fontSize(7.5)
-          .font('Helvetica-Bold')
-          .text(`${item.label}: ${pct}%`, rightSectionX + 12, formulaY);
-
-        formulaY += formulaLineHeight;
-      });
-    }
+        .text(item.value, rowX + 15, rowY + 7);
+    });
 
     y += chartSectionHeight + 12;
 
@@ -477,104 +415,7 @@ export class SalesReportPDF {
       );
   }
 
-  private drawPieChartWithLabels(
-    centerX: number,
-    centerY: number,
-    radius: number,
-    data: { label: string; value: number; percentage: number; color: string }[],
-    isEmptyData: boolean = false
-  ) {
-    const { doc } = this;
-    const total = data.reduce((sum, item) => sum + item.value, 0);
-    let startAngle = -Math.PI / 2; // Start from top
 
-    // Draw slices
-    data.forEach((item) => {
-      if (total === 0) return;
-
-      const percentage = item.value / total;
-      const angle = percentage * 2 * Math.PI;
-      const endAngle = startAngle + angle;
-
-      // Draw pie slice
-      const startX = centerX + radius * Math.cos(startAngle);
-      const startY = centerY + radius * Math.sin(startAngle);
-      const endX = centerX + radius * Math.cos(endAngle);
-      const endY = centerY + radius * Math.sin(endAngle);
-
-      const largeArc = angle > Math.PI ? 1 : 0;
-
-      doc.path(`M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY} Z`)
-        .fill(item.color);
-
-      // Draw percentage label OUTSIDE the pie
-      // Show label if > 3% OR if it's the single placeholder item.
-      // IF EMPTY DATA: User said "tulisan: 100% dan Stock Re... kalau tidak ada fungsinya di delete saja".
-      // So if isEmptyData is true, we SKIP drawing the label text on the chart itself to be clean.
-
-      if (!isEmptyData && (percentage > 0.03 || data.length === 1)) {
-        const midAngle = startAngle + angle / 2;
-        const labelRadius = radius + 15; // Position label outside
-        const labelX = centerX + labelRadius * Math.cos(midAngle);
-        const labelY = centerY + labelRadius * Math.sin(midAngle);
-
-        const pctText = `${(percentage * 100).toFixed(0)}%`;
-
-        doc.fillColor('#1e293b')
-          .fontSize(6)
-          .font('Helvetica-Bold')
-          .text(pctText, labelX - 10, labelY - 4, { width: 20, align: 'center' });
-      }
-
-      startAngle = endAngle;
-    });
-
-    // Draw white lines between slices
-    if (data.length > 1 && !isEmptyData) { // Only draw lines if multiple slices and not empty
-      startAngle = -Math.PI / 2;
-      data.forEach((item) => {
-        if (total === 0) return;
-
-        const x = centerX + radius * Math.cos(startAngle);
-        const y = centerY + radius * Math.sin(startAngle);
-
-        doc.strokeColor('#ffffff')
-          .lineWidth(1.5)
-          .moveTo(centerX, centerY)
-          .lineTo(x, y)
-          .stroke();
-
-        const percentage = item.value / total;
-        startAngle += percentage * 2 * Math.PI;
-      });
-    }
-
-    // Legend below chart
-    // If empty data, only show simplified legend or none? User wants to see "warna"
-    const legendY = centerY + radius + 25;
-    const legendItemWidth = 55;
-
-    // For empty data, just show one item "No Data" or similar?
-    // User: "ditampilan saja warna"
-    const displayData = isEmptyData ? data : data.slice(0, 3);
-
-    const startLegendX = centerX - (Math.min(displayData.length, 3) * legendItemWidth) / 2;
-
-    displayData.forEach((item, idx) => {
-      const lx = startLegendX + idx * legendItemWidth;
-
-      // Color box
-      doc.fillColor(item.color)
-        .rect(lx, legendY, 8, 8)
-        .fill();
-
-      // Label
-      doc.fillColor('#374151')
-        .fontSize(5.5)
-        .font('Helvetica')
-        .text(item.label.substring(0, 8), lx + 10, legendY + 1, { width: 40 });
-    });
-  }
 
   private generateAnalysis(config: SalesReportConfig): string[] {
     const { totalPenjualan, totalRevenue, rataRataHarga, topSalesStaff } = config.metrics;
@@ -629,7 +470,7 @@ export class SalesReportPDF {
     }
 
     // === SARAN LANGKAH SELANJUTNYA ===
-    analysis.push(`📋 LANGKAH SELANJUTNYA: (1) Target penjualan bulan depan: ${Math.max(totalPenjualan + 2, 5)} unit, (2) Follow-up leads yang pending, (3) Evaluasi stok vs permintaan pasar.`);
+    analysis.push('📋 LANGKAH SELANJUTNYA: (1) Tetapkan target penjualan bulan depan yang progresif, (2) Follow-up leads yang pending, (3) Evaluasi stok vs permintaan pasar.');
 
     return analysis;
   }

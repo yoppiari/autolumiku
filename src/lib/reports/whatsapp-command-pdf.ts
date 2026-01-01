@@ -70,95 +70,99 @@ export class WhatsAppCommandPDF {
     const maxY = pageHeight - 50;
 
     // Header - Improved layout with more space
-    const headerHeight = 55;
-    doc.fillColor('#1e40af').rect(0, 0, pageWidth, headerHeight).fill();
+    // Header - White Theme (consistent with Sales Report)
+    const headerHeight = 85;
 
-    // Title (top line)
-    doc.fillColor('#ffffff')
-      .fontSize(15)
+    // 1. Title (Top)
+    doc.fillColor('#1e40af') // Blue title
+      .fontSize(16)
       .font('Helvetica-Bold')
-      .text(config.title.toUpperCase(), 20, 10, { width: pageWidth - 120 });
+      .text(config.title.toUpperCase(), 25, 15, { width: pageWidth - 50, align: 'center' });
 
-    // Logo or tenant name (second line)
+    // 2. Logo or Tenant Badge (Below Title, Centered)
+    const logoY = 40;
     if (config.logoUrl) {
       try {
-        // Display logo image (left side, max width 80px, max height 30px)
-        doc.image(config.logoUrl, 20, 28, {
-          fit: [80, 30],
-        });
+        // Center the logo
+        const logoWidth = 80;
+        const logoX = (pageWidth - logoWidth) / 2;
+        doc.image(config.logoUrl, logoX, logoY, { fit: [80, 30], align: 'center' });
       } catch (error) {
         console.error('[WhatsAppCommandPDF] ❌ Failed to load logo:', error);
-        // Fallback to text if logo fails
-        doc.fontSize(10)
-          .font('Helvetica')
-          .text(config.tenantName.toUpperCase(), 20, 28, { width: pageWidth - 120 });
+        // Fallback badge
+        this.drawTenantBadge(doc, config.tenantName, pageWidth, logoY);
       }
     } else {
-      // No logo, use tenant name text
-      doc.fontSize(10)
-        .font('Helvetica')
-        .text(config.tenantName.toUpperCase(), 20, 28, { width: pageWidth - 120 });
+      this.drawTenantBadge(doc, config.tenantName, pageWidth, logoY);
     }
 
-    // Date (right side) - positioned to not overlap with tenant name
+    // 3. Subtitle (Below Logo)
+    doc.fillColor('#64748b')
+      .fontSize(9)
+      .font('Helvetica')
+      .text(config.subtitle.toUpperCase(), 25, logoY + 35, { width: pageWidth - 50, align: 'center' });
+
+    // Date (Top Right Corner - Small)
     doc.fontSize(7)
-      .fillColor('#93c5fd')
-      .text(`Data: ${this.formatDate(config.date)}`, pageWidth - 25, 15, { align: 'right' });
-    doc.text(`Cetak: ${this.formatDate(new Date())}`, pageWidth - 25, 25, { align: 'right' });
+      .fillColor('#94a3b8')
+      .text(`Date: ${this.formatDate(config.date)}`, pageWidth - 80, 15, { width: 60, align: 'right' });
 
-    // Metrics Grid - Compact (6 cards in 2x3 grid)
-    const cardWidth = (pageWidth - 40) / 3 - 6;
-    const cardHeight = 55; // Reduced from 70
-    const startY = headerHeight + 8; // Position below header with gap
-    const gap = 6;
 
-    config.metrics.slice(0, 6).forEach((metric, idx) => {
-      const col = idx % 3;
-      const row = Math.floor(idx / 3);
+    // Metrics Grid - Clean Design
+    const cardWidth = (pageWidth - 40) / 2 - 10; // 2 cols
+    const cardHeight = 60;
+    const startY = headerHeight + 20;
+    const gap = 12;
+
+    config.metrics.slice(0, 4).forEach((metric, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
       const x = 20 + col * (cardWidth + gap);
       const y = startY + row * (cardHeight + gap);
 
       this.drawMetricCard(x, y, cardWidth, cardHeight, metric);
     });
 
-    let y = startY + 2 * (cardHeight + gap) + 6;
+    let y = startY + 2 * (cardHeight + gap) + 15;
 
-    // Chart section - Compact (if space allows)
-    if (y + 100 < maxY && config.showChart) {
+    // Chart section - Clean
+    if (y + 120 < maxY && config.showChart) {
       doc.fontSize(10)
         .fillColor('#1e40af')
         .font('Helvetica-Bold')
         .text('VISUALISASI DATA', 20, y);
 
-      y += 18;
+      // Line separator
+      doc.moveTo(20, y + 14).lineTo(pageWidth - 20, y + 14).strokeColor('#e2e8f0').lineWidth(1).stroke();
+
+      y += 25;
 
       // Draw donut chart
       const chartData = config.chartData && config.chartData.length > 0 ? config.chartData : [];
-      this.drawDonutChart(20, y, 70, chartData); // Reduced size from 100 to 70
+      this.drawDonutChart(20, y, 90, chartData); // Slightly larger donut
 
-      // Draw legend
-      const legendX = 100;
-      let legendY = y;
+      // Draw legend to the right of chart
+      const legendX = 130;
+      let legendY = y + 10;
 
       if (chartData.length > 0) {
         chartData.forEach((item) => {
-          doc.fillColor(item.color).rect(legendX, legendY, 8, 8).fill();
+          doc.fillColor(item.color).rect(legendX, legendY, 10, 10).fill();
 
           doc.fillColor('#1e293b')
-            .fontSize(8)
+            .fontSize(9)
             .font('Helvetica')
-            .text(`${item.label}: ${item.value}`, legendX + 12, legendY + 7);
+            .text(`${item.label}: ${item.value}`, legendX + 16, legendY);
 
-          legendY += 14;
+          legendY += 16;
         });
       } else {
         doc.fillColor('#64748b')
-          .fontSize(8)
+          .fontSize(9)
           .font('Helvetica-Oblique')
-          .text('Belum ada data', legendX, legendY + 7);
+          .text('Belum ada data visualisasi', legendX, legendY);
       }
-
-      y += 85;
+      y += 100; // Space for chart
     }
 
     // Formulas Section - Compact
@@ -272,6 +276,24 @@ export class WhatsAppCommandPDF {
         .font('Helvetica')
         .text(metric.unit, x + 5, y + 45);
     }
+  }
+
+  private drawTenantBadge(doc: PDFKit.PDFDocument, name: string, pageWidth: number, y: number) {
+    const badgeWidth = 120;
+    const badgeHeight = 22;
+    const x = (pageWidth - badgeWidth) / 2;
+
+    doc.fillColor('#e2e8f0')
+      .roundedRect(x, y, badgeWidth, badgeHeight, 11)
+      .fill();
+
+    doc.fillColor('#475569')
+      .fontSize(9)
+      .font('Helvetica-Bold')
+      .text(name.toUpperCase(), x, y + 6, {
+        width: badgeWidth,
+        align: 'center',
+      });
   }
 
   private drawDonutChart(x: number, y: number, size: number, data: { label: string; value: number; color: string }[]) {
