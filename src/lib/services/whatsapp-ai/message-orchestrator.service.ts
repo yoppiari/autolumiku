@@ -1042,6 +1042,9 @@ export class MessageOrchestratorService {
       message.includes('operational metrics') ||
       message.includes('operational metric') ||
       message.includes('tren penjualan') ||
+      message.includes('laporan penjualan') ||
+      message.includes('laporan penjualan lengkap') ||
+      message.includes('sales report lengkap') ||
       // English keywords (add missing aliases):
       message.includes('customer metrics') || message.includes('customer metric') ||
       message.includes('sales trends') || message.includes('sales trend') ||
