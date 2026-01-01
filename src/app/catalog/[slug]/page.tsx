@@ -171,7 +171,7 @@ export default async function ShowroomHomePage({ params }: { params: { slug: str
           <CatalogHeader
             branding={{
               name: tenant.name,
-              logoUrl: tenant.logoUrl,
+              logoUrl: tenant.logoUrl || (tenant.slug.includes('primamobil') || tenant.slug.includes('prima-mobil') ? '/prima-mobil-logo.jpg' : null),
               primaryColor: tenant.primaryColor,
               secondaryColor: tenant.secondaryColor,
               slug: tenant.slug,
