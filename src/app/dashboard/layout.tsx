@@ -125,6 +125,44 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [user]);
 
+  // Auto-sync user roleLevel from database to fix stale localStorage data
+  // This ensures ADMIN users always have correct permissions even if localStorage is outdated
+  React.useEffect(() => {
+    const syncUserRole = async () => {
+      if (!user?.id) return;
+
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+
+        // Fetch fresh user data from API
+        const response = await fetch(`/api/v1/users/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const freshUser = data.data || data.user;
+
+          // Check if roleLevel has changed from what's in localStorage
+          if (freshUser && freshUser.roleLevel !== user.roleLevel) {
+            console.log(`[Dashboard] Role synced: ${user.roleLevel} → ${freshUser.roleLevel}`);
+
+            // Update user state and localStorage with fresh roleLevel
+            const updatedUser = { ...user, roleLevel: freshUser.roleLevel, role: freshUser.role };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          }
+        }
+      } catch (error) {
+        console.error('[Dashboard] Failed to sync user role:', error);
+      }
+    };
+
+    syncUserRole();
+  }, [user?.id]); // Only run when user.id changes (initial load)
+
+
   // Update document title based on tenant
   React.useEffect(() => {
     if (tenant?.name) {
