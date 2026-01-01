@@ -2,6 +2,8 @@
  * Sales Report PDF Generator - Professional Draft Format
  * Creates 1-page PDF with metrics, formulas, chart, and showroom analysis
  * Based on the new draft design format
+ * 
+ * REVISI: Fix pie chart labels, korelasi data real-time, layout tidak out of box
  */
 
 import PDFDocument from 'pdfkit';
@@ -15,6 +17,7 @@ interface SalesReportConfig {
     rataRataHarga: number;
     topSalesStaff: string | null;
   };
+  // Chart data dengan persentase dari penjualan per merek kendaraan
   chartData?: { label: string; value: number; percentage: number; color: string }[];
   showroomInsights?: string[];
 }
@@ -62,343 +65,385 @@ export class SalesReportPDF {
   private generatePage(config: SalesReportConfig) {
     const { doc } = this;
     const pageWidth = doc.page.width;
-    const margin = 20;
+    const margin = 25;
     const contentWidth = pageWidth - margin * 2;
 
     let y = 0;
 
     // ==================== HEADER ====================
     const headerHeight = 50;
-    
+
     // Blue header background
     doc.fillColor('#1e3a8a').rect(0, 0, pageWidth, headerHeight).fill();
-    
+
     // "SALES REPORT" title
     doc.fillColor('#ffffff')
-      .fontSize(22)
+      .fontSize(20)
       .font('Helvetica-Bold')
-      .text('SALES REPORT', 0, 15, { 
-        align: 'center', 
-        width: pageWidth 
+      .text('SALES REPORT', 0, 12, {
+        align: 'center',
+        width: pageWidth
       });
-    
-    // Tenant name badge (pink/red gradient look)
+
+    // Tenant name badge
     const badgeText = config.tenantName.toUpperCase();
-    const badgeWidth = doc.widthOfString(badgeText, { font: 'Helvetica-Bold', size: 8 }) + 16;
+    doc.fontSize(8);
+    const badgeWidth = doc.widthOfString(badgeText) + 20;
     const badgeX = (pageWidth - badgeWidth) / 2;
-    const badgeY = 35;
-    
+    const badgeY = 33;
+
     // Badge background
     doc.fillColor('#dc2626')
       .roundedRect(badgeX, badgeY, badgeWidth, 14, 3)
       .fill();
-    
+
     doc.fillColor('#ffffff')
       .fontSize(8)
       .font('Helvetica-Bold')
-      .text(badgeText, badgeX + 8, badgeY + 3);
+      .text(badgeText, badgeX, badgeY + 3, { width: badgeWidth, align: 'center' });
 
-    y = headerHeight + 5;
+    y = headerHeight + 8;
 
     // ==================== METRIC CARDS ====================
     const cardCount = 4;
-    const cardGap = 8;
+    const cardGap = 6;
     const cardWidth = (contentWidth - (cardGap * (cardCount - 1))) / cardCount;
-    const cardHeight = 45;
-    
+    const cardHeight = 48;
+
     const metricColors = ['#1e40af', '#16a34a', '#a855f7', '#f97316'];
     const metricLabels = ['TOTAL PENJUALAN', 'TOTAL REVENUE', 'RATA-RATA HARGA', 'TOP SALES STAFF'];
     const metricValues = [
       config.metrics.totalPenjualan.toString(),
-      this.formatCurrency(config.metrics.totalRevenue),
-      this.formatCurrency(config.metrics.rataRataHarga),
+      this.formatCurrencyShort(config.metrics.totalRevenue),
+      this.formatCurrencyShort(config.metrics.rataRataHarga),
       config.metrics.topSalesStaff || 'N/A'
     ];
     const metricUnits = ['Unit', '', '', ''];
 
     for (let i = 0; i < cardCount; i++) {
       const x = margin + i * (cardWidth + cardGap);
-      
-      // Card background
+
+      // Card background with rounded corners
       doc.fillColor(metricColors[i])
-        .rect(x, y, cardWidth, cardHeight)
+        .roundedRect(x, y, cardWidth, cardHeight, 4)
         .fill();
-      
-      // Label
+
+      // Label - smaller font to fit
       doc.fillColor('#ffffff')
-        .fontSize(6)
+        .fontSize(5.5)
         .font('Helvetica-Bold')
-        .text(metricLabels[i], x + 5, y + 5, { width: cardWidth - 10 });
-      
-      // Value
+        .text(metricLabels[i], x + 4, y + 4, { width: cardWidth - 8 });
+
+      // Value - adjust font size based on content
+      const valueText = metricValues[i];
+      const valueFontSize = i === 3 ? 8 : (valueText.length > 10 ? 10 : 13);
+
       doc.fillColor('#ffffff')
-        .fontSize(i === 3 ? 10 : 14) // Smaller font for staff name
+        .fontSize(valueFontSize)
         .font('Helvetica-Bold')
-        .text(metricValues[i], x + 5, y + 18, { width: cardWidth - 10 });
-      
+        .text(valueText, x + 4, y + 16, { width: cardWidth - 8 });
+
       // Unit
       if (metricUnits[i]) {
         doc.fillColor('#ffffff')
-          .fontSize(7)
+          .fontSize(6)
           .font('Helvetica')
-          .text(metricUnits[i], x + 5, y + 35, { width: cardWidth - 10 });
+          .text(metricUnits[i], x + 4, y + 38, { width: cardWidth - 8 });
       }
     }
 
-    y += cardHeight + 15;
+    y += cardHeight + 12;
 
     // ==================== RUMUSAN PERHITUNGAN SECTION ====================
     doc.fillColor('#1e293b')
-      .fontSize(11)
+      .fontSize(10)
       .font('Helvetica-Bold')
       .text('RUMUSAN PERHITUNGAN:', margin, y);
-    
-    y += 18;
+
+    y += 16;
 
     // Formula table header
-    doc.fillColor('#f1f5f9')
-      .rect(margin, y, contentWidth, 20)
+    doc.fillColor('#e2e8f0')
+      .roundedRect(margin, y, contentWidth, 18, 2)
       .fill();
-    
+
     doc.fillColor('#1e293b')
-      .fontSize(8)
+      .fontSize(7)
       .font('Helvetica-Bold')
-      .text('RUMUSAN PER METRIK', margin + 5, y + 6);
-    
+      .text('RUMUSAN PER METRIK', margin + 8, y + 5);
+
     doc.fillColor('#1e293b')
-      .fontSize(8)
-      .text('Hasil', pageWidth - margin - 40, y + 6, { align: 'right', width: 35 });
+      .fontSize(7)
+      .text('Hasil', pageWidth - margin - 50, y + 5, { align: 'right', width: 45 });
 
-    y += 20;
+    y += 18;
 
-    // Formula items
+    // Formula items dengan data REAL
+    const totalPenjualan = config.metrics.totalPenjualan;
+    const totalRevenue = config.metrics.totalRevenue;
+    const rataRataHarga = config.metrics.rataRataHarga;
+
     const formulas: FormulaItem[] = [
       {
         name: 'Total Penjualan',
-        formula: 'Σ: COUNT(penjualan) WHERE status = SOLD',
-        calculation: 'H: 0 unit terjual',
-        result: config.metrics.totalPenjualan
+        formula: 'Σ: COUNT(vehicles) WHERE status = SOLD',
+        calculation: `H: ${totalPenjualan} unit terjual`,
+        result: totalPenjualan
       },
       {
         name: 'Total Revenue',
-        formula: 'Σ: SUM(harga) WHERE status = SOLD',
-        calculation: 'H: Rp 0',
-        result: this.formatCurrency(config.metrics.totalRevenue)
+        formula: 'Σ: SUM(price) WHERE status = SOLD',
+        calculation: `H: ${this.formatCurrency(totalRevenue)}`,
+        result: this.formatCurrencyShort(totalRevenue)
+      },
+      {
+        name: 'Rata-rata Harga',
+        formula: 'AVG: SUM(price) / COUNT(vehicles) WHERE status = SOLD',
+        calculation: `H: ${this.formatCurrency(totalRevenue)} / ${totalPenjualan} = ${this.formatCurrency(rataRataHarga)}`,
+        result: this.formatCurrencyShort(rataRataHarga)
       }
     ];
 
     formulas.forEach((formula, idx) => {
-      const bgColor = idx % 2 === 0 ? '#fef3c7' : '#ffffff';
-      const borderColor = '#f59e0b';
-      
+      const bgColor = idx % 2 === 0 ? '#fef9c3' : '#ffffff';
+      const borderColor = '#eab308';
+      const rowHeight = 32;
+
       doc.fillColor(bgColor)
-        .rect(margin, y, contentWidth, 35)
+        .rect(margin, y, contentWidth, rowHeight)
         .fill();
-      
+
       // Left border
       doc.fillColor(borderColor)
-        .rect(margin, y, 4, 35)
+        .rect(margin, y, 3, rowHeight)
         .fill();
-      
+
       // Formula name
       doc.fillColor('#1e293b')
-        .fontSize(8)
-        .font('Helvetica-Bold')
-        .text(formula.name, margin + 10, y + 5);
-      
-      // Formula
-      doc.fillColor('#6b7280')
         .fontSize(7)
+        .font('Helvetica-Bold')
+        .text(formula.name, margin + 10, y + 4);
+
+      // Formula expression
+      doc.fillColor('#64748b')
+        .fontSize(6)
         .font('Helvetica-Oblique')
-        .text(formula.formula, margin + 10, y + 16);
-      
+        .text(`R: ${formula.formula}`, margin + 10, y + 13, { width: contentWidth - 100 });
+
       // Calculation
-      doc.fillColor('#6b7280')
-        .fontSize(7)
+      doc.fillColor('#64748b')
+        .fontSize(6)
         .font('Helvetica')
-        .text(formula.calculation, margin + 10, y + 26);
-      
-      // Result
+        .text(formula.calculation, margin + 10, y + 22, { width: contentWidth - 100 });
+
+      // Result - positioned to not overflow
       doc.fillColor('#dc2626')
-        .fontSize(10)
+        .fontSize(9)
         .font('Helvetica-Bold')
-        .text(formula.result.toString(), pageWidth - margin - 70, y + 12, { 
-          align: 'right', 
-          width: 65 
+        .text(formula.result.toString(), pageWidth - margin - 80, y + 10, {
+          align: 'right',
+          width: 75
         });
 
-      y += 35;
+      y += rowHeight;
     });
 
-    y += 15;
+    y += 10;
 
     // ==================== INSIGHT UTAMA ====================
     doc.fillColor('#fef3c7')
-      .rect(margin, y, contentWidth, 25)
+      .roundedRect(margin, y, contentWidth, 28, 3)
       .fill();
-    
+
     // Yellow left border
     doc.fillColor('#f59e0b')
-      .rect(margin, y, 4, 25)
+      .rect(margin, y, 3, 28)
       .fill();
-    
+
     doc.fillColor('#1e293b')
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .text('📊 INSIGHT UTAMA', margin + 10, y + 4);
-    
-    doc.fillColor('#6b7280')
       .fontSize(8)
+      .font('Helvetica-Bold')
+      .text('INSIGHT UTAMA', margin + 12, y + 5);
+
+    // Insight dengan data real
+    const avgRevenuePerUnit = totalPenjualan > 0 ? totalRevenue / totalPenjualan : 0;
+    const insightText = totalPenjualan > 0
+      ? `Total Penjualan: ${totalPenjualan} Unit | Revenue: ${this.formatCurrencyShort(totalRevenue)} | Avg/Unit: ${this.formatCurrencyShort(avgRevenuePerUnit)}`
+      : 'Belum ada penjualan tercatat dalam periode ini.';
+
+    doc.fillColor('#475569')
+      .fontSize(7)
       .font('Helvetica')
-      .text(`Total Penjualan: ${config.metrics.totalPenjualan} Unit`, margin + 10, y + 14);
+      .text(insightText, margin + 12, y + 16, { width: contentWidth - 20 });
 
     y += 35;
 
     // ==================== DIAGRAM/CHART SECTION ====================
-    const chartSectionHeight = 180;
-    
+    const chartSectionHeight = 145;
+
     // Section border
+    doc.strokeColor('#d1d5db')
+      .lineWidth(1)
+      .roundedRect(margin, y, contentWidth, chartSectionHeight, 4)
+      .stroke();
+
+    // Section headers
+    doc.fillColor('#1e293b')
+      .fontSize(9)
+      .font('Helvetica-Bold')
+      .text('Diagram/ Chart', margin + 10, y + 8);
+
+    const rightSectionX = margin + contentWidth / 2 + 5;
+    doc.fillColor('#1e293b')
+      .fontSize(9)
+      .font('Helvetica-Bold')
+      .text('RUMUSAN PERHITUNGAN', rightSectionX, y + 8);
+
+    // Divider line
     doc.strokeColor('#e5e7eb')
       .lineWidth(1)
-      .rect(margin, y, contentWidth, chartSectionHeight)
+      .moveTo(margin + contentWidth / 2, y + 5)
+      .lineTo(margin + contentWidth / 2, y + chartSectionHeight - 5)
       .stroke();
-    
-    // Section header
-    doc.fillColor('#1e293b')
-      .fontSize(10)
-      .font('Helvetica-Bold')
-      .text('Diagram/ chart', margin + 10, y + 10);
-    
-    doc.fillColor('#1e293b')
-      .fontSize(10)
-      .font('Helvetica-Bold')
-      .text('RUMUSAN PERHITUNGAN', margin + contentWidth / 2, y + 10);
 
-    // Pie chart (left side)
-    const chartX = margin + 80;
-    const chartY = y + 50;
-    const chartRadius = 50;
-    
-    // Draw pie chart with labels
-    if (config.chartData && config.chartData.length > 0) {
-      this.drawPieChart(chartX, chartY, chartRadius, config.chartData);
-    } else {
-      // Default placeholder chart
-      const defaultData = [
-        { label: 'A', value: 33, percentage: 33, color: '#3b82f6' },
-        { label: 'B', value: 33, percentage: 33, color: '#8b5cf6' },
-        { label: 'C', value: 34, percentage: 34, color: '#10b981' }
-      ];
-      this.drawPieChart(chartX, chartY, chartRadius, defaultData);
+    // Pie chart (left side) - with REAL data
+    const chartCenterX = margin + contentWidth / 4;
+    const chartCenterY = y + 75;
+    const chartRadius = 40;
+
+    // Prepare chart data with real percentages
+    let chartData = config.chartData || [];
+    if (chartData.length === 0 && totalPenjualan > 0) {
+      // Default: satu item jika tidak ada breakdown
+      chartData = [{ label: 'Total', value: totalPenjualan, percentage: 100, color: '#3b82f6' }];
     }
 
-    // Exm: label
-    doc.fillColor('#1e293b')
-      .fontSize(8)
-      .font('Helvetica')
-      .text('Exm:', margin + 10, y + 35);
+    if (chartData.length > 0) {
+      this.drawPieChartWithLabels(chartCenterX, chartCenterY, chartRadius, chartData);
+    } else {
+      // No data placeholder
+      doc.fillColor('#e5e7eb')
+        .circle(chartCenterX, chartCenterY, chartRadius)
+        .fill();
 
-    // Chart labels
-    const labelY = y + 55;
-    doc.fillColor('#1e293b')
-      .fontSize(7)
-      .font('Helvetica')
-      .text('A = XXX %', margin + 55, labelY)
-      .text('dalam', margin + 65, labelY + 8)
-      .text('prosentase', margin + 60, labelY + 16);
-    
-    doc.text('B = XXX %', margin + 55, labelY + 30)
-      .text('dalam', margin + 65, labelY + 38)
-      .text('prosentase', margin + 60, labelY + 46);
-    
-    doc.text('C = XXX %', margin + 55, labelY + 60)
-      .text('dalam', margin + 65, labelY + 68)
-      .text('prosentase', margin + 60, labelY + 76);
+      doc.fillColor('#9ca3af')
+        .fontSize(8)
+        .font('Helvetica')
+        .text('No Data', chartCenterX - 15, chartCenterY - 4);
+    }
 
-    // Right side - Rumusan perhitungan list
-    const formulaX = margin + contentWidth / 2 + 10;
-    let formulaY = y + 30;
-    
-    doc.fillColor('#1e293b')
-      .fontSize(7)
-      .font('Helvetica')
-      .text('- rumusan indikatornya ditampilkan:', formulaX, formulaY);
-    
-    formulaY += 10;
-    doc.text('  exm: xxx...[*x/*/y/*+*/"-] xxx.... = hasil (prosentase)', formulaX, formulaY);
-    
-    formulaY += 15;
-    doc.text('- indikator A. ditampilkan :', formulaX, formulaY);
-    formulaY += 10;
-    doc.text('  exm: xxx...[*x/*/y/*+*/"-] xxx.... = hasil (prosentase)', formulaX, formulaY);
-    
-    formulaY += 15;
-    doc.text('- indikator B. ditampilkan :', formulaX, formulaY);
-    formulaY += 10;
-    doc.text('  exm: xxx...[*x/*/y/*+*/"-] xxx.... = hasil (prosentase)', formulaX, formulaY);
-    
-    formulaY += 20;
-    doc.text('- Perhitungan data aktual di jelaskan sesuai rumusannya', formulaX, formulaY);
-    
-    formulaY += 15;
-    doc.text('• Indokator A: ?%', formulaX + 20, formulaY);
-    formulaY += 10;
-    doc.text('• Indokator B: ?%', formulaX + 20, formulaY);
-    formulaY += 10;
-    doc.text('• Indokator C: ?%', formulaX + 20, formulaY);
+    // Right side - Formula explanations dengan data REAL
+    let formulaY = y + 25;
+    const formulaLineHeight = 11;
 
-    y += chartSectionHeight + 15;
+    doc.fillColor('#1e293b')
+      .fontSize(6.5)
+      .font('Helvetica')
+      .text('Rumusan indikator chart:', rightSectionX, formulaY);
+
+    formulaY += formulaLineHeight;
+
+    // Tampilkan rumusan untuk setiap segment chart
+    if (chartData.length > 0) {
+      const totalChartValue = chartData.reduce((sum, d) => sum + d.value, 0);
+
+      chartData.slice(0, 4).forEach((item, idx) => {
+        const pct = totalChartValue > 0 ? ((item.value / totalChartValue) * 100).toFixed(1) : '0';
+
+        // Color indicator
+        doc.fillColor(item.color)
+          .circle(rightSectionX + 5, formulaY + 3, 3)
+          .fill();
+
+        doc.fillColor('#374151')
+          .fontSize(6)
+          .font('Helvetica')
+          .text(`${item.label}: ${item.value} unit / ${totalChartValue} total × 100 = ${pct}%`, rightSectionX + 12, formulaY, { width: contentWidth / 2 - 25 });
+
+        formulaY += formulaLineHeight;
+      });
+
+      formulaY += 5;
+
+      // Summary
+      doc.fillColor('#1e293b')
+        .fontSize(6.5)
+        .font('Helvetica-Bold')
+        .text('Hasil Perhitungan:', rightSectionX, formulaY);
+
+      formulaY += formulaLineHeight;
+
+      chartData.slice(0, 4).forEach((item) => {
+        const pct = totalChartValue > 0 ? ((item.value / totalChartValue) * 100).toFixed(1) : '0';
+
+        doc.fillColor(item.color)
+          .circle(rightSectionX + 5, formulaY + 3, 3)
+          .fill();
+
+        doc.fillColor('#374151')
+          .fontSize(6)
+          .font('Helvetica-Bold')
+          .text(`${item.label}: ${pct}%`, rightSectionX + 12, formulaY);
+
+        formulaY += formulaLineHeight;
+      });
+    } else {
+      doc.fillColor('#9ca3af')
+        .fontSize(6)
+        .font('Helvetica-Oblique')
+        .text('Belum ada data penjualan untuk ditampilkan.', rightSectionX, formulaY);
+    }
+
+    y += chartSectionHeight + 12;
 
     // ==================== ANALISA SHOWROOM SECTION ====================
     doc.fillColor('#1e293b')
-      .fontSize(11)
+      .fontSize(10)
       .font('Helvetica-Bold')
       .text('Analisa Showroom:', margin, y);
-    
-    y += 14;
 
-    const analysisItems = [
-      'sebaiknya harus bagaimana untuk meningkatkan proforma/ kinerja/ performancenya?',
-      'beri saran dan masukkan manajemen prima mobil harus bagaimana menjalankan keputusannya?',
-      'jika ada indkator yang sudah baik sebaiknya: (dipertahankan atau di buat lebih sempurna atau mendekati sempurna atau sempurna'
-    ];
+    y += 12;
+
+    // Dynamic analysis based on data
+    const analysisItems = this.generateAnalysis(config);
 
     analysisItems.forEach((item) => {
-      doc.fillColor('#dc2626')
-        .fontSize(8)
+      doc.fillColor('#b91c1c')
+        .fontSize(7)
         .font('Helvetica')
         .text(`- ${item}`, margin, y, { width: contentWidth });
-      
-      y += doc.heightOfString(`- ${item}`, { width: contentWidth }) + 3;
+
+      y += doc.heightOfString(`- ${item}`, { width: contentWidth, fontSize: 7 }) + 2;
     });
 
     // ==================== FOOTER ====================
-    const footerY = doc.page.height - 25;
-    
+    const footerY = doc.page.height - 22;
+
     doc.fillColor('#f1f5f9')
-      .rect(margin, footerY, contentWidth, 20)
+      .rect(margin, footerY, contentWidth, 18)
       .fill();
-    
+
     doc.fillColor('#94a3b8')
-      .fontSize(7)
+      .fontSize(6)
       .font('Helvetica')
       .text(
         `Generated by ${config.tenantName} | ${new Date().toLocaleString('id-ID')} | Data: Real-time from database`,
-        pageWidth / 2, footerY + 6, 
-        { align: 'center' }
+        margin, footerY + 5,
+        { width: contentWidth, align: 'center' }
       );
   }
 
-  private drawPieChart(
-    centerX: number, 
-    centerY: number, 
-    radius: number, 
+  private drawPieChartWithLabels(
+    centerX: number,
+    centerY: number,
+    radius: number,
     data: { label: string; value: number; percentage: number; color: string }[]
   ) {
     const { doc } = this;
     const total = data.reduce((sum, item) => sum + item.value, 0);
     let startAngle = -Math.PI / 2; // Start from top
 
+    // Draw slices
     data.forEach((item) => {
       if (total === 0) return;
 
@@ -417,19 +462,34 @@ export class SalesReportPDF {
       doc.path(`M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY} Z`)
         .fill(item.color);
 
+      // Draw percentage label OUTSIDE the pie
+      if (percentage > 0.03) { // Only show label if > 3%
+        const midAngle = startAngle + angle / 2;
+        const labelRadius = radius + 15; // Position label outside
+        const labelX = centerX + labelRadius * Math.cos(midAngle);
+        const labelY = centerY + labelRadius * Math.sin(midAngle);
+
+        const pctText = `${(percentage * 100).toFixed(0)}%`;
+
+        doc.fillColor('#1e293b')
+          .fontSize(6)
+          .font('Helvetica-Bold')
+          .text(pctText, labelX - 10, labelY - 4, { width: 20, align: 'center' });
+      }
+
       startAngle = endAngle;
     });
 
-    // Draw white lines between slices for separation effect
+    // Draw white lines between slices
     startAngle = -Math.PI / 2;
     data.forEach((item) => {
       if (total === 0) return;
-      
+
       const x = centerX + radius * Math.cos(startAngle);
       const y = centerY + radius * Math.sin(startAngle);
-      
+
       doc.strokeColor('#ffffff')
-        .lineWidth(2)
+        .lineWidth(1.5)
         .moveTo(centerX, centerY)
         .lineTo(x, y)
         .stroke();
@@ -437,6 +497,48 @@ export class SalesReportPDF {
       const percentage = item.value / total;
       startAngle += percentage * 2 * Math.PI;
     });
+
+    // Legend below chart
+    const legendY = centerY + radius + 25;
+    const legendItemWidth = 55;
+    const startLegendX = centerX - (Math.min(data.length, 3) * legendItemWidth) / 2;
+
+    data.slice(0, 3).forEach((item, idx) => {
+      const lx = startLegendX + idx * legendItemWidth;
+
+      // Color box
+      doc.fillColor(item.color)
+        .rect(lx, legendY, 8, 8)
+        .fill();
+
+      // Label
+      doc.fillColor('#374151')
+        .fontSize(5.5)
+        .font('Helvetica')
+        .text(item.label.substring(0, 8), lx + 10, legendY + 1, { width: 40 });
+    });
+  }
+
+  private generateAnalysis(config: SalesReportConfig): string[] {
+    const { totalPenjualan, totalRevenue, rataRataHarga } = config.metrics;
+
+    if (totalPenjualan === 0) {
+      return [
+        'Belum ada penjualan tercatat. Fokus pada peningkatan lead generation dan follow-up customer.',
+        'Evaluasi strategi marketing dan pricing untuk meningkatkan konversi.',
+        'Pertimbangkan promosi atau diskon untuk menarik minat pembeli.'
+      ];
+    }
+
+    const avgFormatted = this.formatCurrencyShort(rataRataHarga);
+
+    return [
+      `Dengan ${totalPenjualan} unit terjual dan revenue ${this.formatCurrencyShort(totalRevenue)}, fokus pada peningkatan volume penjualan.`,
+      `Rata-rata harga ${avgFormatted} per unit. Evaluasi apakah pricing sudah optimal untuk target market.`,
+      config.metrics.topSalesStaff
+        ? `${config.metrics.topSalesStaff} sebagai top performer - pertahankan dan jadikan benchmark untuk tim lain.`
+        : 'Identifikasi top performer dan buat sistem reward untuk meningkatkan motivasi tim sales.'
+    ];
   }
 
   private formatCurrency(num: number): string {
@@ -447,6 +549,20 @@ export class SalesReportPDF {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(num);
+  }
+
+  private formatCurrencyShort(num: number): string {
+    if (num === 0) return 'Rp 0';
+    if (num >= 1_000_000_000) {
+      return `Rp ${(num / 1_000_000_000).toFixed(1)}M`;
+    }
+    if (num >= 1_000_000) {
+      return `Rp ${(num / 1_000_000).toFixed(0)}Jt`;
+    }
+    if (num >= 1_000) {
+      return `Rp ${(num / 1_000).toFixed(0)}Rb`;
+    }
+    return `Rp ${num}`;
   }
 
   private formatNumber(num: number): string {
