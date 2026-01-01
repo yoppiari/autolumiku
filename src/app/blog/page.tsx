@@ -4,6 +4,9 @@ import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { getTenantFromHeaders } from '@/lib/tenant';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: 'Blog - Tips & Panduan Mobil Bekas',
   description:
@@ -107,11 +110,10 @@ export default async function BlogListPage({ searchParams }: BlogListPageProps) 
           <div className="flex items-center gap-3 overflow-x-auto pb-4">
             <Link
               href="/blog"
-              className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap ${
-                !category
+              className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap ${!category
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
+                }`}
             >
               Semua Artikel
             </Link>
@@ -119,11 +121,10 @@ export default async function BlogListPage({ searchParams }: BlogListPageProps) 
               <Link
                 key={cat.value}
                 href={`/blog?category=${cat.value}`}
-                className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap ${
-                  category === cat.value
+                className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap ${category === cat.value
                     ? 'bg-blue-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 {cat.icon} {cat.label}
               </Link>
@@ -229,11 +230,10 @@ export default async function BlogListPage({ searchParams }: BlogListPageProps) 
                           ...(category && { category }),
                           page: pageNum.toString(),
                         }).toString()}`}
-                        className={`px-4 py-2 rounded-lg ${
-                          pageNum === page
+                        className={`px-4 py-2 rounded-lg ${pageNum === page
                             ? 'bg-blue-600 text-white'
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                        }`}
+                          }`}
                       >
                         {pageNum}
                       </Link>

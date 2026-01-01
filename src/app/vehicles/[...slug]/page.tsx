@@ -6,6 +6,9 @@
  * Professional layout with gallery on left, sticky details on right
  */
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

@@ -316,8 +316,8 @@ export default async function CatalogVehiclesPage({ params, searchParams }: Page
           <p className="text-gray-600 mb-6">
             {error?.message || 'An unexpected error occurred. Please try again.'}
           </p>
-          <Button onClick={() => window.location.reload()}>
-            Reload Page
+          <Button asChild>
+            <Link href=".">Reload Page</Link>
           </Button>
           <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md text-left text-xs">
             <p className="font-bold">{error.name}: {error.message}</p>

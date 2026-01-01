@@ -3,6 +3,9 @@
  * Route: /catalog/[slug]/contact
  */
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import React from 'react';
 import { headers } from 'next/headers';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
