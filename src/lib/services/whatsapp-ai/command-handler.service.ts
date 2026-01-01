@@ -18,6 +18,7 @@ import { StorageService } from '../storage.service';
 import { OnePageSalesPDF } from '@/lib/reports/one-page-sales-pdf';
 import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
 import { SalesReportPDF } from '@/lib/reports/sales-report-pdf';
+import { VehicleInventoryPDF, generateVehicleInventoryPDF } from '@/lib/reports/vehicle-inventory-pdf';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -498,6 +499,12 @@ export async function handlePDFCommand(
     'total inventory': generateTotalInventoryPDF, // Added alias
     'total stok': generateTotalInventoryPDF,
     'stok total': generateTotalInventoryPDF,
+    'inventory listing': generateVehicleInventoryListingPDF, // New format with images
+    'vehicle listing': generateVehicleInventoryListingPDF, // New format with images
+    'daftar kendaraan': generateVehicleInventoryListingPDF, // New format with images
+    'daftar stok': generateVehicleInventoryListingPDF, // New format with images
+    'inventory list': generateVehicleInventoryListingPDF, // New format with images
+    'list kendaraan': generateVehicleInventoryListingPDF, // New format with images
     'average price': generateAveragePricePDF,
     'avg price': generateAveragePricePDF,
     'rata-rata harga': generateAveragePricePDF,
@@ -1822,6 +1829,108 @@ async function generateAveragePricePDF(context: CommandContext): Promise<Command
     message: '✅ Average Price (format standar baru) berhasil dibuat. Mengirim PDF...',
     pdfBuffer,
     filename: `average-price-${new Date().toISOString().split('T')[0]}.pdf`,
+    followUp: true,
+  };
+}
+
+// ============================================================================
+// VEHICLE INVENTORY LISTING PDF (New Format with Images Table)
+// ============================================================================
+
+async function generateVehicleInventoryListingPDF(context: CommandContext): Promise<CommandResult> {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: context.tenantId },
+    select: { name: true, logoUrl: true },
+  });
+
+  // Fetch vehicles for the inventory listing
+  const vehicles = await prisma.vehicle.findMany({
+    where: {
+      tenantId: context.tenantId,
+      status: { not: 'DELETED' }, // Exclude deleted vehicles
+    },
+    select: {
+      id: true,
+      displayId: true,
+      make: true,
+      model: true,
+      year: true,
+      price: true,
+      status: true,
+      mileage: true,
+      transmissionType: true,
+      fuelType: true,
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 50, // Limit to 50 vehicles
+  });
+
+  // Fetch main photos for each vehicle
+  const vehiclesWithImages = await Promise.all(
+    vehicles.map(async (v) => {
+      const mainPhoto = await prisma.vehiclePhoto.findFirst({
+        where: {
+          vehicleId: v.id,
+          isMainPhoto: true,
+        },
+        select: {
+          thumbnailUrl: true,
+        },
+      });
+
+      return {
+        ...v,
+        imageUrl: mainPhoto?.thumbnailUrl || undefined,
+        transmission: v.transmissionType,
+      };
+    })
+  );
+
+  // Calculate metrics
+  const activeVehicles = vehiclesWithImages.filter(v => v.status === 'AVAILABLE' || v.status === 'BOOKED').length;
+  const totalLeads = 0; // TODO: Integrate with leads table when available
+  const followUpRequired = vehiclesWithImages.filter(v => v.status === 'BOOKED').length;
+
+  // Set period (last 30 days)
+  const periodEnd = new Date();
+  const periodStart = new Date();
+  periodStart.setDate(periodEnd.getDate() - 30);
+
+  // Use NEW Vehicle Inventory PDF
+  const generator = new VehicleInventoryPDF();
+
+  const reportConfig = {
+    tenantName: tenant?.name || 'Prima Mobil',
+    logoUrl: tenant?.logoUrl || undefined,
+    periodStart,
+    periodEnd,
+    vehicles: vehiclesWithImages.map(v => ({
+      id: v.id,
+      displayId: v.displayId || 'N/A',
+      make: v.make,
+      model: v.model,
+      year: v.year,
+      price: Number(v.price),
+      status: v.status as any,
+      imageUrl: v.imageUrl,
+      mileage: v.mileage,
+      transmission: v.transmission,
+      fuelType: v.fuelType,
+    })),
+    metrics: {
+      totalLeads,
+      activeVehicles,
+      followUpRequired,
+    },
+  };
+
+  const pdfBuffer = await generator.generate(reportConfig);
+
+  return {
+    success: true,
+    message: '✅ Vehicle Inventory Listing (format baru dengan tabel dan foto) berhasil dibuat. Mengirim PDF...',
+    pdfBuffer,
+    filename: `vehicle-inventory-${new Date().toISOString().split('T')[0]}.pdf`,
     followUp: true,
   };
 }
