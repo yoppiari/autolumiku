@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaSearch, FaPlus, FaEdit, FaTrash, FaUserCircle } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaEdit, FaTrash, FaUserCircle, FaWhatsapp } from 'react-icons/fa';
 import { api } from '@/lib/api-client';
 import { ROLE_LEVELS } from '@/lib/rbac';
 
@@ -24,9 +24,11 @@ interface UserStats {
   byRole: Record<string, number>;
 }
 
-interface ProfilePicture {
+interface WhatsAppProfile {
   pictureUrl: string | null;
   hasPicture: boolean;
+  isRegistered: boolean;
+  loading: boolean;
 }
 
 export default function UsersPage() {
@@ -41,7 +43,7 @@ export default function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [tenantId, setTenantId] = useState<string>('');
-  const [profilePictures, setProfilePictures] = useState<Record<string, ProfilePicture>>({});
+  const [whatsAppProfiles, setWhatsAppProfiles] = useState<Record<string, WhatsAppProfile>>({});
   const [userRoleLevel, setUserRoleLevel] = useState<number>(ROLE_LEVELS.SALES);
   const [accessDenied, setAccessDenied] = useState(false);
 
@@ -82,7 +84,7 @@ export default function UsersPage() {
         setUsers(loadedUsers);
         setStats(response.data?.stats || { total: 0, byStatus: {}, byRole: {} });
         // Load profile pictures for users with phone numbers
-        loadProfilePictures(loadedUsers, tid);
+        loadWhatsAppProfiles(loadedUsers, tid);
       } else {
         console.error('Failed to load users:', response.error);
       }
@@ -93,41 +95,48 @@ export default function UsersPage() {
     }
   };
 
-  const loadProfilePictures = useCallback(async (usersList: User[], tid: string) => {
+  const loadWhatsAppProfiles = useCallback(async (usersList: User[], tid: string) => {
     const usersWithPhone = usersList.filter(u => u.phone);
     if (usersWithPhone.length === 0) return;
 
-    // Load profile pictures in parallel
-    // Note: Don't pass tenantId - API works better with fallback to any connected client
-    const picturePromises = usersWithPhone.map(async (user) => {
+    // Load WhatsApp status and profile pictures
+    usersWithPhone.forEach(async (user) => {
+      const phone = user.phone!;
+
+      // Set loading state for this specific user
+      setWhatsAppProfiles(prev => ({
+        ...prev,
+        [phone]: { ...prev[phone], loading: true }
+      }));
+
       try {
-        const response = await fetch(
-          `/api/v1/whatsapp-ai/profile-picture?phone=${user.phone}`
-        );
-        const data = await response.json();
-        if (data.success) {
-          return {
-            phone: user.phone!,
-            data: {
-              pictureUrl: data.pictureUrl || null,
-              hasPicture: data.hasPicture || false,
-            },
-          };
-        }
+        // Fetch both registration status and profile picture
+        const [regRes, picRes] = await Promise.all([
+          fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${phone}`),
+          fetch(`/api/v1/whatsapp-ai/profile-picture?phone=${phone}`)
+        ]);
+
+        const regData = await regRes.json();
+        const picData = await picRes.json();
+
+        setWhatsAppProfiles(prev => ({
+          ...prev,
+          [phone]: {
+            pictureUrl: picData.success ? picData.pictureUrl : null,
+            hasPicture: picData.success ? picData.hasPicture : false,
+            isRegistered: regData.success ? regData.isRegistered : false,
+            loading: false
+          }
+        }));
       } catch (error) {
-        console.error(`Failed to load profile picture for ${user.phone}:`, error);
+        console.error(`Failed to load WhatsApp data for ${phone}:`, error);
+        setWhatsAppProfiles(prev => ({
+          ...prev,
+          [phone]: { ...prev[phone], loading: false }
+        }));
       }
-      return null;
     });
 
-    const results = await Promise.all(picturePromises);
-    const newPictures: Record<string, ProfilePicture> = {};
-    results.forEach((result) => {
-      if (result) {
-        newPictures[result.phone] = result.data;
-      }
-    });
-    setProfilePictures((prev) => ({ ...prev, ...newPictures }));
   }, []);
 
   const applyFilters = () => {
@@ -470,29 +479,41 @@ export default function UsersPage() {
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-7 w-7 md:h-8 md:w-8 relative">
-                            {user.phone && profilePictures[user.phone]?.hasPicture && profilePictures[user.phone]?.pictureUrl ? (
+                          <div className="flex-shrink-0 h-8 w-8 md:h-10 md:w-10 relative">
+                            {user.phone && whatsAppProfiles[user.phone]?.hasPicture && whatsAppProfiles[user.phone]?.pictureUrl ? (
                               <img
-                                src={profilePictures[user.phone].pictureUrl!}
+                                src={whatsAppProfiles[user.phone].pictureUrl!}
                                 alt={`${user.firstName} ${user.lastName}`}
-                                className="h-7 w-7 md:h-8 md:w-8 rounded-full object-cover"
+                                className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover border border-gray-100 shadow-sm"
                               />
                             ) : (
-                              <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                <span className="text-blue-600 font-semibold text-[10px] md:text-xs">
+                              <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
+                                <span className="text-blue-600 font-bold text-xs md:text-sm">
                                   {user.firstName.charAt(0)}
                                   {user.lastName?.charAt(0) || ''}
                                 </span>
                               </div>
                             )}
+                            {/* WhatsApp Status Indicator on Profile Picture */}
+                            {user.phone && whatsAppProfiles[user.phone] && !whatsAppProfiles[user.phone].loading && (
+                              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            )}
                           </div>
-                          <div className="ml-2 md:ml-3">
-                            <div className="text-xs md:text-sm font-medium text-gray-900">
+                          <div className="ml-3">
+                            <div className="text-xs md:text-sm font-bold text-gray-900 leading-tight">
                               {user.firstName} {user.lastName}
                             </div>
                             {user.phone && (
-                              <div className="text-[9px] md:text-xs text-gray-500">
-                                {formatPhoneNumber(user.phone)}
+                              <div className="flex items-center mt-1">
+                                <FaWhatsapp className="text-green-500 mr-1 text-[10px] md:text-xs" />
+                                <div className="text-[10px] md:text-xs text-gray-600 font-medium">
+                                  {formatPhoneNumber(user.phone)}
+                                </div>
+                                {whatsAppProfiles[user.phone] && !whatsAppProfiles[user.phone].loading && (
+                                  <span className={`ml-2 px-1.5 py-0.5 rounded text-[8px] md:text-[10px] font-bold uppercase tracking-tighter ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                                    {whatsAppProfiles[user.phone].isRegistered ? 'Active' : 'No WA'}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
