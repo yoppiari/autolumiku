@@ -36,7 +36,8 @@ interface SalesStats {
   totalRevenue: number;
   avgPrice: number;
   topBrands: { brand: string; count: number; revenue: number }[];
-  monthlySales: { month: string; count: number; revenue: number }[];
+  monthlySales: { month: string; count: number; revenue: number; brands: { brand: string; count: number }[] }[];
+  topPerformers: { name: string; sales: number; revenue: number }[];
 }
 
 interface WhatsAppAnalytics {
@@ -620,23 +621,32 @@ export default function AnalyticsPage() {
                     <div key={idx} className="flex-1 flex flex-col items-center gap-1">
                       <span className="text-[9px] md:text-[10px] text-gray-600 font-semibold">{month.count}</span>
                       <div className="w-full flex flex-col-reverse" style={{ height: `${Math.max((month.count / maxCount) * 160, 20)}px` }}>
-                        {/* Stacked bars - simulate brand breakdown */}
-                        {topBrands.slice(0, 3).map((brand, bIdx) => {
-                          const height = Math.max(20 / (topBrands.slice(0, 3).length), (Math.random() * 0.4 + 0.2) * ((month.count / maxCount) * 160));
-                          return (
-                            <div
-                              key={bIdx}
-                              className="w-full hover:opacity-80 transition-opacity"
-                              style={{
-                                height: `${height}px`,
-                                backgroundColor: brandColors[brand.brand] || '#6b7280',
-                              }}
-                              title={`${brand.brand}: ~${Math.round(month.count * 0.3)} unit`}
-                            />
-                          );
-                        })}
+                        {/* Stacked bars - use actual brand breakdown from API */}
+                        {month.brands && month.brands.length > 0 ? (
+                          month.brands.map((brandInfo, bIdx) => {
+                            const brandPercent = month.count > 0 ? (brandInfo.count / month.count) : 0;
+                            const height = Math.max(5, (brandPercent * ((month.count / maxCount) * 160)));
+                            return (
+                              <div
+                                key={bIdx}
+                                className="w-full hover:opacity-80 transition-opacity"
+                                style={{
+                                  height: `${height}px`,
+                                  backgroundColor: brandColors[brandInfo.brand] || '#6b7280',
+                                }}
+                                title={`${brandInfo.brand}: ${brandInfo.count} unit`}
+                              />
+                            );
+                          })
+                        ) : (
+                          <div className="w-full h-full bg-gray-200" />
+                        )}
                       </div>
-                      <span className="text-[8px] md:text-[9px] text-gray-500 truncate w-full text-center">{month.month.substring(0, 3)}</span>
+                      <span className="text-[8px] md:text-[9px] text-gray-500 truncate w-full text-center">
+                        {month.month.includes('-')
+                          ? new Date(month.month + (month.month.length === 7 ? '-01' : '')).toLocaleDateString('id-ID', { month: 'short' })
+                          : month.month}
+                      </span>
                     </div>
                   ));
                 })()
@@ -697,13 +707,8 @@ export default function AnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {salesStats?.totalSales && salesStats.totalSales > 0 ? (
-                    // Mock staff data based on sales
-                    [
-                      { name: 'Andi', sales: Math.round((salesStats.totalSales || 0) * 0.35), revenue: (salesStats.totalRevenue || 0) * 0.35 },
-                      { name: 'Budi', sales: Math.round((salesStats.totalSales || 0) * 0.25), revenue: (salesStats.totalRevenue || 0) * 0.25 },
-                      { name: 'Citra', sales: Math.round((salesStats.totalSales || 0) * 0.40), revenue: (salesStats.totalRevenue || 0) * 0.40 },
-                    ].map((staff, idx) => {
+                  {salesStats?.topPerformers && salesStats.topPerformers.length > 0 ? (
+                    salesStats.topPerformers.map((staff, idx) => {
                       const performance = staff.sales >= 5 ? 'Excellent' : staff.sales >= 3 ? 'Good' : 'Needs Improvement';
                       const perfColor = performance === 'Excellent' ? 'bg-green-100 text-green-800' : performance === 'Good' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800';
                       return (

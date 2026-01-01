@@ -173,7 +173,30 @@ export async function GET(request: NextRequest) {
     Object.entries(dateMap)
       .sort((a, b) => a[0].localeCompare(b[0]))
       .forEach(([date, data]) => {
-        revenueTrend.push({ date, ...data });
+        // Find top 3 brands for this specific date range for better visualization
+        const brandsForPeriod = soldVehicles
+          .filter(v => {
+            const vDate = new Date(v.updatedAt);
+            if (period === 'daily' || timeRange === '7d') return vDate.toISOString().split('T')[0] === date;
+            if (period === 'weekly') {
+              const weekStart = new Date(vDate);
+              weekStart.setDate(vDate.getDate() - vDate.getDay());
+              return weekStart.toISOString().split('T')[0] === date;
+            }
+            return `${vDate.getFullYear()}-${String(vDate.getMonth() + 1).padStart(2, '0')}` === date;
+          })
+          .reduce((acc: Record<string, number>, v) => {
+            const make = v.make || 'Other';
+            acc[make] = (acc[make] || 0) + 1;
+            return acc;
+          }, {});
+
+        const brandBreakdown = Object.entries(brandsForPeriod)
+          .map(([brand, count]) => ({ brand, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 3);
+
+        revenueTrend.push({ date, ...data, brands: brandBreakdown });
       });
 
     // Get leads/inquiries data
@@ -239,19 +262,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        summary: {
-          totalSalesCount,
-          totalSalesValue,
-          averageSaleValue,
-          growthRate: parseFloat(growthRate),
-          previousPeriod: {
-            count: previousCount,
-            value: previousTotalValue,
-          },
-        },
-        topPerformers,
-        categoryBreakdown,
-        revenueTrend,
+        totalSales: totalSalesCount,
+        totalRevenue: totalSalesValue,
+        avgPrice: averageSaleValue,
+        topBrands: categoryBreakdown.map(c => ({
+          brand: c.category,
+          count: c.count,
+          revenue: c.value
+        })),
+        monthlySales: revenueTrend.map(r => ({
+          month: r.date,
+          count: r.count,
+          revenue: r.value,
+          brands: (r as any).brands
+        })),
+        topPerformers: topPerformers.map(p => ({
+          name: p.name,
+          sales: p.count,
+          revenue: p.value
+        })),
         leads: leadsData,
         timeRange,
         period,

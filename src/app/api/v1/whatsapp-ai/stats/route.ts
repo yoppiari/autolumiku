@@ -9,6 +9,61 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Calculate average response time in seconds
+ * Measures time between inbound customer message and AI response
+ */
+async function calculateAvgResponseTime(tenantId: string): Promise<number> {
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30); // Last 30 days
+
+    const conversations = await prisma.whatsAppConversation.findMany({
+      where: {
+        tenantId,
+        startedAt: { gte: startDate },
+        status: { not: "deleted" },
+      },
+      include: {
+        messages: {
+          orderBy: { createdAt: "asc" },
+          take: 10,
+        },
+      },
+      take: 50,
+    });
+
+    const responseTimes: number[] = [];
+
+    for (const conv of conversations) {
+      const messages = conv.messages;
+      for (let i = 0; i < messages.length - 1; i++) {
+        const current = messages[i];
+        const next = messages[i + 1];
+
+        if (
+          current.direction === "inbound" &&
+          next.direction === "outbound" &&
+          next.aiResponse
+        ) {
+          const responseTime =
+            (new Date(next.createdAt).getTime() - new Date(current.createdAt).getTime()) / 1000;
+
+          if (responseTime > 0 && responseTime < 300) {
+            responseTimes.push(responseTime);
+          }
+        }
+      }
+    }
+
+    if (responseTimes.length === 0) return 5;
+    return Math.round(responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length);
+  } catch (error) {
+    console.error("[Stats] Error calculating response time:", error);
+    return 5;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -94,9 +149,8 @@ export async function GET(request: NextRequest) {
     // Calculate AI performance metrics
     const aiAccuracy = customerMessages > 0 ? Math.round((aiMessages / customerMessages) * 100) : 0;
 
-    // Calculate average response time (simplified - dalam production harus lebih sophisticated)
-    // For now, return mock data - akan diimplementasi dengan tracking timestamps
-    const avgResponseTime = 5; // 5 seconds (mock)
+    // Calculate average response time from actual message timestamps
+    const avgResponseTime = await calculateAvgResponseTime(tenantId);
 
     // Get staff command stats
     const staffCommands = await prisma.staffCommandLog.count({
