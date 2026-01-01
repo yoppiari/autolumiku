@@ -6,6 +6,7 @@
  * REVISI: Fix pie chart labels, korelasi data real-time, layout tidak out of box
  * REVISI 2: Font size adjustments, layout spacing
  * REVISI 3: Logo implementation, always show chart, black analysis text, larger legend font
+ * REVISI 4: Header layout fix (Title Top, Logo Below), Add Top Sales metric, clean empty chart, clean analysis symbols
  */
 
 import PDFDocument from 'pdfkit';
@@ -73,12 +74,21 @@ export class SalesReportPDF {
     let y = 0;
 
     // ==================== HEADER ====================
-    const headerHeight = 60; // Increased to accommodate Logo + Title
+    const headerHeight = 85;
 
     // Blue header background
     doc.fillColor('#1e3a8a').rect(0, 0, pageWidth, headerHeight).fill();
 
-    // LOGO IMPLEMENTATION
+    // 1. Title at VERY TOP
+    doc.fillColor('#ffffff')
+      .fontSize(22)
+      .font('Helvetica-Bold')
+      .text('SALES REPORT', 0, 15, {
+        align: 'center',
+        width: pageWidth
+      });
+
+    // 2. LOGO Below Title
     const logoRelPath = 'public/prima-mobil-logo.jpg';
     const fs = require('fs');
     // Check both relative and absolute path just in case
@@ -89,54 +99,34 @@ export class SalesReportPDF {
 
     try {
       if (fs.existsSync(logoAbsPath)) {
-        // Draw Logo centered at TOP
-        const logoWidth = 100;
-        const logoHeight = 25; // Approximate aspect ratio
-        doc.image(logoAbsPath, (pageWidth - logoWidth) / 2, 8, { width: logoWidth });
+        const logoWidth = 120;
+        // Centered below title (y=45)
+        doc.image(logoAbsPath, (pageWidth - logoWidth) / 2, 45, { width: logoWidth });
         logoDrawn = true;
-
-        // Title BELOW Logo
-        doc.fillColor('#ffffff')
-          .fontSize(16)
-          .font('Helvetica-Bold')
-          .text('SALES REPORT', 0, 36, {
-            align: 'center',
-            width: pageWidth
-          });
       }
     } catch (e) {
       console.error('Error drawing logo:', e);
     }
 
     if (!logoDrawn) {
-      // Fallback: Original Design with Badge
-      doc.fillColor('#ffffff')
-        .fontSize(20)
-        .font('Helvetica-Bold')
-        .text('SALES REPORT', 0, 12, {
-          align: 'center',
-          width: pageWidth
-        });
-
-      // Tenant name badge
+      // Fallback: Badge below title
       const badgeText = config.tenantName.toUpperCase();
-      doc.fontSize(8);
-      const badgeWidth = doc.widthOfString(badgeText) + 20;
+      doc.fontSize(10);
+      const badgeWidth = doc.widthOfString(badgeText) + 30;
       const badgeX = (pageWidth - badgeWidth) / 2;
-      const badgeY = 33;
+      const badgeY = 50;
 
-      // Badge background
       doc.fillColor('#dc2626')
-        .roundedRect(badgeX, badgeY, badgeWidth, 14, 3)
+        .roundedRect(badgeX, badgeY, badgeWidth, 18, 4)
         .fill();
 
       doc.fillColor('#ffffff')
-        .fontSize(8)
+        .fontSize(10)
         .font('Helvetica-Bold')
-        .text(badgeText, badgeX, badgeY + 3, { width: badgeWidth, align: 'center' });
+        .text(badgeText, badgeX, badgeY + 4, { width: badgeWidth, align: 'center' });
     }
 
-    y = headerHeight + 10;
+    y = headerHeight + 12;
 
     // ==================== METRIC CARDS ====================
     const cardCount = 4;
@@ -235,13 +225,20 @@ export class SalesReportPDF {
         formula: 'AVG: SUM(price) / COUNT(vehicles) WHERE status = SOLD',
         calculation: `H: ${this.formatCurrency(totalRevenue)} / ${totalPenjualan} = ${this.formatCurrency(rataRataHarga)}`,
         result: this.formatCurrencyShort(rataRataHarga)
+      },
+      // REVISI: Add Top Sales Staff formula
+      {
+        name: 'Top Sales Staff',
+        formula: 'MAX: COUNT(sales) BY sales_staff',
+        calculation: `H: ${config.metrics.topSalesStaff || '-'}`,
+        result: config.metrics.topSalesStaff ? '1st Rank' : '-'
       }
     ];
 
     formulas.forEach((formula, idx) => {
       const bgColor = idx % 2 === 0 ? '#fef9c3' : '#ffffff';
       const borderColor = '#eab308';
-      const rowHeight = 42; // Increased height for larger text
+      const rowHeight = 42;
 
       doc.fillColor(bgColor)
         .rect(margin, y, contentWidth, rowHeight)
@@ -348,25 +345,27 @@ export class SalesReportPDF {
     // Prepare chart data with real percentages
     let chartData = config.chartData || [];
 
-    // REVISI: Always show chart. If no data, show "Belum Ada Data" segment
+    // REVISI: Fixed Empty State
+    const isEmptyData = chartData.length === 0 && config.metrics.totalPenjualan === 0;
+
     if (chartData.length === 0) {
       if (config.metrics.totalPenjualan > 0) {
         chartData = [{ label: 'Total', value: config.metrics.totalPenjualan, percentage: 100, color: '#3b82f6' }];
       } else {
-        // Default placeholder data so chart is always visible even with 0 sales
-        chartData = [{ label: 'Stock Report (Kosong/Belum Ada)', value: 1, percentage: 100, color: '#9ca3af' }]; // Grey color
+        // Placeholder for 0 sales - only show color as requested
+        chartData = [{ label: 'Data Belum Tersedia', value: 1, percentage: 100, color: '#9ca3af' }];
       }
     }
 
     // Always draw pie chart
-    this.drawPieChartWithLabels(chartCenterX, chartCenterY, chartRadius, chartData);
+    this.drawPieChartWithLabels(chartCenterX, chartCenterY, chartRadius, chartData, isEmptyData);
 
     // Right side - Formula explanations dengan data REAL
     let formulaY = y + 25;
-    const formulaLineHeight = 13; // Increased slightly
+    const formulaLineHeight = 13;
 
     doc.fillColor('#1e293b')
-      .fontSize(8.5) // Increased font size (from 6.5 -> 8.5 REVISI)
+      .fontSize(8.5)
       .font('Helvetica')
       .text('Rumusan indikator chart:', rightSectionX, formulaY);
 
@@ -377,6 +376,22 @@ export class SalesReportPDF {
       const totalChartValue = chartData.reduce((sum, d) => sum + d.value, 0);
 
       chartData.slice(0, 4).forEach((item, idx) => {
+        // If empty data, only show simple label or nothing if requested. 
+        if (isEmptyData) {
+          // Just show color dot and "Belum Ada Data" text, no percentage
+          doc.fillColor(item.color)
+            .circle(rightSectionX + 5, formulaY + 3, 3)
+            .fill();
+
+          doc.fillColor('#374151')
+            .fontSize(8)
+            .font('Helvetica')
+            .text(`Belum ada data penjualan`, rightSectionX + 12, formulaY);
+
+          formulaY += formulaLineHeight;
+          return;
+        }
+
         const pct = totalChartValue > 0 ? ((item.value / totalChartValue) * 100).toFixed(1) : '0';
 
         // Color indicator
@@ -385,7 +400,7 @@ export class SalesReportPDF {
           .fill();
 
         doc.fillColor('#374151')
-          .fontSize(8) // Increased font size (from 6/7 -> 8 REVISI)
+          .fontSize(8)
           .font('Helvetica')
           .text(`${item.label}: ${item.value} unit / ${totalChartValue} total × 100 = ${pct}%`, rightSectionX + 12, formulaY, { width: contentWidth / 2 - 25 });
 
@@ -396,13 +411,15 @@ export class SalesReportPDF {
 
       // Summary
       doc.fillColor('#1e293b')
-        .fontSize(8) // Increased size
+        .fontSize(8)
         .font('Helvetica-Bold')
         .text('Hasil Perhitungan:', rightSectionX, formulaY);
 
       formulaY += formulaLineHeight;
 
       chartData.slice(0, 4).forEach((item) => {
+        if (isEmptyData) return; // Hide percentage list for empty data
+
         const pct = totalChartValue > 0 ? ((item.value / totalChartValue) * 100).toFixed(1) : '0';
 
         doc.fillColor(item.color)
@@ -410,7 +427,7 @@ export class SalesReportPDF {
           .fill();
 
         doc.fillColor('#374151')
-          .fontSize(7.5) // Increased size
+          .fontSize(7.5)
           .font('Helvetica-Bold')
           .text(`${item.label}: ${pct}%`, rightSectionX + 12, formulaY);
 
@@ -432,12 +449,15 @@ export class SalesReportPDF {
     const analysisItems = this.generateAnalysis(config);
 
     analysisItems.forEach((item) => {
+      // REVISI: Clean symbols
+      const cleanItem = item.replace(/^[•\-\*><]+\s*/, '').trim();
+
       doc.fillColor('#000000') // REVISI: Changed to black
         .fontSize(9)
         .font('Helvetica')
-        .text(`- ${item}`, margin, y, { width: contentWidth });
+        .text(`- ${cleanItem}`, margin, y, { width: contentWidth });
 
-      y += doc.heightOfString(`- ${item}`, { width: contentWidth }) + 4;
+      y += doc.heightOfString(`- ${cleanItem}`, { width: contentWidth }) + 4;
     });
 
     // ==================== FOOTER ====================
@@ -461,7 +481,8 @@ export class SalesReportPDF {
     centerX: number,
     centerY: number,
     radius: number,
-    data: { label: string; value: number; percentage: number; color: string }[]
+    data: { label: string; value: number; percentage: number; color: string }[],
+    isEmptyData: boolean = false
   ) {
     const { doc } = this;
     const total = data.reduce((sum, item) => sum + item.value, 0);
@@ -487,8 +508,11 @@ export class SalesReportPDF {
         .fill(item.color);
 
       // Draw percentage label OUTSIDE the pie
-      // Show label if > 3% OR if it's the single placeholder item (percentage 100)
-      if (percentage > 0.03 || data.length === 1) {
+      // Show label if > 3% OR if it's the single placeholder item.
+      // IF EMPTY DATA: User said "tulisan: 100% dan Stock Re... kalau tidak ada fungsinya di delete saja".
+      // So if isEmptyData is true, we SKIP drawing the label text on the chart itself to be clean.
+
+      if (!isEmptyData && (percentage > 0.03 || data.length === 1)) {
         const midAngle = startAngle + angle / 2;
         const labelRadius = radius + 15; // Position label outside
         const labelX = centerX + labelRadius * Math.cos(midAngle);
@@ -506,7 +530,7 @@ export class SalesReportPDF {
     });
 
     // Draw white lines between slices
-    if (data.length > 1) { // Only draw lines if multiple slices
+    if (data.length > 1 && !isEmptyData) { // Only draw lines if multiple slices and not empty
       startAngle = -Math.PI / 2;
       data.forEach((item) => {
         if (total === 0) return;
@@ -526,11 +550,17 @@ export class SalesReportPDF {
     }
 
     // Legend below chart
+    // If empty data, only show simplified legend or none? User wants to see "warna"
     const legendY = centerY + radius + 25;
     const legendItemWidth = 55;
-    const startLegendX = centerX - (Math.min(data.length, 3) * legendItemWidth) / 2;
 
-    data.slice(0, 3).forEach((item, idx) => {
+    // For empty data, just show one item "No Data" or similar?
+    // User: "ditampilan saja warna"
+    const displayData = isEmptyData ? data : data.slice(0, 3);
+
+    const startLegendX = centerX - (Math.min(displayData.length, 3) * legendItemWidth) / 2;
+
+    displayData.forEach((item, idx) => {
       const lx = startLegendX + idx * legendItemWidth;
 
       // Color box
