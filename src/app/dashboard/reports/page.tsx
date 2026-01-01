@@ -65,22 +65,6 @@ const REPORT_TYPES: ReportType[] = [
         category: 'sales',
     },
 
-    // WhatsApp & Customer
-    {
-        id: 'whatsapp-analytics',
-        name: 'WhatsApp AI Analytics',
-        description: 'Conversation metrics + intent breakdown',
-        icon: '💬',
-        category: 'whatsapp',
-    },
-    {
-        id: 'customer-metrics',
-        name: 'Metrik Pelanggan',
-        description: 'Customer retention + engagement data',
-        icon: '👥',
-        category: 'whatsapp',
-    },
-
     // Performance & KPIs
     {
         id: 'sales-metrics',
@@ -238,7 +222,6 @@ export default function ReportsPage() {
                 {[
                     { value: 'all', label: 'Semua', icon: '📑' },
                     { value: 'sales', label: 'Sales', icon: '💵' },
-                    { value: 'whatsapp', label: 'WhatsApp', icon: '💬' },
                     { value: 'performance', label: 'Performa', icon: '🎯' },
                     { value: 'inventory', label: 'Inventory', icon: '📦' },
                 ].map((cat) => (
@@ -261,9 +244,9 @@ export default function ReportsPage() {
                 {filteredReports.map((report) => (
                     <div
                         key={report.id}
-                        className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
+                        className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow flex flex-col h-full"
                     >
-                        <div className="flex items-start gap-3 mb-3">
+                        <div className="flex items-start gap-3 mb-4">
                             <span className="text-3xl">{report.icon}</span>
                             <div className="flex-1">
                                 <h3 className="text-base font-semibold text-gray-900 mb-1">
@@ -275,7 +258,7 @@ export default function ReportsPage() {
                             </div>
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 mt-auto pt-2">
                             <button
                                 onClick={() => handleDownload(report.id, 'pdf')}
                                 disabled={!!downloading}

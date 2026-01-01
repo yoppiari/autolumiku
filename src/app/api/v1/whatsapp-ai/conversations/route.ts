@@ -85,6 +85,8 @@ export async function GET(request: NextRequest) {
 
     // Auto-validate and fix stale staff flags
     const staleStaffConversations: string[] = [];
+    const promoteToStaffConversations: string[] = [];
+
     for (const conv of conversations) {
       const normalizedPhone = normalizePhone(conv.customerPhone);
       const isCurrentlyStaff = staffPhoneSet.has(normalizedPhone);
@@ -92,6 +94,9 @@ export async function GET(request: NextRequest) {
       if (conv.isStaff && !isCurrentlyStaff) {
         // Conversation marked as staff but user is no longer staff
         staleStaffConversations.push(conv.id);
+      } else if (!conv.isStaff && isCurrentlyStaff) {
+        // User is now staff (Owner/Admin/etc) but conversation not marked yet
+        promoteToStaffConversations.push(conv.id);
       }
     }
 
@@ -101,10 +106,19 @@ export async function GET(request: NextRequest) {
       prisma.whatsAppConversation.updateMany({
         where: { id: { in: staleStaffConversations } },
         data: { isStaff: false, conversationType: 'customer' },
-      }).then(() => {
-        console.log(`[Conversations API] Fixed ${staleStaffConversations.length} stale staff flags`);
       }).catch((err) => {
         console.error('[Conversations API] Error fixing stale staff flags:', err);
+      });
+    }
+
+    // Auto-promote new staff conversations in background
+    if (promoteToStaffConversations.length > 0) {
+      console.log(`[Conversations API] Auto-promoting ${promoteToStaffConversations.length} conversations to staff status`);
+      prisma.whatsAppConversation.updateMany({
+        where: { id: { in: promoteToStaffConversations } },
+        data: { isStaff: true, conversationType: 'staff' },
+      }).catch((err) => {
+        console.error('[Conversations API] Error promoting staff flags:', err);
       });
     }
 

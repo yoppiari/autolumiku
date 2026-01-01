@@ -1306,11 +1306,14 @@ export class AimeowClientService {
    */
   private static async resolveClientId(clientId: string): Promise<string> {
     // 1. If it's already a UUID, return it
-    if (clientId.includes("-") && !clientId.includes("@")) {
+    if (clientId.includes("-") && !clientId.includes("@") && clientId.length > 20) {
       return clientId;
     }
 
     console.log(`[Aimeow Resolve] ⚠️ ClientId needs resolution: ${clientId}`);
+
+    // If it's a JID or LID, extract the core number
+    const coreId = clientId.split(":")[0].split("@")[0];
 
     // 2. Try database lookup if it's a Prisma ID, JID, or stored clientId
     try {
@@ -1319,7 +1322,10 @@ export class AimeowClientService {
           OR: [
             { id: clientId },
             { clientId: clientId },
-            { phoneNumber: clientId.split(":")[0].split("@")[0] }
+            { phoneNumber: coreId },
+            { phoneNumber: `+${coreId}` },
+            { phoneNumber: `62${coreId.replace(/^0/, '')}` },
+            { phoneNumber: `0${coreId.replace(/^62/, '')}` },
           ]
         }
       });
@@ -1337,6 +1343,13 @@ export class AimeowClientService {
       const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
       if (response.ok) {
         const clients = await response.json();
+        // If we have a phone number, try to match it
+        const matching = clients.find((c: any) => c.phone === coreId || c.phone === `+${coreId}`);
+        if (matching) {
+          console.log(`[Aimeow Resolve] ✅ Resolved via API phone match: ${matching.id}`);
+          return matching.id;
+        }
+
         const connected = clients.find((c: any) => c.isConnected);
         if (connected) {
           console.log(`[Aimeow Resolve] ⚠️ Fallback to connected client: ${connected.id}`);

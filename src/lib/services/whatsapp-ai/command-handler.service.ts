@@ -390,10 +390,21 @@ async function handleUniversalCommand(
     // 2. Admin Tools (Admin only)
     if (isAdmin) {
       helpMsg += `👮‍♂️ *MENU ADMIN & OWNER*\n`;
-      helpMsg += `• *Sales Report*: Ketik "sales report", "laporan penjualan", atau "total sales"\n`;
-      helpMsg += `• *Inventory Report*: Ketik "inventory report" atau "total inventory"\n`;
-      helpMsg += `• *Staff Performance*: Ketik "staff performance" atau "laporan staff"\n`;
-      helpMsg += `• *Broadcast Report*: Tambahkan "kirim pdf" di akhir perintah\n\n`;
+      helpMsg += `Terdapat total *15+ Laporan Management* yang tersedia:\n\n`;
+
+      helpMsg += `📊 *Sales & Revenue (6 Report)*\n`;
+      helpMsg += `• Ketik: "sales report", "laporan penjualan", "total revenue", atau "tren penjualan"\n\n`;
+
+      helpMsg += `📦 *Inventory & Stock (3 Report)*\n`;
+      helpMsg += `• Ketik: "stok report", "total inventory", atau "ave price"\n\n`;
+
+      helpMsg += `👥 *Team & Performance (3 Report)*\n`;
+      helpMsg += `• Ketik: "staff performance", "performa staff", atau "recent sales"\n\n`;
+
+      helpMsg += `🤖 *WhatsApp AI & Customer (3 Report)*\n`;
+      helpMsg += `• Ketik: "whatsapp analytics", "metrik operasional", atau "customer metrics"\n\n`;
+
+      helpMsg += `💡 *Kirim PDF*: Tambahkan kata "kirim pdf" untuk mendapatkan file. Contoh: "kirim sales report pdf"\n\n`;
     }
 
     helpMsg += `💡 *TIPS:*\n`;
@@ -596,33 +607,32 @@ export async function handlePDFCommand(
   if (cmd.includes('report') || cmd.includes('pdf')) {
     return {
       success: true,
-      message: `📊 *PDF Report Tersedia*
+      message: `📊 *PDF Report Management (15+ Tipe)*
 
 Silakan pilih report yang diinginkan:
 
 📈 *Sales & Revenue:*
-• Sales Report
-• Total Penjualan
-• Total Revenue
+• Sales Report / Laporan Penjualan
+• Total Penjualan & Revenue
+• Tren Penjualan
 • Sales Summary
 • Metrik Penjualan
-• Tren Penjualan
 
 📦 *Inventory:*
+• Stock Report / Total Inventory
 • Low Stock Alert
-• Total Inventory
-• Average Price
+• Average Price (Rata-rata Harga)
 
-👥 *Staff & Customers:*
-• Staff Performance
-• Recent Sales
-• Metrik Pelanggan
+👥 *Staff & Team:*
+• Staff Performance (Performa Staff)
+• Recent Sales (Penjualan Terkini)
 
-🤖 *WhatsApp AI:*
+🤖 *WhatsApp AI & Engagement:*
 • WhatsApp AI Analytics
-• Metrik Operational
+• Metrik Operasional
+• Customer Metrics (Metrik Pelanggan)
 
-Ketik nama report untuk mendapatkan PDF. Contoh: "sales report", "low stock alert", "sales summary"`,
+Ketik nama report untuk mendapatkan PDF. Contoh: "kirim sales report pdf", "total inventory", atau "staff performance"`,
       followUp: true,
     };
   }

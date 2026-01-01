@@ -422,11 +422,11 @@ export default function WhatsAppAIDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-4 md:mb-5">
               <div className="text-[10px] md:text-xs leading-snug">
                 <span className="font-bold text-green-700">💬 Conversations:</span>{' '}
-                <span className="text-gray-700">{stats.total || 0} hari ini ({stats.active || 0} active)</span>
+                <span className="text-gray-700">{(stats as any).todayConversations || 0} hari ini ({stats.active || 0} active)</span>
               </div>
               <div className="text-[10px] md:text-xs leading-snug">
                 <span className="font-bold text-purple-700">📨 Messages:</span>{' '}
-                <span className="text-gray-700">{status.todayMessages} hari ini</span>
+                <span className="text-gray-700">{(stats as any).todayMessages || status.todayMessages || 0} hari ini</span>
               </div>
               <div className="text-[10px] md:text-xs leading-snug">
                 <span className="font-bold text-blue-700">🤖 AI Automation:</span>{' '}
@@ -435,24 +435,30 @@ export default function WhatsAppAIDashboard() {
                     <span className="text-green-600 font-semibold">Excellent ({status.aiResponseRate}%)</span>
                   ) : status.aiResponseRate >= 60 ? (
                     <span className="text-amber-600 font-semibold">Good ({status.aiResponseRate}%)</span>
+                  ) : status.aiResponseRate > 0 ? (
+                    <span className="text-red-600 font-semibold">Perlu improve ({status.aiResponseRate}%)</span>
                   ) : (
-                    <span className="text-red-600 font-semibold">Perlu improve</span>
+                    <span className="text-gray-400 font-medium">No Data</span>
                   )}
                 </span>
               </div>
               <div className="text-[10px] md:text-xs leading-snug">
                 <span className="font-bold text-orange-700">⚡ Response Speed:</span>{' '}
                 <span className="text-gray-700">
-                  {stats.avgResponseTime < 60 ? (
-                    <span className="text-green-600 font-semibold">Cepat ({formatResponseTime(stats.avgResponseTime)})</span>
+                  {stats.avgResponseTime > 0 ? (
+                    stats.avgResponseTime < 60 ? (
+                      <span className="text-green-600 font-semibold">Cepat ({formatResponseTime(stats.avgResponseTime)})</span>
+                    ) : (
+                      <span className="text-amber-600 font-semibold">Slow ({formatResponseTime(stats.avgResponseTime)})</span>
+                    )
                   ) : (
-                    <span className="text-amber-600 font-semibold">Perlu ditingkatkan</span>
+                    <span className="text-gray-400 font-medium">No Data</span>
                   )}
                 </span>
               </div>
               <div className="text-[10px] md:text-xs leading-snug">
                 <span className="font-bold text-green-700">💰 Time Saved:</span>{' '}
-                <span className="text-gray-700">~<span className="font-semibold text-green-600">{Math.round((status.todayMessages || 0) * (status.aiResponseRate / 100) * 2)} menit</span> hari ini</span>
+                <span className="text-gray-700">~<span className="font-semibold text-green-600">{Math.round(((stats as any).todayMessages || status.todayMessages || 0) * (status.aiResponseRate / 100) * 1.5)} menit</span> hari ini</span>
               </div>
             </div>
 

@@ -65,7 +65,7 @@ async function calculateAvgResponseTime(tenantId: string, startDate: Date): Prom
     }
 
     if (responseTimes.length === 0) {
-      return 5; // Default 5 seconds if no data
+      return 0; // Return 0 if no data for real-time accuracy
     }
 
     // Calculate average
@@ -73,7 +73,7 @@ async function calculateAvgResponseTime(tenantId: string, startDate: Date): Prom
     return Math.round(avg);
   } catch (error) {
     console.error("[Analytics] Error calculating response time:", error);
-    return 5; // Default fallback
+    return 0; // Fallback to 0 on error
   }
 }
 

@@ -56,11 +56,11 @@ async function calculateAvgResponseTime(tenantId: string): Promise<number> {
       }
     }
 
-    if (responseTimes.length === 0) return 5;
+    if (responseTimes.length === 0) return 0; // Return 0 if no data instead of hardcoded 5
     return Math.round(responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length);
   } catch (error) {
     console.error("[Stats] Error calculating response time:", error);
-    return 5;
+    return 0; // Return 0 on error
   }
 }
 
@@ -86,6 +86,7 @@ export async function GET(request: NextRequest) {
       escalatedConversations,
       customerConversations,
       staffConversations,
+      todayConversations,
     ] = await Promise.all([
       prisma.whatsAppConversation.count({
         where: {
@@ -120,10 +121,17 @@ export async function GET(request: NextRequest) {
           status: { not: "deleted" },
         },
       }),
+      prisma.whatsAppConversation.count({
+        where: {
+          tenantId,
+          startedAt: { gte: todayStart },
+          status: { not: "deleted" },
+        },
+      }),
     ]);
 
     // Get message counts (exclude messages from deleted conversations)
-    const [totalMessages, aiMessages, customerMessages] = await Promise.all([
+    const [totalMessages, aiMessages, customerMessages, todayMessages] = await Promise.all([
       prisma.whatsAppMessage.count({
         where: {
           tenantId,
@@ -141,6 +149,13 @@ export async function GET(request: NextRequest) {
         where: {
           tenantId,
           direction: "inbound",
+          conversation: { status: { not: "deleted" } },
+        },
+      }),
+      prisma.whatsAppMessage.count({
+        where: {
+          tenantId,
+          createdAt: { gte: todayStart },
           conversation: { status: { not: "deleted" } },
         },
       }),
@@ -168,9 +183,11 @@ export async function GET(request: NextRequest) {
         escalated: escalatedConversations,
         customerChats: customerConversations,
         staffCommands: staffConversations,
+        todayConversations,
         avgResponseTime,
         aiAccuracy,
         totalMessages,
+        todayMessages,
         aiMessages,
         staffCommandsToday: staffCommands,
       },
