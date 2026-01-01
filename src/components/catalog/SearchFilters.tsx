@@ -47,8 +47,8 @@ export default function SearchFilters({
   onChange,
   onClear,
 }: SearchFiltersProps) {
-  // Local state for expansion
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Local state for expansion - Auto-show by default for better UX
+  const [isExpanded, setIsExpanded] = useState(true);
 
   // Local state for text inputs (instant response while typing)
   const [localSearch, setLocalSearch] = useState(filters.search);
