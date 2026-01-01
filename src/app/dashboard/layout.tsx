@@ -183,19 +183,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // NOTE: Invoice feature is HIDDEN for all roles
   const allNavigation: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠', minRole: ROLE_LEVELS.SALES },
-    // Kendaraan - Visible to all
-    { name: 'Kendaraan', href: '/dashboard/vehicles', icon: '🚗', minRole: ROLE_LEVELS.SALES },
-    // Invoice - HIDDEN (not included in navigation)
-    // Tim - Visible to all
-    { name: 'Tim', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.SALES },
+    // Vehicles - Visible to all
+    { name: 'Vehicles', href: '/dashboard/vehicles', icon: '🚗', minRole: ROLE_LEVELS.SALES },
+    // Team - Visible to all
+    { name: 'Team', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.SALES },
     // WhatsApp AI - Visible to all
     { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬', minRole: ROLE_LEVELS.SALES },
-    // Laporan - Visible to Admin+
-    { name: 'Laporan', href: '/dashboard/reports', icon: '📊', minRole: ROLE_LEVELS.ADMIN },
+    // Reports - Visible to Admin+
+    { name: 'Reports', href: '/dashboard/reports', icon: '📊', minRole: ROLE_LEVELS.ADMIN },
     // Blog - visible to ALL roles
     { name: 'Blog', href: '/dashboard/blog', icon: '📝', minRole: ROLE_LEVELS.SALES },
-    // Pengaturan - Visible to all
-    { name: 'Pengaturan', href: '/dashboard/settings', icon: '⚙️', minRole: ROLE_LEVELS.SALES },
+    // Settings - Visible to all
+    { name: 'Settings', href: '/dashboard/settings', icon: '⚙️', minRole: ROLE_LEVELS.SALES },
   ];
 
   // Get user's role level

@@ -354,30 +354,56 @@ export default function WhatsAppDebugPage() {
             )}
           </div>
 
-          {/* Fix ClientId Button */}
-          <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+          {/* Dynamic ClientId Status/Fix Section */}
+          <div className={`mt-4 p-4 rounded-lg border-2 ${logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
+              ? 'bg-red-50 border-red-300'
+              : 'bg-green-50 border-green-200'
+            }`}>
             <div className="flex justify-between items-start mb-2">
               <div>
-                <p className="text-sm font-semibold text-red-900">🚨 ClientId Mismatch Detected</p>
-                <p className="text-xs text-red-700 mt-1">
-                  Your clientId is in UUID format but Aimeow sends JID format. This causes send
-                  failures.
+                <p className={`text-sm font-semibold ${logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
+                    ? 'text-red-900'
+                    : 'text-green-900'
+                  }`}>
+                  {logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
+                    ? '🚨 ClientId Mismatch Detected'
+                    : '✅ ClientId Optimized'}
+                </p>
+                <p className={`text-xs mt-1 ${logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
+                    ? 'text-red-700'
+                    : 'text-green-700'
+                  }`}>
+                  {logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
+                    ? 'Your clientId is in JID format (phone number) but should be a UUID for reliable outbound messaging.'
+                    : 'Your clientId is in the correct UUID format. Outbound messaging is enabled and stable.'}
                 </p>
               </div>
-              <button
-                onClick={fixClientId}
-                disabled={isFixingClientId}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 font-medium"
-              >
-                {isFixingClientId ? 'Fixing...' : '🔧 Fix ClientId Now'}
-              </button>
+              {(logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')) && (
+                <button
+                  onClick={fixClientId}
+                  disabled={isFixingClientId}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 font-medium"
+                >
+                  {isFixingClientId ? 'Fixing...' : '🔧 Fix ClientId Now'}
+                </button>
+              )}
+              {!(logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')) && (
+                <button
+                  onClick={fixClientId}
+                  disabled={isFixingClientId}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 font-medium opacity-50 cursor-not-allowed"
+                >
+                  Optimized
+                </button>
+              )}
             </div>
             {fixClientIdResult && (
-              <div className="mt-3 p-3 bg-white border border-red-200 rounded text-xs font-mono whitespace-pre-wrap">
+              <div className="mt-3 p-3 bg-white border border-gray-200 rounded text-xs font-mono whitespace-pre-wrap">
                 {fixClientIdResult}
               </div>
             )}
           </div>
+
         </div>
       )}
 
@@ -619,20 +645,18 @@ export default function WhatsAppDebugPage() {
             {logs.recentMessages.map((msg) => (
               <div
                 key={msg.id}
-                className={`p-4 rounded-lg border-2 ${
-                  msg.direction === 'inbound'
+                className={`p-4 rounded-lg border-2 ${msg.direction === 'inbound'
                     ? 'bg-blue-50 border-blue-200'
                     : 'bg-green-50 border-green-200'
-                }`}
+                  }`}
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center space-x-2">
                     <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        msg.direction === 'inbound'
+                      className={`px-2 py-1 rounded text-xs font-medium ${msg.direction === 'inbound'
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-green-100 text-green-800'
-                      }`}
+                        }`}
                     >
                       {msg.direction === 'inbound' ? '📥 IN' : '📤 OUT'}
                     </span>
@@ -673,9 +697,8 @@ export default function WhatsAppDebugPage() {
                   </div>
                   <div className="text-right">
                     <p
-                      className={`text-sm font-medium ${
-                        conv.status === 'active' ? 'text-green-600' : 'text-gray-600'
-                      }`}
+                      className={`text-sm font-medium ${conv.status === 'active' ? 'text-green-600' : 'text-gray-600'
+                        }`}
                     >
                       {conv.status}
                     </p>

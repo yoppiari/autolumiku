@@ -44,24 +44,10 @@ const REPORT_TYPES: ReportType[] = [
         category: 'sales',
     },
     {
-        id: 'total-sales',
-        name: 'Total Penjualan',
-        description: 'Total units sold summary',
-        icon: '🎯',
-        category: 'sales',
-    },
-    {
-        id: 'total-revenue',
-        name: 'Total Revenue',
-        description: 'Total revenue summary',
-        icon: '💰',
-        category: 'sales',
-    },
-    {
-        id: 'sales-summary',
-        name: 'Ringkasan Penjualan',
-        description: 'Quick overview of sales performance',
-        icon: '📋',
+        id: 'recent-sales',
+        name: 'Penjualan Terkini',
+        description: 'Detailed list of recent sales transactions',
+        icon: '🔄',
         category: 'sales',
     },
 

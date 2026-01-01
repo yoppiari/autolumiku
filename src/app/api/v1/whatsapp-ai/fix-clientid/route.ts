@@ -63,6 +63,21 @@ export async function POST(request: NextRequest) {
     const correctClientId = connectedClient.id;
     console.log(`[Fix ClientId] Found connected client UUID: ${correctClientId}`);
 
+    // If already correct, no need for update
+    const oldClientId = account.clientId;
+    if (oldClientId === correctClientId) {
+      console.log(`[Fix ClientId] ✅ ClientId is already correct: ${oldClientId}`);
+      return NextResponse.json({
+        success: true,
+        message: "ClientId is already optimized! No changes needed.",
+        data: {
+          clientId: correctClientId,
+          phoneNumber: account.phoneNumber,
+          status: "optimized",
+        },
+      });
+    }
+
     // Extract phone number from current clientId if it's in JID format
     let phoneNumber = account.phoneNumber;
     if (account.clientId.includes("@s.whatsapp.net")) {
@@ -71,7 +86,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Update database with correct UUID clientId
-    const oldClientId = account.clientId;
     await prisma.aimeowAccount.update({
       where: { id: account.id },
       data: {
@@ -92,11 +106,13 @@ export async function POST(request: NextRequest) {
         oldClientId,
         newClientId: correctClientId,
         phoneNumber,
+        status: "fixed",
         explanation: "ClientId must be a UUID (not JID format). The UUID is what Aimeow uses to identify sessions for sending messages.",
         connectedAt: connectedClient.connectedAt,
         messageCount: connectedClient.messageCount,
       },
     });
+
   } catch (error: any) {
     console.error("[Fix ClientId] Error:", error);
     return NextResponse.json(

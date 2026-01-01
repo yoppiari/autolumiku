@@ -630,12 +630,26 @@ async function autoFixClientIdMismatch(webhookClientId: string) {
 
           if (accountByPhone) {
             console.log(`[Aimeow AutoFix] ✅ Found DB account (${accountByPhone.id}) for phone ${matchingClient.phone}`);
-            console.log(`[Aimeow AutoFix] 🔄 Updating DB ClientId: ${accountByPhone.clientId} → ${webhookClientId} (TRUSTING WEBHOOK)`);
+
+            // CRITICAL PROTECTION: Only update if the current clientId is NOT a valid UUID
+            // or if the new one from Aimeow is a valid UUID and the old one isn't.
+            const currentIsUUID = accountByPhone.clientId.includes('-') && !accountByPhone.clientId.includes('@');
+            const newIsUUID = webhookClientId.includes('-') && !webhookClientId.includes('@');
+
+            if (currentIsUUID && !newIsUUID) {
+              console.log(`[Aimeow AutoFix] 🛡️ Shielding valid UUID: Keeping ${accountByPhone.clientId} instead of overwriting with JID ${webhookClientId}`);
+              return await prisma.aimeowAccount.findUnique({
+                where: { id: accountByPhone.id },
+                include: { aiConfig: true, tenant: true },
+              });
+            }
+
+            console.log(`[Aimeow AutoFix] 🔄 Updating DB ClientId: ${accountByPhone.clientId} → ${webhookClientId}`);
 
             await prisma.aimeowAccount.update({
               where: { id: accountByPhone.id },
               data: {
-                clientId: webhookClientId, // Trust the ID sending the webhook!
+                clientId: webhookClientId,
                 phoneNumber: matchingClient.phone,
                 connectionStatus: "connected",
                 isActive: true,
