@@ -152,6 +152,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Tim', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.SALES },
     // WhatsApp AI - Visible to all
     { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬', minRole: ROLE_LEVELS.SALES },
+    // Laporan - Visible to Admin+
+    { name: 'Laporan', href: '/dashboard/reports', icon: '📊', minRole: ROLE_LEVELS.ADMIN },
     // Blog - visible to ALL roles
     { name: 'Blog', href: '/dashboard/blog', icon: '📝', minRole: ROLE_LEVELS.SALES },
     // Pengaturan - Visible to all

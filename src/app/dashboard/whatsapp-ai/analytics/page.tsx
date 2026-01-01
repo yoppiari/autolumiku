@@ -83,6 +83,7 @@ export default function AnalyticsPage() {
   const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [whatsappAnalytics, setWhatsappAnalytics] = useState<WhatsAppAnalytics | null>(null);
+  const [insights, setInsights] = useState<string[]>([]);
   const [period, setPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('week');
 
@@ -95,8 +96,21 @@ export default function AnalyticsPage() {
       setUserRoleLevel(roleLevel);
 
       loadAnalytics();
+      loadInsights(parsedUser.tenantId);
     }
   }, [router]);
+
+  const loadInsights = async (tid: string) => {
+    try {
+      const res = await fetch(`/api/v1/reports/management-insights?period=monthly&tenantId=${tid}`);
+      const data = await res.json();
+      if (data.managementInsights) {
+        setInsights(data.managementInsights.slice(0, 3));
+      }
+    } catch (e) {
+      console.error('Failed to load insights:', e);
+    }
+  };
 
   const loadAnalytics = async () => {
     setIsLoading(true);
@@ -283,6 +297,28 @@ export default function AnalyticsPage() {
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">Analytics & Reports</h1>
             <p className="text-sm text-gray-500 mt-1">Laporan performa untuk manajemen Prima Mobil</p>
           </div>
+
+          {/* Smart Insights Banner */}
+          {insights.length > 0 && (
+            <div className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-3 md:p-4 text-white shadow-md relative overflow-hidden group">
+              <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform">
+                <span className="text-8xl">🧠</span>
+              </div>
+              <div className="relative z-10">
+                <h3 className="text-xs md:text-sm font-bold flex items-center gap-2 mb-2">
+                  <span>🧠</span> SMART INSIGHTS
+                </h3>
+                <div className="space-y-1.5">
+                  {insights.map((insight, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-[10px] md:text-xs bg-white/10 rounded px-2 py-1 border border-white/5">
+                      <span className="text-blue-300">•</span>
+                      <p className="line-clamp-1">{insight}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Period Filter & Export Buttons */}
           <div className="flex flex-wrap items-center gap-2">

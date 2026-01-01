@@ -60,6 +60,8 @@ export const PAGE_ACCESS: Record<string, { minRole: number; excludeRoles?: numbe
   '/dashboard/blog': { minRole: ROLE_LEVELS.SALES },
   '/dashboard/blog/create': { minRole: ROLE_LEVELS.SALES },
   '/dashboard/blog/edit': { minRole: ROLE_LEVELS.SALES },
+  // Reports - Admin+
+  '/dashboard/reports': { minRole: ROLE_LEVELS.ADMIN },
 };
 
 /**
