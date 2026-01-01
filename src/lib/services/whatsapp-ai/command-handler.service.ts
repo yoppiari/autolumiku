@@ -240,31 +240,35 @@ async function handleUniversalCommand(
   helpMsg += `Selamat datang di showroom kami\n`;
   helpMsg += `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n`;
   helpMsg += `Ada yang bisa kami bantu?\n\n`;
-  helpMsg += `Saat ini terdapat *${availableCount} unit* kendaraan tersedia di ${tenantName}.\n\n`;
+  helpMsg += `Saat ini terdapat ${availableCount} unit kendaraan tersedia di ${tenantName}.\n\n`;
 
   helpMsg += `Layanan yang tersedia:\n\n`;
 
-  helpMsg += `📸 *Upload Kendaraan Baru*\n`;
+  helpMsg += `📸 Upload Kendaraan Baru\n`;
   helpMsg += `   Ketik: upload\n`;
   helpMsg += `   Lalu kirim foto + info mobil\n`;
   helpMsg += `   Contoh: "upload Brio 2020 120jt hitam matic km 30rb"\n\n`;
 
-  helpMsg += `📋 *Cek Stok Kendaraan*\n`;
+  helpMsg += `📋 Cek Stok Kendaraan\n`;
   helpMsg += `   Ketik: inventory atau stok\n`;
   helpMsg += `   Filter: inventory AVAILABLE\n\n`;
 
-  helpMsg += `📊 *Lihat Statistik*\n`;
+  helpMsg += `📊 Lihat Statistik\n`;
   helpMsg += `   Ketik: stats atau laporan\n`;
   helpMsg += `   Period: stats today / stats week / stats month\n\n`;
 
-  helpMsg += `🔄 *Update Status Kendaraan*\n`;
+  helpMsg += `🔄 Update Status Kendaraan\n`;
   helpMsg += `   Ketik: status [ID] [STATUS]\n`;
   helpMsg += `   Contoh: status PM-PST-001 SOLD\n\n`;
 
+  helpMsg += `🚙 Edit Kendaraan\n`;
+  helpMsg += `   Ketik: Edit/ Ubah/ Rubah/ Ganti [ID] [Detail kendaraan/ informasi dasar/ harga]\n`;
+  helpMsg += `   Contoh: Ganti PM-PST-001 Hybrid / Ubah PM-PST-001 AT / Edit PM-PST-001 85000 km\n\n`;
+
   if (isAdmin) {
-    helpMsg += `👮‍♂️ *MENU ADMIN & OWNER (PDF REPORTS)*\n`;
+    helpMsg += `👮‍♂️ MENU ADMIN & OWNER (PDF REPORTS)\n`;
     helpMsg += `Terdapat 15+ Laporan Management dalam format PDF.\n`;
-    helpMsg += `Ketik: "sales report", "stok report", atau "staff performance"\n\n`;
+    helpMsg += `Ketik: "sales report", "Total Inventory", atau "staff performance"\n\n`;
   }
 
   helpMsg += `Silakan ketik perintah yang diinginkan. Kami siap membantu!`;
@@ -771,26 +775,79 @@ async function generateReportByType(
     // Gather data using shared service
     const reportData = await ReportDataService.gather(type, context.tenantId, startDate, now);
 
-    const config = {
-      type,
+    // Map ReportData to professional WhatsAppCommandPDF config
+    const generator = new WhatsAppCommandPDF();
+    const metrics: any[] = [];
+    let analysis: string[] = [];
+    let chartData: any[] = [];
+
+    // Basic Metrics (Common)
+    if (reportData.totalSales !== undefined) {
+      metrics.push({ label: 'Total Sales', value: `${reportData.totalSales}`, unit: 'Unit', color: '#1d4ed8', formula: 'COUNT(SOLD)' });
+    }
+    if (reportData.totalRevenue !== undefined) {
+      metrics.push({ label: 'Total Revenue', value: formatNumber(reportData.totalRevenue), unit: 'IDR', color: '#16a34a', formula: 'SUM(price)' });
+    }
+    if (reportData.avgPrice !== undefined) {
+      metrics.push({ label: 'Avg Price', value: formatNumber(reportData.avgPrice), unit: 'IDR', color: '#9333ea', formula: 'Revenue / Sales' });
+    }
+    if (reportData.totalInventory !== undefined) {
+      metrics.push({ label: 'Stock', value: `${reportData.totalInventory}`, unit: 'Available', color: '#ea580c', formula: 'COUNT(AVAILABLE)' });
+    }
+
+    // WhatsApp Specific Metrics
+    if (reportData.whatsapp) {
+      const wa = reportData.whatsapp;
+      metrics.push({ label: 'Conversations', value: `${wa.totalConversations}`, color: '#10b981' });
+      metrics.push({ label: 'Response Rate', value: `${wa.aiResponseRate}%`, color: '#3b82f6' });
+      metrics.push({ label: 'Avg Resp Time', value: `${wa.avgResponseTime}s`, color: '#f59e0b' });
+      metrics.push({ label: 'Escalation', value: `${wa.escalationRate}%`, color: '#ef4444' });
+
+      chartData = wa.intentBreakdown.map((i: any, idx: number) => ({
+        label: i.intent,
+        value: `${i.count}`,
+        color: ['#1d4ed8', '#16a34a', '#9333ea', '#ea580c'][idx % 4]
+      }));
+    }
+
+    // Chart data for Sales (Top 4 Brands)
+    if (reportData.salesByBrand && chartData.length === 0) {
+      chartData = reportData.salesByBrand.slice(0, 4).map((b: any, idx: number) => ({
+        label: b.brand,
+        value: `${b.count}`,
+        color: ['#1d4ed8', '#16a34a', '#9333ea', '#ea580c'][idx % 4]
+      }));
+    }
+
+    // KPIs & Insights
+    if (reportData.managementInsights) {
+      analysis = reportData.managementInsights.slice(0, 5).map(i => i.text);
+    } else if (reportData.kpis) {
+      analysis = [
+        `Showroom Efficiency: ${reportData.kpis.efficiency}%`,
+        `Inventory Turnover: ${reportData.kpis.inventoryTurnover}%`,
+        `Staff Performance: ${reportData.kpis.salesPerEmployee}%`,
+        `Customer Engagement Proxy: ${reportData.kpis.customerRetention}%`
+      ];
+    }
+
+    const pdfBuffer = await generator.generate({
+      title: type.toUpperCase().replace(/-/g, ' '),
+      subtitle: periodLabel,
       tenantName: tenant?.name || 'Prima Mobil',
       logoUrl: tenant?.logoUrl || undefined,
-      period: {
-        start: startDate,
-        end: now,
-        label: periodLabel,
-      },
-      data: reportData,
-    };
+      date: now,
+      metrics,
+      showChart: chartData.length > 0,
+      chartData,
+      analysis,
+    });
 
-    const generator = new ComprehensiveReportPDF();
-    const pdfBuffer = await generator.generate(config);
-
-    const filename = `${type}-${new Date().toISOString().split('T')[0]}.pdf`;
+    const filename = `${type}-${now.toISOString().split('T')[0]}.pdf`;
 
     return {
       success: true,
-      message: `✅ Report *${type.toUpperCase().replace('-', ' ')}* berhasil dibuat. Mengirim PDF...`,
+      message: `✅ Professional Report *${type.toUpperCase().replace(/-/g, ' ')}* (1-page) berhasil dibuat. Mengirim PDF...`,
       pdfBuffer,
       filename,
       followUp: true,
@@ -806,7 +863,28 @@ async function generateReportByType(
 }
 
 // Map each specific report command to the unified generator
-const generateSalesReportPDF = (ctx: CommandContext) => generateReportByType('sales-report', ctx);
+// Map each specific report command to the unified generator
+const generateSalesReportPDF = async (ctx: CommandContext): Promise<CommandResult> => {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: ctx.tenantId },
+    select: { name: true },
+  });
+
+  const generator = new OnePageSalesPDF();
+  const pdfBuffer = await generator.generate({
+    tenantName: tenant?.name || 'Prima Mobil',
+    period: '30 Hari Terakhir',
+  });
+
+  return {
+    success: true,
+    message: '✅ Professional Sales Report (1-page) berhasil dibuat. Mengirim PDF...',
+    pdfBuffer,
+    filename: `sales-report-${new Date().toISOString().split('T')[0]}.pdf`,
+    followUp: true,
+  };
+};
+
 const generateWhatsAppAIPDF = (ctx: CommandContext) => generateReportByType('whatsapp-analytics', ctx);
 const generateSalesMetricsPDF = (ctx: CommandContext) => generateReportByType('sales-metrics', ctx);
 const generateCustomerMetricsPDF = (ctx: CommandContext) => generateReportByType('customer-metrics', ctx);

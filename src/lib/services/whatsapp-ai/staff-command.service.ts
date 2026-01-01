@@ -1538,22 +1538,31 @@ export class StaffCommandService {
 
     // Build professional staff menu - following premium template
     const message =
-      `${greeting}\n\n` +
-      `Selamat datang di showroom kami! Saya adalah Asisten virtual yang siap membantu Anda.\n\n` +
-      `Ada yang bisa kami bantu? Saat ini terdapat *${availableCount} unit* kendaraan tersedia di ${tenantName}.\n\n` +
-      `*Layanan yang tersedia:*\n\n` +
-      `📸 *Upload Kendaraan Baru*\n` +
-      `   Ketik: upload [info mobil]\n` +
+      `${timeGreeting}, Halo!\n\n` +
+      `Selamat datang di showroom kami\n` +
+      `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
+      `Ada yang bisa kami bantu?\n\n` +
+      `Saat ini terdapat ${availableCount} unit kendaraan tersedia di ${tenantName}.\n\n` +
+      `Layanan yang tersedia:\n\n` +
+      `📸 Upload Kendaraan Baru\n` +
+      `   Ketik: upload\n` +
+      `   Lalu kirim foto + info mobil\n` +
       `   Contoh: "upload Brio 2020 120jt hitam matic km 30rb"\n\n` +
-      `📋 *Cek Stok Kendaraan*\n` +
+      `📋 Cek Stok Kendaraan\n` +
       `   Ketik: inventory atau stok\n` +
-      `   Filter: stok AVAILABLE atau stok Brio\n\n` +
-      `📊 *Lihat Statistik*\n` +
+      `   Filter: inventory AVAILABLE\n\n` +
+      `📊 Lihat Statistik\n` +
       `   Ketik: stats atau laporan\n` +
       `   Period: stats today / stats week / stats month\n\n` +
-      `🔄 *Update Status Kendaraan*\n` +
+      `🔄 Update Status Kendaraan\n` +
       `   Ketik: status [ID] [STATUS]\n` +
       `   Contoh: status PM-PST-001 SOLD\n\n` +
+      `🚙 Edit Kendaraan\n` +
+      `   Ketik: Edit/ Ubah/ Rubah/ Ganti [ID] [Detail kendaraan/ informasi dasar/ harga]\n` +
+      `   Contoh: Ganti PM-PST-001 Hybrid / Ubah PM-PST-001 AT / Edit PM-PST-001 85000 km\n\n` +
+      `👮‍♂️ MENU ADMIN & OWNER (PDF REPORTS)\n` +
+      `Terdapat 15+ Laporan Management dalam format PDF.\n` +
+      `Ketik: "sales report", "Total Inventory", atau "staff performance"\n\n` +
       `Silakan ketik perintah yang diinginkan. Kami siap membantu!`;
 
     return {

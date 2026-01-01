@@ -177,6 +177,40 @@ export default function WhatsAppDebugPage() {
     }
   };
 
+  const forceLinkAccount = async () => {
+    if (!tenantId) return;
+
+    const clientId = prompt("Enter Aimeow Client ID (UUID):");
+    const phoneNumber = prompt("Enter WhatsApp Phone Number (E.164, e.g., 628...):");
+
+    if (!clientId || !phoneNumber) return;
+
+    setIsFixingClientId(true);
+    setFixClientIdResult("");
+
+    try {
+      const response = await fetch('/api/v1/whatsapp-ai/link-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId, clientId, phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to link account');
+      }
+
+      setFixClientIdResult(`✅ Account linked successfully!\nPhone: ${phoneNumber}\nClient ID: ${clientId}`);
+      setTimeout(loadLogs, 1000);
+    } catch (err: any) {
+      console.error('Link account error:', err);
+      setFixClientIdResult(`❌ Error: ${err.message}`);
+    } finally {
+      setIsFixingClientId(false);
+    }
+  };
+
   const loadLogs = async () => {
     if (!tenantId) return;
 
@@ -356,22 +390,22 @@ export default function WhatsAppDebugPage() {
 
           {/* Dynamic ClientId Status/Fix Section */}
           <div className={`mt-4 p-4 rounded-lg border-2 ${logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
-              ? 'bg-red-50 border-red-300'
-              : 'bg-green-50 border-green-200'
+            ? 'bg-red-50 border-red-300'
+            : 'bg-green-50 border-green-200'
             }`}>
             <div className="flex justify-between items-start mb-2">
               <div>
                 <p className={`text-sm font-semibold ${logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
-                    ? 'text-red-900'
-                    : 'text-green-900'
+                  ? 'text-red-900'
+                  : 'text-green-900'
                   }`}>
                   {logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
                     ? '🚨 ClientId Mismatch Detected'
                     : '✅ ClientId Optimized'}
                 </p>
                 <p className={`text-xs mt-1 ${logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
-                    ? 'text-red-700'
-                    : 'text-green-700'
+                  ? 'text-red-700'
+                  : 'text-green-700'
                   }`}>
                   {logs.account.clientId.includes('@') || !logs.account.clientId.includes('-')
                     ? 'Your clientId is in JID format (phone number) but should be a UUID for reliable outbound messaging.'
@@ -402,6 +436,26 @@ export default function WhatsAppDebugPage() {
                 {fixClientIdResult}
               </div>
             )}
+          </div>
+
+          {/* Emergency Fix / Manual Link */}
+          <div className="mt-4 p-4 rounded-lg bg-orange-50 border-2 border-orange-200 shadow-sm">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-semibold text-orange-900">
+                  ⚠️ Emergency: Manual Account Link
+                </p>
+                <p className="text-xs text-orange-700 mt-1">
+                  Jika bot tidak mengenali pesan masuk (Account not found), gunakan tombol ini untuk memaksa link WhatsApp.
+                </p>
+              </div>
+              <button
+                onClick={forceLinkAccount}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm shadow-sm"
+              >
+                🔗 Force Link Account
+              </button>
+            </div>
           </div>
 
         </div>
@@ -646,16 +700,16 @@ export default function WhatsAppDebugPage() {
               <div
                 key={msg.id}
                 className={`p-4 rounded-lg border-2 ${msg.direction === 'inbound'
-                    ? 'bg-blue-50 border-blue-200'
-                    : 'bg-green-50 border-green-200'
+                  ? 'bg-blue-50 border-blue-200'
+                  : 'bg-green-50 border-green-200'
                   }`}
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center space-x-2">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${msg.direction === 'inbound'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-green-100 text-green-800'
                         }`}
                     >
                       {msg.direction === 'inbound' ? '📥 IN' : '📤 OUT'}
