@@ -42,6 +42,7 @@ interface CommandResult {
     phone: string;
   };
   followUp?: boolean;
+  broadcastToRoles?: string[]; // Roles to broadcast the result to (e.g. ['ADMIN', 'OWNER'])
 }
 
 // Helper functions
@@ -526,7 +527,14 @@ export async function handlePDFCommand(
   for (const [keyword, generator] of Object.entries(pdfGenerators)) {
     if (cmd.includes(keyword)) {
       console.log(`[Command Handler] ✅ Found match: "${keyword}" → calling generator`);
-      return await generator(context);
+      const result = await generator(context);
+
+      // Auto-broadcast all PDF reports to Admins/Owners
+      if (result.success && result.pdfBuffer) {
+        result.broadcastToRoles = ['OWNER', 'ADMIN', 'SUPER_ADMIN'];
+      }
+
+      return result;
     }
   }
   console.log(`[Command Handler] ❌ No PDF generator match found for: "${cmd}"`);

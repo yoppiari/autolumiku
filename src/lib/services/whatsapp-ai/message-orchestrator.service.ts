@@ -1153,14 +1153,63 @@ export class MessageOrchestratorService {
             result.filename,
             'Berikut adalah laporan yang Anda minta.'
           );
+          console.log(`[Orchestrator] ✅ PDF sent:`, sendResult);
 
           if (sendResult.success) {
-            console.log(`[Orchestrator] ✅ PDF sent successfully via WhatsApp (base64)`);
             result.message = result.message + '\n\n✅ PDF berhasil dikirim!';
           } else {
-            console.error(`[Orchestrator] ❌ Failed to send PDF: ${sendResult.error}`);
             result.message = result.message + `\n\n❌ Gagal mengirim PDF: ${sendResult.error}\n\nSilakan coba lagi.`;
           }
+
+          // BROADCAST LOGIC: Send to other admins/owners if requested
+          if (result.broadcastToRoles && result.broadcastToRoles.length > 0) {
+            console.log(`[Orchestrator] 📢 Broadcasting PDF to roles: ${result.broadcastToRoles.join(', ')}`);
+
+            // Find all eligible recipients
+            const recipients = await prisma.user.findMany({
+              where: {
+                tenantId: incoming.tenantId,
+                role: { in: result.broadcastToRoles },
+                phone: { not: null },
+                // Exclude the original sender (already received)
+                NOT: {
+                  OR: [
+                    { phone: phoneWith0 },
+                    { phone: phoneWith62 },
+                    { phone: phoneForLookup }
+                  ]
+                }
+              },
+              select: {
+                firstName: true,
+                lastName: true,
+                phone: true,
+                role: true
+              }
+            });
+
+            console.log(`[Orchestrator] 👥 Found ${recipients.length} broadcast recipients`);
+
+            // Send to each recipient
+            for (const recipient of recipients) {
+              if (!recipient.phone) continue;
+
+              console.log(`[Orchestrator] 📤 Broadcasting to ${recipient.firstName} (${recipient.role}) at ${recipient.phone}`);
+
+              try {
+                await AimeowClientService.sendDocumentBase64(
+                  clientId,
+                  recipient.phone,
+                  base64Pdf,
+                  result.filename,
+                  `📢 Broadcast Report from ${user.firstName}: ${result.message}`
+                );
+              } catch (err) {
+                console.error(`[Orchestrator] ❌ Failed to broadcast to ${recipient.phone}:`, err);
+              }
+            }
+          }
+
         } catch (error: any) {
           console.error(`[Orchestrator] ❌ Error sending PDF:`, error);
           result.message = result.message + `\n\n❌ Terjadi kesalahan saat mengirim PDF: ${error.message}\n\nSilakan coba lagi atau hubungi admin.`;
