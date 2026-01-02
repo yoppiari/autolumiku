@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ROLE_LEVELS } from '@/lib/rbac';
@@ -82,7 +82,7 @@ interface WhatsAppAnalytics {
   }[];
 }
 
-export default function AnalyticsPage() {
+function AnalyticsPageInternal() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [accessDenied, setAccessDenied] = useState(false);
