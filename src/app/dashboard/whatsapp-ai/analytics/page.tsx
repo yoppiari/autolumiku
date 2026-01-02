@@ -1082,14 +1082,14 @@ export default function AnalyticsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰' },
-                { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊' },
-                { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈' },
-                { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋' },
-                { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐' },
-                { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑' },
+                { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰', href: '/dashboard/sales/analytics' },
+                { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊', href: '/dashboard/sales' },
+                { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈', href: '/dashboard/sales/analytics' },
+                { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋', href: '/dashboard/sales' },
+                { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐', href: '/dashboard/sales/analytics' },
+                { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑', href: '/dashboard/sales' },
               ].map(report => (
-                <ReportCard key={report.id} report={report} onDownload={handleDownloadReport} downloading={downloading} />
+                <ReportCard key={report.id} report={report} />
               ))}
             </div>
           </section>
@@ -1105,12 +1105,12 @@ export default function AnalyticsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Ringkasan stok kendaraan tersedia', icon: '📦' },
-                { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan stok kritis & stok lama', icon: '⚠️' },
-                { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Analisis harga jual vs harga stok', icon: '💵' },
-                { id: 'inventory-listing', name: 'Vehicle Inventory Listing', desc: 'Katalog stok lengkap dengan foto', icon: '🚙' },
+                { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Ringkasan stok kendaraan tersedia', icon: '📦', href: '/dashboard/vehicles' },
+                { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan stok kritis & stok lama', icon: '⚠️', href: '/dashboard/vehicles?status=AVAILABLE' },
+                { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Analisis harga jual vs harga stok', icon: '💵', href: '/dashboard/vehicles' },
+                { id: 'inventory-listing', name: 'Vehicle Inventory Listing', desc: 'Katalog stok lengkap dengan foto', icon: '🚙', href: '/dashboard/vehicles' },
               ].map(report => (
-                <ReportCard key={report.id} report={report} onDownload={handleDownloadReport} downloading={downloading} />
+                <ReportCard key={report.id} report={report} />
               ))}
             </div>
           </section>
@@ -1126,10 +1126,10 @@ export default function AnalyticsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking & produktivitas tim sales', icon: '🏆' },
-                { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄' },
+                { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking & produktivitas tim sales', icon: '🏆', href: '/dashboard/users' },
+                { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄', href: '/dashboard/sales' },
               ].map(report => (
-                <ReportCard key={report.id} report={report} onDownload={handleDownloadReport} downloading={downloading} />
+                <ReportCard key={report.id} report={report} />
               ))}
             </div>
           </section>
@@ -1145,11 +1145,11 @@ export default function AnalyticsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖' },
-                { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️' },
-                { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis ketertarikan & behavior', icon: '👥' },
+                { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics' },
+                { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics' },
+                { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis ketertarikan & behavior', icon: '👥', href: '/dashboard/leads' },
               ].map(report => (
-                <ReportCard key={report.id} report={report} onDownload={handleDownloadReport} downloading={downloading} />
+                <ReportCard key={report.id} report={report} />
               ))}
             </div>
           </section>
@@ -1162,13 +1162,12 @@ export default function AnalyticsPage() {
 /**
  * Shared Report Card Component
  */
-function ReportCard({ report, onDownload, downloading }: {
-  report: { id: string; name: string; desc: string; icon: string };
-  onDownload: (id: string) => void;
-  downloading: string | null;
+/**
+ * Shared Report Card Component
+ */
+function ReportCard({ report }: {
+  report: { id: string; name: string; desc: string; icon: string; href?: string };
 }) {
-  const isDownloading = downloading === report.id;
-
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow group flex flex-col justify-between">
       <div>
@@ -1179,17 +1178,24 @@ function ReportCard({ report, onDownload, downloading }: {
         <p className="text-[10px] text-gray-500 mb-4 line-clamp-2 leading-relaxed">{report.desc}</p>
       </div>
 
-      {/* Download Button Hidden
-      <button
-        disabled={true}
-        className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-      >
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-        </svg>
-        PDF Disabled
-      </button>
-      */}
+      {report.href ? (
+        <Link
+          href={report.href}
+          className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-sm transition-all"
+        >
+          <span>View Details</span>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </Link>
+      ) : (
+        <button
+          disabled={true}
+          className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+        >
+          Coming Soon
+        </button>
+      )}
     </div>
   );
 }
