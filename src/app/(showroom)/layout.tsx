@@ -87,6 +87,8 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
+import WhatsAppFloatingButton from '@/components/catalog/WhatsAppFloatingButton';
+
 export default async function ShowroomLayout({
   children,
 }: {
@@ -110,9 +112,22 @@ export default async function ShowroomLayout({
     return <>{children}</>;
   }
 
+  // Get tenant data for WhatsApp
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId || '' },
+    select: { name: true, whatsappNumber: true, logoUrl: true }
+  });
+
   return (
     <ThemeProvider tenantId={tenantId || ''}>
       {children}
+      {tenant?.whatsappNumber && (
+        <WhatsAppFloatingButton
+          phoneNumber={tenant.whatsappNumber}
+          tenantName={tenant.name || 'Showroom'}
+          logoUrl={tenant.logoUrl}
+        />
+      )}
     </ThemeProvider>
   );
 }

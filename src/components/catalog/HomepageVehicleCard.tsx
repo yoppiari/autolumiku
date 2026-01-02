@@ -57,7 +57,7 @@ export default function HomepageVehicleCard({
             roundedClass="rounded-xl"
             showIndicators={false}
             showCounter={true}
-            interval={10000}
+            interval={8000}
             grayscale={isSold}
             overlay={
               isSold && (

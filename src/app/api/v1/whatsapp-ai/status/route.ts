@@ -242,6 +242,8 @@ export async function GET(request: NextRequest) {
       data: {
         isConnected: account.isActive,
         phoneNumber: account.phoneNumber,
+        pushName: (account as any).pushName || "WhatsApp AI",
+        profilePicUrl: (account as any).profilePicUrl || null,
         clientId: account.clientId,
         qrCode: account.qrCode,
         connectionStatus: account.connectionStatus,

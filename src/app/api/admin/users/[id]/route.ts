@@ -102,25 +102,30 @@ export async function PATCH(
                 if (emailTaken && emailTaken.id !== id) {
                     // SMART RECLAIM: If the owner of this email is in a "DUMMY" or PLATFORM tenant, 
                     // auto-delete them so this user can take the email.
-                    const dummyTenants = [
+                    const isDummyUser = emailTaken?.tenant?.name && [
                         "Tenant 1 Demo",
                         "Showroom Jakarta Premium",
                         "Showroom Jakarta",
                         "Dealer Mobil",
                         "AutoMobil",
                         "AutoLumiku Platform"
-                    ];
+                    ].includes(emailTaken.tenant.name);
 
-                    const isDummyUser = !emailTaken.tenantId || (emailTaken.tenant && dummyTenants.includes(emailTaken.tenant.name));
+                    // CRITICAL PROTECTION: Never reclaim from Super Admin or Platform Admin (tenantId is null)
+                    const isSuperAdmin = !emailTaken?.tenantId || (emailTaken?.roleLevel && emailTaken.roleLevel >= 90);
 
-                    if (isDummyUser) {
-                        console.log(`♻️ Smart Reclaim: Deleting dummy/platform user ${email} to allow update for user ${id}`);
+                    // Scenario A: Collision with a Dummy account (Delete & Proceed) - BUT ONLY IF NOT SUPER ADMIN
+                    if (isDummyUser && !isSuperAdmin) {
+                        console.log(`[SmartReclaim] Deleting dummy/platform user ${emailTaken.id} to reclaim email ${email}`);
                         await prisma.user.delete({ where: { id: emailTaken.id } });
-                    } else {
+                    }
+                    // Scenario B: Collision with a Real account OR Super Admin (Block)
+                    else {
+                        const tenantName = emailTaken.tenant?.name || 'Platform Admin';
                         return NextResponse.json(
                             {
                                 success: false,
-                                error: `Email sudah terdaftar di tenant lain: ${emailTaken.tenant?.name || 'Platform'}`
+                                error: `Email already in use by ${tenantName}. ${isSuperAdmin ? 'Platform accounts cannot be reclaimed.' : ''}`
                             },
                             { status: 400 }
                         );

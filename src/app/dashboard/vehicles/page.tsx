@@ -515,7 +515,7 @@ export default function VehiclesPage() {
                     grayscale={vehicle.status === 'SOLD'}
                     showIndicators={false}
                     showCounter={false}
-                    interval={10000}
+                    interval={8000}
                     overlay={vehicle.status === 'SOLD' ? (
                       <div className={`absolute inset-0 bg-black/40 flex items-center justify-center ${viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'} z-20`}>
                         <span className="text-white text-xs font-bold rotate-[-15deg] bg-red-600 px-2 py-0.5 rounded">TERJUAL</span>

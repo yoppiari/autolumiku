@@ -108,6 +108,18 @@ export async function POST(request: NextRequest) {
         ? subdomain.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
         : domain.replace(/^www\./, '').replace(/\./g, '-');
 
+      // RESERVED SLUG PROTECTION: Prevent conflicts with platform routes
+      const reservedSlugs = ['admin', 'dashboard', 'api', 'login', 'catalog', 'vehicles', 'blog', 'search', 'contact', 'team', 'settings'];
+      if (reservedSlugs.includes(slug)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Slug "${slug}" is reserved for platform use and cannot be used for a tenant.`,
+          },
+          { status: 400 }
+        );
+      }
+
       // Check if domain already exists
       const existingTenant = await prisma.tenant.findUnique({
         where: { domain },

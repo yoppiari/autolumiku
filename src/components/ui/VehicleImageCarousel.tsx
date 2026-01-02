@@ -28,7 +28,7 @@ export default function VehicleImageCarousel({
   alt,
   className = '',
   imageClassName = '',
-  interval = 10000, // 10 seconds default
+  interval = 8000, // 8 seconds default
   showIndicators = true,
   showCounter = true,
   grayscale = false,
@@ -94,9 +94,8 @@ export default function VehicleImageCarousel({
           <img
             src={photoUrl}
             alt={alt}
-            className={`w-full h-full object-cover transition-opacity duration-500 ${
-              grayscale ? 'grayscale' : ''
-            } ${imageClassName}`}
+            className={`w-full h-full object-cover transition-opacity duration-500 ${grayscale ? 'grayscale' : ''
+              } ${imageClassName}`}
           />
 
           {/* Navigation Arrows (visible on hover) */}
@@ -134,11 +133,10 @@ export default function VehicleImageCarousel({
                     e.stopPropagation();
                     goToPhoto(idx);
                   }}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${
-                    idx === currentIndex
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentIndex
                       ? 'bg-white w-3'
                       : 'bg-white/60 hover:bg-white/80'
-                  }`}
+                    }`}
                   aria-label={`Go to photo ${idx + 1}`}
                 />
               ))}

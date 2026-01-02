@@ -238,6 +238,8 @@ export class AimeowClientService {
       const result = {
         clientId,
         phoneNumber: data.phone,
+        pushName: data.pushName || data.name,
+        profilePicUrl: data.profilePicUrl || data.avatarUrl,
         isConnected,
         qrCode: data.qrCode,
         lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
