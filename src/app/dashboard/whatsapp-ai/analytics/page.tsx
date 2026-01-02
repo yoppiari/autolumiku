@@ -167,36 +167,24 @@ function AnalyticsPageInternal() {
   return (
     <div className="p-4 md:p-6 pb-20">
       {/* Header */}
-      <div className="mb-4 md:mb-6">
-        <Link href="/dashboard/whatsapp-ai" className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm mb-2">
-          ← Back
-        </Link>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Sales Report</h1>
-            <p className="text-sm text-gray-500 mt-1">Laporan performa untuk manajemen Prima Mobil</p>
-          </div>
-
-          {insights.length > 0 && (
-            <div className="flex-1 max-w-md bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-3 md:p-4 text-white shadow-md relative overflow-hidden group">
-              <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform">
-                <span className="text-6xl">🧠</span>
-              </div>
-              <div className="relative z-10">
-                <h3 className="text-xs font-bold flex items-center gap-2 mb-2">
-                  <span>🧠</span> SMART INSIGHTS
-                </h3>
-                <div className="space-y-1.5">
-                  {insights.map((insight, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-[10px] bg-white/10 rounded px-2 py-1 border border-white/5">
-                      <span className="text-blue-300">•</span>
-                      <p className="line-clamp-1">{insight}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      {/* Header - Elegant Rich Modern (Matched to Main Dashboard) */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-lg">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <Link href="/dashboard/whatsapp-ai" className="text-slate-400 hover:text-white transition-colors text-xs flex items-center gap-1">
+                ← Back to WhatsApp AI
+              </Link>
             </div>
-          )}
+            <h1 className="text-base md:text-2xl font-bold text-white truncate">
+              Sales & Analytics Report
+            </h1>
+            <p className="text-xs md:text-sm text-slate-300">Laporan performa & analisis showroom</p>
+          </div>
+          <span className="inline-flex items-center px-2 md:px-3 py-1 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 ml-2 flex-shrink-0">
+            <span className="w-1.5 md:w-2 h-1.5 md:h-2 bg-emerald-400 rounded-full mr-1 md:mr-2 animate-pulse"></span>
+            Live Data
+          </span>
         </div>
       </div>
 
@@ -236,27 +224,27 @@ function AnalyticsPageInternal() {
       {!isLoading && activeDepartment === 'sales' && (
         <div className="space-y-8 animate-in fade-in duration-500">
           <div className="space-y-6">
-            {/* Summary Cards */}
+            {/* Summary Cards - Main Dashboard Style */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all">
-                <p className="text-xs text-gray-500 mb-1">Total Penjualan</p>
+              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:shadow-md transition-shadow border border-gray-100">
+                <p className="text-xs md:text-sm text-gray-500">Total Penjualan</p>
                 <p className="text-xl md:text-2xl font-bold text-gray-900">{salesStats?.totalSales || 0}</p>
-                <p className="text-[10px] text-green-600 mt-1 font-medium">Unit terjual</p>
+                <p className="text-[10px] md:text-xs text-green-600 mt-1">Unit terjual</p>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all">
-                <p className="text-xs text-gray-500 mb-1">Total Revenue</p>
+              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:shadow-md transition-shadow border border-gray-100">
+                <p className="text-xs md:text-sm text-gray-500">Total Revenue</p>
                 <p className="text-xl md:text-2xl font-bold text-blue-600">{formatRupiah(salesStats?.totalRevenue || 0)}</p>
-                <p className="text-[10px] text-gray-500 mt-1 font-medium">Omzet keseluruhan</p>
+                <p className="text-[10px] md:text-xs text-gray-500 mt-1">Omzet keseluruhan</p>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all">
-                <p className="text-xs text-gray-500 mb-1">Total Inventory</p>
+              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:shadow-md transition-shadow border border-gray-100">
+                <p className="text-xs md:text-sm text-gray-500">Total Inventory</p>
                 <p className="text-xl md:text-2xl font-bold text-gray-900">{kpiData?.raw.totalInventory || 0}</p>
-                <p className="text-[10px] text-gray-500 mt-1 font-medium">Stok tersedia</p>
+                <p className="text-[10px] md:text-xs text-gray-500 mt-1">Stok tersedia</p>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all">
-                <p className="text-xs text-gray-500 mb-1">Top Brand</p>
+              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:shadow-md transition-shadow border border-gray-100">
+                <p className="text-xs md:text-sm text-gray-500">Top Brand</p>
                 <p className="text-xl md:text-2xl font-bold text-purple-600 truncate">{salesStats?.topBrands?.[0]?.brand || '-'}</p>
-                <p className="text-[10px] text-gray-500 mt-1 font-medium">{salesStats?.topBrands?.[0]?.count || 0} unit</p>
+                <p className="text-[10px] md:text-xs text-gray-500 mt-1">{salesStats?.topBrands?.[0]?.count || 0} unit</p>
               </div>
             </div>
 
@@ -276,15 +264,15 @@ function AnalyticsPageInternal() {
               </div>
             </div>
 
-            {/* KPI Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* KPI Charts Section - Matched to Main Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
               {/* KPI Penjualan */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col">
+                <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
                   <span className="text-lg">📊</span> Metrix Penjualan
                 </h4>
-                <div className="flex items-center justify-center py-3 mb-3">
-                  <div className="relative w-36 h-36">
+                <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
+                  <div className="relative w-28 h-28 md:w-32 md:h-32">
                     <svg className="w-full h-full" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
                       <circle
@@ -298,34 +286,41 @@ function AnalyticsPageInternal() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
-                      <span className="text-[10px] text-gray-500 font-medium">Monthly Target</span>
+                      <span className="text-2xl md:text-3xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
+                      <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">Monthly Target</span>
                     </div>
                   </div>
                 </div>
-                <div className="space-y-2 border-t border-gray-50 pt-3">
-                  {[
-                    { label: 'ATV', value: kpiData?.atv, color: 'bg-green-500' },
-                    { label: 'Inventory Turnover', value: kpiData?.inventoryTurnover, color: 'bg-purple-500' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${item.color}`}></span>
-                        <span className="text-[10px] text-gray-600 font-medium">{item.label}</span>
-                      </div>
-                      <span className="text-[10px] font-bold text-gray-900">{item.value || 0}%</span>
+                <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-green-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">ATV</span>
                     </div>
-                  ))}
+                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.atv || 0}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-purple-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Inventory Turnover</span>
+                    </div>
+                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
+                  </div>
+                </div>
+                <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
+                  <p className="text-[7px] md:text-[8px] leading-snug text-blue-500">
+                    Target: 20% inventory sold per month
+                  </p>
                 </div>
               </div>
 
               {/* KPI Pelanggan */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col">
+                <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
                   <span className="text-lg">👥</span> Metrix Pelanggan
                 </h4>
-                <div className="flex items-center justify-center py-3 mb-3">
-                  <div className="relative w-36 h-36">
+                <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
+                  <div className="relative w-28 h-28 md:w-32 md:h-32">
                     <svg className="w-full h-full" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
                       <circle
@@ -339,34 +334,41 @@ function AnalyticsPageInternal() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
-                      <span className="text-[10px] text-gray-500 font-medium">NPS Score</span>
+                      <span className="text-2xl md:text-3xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
+                      <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">NPS Score</span>
                     </div>
                   </div>
                 </div>
-                <div className="space-y-2 border-t border-gray-50 pt-3">
-                  {[
-                    { label: 'Customer Retention', value: kpiData?.customerRetention, color: 'bg-teal-500' },
-                    { label: 'Lead Conversion', value: kpiData?.raw?.leadConversion, color: 'bg-cyan-500' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${item.color}`}></span>
-                        <span className="text-[10px] text-gray-600 font-medium">{item.label}</span>
-                      </div>
-                      <span className="text-[10px] font-bold text-gray-900">{item.value || 0}%</span>
+                <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-teal-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Customer Retention</span>
                     </div>
-                  ))}
+                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.customerRetention || 0}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-cyan-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Lead Conversion</span>
+                    </div>
+                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.raw?.leadConversion || 0}%</span>
+                  </div>
+                </div>
+                <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
+                  <p className="text-[7px] md:text-[8px] leading-snug text-amber-500">
+                    Target: NPS &gt; 50% (Excellent)
+                  </p>
                 </div>
               </div>
 
               {/* KPI Operasional */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col">
+                <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
                   <span className="text-lg">⚙️</span> Metrix Operasional
                 </h4>
-                <div className="flex items-center justify-center py-3 mb-3">
-                  <div className="relative w-36 h-36">
+                <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
+                  <div className="relative w-28 h-28 md:w-32 md:h-32">
                     <svg className="w-full h-full" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
                       <circle
@@ -380,24 +382,31 @@ function AnalyticsPageInternal() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
-                      <span className="text-[10px] text-gray-500 font-medium">Efficiency</span>
+                      <span className="text-2xl md:text-3xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
+                      <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">Efficiency</span>
                     </div>
                   </div>
                 </div>
-                <div className="space-y-2 border-t border-gray-50 pt-3">
-                  {[
-                    { label: 'Sales per Employee', value: kpiData?.salesPerEmployee, color: 'bg-indigo-500' },
-                    { label: 'Inventory Velocity', value: kpiData?.inventoryTurnover, color: 'bg-rose-500' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${item.color}`}></span>
-                        <span className="text-[10px] text-gray-600 font-medium">{item.label}</span>
-                      </div>
-                      <span className="text-[10px] font-bold text-gray-900">{item.value || 0}%</span>
+                <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-indigo-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Sales per Employee</span>
                     </div>
-                  ))}
+                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.salesPerEmployee || 0}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-rose-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Inventory Velocity</span>
+                    </div>
+                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
+                  </div>
+                </div>
+                <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
+                  <p className="text-[7px] md:text-[8px] leading-snug text-violet-500">
+                    Target: 2 vehicles/employee/month
+                  </p>
                 </div>
               </div>
             </div>

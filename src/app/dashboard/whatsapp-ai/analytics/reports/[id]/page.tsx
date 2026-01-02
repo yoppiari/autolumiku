@@ -30,12 +30,23 @@ export default function ReportDetailPage() {
         const fetchReportData = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`/api/v1/analytics/reports/${reportId}`);
+                let url = `/api/v1/analytics/reports/${reportId}`;
+                const storedUser = localStorage.getItem('user');
+                if (storedUser) {
+                    const user = JSON.parse(storedUser);
+                    if (user.tenantId) {
+                        url += `?tenantId=${user.tenantId}`;
+                    }
+                }
+
+                const response = await fetch(url);
                 if (response.ok) {
                     const result = await response.json();
                     if (result.success) {
                         setReport(result.data);
                     }
+                } else {
+                    console.error('Report fetch failed:', response.status);
                 }
             } catch (error) {
                 console.error('Failed to fetch report data:', error);

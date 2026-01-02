@@ -23,8 +23,17 @@ export async function GET(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const tenantId = auth.user.tenantId;
-    if (!tenantId) {
+    let tenantId = auth.user.tenantId;
+
+    // RBAC: Super Admin can view all tenants or filter by specific tenantId
+    if (auth.user.roleLevel >= ROLE_LEVELS.SUPER_ADMIN) {
+        const requestedId = request.nextUrl.searchParams.get('tenantId');
+        if (requestedId) {
+            tenantId = requestedId;
+        }
+    }
+
+    if (!tenantId && auth.user.roleLevel < ROLE_LEVELS.SUPER_ADMIN) {
         return NextResponse.json({ error: 'Missing tenantId' }, { status: 400 });
     }
 
