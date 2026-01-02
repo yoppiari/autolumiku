@@ -1208,3 +1208,19 @@ function ReportCard({ report }: {
     </div>
   );
 }
+
+// Wrap in Suspense to handle useSearchParams
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-6 flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-3 text-gray-600 text-sm">Loading Analytics...</p>
+        </div>
+      </div>
+    }>
+      <AnalyticsPageInternal />
+    </Suspense>
+  );
+}
