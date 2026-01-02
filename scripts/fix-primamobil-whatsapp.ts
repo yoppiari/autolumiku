@@ -52,8 +52,8 @@ async function main() {
 
     try {
         // Prima Mobil WhatsApp number (format: country code without +)
-        const WHATSAPP_NUMBER = '62811360752';
-        const PHONE_NUMBER = '+62-811-360-752';
+        const WHATSAPP_NUMBER = '6285385419766';
+        const PHONE_NUMBER = '+62 853-8541-9766';
         const TENANT_SLUG = 'primamobil-id';
 
         // Check if tenant exists
