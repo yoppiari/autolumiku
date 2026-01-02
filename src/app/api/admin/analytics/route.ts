@@ -21,219 +21,277 @@ export async function GET(request: NextRequest) {
       const searchParams = request.nextUrl.searchParams;
       const timeRange = searchParams.get('timeRange') || '7d';
 
-    // Calculate date range
-    const now = new Date();
-    let startDate = new Date();
+      // Calculate date range
+      const now = new Date();
+      let startDate = new Date();
 
-    switch (timeRange) {
-      case '24h':
-        startDate.setHours(now.getHours() - 24);
-        break;
-      case '7d':
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(now.getDate() - 30);
-        break;
-      case '90d':
-        startDate.setDate(now.getDate() - 90);
-        break;
-      default:
-        startDate.setDate(now.getDate() - 7);
-    }
-
-    // Get tenant summaries with real data
-    const tenants = await prisma.tenant.findMany({
-      include: {
-        _count: {
-          select: {
-            vehicles: true,
-            users: true,
-          },
-        },
-      },
-    });
-
-    const tenantSummary = await Promise.all(
-      tenants.map(async (tenant) => {
-        const soldVehicles = await prisma.vehicle.count({
-          where: {
-            tenantId: tenant.id,
-            status: 'SOLD',
-          },
-        });
-
-        const totalLeads = await prisma.lead.count({
-          where: {
-            tenantId: tenant.id,
-          },
-        });
-
-        const conversionRate = tenant._count.vehicles > 0
-          ? ((soldVehicles / tenant._count.vehicles) * 100).toFixed(1)
-          : '0.0';
-
-        return {
-          tenantId: tenant.id,
-          tenantName: tenant.name,
-          totalVehicles: tenant._count.vehicles,
-          soldVehicles,
-          totalViews: Math.floor(Math.random() * 5000) + 1000, // Mock: view tracking not implemented
-          totalInquiries: totalLeads,
-          conversionRate: parseFloat(conversionRate),
-        };
-      })
-    );
-
-    // Get most sold vehicles
-    const soldVehicles = await prisma.vehicle.findMany({
-      where: {
-        status: 'SOLD',
-      },
-      include: {
-        tenant: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      take: 10,
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    });
-
-    // Group by make/model for most sold
-    const soldByModel = soldVehicles.reduce((acc: any, vehicle) => {
-      const key = `${vehicle.make}-${vehicle.model}`;
-      if (!acc[key]) {
-        acc[key] = {
-          vehicleId: vehicle.id,
-          make: vehicle.make,
-          model: vehicle.model,
-          year: vehicle.year,
-          count: 0,
-          tenantName: vehicle.tenant.name,
-        };
+      switch (timeRange) {
+        case '24h':
+          startDate.setHours(now.getHours() - 24);
+          break;
+        case '7d':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case '30d':
+          startDate.setDate(now.getDate() - 30);
+          break;
+        case '90d':
+          startDate.setDate(now.getDate() - 90);
+          break;
+        default:
+          startDate.setDate(now.getDate() - 7);
       }
-      acc[key].count++;
-      return acc;
-    }, {});
 
-    const mostSold = Object.values(soldByModel)
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 5);
-
-    // Get most collected (available vehicles)
-    const availableVehicles = await prisma.vehicle.findMany({
-      where: {
-        status: 'AVAILABLE',
-      },
-      include: {
-        tenant: {
-          select: {
-            name: true,
+      // 1. Get Active Tenants only (No dummy/deleted tenants)
+      const tenants = await prisma.tenant.findMany({
+        where: {
+          status: 'active',
+          // Exclude internal/placeholder tenants if needed (can add slug filter if there's a convention)
+        },
+        include: {
+          _count: {
+            select: {
+              vehicles: true,
+              searchAnalytics: true,
+            },
           },
         },
-      },
-      take: 20,
-    });
-
-    const collectedByModel = availableVehicles.reduce((acc: any, vehicle) => {
-      const key = `${vehicle.make}-${vehicle.model}`;
-      if (!acc[key]) {
-        acc[key] = {
-          vehicleId: vehicle.id,
-          make: vehicle.make,
-          model: vehicle.model,
-          year: vehicle.year,
-          count: 0,
-          tenantName: vehicle.tenant.name,
-        };
-      }
-      acc[key].count++;
-      return acc;
-    }, {});
-
-    const mostCollected = Object.values(collectedByModel)
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 5);
-
-    // Get leads for most asked (inquiries)
-    const leads = await prisma.lead.findMany({
-      where: {
-        interestedIn: {
-          not: null,
-        },
-      },
-      take: 50,
-    });
-
-    // Get tenant names for leads
-    const tenantIds = Array.from(new Set(leads.map(l => l.tenantId)));
-    const tenantsForLeads = await prisma.tenant.findMany({
-      where: {
-        id: {
-          in: tenantIds,
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-
-    const tenantMap = tenantsForLeads.reduce((acc: any, t) => {
-      acc[t.id] = t.name;
-      return acc;
-    }, {});
-
-    const askedByVehicle = leads.reduce((acc: any, lead) => {
-      if (lead.interestedIn) {
-        const key = lead.interestedIn;
-        if (!acc[key]) {
-          acc[key] = {
-            vehicleId: lead.id,
-            make: lead.interestedIn.split(' ')[0] || 'Unknown',
-            model: lead.interestedIn.split(' ').slice(1).join(' ') || 'Unknown',
-            year: new Date().getFullYear(),
-            count: 0,
-            tenantName: tenantMap[lead.tenantId] || 'Unknown',
-          };
-        }
-        acc[key].count++;
-      }
-      return acc;
-    }, {});
-
-    const mostAsked = Object.values(askedByVehicle)
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 5);
-
-    // Time series data - mock for now (requires historical tracking)
-    const timeSeriesData = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      timeSeriesData.push({
-        date: date.toISOString().split('T')[0],
-        views: Math.floor(Math.random() * 2000) + 2000,
-        inquiries: Math.floor(Math.random() * 40) + 40,
-        sales: Math.floor(Math.random() * 15) + 10,
-        newVehicles: Math.floor(Math.random() * 10) + 5,
       });
-    }
 
-    const analyticsData = {
-      mostCollected,
-      mostViewed: mostCollected, // Mock: view tracking not implemented
-      mostAsked: mostAsked.length > 0 ? mostAsked : mostCollected,
-      mostSold: mostSold.length > 0 ? mostSold : mostCollected,
-      tenantSummary,
-      timeSeriesData,
-      generated: new Date().toISOString(),
-      timeRange,
-    };
+      // 2. Fetch all required counts in parallel for performance
+      const tenantSummary = await Promise.all(
+        tenants.map(async (tenant) => {
+          const [soldVehicles, totalLeads, totalViews] = await Promise.all([
+            prisma.vehicle.count({
+              where: {
+                tenantId: tenant.id,
+                status: 'SOLD',
+              },
+            }),
+            prisma.lead.count({
+              where: {
+                tenantId: tenant.id,
+                createdAt: { gte: startDate },
+              },
+            }),
+            prisma.pageView.count({
+              where: {
+                tenantId: tenant.id,
+                createdAt: { gte: startDate },
+              },
+            }),
+          ]);
+
+          const totalVehicles = tenant._count.vehicles;
+          const conversionRate = totalVehicles > 0
+            ? ((soldVehicles / totalVehicles) * 100).toFixed(1)
+            : '0.0';
+
+          return {
+            tenantId: tenant.id,
+            tenantName: tenant.name,
+            totalVehicles,
+            soldVehicles,
+            totalViews,
+            totalInquiries: totalLeads,
+            conversionRate: parseFloat(conversionRate),
+          };
+        })
+      );
+
+      // 3. Get Most Viewed Vehicles (Real data from PageView)
+      const pageViewsByVehicle = await prisma.pageView.groupBy({
+        by: ['vehicleId'],
+        where: {
+          vehicleId: { not: null },
+          createdAt: { gte: startDate },
+          tenant: { status: 'active' }, // Ensure we only count active tenant views
+        },
+        _count: {
+          id: true,
+        },
+        orderBy: {
+          _count: {
+            id: 'desc',
+          },
+        },
+        take: 5,
+      });
+
+      const mostViewed = await Promise.all(
+        pageViewsByVehicle.map(async (view) => {
+          const vehicle = await prisma.vehicle.findUnique({
+            where: { id: view.vehicleId as string },
+            include: { tenant: { select: { name: true } } },
+          });
+          return {
+            vehicleId: view.vehicleId,
+            make: vehicle?.make || 'Unknown',
+            model: vehicle?.model || 'Unknown',
+            year: vehicle?.year || 0,
+            count: view._count.id,
+            tenantName: vehicle?.tenant.name || 'Unknown',
+          };
+        })
+      );
+
+      // 4. Get Most Sold Vehicles (Real data)
+      const soldVehiclesByModel = await prisma.vehicle.groupBy({
+        by: ['make', 'model', 'year', 'tenantId'],
+        where: {
+          status: 'SOLD',
+          updatedAt: { gte: startDate },
+          tenant: { status: 'active' },
+        },
+        _count: {
+          id: true,
+        },
+        orderBy: {
+          _count: {
+            id: 'desc',
+          },
+        },
+        take: 5,
+      });
+
+      const mostSold = await Promise.all(
+        soldVehiclesByModel.map(async (item) => {
+          const tenant = await prisma.tenant.findUnique({
+            where: { id: item.tenantId },
+            select: { name: true },
+          });
+          return {
+            vehicleId: `${item.make}-${item.model}`, // Composite ID for aggregation
+            make: item.make,
+            model: item.model,
+            year: item.year,
+            count: item._count.id,
+            tenantName: tenant?.name || 'Unknown',
+          };
+        })
+      );
+
+      // 5. Get Most Asked Vehicles (Leads - Real data)
+      const leadsByModel = await prisma.lead.groupBy({
+        by: ['interestedIn', 'tenantId'],
+        where: {
+          interestedIn: { not: null },
+          createdAt: { gte: startDate },
+          tenant: { status: 'active' },
+        },
+        _count: {
+          id: true,
+        },
+        orderBy: {
+          _count: {
+            id: 'desc',
+          },
+        },
+        take: 5,
+      });
+
+      const mostAsked = await Promise.all(
+        leadsByModel.map(async (item) => {
+          const tenant = await prisma.tenant.findUnique({
+            where: { id: item.tenantId },
+            select: { name: true },
+          });
+
+          // Split interestedIn which usually stores "Make Model"
+          const parts = (item.interestedIn || '').split(' ');
+          const make = parts[0] || 'Unknown';
+          const model = parts.slice(1).join(' ') || 'Unknown';
+
+          return {
+            vehicleId: item.interestedIn,
+            make,
+            model,
+            year: now.getFullYear(),
+            count: item._count.id,
+            tenantName: tenant?.name || 'Unknown',
+          };
+        })
+      );
+
+      // 6. Get Most Collected (Inventory Count by Model)
+      const availableByModel = await prisma.vehicle.groupBy({
+        by: ['make', 'model', 'year', 'tenantId'],
+        where: {
+          status: 'AVAILABLE',
+          tenant: { status: 'active' },
+        },
+        _count: {
+          id: true,
+        },
+        orderBy: {
+          _count: {
+            id: 'desc',
+          },
+        },
+        take: 5,
+      });
+
+      const mostCollected = await Promise.all(
+        availableByModel.map(async (item) => {
+          const tenant = await prisma.tenant.findUnique({
+            where: { id: item.tenantId },
+            select: { name: true },
+          });
+          return {
+            vehicleId: `${item.make}-${item.model}`,
+            make: item.make,
+            model: item.model,
+            year: item.year,
+            count: item._count.id,
+            tenantName: tenant?.name || 'Unknown',
+          };
+        })
+      );
+
+      // 7. Time Series Activity (Real - Last 7 Days)
+      const timeSeriesData = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+
+        const nextD = new Date(d);
+        nextD.setDate(nextD.getDate() + 1);
+
+        const [views, inquiries, sales, newVehicles] = await Promise.all([
+          prisma.pageView.count({
+            where: { createdAt: { gte: d, lt: nextD }, tenant: { status: 'active' } }
+          }),
+          prisma.lead.count({
+            where: { createdAt: { gte: d, lt: nextD }, tenant: { status: 'active' } }
+          }),
+          prisma.vehicle.count({
+            where: { status: 'SOLD', updatedAt: { gte: d, lt: nextD }, tenant: { status: 'active' } }
+          }),
+          prisma.vehicle.count({
+            where: { createdAt: { gte: d, lt: nextD }, tenant: { status: 'active' } }
+          })
+        ]);
+
+        timeSeriesData.push({
+          date: d.toISOString().split('T')[0],
+          views,
+          inquiries,
+          sales,
+          newVehicles,
+        });
+      }
+
+      const analyticsData = {
+        mostCollected,
+        mostViewed,
+        mostAsked,
+        mostSold,
+        tenantSummary,
+        timeSeriesData,
+        generated: new Date().toISOString(),
+        timeRange,
+      };
 
       return NextResponse.json(analyticsData);
 
