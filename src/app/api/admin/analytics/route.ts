@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       // 2. Fetch all required counts in parallel for performance
       const tenantSummary = await Promise.all(
         tenants.map(async (tenant) => {
-          const [soldVehicles, totalLeads, totalViews] = await Promise.all([
+          const [soldVehicles, totalLeads, totalViews, totalVehiclesClean] = await Promise.all([
             prisma.vehicle.count({
               where: {
                 tenantId: tenant.id,
@@ -91,9 +91,15 @@ export async function GET(request: NextRequest) {
                 createdAt: { gte: startDate },
               },
             }),
+            prisma.vehicle.count({
+              where: {
+                tenantId: tenant.id,
+                status: { not: 'DELETED' },
+              },
+            }),
           ]);
 
-          const totalVehicles = tenant._count.vehicles;
+          const totalVehicles = totalVehiclesClean;
           const conversionRate = totalVehicles > 0
             ? ((soldVehicles / totalVehicles) * 100).toFixed(1)
             : '0.0';
@@ -135,6 +141,7 @@ export async function GET(request: NextRequest) {
             where: { id: view.vehicleId as string },
             include: { tenant: { select: { name: true } } },
           });
+          if (!vehicle || vehicle.status === 'DELETED') return null;
           return {
             vehicleId: view.vehicleId,
             make: vehicle?.make || 'Unknown',
@@ -144,7 +151,7 @@ export async function GET(request: NextRequest) {
             tenantName: vehicle?.tenant.name || 'Unknown',
           };
         })
-      );
+      ).then(results => results.filter((v): v is NonNullable<typeof v> => v !== null));
 
       // 4. Get Most Sold Vehicles (Real data)
       const soldVehiclesByModel = await prisma.vehicle.groupBy({
@@ -280,7 +287,7 @@ export async function GET(request: NextRequest) {
             where: { status: 'SOLD', updatedAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds } }
           }),
           prisma.vehicle.count({
-            where: { createdAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds } }
+            where: { createdAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds }, status: { not: 'DELETED' } }
           })
         ]);
 
