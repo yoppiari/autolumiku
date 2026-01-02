@@ -24,6 +24,15 @@ export async function GET(request: NextRequest) {
       // }
 
       const tenants = await prisma.tenant.findMany({
+        where: {
+          name: {
+            notIn: [
+              "Tenant 1 Demo",
+              "Showroom Jakarta Premium",
+              "AutoLumiku Platform"
+            ]
+          }
+        },
         include: {
           subscription: true,
           _count: {

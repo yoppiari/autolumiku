@@ -46,16 +46,14 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
     });
   }, []);
 
+  // Client-side filtering removed - now handled by API
+
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Filter out demo/system tenants as requested
-  const excludedTenants = ['Tenant 1 Demo', 'Showroom Jakarta Premium', 'AutoLumiku Platform'];
-  const displayTenants = tenants.filter(t => !excludedTenants.includes(t.name));
-
   useEffect(() => {
-    // Calculate tenant statistics (using filtered tenants)
-    const tenantStats = displayTenants.reduce(
+    // Calculate tenant statistics
+    const tenantStats = tenants.reduce(
       (acc, tenant) => {
         acc.total++;
         acc[tenant.status === 'setup_required' ? 'setupRequired' : tenant.status]++;
@@ -65,7 +63,18 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
     );
 
     setStats(tenantStats);
-  }, [tenants]); // Re-run when raw tenants prop changes
+  }, [tenants]);
+
+  // Real-time polling (every 30 seconds)
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      if (!isRefreshing) {
+        handleRefresh();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [onRefresh, isRefreshing]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -257,7 +266,7 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {displayTenants.slice(0, 5).map((tenant) => (
+              {tenants.slice(0, 5).map((tenant) => (
                 <tr key={tenant.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{tenant.name}</div>
@@ -281,7 +290,7 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
             </tbody>
           </table>
 
-          {displayTenants.length === 0 && (
+          {tenants.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               Belum ada aktivitas tenant
             </div>
