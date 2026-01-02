@@ -11,6 +11,7 @@ import { PlateDetectionService } from '@/lib/services/plate-detection.service';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';
+import { isValidUUID, parseVehicleSlug } from '@/lib/utils';
 
 /**
  * POST /api/v1/vehicles/[id]/photos
@@ -18,7 +19,7 @@ import { ROLE_LEVELS } from '@/lib/rbac';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   // Authenticate request
   const auth = await authenticateRequest(request);
@@ -33,7 +34,9 @@ export async function POST(
   // Sales, Admin, Owner, Super Admin all have access
 
   try {
-    const { id: vehicleId } = await params;
+    const { id } = params;
+    const { id: searchId, isUuid } = parseVehicleSlug(id);
+
     const body = await request.json();
     const { photos } = body; // Array of { base64: string }
 
@@ -45,17 +48,27 @@ export async function POST(
     }
 
     // Verify vehicle exists and get details
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId },
-      select: { id: true, tenantId: true, make: true, model: true },
-    });
+    let vehicle;
+    if (isUuid) {
+      vehicle = await prisma.vehicle.findUnique({
+        where: { id: searchId },
+        select: { id: true, tenantId: true, make: true, model: true },
+      });
+    } else {
+      vehicle = await prisma.vehicle.findFirst({
+        where: { displayId: searchId },
+        select: { id: true, tenantId: true, make: true, model: true },
+      });
+    }
 
     if (!vehicle) {
       return NextResponse.json(
-        { error: 'Vehicle not found' },
+        { error: 'Vehicle not found', message: `Could not find vehicle with ID or slug: ${id}` },
         { status: 404 }
       );
     }
+
+    const vehicleId = vehicle.id;
 
     // Fetch tenant details for plate cover branding
     const tenant = await prisma.tenant.findUnique({

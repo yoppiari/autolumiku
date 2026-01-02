@@ -8,13 +8,14 @@ import { StorageService } from '@/lib/services/storage.service';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';
+import { parseVehicleSlug } from '@/lib/utils';
 
 /**
  * DELETE - Remove photo from vehicle
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; photoId: string }> }
+  { params }: { params: { id: string; photoId: string } }
 ) {
   // Authenticate request
   const auth = await authenticateRequest(request);
@@ -29,7 +30,25 @@ export async function DELETE(
   // Sales, Admin, Owner, Super Admin all have access
 
   try {
-    const { id: vehicleId, photoId } = await params;
+    const { id, photoId } = params;
+    const { id: searchId, isUuid } = parseVehicleSlug(id);
+
+    // Resolve vehicleId to actual UUID if it's a slug
+    let vehicleId = searchId;
+    if (!isUuid) {
+      const v = await prisma.vehicle.findFirst({
+        where: { displayId: searchId },
+        select: { id: true }
+      });
+      if (v) {
+        vehicleId = v.id;
+      } else {
+        return NextResponse.json(
+          { error: 'Vehicle not found', message: `Could not find vehicle with ID or slug: ${id}` },
+          { status: 404 }
+        );
+      }
+    }
 
     // Find photo
     const photo = await prisma.vehiclePhoto.findFirst({
@@ -90,7 +109,7 @@ export async function DELETE(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; photoId: string }> }
+  { params }: { params: { id: string; photoId: string } }
 ) {
   // Authenticate request
   const auth = await authenticateRequest(request);
@@ -105,7 +124,26 @@ export async function PUT(
   // Sales, Admin, Owner, Super Admin all have access
 
   try {
-    const { id: vehicleId, photoId } = await params;
+    const { id, photoId } = params;
+    const { id: searchId, isUuid } = parseVehicleSlug(id);
+
+    // Resolve vehicleId to actual UUID if it's a slug
+    let vehicleId = searchId;
+    if (!isUuid) {
+      const v = await prisma.vehicle.findFirst({
+        where: { displayId: searchId },
+        select: { id: true }
+      });
+      if (v) {
+        vehicleId = v.id;
+      } else {
+        return NextResponse.json(
+          { error: 'Vehicle not found', message: `Could not find vehicle with ID or slug: ${id}` },
+          { status: 404 }
+        );
+      }
+    }
+
     const body = await request.json();
     const { caption, isFeatured } = body;
 

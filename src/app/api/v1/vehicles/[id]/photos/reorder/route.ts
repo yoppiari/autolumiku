@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';
+import { parseVehicleSlug } from '@/lib/utils';
 
 interface ReorderItem {
   photoId: string;
@@ -18,7 +19,7 @@ interface ReorderItem {
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   // Authenticate request
   const auth = await authenticateRequest(request);
@@ -33,7 +34,25 @@ export async function PATCH(
   // Sales, Admin, Owner, Super Admin all have access
 
   try {
-    const { id: vehicleId } = await params;
+    const { id } = params;
+    const { id: searchId, isUuid } = parseVehicleSlug(id);
+
+    // Resolve vehicleId to actual UUID if it's a slug
+    let vehicleId = searchId;
+    if (!isUuid) {
+      const v = await prisma.vehicle.findFirst({
+        where: { displayId: searchId },
+        select: { id: true }
+      });
+      if (v) {
+        vehicleId = v.id;
+      } else {
+        return NextResponse.json(
+          { error: 'Vehicle not found', message: `Could not find vehicle with ID or slug: ${id}` },
+          { status: 404 }
+        );
+      }
+    }
     const body = await request.json();
     const { photos }: { photos: ReorderItem[] } = body;
 
