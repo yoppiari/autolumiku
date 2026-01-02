@@ -1638,13 +1638,33 @@ export class StaffCommandService {
       `🚙 Edit Kendaraan\n` +
       `   Ketik: Edit/ Ubah/ Rubah/ Ganti [ID] [Detail kendaraan/ informasi dasar/ harga]\n` +
       `   Contoh: Ganti PM-PST-001 Hybrid / Ubah PM-PST-001 AT / Edit PM-PST-001 85000 km\n\n` +
-      `👮‍♂️ *MENU ADMIN & OWNER (REPORTS)*\n` +
-      `Laporan Managemen real-time via WhatsApp (Info & Link):\n` +
-      `✅ *Sales*: "Total Penjualan", "Total Revenue", "Tren Penjualan", "Metrik Penjualan"\n` +
-      `✅ *Inventory*: "Total Inventory", "Daftar Kendaraan", "Peringatan Stok Tipis", "Rata-rata Harga"\n` +
-      `✅ *Performance*: "Staff Performance", "Penjualan 7 Hari"\n` +
-      `✅ *AI*: "Performa Bot", "Analisis Pelanggan", "Efisiensi Chat"\n\n` +
-      `Silakan ketik perintah yang diinginkan. Kami siap membantu!`;
+      `👮‍♂️ *MENU ADMIN & OWNER (REPORTS)*
+Laporan Management Real-Time (Ketik untuk akses):
+
+💰 *SALES & REVENUE*
+• "Sales Report" (Laporan Lengkap)
+• "Total Sales" (Penjualan Unit)
+• "Total Revenue" (Pendapatan)
+• "Sales Trends" (Tren Penjualan)
+• "Sales Metrics" (KPI Penjualan)
+• "Sales Summary" (Ringkasan Cepat)
+
+📦 *INVENTORY & STOCK*
+• "Total Inventory" (Stok Keseluruhan)
+• "Vehicle Listing" (Daftar Kendaraan)
+• "Low Stock Alert" (Peringatan Stok)
+• "Average Price" (Rata-rata Harga)
+
+🏆 *TEAM & PERFORMANCE*
+• "Staff Performance" (Ranking Tim)
+• "Recent Sales" (Penjualan Terkini)
+
+🤖 *WHATSAPP AI & CUSTOMER*
+• "WhatsApp AI Analytics" (Performa Bot)
+• "Customer Metrics" (Analisis Pelanggan)
+• "Operational Metrics" (Efisiensi Chat)
+
+Silakan ketik nama report diatas. Kami siap membantu!`;
 
     return {
       success: true,
