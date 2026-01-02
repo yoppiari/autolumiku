@@ -115,13 +115,11 @@ export async function POST(request: NextRequest) {
       } = body;
 
       // Validate required fields
-      // tenantId is optional for Platform Admins/Super Admins
-      const isPlatformLevel = ['super_admin', 'platform_admin'].includes(role);
-      if (!email || !firstName || !password || !role || (!tenantId && !isPlatformLevel)) {
+      if (!email || !firstName || !password || !role || !tenantId) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Email, nama, password, role, dan (untuk staff/manager/admin) tenant wajib diisi',
+            error: 'Email, nama, password, role, dan tenant wajib diisi',
           },
           { status: 400 }
         );
@@ -182,10 +180,10 @@ export async function POST(request: NextRequest) {
           // Fall through to create new user below
         } else {
           // SCENARIO 2.5: Creating a Platform Admin OR Promoting to Super Admin
-          // If tenantId is null OR role is platform-level, we treat this as a promotion
-          if (!tenantId || ['super_admin', 'platform_admin'].includes(role)) {
-            const isPromotion = ['super_admin', 'platform_admin', 'admin'].includes(role);
-            console.log(`🔼 Promoting ${email} from ${existingUser.tenant?.name || 'Local'} to Platform Admin (Role: ${role})`);
+          // If tenantId is null OR role is 'super_admin', we treat this as a promotion
+          if (!tenantId || role === 'super_admin') {
+            const isPromotion = role === 'super_admin' || role === 'admin';
+            console.log(`🔼 Promoting ${email} from ${existingUser.tenant?.name} to Platform Admin (Role: ${role})`);
 
             const promotedUser = await prisma.user.update({
               where: { id: existingUser.id },
@@ -207,7 +205,7 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({
               success: true,
-              message: `User berhasil dipromosikan ke ${role.replace('_', ' ').toUpperCase()} dari ${existingUser.tenant?.name || 'Tenant Lain'}`,
+              message: `User berhasil dipromosikan ke ${role === 'super_admin' ? 'Super Admin' : 'Platform Admin'} dari ${existingUser.tenant?.name}`,
               data: promotedUser,
             });
           }

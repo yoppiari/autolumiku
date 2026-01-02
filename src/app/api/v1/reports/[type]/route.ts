@@ -9,7 +9,7 @@
  * 
  * Query params:
  * - period: '7d' | '30d' | '90d' | '1y' | 'mtd' | 'ytd' (default: '30d')
- * - format: 'pdf' | 'excel' | 'json' (default: 'pdf')
+ * - format: 'pdf' | 'excel' (default: 'pdf')
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -132,13 +132,6 @@ export async function GET(
 
         // Gather data based on report type
         const reportData = await ReportDataService.gather(reportType, tenantId, startDate, now);
-
-        if (format === 'json') {
-            return NextResponse.json({
-                success: true,
-                data: reportData
-            });
-        }
 
         // Generate PDF
         if (format === 'pdf') {

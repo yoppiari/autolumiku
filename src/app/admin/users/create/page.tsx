@@ -14,7 +14,7 @@ interface CreateUserForm {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'super_admin' | 'platform_admin' | 'admin' | 'manager' | 'staff';
+  role: 'super_admin' | 'admin' | 'manager' | 'staff';
   tenantId?: string;
   password: string;
   confirmPassword: string;
@@ -67,9 +67,7 @@ export default function CreateUserPage() {
 
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-      // If role is platform level, tenantId should be cleared
-      tenantId: name === 'role' && ['platform_admin', 'super_admin'].includes(value) ? '' : (name === 'tenantId' ? value : prev.tenantId)
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
@@ -116,7 +114,6 @@ export default function CreateUserPage() {
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'super_admin': return 'Super Admin';
-      case 'platform_admin': return 'Platform Admin';
       case 'admin': return 'Admin';
       case 'manager': return 'Manager';
       case 'staff': return 'Staff';
@@ -243,11 +240,10 @@ export default function CreateUserPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Pilih Role</option>
-                <option value="platform_admin">Platform Admin</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
                 <option value="staff">Staff</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+                <option value="super_admin">Super Admin</option>
               </select>
             </div>
 
@@ -323,9 +319,6 @@ export default function CreateUserPage() {
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
         <h3 className="text-lg font-semibold text-blue-900 mb-4">Informasi Role</h3>
         <div className="space-y-3 text-sm text-blue-800">
-          <div>
-            <strong>Platform Admin:</strong> Handle full akses platform AutoLumiku (Global)
-          </div>
           <div>
             <strong>Super Admin:</strong> Akses penuh ke semua fitur platform
           </div>

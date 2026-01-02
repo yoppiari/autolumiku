@@ -13,8 +13,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { authenticateRequest } from "@/lib/auth/middleware";
-import { ROLE_LEVELS } from "@/lib/rbac";
 
 export const dynamic = 'force-dynamic';
 
@@ -80,34 +78,18 @@ async function calculateAvgResponseTime(tenantId: string, startDate: Date): Prom
 }
 
 export async function GET(request: NextRequest) {
-  // Authenticate request
-  const auth = await authenticateRequest(request);
-  if (!auth.success || !auth.user) {
-    return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: 401 });
-  }
-
-  // RBAC: Require ADMIN+ role
-  if (auth.user.roleLevel < ROLE_LEVELS.ADMIN) {
-    return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
-  }
-
-  const { searchParams } = new URL(request.url);
-  const tenantId = searchParams.get("tenantId") || auth.user.tenantId;
-  const range = searchParams.get("range") || "week"; // today, week, month
-
-  // Security: Only super-admins can view other tenants' data
-  if (tenantId !== auth.user.tenantId && auth.user.roleLevel < ROLE_LEVELS.SUPER_ADMIN) {
-    return NextResponse.json({ error: "Unauthorized tenant access" }, { status: 401 });
-  }
-
-  if (!tenantId) {
-    return NextResponse.json(
-      { success: false, error: "Missing required parameter: tenantId" },
-      { status: 400 }
-    );
-  }
-
   try {
+    const { searchParams } = new URL(request.url);
+    const tenantId = searchParams.get("tenantId");
+    const range = searchParams.get("range") || "week"; // today, week, month
+
+    if (!tenantId) {
+      return NextResponse.json(
+        { success: false, error: "Missing required parameter: tenantId" },
+        { status: 400 }
+      );
+    }
+
     // Calculate date range
     const now = new Date();
     let startDate: Date;
