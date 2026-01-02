@@ -32,7 +32,8 @@ export default function ReportDetailPage() {
             try {
                 let url = `/api/v1/analytics/reports/${reportId}`;
                 const storedUser = localStorage.getItem('user');
-                const token = localStorage.getItem('token');
+                const token = localStorage.getItem('authToken'); // Fixed: use 'authToken' instead of 'token'
+
 
                 if (storedUser) {
                     const user = JSON.parse(storedUser);
