@@ -183,7 +183,7 @@ export async function withAdminAuth(
   }
 
   // Check if user has admin role
-  if (!auth.user || !['admin', 'super_admin'].includes(auth.user.role)) {
+  if (!auth.user || !['admin', 'super_admin', 'platform_admin'].includes(auth.user.role)) {
     return NextResponse.json(
       { error: 'Forbidden - Admin access required' },
       { status: 403 }
@@ -210,10 +210,10 @@ export async function withSuperAdminAuth(
     );
   }
 
-  // Check if user has super_admin role
-  if (!auth.user || auth.user.role !== 'super_admin') {
+  // Check if user has super_admin/platform_admin role
+  if (!auth.user || !['super_admin', 'platform_admin'].includes(auth.user.role)) {
     return NextResponse.json(
-      { error: 'Forbidden - Super admin access required' },
+      { error: 'Forbidden - Platform access required' },
       { status: 403 }
     );
   }
@@ -227,6 +227,7 @@ export async function withSuperAdminAuth(
 export function getUserPermissions(role: string): string[] {
   switch (role) {
     case 'super_admin':
+    case 'platform_admin':
       return [
         'tenant:create', 'tenant:read', 'tenant:update', 'tenant:delete',
         'user:create', 'user:read', 'user:update', 'user:delete',

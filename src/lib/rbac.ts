@@ -23,7 +23,8 @@ export const ROLE_LEVELS = {
   SALES: 30, // Sales - vehicle operations
   ADMIN: 90, // Admin - team, whatsapp, blog management
   OWNER: 100, // Owner - full tenant access
-  SUPER_ADMIN: 110, // Super Admin - platform access
+  PLATFORM_ADMIN: 110, // Platform Admin - full platform access (Indonesia regional)
+  SUPER_ADMIN: 120, // Super Admin - system level access
 } as const;
 
 export type RoleLevel = (typeof ROLE_LEVELS)[keyof typeof ROLE_LEVELS];
@@ -167,6 +168,8 @@ export function getRoleLevelFromRole(role: string): number {
   switch (normalizedRole) {
     case "SUPER_ADMIN":
       return ROLE_LEVELS.SUPER_ADMIN;
+    case "PLATFORM_ADMIN":
+      return ROLE_LEVELS.PLATFORM_ADMIN;
     case "OWNER":
       return ROLE_LEVELS.OWNER;
     case "ADMIN":
@@ -183,6 +186,7 @@ export function getRoleLevelFromRole(role: string): number {
  */
 export function getRoleName(roleLevel: number): string {
   if (roleLevel >= ROLE_LEVELS.SUPER_ADMIN) return 'Super Admin';
+  if (roleLevel >= ROLE_LEVELS.PLATFORM_ADMIN) return 'Platform Admin';
   if (roleLevel >= ROLE_LEVELS.OWNER) return 'Owner';
   if (roleLevel >= ROLE_LEVELS.ADMIN) return 'Admin';
   return 'Staff/Sales';
