@@ -1834,10 +1834,20 @@ export class StaffCommandService {
     const normalizedInput = this.normalizePhone(staffPhone);
     console.log(`[Staff Command] Verifying authorization - input: ${staffPhone}, normalized: ${normalizedInput}`);
 
-    // Get all users in tenant and check phone match with normalization
+    // Get users by phone match (either in tenant OR platform/super admin)
     const users = await prisma.user.findMany({
-      where: { tenantId },
-      select: { id: true, phone: true, firstName: true },
+      where: {
+        AND: [
+          { phone: { not: null } },
+          {
+            OR: [
+              { tenantId },
+              { tenantId: null } // Platform Admin / Super Admin
+            ]
+          }
+        ]
+      },
+      select: { id: true, phone: true, firstName: true, role: true },
     });
 
     for (const user of users) {
@@ -2120,12 +2130,41 @@ export class StaffCommandService {
     const authorizedRoles = ['ADMIN', 'OWNER', 'SUPER_ADMIN'];
     const user = await prisma.user.findFirst({
       where: {
-        tenantId,
-        phone: { contains: this.normalizePhone(staffPhone) }
+        AND: [
+          { phone: { not: null } },
+          {
+            OR: [
+              { tenantId },
+              { tenantId: null } // Super Admin
+            ]
+          }
+        ]
       }
     });
 
-    if (!user || !authorizedRoles.includes(user.role.toUpperCase())) {
+    // Check if user exists and match phone with normalization
+    // We need to loop or find specifically because of normalization
+    let authorizedUser = null;
+    if (user) {
+      // Find all potential users for this phone across the allowed scopes
+      const potentialUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { tenantId },
+            { tenantId: null }
+          ]
+        }
+      });
+
+      for (const u of potentialUsers) {
+        if (u.phone && this.normalizePhone(u.phone) === this.normalizePhone(staffPhone)) {
+          authorizedUser = u;
+          break;
+        }
+      }
+    }
+
+    if (!authorizedUser || !authorizedRoles.includes(authorizedUser.role.toUpperCase())) {
       return {
         success: false,
         message: "Maaf kak, fitur report ini khusus untuk Admin / Owner saja ya! 🙏",
