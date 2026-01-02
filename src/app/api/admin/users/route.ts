@@ -154,19 +154,21 @@ export async function POST(request: NextRequest) {
           await prisma.user.delete({ where: { id: existingUser.id } });
           // Fall through to create new user below
         } else {
-          // SCENARIO 2.5: Creating a Platform Admin (tenantId: null) using email from existing tenant admin
-          // -> PROMOTE them to Super Admin by setting tenantId = null
-          if (!tenantId) {
-            console.log(`🔼 Promoting ${email} from ${existingUser.tenant?.name} to Platform Admin`);
+          // SCENARIO 2.5: Creating a Platform Admin OR Promoting to Super Admin
+          // If tenantId is null OR role is 'super_admin', we treat this as a promotion
+          if (!tenantId || role === 'super_admin') {
+            const isPromotion = role === 'super_admin' || role === 'admin';
+            console.log(`🔼 Promoting ${email} from ${existingUser.tenant?.name} to Platform Admin (Role: ${role})`);
+
             const promotedUser = await prisma.user.update({
               where: { id: existingUser.id },
               data: {
                 firstName,
                 lastName: lastName || '',
-                role, // Should be 'super_admin' or 'admin'
+                role,
                 emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
                 passwordHash: await bcrypt.hash(password, 10),
-                tenantId: null, // Promote to Platform Admin
+                tenantId: null, // Force null for super_admin/platform admin
               },
               include: {
                 tenant: {
@@ -177,7 +179,7 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({
               success: true,
-              message: `User berhasil dipromosikan ke Platform Admin dari ${existingUser.tenant?.name}`,
+              message: `User berhasil dipromosikan ke ${role === 'super_admin' ? 'Super Admin' : 'Platform Admin'} dari ${existingUser.tenant?.name}`,
               data: promotedUser,
             });
           }
