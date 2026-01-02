@@ -58,6 +58,8 @@ export async function GET(request: NextRequest) {
         },
       });
 
+      const activeTenantIds = tenants.map(t => t.id);
+
       // 2. Fetch all required counts in parallel for performance
       const tenantSummary = await Promise.all(
         tenants.map(async (tenant) => {
@@ -105,7 +107,7 @@ export async function GET(request: NextRequest) {
         where: {
           vehicleId: { not: null },
           createdAt: { gte: startDate },
-          tenant: { status: 'active' }, // Ensure we only count active tenant views
+          tenantId: { in: activeTenantIds }, // Ensure we only count active tenant views
         },
         _count: {
           id: true,
@@ -141,7 +143,7 @@ export async function GET(request: NextRequest) {
         where: {
           status: 'SOLD',
           updatedAt: { gte: startDate },
-          tenant: { status: 'active' },
+          tenantId: { in: activeTenantIds },
         },
         _count: {
           id: true,
@@ -177,7 +179,7 @@ export async function GET(request: NextRequest) {
         where: {
           interestedIn: { not: null },
           createdAt: { gte: startDate },
-          tenant: { status: 'active' },
+          tenantId: { in: activeTenantIds },
         },
         _count: {
           id: true,
@@ -218,7 +220,7 @@ export async function GET(request: NextRequest) {
         by: ['make', 'model', 'year', 'tenantId'],
         where: {
           status: 'AVAILABLE',
-          tenant: { status: 'active' },
+          tenantId: { in: activeTenantIds },
         },
         _count: {
           id: true,
@@ -260,16 +262,16 @@ export async function GET(request: NextRequest) {
 
         const [views, inquiries, sales, newVehicles] = await Promise.all([
           prisma.pageView.count({
-            where: { createdAt: { gte: d, lt: nextD }, tenant: { status: 'active' } }
+            where: { createdAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds } }
           }),
           prisma.lead.count({
-            where: { createdAt: { gte: d, lt: nextD }, tenant: { status: 'active' } }
+            where: { createdAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds } }
           }),
           prisma.vehicle.count({
-            where: { status: 'SOLD', updatedAt: { gte: d, lt: nextD }, tenant: { status: 'active' } }
+            where: { status: 'SOLD', updatedAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds } }
           }),
           prisma.vehicle.count({
-            where: { createdAt: { gte: d, lt: nextD }, tenant: { status: 'active' } }
+            where: { createdAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds } }
           })
         ]);
 

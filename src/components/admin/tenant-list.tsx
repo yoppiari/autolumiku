@@ -235,23 +235,23 @@ export default function TenantList({
                     />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {tenant.name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {tenant.id.slice(0, 8)}...
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
                     <a
-                      href={`https://${tenant.subdomain}.autolumiku.com`}
+                      href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard` : `https://${tenant.subdomain}.autolumiku.com/dashboard`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group"
+                      className="group block"
                     >
-                      <div className="text-sm text-blue-600 group-hover:underline">{tenant.subdomain}</div>
-                      <div className="text-sm text-gray-400">.autolumiku.com</div>
+                      <div className="text-sm font-medium text-blue-600 group-hover:underline">
+                        {tenant.name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {tenant.id.slice(0, 8)}...
+                      </div>
                     </a>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{tenant.subdomain}</div>
+                    <div className="text-sm text-gray-400">.autolumiku.com</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {tenant.customDomain ? (
