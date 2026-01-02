@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ROLE_LEVELS } from '@/lib/rbac';
 
-type Department = 'sales' | 'whatsapp';
+type Department = 'sales' | 'whatsapp' | 'reports';
 
 const intentColors: Record<string, string> = {
   vehicle: '#3b82f6', // blue
@@ -94,7 +94,7 @@ function AnalyticsPageInternal() {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['sales', 'whatsapp'].includes(tab)) {
+    if (tab && ['sales', 'whatsapp', 'reports'].includes(tab)) {
       setActiveDepartment(tab as Department);
     }
   }, [searchParams]);
@@ -242,6 +242,16 @@ function AnalyticsPageInternal() {
           >
             <span className="text-lg">💬</span>
             <span>WhatsApp AI</span>
+          </button>
+          <button
+            onClick={() => setActiveDepartment('reports')}
+            className={`py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${activeDepartment === 'reports'
+              ? 'border-purple-500 text-purple-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+          >
+            <span className="text-lg">📑</span>
+            <span>Reports</span>
           </button>
         </nav>
       </div>
@@ -660,6 +670,17 @@ function AnalyticsPageInternal() {
           )}
         </div>
       )}
+
+      {/* Reports Tab Content */}
+      {!isLoading && activeDepartment === 'reports' && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {REPORTS_LIST.map((report) => (
+              <ReportCard key={report.id} report={report} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -693,6 +714,24 @@ function ReportCard({ report }: { report: { id: string; name: string; desc: stri
     </div>
   );
 }
+
+const REPORTS_LIST = [
+  { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Ringkasan penjualan, pendapatan, dan harga rata-rata unit terjual.', icon: '💰', href: '/dashboard/whatsapp-ai/analytics/reports/one-page-sales' },
+  { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Analisis ketersediaan stok, nilai aset, dan status unit (Ready/Booked).', icon: '📦', href: '/dashboard/whatsapp-ai/analytics/reports/total-inventory' },
+  { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Perbandingan rata-rata harga unit tersedia vs unit yang sudah terjual.', icon: '💵', href: '/dashboard/whatsapp-ai/analytics/reports/average-price' },
+  { id: 'staff-performance', name: 'Performa Staff', desc: 'Kontribusi penjualan dan efektivitas masing-masing anggota tim sales.', icon: '🏆', href: '/dashboard/whatsapp-ai/analytics/reports/staff-performance' },
+  { id: 'total-sales', name: 'Total Penjualan', desc: 'Akumulasi volume unit terjual dan pencapaian target bulanan.', icon: '📊', href: '/dashboard/whatsapp-ai/analytics/reports/total-sales' },
+  { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan dini untuk brand atau model dengan ketersediaan stok kritis.', icon: '⚠️', href: '/dashboard/whatsapp-ai/analytics/reports/low-stock-alert' },
+  { id: 'inventory-listing', name: 'Vehicle Inventory', desc: 'Daftar lengkap unit siap jual dengan rincian harga dan spesifikasi.', icon: '🚙', href: '/dashboard/whatsapp-ai/analytics/reports/inventory-listing' },
+  { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Log transaksi penjualan dalam 7 hari terakhir untuk monitoring harian.', icon: '🔄', href: '/dashboard/whatsapp-ai/analytics/reports/recent-sales' },
+  { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan (YoY/MoM) dan pergeseran minat pembeli.', icon: '📈', href: '/dashboard/whatsapp-ai/analytics/reports/sales-trends' },
+  { id: 'sales-summary', name: 'Executive Summary', desc: 'Laporan ringkas untuk Owner/Admin mengenai kesehatan bisnis showroom.', icon: '📋', href: '/dashboard/whatsapp-ai/analytics/reports/sales-summary' },
+  { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI penting: Conversion Rate, ATV, dan rasio prospek terhadap closing.', icon: '📐', href: '/dashboard/whatsapp-ai/analytics/reports/sales-metrics' },
+  { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Data transaksi detail untuk kebutuhan rekonsiliasi dan audit keuangan.', icon: '📑', href: '/dashboard/whatsapp-ai/analytics/reports/sales-report' },
+  { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Statistik efisiensi chatbot dan tingkat eskalasi percakapan ke staff.', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics/reports/operational-metrics' },
+  { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis jumlah pelanggan unik dan tingkat resolusi chat (Closed/Open).', icon: '👥', href: '/dashboard/whatsapp-ai/analytics/reports/customer-metrics' },
+  { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Performa akurasi AI dalam menangani pertanyaan stok dan info unit.', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics/reports/whatsapp-ai' },
+];
 
 export default function AnalyticsPage() {
   return (
