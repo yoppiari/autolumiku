@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // Determine which tenant(s) to show based on user role
     let filterTenantIds: string[] = [];
 
-    if (user.roleLevel >= ROLE_LEVELS.SUPER_ADMIN) {
+    if (user.roleLevel >= ROLE_LEVELS.SUPER_ADMIN || !user.tenantId) {
       // Super Admin: Can view all tenants OR filter by specific tenantId
       if (requestedTenantId) {
         filterTenantIds = [requestedTenantId];
