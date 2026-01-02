@@ -30,6 +30,16 @@ export async function GET(
         const requestedId = request.nextUrl.searchParams.get('tenantId');
         if (requestedId) {
             tenantId = requestedId;
+        } else {
+            // Explicitly set to undefined for global view if no param provided
+            // This is critical because auth.user.tenantId might be null, but we need undefined for Prisma logic sometimes
+            // detailed below or just rely on getReportData handling null/undefined correctly.
+            // Actually, if auth.user.tenantId is null (Platform Admin) and no param, tenantId is null.
+            // We need to ensure we don't return 400 error.
+            if (!tenantId) {
+                // It's already null/undefined, just proceed. 
+                // The check below handles Role < ADMIN.
+            }
         }
     }
 
@@ -38,7 +48,9 @@ export async function GET(
     }
 
     try {
-        const data = await getReportData(reportId, tenantId);
+        // Pass tenantId (string | null) to getReportData. 
+        // We will assert it as string | undefined inside or handle null means global.
+        const data = await getReportData(reportId, tenantId || undefined);
         return NextResponse.json({ success: true, data });
     } catch (error: any) {
         console.error(`[Report API] Error generating report ${reportId}:`, error);
@@ -46,14 +58,17 @@ export async function GET(
     }
 }
 
-async function getReportData(id: string, tenantId: string) {
+async function getReportData(id: string, tenantId?: string) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Global helper: Construct where clause
+    const withTenant = (base: any) => tenantId ? { ...base, tenantId } : base;
 
     switch (id) {
         case 'one-page-sales': {
             const sold = await prisma.vehicle.findMany({
-                where: { tenantId, status: 'SOLD', updatedAt: { gte: startOfMonth } },
+                where: withTenant({ status: 'SOLD', updatedAt: { gte: startOfMonth } }),
                 select: { price: true, status: true, condition: true }
             });
 
@@ -98,7 +113,7 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'total-inventory': {
             const inventory = await prisma.vehicle.findMany({
-                where: { tenantId, status: { in: ['AVAILABLE', 'BOOKED'] } },
+                where: withTenant({ status: { in: ['AVAILABLE', 'BOOKED'] } }),
                 select: { price: true, status: true }
             });
 
@@ -136,7 +151,7 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'average-price': {
             const vehicles = await prisma.vehicle.findMany({
-                where: { tenantId, status: { in: ['AVAILABLE', 'SOLD'] } },
+                where: withTenant({ status: { in: ['AVAILABLE', 'SOLD'] } }),
                 select: { price: true, status: true }
             });
 
@@ -176,7 +191,7 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'staff-performance': {
             const sold = await prisma.vehicle.findMany({
-                where: { tenantId, status: 'SOLD', updatedAt: { gte: startOfMonth } },
+                where: withTenant({ status: 'SOLD', updatedAt: { gte: startOfMonth } }),
                 select: { createdBy: true, price: true }
             });
 
@@ -229,7 +244,7 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'total-sales': {
             const sold = await prisma.vehicle.findMany({
-                where: { tenantId, status: 'SOLD', updatedAt: { gte: startOfMonth } },
+                where: withTenant({ status: 'SOLD', updatedAt: { gte: startOfMonth } }),
                 select: { price: true, updatedAt: true }
             });
 
@@ -267,12 +282,12 @@ async function getReportData(id: string, tenantId: string) {
         case 'low-stock-alert': {
             const stockByMake = await prisma.vehicle.groupBy({
                 by: ['make'],
-                where: { tenantId, status: 'AVAILABLE' },
+                where: withTenant({ status: 'AVAILABLE' }),
                 _count: true
             });
 
             const lowStock = stockByMake.filter(s => s._count <= 1);
-            const totalStock = await prisma.vehicle.count({ where: { tenantId, status: 'AVAILABLE' } });
+            const totalStock = await prisma.vehicle.count({ where: withTenant({ status: 'AVAILABLE' }) });
 
             return {
                 id,
@@ -305,14 +320,14 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'inventory-listing': {
             const inventory = await prisma.vehicle.findMany({
-                where: { tenantId, status: 'AVAILABLE' },
+                where: withTenant({ status: 'AVAILABLE' }),
                 orderBy: { createdAt: 'desc' },
                 take: 10,
                 select: { make: true, model: true, year: true, price: true }
             });
 
             const totalValue = await prisma.vehicle.aggregate({
-                where: { tenantId, status: 'AVAILABLE' },
+                where: withTenant({ status: 'AVAILABLE' }),
                 _sum: { price: true }
             });
 
@@ -348,7 +363,7 @@ async function getReportData(id: string, tenantId: string) {
             sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
             const recent = await prisma.vehicle.findMany({
-                where: { tenantId, status: 'SOLD', updatedAt: { gte: sevenDaysAgo } },
+                where: withTenant({ status: 'SOLD', updatedAt: { gte: sevenDaysAgo } }),
                 orderBy: { updatedAt: 'desc' },
                 select: { make: true, model: true, price: true, updatedAt: true }
             });
@@ -388,8 +403,8 @@ async function getReportData(id: string, tenantId: string) {
             const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
             const [currentMonth, prevMonth] = await Promise.all([
-                prisma.vehicle.count({ where: { tenantId, status: 'SOLD', updatedAt: { gte: currentMonthStart } } }),
-                prisma.vehicle.count({ where: { tenantId, status: 'SOLD', updatedAt: { gte: prevMonthStart, lte: prevMonthEnd } } })
+                prisma.vehicle.count({ where: withTenant({ status: 'SOLD', updatedAt: { gte: currentMonthStart } }) }),
+                prisma.vehicle.count({ where: withTenant({ status: 'SOLD', updatedAt: { gte: prevMonthStart, lte: prevMonthEnd } }) })
             ]);
 
             const growth = prevMonth > 0 ? ((currentMonth - prevMonth) / prevMonth) * 100 : currentMonth > 0 ? 100 : 0;
@@ -424,12 +439,12 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'sales-summary': {
             const sold = await prisma.vehicle.aggregate({
-                where: { tenantId, status: 'SOLD' },
+                where: withTenant({ status: 'SOLD' }),
                 _count: true,
                 _sum: { price: true }
             });
 
-            const stock = await prisma.vehicle.count({ where: { tenantId, status: 'AVAILABLE' } });
+            const stock = await prisma.vehicle.count({ where: withTenant({ status: 'AVAILABLE' }) });
 
             return {
                 id,
@@ -461,11 +476,11 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'sales-metrics': {
             const soldVehicles = await prisma.vehicle.findMany({
-                where: { tenantId, status: 'SOLD', updatedAt: { gte: startOfMonth } },
+                where: withTenant({ status: 'SOLD', updatedAt: { gte: startOfMonth } }),
                 select: { price: true }
             });
 
-            const totalLeads = await prisma.lead.count({ where: { tenantId, createdAt: { gte: startOfMonth } } });
+            const totalLeads = await prisma.lead.count({ where: withTenant({ createdAt: { gte: startOfMonth } }) });
             const totalRevenue = soldVehicles.reduce((sum, v) => sum + Number(v.price), 0);
             const conversionRate = totalLeads > 0 ? (soldVehicles.length / totalLeads) * 100 : 0;
             const atv = soldVehicles.length > 0 ? totalRevenue / soldVehicles.length : 0;
@@ -500,7 +515,7 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'sales-report': {
             const transactions = await prisma.vehicle.findMany({
-                where: { tenantId, status: 'SOLD', updatedAt: { gte: startOfMonth } },
+                where: withTenant({ status: 'SOLD', updatedAt: { gte: startOfMonth } }),
                 select: { make: true, model: true, year: true, price: true, updatedAt: true },
                 orderBy: { updatedAt: 'desc' }
             });
@@ -538,9 +553,9 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'operational-metrics': {
             const [totalMsgs, aiMsgs, escalated] = await Promise.all([
-                prisma.whatsAppMessage.count({ where: { tenantId, createdAt: { gte: startOfMonth } } }),
-                prisma.whatsAppMessage.count({ where: { tenantId, aiResponse: true, createdAt: { gte: startOfMonth } } }),
-                prisma.whatsAppConversation.count({ where: { tenantId, escalatedTo: { not: null }, startedAt: { gte: startOfMonth } } })
+                prisma.whatsAppMessage.count({ where: withTenant({ createdAt: { gte: startOfMonth } }) }),
+                prisma.whatsAppMessage.count({ where: withTenant({ aiResponse: true, createdAt: { gte: startOfMonth } }) }),
+                prisma.whatsAppConversation.count({ where: withTenant({ escalatedTo: { not: null }, startedAt: { gte: startOfMonth } }) })
             ]);
 
             const efficiency = totalMsgs > 0 ? (aiMsgs / totalMsgs) * 100 : 0;
@@ -576,7 +591,7 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'customer-metrics': {
             const conversations = await prisma.whatsAppConversation.findMany({
-                where: { tenantId, startedAt: { gte: startOfMonth } },
+                where: withTenant({ startedAt: { gte: startOfMonth } }),
                 select: { status: true }
             });
 
@@ -614,11 +629,11 @@ async function getReportData(id: string, tenantId: string) {
 
         case 'whatsapp-ai': {
             const [totalConv, activeConv, escalatedConv, totalMsgs, aiMsgs] = await Promise.all([
-                prisma.whatsAppConversation.count({ where: { tenantId, startedAt: { gte: startOfMonth } } }),
-                prisma.whatsAppConversation.count({ where: { tenantId, status: 'active' } }),
-                prisma.whatsAppConversation.count({ where: { tenantId, escalatedTo: { not: null }, startedAt: { gte: startOfMonth } } }),
-                prisma.whatsAppMessage.count({ where: { tenantId, createdAt: { gte: startOfMonth } } }),
-                prisma.whatsAppMessage.count({ where: { tenantId, aiResponse: true, createdAt: { gte: startOfMonth } } })
+                prisma.whatsAppConversation.count({ where: withTenant({ startedAt: { gte: startOfMonth } }) }),
+                prisma.whatsAppConversation.count({ where: withTenant({ status: 'active' }) }),
+                prisma.whatsAppConversation.count({ where: withTenant({ escalatedTo: { not: null }, startedAt: { gte: startOfMonth } }) }),
+                prisma.whatsAppMessage.count({ where: withTenant({ createdAt: { gte: startOfMonth } }) }),
+                prisma.whatsAppMessage.count({ where: withTenant({ aiResponse: true, createdAt: { gte: startOfMonth } }) })
             ]);
 
             const aiAccuracy = totalConv > 0 ? Math.round(((totalConv - escalatedConv) / totalConv) * 100) : 0;
