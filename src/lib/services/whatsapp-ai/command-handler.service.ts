@@ -89,22 +89,22 @@ export async function processCommand(
   console.log(`[CommandHandler] 📥 Processing command: "${command}" -> normalized: "${cmd}"`);
   console.log(`[CommandHandler] 👤 User role level: ${userRoleLevel}, Tenant: ${tenantId}`);
 
-  // PDF Report Commands (ADMIN+ only) - CHECK FIRST to take precedence over universal
-  const isPDF = isPDFCommand(cmd);
-  console.log(`[CommandHandler] 📄 isPDFCommand: ${isPDF}`);
+  // Report Commands (ADMIN+ only) - CHECK FIRST to take precedence over universal
+  const isReport = isReportCommand(cmd);
+  console.log(`[CommandHandler] 📄 isReportCommand: ${isReport}`);
 
-  if (isPDF) {
+  if (isReport) {
     // RBAC Check
     if (userRoleLevel < ROLE_LEVELS.ADMIN) {
       console.log(`[CommandHandler] ❌ Access denied - user level ${userRoleLevel} < ADMIN ${ROLE_LEVELS.ADMIN}`);
       return {
         success: false,
-        message: 'Maaf, fitur PDF Report hanya untuk Owner, Admin, dan Super Admin.',
+        message: 'Maaf, fitur Laporan & Analitik hanya untuk Owner, Admin, dan Super Admin.',
         followUp: true,
       };
     }
-    console.log(`[CommandHandler] ✅ Routing to PDF handler`);
-    return await handlePDFCommand(cmd, context);
+    console.log(`[CommandHandler] ✅ Routing to Report handler`);
+    return await handleReportCommand(cmd, context);
   }
 
   // Universal Commands (ALL roles) - CHECK SECOND
@@ -146,10 +146,10 @@ function isUniversalCommand(cmd: string): boolean {
 }
 
 /**
- * Check if command is PDF report command
- * Uses exact phrase matching to prevent false positives (e.g., "inventory" shouldn't match "total inventory")
+ * Check if command is Report command
+ * Uses exact phrase matching to prevent false positives
  */
-function isPDFCommand(cmd: string): boolean {
+function isReportCommand(cmd: string): boolean {
   const normalizedCmd = cmd.toLowerCase().trim();
 
   // Single word triggers (exact match)
@@ -159,7 +159,7 @@ function isPDFCommand(cmd: string): boolean {
 
   // Multi-word triggers - use exact phrase matching with word boundaries
   // This prevents "inventory" from matching "total inventory"
-  const pdfPhrases = [
+  const reportPhrases = [
     'sales report',
     'whatsapp ai analytics',
     'whatsapp ai',
@@ -199,7 +199,7 @@ function isPDFCommand(cmd: string): boolean {
   ];
 
   // Check for exact phrase matches (with word boundaries)
-  for (const phrase of pdfPhrases) {
+  for (const phrase of reportPhrases) {
     // Use simple includes check - phrase must appear as-is in command
     // This prevents "inventory" from matching "total inventory"
     if (normalizedCmd.includes(phrase)) {
@@ -276,8 +276,8 @@ async function handleUniversalCommand(
   helpMsg += `   Contoh: Ganti PM-PST-001 Hybrid / Ubah PM-PST-001 AT / Edit PM-PST-001 85000 km\n\n`;
 
   if (isAdmin) {
-    helpMsg += `👮‍♂️ MENU ADMIN & OWNER (PDF REPORTS)\n`;
-    helpMsg += `Terdapat 15+ Laporan Management dalam format PDF.\n`;
+    helpMsg += `👮‍♂️ MENU ADMIN & OWNER (LOG & ANALYTICS)\n`;
+    helpMsg += `Dapatkan ringkasan performa & link dashboard detail.\n`;
     helpMsg += `Ketik: "sales report", "Total Inventory", atau "staff performance"\n\n`;
   }
 
@@ -458,126 +458,252 @@ async function handleContactCommand(
 }
 
 /**
- * Handle PDF report commands (ADMIN+ only)
+ * Handle report commands (ADMIN+ only)
+ * Returns text summary + dashboard link instead of PDF header/file
  */
-export async function handlePDFCommand(
+export async function handleReportCommand(
   cmd: string,
   context: CommandContext
 ): Promise<CommandResult> {
-  // Map command to PDF generator function with multiple keyword aliases
-  const pdfGenerators: Record<string, (ctx: CommandContext) => Promise<CommandResult>> = {
+  // Map command to text generator function
+  const reportGenerators: Record<string, (ctx: CommandContext) => Promise<CommandResult>> = {
     // Sales & Revenue
-    'sales report': generateSalesReportPDF,
-    'whatsapp ai': generateWhatsAppAIPDF,
-    'metrix penjualan': generateSalesMetricsPDF,
-    'metrics penjualan': generateSalesMetricsPDF,
-    'metrix pelanggan': generateCustomerMetricsPDF,
-    'metrics pelanggan': generateCustomerMetricsPDF,
-    'customer metrics': generateCustomerMetricsPDF, // Added alias
-    'customer metric': generateCustomerMetricsPDF,
-    'metrix operational': generateOperationalMetricsPDF,
-    'metrics operational': generateOperationalMetricsPDF,
-    'operational metrics': generateOperationalMetricsPDF,
-    'operational metric': generateOperationalMetricsPDF,
-    'tren penjualan': generateSalesTrendsPDF,
-    'trends penjualan': generateSalesTrendsPDF,
-    'sales trends': generateSalesTrendsPDF, // Added alias
-    'sales trend': generateSalesTrendsPDF,
-    'penjualan trends': generateSalesTrendsPDF,
+    'sales report': generateSalesReportText,
+    'whatsapp ai': generateWhatsAppAIReportText,
+    'metrix penjualan': generateSalesMetricsText,
+    'metrics penjualan': generateSalesMetricsText,
+    'metrix pelanggan': generateCustomerMetricsText,
+    'metrics pelanggan': generateCustomerMetricsText,
+    'customer metrics': generateCustomerMetricsText,
+    'customer metric': generateCustomerMetricsText,
+    'metrix operational': generateOperationalMetricsText,
+    'metrics operational': generateOperationalMetricsText,
+    'operational metrics': generateOperationalMetricsText,
+    'operational metric': generateOperationalMetricsText,
+    'tren penjualan': generateSalesTrendsText,
+    'trends penjualan': generateSalesTrendsText,
+    'sales trends': generateSalesTrendsText,
+    'sales trend': generateSalesTrendsText,
 
     // Staff
-    'staff performance': generateStaffPerformancePDF,
-    'recent sales': generateRecentSalesPDF,
+    'staff performance': generateStaffPerformanceText,
+    'recent sales': generateRecentSalesText,
 
     // Inventory
-    'low stock alert': generateLowStockPDF,
-    'low stock': generateLowStockPDF,
-    'total inventory': generateTotalInventoryPDF, // Added alias
-    'stock report': generateTotalInventoryPDF,
-    'total stok': generateTotalInventoryPDF,
-    'stok total': generateTotalInventoryPDF,
-    'inventory listing': generateVehicleInventoryListingPDF, // New format with images
-    'vehicle listing': generateVehicleInventoryListingPDF, // New format with images
-    'daftar kendaraan': generateVehicleInventoryListingPDF, // New format with images
-    'daftar stok': generateVehicleInventoryListingPDF, // New format with images
-    'inventory list': generateVehicleInventoryListingPDF, // New format with images
-    'list kendaraan': generateVehicleInventoryListingPDF, // New format with images
-    'average price': generateAveragePricePDF,
-    'avg price': generateAveragePricePDF,
-    'rata-rata harga': generateAveragePricePDF,
+    'low stock alert': generateLowStockText,
+    'low stock': generateLowStockText,
+    'total inventory': generateInventoryReportText,
+    'stock report': generateInventoryReportText,
+    'total stok': generateInventoryReportText,
+    'stok total': generateInventoryReportText,
+    'average price': generateAveragePriceText,
+    'avg price': generateAveragePriceText,
+    'rata-rata harga': generateAveragePriceText,
 
-    // Sales & Revenue
-    'total penjualan showroom': generateTotalSalesPDF,
-    'total penjualan': generateTotalSalesPDF, // Added alias
-    'total sales': generateTotalSalesPDF, // Added alias
-    'sales total': generateTotalSalesPDF,
-    'total revenue': generateTotalRevenuePDF,
-    'revenue total': generateTotalRevenuePDF,
-    'sales summary': generateSalesReportPDF,  // Use 1-page WhatsAppCommandPDF instead of CompactExecutivePDF
-    'penjualan': generateSalesReportPDF,      // Use 1-page WhatsAppCommandPDF instead of CompactExecutivePDF
-    'sales': generateSalesReportPDF,          // Use 1-page WhatsAppCommandPDF instead of CompactExecutivePDF
-    'laporan penjualan': generateSalesReportPDF,
-    'laporan penjualan lengkap': generateSalesReportPDF,
-    'laporan lengkap': generateSalesReportPDF,
-    'sales report lengkap': generateSalesReportPDF,
+    // Revenue
+    'total penjualan showroom': generateSalesMetricsText,
+    'total penjualan': generateSalesMetricsText,
+    'total sales': generateSalesMetricsText,
+    'sales total': generateSalesMetricsText,
+    'total revenue': generateSalesMetricsText,
+    'sales summary': generateSalesReportText,
+    'penjualan': generateSalesReportText,
+    'laporan penjualan': generateSalesReportText,
   };
 
   // Find matching generator
-  console.log(`[Command Handler] 🔍 Looking for PDF generator for command: "${cmd}"`);
-  for (const [keyword, generator] of Object.entries(pdfGenerators)) {
+  console.log(`[Command Handler] 🔍 Looking for report generator for command: "${cmd}"`);
+  for (const [keyword, generator] of Object.entries(reportGenerators)) {
     if (cmd.includes(keyword)) {
       console.log(`[Command Handler] ✅ Found match: "${keyword}" → calling generator`);
-      const result = await generator(context);
-
-      // Auto-broadcast all PDF reports to Admins/Owners
-      if (result.success && result.pdfBuffer) {
-        result.broadcastToRoles = ['OWNER', 'ADMIN', 'SUPER_ADMIN'];
-      }
-
-      return result;
+      return await generator(context);
     }
   }
-  console.log(`[Command Handler] ❌ No PDF generator match found for: "${cmd}"`);
+  console.log(`[Command Handler] ❌ No report generator match found for: "${cmd}"`);
 
-  // Generic 'report' or 'pdf' without specific type - send list of available reports
+  // Generic 'report' or 'pdf' without specific type
   if (cmd.includes('report') || cmd.includes('pdf')) {
     return {
       success: true,
-      message: `📊 *PDF Report Management (15+ Tipe)*
+      message: `📊 *Admin Dashboard & Reports*
 
-Silakan pilih report yang diinginkan:
+Silakan pilih info ringkasan yang diinginkan:
 
 📈 *Sales & Revenue:*
-• Sales Report / Laporan Penjualan
-• Total Penjualan & Revenue
-• Tren Penjualan
-• Sales Summary
+• Sales Report
 • Metrik Penjualan
+• Tren Penjualan
 
 📦 *Inventory:*
-• Stock Report / Total Inventory
+• Total Inventory
 • Low Stock Alert
-• Average Price (Rata-rata Harga)
+• Rata-rata Harga
 
-👥 *Staff & Team:*
-• Staff Performance (Performa Staff)
-• Recent Sales (Penjualan Terkini)
-
-🤖 *WhatsApp AI & Engagement:*
+🤖 *System & Staff:*
 • WhatsApp AI Analytics
-• Metrik Operasional
-• Customer Metrics (Metrik Pelanggan)
+• Staff Performance
 
-Ketik nama report untuk mendapatkan PDF. Contoh: "kirim sales report pdf", "total inventory", atau "staff performance"`,
+Ketik nama report (contoh: "sales report" atau "whatsapp ai") untuk mendapatkan ringkasan data real-time + link dashboard.`,
       followUp: true,
     };
   }
 
   return {
     success: false,
-    message: 'Report tidak ditemukan. Ketik "report" atau "pdf" untuk melihat daftar report yang tersedia.',
+    message: 'Report tidak ditemukan. Ketik "report" untuk melihat daftar report yang tersedia.',
     followUp: true,
   };
+}
+
+// ============================================================================
+// TEXT REPORT GENERATORS (Replaces PDF Generators)
+// ============================================================================
+
+async function generateSalesReportText(ctx: CommandContext): Promise<CommandResult> {
+  const data = await fetchSalesData(ctx, 30);
+  const formattedValue = formatCurrency(data.summary.totalSalesValue);
+  const avgPrice = formatCurrency(data.avgPrice);
+
+  const message = `📊 *LAPORAN PENJUALAN (30 Hari)*
+
+💰 *Total Penjualan*: ${data.summary.totalSalesCount} unit
+💵 *Total Revenue*: ${formattedValue}
+🏷️ *Rata-rata Harga*: ${avgPrice}
+
+*Top Brand:*
+${data.byMake.slice(0, 3).map((m: any, i: number) => `${i + 1}. ${m.make}: ${m.count} unit (${formatCurrency(m.value)})`).join('\n')}
+
+🔗 *Lihat Detail & Grafik Lengkap:*
+https://primamobil.id/dashboard/sales/analytics`;
+
+  return { success: true, message, followUp: true };
+}
+
+async function generateInventoryReportText(ctx: CommandContext): Promise<CommandResult> {
+  const data = await fetchInventoryData(ctx);
+  const totalValue = formatCurrency(data.totalValue);
+
+  const message = `📦 *LAPORAN INVENTORY*
+
+Total Stok: ${data.totalStock} unit
+Total Nilai Aset: ${totalValue}
+Rata-rata Umur Stok: ${data.avgDaysInStock} hari
+
+🔗 *Lihat Inventory Lengkap:*
+https://primamobil.id/dashboard/vehicles`;
+
+  return { success: true, message, followUp: true };
+}
+
+async function generateWhatsAppAIReportText(ctx: CommandContext): Promise<CommandResult> {
+  const data = await fetchWhatsAppAIData(ctx, 30);
+  if (!data) return { success: false, message: "Gagal mengambil data AI." };
+
+  const message = `🤖 *WHATSAPP AI ANALYTICS (30 Hari)*
+
+💬 *Total Percakapan*: ${data.overview.totalConversations}
+⚡ *Response Rate AI*: ${data.overview.aiResponseRate}%
+👥 *Handled by Staff*: ${data.overview.escalatedConversations} (${100 - data.overview.aiAccuracy}%)
+
+*Top Topik:*
+${data.intentBreakdown.slice(0, 3).map((i: any) => `• ${i.intent}: ${i.count} (${i.percentage}%)`).join('\n')}
+
+🔗 *Analisis Detail:*
+https://primamobil.id/dashboard/whatsapp-ai/analytics`;
+
+  return { success: true, message, followUp: true };
+}
+
+async function generateStaffPerformanceText(ctx: CommandContext): Promise<CommandResult> {
+  const data = await fetchStaffPerformance(ctx, 30);
+
+  const message = `👥 *STAFF PERFORMANCE (30 Hari)*
+
+Total Sales Staff: ${data.totalStaff}
+
+*Top Performers:*
+${data.topPerformers.slice(0, 3).map((s: any, i: number) => `${i + 1}. ${s.name}: ${s.count} unit (${formatCurrency(s.value)})`).join('\n')}
+
+🔗 *Lihat Detail Kinerja:*
+https://primamobil.id/dashboard/users`; // Assuming users or sales dashboard
+
+  return { success: true, message, followUp: true };
+}
+
+// Reuse existing data fetchers or logic for smaller metrics
+async function generateSalesMetricsText(ctx: CommandContext): Promise<CommandResult> {
+  return generateSalesReportText(ctx); // Reuse summary
+}
+
+async function generateCustomerMetricsText(ctx: CommandContext): Promise<CommandResult> {
+  // Placeholder - could fetch specific customer data if needed
+  const message = `👥 *METRIK PELANGGAN*
+
+Analisis pelanggan tersedia lengkap di dashboard.
+
+🔗 *Lihat di Dashboard:*
+https://primamobil.id/dashboard/leads`;
+  return { success: true, message, followUp: true };
+}
+
+async function generateOperationalMetricsText(ctx: CommandContext): Promise<CommandResult> {
+  const message = `⚙️ *METRIK OPERASIONAL*
+
+Analisis operasional tersedia lengkap di dashboard.
+
+🔗 *Lihat di Dashboard:*
+https://primamobil.id/dashboard/analytics`;
+  return { success: true, message, followUp: true };
+}
+
+async function generateSalesTrendsText(ctx: CommandContext): Promise<CommandResult> {
+  // Trends are best viewed on charts
+  const message = `📈 *TREN PENJUALAN*
+
+Grafik tren dan analisis pertumbuhan tersedia di dashboard.
+
+🔗 *Lihat Grafik:*
+https://primamobil.id/dashboard/sales/analytics`;
+  return { success: true, message, followUp: true };
+}
+
+async function generateRecentSalesText(ctx: CommandContext): Promise<CommandResult> {
+  const data = await fetchSalesData(ctx, 7); // Last 7 days
+  const message = `💰 *PENJUALAN TERKINI (7 Hari)*
+
+Total Unit: ${data.summary.totalSalesCount}
+Revenue: ${formatCurrency(data.summary.totalSalesValue)}
+
+🔗 *Lihat Semua Transaksi:*
+https://primamobil.id/dashboard/sales`;
+  return { success: true, message, followUp: true };
+}
+
+async function generateLowStockText(ctx: CommandContext): Promise<CommandResult> {
+  // Minimal logic for low stock
+  const message = `⚠️ *LOW STOCK ALERT*
+
+Cek daftar unit yang menipis atau perlu restock di dashboard inventory.
+
+🔗 *Lihat Inventory:*
+https://primamobil.id/dashboard/vehicles?status=AVAILABLE`;
+  return { success: true, message, followUp: true };
+}
+
+async function generateAveragePriceText(ctx: CommandContext): Promise<CommandResult> {
+  const data = await fetchInventoryData(ctx);
+  const totalValue = data.totalValue;
+  const count = data.totalStock;
+  const avg = count > 0 ? totalValue / count : 0;
+
+  const message = `🏷️ *RATA-RATA HARGA STOK*
+
+Rata-rata: ${formatCurrency(avg)}
+Total Stok: ${count} unit
+
+🔗 *Lihat Inventory:*
+https://primamobil.id/dashboard/vehicles`;
+  return { success: true, message, followUp: true };
 }
 
 // ============================================================================
