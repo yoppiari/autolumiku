@@ -168,14 +168,6 @@ export default function TenantList({
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedTenants.length === filteredTenants.length && filteredTenants.length > 0}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('name')}
@@ -226,14 +218,6 @@ export default function TenantList({
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTenants.map((tenant) => (
                 <tr key={tenant.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={selectedTenants.includes(tenant.id)}
-                      onChange={(e) => handleSelectTenant(tenant.id, e.target.checked)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <a
                       href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard` : `https://${tenant.subdomain}.autolumiku.com/dashboard`}
