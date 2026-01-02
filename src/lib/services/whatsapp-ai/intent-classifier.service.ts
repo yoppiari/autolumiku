@@ -289,8 +289,10 @@ export class IntentClassifierService {
 
     return {
       ...customerIntent,
-      isStaff: false,
-      isCustomer: true,
+      // CRITICAL FIX: Preserve isStaff status if conversation is flagged as staff
+      // This allows staff to "talk like a customer" (ask questions) without losing staff identity
+      isStaff: isStaff,
+      isCustomer: !isStaff,
     };
   }
 
@@ -598,23 +600,24 @@ export class IntentClassifierService {
 
     // Check staff greeting (halo, hai, hello, etc.)
     // Show welcome menu with options
-    const greetingPatterns = [
-      /^(halo|helo|hai|hello|hi|hey|hallo|hei|haloha|halohaa?)$/i,
-      /^(halo|helo|hai|hello|hi|hey|hallo|hei|haloha)\s*(kak|min|admin|bos|boss)?[.!?]?$/i,
-      /^(selamat\s+(pagi|siang|sore|malam))$/i,
-      /^(pagi|siang|sore|malam)$/i,
-      /^(assalamu.*alaikum|assalamualaikum)/i,
-      /^(met\s+(pagi|siang|sore|malam))/i,
-      /^(yo|yoo|woi|woii|hoi|hoii)$/i,             // informal greetings
+    // Check staff greeting (halo, hai, hello, etc.)
+    // MODIFIED: Only specific help commands trigger staff menu
+    // "bantuan", "help", "menu", "fitur" -> Show menu
+    // Greetings like "halo", "selamat pagi" -> Handle naturally by AI
+    const helpPatterns = [
+      /^(help|bantuan|tolong|panduan)$/i,
+      /^(menu|fitur|perintah|command)$/i,
+      /^(cara\s+pakai|cara\s+kerja)$/i,
+      /^(apa\s+saja\s+fitur|apa\s+bisa\s+bantu)$/i,
     ];
 
-    if (greetingPatterns.some((p) => p.test(message))) {
+    if (helpPatterns.some((p) => p.test(message))) {
       return {
         intent: "staff_greeting",
         confidence: 0.95,
         isStaff: true,
         isCustomer: false,
-        reason: "Staff greeting - show welcome menu",
+        reason: "Staff help/menu command detected",
       };
     }
 

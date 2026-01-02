@@ -987,9 +987,10 @@ export class MessageOrchestratorService {
 
     // Check if message contains command keywords (more flexible matching)
     // Check if message contains command keywords (Universal + Operational)
+    // REMOVED: greetings (halo, hi, etc) to allow AI to handle them naturally for staff
     const isUniversalCommand = [
       'help', 'bantuan', 'panduan', 'cara pakai', 'menu', 'fitur', 'perintah', 'command',
-      'halo', 'halo admin', 'halo owner', 'halo staff', 'hi', 'hello',
+      // 'halo', 'halo admin', 'halo owner', 'halo staff', 'hi', 'hello', // Let AI handle greetings
       'upload', 'tambah', 'input',
       'inventory', 'stok', 'stock',
       'status', 'update', 'ubah', 'edit', 'rubah',
