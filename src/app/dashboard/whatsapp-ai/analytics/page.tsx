@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ROLE_LEVELS } from '@/lib/rbac';
 
 type Department = 'sales' | 'whatsapp' | 'reports';
@@ -84,10 +84,19 @@ interface WhatsAppAnalytics {
 
 export default function AnalyticsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [accessDenied, setAccessDenied] = useState(false);
   const [userRoleLevel, setUserRoleLevel] = useState(ROLE_LEVELS.SALES);
   const [activeDepartment, setActiveDepartment] = useState<Department>('sales');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Handle URL query params for tab switching
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['sales', 'whatsapp', 'reports'].includes(tab)) {
+      setActiveDepartment(tab as Department);
+    }
+  }, [searchParams]);
   const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [whatsappAnalytics, setWhatsappAnalytics] = useState<WhatsAppAnalytics | null>(null);
@@ -1082,12 +1091,12 @@ export default function AnalyticsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰', href: '/dashboard/sales/analytics' },
-                { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊', href: '/dashboard/sales' },
-                { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈', href: '/dashboard/sales/analytics' },
-                { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋', href: '/dashboard/sales' },
-                { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐', href: '/dashboard/sales/analytics' },
-                { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑', href: '/dashboard/sales' },
+                { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰', href: '?tab=sales' },
+                { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊', href: '/dashboard/invoices' },
+                { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈', href: '?tab=sales' },
+                { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋', href: '?tab=sales' },
+                { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐', href: '?tab=sales' },
+                { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑', href: '/dashboard/invoices' },
               ].map(report => (
                 <ReportCard key={report.id} report={report} />
               ))}
@@ -1127,7 +1136,7 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
                 { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking & produktivitas tim sales', icon: '🏆', href: '/dashboard/users' },
-                { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄', href: '/dashboard/sales' },
+                { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄', href: '/dashboard/invoices' },
               ].map(report => (
                 <ReportCard key={report.id} report={report} />
               ))}
@@ -1145,8 +1154,8 @@ export default function AnalyticsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics' },
-                { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics' },
+                { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖', href: '?tab=whatsapp' },
+                { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️', href: '?tab=whatsapp' },
                 { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis ketertarikan & behavior', icon: '👥', href: '/dashboard/leads' },
               ].map(report => (
                 <ReportCard key={report.id} report={report} />
