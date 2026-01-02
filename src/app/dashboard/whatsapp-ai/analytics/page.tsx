@@ -11,15 +11,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ROLE_LEVELS } from '@/lib/rbac';
 
-type Department = 'sales' | 'whatsapp' | 'reports';
+type Department = 'sales' | 'whatsapp';
 
-const intentColors: Record<string, string> = {
-  vehicle: '#3b82f6', // blue
-  price: '#8b5cf6',   // purple
-  greeting: '#22c55e', // green
-  general: '#f59e0b',  // amber
-  escalated: '#ef4444' // red
-};
 
 interface KPIData {
   penjualanShowroom: number;
@@ -93,7 +86,7 @@ function AnalyticsPageInternal() {
   // Handle URL query params for tab switching
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['sales', 'whatsapp', 'reports'].includes(tab)) {
+    if (tab && ['sales', 'whatsapp'].includes(tab)) {
       setActiveDepartment(tab as Department);
     }
   }, [searchParams]);
@@ -311,17 +304,6 @@ function AnalyticsPageInternal() {
             <span className="hidden sm:inline">WhatsApp AI</span>
             <span className="sm:hidden">WhatsApp</span>
           </button>
-          <button
-            onClick={() => setActiveDepartment('reports')}
-            className={`py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${activeDepartment === 'reports'
-              ? 'border-indigo-500 text-indigo-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-          >
-            <span className="text-lg">📁</span>
-            <span className="hidden sm:inline">Analytics & Report</span>
-            <span className="sm:hidden">Reports</span>
-          </button>
         </nav>
       </div>
 
@@ -334,6 +316,7 @@ function AnalyticsPageInternal() {
           </div>
         </div>
       )}
+
 
       {/* Sales Department Report */}
       {!isLoading && activeDepartment === 'sales' && (
@@ -759,6 +742,93 @@ function AnalyticsPageInternal() {
               <span className="text-[9px] md:text-[10px] text-blue-400/80 font-semibold">Prima Mobil v2.0</span>
             </div>
           </div>
+
+
+          {/* Consolidating 'Analytics & Report' here at the bottom of Sales Report */}
+          <div className="pt-8 space-y-8 border-t border-gray-200 mt-8">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Detailed Reports & Analytics</h2>
+
+            {/* Sales & Revenue Reports (6) */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xl">💰</span>
+                <h3 className="text-lg font-bold text-gray-900">Sales & Revenue Reports</h3>
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">6 REPORTS</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰', href: '/dashboard/whatsapp-ai/analytics/reports/one-page-sales' },
+                  { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊', href: '/dashboard/whatsapp-ai/analytics/reports/total-sales' },
+                  { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈', href: '/dashboard/whatsapp-ai/analytics/reports/sales-trends' },
+                  { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋', href: '/dashboard/whatsapp-ai/analytics/reports/sales-summary' },
+                  { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐', href: '/dashboard/whatsapp-ai/analytics/reports/sales-metrics' },
+                  { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑', href: '/dashboard/whatsapp-ai/analytics/reports/sales-report' },
+                ].map(report => (
+                  <ReportCard key={report.id} report={report} />
+                ))}
+              </div>
+            </section>
+
+            <hr className="border-gray-100" />
+
+            {/* Inventory & Stock Reports (4) */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xl">📦</span>
+                <h3 className="text-lg font-bold text-gray-900">Inventory & Stock Reports</h3>
+                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full">4 REPORTS</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Ringkasan stok kendaraan tersedia', icon: '📦', href: '/dashboard/whatsapp-ai/analytics/reports/total-inventory' },
+                  { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan stok kritis & stok lama', icon: '⚠️', href: '/dashboard/whatsapp-ai/analytics/reports/low-stock-alert' },
+                  { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Analisis harga jual vs harga stok', icon: '💵', href: '/dashboard/whatsapp-ai/analytics/reports/average-price' },
+                  { id: 'inventory-listing', name: 'Vehicle Inventory Listing', desc: 'Katalog stok lengkap dengan foto', icon: '🚙', href: '/dashboard/whatsapp-ai/analytics/reports/inventory-listing' },
+                ].map(report => (
+                  <ReportCard key={report.id} report={report} />
+                ))}
+              </div>
+            </section>
+
+            <hr className="border-gray-100" />
+
+            {/* Team & Performance (2) */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xl">🏆</span>
+                <h3 className="text-lg font-bold text-gray-900">Team & Performance</h3>
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full">2 REPORTS</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking & produktivitas tim sales', icon: '🏆', href: '/dashboard/whatsapp-ai/analytics/reports/staff-performance' },
+                  { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄', href: '/dashboard/whatsapp-ai/analytics/reports/recent-sales' },
+                ].map(report => (
+                  <ReportCard key={report.id} report={report} />
+                ))}
+              </div>
+            </section>
+
+            <hr className="border-gray-100" />
+
+            {/* WhatsApp AI & Engagement (3) */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xl">🤖</span>
+                <h3 className="text-lg font-bold text-gray-900">WhatsApp AI & Engagement</h3>
+                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">3 REPORTS</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics/reports/whatsapp-ai' },
+                  { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics/reports/operational-metrics' },
+                  { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis ketertarikan & behavior', icon: '👥', href: '/dashboard/whatsapp-ai/analytics/reports/customer-metrics' },
+                ].map(report => (
+                  <ReportCard key={report.id} report={report} />
+                ))}
+              </div>
+            </section>
+          </div>
         </div>
       )}
 
@@ -951,91 +1021,7 @@ function AnalyticsPageInternal() {
           )}
         </div>
       )}
-      {/* Reports Collection Tab */}
-      {!isLoading && activeDepartment === 'reports' && (
-        <div className="space-y-8 animate-in fade-in duration-500 pb-12">
-          {/* Sales & Revenue Reports (6) */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">💰</span>
-              <h3 className="text-lg font-bold text-gray-900">Sales & Revenue Reports</h3>
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">6 REPORTS</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰', href: '/dashboard/whatsapp-ai/analytics/reports/one-page-sales' },
-                { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊', href: '/dashboard/whatsapp-ai/analytics/reports/total-sales' },
-                { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈', href: '/dashboard/whatsapp-ai/analytics/reports/sales-trends' },
-                { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋', href: '/dashboard/whatsapp-ai/analytics/reports/sales-summary' },
-                { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐', href: '/dashboard/whatsapp-ai/analytics/reports/sales-metrics' },
-                { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑', href: '/dashboard/whatsapp-ai/analytics/reports/sales-report' },
-              ].map(report => (
-                <ReportCard key={report.id} report={report} />
-              ))}
-            </div>
-          </section>
 
-          <hr className="border-gray-100" />
-
-          {/* Inventory & Stock Reports (4) */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">📦</span>
-              <h3 className="text-lg font-bold text-gray-900">Inventory & Stock Reports</h3>
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full">4 REPORTS</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Ringkasan stok kendaraan tersedia', icon: '📦', href: '/dashboard/whatsapp-ai/analytics/reports/total-inventory' },
-                { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan stok kritis & stok lama', icon: '⚠️', href: '/dashboard/whatsapp-ai/analytics/reports/low-stock-alert' },
-                { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Analisis harga jual vs harga stok', icon: '💵', href: '/dashboard/whatsapp-ai/analytics/reports/average-price' },
-                { id: 'inventory-listing', name: 'Vehicle Inventory Listing', desc: 'Katalog stok lengkap dengan foto', icon: '🚙', href: '/dashboard/whatsapp-ai/analytics/reports/inventory-listing' },
-              ].map(report => (
-                <ReportCard key={report.id} report={report} />
-              ))}
-            </div>
-          </section>
-
-          <hr className="border-gray-100" />
-
-          {/* Team & Performance (2) */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">🏆</span>
-              <h3 className="text-lg font-bold text-gray-900">Team & Performance</h3>
-              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full">2 REPORTS</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking & produktivitas tim sales', icon: '🏆', href: '/dashboard/whatsapp-ai/analytics/reports/staff-performance' },
-                { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄', href: '/dashboard/whatsapp-ai/analytics/reports/recent-sales' },
-              ].map(report => (
-                <ReportCard key={report.id} report={report} />
-              ))}
-            </div>
-          </section>
-
-          <hr className="border-gray-100" />
-
-          {/* WhatsApp AI & Engagement (3) */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">🤖</span>
-              <h3 className="text-lg font-bold text-gray-900">WhatsApp AI & Engagement</h3>
-              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">3 REPORTS</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics/reports/whatsapp-ai' },
-                { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics/reports/operational-metrics' },
-                { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis ketertarikan & behavior', icon: '👥', href: '/dashboard/whatsapp-ai/analytics/reports/customer-metrics' },
-              ].map(report => (
-                <ReportCard key={report.id} report={report} />
-              ))}
-            </div>
-          </section>
-        </div>
-      )}
     </div>
   );
 }
