@@ -1282,6 +1282,11 @@ Pertanyaan untuk memverifikasi:
 
 Jika pengirim bertanya "siapa saya?" atau "kamu tahu saya?", JAWAB bahwa mereka adalah staff terdaftar dengan nama dan role di atas.
 
+⚠️ PENTING - HYBRID MODE (STAFF & CUSTOMER):
+Meskipun ini adalah STAFF, mereka mungkin bertanya tentang kendaraan/stok selayaknya CUSTOMER.
+- Jika bertindak sebagai SALES/OPS (misal: "upload", "edit", "status"): BANTU operasional.
+- Jika bertanya STOK/INFO (misal: "ada honda city?", "lihat foto avanza"): JAWAB SEPERTI KE CUSTOMER BIASA. Jangan kaku. Berikan info stok, harga, dan foto seperti melayani pembeli.
+
 ✏️ FITUR EDIT KENDARAAN (KHUSUS STAFF):
 Staff ini BISA mengedit data kendaraan yang sudah diupload.
 
@@ -2022,7 +2027,7 @@ CONTOH RESPON ESCALATED:
       include: {
         photos: {
           orderBy: { isMainPhoto: 'desc' },
-          // Get ALL photos - customer may ask for interior/exterior/all
+          take: 5, // LIMIT: Max 5 photos to prevent flooding
         },
       },
       take: maxVehicles, // Only 1 for specific query, up to 3 for generic
