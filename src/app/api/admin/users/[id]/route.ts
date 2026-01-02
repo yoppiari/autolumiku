@@ -96,13 +96,35 @@ export async function PATCH(
             if (email) {
                 const emailTaken = await prisma.user.findUnique({
                     where: { email },
+                    include: { tenant: true },
                 });
 
                 if (emailTaken && emailTaken.id !== id) {
-                    return NextResponse.json(
-                        { success: false, error: 'Email already in use' },
-                        { status: 400 }
-                    );
+                    // SMART RECLAIM: If the owner of this email is in a "DUMMY" or PLATFORM tenant, 
+                    // auto-delete them so this user can take the email.
+                    const dummyTenants = [
+                        "Tenant 1 Demo",
+                        "Showroom Jakarta Premium",
+                        "Showroom Jakarta",
+                        "Dealer Mobil",
+                        "AutoMobil",
+                        "AutoLumiku Platform"
+                    ];
+
+                    const isDummyUser = !emailTaken.tenantId || (emailTaken.tenant && dummyTenants.includes(emailTaken.tenant.name));
+
+                    if (isDummyUser) {
+                        console.log(`♻️ Smart Reclaim: Deleting dummy/platform user ${email} to allow update for user ${id}`);
+                        await prisma.user.delete({ where: { id: emailTaken.id } });
+                    } else {
+                        return NextResponse.json(
+                            {
+                                success: false,
+                                error: `Email sudah terdaftar di tenant lain: ${emailTaken.tenant?.name || 'Platform'}`
+                            },
+                            { status: 400 }
+                        );
+                    }
                 }
             }
 

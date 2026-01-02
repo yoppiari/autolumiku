@@ -1091,12 +1091,12 @@ function AnalyticsPageInternal() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰', href: '?tab=sales' },
-                { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊', href: '/dashboard/invoices' },
-                { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈', href: '?tab=sales' },
-                { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋', href: '?tab=sales' },
-                { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐', href: '?tab=sales' },
-                { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑', href: '/dashboard/invoices' },
+                { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰', href: '/dashboard/whatsapp-ai/analytics/reports/one-page-sales' },
+                { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊', href: '/dashboard/whatsapp-ai/analytics/reports/total-sales' },
+                { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈', href: '/dashboard/whatsapp-ai/analytics/reports/sales-trends' },
+                { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋', href: '/dashboard/whatsapp-ai/analytics/reports/sales-summary' },
+                { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐', href: '/dashboard/whatsapp-ai/analytics/reports/sales-metrics' },
+                { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑', href: '/dashboard/whatsapp-ai/analytics/reports/sales-report' },
               ].map(report => (
                 <ReportCard key={report.id} report={report} />
               ))}
@@ -1114,10 +1114,10 @@ function AnalyticsPageInternal() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Ringkasan stok kendaraan tersedia', icon: '📦', href: '/dashboard/vehicles' },
-                { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan stok kritis & stok lama', icon: '⚠️', href: '/dashboard/vehicles?status=AVAILABLE' },
-                { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Analisis harga jual vs harga stok', icon: '💵', href: '/dashboard/vehicles' },
-                { id: 'inventory-listing', name: 'Vehicle Inventory Listing', desc: 'Katalog stok lengkap dengan foto', icon: '🚙', href: '/dashboard/vehicles' },
+                { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Ringkasan stok kendaraan tersedia', icon: '📦', href: '/dashboard/whatsapp-ai/analytics/reports/total-inventory' },
+                { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan stok kritis & stok lama', icon: '⚠️', href: '/dashboard/whatsapp-ai/analytics/reports/low-stock-alert' },
+                { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Analisis harga jual vs harga stok', icon: '💵', href: '/dashboard/whatsapp-ai/analytics/reports/average-price' },
+                { id: 'inventory-listing', name: 'Vehicle Inventory Listing', desc: 'Katalog stok lengkap dengan foto', icon: '🚙', href: '/dashboard/whatsapp-ai/analytics/reports/inventory-listing' },
               ].map(report => (
                 <ReportCard key={report.id} report={report} />
               ))}
@@ -1135,8 +1135,8 @@ function AnalyticsPageInternal() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking & produktivitas tim sales', icon: '🏆', href: '/dashboard/users' },
-                { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄', href: '/dashboard/invoices' },
+                { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking & produktivitas tim sales', icon: '🏆', href: '/dashboard/whatsapp-ai/analytics/reports/staff-performance' },
+                { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄', href: '/dashboard/whatsapp-ai/analytics/reports/recent-sales' },
               ].map(report => (
                 <ReportCard key={report.id} report={report} />
               ))}
@@ -1154,9 +1154,9 @@ function AnalyticsPageInternal() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖', href: '?tab=whatsapp' },
-                { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️', href: '?tab=whatsapp' },
-                { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis ketertarikan & behavior', icon: '👥', href: '/dashboard/leads' },
+                { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics/reports/whatsapp-ai' },
+                { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics/reports/operational-metrics' },
+                { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis ketertarikan & behavior', icon: '👥', href: '/dashboard/whatsapp-ai/analytics/reports/customer-metrics' },
               ].map(report => (
                 <ReportCard key={report.id} report={report} />
               ))}
