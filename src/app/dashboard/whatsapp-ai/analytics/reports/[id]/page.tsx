@@ -32,6 +32,8 @@ export default function ReportDetailPage() {
             try {
                 let url = `/api/v1/analytics/reports/${reportId}`;
                 const storedUser = localStorage.getItem('user');
+                const token = localStorage.getItem('token');
+
                 if (storedUser) {
                     const user = JSON.parse(storedUser);
                     if (user.tenantId) {
@@ -39,7 +41,15 @@ export default function ReportDetailPage() {
                     }
                 }
 
-                const response = await fetch(url);
+                const headers: HeadersInit = {
+                    'Content-Type': 'application/json',
+                };
+
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch(url, { headers });
                 if (response.ok) {
                     const result = await response.json();
                     if (result.success) {
