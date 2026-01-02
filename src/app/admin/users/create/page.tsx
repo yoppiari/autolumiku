@@ -257,7 +257,8 @@ export default function CreateUserPage() {
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Pilih Tenant (Opsional)</option>
+                <option value="">Platform Admin / Pilih Tenant...</option>
+                <option value="">-- Platform Admin (No Tenant) --</option>
                 {tenants.map(tenant => (
                   <option key={tenant.id} value={tenant.id}>
                     {tenant.name}

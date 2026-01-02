@@ -115,11 +115,15 @@ export async function POST(request: NextRequest) {
       } = body;
 
       // Validate required fields
-      if (!email || !firstName || !password || !role || !tenantId) {
+      // Allow tenantId to be null/empty ONLY if role is super_admin or admin (Platform Admin)
+      const isPlatformRole = role === 'super_admin' || role === 'admin';
+      if (!email || !firstName || !password || !role || (!tenantId && !isPlatformRole)) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Email, nama, password, role, dan tenant wajib diisi',
+            error: isPlatformRole
+              ? 'Email, nama, password, dan role wajib diisi'
+              : 'Email, nama, password, role, dan tenant wajib diisi',
           },
           { status: 400 }
         );
@@ -246,7 +250,7 @@ export async function POST(request: NextRequest) {
           lastName: lastName || '',
           passwordHash: await bcrypt.hash(password, 10),
           role,
-          tenantId,
+          tenantId: tenantId || null,
           phone: phone || '',
           emailVerified: emailVerified !== undefined ? emailVerified : false,
         },
