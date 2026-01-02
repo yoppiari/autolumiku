@@ -72,8 +72,8 @@ async function getReportData(id: string, tenantId?: string) {
                 select: { price: true, status: true, condition: true }
             });
 
-            const totalRevenue = sold.reduce((sum, v) => sum + Number(v.price), 0);
             const unitsSold = sold.length;
+            const totalRevenue = sold.reduce((sum, v) => sum + Number(v.price), 0);
             const avgPrice = unitsSold > 0 ? totalRevenue / unitsSold : 0;
 
             const conditionCounts = sold.reduce((acc: any, v) => {
@@ -103,11 +103,11 @@ async function getReportData(id: string, tenantId?: string) {
                     { label: 'Month', value: now.toLocaleString('id-ID', { month: 'long' }) }
                 ],
                 chartType: 'donut',
-                chartData: Object.entries(conditionCounts).map(([label, count]) => ({
+                chartData: unitsSold > 0 ? Object.entries(conditionCounts).map(([label, count]) => ({
                     label,
                     value: Math.round(((count as number) / unitsSold) * 100) || 0,
                     color: label === 'excellent' ? '#4f46e5' : label === 'good' ? '#10b981' : '#f59e0b'
-                }))
+                })) : [{ label: 'No Sales Data', value: 0, color: '#e5e7eb' }]
             };
         }
 
@@ -445,6 +445,7 @@ async function getReportData(id: string, tenantId?: string) {
             });
 
             const stock = await prisma.vehicle.count({ where: withTenant({ status: 'AVAILABLE' }) });
+            const total = sold._count + stock;
 
             return {
                 id,
@@ -467,10 +468,10 @@ async function getReportData(id: string, tenantId?: string) {
                     { label: 'Health Score', value: 'OPTIMAL' }
                 ],
                 chartType: 'donut',
-                chartData: [
-                    { label: 'Sold', value: sold._count > 0 ? Math.round((sold._count / (sold._count + stock)) * 100) : 0, color: '#4f46e5' },
-                    { label: 'Stock', value: stock > 0 ? Math.round((stock / (sold._count + stock)) * 100) : 0, color: '#e5e7eb' }
-                ]
+                chartData: total > 0 ? [
+                    { label: 'Sold', value: Math.round((sold._count / total) * 100), color: '#4f46e5' },
+                    { label: 'Stock', value: Math.round((stock / total) * 100), color: '#e5e7eb' }
+                ] : [{ label: 'No Data', value: 0, color: '#e5e7eb' }]
             };
         }
 
@@ -543,11 +544,11 @@ async function getReportData(id: string, tenantId?: string) {
                     { label: 'Status', value: 'FINALIZED' }
                 ],
                 chartType: 'bar',
-                chartData: transactions.slice(0, 5).map((t, i) => ({
+                chartData: totalValue > 0 ? transactions.slice(0, 5).map((t, i) => ({
                     label: `${t.make} ${t.model}`,
                     value: Math.round((Number(t.price) / totalValue) * 100) || 0,
                     color: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][i] || '#6b7280'
-                }))
+                })) : [{ label: 'No Sales', value: 0, color: '#e5e7eb' }]
             };
         }
 

@@ -152,8 +152,13 @@ export default function ReportDetailPage() {
                                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f3f4f6" strokeWidth="4" />
                                     {(() => {
                                         let accumulatedPercent = 0;
+                                        const hasData = report.chartData.some(d => d.value > 0);
+
+                                        if (!hasData) return null;
+
                                         return report.chartData.map((segment, idx) => {
-                                            const length = (segment.value / 100) * 100;
+                                            const val = Number(segment.value) || 0;
+                                            const length = (val / 100) * 100;
                                             const dashArray = `${length} ${100 - length}`;
                                             const offset = 100 - accumulatedPercent;
                                             accumulatedPercent += length;
@@ -174,8 +179,12 @@ export default function ReportDetailPage() {
                                     })()}
                                 </svg>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-3xl font-black text-gray-900">100%</span>
-                                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Total Share</span>
+                                    <span className="text-3xl font-black text-gray-900">
+                                        {report.chartData.some(d => d.value > 0) ? '100%' : '0%'}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">
+                                        {report.chartType === 'donut' || report.chartType === 'pie' ? 'Total Share' : 'Distribution'}
+                                    </span>
                                 </div>
                             </div>
 
