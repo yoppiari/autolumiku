@@ -306,6 +306,13 @@ function AnalyticsPageInternal() {
                     </div>
                     <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-blue-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Penjualan Showroom</span>
+                    </div>
+                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.penjualanShowroom || 0}%</span>
+                  </div>
                 </div>
                 <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
                   <p className="text-[7px] md:text-[8px] leading-snug text-blue-500">
@@ -346,6 +353,13 @@ function AnalyticsPageInternal() {
                       <span className="text-[10px] md:text-xs text-gray-700 font-medium">Customer Retention</span>
                     </div>
                     <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.customerRetention || 0}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-amber-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">NPS (Satisfaction)</span>
+                    </div>
+                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.nps || 0}%</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 md:gap-2">
@@ -394,6 +408,13 @@ function AnalyticsPageInternal() {
                       <span className="text-[10px] md:text-xs text-gray-700 font-medium">Sales per Employee</span>
                     </div>
                     <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.salesPerEmployee || 0}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-violet-500"></span>
+                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Overall Efficiency</span>
+                    </div>
+                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.efficiency || 0}%</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 md:gap-2">
