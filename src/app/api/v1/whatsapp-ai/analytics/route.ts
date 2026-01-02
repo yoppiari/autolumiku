@@ -32,10 +32,8 @@ async function calculateAvgResponseTime(tenantId: string, startDate: Date): Prom
       include: {
         messages: {
           orderBy: { createdAt: "asc" },
-          take: 10, // Limit messages per conversation for performance
         },
       },
-      take: 100, // Sample 100 conversations for performance
     });
 
     const responseTimes: number[] = [];
@@ -260,7 +258,7 @@ export async function GET(request: NextRequest) {
         percentage: totalIntentMessages > 0 ? Math.round((item._count / totalIntentMessages) * 100) : 0,
       }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5); // Top 5 intents
+      .slice(0, 10); // Top 10 intents
 
     // Get registered staff phone numbers from StaffWhatsAppAuth
     const registeredStaff = await prisma.staffWhatsAppAuth.findMany({

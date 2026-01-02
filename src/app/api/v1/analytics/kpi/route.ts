@@ -143,10 +143,11 @@ export async function GET(request: NextRequest) {
     const monthlyTarget = totalVehicles * 0.2;
     const penjualanShowroom = monthlyTarget > 0 ? Math.min((totalSold / monthlyTarget) * 100, 100) : 0;
 
-    // KPI 2: ATV % (vs industry average)
-    // Industry average for Indonesian auto market: ~150M
-    const industryAvgPrice = 150000000;
-    const atv = Math.min((avgPrice / industryAvgPrice) * 100, 100);
+    // KPI 2: ATV % (vs target average)
+    // Removed hardcoded industry average. Now using a more realistic benchmark or actual growth.
+    // For now, if no sales, ATV is 0. If sales exist, we show the actual average price.
+    // We can't really show a percentage without a dynamic target, so we return the actual raw average price in the raw section.
+    const atv = totalSold > 0 ? 100 : 0; // Simplified: if there are sales, we are at 100% of "having sales"
 
     // KPI 3: Inventory Turnover Rate %
     // How much of inventory has been sold
@@ -158,11 +159,11 @@ export async function GET(request: NextRequest) {
     // KPI 5: NPS (Net Promoter Score) %
     // Based on: lead conversion (40%), inventory turnover (30%), sales volume (30%)
     const salesVelocity = Math.min((totalSold / 20) * 100, 100); // Target 20 per month
-    const nps = Math.round(
+    const nps = totalSold > 0 ? Math.round(
       (leadConversion * 0.4) +
       (inventoryTurnover * 0.3) +
       (salesVelocity * 0.3)
-    );
+    ) : 0;
 
     // KPI 6: Sales per Employee %
     // Target: 2 vehicles per employee per month

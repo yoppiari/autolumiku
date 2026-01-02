@@ -48,6 +48,10 @@ export class ReportDataService {
             'customer-metrics',
         ].includes(reportType) || needsAllData;
 
+        // Variables for KPI calculation
+        let inventoryTurnover = 0;
+        let salesPerEmployee = 0;
+
         // Fetch sales data
         if (needsSalesData) {
             const soldVehicles = await prisma.vehicle.findMany({
@@ -169,6 +173,13 @@ export class ReportDataService {
                     .filter((v) => v.status !== 'ok')
                     .sort((a, b) => b.daysInStock - a.daysInStock);
             }
+
+            // Calculation for KPI
+            const totalSalesCount = data.totalSales || 0;
+            const totalInventory = data.totalInventory || 0;
+            inventoryTurnover = (totalSalesCount + totalInventory) > 0
+                ? (totalSalesCount / (totalSalesCount + totalInventory)) * 100
+                : 0;
         }
 
         // Fetch staff performance
@@ -231,6 +242,12 @@ export class ReportDataService {
                     };
                 })
                 .sort((a, b) => b.sales - a.sales);
+
+            // Calculation for KPI
+            const totalSalesCount = data.totalSales || 0;
+            const employeeCount = staff.length || 1;
+            const targetPerMonth = 5;
+            salesPerEmployee = Math.min((totalSalesCount / (employeeCount * targetPerMonth)) * 100, 100);
         }
 
         // Fetch WhatsApp analytics
@@ -253,7 +270,6 @@ export class ReportDataService {
                             orderBy: { createdAt: 'asc' },
                         },
                     },
-                    take: 500,
                 });
 
                 const totalConversations = conversations.length;
@@ -297,7 +313,7 @@ export class ReportDataService {
 
                 // Intent breakdown
                 const intents = { vehicle: 0, price: 0, greeting: 0, general: 0 };
-                conversations.slice(0, 100).forEach((c) => {
+                conversations.forEach((c) => {
                     const firstMessage = c.messages.find((m) => m.direction === 'inbound');
                     if (firstMessage) {
                         const content = firstMessage.content.toLowerCase();
@@ -366,36 +382,14 @@ export class ReportDataService {
         ].includes(reportType) || needsAllData;
 
         if (needsKPIs) {
-            const totalSalesValue = data.totalRevenue || 0;
-            const totalSalesCount = data.totalSales || 0;
-            const totalVehicles = data.totalInventory || 0;
-            const employeeCount = data.staffPerformance?.length || 1;
-
-            // Calculate real-ish metrics
-            const inventoryTurnover = totalVehicles > 0 ? (totalSalesCount / (totalSalesCount + totalVehicles)) * 100 : 0;
-            const avgPrice = totalSalesCount > 0 ? totalSalesValue / totalSalesCount : 0;
-
-            // Industry average for current market (approx 180jt-250jt)
-            const industryAvgPrice = 200000000;
-            const atv = Math.min((avgPrice / industryAvgPrice) * 100, 100);
-
-            // Sales per employee (target 5 unit/bulan)
-            const targetPerMonth = 5;
-            const salesPerEmployee = Math.min((totalSalesCount / (employeeCount * targetPerMonth)) * 100, 100);
-
-            // WhatsApp Engagement as proxy for Retention/NPS
-            const chatEngaged = data.whatsapp?.totalConversations || 0;
-            const retentionProxy = chatEngaged > 0 ? Math.min(80 + (chatEngaged / 10), 95) : 75;
-            const npsProxy = chatEngaged > 50 ? 85 : 80;
-
-            const efficiency = (inventoryTurnover + atv + salesPerEmployee) / 3;
+            const efficiency = (inventoryTurnover + salesPerEmployee) / 2;
 
             data.kpis = {
                 penjualanShowroom: Math.round(inventoryTurnover),
-                atv: Math.round(atv),
+                atv: (data.totalSales || 0) > 0 ? 100 : 0,
                 inventoryTurnover: Math.round(inventoryTurnover),
-                customerRetention: Math.round(retentionProxy),
-                nps: npsProxy,
+                customerRetention: 0,
+                nps: 0,
                 salesPerEmployee: Math.round(salesPerEmployee),
                 efficiency: Math.round(efficiency),
             };
