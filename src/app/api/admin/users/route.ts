@@ -109,7 +109,14 @@ export async function POST(request: NextRequest) {
 
       if (existingUser) {
         // SELF-HEALING: If the existing user belongs to a dummy tenant, DELETE it and proceed.
-        const dummyTenants = ["Tenant 1 Demo", "Showroom Jakarta Premium", "AutoLumiku Platform"];
+        const dummyTenants = [
+          "Tenant 1 Demo",
+          "Showroom Jakarta Premium",
+          "Showroom Jakarta", // Added variant
+          "Dealer Mobil",     // Added variant
+          "AutoMobil",        // Added variant
+          "AutoLumiku Platform"
+        ];
         const isDummyUser = existingUser.tenant && dummyTenants.includes(existingUser.tenant.name);
 
         if (isDummyUser) {

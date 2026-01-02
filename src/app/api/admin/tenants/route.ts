@@ -29,6 +29,9 @@ export async function GET(request: NextRequest) {
             notIn: [
               "Tenant 1 Demo",
               "Showroom Jakarta Premium",
+              "Showroom Jakarta",
+              "Dealer Mobil",
+              "AutoMobil",
               "AutoLumiku Platform"
             ]
           }
