@@ -10,6 +10,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ROLE_LEVELS } from '@/lib/rbac';
+import { api } from '@/lib/api-client';
 
 type Department = 'sales' | 'whatsapp';
 
@@ -102,14 +103,14 @@ function AnalyticsPageInternal() {
       loadAnalytics();
       loadInsights(user.tenantId);
     }
-  }, [router, timeRange]);
+  }, [router, timeRange, activeDepartment]);
 
   const loadInsights = async (tid: string) => {
     try {
-      const res = await fetch(`/api/v1/reports/management-insights?period=monthly&tenantId=${tid}`);
-      const data = await res.json();
-      if (data.managementInsights) {
-        setInsights(data.managementInsights.slice(0, 3));
+      // Use format=json to get the data instead of PDF
+      const result = await api.get(`/api/v1/reports/management-insights?period=mtd&format=json&tenantId=${tid}`);
+      if (result.success && result.data?.managementInsights) {
+        setInsights(result.data.managementInsights.slice(0, 3));
       }
     } catch (e) {
       console.error('Failed to load insights:', e);
@@ -119,31 +120,23 @@ function AnalyticsPageInternal() {
   const loadAnalytics = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
       const storedUser = localStorage.getItem('user');
       const parsedUser = storedUser ? JSON.parse(storedUser) : null;
 
-      const salesRes = await fetch('/api/v1/analytics/sales', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (salesRes.ok) {
-        const salesData = await salesRes.json();
-        setSalesStats(salesData.data);
+      const salesRes = await api.get('/api/v1/analytics/sales');
+      if (salesRes.success) {
+        setSalesStats(salesRes.data);
       }
 
-      const kpiRes = await fetch('/api/v1/analytics/kpi', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (kpiRes.ok) {
-        const kpiResult = await kpiRes.json();
-        setKpiData(kpiResult.data);
+      const kpiRes = await api.get('/api/v1/analytics/kpi');
+      if (kpiRes.success) {
+        setKpiData(kpiRes.data);
       }
 
       if (parsedUser?.tenantId) {
-        const waRes = await fetch(`/api/v1/whatsapp-ai/analytics?tenantId=${parsedUser.tenantId}&range=${timeRange}`);
-        if (waRes.ok) {
-          const waData = await waRes.json();
-          if (waData.success) setWhatsappAnalytics(waData.data);
+        const waResult = await api.get(`/api/v1/whatsapp-ai/analytics?tenantId=${parsedUser.tenantId}&range=${timeRange}`);
+        if (waResult.success) {
+          setWhatsappAnalytics(waResult.data);
         }
       }
     } finally {
@@ -159,20 +152,11 @@ function AnalyticsPageInternal() {
     }).format(amount);
   };
 
-  const intentColors: Record<string, string> = {
-    greeting: '#22c55e',
-    vehicle: '#3b82f6',
-    price: '#a855f7',
-    general: '#f59e0b',
-    closing: '#ef4444',
-    unknown: '#6b7280',
-  };
-
   return (
     <div className="p-4 md:p-6 pb-20">
       {/* Header */}
       <div className="mb-6">
-        <Link href="/dashboard/whatsapp-ai" className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm mb-4">
+        <Link href="/dashboard/whatsapp-ai" className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm mb-4 font-bold">
           ← Back
         </Link>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -304,7 +288,7 @@ function AnalyticsPageInternal() {
                   </div>
                   <div className="h-60 flex items-end gap-3 px-2">
                     {salesStats?.monthlySales?.map((m, i) => {
-                      const max = Math.max(...salesStats.monthlySales.map(x => x.count), 1);
+                      const max = Math.max(...(salesStats.monthlySales.map(x => x.count) || [1]), 1);
                       const h = (m.count / max) * 100;
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
@@ -373,7 +357,7 @@ function AnalyticsPageInternal() {
                       { l: 'Accuracy', v: `${whatsappAnalytics.performance.aiAccuracy}%`, c: 'purple' }
                     ].map((m, i) => (
                       <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
-                        <div className={`absolute top-0 left-0 w-1 h-full bg-${m.c}-500/50`}></div>
+                        <div className={`absolute top-0 left-0 w-1 h-full bg-blue-500/50`}></div>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{m.l}</p>
                         <p className="text-3xl font-black text-gray-900">{m.v}</p>
                       </div>

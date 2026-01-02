@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ROLE_LEVELS } from '@/lib/rbac';
+import { api } from '@/lib/api-client';
 
 interface ReportDetailData {
     id: string;
@@ -30,12 +31,9 @@ export default function ReportDetailPage() {
         const fetchReportData = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`/api/v1/analytics/reports/${reportId}`);
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success) {
-                        setReport(result.data);
-                    }
+                const result = await api.get(`/api/v1/analytics/reports/${reportId}`);
+                if (result.success) {
+                    setReport(result.data);
                 }
             } catch (error) {
                 console.error('Failed to fetch report data:', error);
@@ -62,10 +60,12 @@ export default function ReportDetailPage() {
 
     if (!report) {
         return (
-            <div className="p-6 text-center">
-                <h2 className="text-xl font-bold">Report not found</h2>
-                <Link href="/dashboard/whatsapp-ai/analytics?tab=reports" className="text-blue-600 mt-4 inline-block">
-                    Return to Dashboard
+            <div className="p-12 text-center max-w-md mx-auto">
+                <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6">🔍</div>
+                <h2 className="text-2xl font-black text-gray-900 mb-2">Report Not Found</h2>
+                <p className="text-gray-500 mb-8 font-medium">The specific intelligence module you requested is currently unavailable or doesn't exist.</p>
+                <Link href="/dashboard/whatsapp-ai/analytics" className="w-full py-3 px-6 rounded-2xl bg-gray-900 text-white font-black uppercase tracking-widest hover:bg-blue-600 transition-all block">
+                    ← Back to Dashboard
                 </Link>
             </div>
         );
@@ -75,7 +75,7 @@ export default function ReportDetailPage() {
         <div className="p-4 md:p-8 max-w-6xl mx-auto">
             {/* Breadcrumbs */}
             <nav className="flex mb-6 text-sm text-gray-500 gap-2">
-                <Link href="/dashboard/whatsapp-ai/analytics?tab=reports" className="hover:text-indigo-600">Analytics</Link>
+                <Link href="/dashboard/whatsapp-ai/analytics" className="hover:text-indigo-600">Analytics</Link>
                 <span>/</span>
                 <span className="text-gray-900 font-medium">Report Detail</span>
             </nav>
