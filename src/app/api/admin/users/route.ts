@@ -108,13 +108,42 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingUser) {
-        // SELF-HEALING: If the existing user belongs to a dummy tenant, DELETE it and proceed.
+        // SCENARIO 1: User exists in the SAME user-selected tenant -> UPDATE (Upsert)
+        // Treat checking for "Showroom Jakarta" specifically if needed, but tenantId match is safer
+        if (existingUser.tenantId === tenantId) {
+          console.log(`♻️ User ${email} exists in same tenant. Updating...`);
+          const updatedUser = await prisma.user.update({
+            where: { id: existingUser.id },
+            data: {
+              firstName,
+              lastName: lastName || '',
+              role,
+              emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
+              // Update password only if provided and different? 
+              // For admin create, we usually overwrite password if provided.
+              passwordHash: await bcrypt.hash(password, 10),
+            },
+            include: {
+              tenant: {
+                select: { id: true, name: true, slug: true }
+              }
+            }
+          });
+
+          return NextResponse.json({
+            success: true,
+            message: 'User berhasil diperbarui (Upsert)',
+            data: updatedUser,
+          });
+        }
+
+        // SCENARIO 2: User exists in a DUMMY tenant -> DELETE & RECREATE
         const dummyTenants = [
           "Tenant 1 Demo",
           "Showroom Jakarta Premium",
-          "Showroom Jakarta", // Added variant
-          "Dealer Mobil",     // Added variant
-          "AutoMobil",        // Added variant
+          "Showroom Jakarta",
+          "Dealer Mobil",
+          "AutoMobil",
           "AutoLumiku Platform"
         ];
         const isDummyUser = existingUser.tenant && dummyTenants.includes(existingUser.tenant.name);
@@ -122,12 +151,13 @@ export async function POST(request: NextRequest) {
         if (isDummyUser) {
           console.log(`♻️ Auto-cleaning dummy user ${email} from ${existingUser.tenant?.name}`);
           await prisma.user.delete({ where: { id: existingUser.id } });
-          // Proceed to create (conflict resolved)
+          // Fall through to create new user below
         } else {
+          // SCENARIO 3: User exists in a DIFFERENT, REAL tenant -> CONFLICT
           return NextResponse.json(
             {
               success: false,
-              error: 'Email sudah terdaftar',
+              error: `Email sudah terdaftar di tenant lain: ${existingUser.tenant?.name}`,
             },
             { status: 409 }
           );
@@ -149,7 +179,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Create user
+      // Create new user (if not upserted)
       const user = await prisma.user.create({
         data: {
           email,
