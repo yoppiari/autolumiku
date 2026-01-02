@@ -46,7 +46,16 @@ export async function GET(request: NextRequest) {
       const tenants = await prisma.tenant.findMany({
         where: {
           status: 'active',
-          // Exclude internal/placeholder tenants if needed (can add slug filter if there's a convention)
+          name: {
+            notIn: [
+              "Tenant 1 Demo",
+              "Showroom Jakarta Premium",
+              "Showroom Jakarta",
+              "Dealer Mobil",
+              "AutoMobil",
+              "AutoLumiku Platform"
+            ]
+          }
         },
         include: {
           _count: {

@@ -51,9 +51,32 @@ export async function GET(request: NextRequest) {
         },
       });
 
+      // Fetch WhatsApp connection status for these users
+      const staffAuths = await prisma.staffWhatsAppAuth.findMany({
+        where: {
+          userId: { in: users.map(u => u.id) }
+        },
+        select: {
+          userId: true,
+          isActive: true,
+          phoneNumber: true
+        }
+      });
+
+      // Merge status into user objects
+      const usersWithStatus = users.map(user => {
+        const auth = staffAuths.find(a => a.userId === user.id);
+        return {
+          ...user,
+          isWhatsAppActive: auth ? auth.isActive : false,
+          // If the user object doesn't have a phone but auth does, we can use it
+          phone: user.phone || auth?.phoneNumber || null
+        };
+      });
+
       return NextResponse.json({
         success: true,
-        data: users,
+        data: usersWithStatus,
         total: users.length,
       });
 
