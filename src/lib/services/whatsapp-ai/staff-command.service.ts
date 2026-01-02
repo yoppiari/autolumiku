@@ -487,7 +487,7 @@ export class StaffCommandService {
     for (const [key, value] of Object.entries(reportMap)) {
       if (msg.includes(key)) {
         return {
-          command: "get_report",
+          command: "staff_get_report",
           params: { type: value },
           isValid: true,
         };
