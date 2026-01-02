@@ -15,6 +15,7 @@ import { WhatsAppVehicleUploadService } from "./vehicle-upload.service";
 import { UploadNotificationService } from "./upload-notification.service";
 import { WhatsAppReportService } from "./report.service";
 import { ROLE_LEVELS } from "@/lib/rbac";
+import { generateVehicleDashboardUrl } from "@/lib/utils/vehicle-slug";
 
 // ==================== TYPES ====================
 
@@ -1470,10 +1471,14 @@ export class StaffCommandService {
     }
 
     // Add link to dashboard in message
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
-    const vehicleUrl = `${baseUrl}/dashboard/vehicles/${uploadResult.vehicleId}`;
+    const vehicleUrl = generateVehicleDashboardUrl({
+      make: uploadResult.make || '',
+      model: uploadResult.model || '',
+      year: uploadResult.year || 0,
+      displayId: uploadResult.displayId || uploadResult.vehicleId || 'unknown',
+    });
 
-    // Build final message
+    // Build final message (using 🔗 Link: prefix as requested by user)
     let finalMessage = uploadResult.message + `\n\n🔗 *Link:*\n${vehicleUrl}`;
 
     // If no photos, add prompt to send photos now

@@ -33,6 +33,9 @@ export interface WhatsAppVehicleUploadResult {
   success: boolean;
   vehicleId?: string;
   displayId?: string;
+  make?: string;
+  model?: string;
+  year?: number;
   message: string;
   error?: string;
 }
@@ -487,6 +490,9 @@ export class WhatsAppVehicleUploadService {
         success: true,
         vehicleId: vehicle.id,
         displayId,
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
         message,
       };
 
