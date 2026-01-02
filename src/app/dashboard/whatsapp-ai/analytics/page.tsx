@@ -161,47 +161,16 @@ export default function AnalyticsPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
 
   const handleDownloadReport = async (reportId: string) => {
+    alert('Fitur download PDF telah dinonaktifkan. Silakan lihat detail laporan langsung di dashboard ini.');
+    return;
+    /* PDF DOWNLOAD DISABLED
     try {
       setDownloading(reportId);
-      const token = localStorage.getItem('authToken');
-
-      if (!token) {
-        alert('Token tidak ditemukan. Silakan login kembali.');
-        router.push('/login');
-        return;
-      }
-
-      // Track download for specific report types
-      console.log(`[Analytics] 📥 Generating report: ${reportId}`);
-
-      const response = await fetch(
-        `/api/v1/reports/${reportId}?period=month&format=pdf`,
-        {
-          method: 'GET',
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${reportId}-${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        const errData = await response.json();
-        alert(`Gagal download: ${errData.error || 'Terjadi kesalahan sistem'}`);
-      }
-    } catch (error) {
-      console.error('Download error:', error);
-      alert('Terjadi kesalahan saat mengunduh laporan.');
+// ... existing logic commented out ...
     } finally {
       setDownloading(null);
     }
+    */
   };
 
   const handleExport = async (format: 'pdf' | 'excel') => {
@@ -212,6 +181,11 @@ export default function AnalyticsPage() {
       if (!token) {
         alert('Token tidak ditemukan. Silakan login kembali.');
         window.location.href = '/login';
+        return;
+      }
+
+      if (format === 'pdf') {
+        alert('Fitur export PDF telah dinonaktifkan. Silakan gunakan format Excel atau lihat dashboard langsung.');
         return;
       }
 
@@ -386,24 +360,30 @@ export default function AnalyticsPage() {
                   <option value="quarterly">Kuartalan</option>
                   <option value="yearly">Tahunan</option>
                 </select>
-                <button
-                  onClick={() => handleExport('excel')}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Excel
-                </button>
-                <button
-                  onClick={() => handleExport('pdf')}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                  PDF
-                </button>
+                {/* Export Buttons Hidden */}
+                {false && (
+                  <>
+                    <button
+                      onClick={() => handleExport('excel')}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Excel
+                    </button>
+                    <button
+                      disabled={true}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed text-sm font-medium"
+                      title="Fitur PDF dinonaktifkan"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                      PDF (Disabled)
+                    </button>
+                  </>
+                )}
               </>
             )}
             {/* Time Range - for WhatsApp */}
@@ -1199,28 +1179,17 @@ function ReportCard({ report, onDownload, downloading }: {
         <p className="text-[10px] text-gray-500 mb-4 line-clamp-2 leading-relaxed">{report.desc}</p>
       </div>
 
+      {/* Download Button Hidden
       <button
-        onClick={() => onDownload(report.id)}
-        disabled={!!downloading}
-        className={`w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${isDownloading
-            ? 'bg-blue-100 text-blue-600 cursor-not-allowed'
-            : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-sm'
-          }`}
+        disabled={true}
+        className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
       >
-        {isDownloading ? (
-          <>
-            <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            Generating...
-          </>
-        ) : (
-          <>
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Download PDF
-          </>
-        )}
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+        PDF Disabled
       </button>
+      */}
     </div>
   );
 }
