@@ -20,6 +20,7 @@ interface UserForm {
     confirmPassword?: string;
     emailVerified: boolean;
     isActive: boolean;
+    phone?: string;
 }
 
 interface Tenant {
@@ -45,6 +46,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
         confirmPassword: '',
         emailVerified: false,
         isActive: true,
+        phone: '',
     });
 
     // Fetch user data and tenants
@@ -73,6 +75,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
                         confirmPassword: '',
                         emailVerified: user.emailVerified,
                         isActive: user.isActive,
+                        phone: user.phone || '',
                     });
                 } else {
                     alert('Gagal memuat data user: ' + (userData.error || 'User tidak ditemukan'));
@@ -225,6 +228,20 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            no Whatsapp
+                        </label>
+                        <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="+628123456789"
+                        />
                     </div>
 
                     {formData.password && (

@@ -77,6 +77,7 @@ export async function PATCH(
                 tenantId,
                 isActive,
                 emailVerified,
+                phone,
             } = body;
 
             // Check if user exists
@@ -114,6 +115,7 @@ export async function PATCH(
                 tenantId: role === 'super_admin' ? null : tenantId,
                 isActive,
                 emailVerified,
+                phone: phone !== undefined ? phone : existingUser.phone,
             };
 
             // Hash password if provided
