@@ -1916,7 +1916,7 @@ export class StaffCommandService {
     // Example: "rubah PM-PST-001 km 50000" -> Now matches because of non-greedy wildcard
     const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
       // Mileage: "rubah km 50000", "ganti kilometer ke 30000", "rubah PM-PST-001 km 50000"
-      { pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:km|kilometer|odometer)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'mileage', valueExtractor: m => m[1] },
+      { pattern: /(?:rubah|ganti|ubah|update|edit)(?:\s+pm-\w+-\d+)?\s*(?:km|kilometer|odometer)?\s*(?:ke|jadi|menjadi)?\s*(\d+)\s*(?:km)?/i, field: 'mileage', valueExtractor: m => m[1] },
 
       // Year: "rubah tahun 2017", "ganti tahun ke 2018", "ubah tahun jadi 2019"
       { pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*tahun\s*(?:ke|jadi|menjadi)?\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
