@@ -33,6 +33,7 @@ export type MessageIntent =
   | "staff_update_status"
   | "staff_check_inventory"
   | "staff_get_stats"
+  | "staff_get_report"
   | "staff_verify_identity"
   | "staff_edit_vehicle"
   | "system_command"              // PDF/vCard commands that already sent their own response
@@ -103,6 +104,23 @@ const STAFF_COMMAND_PATTERNS = {
     /^laporan/i,                     // laporan
     /^statistik/i,                   // statistik
     /^report\b/i,                    // report, report today
+  ],
+  get_report: [
+    /(?:sales|penjualan)\s*report/i,
+    /total\s*(?:sales|penjualan)/i,
+    /total\s*(?:revenue|pendapatan)/i,
+    /(?:tren|tren\s*penjualan|sales\s*trend)/i,
+    /(?:metrik\s*penjualan|sales\s*metric|kpi)/i,
+    /(?:sales\s*summary|ringkasan)/i,
+    /total\s*(?:inventory|stok|stock)/i,
+    /(?:vehicle\s*listing|daftar\s*kendaraan)/i,
+    /(?:low\s*stock|stok\s*tipis|peringatan\s*stok)/i,
+    /(?:average\s*price|rata\s*rata\s*harga)/i,
+    /(?:staff\s*performance|performa\s*sales)/i,
+    /(?:recent\s*sales|penjualan\s*terkini)/i,
+    /(?:whatsapp\s*ai|performa\s*bot)/i,
+    /(?:customer\s*metric|analisis\s*pelanggan)/i,
+    /(?:operasional\s*metric|efisiensi\s*chat)/i,
   ],
   edit_vehicle: [
     /^\/edit/i,                      // /edit PM-PST-001 km 50000
@@ -564,6 +582,17 @@ export class IntentClassifierService {
         isStaff: true,
         isCustomer: false,
         reason: "Matched get stats command pattern",
+      };
+    }
+
+    // Check report
+    if (STAFF_COMMAND_PATTERNS.get_report.some((p) => p.test(message))) {
+      return {
+        intent: "staff_get_report",
+        confidence: 0.95,
+        isStaff: true,
+        isCustomer: false,
+        reason: "Matched specific report command pattern",
       };
     }
 

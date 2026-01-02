@@ -283,9 +283,25 @@ export default function UsersPage() {
                     {user.tenantName || 'Platform Admin'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(user.isActive)}`}>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const data = await api.patch(`/api/admin/users/${user.id}`, {
+                            isActive: !user.isActive
+                          });
+                          if (data.success) {
+                            fetchUsers(); // Refresh list
+                          } else {
+                            alert('Gagal mengubah status: ' + (data.error || 'Unknown error'));
+                          }
+                        } catch (error) {
+                          alert('Terjadi kesalahan: ' + (error as Error).message);
+                        }
+                      }}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getStatusBadgeColor(user.isActive)}`}
+                    >
                       {user.isActive ? 'Aktif' : 'Tidak Aktif'}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Belum pernah login'}
@@ -299,10 +315,19 @@ export default function UsersPage() {
                         Edit
                       </Link>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (window.confirm(`Apakah Anda yakin ingin menghapus user ${user.email}?`)) {
-                            // Handle delete
-                            console.log('Delete user:', user.id);
+                            try {
+                              const data = await api.delete(`/api/admin/users/${user.id}`);
+                              if (data.success) {
+                                alert('User berhasil dihapus!');
+                                fetchUsers(); // Refresh list
+                              } else {
+                                alert('Gagal menghapus user: ' + (data.error || 'Unknown error'));
+                              }
+                            } catch (error) {
+                              alert('Terjadi kesalahan: ' + (error as Error).message);
+                            }
                           }
                         }}
                         className="text-red-600 hover:text-red-900"

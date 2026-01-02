@@ -574,7 +574,7 @@ async function generateSalesReportText(ctx: CommandContext): Promise<CommandResu
 ${data.byMake.slice(0, 3).map((m: any, i: number) => `${i + 1}. ${m.make}: ${m.count} unit (${formatCurrency(m.value)})`).join('\n')}
 
 🔗 *Lihat Detail & Grafik Lengkap:*
-https://primamobil.id/dashboard/sales/analytics`;
+https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
 
   return { success: true, message, followUp: true };
 }
@@ -663,7 +663,7 @@ async function generateSalesTrendsText(ctx: CommandContext): Promise<CommandResu
 Grafik tren dan analisis pertumbuhan tersedia di dashboard.
 
 🔗 *Lihat Grafik:*
-https://primamobil.id/dashboard/sales/analytics`;
+https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
   return { success: true, message, followUp: true };
 }
 
@@ -675,7 +675,7 @@ Total Unit: ${data.summary.totalSalesCount}
 Revenue: ${formatCurrency(data.summary.totalSalesValue)}
 
 🔗 *Lihat Semua Transaksi:*
-https://primamobil.id/dashboard/sales`;
+https://primamobil.id/dashboard/invoices`;
   return { success: true, message, followUp: true };
 }
 

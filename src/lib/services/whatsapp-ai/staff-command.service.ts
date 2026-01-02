@@ -13,6 +13,8 @@ import { MessageIntent } from "./intent-classifier.service";
 import { VehicleDataExtractorService } from "@/lib/ai/vehicle-data-extractor.service";
 import { WhatsAppVehicleUploadService } from "./vehicle-upload.service";
 import { UploadNotificationService } from "./upload-notification.service";
+import { WhatsAppReportService } from "./report.service";
+import { ROLE_LEVELS } from "@/lib/rbac";
 
 // ==================== TYPES ====================
 
@@ -80,6 +82,9 @@ export class StaffCommandService {
 
       case "staff_get_stats":
         return this.parseStatsCommand(trimmedMessage);
+
+      case "staff_get_report":
+        return this.parseReportCommand(trimmedMessage);
 
       case "staff_edit_vehicle":
         return this.parseEditVehicleCommand(trimmedMessage);
@@ -158,6 +163,10 @@ export class StaffCommandService {
 
         case "staff_edit_vehicle":
           result = await this.handleEditVehicle(params, tenantId, staffPhone, conversationId);
+          break;
+
+        case "staff_get_report":
+          result = await this.handleGetReport(params, tenantId, staffPhone);
           break;
 
         default:
@@ -421,6 +430,75 @@ export class StaffCommandService {
       command: "stats",
       params: { period },
       isValid: true,
+    };
+  }
+
+  /**
+   * Parse report command
+   */
+  private static parseReportCommand(message: string): CommandParseResult {
+    const msg = message.toLowerCase();
+
+    // Mapping keywords to internal report types
+    const reportMap: Record<string, string> = {
+      // Sales & Revenue
+      'sales report': 'sales_report',
+      'laporan penjualan lengkap': 'sales_report',
+      'total penjualan': 'total_sales',
+      'total sales': 'total_sales',
+      'total revenue': 'total_revenue',
+      'pendapatan': 'total_revenue',
+      'tren penjualan': 'sales_trends',
+      'sales trends': 'sales_trends',
+      'metrik penjualan': 'sales_metrics',
+      'sales metrics': 'sales_metrics',
+      'kpi': 'sales_metrics',
+      'sales summary': 'sales_summary',
+      'ringkasan cepat': 'sales_summary',
+
+      // Inventory & Stock
+      'total inventory': 'total_inventory',
+      'laporan stok': 'total_inventory',
+      'vehicle listing': 'vehicle_listing',
+      'daftar kendaraan': 'vehicle_listing',
+      'low stock alert': 'low_stock_alert',
+      'stok tipis': 'low_stock_alert',
+      'peringatan stok': 'low_stock_alert',
+      'average price': 'average_price',
+      'analisis harga': 'average_price',
+      'rata rata harga': 'average_price',
+
+      // Team & Performance
+      'staff performance': 'staff_performance',
+      'performa sales': 'staff_performance',
+      'recent sales': 'recent_sales',
+      'penjualan terkini': 'recent_sales',
+      'penjualan 7 hari': 'recent_sales',
+
+      // WhatsApp AI & Customer
+      'whatsapp ai analytics': 'ai_analytics',
+      'performa bot': 'ai_analytics',
+      'customer metrics': 'customer_metrics',
+      'analisis pelanggan': 'customer_metrics',
+      'metrik operasional': 'operational_metrics',
+      'efisiensi chat': 'operational_metrics',
+    };
+
+    for (const [key, value] of Object.entries(reportMap)) {
+      if (msg.includes(key)) {
+        return {
+          command: "get_report",
+          params: { type: value },
+          isValid: true,
+        };
+      }
+    }
+
+    return {
+      command: "get_report",
+      params: {},
+      isValid: false,
+      error: "Report jenis apa kak? Cek menu report ya.",
     };
   }
 
@@ -1560,9 +1638,12 @@ export class StaffCommandService {
       `🚙 Edit Kendaraan\n` +
       `   Ketik: Edit/ Ubah/ Rubah/ Ganti [ID] [Detail kendaraan/ informasi dasar/ harga]\n` +
       `   Contoh: Ganti PM-PST-001 Hybrid / Ubah PM-PST-001 AT / Edit PM-PST-001 85000 km\n\n` +
-      `👮‍♂️ MENU ADMIN & OWNER (PDF REPORTS)\n` +
-      `Terdapat 15+ Laporan Management dalam format PDF.\n` +
-      `Ketik: "sales report", "Total Inventory", atau "staff performance"\n\n` +
+      `👮‍♂️ *MENU ADMIN & OWNER (REPORTS)*\n` +
+      `Laporan Managemen real-time via WhatsApp (Info & Link):\n` +
+      `✅ *Sales*: "Total Penjualan", "Total Revenue", "Tren Penjualan", "Metrik Penjualan"\n` +
+      `✅ *Inventory*: "Total Inventory", "Daftar Kendaraan", "Peringatan Stok Tipis", "Rata-rata Harga"\n` +
+      `✅ *Performance*: "Staff Performance", "Penjualan 7 Hari"\n` +
+      `✅ *AI*: "Performa Bot", "Analisis Pelanggan", "Efisiensi Chat"\n\n` +
       `Silakan ketik perintah yang diinginkan. Kami siap membantu!`;
 
     return {
@@ -1994,15 +2075,6 @@ export class StaffCommandService {
     staffPhone: string,
     conversationId: string
   ): Promise<CommandExecutionResult> {
-    console.log(`[Staff Command] Handling edit vehicle:`, params);
-
-    if (!params.field || !params.newValue) {
-      return {
-        success: false,
-        message: "❌ Format tidak dikenali.\n\nContoh penggunaan:\n• rubah km 50000\n• ganti bensin jadi diesel\n• ubah tahun ke 2018\n• update harga 150jt\n• ubah innova 2019 jadi bensin",
-      };
-    }
-
     try {
       // Import VehicleEditService
       const { VehicleEditService } = await import('./vehicle-edit.service');
@@ -2032,6 +2104,48 @@ export class StaffCommandService {
         message: `❌ Gagal edit: ${error.message}`,
       };
     }
+  }
+
+  /**
+   * Handle report request
+   */
+  private static async handleGetReport(
+    params: Record<string, any>,
+    tenantId: string,
+    staffPhone: string
+  ): Promise<CommandExecutionResult> {
+    const { type } = params;
+
+    // 1. Role Authorization
+    const authorizedRoles = ['ADMIN', 'OWNER', 'SUPER_ADMIN'];
+    const user = await prisma.user.findFirst({
+      where: {
+        tenantId,
+        phone: { contains: this.normalizePhone(staffPhone) }
+      }
+    });
+
+    if (!user || !authorizedRoles.includes(user.role.toUpperCase())) {
+      return {
+        success: false,
+        message: "Maaf kak, fitur report ini khusus untuk Admin / Owner saja ya! 🙏",
+      };
+    }
+
+    if (!type) {
+      return {
+        success: false,
+        message: "Jenis report tidak valid. Silakan ketik perintah report yang jelas.",
+      };
+    }
+
+    // 2. Fetch Report
+    const reportText = await WhatsAppReportService.getReport(type, tenantId);
+
+    return {
+      success: true,
+      message: reportText,
+    };
   }
 }
 

@@ -53,7 +53,7 @@ export default function TenantList({
     .sort((a, b) => {
       const aValue = a[sortField];
       const bValue = b[sortField];
-      
+
       if (aValue === undefined || bValue === undefined) return 0;
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
@@ -240,17 +240,29 @@ export default function TenantList({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{tenant.subdomain}</div>
-                    <div className="text-sm text-gray-500">.autolumiku.com</div>
+                    <a
+                      href={`https://${tenant.subdomain}.autolumiku.com`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group"
+                    >
+                      <div className="text-sm text-blue-600 group-hover:underline">{tenant.subdomain}</div>
+                      <div className="text-sm text-gray-400">.autolumiku.com</div>
+                    </a>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {tenant.customDomain ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="text-sm text-gray-900">{tenant.customDomain}</div>
+                      <a
+                        href={`https://${tenant.customDomain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2 group"
+                      >
+                        <div className="text-sm text-blue-600 group-hover:underline">{tenant.customDomain}</div>
                         <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">
                           Custom
                         </span>
-                      </div>
+                      </a>
                     ) : (
                       <span className="text-sm text-gray-400 italic">-</span>
                     )}
