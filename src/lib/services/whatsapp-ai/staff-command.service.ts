@@ -1921,14 +1921,13 @@ export class StaffCommandService {
       // Year: "rubah tahun 2017", "ganti tahun ke 2018", "ubah tahun jadi 2019"
       { pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*tahun\s*(?:ke|jadi|menjadi)?\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
 
-      // Fuel type: "rubah bensin jadi diesel", "ganti ke diesel", "ubah bahan bakar diesel"
-      // Note: For "rubah bensin" (without 'bahan bakar'), we handle explicitly
-      { pattern: /(?:rubah|ganti|ubah)(?:.*?)?\s*(?:bahan\s*bakar|fuel)\s*(?:ke|jadi|menjadi)?\s*(diesel|bensin|hybrid|electric|listrik|solar)/i, field: 'fuelType', valueExtractor: m => m[1] },
-      { pattern: /(?:rubah|ganti|ubah)(?:.*?)?\s*(bensin|diesel|solar)\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[2] },
+      // Fuel type: "Ganti PM-PST-001 diesel", "ganti ke diesel", "Edit PM-PST-001 hybrid"
+      { pattern: /(?:rubah|ganti|ubah|update|edit)(?:\s+pm-\w+-\d+)?\s*(?:bahan\s*bakar|fuel)?\s*(?:ke|jadi|menjadi)?\s*(diesel|bensin|hybrid|electric|listrik|solar)/i, field: 'fuelType', valueExtractor: m => m[1] },
+      { pattern: /(?:rubah|ganti|ubah)(?:\s+pm-\w+-\d+)?\s*(bensin|diesel|solar)\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[2] },
 
-      // Price: "rubah harga 150jt", "update harga ke 200000000"
+      // Price: "rubah harga 150jt", "update PM-PST-001 harga 200jt"
       {
-        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:\s+pm-\w+-\d+)?\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
           const val = m[1].toLowerCase();
           if (val.includes('jt') || val.includes('juta')) {
             return String(parseInt(val) * 1000000);
