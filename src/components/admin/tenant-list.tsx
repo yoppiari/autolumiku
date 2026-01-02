@@ -215,6 +215,9 @@ export default function TenantList({
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Audit & Quick Action
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Aksi
                 </th>
@@ -274,6 +277,46 @@ export default function TenantList({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {format(new Date(tenant.createdAt), 'dd MMM yyyy', { locale: id })}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <a
+                          href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard/users` : `https://${tenant.subdomain}.autolumiku.com/dashboard/users`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-200 hover:bg-blue-100 transition-colors"
+                        >
+                          Lihat Users
+                        </a>
+                        <a
+                          href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard/vehicles` : `https://${tenant.subdomain}.autolumiku.com/dashboard/vehicles`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] px-2 py-0.5 bg-green-50 text-green-600 rounded border border-green-200 hover:bg-green-100 transition-colors"
+                        >
+                          Lihat Kendaraan
+                        </a>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <a
+                          href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard/whatsapp-ai` : `https://${tenant.subdomain}.autolumiku.com/dashboard/whatsapp-ai`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded border border-purple-200 hover:bg-purple-100 transition-colors"
+                        >
+                          WhatsApp AI
+                        </a>
+                        <a
+                          href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard/whatsapp-ai/analytics` : `https://${tenant.subdomain}.autolumiku.com/dashboard/whatsapp-ai/analytics`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                        >
+                          Analytics
+                        </a>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
