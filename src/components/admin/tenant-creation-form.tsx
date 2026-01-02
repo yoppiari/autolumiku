@@ -23,6 +23,8 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
   const [formData, setFormData] = useState<CreateTenantRequest>({
     name: '',
     domain: '',
+    subdomain: '',
+    status: 'active',
     adminEmail: '',
     adminFirstName: '',
     adminLastName: '',
@@ -69,13 +71,18 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
       newErrors.name = 'Nama tenant maksimal 100 karakter';
     }
 
-    // Domain validation
-    if (!formData.domain.trim()) {
-      newErrors.domain = 'Domain wajib diisi';
-    } else {
+    // Subdomain validation
+    if (!formData.subdomain?.trim()) {
+      newErrors.domain = 'Subdomain wajib diisi';
+    } else if (formData.subdomain.length > 50) {
+      newErrors.domain = 'Subdomain maksimal 50 karakter';
+    }
+
+    // Domain validation (optional)
+    if (formData.domain.trim()) {
       const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
       if (!domainRegex.test(formData.domain.trim())) {
-        newErrors.domain = 'Format domain tidak valid (contoh: showroom.com atau www.showroom.com)';
+        newErrors.domain = 'Format domain tidak valid (contoh: showroom.com)';
       }
     }
 
@@ -138,7 +145,16 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
   };
 
   const handleInputChange = (field: keyof CreateTenantRequest, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+
+      // Auto-generate subdomain from name if subdomain is still empty or looks like a default slug
+      if (field === 'name' && (!prev.subdomain || prev.subdomain === prev.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))) {
+        newData.subdomain = value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      }
+
+      return newData;
+    });
 
     // Clear error for this field when user starts typing
     if (errors[field as keyof FormErrors]) {
@@ -181,9 +197,8 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Contoh: Showroom Mobil Jakarta"
                 disabled={isSubmitting}
               />
@@ -192,19 +207,60 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
               )}
             </div>
 
-            {/* Domain */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Subdomain */}
+              <div>
+                <label htmlFor="subdomain" className="block text-sm font-medium text-gray-700 mb-1">
+                  Subdomain <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    id="subdomain"
+                    value={formData.subdomain}
+                    onChange={(e) => handleInputChange('subdomain', e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="showroom-jakarta"
+                    disabled={isSubmitting}
+                  />
+                  <span className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm rounded-r-md">
+                    .autolumiku.com
+                  </span>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                  Status <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="status"
+                  value={formData.status}
+                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={isSubmitting}
+                >
+                  <option value="active">Active</option>
+                  <option value="setup_required">Setup Required</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Domain (Custom Domain) */}
             <div>
               <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
-                Domain <span className="text-red-500">*</span>
+                Custom Domain <span className="text-gray-400 font-normal">(Opsional, ketik subdomain di atas jika tidak ada)</span>
               </label>
               <input
                 type="text"
                 id="domain"
                 value={formData.domain}
                 onChange={(e) => handleInputChange('domain', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.domain ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.domain ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="showroom.com atau www.showroom.com"
                 disabled={isSubmitting}
               />
@@ -239,9 +295,8 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
                 id="adminEmail"
                 value={formData.adminEmail}
                 onChange={(e) => handleInputChange('adminEmail', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.adminEmail ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.adminEmail ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="admin@showroom.com"
                 disabled={isSubmitting}
               />
@@ -261,9 +316,8 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
                   id="adminFirstName"
                   value={formData.adminFirstName}
                   onChange={(e) => handleInputChange('adminFirstName', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.adminFirstName ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.adminFirstName ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="Budi"
                   disabled={isSubmitting}
                 />
@@ -282,9 +336,8 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
                   id="adminLastName"
                   value={formData.adminLastName}
                   onChange={(e) => handleInputChange('adminLastName', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.adminLastName ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.adminLastName ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="Santoso"
                   disabled={isSubmitting}
                 />
@@ -322,9 +375,8 @@ export default function TenantCreationForm({ onSubmit, onCancel, isLoading }: Te
                     id="adminPassword"
                     value={formData.adminPassword}
                     onChange={(e) => handleInputChange('adminPassword', e.target.value)}
-                    className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.adminPassword ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.adminPassword ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="Masukkan password (min. 8 karakter)"
                     disabled={isSubmitting}
                   />

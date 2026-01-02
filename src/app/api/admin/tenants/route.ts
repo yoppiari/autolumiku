@@ -77,6 +77,8 @@ export async function POST(request: NextRequest) {
       const {
         name,
         domain,
+        subdomain,
+        status: initialStatus,
         adminUser,
         adminEmail,
         adminFirstName,
@@ -101,8 +103,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Generate slug from domain (remove www. and dots)
-      const slug = domain.replace(/^www\./, '').replace(/\./g, '-');
+      // Generate slug from subdomain input or domain (remove www. and dots)
+      const slug = subdomain
+        ? subdomain.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        : domain.replace(/^www\./, '').replace(/\./g, '-');
 
       // Check if domain already exists
       const existingTenant = await prisma.tenant.findUnique({
@@ -127,7 +131,7 @@ export async function POST(request: NextRequest) {
             name,
             slug,
             domain,
-            status: 'active',
+            status: initialStatus || 'active',
             primaryColor: '#2563eb',
             secondaryColor: '#7c3aed',
             theme: 'light',

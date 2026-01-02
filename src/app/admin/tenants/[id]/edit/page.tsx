@@ -217,7 +217,7 @@ export default function TenantEditPage() {
 
             <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-                Slug <span className="text-red-500">*</span>
+                Subdomain <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -235,7 +235,7 @@ export default function TenantEditPage() {
 
             <div>
               <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
-                Domain <span className="text-red-500">*</span>
+                Custom Domain <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
