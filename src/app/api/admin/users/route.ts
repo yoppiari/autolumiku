@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
         tenantId,
         isActive,
         emailVerified,
+        phone,
       } = body;
 
       // Validate required fields
@@ -142,6 +143,7 @@ export async function POST(request: NextRequest) {
               lastName: lastName || '',
               role,
               emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
+              phone: phone || existingUser.phone,
               // Update password only if provided and different? 
               // For admin create, we usually overwrite password if provided.
               passwordHash: await bcrypt.hash(password, 10),
@@ -190,6 +192,7 @@ export async function POST(request: NextRequest) {
                 lastName: lastName || '',
                 role,
                 emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
+                phone: phone || existingUser.phone,
                 passwordHash: await bcrypt.hash(password, 10),
                 tenantId: null, // Force null for super_admin/platform admin
               },
@@ -244,6 +247,7 @@ export async function POST(request: NextRequest) {
           passwordHash: await bcrypt.hash(password, 10),
           role,
           tenantId,
+          phone: phone || '',
           emailVerified: emailVerified !== undefined ? emailVerified : false,
         },
         include: {

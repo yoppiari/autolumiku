@@ -82,24 +82,59 @@ export class WhatsAppReportService {
             _sum: { price: true }
         });
 
+        const totalRevenue = totalValue._sum.price || 0;
+
         let msg = `📊 *LAPORAN PENJUALAN LENGKAP*\n\n`;
-        msg += `📈 Total Unit Terjual: ${totalCount}\n`;
-        msg += `💰 Total Revenue: Rp ${formatCurrency(totalValue._sum.price || 0)}\n\n`;
+        msg += `📈 Total Unit Terjual: *${totalCount} unit*\n`;
+        msg += `💰 Total Revenue: *Rp ${formatCurrency(totalRevenue)}*\n\n`;
+
+        msg += `🧮 *RUMUSAN PERHITUNGAN:*\n`;
+        msg += `• _Revenue = Σ(Harga Jual Unit Terjual)_\n`;
+        msg += `• _Data mencakup semua unit dengan status 'SOLD'._\n\n`;
 
         if (sold.length > 0) {
             msg += `*5 Penjualan Terakhir:*\n`;
             sold.forEach((v, i) => {
                 msg += `${i + 1}. ${v.make} ${v.model} (${v.year}) - Rp ${formatCurrency(v.price || 0)}\n`;
             });
+            msg += `\n`;
         }
 
-        msg += `\n🔗 *Detail Lengkap:* https://primamobil.id/dashboard/invoices`;
+        msg += `🧐 *ANALISA & REVIEW:*\n`;
+        if (totalCount > 0) {
+            const avgPrice = Math.floor(totalRevenue / totalCount);
+            msg += `• Rata-rata harga jual (ATV) berada di angka *Rp ${formatCurrency(avgPrice)}*.\n`;
+            msg += `• Perputaran stok terlihat ${totalCount > 2 ? 'stabil' : 'perlu ditingkatkan'}.\n`;
+        } else {
+            msg += `• Belum ada aktivitas penjualan yang tercatat.\n`;
+        }
+        msg += `\n`;
+
+        msg += `💡 *REKOMENDASI:*\n`;
+        msg += `• Pertahankan momentum dengan mempromosikan unit 'Available' yang serupa.\n`;
+        msg += `• Update status 'Sold' segera setelah transaksi selesai agar data tetap akurat.\n\n`;
+
+        msg += `🔗 *Detail Lengkap:* https://primamobil.id/dashboard/invoices`;
         return msg;
     }
 
     private static async getTotalSales(tenantId: string): Promise<string> {
         const count = await prisma.vehicle.count({ where: { tenantId, status: 'SOLD' } });
-        return `📈 *TOTAL PENJUALAN*\n\nHingga saat ini, sebanyak *${count} unit* kendaraan telah terjual.\n\n🔗 *Lihat Chart:* https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+
+        let msg = `📈 *TOTAL PENJUALAN*\n\n`;
+        msg += `Hingga saat ini, sebanyak *${count} unit* telah terjual.\n\n`;
+
+        msg += `🧮 *RUMUSAN:*\n`;
+        msg += `• _Count(Vehicle) WHERE status = 'SOLD'_\n\n`;
+
+        msg += `🧐 *ANALISA:*\n`;
+        msg += `• Volume penjualan ini mencerminkan penetrasi pasar showroom Anda.\n\n`;
+
+        msg += `💡 *REKOMENDASI:*\n`;
+        msg += `• Analisa brand yang paling cepat laku untuk strategi stok berikutnya.\n\n`;
+
+        msg += `🔗 *Lihat Chart:* https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+        return msg;
     }
 
     private static async getTotalRevenue(tenantId: string): Promise<string> {
@@ -107,11 +142,26 @@ export class WhatsAppReportService {
             where: { tenantId, status: 'SOLD' },
             _sum: { price: true }
         });
-        return `💰 *TOTAL PENDAPATAN*\n\nAkumulasi pendapatan dari unit terjual: \n*Rp ${formatCurrency(stats._sum.price || 0)}*\n\n🔗 *Detail Keuangan:* https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+
+        const totalRev = stats._sum.price || 0;
+
+        let msg = `💰 *TOTAL PENDAPATAN*\n\n`;
+        msg += `Akumulasi pendapatan: *Rp ${formatCurrency(totalRev)}*\n\n`;
+
+        msg += `🧮 *RUMUSAN:*\n`;
+        msg += `• _Total Revenue = SUM(Final Sale Price)_\n\n`;
+
+        msg += `🧐 *ANALISA:*\n`;
+        msg += `• Omzet kumulatif ini adalah hasil dari seluruh unit yang telah berstatus SOLD.\n\n`;
+
+        msg += `💡 *REKOMENDASI:*\n`;
+        msg += `• Pastikan margin profit terjaga di setiap unit yang terjual.\n\n`;
+
+        msg += `🔗 *Detail Keuangan:* https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+        return msg;
     }
 
     private static async getSalesTrends(tenantId: string): Promise<string> {
-        // Simplified trend: this month vs last month
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -126,9 +176,32 @@ export class WhatsAppReportService {
 
         const diff = countThisMonth - countPrevMonth;
         const trendIcon = diff >= 0 ? '📈' : '📉';
-        const status = diff >= 0 ? 'naik' : 'turun';
+        const status = diff >= 0 ? 'NAIK' : 'TURUN';
 
-        return `${trendIcon} *TREN PENJUALAN*\n\nBulan ini: *${countThisMonth} unit*\nBulan lalu: *${countPrevMonth} unit*\n\nTren ${status} sebesar *${Math.abs(diff)} unit* dibanding bulan lalu.\n\n🔗 *Grafik Tren:* https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+        let msg = `${trendIcon} *TREN PENJUALAN*\n\n`;
+        msg += `• Bulan ini: *${countThisMonth} unit*\n`;
+        msg += `• Bulan lalu: *${countPrevMonth} unit*\n`;
+        msg += `• Status: *${status} ${Math.abs(diff)} unit*\n\n`;
+
+        msg += `🧮 *RUMUSAN:*\n`;
+        msg += `• _Trend = (Jualan Bulan Ini) - (Jualan Bulan Lalu)_\n\n`;
+
+        msg += `🧐 *ANALISA:*\n`;
+        if (diff > 0) {
+            msg += `• Performa bulan ini menunjukkan tren positif dibanding bulan sebelumnya.\n`;
+        } else if (diff < 0) {
+            msg += `• Ada penurunan volume penjualan. Perlu evaluasi strategi promosi.\n`;
+        } else {
+            msg += `• Volume penjualan stabil (sama dengan bulan lalu).\n`;
+        }
+        msg += `\n`;
+
+        msg += `💡 *REKOMENDASI:*\n`;
+        msg += diff < 0 ? `• Tingkatkan intensitas follow-up leads yang pending.\n` : `• Pertahankan kualitas layanan agar tren terus meningkat.\n`;
+        msg += `\n`;
+
+        msg += `🔗 *Grafik Tren:* https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+        return msg;
     }
 
     private static async getSalesMetrics(tenantId: string): Promise<string> {
@@ -136,7 +209,33 @@ export class WhatsAppReportService {
         const totalLeads = await prisma.lead.count({ where: { tenantId } });
         const convRate = totalLeads > 0 ? ((totalSold / totalLeads) * 100).toFixed(1) : '0';
 
-        return `🎯 *METRIK PENJUALAN (KPI)*\n\nTotal Leads: ${totalLeads}\nTotal Sales: ${totalSold}\nLead-to-Sale Conversion: *${convRate}%*\n\n🔗 *KPI Lengkap:* https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+        let msg = `🎯 *METRIK PENJUALAN (KPI)*\n\n`;
+        msg += `• Total Leads: ${totalLeads}\n`;
+        msg += `• Total Sales: ${totalSold}\n`;
+        msg += `• Conversion: *${convRate}%*\n\n`;
+
+        msg += `🧮 *RUMUSAN:*\n`;
+        msg += `• _Conv. Rate = (Total Sales / Total Leads) x 100%_\n\n`;
+
+        msg += `🔴 *PIE CHART (Sales vs Leads)*\n`;
+        const salesBar = '🟩'.repeat(Math.ceil(Number(convRate) / 10)) || '⬜';
+        const leadBar = '⬜'.repeat(10 - salesBar.split('🟩').length + 1);
+        msg += `[${salesBar}${leadBar}] ${convRate}% Close Rate\n\n`;
+
+        msg += `🧐 *ANALISA:*\n`;
+        if (Number(convRate) < 10) {
+            msg += `• Rasio konversi masih rendah (< 10%). Masalah mungkin ada di respons tim sales atau kualitas leads.\n`;
+        } else {
+            msg += `• Rasio konversi bagus! Efektivitas sales dalam menutup prospek sudah optimal.\n`;
+        }
+        msg += `\n`;
+
+        msg += `💡 *REKOMENDASI:*\n`;
+        msg += Number(convRate) < 10 ? `• Berikan training teknik closing pada staff sales.\n` : `• Skalakan jumlah leads untuk memperbesar volume penjualan.\n`;
+        msg += `\n`;
+
+        msg += `🔗 *KPI Lengkap:* https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+        return msg;
     }
 
     private static async getSalesSummary(tenantId: string): Promise<string> {
@@ -155,7 +254,29 @@ export class WhatsAppReportService {
             _sum: { price: true }
         });
 
-        return `📦 *LAPORAN STOK KESELURUHAN*\n\nUnit Tersedia: *${total} unit*\nTotal Nilai Aset: *Rp ${formatCurrency(value._sum.price || 0)}*\n\n🔗 *Inventory:* https://primamobil.id/dashboard/vehicles`;
+        const totalValue = value._sum.price || 0;
+
+        let msg = `📦 *LAPORAN STOK KESELURUHAN*\n\n`;
+        msg += `• Unit Tersedia: *${total} unit*\n`;
+        msg += `• Nilai Invetori: *Rp ${formatCurrency(totalValue)}*\n\n`;
+
+        msg += `🧮 *RUMUSAN:*\n`;
+        msg += `• _Total Value = Σ(Asking Price of AVAILABLE units)_\n\n`;
+
+        msg += `🧐 *ANALISA:*\n`;
+        if (total > 15) {
+            msg += `• Stok berlimpah. Pastikan kecepatan rotasi barang (inventory turnover) terjaga.\n`;
+        } else {
+            msg += `• Stok menipis. Segera lakukan hunting unit baru untuk menjaga variasi showroom.\n`;
+        }
+        msg += `\n`;
+
+        msg += `💡 *REKOMENDASI:*\n`;
+        msg += total > 15 ? `• Buat promo paket "Cuci Gudang" untuk unit yang sudah lama parkir.\n` : `• Fokus pada penambahan stok brand yang paling dicari (Fast Moving).\n`;
+        msg += `\n`;
+
+        msg += `🔗 *Inventory:* https://primamobil.id/dashboard/vehicles`;
+        return msg;
     }
 
     private static async getVehicleListing(tenantId: string): Promise<string> {
@@ -170,7 +291,16 @@ export class WhatsAppReportService {
             msg += `${i + 1}. ${v.make} ${v.model} (${v.year}) - Rp ${formatCurrency(v.price || 0)}\n`;
         });
 
-        msg += `\n🔗 *Lihat Semua:* https://primamobil.id/dashboard/vehicles`;
+        msg += `\n🧮 *RUMUSAN:*\n`;
+        msg += `• _List(Vehicle) WHERE status = 'AVAILABLE' ORDER BY createdAt DESC_\n\n`;
+
+        msg += `🧐 *ANALISA:*\n`;
+        msg += `• Unit di atas adalah stok terbaru yang siap dipasarkan.\n\n`;
+
+        msg += `💡 *REKOMENDASI:*\n`;
+        msg += `• Segera buat konten video/foto untuk unit terbaru agar cepat menarik minat leads.\n\n`;
+
+        msg += `🔗 *Lihat Semua:* https://primamobil.id/dashboard/vehicles`;
         return msg;
     }
 
@@ -203,13 +333,27 @@ export class WhatsAppReportService {
             _avg: { price: true }
         });
 
-        return `🧮 *ANALISIS RATA-RATA HARGA*\n\nRata-rata harga unit di showroom: \n*Rp ${formatCurrency(Math.floor(stats._avg.price || 0))}*\n\n🔗 *Detail Inventory:* https://primamobil.id/dashboard/vehicles`;
+        const avgPrice = Math.floor(stats._avg.price || 0);
+
+        let msg = `🧮 *ANALISIS RATA-RATA HARGA*\n\n`;
+        msg += `Rata-rata harga unit tersedia: \n*Rp ${formatCurrency(avgPrice)}*\n\n`;
+
+        msg += `🧮 *RUMUSAN:*\n`;
+        msg += `• _Average Price = AVG(Price of AVAILABLE units)_\n\n`;
+
+        msg += `🧐 *ANALISA:*\n`;
+        msg += `• Angka ini menunjukkan segmentasi harga showroom Anda (Low, Mid, atau Premium).\n\n`;
+
+        msg += `💡 *REKOMENDASI:*\n`;
+        msg += `• Sesuaikan budget marketing dengan target audiens dari segmen harga ini.\n\n`;
+
+        msg += `🔗 *Detail Inventory:* https://primamobil.id/dashboard/vehicles`;
+        return msg;
     }
 
     // ==================== TEAM & PERFORMANCE REPORTS ====================
 
     private static async getStaffPerformance(tenantId: string): Promise<string> {
-        // Get top sales by unit count
         const topSales = await prisma.vehicle.groupBy({
             by: ['createdBy'],
             where: { tenantId, status: 'SOLD' },
@@ -226,10 +370,19 @@ export class WhatsAppReportService {
         for (const s of topSales) {
             const user = await prisma.user.findUnique({ where: { id: s.createdBy || '' }, select: { firstName: true, lastName: true } });
             const name = user ? `${user.firstName} ${user.lastName}` : 'System';
-            msg += `• ${name}: ${s._count} unit terjual\n`;
+            msg += `• ${name}: ${s._count} unit\n`;
         }
 
-        msg += `\n🔗 *Detail Performa:* https://primamobil.id/dashboard/users`;
+        msg += `\n🧮 *RUMUSAN:*\n`;
+        msg += `• _Ranked by COUNT(Vehicle) WHERE status = 'SOLD'_\n\n`;
+
+        msg += `🧐 *ANALISA:*\n`;
+        msg += `• Data ini menunjukkan kontribusi masing-masing staff terhadap total sales.\n\n`;
+
+        msg += `💡 *REKOMENDASI:*\n`;
+        msg += `• Berikan apresiasi (insentif) bagi top performer untuk menjaga motivasi.\n\n`;
+
+        msg += `🔗 *Detail Performa:* https://primamobil.id/dashboard/users`;
         return msg;
     }
 
@@ -241,7 +394,19 @@ export class WhatsAppReportService {
             where: { tenantId, status: 'SOLD', updatedAt: { gte: sevenDaysAgo } }
         });
 
-        return `📅 *PENJUALAN 7 HARI TERAKHIR*\n\nBerhasil menjual *${count} unit* dalam 7 hari terakhir. 🔥\n\n🔗 *Daftar Invoices:* https://primamobil.id/dashboard/invoices`;
+        let msg = `📅 *PENJUALAN 7 HARI TERAKHIR*\n\n`;
+        msg += `Berhasil menjual *${count} unit* 🔥\n\n`;
+
+        msg += `🧐 *ANALISA:*\n`;
+        if (count > 0) {
+            msg += `• Aktivitas penjualan dalam seminggu terakhir cukup aktif.\n`;
+        } else {
+            msg += `• Tidak ada penjualan dalam 7 hari terakhir. Perlu push promosi.\n`;
+        }
+        msg += `\n`;
+
+        msg += `🔗 *Daftar Invoices:* https://primamobil.id/dashboard/invoices`;
+        return msg;
     }
 
     // ==================== WHATSAPP AI & CUSTOMER REPORTS ====================
