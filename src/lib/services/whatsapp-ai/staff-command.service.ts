@@ -2167,14 +2167,14 @@ export class StaffCommandService {
     if (!authorizedUser || !authorizedRoles.includes(authorizedUser.role.toUpperCase())) {
       return {
         success: false,
-        message: "Maaf kak, fitur report ini khusus untuk Admin / Owner saja ya! 🙏",
+        message: "Maaf kak, fitur report ini khusus untuk Admin / Owner / Super Admin saja ya! 🙏",
       };
     }
 
     if (!type) {
       return {
         success: false,
-        message: "Jenis report tidak valid. Silakan ketik perintah report yang jelas.",
+        message: "Jenis report tidak valid. Silakan ketik perintah report yang dinginkan.",
       };
     }
 
