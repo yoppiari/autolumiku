@@ -49,8 +49,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const tenantId = auth.user.tenantId;
-    if (!tenantId) {
+    let tenantId = auth.user.tenantId;
+
+    // RBAC: Super Admin can view all tenants or filter by specific tenantId
+    if (auth.user.roleLevel >= ROLE_LEVELS.SUPER_ADMIN) {
+      const requestedId = request.nextUrl.searchParams.get('tenantId');
+      if (requestedId) {
+        tenantId = requestedId;
+      }
+      // If still no tenantId, continue (Prisma handles undefined by omitting from where clause)
+    }
+
+    if (!tenantId && auth.user.roleLevel < ROLE_LEVELS.SUPER_ADMIN) {
       return NextResponse.json(
         { error: 'No tenant associated with this user' },
         { status: 400 }
