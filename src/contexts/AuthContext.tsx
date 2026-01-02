@@ -62,8 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           // Compute roleLevel if not present (backward compatibility)
           if (!userData.roleLevel) {
-            // Import getRoleLevelFromRole dynamically since this is client-side
-            const { getRoleLevelFromRole } = await import('@/lib/auth/middleware');
+            // Import getRoleLevelFromRole from rbac utility (client-safe)
+            const { getRoleLevelFromRole } = await import('@/lib/rbac');
             userData.roleLevel = getRoleLevelFromRole(userData.role);
             // Update localStorage with the computed roleLevel
             localStorage.setItem('user', JSON.stringify(userData));
@@ -123,19 +123,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const result = await response.json();
-    
+
     // Ensure roleLevel is included (backward compatibility)
     let userData = {
       ...result.data.user,
       fullName: `${result.data.user.firstName} ${result.data.user.lastName}`,
     };
-    
-    // Compute roleLevel if not present in response
+
+    // Compute roleLevel from rbac utility
     if (!userData.roleLevel) {
-      const { getRoleLevelFromRole } = await import('@/lib/auth/middleware');
+      const { getRoleLevelFromRole } = await import('@/lib/rbac');
       userData.roleLevel = getRoleLevelFromRole(userData.role);
     }
-    
+
     const accessToken = result.data.accessToken;
 
     setUser(userData);
@@ -171,14 +171,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/v1/auth/me');
       if (response.ok) {
         const data = await response.json();
-        
+
         // Ensure roleLevel is included (backward compatibility)
         let userData = data.user;
         if (!userData.roleLevel) {
-          const { getRoleLevelFromRole } = await import('@/lib/auth/middleware');
+          const { getRoleLevelFromRole } = await import('@/lib/rbac');
           userData.roleLevel = getRoleLevelFromRole(userData.role);
         }
-        
+
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
 

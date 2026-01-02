@@ -7,20 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAccessToken, extractTokenFromHeader, type JWTPayload } from './jwt';
 
-/**
- * Compute roleLevel from role string
- * SUPER_ADMIN(110), OWNER(100), ADMIN(90), SALES(30)
- */
-export function getRoleLevelFromRole(role: string): number {
-  const normalizedRole = role.toUpperCase();
-  switch (normalizedRole) {
-    case 'SUPER_ADMIN': return 110;
-    case 'OWNER': return 100;
-    case 'ADMIN': return 90;
-    case 'SALES': return 30;
-    default: return 30;
-  }
-}
+import { getRoleLevelFromRole } from '@/lib/rbac';
+export { getRoleLevelFromRole };
 
 /**
  * Authentication result

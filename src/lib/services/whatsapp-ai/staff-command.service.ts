@@ -1905,8 +1905,8 @@ export class StaffCommandService {
    * But during upload flow, price is still in full IDR (e.g., 135000000 for 135 juta)
    */
   private static formatPrice(price: number, fromDatabase: boolean = false): string {
-    // Only divide by 100 if price is from database (stored in cents)
-    const priceInRupiah = fromDatabase ? Math.round(price / 100) : price;
+    // No longer divide by 100 since database stores full IDR, not cents
+    const priceInRupiah = fromDatabase ? Math.round(price) : price;
     return new Intl.NumberFormat("id-ID").format(priceInRupiah);
   }
 

@@ -282,6 +282,14 @@ export class VehicleEditService {
       const vehicleUrl = generateVehicleUrl(vehicleParams, baseUrl);
       let message: string;
 
+      // Use slug-based dashboard URL
+      const { createVehicleSlug } = await import('@/lib/utils');
+      const vehicleSlug = createVehicleSlug({
+        ...vehicle,
+        year: Number(vehicle.year), // Ensure number
+      });
+      const dashboardUrl = `${baseUrl}/dashboard/vehicles/${vehicleSlug}/edit`;
+
       if (changes.length === 1) {
         // Single field change
         const change = changes[0];
@@ -292,7 +300,7 @@ export class VehicleEditService {
           `${change.fieldLabel}: ${formattedOld} → ${formattedNew}\n` +
           `ID: ${vehicle.displayId || vehicle.id}\n\n` +
           `🌐 Website:\n${vehicleUrl}\n\n` +
-          `📊 Dashboard:\n${baseUrl}/dashboard/vehicles/${vehicle.id}`;
+          `📊 Dashboard:\n${dashboardUrl}`;
       } else {
         // Multi-field changes
         const changeLines = changes.map((c) => {
@@ -305,7 +313,7 @@ export class VehicleEditService {
           `Perubahan:\n${changeLines.join("\n")}\n\n` +
           `ID: ${vehicle.displayId || vehicle.id}\n\n` +
           `🌐 Website:\n${vehicleUrl}\n\n` +
-          `📊 Dashboard:\n${baseUrl}/dashboard/vehicles/${vehicle.id}`;
+          `📊 Dashboard:\n${dashboardUrl}`;
       }
 
       // Add partial error info if some fields failed

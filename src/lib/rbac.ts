@@ -159,6 +159,26 @@ export const permissions = {
 };
 
 /**
+ * Compute roleLevel from role string
+ * SUPER_ADMIN(110), OWNER(100), ADMIN(90), SALES(30)
+ */
+export function getRoleLevelFromRole(role: string): number {
+  const normalizedRole = (role || "").toUpperCase();
+  switch (normalizedRole) {
+    case "SUPER_ADMIN":
+      return ROLE_LEVELS.SUPER_ADMIN;
+    case "OWNER":
+      return ROLE_LEVELS.OWNER;
+    case "ADMIN":
+      return ROLE_LEVELS.ADMIN;
+    case "SALES":
+      return ROLE_LEVELS.SALES;
+    default:
+      return ROLE_LEVELS.SALES;
+  }
+}
+
+/**
  * Get role name from role level
  */
 export function getRoleName(roleLevel: number): string {

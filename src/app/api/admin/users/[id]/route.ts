@@ -92,13 +92,13 @@ export async function PATCH(
                 );
             }
 
-            // Check if new email is already taken
-            if (email && email !== existingUser.email) {
+            // Check if email is already taken by another user
+            if (email) {
                 const emailTaken = await prisma.user.findUnique({
                     where: { email },
                 });
 
-                if (emailTaken) {
+                if (emailTaken && emailTaken.id !== id) {
                     return NextResponse.json(
                         { success: false, error: 'Email already in use' },
                         { status: 400 }
