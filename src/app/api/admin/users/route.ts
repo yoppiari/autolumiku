@@ -148,74 +148,104 @@ export async function POST(request: NextRequest) {
         ];
         const isDummyUser = existingUser.tenant && dummyTenants.includes(existingUser.tenant.name);
 
+
         if (isDummyUser) {
           console.log(`♻️ Auto-cleaning dummy user ${email} from ${existingUser.tenant?.name}`);
           await prisma.user.delete({ where: { id: existingUser.id } });
           // Fall through to create new user below
         } else {
-          // SCENARIO 3: User exists in a DIFFERENT, REAL tenant -> CONFLICT
-          return NextResponse.json(
-            {
-              success: false,
-              error: `Email sudah terdaftar di tenant lain: ${existingUser.tenant?.name}`,
+          // SCENARIO 2.5: Creating a Platform Admin (tenantId: null) using email from existing tenant admin
+          // -> PROMOTE them to Super Admin by setting tenantId = null
+          if (!tenantId) {
+            console.log(`🔼 Promoting ${email} from ${existingUser.tenant?.name} to Platform Admin`);
+            const promotedUser = await prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                firstName,
+                lastName: last Name || '',
+              role, // Should be 'super_admin' or 'admin'
+              emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
+              passwordHash: await bcrypt.hash(password, 10),
+              tenantId: null, // Promote to Platform Admin
             },
-            { status: 409 }
-          );
+              include: {
+              tenant: {
+                select: { id: true, name: true, slug: true }
+              }
+            }
+            });
+
+  return NextResponse.json({
+    success: true,
+    message: `User berhasil dipromosikan ke Platform Admin dari ${existingUser.tenant?.name}`,
+    data: promotedUser,
+  });
+}
+
+// SCENARIO 3: User exists in a DIFFERENT, REAL tenant -> CONFLICT
+return NextResponse.json(
+  {
+    success: false,
+    error: `Email sudah terdaftar di tenant lain: ${existingUser.tenant?.name}`,
+  },
+  { status: 409 }
+);
         }
       }
 
-      // Check if tenant exists
-      const tenant = await prisma.tenant.findUnique({
-        where: { id: tenantId },
-      });
+// Check if tenant exists (skip if tenantId is null for Platform Admins)
+if (tenantId) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
 
-      if (!tenant) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Tenant tidak ditemukan',
-          },
-          { status: 404 }
-        );
-      }
+  if (!tenant) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Tenant tidak ditemukan',
+      },
+      { status: 404 }
+    );
+  }
 
-      // Create new user (if not upserted)
-      const user = await prisma.user.create({
-        data: {
-          email,
-          firstName,
-          lastName: lastName || '',
-          passwordHash: await bcrypt.hash(password, 10),
-          role,
-          tenantId,
-          emailVerified: emailVerified !== undefined ? emailVerified : false,
+  // Create new user (if not upserted)
+  const user = await prisma.user.create({
+    data: {
+      email,
+      firstName,
+      lastName: lastName || '',
+      passwordHash: await bcrypt.hash(password, 10),
+      role,
+      tenantId,
+      emailVerified: emailVerified !== undefined ? emailVerified : false,
+    },
+    include: {
+      tenant: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
         },
-        include: {
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-        },
-      });
+      },
+    },
+  });
 
-      return NextResponse.json({
-        success: true,
-        message: 'User berhasil dibuat',
-        data: user,
-      });
+  return NextResponse.json({
+    success: true,
+    message: 'User berhasil dibuat',
+    data: user,
+  });
 
-    } catch (error) {
-      console.error('Create user error:', error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Internal server error',
-        },
-        { status: 500 }
-      );
-    }
+} catch (error) {
+  console.error('Create user error:', error);
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Internal server error',
+    },
+    { status: 500 }
+  );
+}
   });
 }
