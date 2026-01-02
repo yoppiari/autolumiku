@@ -182,108 +182,6 @@ function AnalyticsPageInternal() {
     */
   };
 
-  const handleExport = async (format: 'pdf' | 'excel') => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const refreshToken = localStorage.getItem('refreshToken');
-
-      if (!token) {
-        alert('Token tidak ditemukan. Silakan login kembali.');
-        window.location.href = '/login';
-        return;
-      }
-
-      if (format === 'pdf') {
-        alert('Fitur export PDF telah dinonaktifkan. Silakan gunakan format Excel atau lihat dashboard langsung.');
-        return;
-      }
-
-      // Always export Sales + WhatsApp AI together
-      let response = await fetch(
-        `/api/v1/analytics/export?format=${format}&department=all&period=${period}`,
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      // Handle 401 - try to refresh token and retry
-      if (response.status === 401 && refreshToken) {
-        console.log('[Export] Token expired, attempting refresh...');
-
-        // Try to refresh the token
-        const refreshResponse = await fetch('/api/v1/auth/refresh', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
-
-        if (refreshResponse.ok) {
-          const refreshData = await refreshResponse.json();
-          if (refreshData.data) {
-            // Update tokens in localStorage
-            localStorage.setItem('authToken', refreshData.data.accessToken);
-            localStorage.setItem('refreshToken', refreshData.data.refreshToken);
-            localStorage.setItem('user', JSON.stringify(refreshData.data.user));
-
-            console.log('[Export] Token refreshed, retrying export...');
-
-            // Retry the original request with new token
-            response = await fetch(
-              `/api/v1/analytics/export?format=${format}&department=all&period=${period}`,
-              {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${refreshData.data.accessToken}` },
-              }
-            );
-          }
-        } else {
-          // Refresh failed - clear session and redirect
-          console.log('[Export] Token refresh failed');
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          window.location.href = '/login?error=session_expired';
-          return;
-        }
-      }
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `analytics-sales-whatsapp-${new Date().toISOString().split('T')[0]}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        // Get error details from response
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Export failed:', errorData);
-
-        // Provide user-friendly Indonesian error messages
-        let errorMessage = 'Gagal mengekspor laporan.';
-        if (response.status === 401) {
-          errorMessage = 'Sesi Anda telah berakhir. Silakan login kembali.';
-          // Redirect to login after showing message
-          setTimeout(() => {
-            window.location.href = '/login?error=session_expired';
-          }, 2000);
-        } else if (response.status === 403) {
-          errorMessage = 'Anda tidak memiliki izin untuk mengekspor laporan ini.';
-        } else if (errorData.error) {
-          errorMessage = `Gagal mengekspor laporan: ${errorData.error}`;
-        }
-
-        alert(errorMessage);
-      }
-    } catch (error) {
-      console.error('Export error:', error);
-      alert(`Terjadi kesalahan saat mengekspor: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
 
   const formatRupiah = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -359,41 +257,15 @@ function AnalyticsPageInternal() {
           <div className="flex flex-wrap items-center gap-2">
             {/* Period Filter - for Sales only */}
             {activeDepartment === 'sales' && (
-              <>
-                <select
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value as 'monthly' | 'quarterly' | 'yearly')}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="monthly">Bulanan</option>
-                  <option value="quarterly">Kuartalan</option>
-                  <option value="yearly">Tahunan</option>
-                </select>
-                {/* Export Buttons Hidden */}
-                {false && (
-                  <>
-                    <button
-                      onClick={() => handleExport('excel')}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Excel
-                    </button>
-                    <button
-                      disabled={true}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed text-sm font-medium"
-                      title="Fitur PDF dinonaktifkan"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      PDF (Disabled)
-                    </button>
-                  </>
-                )}
-              </>
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value as 'monthly' | 'quarterly' | 'yearly')}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="monthly">Bulanan</option>
+                <option value="quarterly">Kuartalan</option>
+                <option value="yearly">Tahunan</option>
+              </select>
             )}
             {/* Time Range - for WhatsApp */}
             {activeDepartment === 'whatsapp' && (
@@ -827,12 +699,12 @@ function AnalyticsPageInternal() {
               <div className="text-[10px] md:text-xs leading-snug">
                 <span className="font-bold text-blue-700">📊 Performa Penjualan:</span>{' '}
                 <span className="text-gray-700">
-                  {(salesStats?.totalSales || 0) >= 80 ? (
-                    <><span className="text-green-600 font-semibold">Excellent</span> - Target tercapai ({salesStats?.totalSales || 0} unit). Pertahankan strategi pemasaran.</>
-                  ) : (salesStats?.totalSales || 0) >= 50 ? (
-                    <><span className="text-amber-600 font-semibold">Moderat</span> - {Math.round(((salesStats?.totalSales || 0) / 100) * 100)}% target. Perlu evaluasi strategi promosi.</>
+                  {(salesStats?.totalSales || 0) >= 10 ? (
+                    <><span className="text-green-600 font-semibold">Excellent</span> - Melampaui target ({salesStats?.totalSales || 0} unit). Pertahankan momentum.</>
+                  ) : (salesStats?.totalSales || 0) >= 5 ? (
+                    <><span className="text-amber-600 font-semibold">Stabil</span> - {salesStats?.totalSales || 0} unit terjual. {10 - (salesStats?.totalSales || 0)} unit lagi untuk mencapai target ideal bulan ini.</>
                   ) : (
-                    <><span className="text-red-600 font-semibold">Kritis</span> - {salesStats?.totalSales || 0} unit. Review pricing & tingkatkan follow-up.</>
+                    <><span className="text-red-600 font-semibold">Perlu Atensi</span> - {salesStats?.totalSales || 0} unit terjual. Tingkatkan intensitas follow-up leads dan review pricing stok.</>
                   )}
                 </span>
               </div>

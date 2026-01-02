@@ -26,18 +26,27 @@ export default function ReportDetailPage() {
     const [report, setReport] = useState<ReportDetailData | null>(null);
 
     useEffect(() => {
-        // Generate/Fetch report data based on ID
-        const generateReport = async () => {
+        // Fetch report data from API
+        const fetchReportData = async () => {
             setIsLoading(true);
-            // Simulate API fetch
-            await new Promise(resolve => setTimeout(resolve, 800));
-
-            const data = getMockReportData(reportId);
-            setReport(data);
-            setIsLoading(false);
+            try {
+                const response = await fetch(`/api/v1/analytics/reports/${reportId}`);
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        setReport(result.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch report data:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
-        generateReport();
+        if (reportId) {
+            fetchReportData();
+        }
     }, [reportId]);
 
     if (isLoading) {
@@ -176,137 +185,39 @@ export default function ReportDetailPage() {
                 {/* Right Column: Formulas & Recommendations */}
                 <div className="space-y-8">
                     {/* Formula Section */}
-                    <div className="bg-indigo-600 rounded-2xl shadow-lg p-6 text-white overflow-hidden relative">
-                        <div className="absolute -bottom-4 -right-4 opacity-10 text-8xl font-black italic">f(x)</div>
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                            <span>🧮</span> Metodologi & Rumus
-                        </h3>
-                        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                            <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed py-2">
-                                {report.formula}
-                            </pre>
+                    {report.formula && (
+                        <div className="bg-indigo-600 rounded-2xl shadow-lg p-6 text-white overflow-hidden relative">
+                            <div className="absolute -bottom-4 -right-4 opacity-10 text-8xl font-black italic">f(x)</div>
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                <span>🧮</span> Metodologi & Rumus
+                            </h3>
+                            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                                <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed py-2">
+                                    {report.formula}
+                                </pre>
+                            </div>
+                            <p className="text-[10px] mt-4 opacity-70 italic">Calculated using Prima Mobil advanced analytics engine.</p>
                         </div>
-                        <p className="text-[10px] mt-4 opacity-70 italic">Calculated using Prima Mobil advanced analytics engine.</p>
-                    </div>
+                    )}
 
                     {/* Recommendations Section */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <span className="text-green-500">⚡</span> Strategic Recommendations
-                        </h3>
-                        <div className="space-y-4">
-                            {report.recommendations.map((rec, i) => (
-                                <div key={i} className="flex gap-3 items-start group">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0 group-hover:scale-125 transition-transform" />
-                                    <p className="text-sm text-gray-600 font-medium leading-relaxed">{rec}</p>
-                                </div>
-                            ))}
+                    {report.recommendations && report.recommendations.length > 0 && (
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <span className="text-green-500">⚡</span> Strategic Recommendations
+                            </h3>
+                            <div className="space-y-4">
+                                {report.recommendations.map((rec, i) => (
+                                    <div key={i} className="flex gap-3 items-start group">
+                                        <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0 group-hover:scale-125 transition-transform" />
+                                        <p className="text-sm text-gray-600 font-medium leading-relaxed">{rec}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Export Section */}
-                    <button className="w-full bg-gray-900 text-white rounded-xl py-4 font-bold text-sm shadow-xl transition-all hover:bg-black active:scale-95 flex items-center justify-center gap-2">
-                        <span>Export to PDF/Excel</span>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                    </button>
+                    )}
                 </div>
             </div>
         </div>
     );
-}
-
-// Helpers for mock data generation
-function getMockReportData(id: string): ReportDetailData {
-    switch (id) {
-        case 'one-page-sales':
-            return {
-                id,
-                name: 'Sales & Revenue Report',
-                icon: '💰',
-                formula: 'Total Revenue = Σ (Unit Sale Price)\nATV = Total Revenue / Total Units Sold\nProfit = Total Revenue - Total COGS',
-                analysis: [
-                    'Pendapatan bulan ini menunjukkan kenaikan 15% dibanding rata-rata kuartal sebelumnya.',
-                    'Segmen SUV mewah berkontribusi terhadap 45% total revenue meskipun volume unit lebih rendah.',
-                    'Lama unit mengendap di showroom (Inventory Age) rata-rata adalah 18 hari untuk brand Toyota.'
-                ],
-                recommendations: [
-                    'Tingkatkan stok brand Honda mengingat margin profit per unitnya paling tinggi.',
-                    'Lakukan evaluasi ulang harga pada unit yang sudah parkir lebih dari 45 hari.',
-                    'Optimasi budget ads khusus pada hari Jumat & Sabtu (peak leads generation).'
-                ],
-                metrics: [
-                    { label: 'Total Revenue', value: 'Rp 4.2B', color: 'text-indigo-600' },
-                    { label: 'Units Sold', value: 18 },
-                    { label: 'Avg Sale Price', value: 'Rp 235M' },
-                    { label: 'Profit Est.', value: 'Rp 640M', color: 'text-green-600' }
-                ],
-                chartType: 'donut',
-                chartData: [
-                    { label: 'New Vehicles', value: 65, color: '#4f46e5' },
-                    { label: 'Used Vehicles', value: 25, color: '#10b981' },
-                    { label: 'Trade-ins', value: 10, color: '#f59e0b' }
-                ]
-            };
-        case 'total-inventory':
-            return {
-                id,
-                name: 'Stock Report (Total)',
-                icon: '📦',
-                formula: 'Net Inventory = (Initial Stock + Purchases) - Sales\nTurnover Rate = Sales / Average Inventory',
-                analysis: [
-                    'Stok fisik saat ini adalah 24 unit, dengan kapasitas maksimal showroom adalah 30 unit.',
-                    'Tingkat perputaran stok (Turnover) meningkat dari 1.2x menjadi 1.5x.',
-                    '60% stok berada di kategori "Fast Moving" (harga di bawah Rp 200 juta).'
-                ],
-                recommendations: [
-                    'Showroom hampir penuh, prioritas adalah pembersihan unit stok lama.',
-                    'Segera ambil unit Toyota Avanza baru karena stok saat ini kosong (peminat tinggi).',
-                    'Lakukan rotasi parkir depan untuk unit yang paling ingin dipromosikan minggu ini.'
-                ],
-                metrics: [
-                    { label: 'Total Stock', value: 24, color: 'text-blue-600' },
-                    { label: 'Stock Value', value: 'Rp 5.8B' },
-                    { label: 'Capacity Used', value: '80%' },
-                    { label: 'New Arrivals', value: 6, color: 'text-green-600' }
-                ],
-                chartData: [
-                    { label: 'Ready Stock', value: 75, color: '#3b82f6' },
-                    { label: 'In Transit', value: 15, color: '#8b5cf6' },
-                    { label: 'Under Prep', value: 10, color: '#10b981' }
-                ],
-                chartType: 'donut'
-            };
-        default:
-            // Generic template for others
-            return {
-                id,
-                name: id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-                icon: '📊',
-                formula: 'Metric = ∑(DataPoints) / TimeRange\nConfidence Score = Σ(ValidData) / Σ(TotalData)',
-                analysis: [
-                    'Data menunjukkan stabilitas operasional yang konsisten selama 30 hari terakhir.',
-                    'Terdapat anomali positif pada volume interaksi di akhir pekan.',
-                    'Efisiensi tim meningkat 12% setelah implementasi WhatsApp AI auto-response.'
-                ],
-                recommendations: [
-                    'Pertahankan strategi konten media sosial saat ini karena berdampak langsung pada metrik ini.',
-                    'Lakukan survei kepuasan pelanggan khusus untuk segmen interaksi bot.',
-                    'Audit data secara berkala setiap Senin pagi untuk menjaga akurasi laporan.'
-                ],
-                metrics: [
-                    { label: 'Current Score', value: '88/100', color: 'text-indigo-600' },
-                    { label: 'Growth', value: '+5.2%', color: 'text-green-600' },
-                    { label: 'Samples', value: '1,240' },
-                    { label: 'Status', value: 'HEALTHY' }
-                ],
-                chartData: [
-                    { label: 'Positive', value: 60, color: '#10b981' },
-                    { label: 'Neutral', value: 30, color: '#6366f1' },
-                    { label: 'Negative', value: 10, color: '#ef4444' }
-                ],
-                chartType: 'donut'
-            };
-    }
 }
