@@ -21,6 +21,22 @@ export async function GET(request: NextRequest) {
       // }
 
       const users = await prisma.user.findMany({
+        where: {
+          OR: [
+            { tenantId: null }, // Include Platform Admins
+            {
+              tenant: {
+                name: {
+                  notIn: [
+                    "Tenant 1 Demo",
+                    "Showroom Jakarta Premium",
+                    "AutoLumiku Platform"
+                  ]
+                }
+              }
+            }
+          ]
+        },
         include: {
           tenant: {
             select: {

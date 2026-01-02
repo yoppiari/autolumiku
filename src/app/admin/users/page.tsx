@@ -47,66 +47,74 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        setIsLoading(true);
+  const fetchUsers = async () => {
+    try {
+      // Only show loading on initial load, not on background refresh
+      if (users.length === 0) setIsLoading(true);
 
-        const data = await api.get('/api/admin/users');
+      const data = await api.get('/api/admin/users');
 
-        if (data.success && data.data) {
-          // Map the data to match the User interface
-          const mappedUsers: User[] = data.data.map((user: any) => ({
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            tenantId: user.tenantId,
-            tenantName: user.tenant?.name,
-            emailVerified: user.emailVerified,
-            isActive: user.isActive,
-            createdAt: user.createdAt,
-            lastLoginAt: user.lastLoginAt,
-          }));
+      if (data.success && data.data) {
+        // Map the data to match the User interface
+        const mappedUsers: User[] = data.data.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          tenantId: user.tenantId,
+          tenantName: user.tenant?.name,
+          emailVerified: user.emailVerified,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+          lastLoginAt: user.lastLoginAt,
+        }));
 
-          // Calculate stats
-          const userStats = mappedUsers.reduce((acc, user) => {
-            acc.total++;
-            if (user.isActive) acc.active++;
-            else acc.inactive++;
+        // Calculate stats
+        const userStats = mappedUsers.reduce((acc, user) => {
+          acc.total++;
+          if (user.isActive) acc.active++;
+          else acc.inactive++;
 
-            if (user.role === 'super_admin' || user.role === 'admin') acc.admins++;
-            else if (user.role === 'manager') acc.managers++;
-            else acc.staff++;
+          if (user.role === 'super_admin' || user.role === 'admin') acc.admins++;
+          else if (user.role === 'manager') acc.managers++;
+          else acc.staff++;
 
-            return acc;
-          }, { total: 0, active: 0, inactive: 0, admins: 0, managers: 0, staff: 0 });
+          return acc;
+        }, { total: 0, active: 0, inactive: 0, admins: 0, managers: 0, staff: 0 });
 
-          setUsers(mappedUsers);
-          setStats(userStats);
-        }
-      } catch (error) {
-        console.error('Failed to load users:', error);
-      } finally {
-        setIsLoading(false);
+        setUsers(mappedUsers);
+        setStats(userStats);
       }
-    };
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    loadUsers();
+  useEffect(() => {
+    fetchUsers();
+
+    // Auto-refresh every 30 seconds
+    const intervalId = setInterval(() => {
+      fetchUsers();
+    }, 30000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   // Filter users
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (user.tenantName && user.tenantName.toLowerCase().includes(searchTerm.toLowerCase()));
+      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.tenantName && user.tenantName.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'active' && user.isActive) ||
-                         (statusFilter === 'inactive' && !user.isActive);
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'active' && user.isActive) ||
+      (statusFilter === 'inactive' && !user.isActive);
 
     return matchesSearch && matchesRole && matchesStatus;
   });

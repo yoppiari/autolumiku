@@ -44,19 +44,25 @@ export default function CreateUserPage() {
     isActive: true,
   });
 
-  // Mock tenants data
+  // Fetch active tenants from API
   useEffect(() => {
-    const mockTenants: Tenant[] = [
-      { id: 'tenant-1', name: 'Showroom Jakarta', slug: 'showroomjakarta' },
-      { id: 'tenant-2', name: 'Dealer Mobil', slug: 'dealermobil' },
-      { id: 'tenant-3', name: 'AutoMobil', slug: 'automobil' },
-    ];
-    setTenants(mockTenants);
+    const fetchTenants = async () => {
+      try {
+        const data = await api.get('/api/admin/tenants');
+        if (data.success && data.data) {
+          setTenants(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to load tenants:', error);
+      }
+    };
+
+    fetchTenants();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
@@ -78,7 +84,7 @@ export default function CreateUserPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const errors = validateForm();
     if (errors.length > 0) {
       alert('Error:\\n' + errors.join('\\n'));
