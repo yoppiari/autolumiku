@@ -110,7 +110,15 @@ function AnalyticsPageInternal() {
 
   const loadInsights = async (tid: string) => {
     try {
-      const res = await fetch(`/api/v1/reports/management-insights?period=monthly&tenantId=${tid}`);
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.warn('[Analytics] No auth token found for insights');
+        return;
+      }
+
+      const res = await fetch(`/api/v1/reports/management-insights?period=monthly&tenantId=${tid}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       if (data.managementInsights) {
         setInsights(data.managementInsights.slice(0, 3));
@@ -126,6 +134,13 @@ function AnalyticsPageInternal() {
       const token = localStorage.getItem('authToken');
       const storedUser = localStorage.getItem('user');
       const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+
+      // Validate token exists before making API calls
+      if (!token) {
+        console.warn('[Analytics] No auth token found, skipping API calls');
+        setIsLoading(false);
+        return;
+      }
 
       const salesRes = await fetch('/api/v1/analytics/sales', {
         headers: { Authorization: `Bearer ${token}` },
