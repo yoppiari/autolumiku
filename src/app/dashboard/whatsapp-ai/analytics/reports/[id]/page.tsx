@@ -51,6 +51,14 @@ export default function ReportDetailPage() {
                 }
 
                 const response = await fetch(url, { headers });
+
+                if (response.status === 401) {
+                    console.warn('[Report Detail] Token expired, redirecting to login');
+                    localStorage.clear();
+                    window.location.href = '/login';
+                    return;
+                }
+
                 if (response.ok) {
                     const result = await response.json();
                     if (result.success) {

@@ -119,6 +119,14 @@ function AnalyticsPageInternal() {
       const res = await fetch(`/api/v1/reports/management-insights?period=monthly&tenantId=${tid}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (res.status === 401) {
+        console.warn('[Analytics] Token expired in insights, redirecting to login');
+        localStorage.clear();
+        window.location.href = '/login';
+        return;
+      }
+
       const data = await res.json();
       if (data.managementInsights) {
         setInsights(data.managementInsights.slice(0, 3));
@@ -137,22 +145,31 @@ function AnalyticsPageInternal() {
 
       // Validate token exists before making API calls
       if (!token) {
-        console.warn('[Analytics] No auth token found, skipping API calls');
-        setIsLoading(false);
+        console.warn('[Analytics] No auth token found, redirecting to login');
+        window.location.href = '/login';
         return;
       }
 
-      const salesRes = await fetch('/api/v1/analytics/sales', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const salesRes = await fetch('/api/v1/analytics/sales', { headers });
+      if (salesRes.status === 401) {
+        console.warn('[Analytics] Token expired, redirecting to login');
+        localStorage.clear();
+        window.location.href = '/login';
+        return;
+      }
       if (salesRes.ok) {
         const salesData = await salesRes.json();
         setSalesStats(salesData.data);
       }
 
-      const kpiRes = await fetch('/api/v1/analytics/kpi', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const kpiRes = await fetch('/api/v1/analytics/kpi', { headers });
+      if (kpiRes.status === 401) {
+        localStorage.clear();
+        window.location.href = '/login';
+        return;
+      }
       if (kpiRes.ok) {
         const kpiResult = await kpiRes.json();
         setKpiData(kpiResult.data);
