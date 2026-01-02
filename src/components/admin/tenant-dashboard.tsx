@@ -49,9 +49,13 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Filter out demo/system tenants as requested
+  const excludedTenants = ['Tenant 1 Demo', 'Showroom Jakarta Premium', 'AutoLumiku Platform'];
+  const displayTenants = tenants.filter(t => !excludedTenants.includes(t.name));
+
   useEffect(() => {
-    // Calculate tenant statistics
-    const tenantStats = tenants.reduce(
+    // Calculate tenant statistics (using filtered tenants)
+    const tenantStats = displayTenants.reduce(
       (acc, tenant) => {
         acc.total++;
         acc[tenant.status === 'setup_required' ? 'setupRequired' : tenant.status]++;
@@ -61,7 +65,7 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
     );
 
     setStats(tenantStats);
-  }, [tenants]);
+  }, [tenants]); // Re-run when raw tenants prop changes
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -253,7 +257,7 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {tenants.slice(0, 5).map((tenant) => (
+              {displayTenants.slice(0, 5).map((tenant) => (
                 <tr key={tenant.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{tenant.name}</div>
@@ -261,8 +265,8 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {tenant.status === 'active' ? 'Tenant aktif dan berjalan normal' :
-                     tenant.status === 'setup_required' ? 'Menunggu konfigurasi awal' :
-                     tenant.status === 'suspended' ? 'Tenant disuspensi' : 'Tenant dinonaktifkan'}
+                      tenant.status === 'setup_required' ? 'Menunggu konfigurasi awal' :
+                        tenant.status === 'suspended' ? 'Tenant disuspensi' : 'Tenant dinonaktifkan'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColor[tenant.status]}`}>
@@ -277,7 +281,7 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
             </tbody>
           </table>
 
-          {tenants.length === 0 && (
+          {displayTenants.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               Belum ada aktivitas tenant
             </div>

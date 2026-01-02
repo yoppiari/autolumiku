@@ -27,9 +27,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       try {
         const userData = JSON.parse(storedUser);
 
-        // Check if user is super_admin
-        if (userData.role !== 'super_admin') {
-          // Not a super admin, redirect to showroom dashboard
+        // STRICT AUTH CHECK: Only Platform Admins allowed
+        // 1. Super Admin
+        // 2. Admin with NO tenantId (Platform Admin)
+        const isSuperAdmin = userData.role === 'super_admin';
+        const isPlatformAdmin = userData.role === 'admin' && !userData.tenantId;
+
+        if (!isSuperAdmin && !isPlatformAdmin) {
+          console.warn('[AdminAccess] Access denied: User is not a Platform Admin', userData);
+          // Redirect Tenant Admins to their specific dashboard
           window.location.href = '/dashboard';
           return;
         }
@@ -81,9 +87,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Tenants', href: '/admin/tenants', icon: '🏢' },
     { name: 'Users', href: '/admin/users', icon: '👥' },
     { name: 'Analytics', href: '/admin/health', icon: '📊' },
-    { name: 'Data Management', href: '/admin/data-management', icon: '🗄️', submenu: [
-      { name: 'Vehicle Scraper', href: '/admin/data-management/scraper', icon: '🤖' },
-    ]},
+    {
+      name: 'Data Management', href: '/admin/data-management', icon: '🗄️', submenu: [
+        { name: 'Vehicle Scraper', href: '/admin/data-management/scraper', icon: '🤖' },
+      ]
+    },
     { name: 'Audit Logs', href: '/admin/audit', icon: '📋' },
     { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
   ];
@@ -149,9 +157,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         {item.name}
                       </div>
                       <svg
-                        className={`w-4 h-4 transition-transform ${
-                          expandedMenus.includes(item.name) ? 'rotate-180' : ''
-                        }`}
+                        className={`w-4 h-4 transition-transform ${expandedMenus.includes(item.name) ? 'rotate-180' : ''
+                          }`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
