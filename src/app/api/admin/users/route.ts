@@ -104,16 +104,27 @@ export async function POST(request: NextRequest) {
       // Check if email already exists
       const existingUser = await prisma.user.findUnique({
         where: { email },
+        include: { tenant: true }
       });
 
       if (existingUser) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Email sudah terdaftar',
-          },
-          { status: 409 }
-        );
+        // SELF-HEALING: If the existing user belongs to a dummy tenant, DELETE it and proceed.
+        const dummyTenants = ["Tenant 1 Demo", "Showroom Jakarta Premium", "AutoLumiku Platform"];
+        const isDummyUser = existingUser.tenant && dummyTenants.includes(existingUser.tenant.name);
+
+        if (isDummyUser) {
+          console.log(`♻️ Auto-cleaning dummy user ${email} from ${existingUser.tenant?.name}`);
+          await prisma.user.delete({ where: { id: existingUser.id } });
+          // Proceed to create (conflict resolved)
+        } else {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Email sudah terdaftar',
+            },
+            { status: 409 }
+          );
+        }
       }
 
       // Check if tenant exists
