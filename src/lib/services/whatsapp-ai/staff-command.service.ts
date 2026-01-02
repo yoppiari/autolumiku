@@ -1614,30 +1614,36 @@ export class StaffCommandService {
       greeting = `${timeGreeting}, ${staffName}! Selamat datang di ${tenantName}!`;
     }
 
-    // Build professional staff menu - following premium template
+    // Build simplified, clear staff menu with better formatting
     const message =
-      `${timeGreeting}, Halo!\n\n` +
-      `Selamat datang di showroom kami\n` +
-      `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
-      `Ada yang bisa kami bantu?\n\n` +
-      `Saat ini terdapat ${availableCount} unit kendaraan tersedia di ${tenantName}.\n\n` +
-      `Layanan yang tersedia:\n\n` +
-      `📸 Upload Kendaraan Baru\n` +
-      `   Ketik: upload\n` +
-      `   Lalu kirim foto + info mobil\n` +
-      `   Contoh: "upload Brio 2020 120jt hitam matic km 30rb"\n\n` +
-      `📋 Cek Stok Kendaraan\n` +
-      `   Ketik: inventory atau stok\n` +
-      `   Filter: inventory AVAILABLE\n\n` +
-      `📊 Lihat Statistik\n` +
-      `   Ketik: stats atau laporan\n` +
-      `   Period: stats today / stats week / stats month\n\n` +
-      `🔄 Update Status Kendaraan\n` +
-      `   Ketik: status [ID] [STATUS]\n` +
-      `   Contoh: status PM-PST-001 SOLD\n\n` +
-      `🚙 Edit Kendaraan\n` +
-      `   Ketik: Edit/ Ubah/ Rubah/ Ganti [ID] [Detail kendaraan/ informasi dasar/ harga]\n` +
-      `   Contoh: Ganti PM-PST-001 Hybrid / Ubah PM-PST-001 AT / Edit PM-PST-001 85000 km\n\n` +
+      `${timeGreeting}, ${staffName}! 👋\n\n` +
+      `Selamat datang di *${tenantName}*\n` +
+      `Stok saat ini: *${availableCount} unit* tersedia\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `📋 *MENU STAFF*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `*1️⃣ UPLOAD MOBIL BARU*\n` +
+      `Ketik: \`upload\`\n` +
+      `Langkah:\n` +
+      `  1. Ketik "upload"\n` +
+      `  2. Kirim foto mobil (min 6 foto)\n` +
+      `  3. Ketik detail: "Brio 2020 120jt hitam matic 30rb km"\n\n` +
+      `*2️⃣ CEK STOK*\n` +
+      `Ketik: \`stok\` atau \`inventory\`\n` +
+      `Filter: \`stok AVAILABLE\` atau \`stok SOLD\`\n\n` +
+      `*3️⃣ EDIT DATA MOBIL*\n` +
+      `Format: \`edit [field] jadi [nilai]\`\n` +
+      `Contoh:\n` +
+      `  • \`edit harga jadi 150jt\`\n` +
+      `  • \`rubah km jadi 50000\`\n` +
+      `  • \`ganti warna jadi hitam\`\n\n` +
+      `*4️⃣ UPDATE STATUS*\n` +
+      `Format: \`status [ID] [STATUS]\`\n` +
+      `Contoh: \`status PM-PST-001 SOLD\`\n` +
+      `Status: AVAILABLE, BOOKED, SOLD\n\n` +
+      `*5️⃣ STATISTIK & LAPORAN*\n` +
+      `Ketik: \`stats\` atau \`laporan\`\n` +
+      `Period: \`stats today\`, \`stats week\`, \`stats month\`\n\n` +
       `👮‍♂️ *MENU ADMIN & OWNER (REPORTS)*
 Laporan Management Real-Time (Ketik untuk akses):
 
