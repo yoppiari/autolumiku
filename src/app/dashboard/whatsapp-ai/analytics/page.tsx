@@ -1,211 +1,103 @@
-/**
- * WhatsApp AI Analytics Dashboard
- * Access: ADMIN (90+) only
- */
-
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ROLE_LEVELS } from '@/lib/rbac';
-
-type Department = 'sales' | 'whatsapp';
-
-const intentColors: Record<string, string> = {
-  vehicle: '#3b82f6', // blue
-  price: '#8b5cf6',   // purple
-  greeting: '#22c55e', // green
-  general: '#f59e0b',  // amber
-  escalated: '#ef4444' // red
-};
-
-interface KPIData {
-  penjualanShowroom: number;
-  atv: number;
-  inventoryTurnover: number;
-  customerRetention: number;
-  nps: number;
-  salesPerEmployee: number;
-  efficiency: number;
-  raw: {
-    totalSold: number;
-    totalInventory: number;
-    totalRevenue: number;
-    avgPrice: number;
-    employeeCount: number;
-    leadConversion: number;
-  };
-}
+import { api } from '@/lib/api-client';
+import { useSearchParams } from 'next/navigation';
 
 interface SalesStats {
   totalSales: number;
   totalRevenue: number;
-  avgPrice: number;
-  topBrands: { brand: string; count: number; revenue: number }[];
-  monthlySales: { month: string; count: number; revenue: number; brands: { brand: string; count: number }[] }[];
-  topPerformers: { name: string; sales: number; revenue: number }[];
+  topBrands: { brand: string; count: number }[];
 }
 
-interface WhatsAppAnalytics {
+interface KPIData {
+  raw: any;
+  penjualanShowroom: number;
+  atv: number;
+  inventoryTurnover: number;
+  efficiency: number;
+  nps: number;
+  customerRetention: number;
+  leadConversion: number;
+  salesPerEmployee: number;
+}
+
+interface WhatsappAnalytics {
   overview: {
     totalConversations: number;
-    activeConversations: number;
     totalMessages: number;
     aiResponseRate: number;
-    avgResponseTime: number;
     escalationRate: number;
+    avgResponseTime: number;
   };
   performance: {
-    aiAccuracy: number;
-    customerSatisfaction: number;
     resolutionRate: number;
-    firstResponseTime: number;
+    aiAccuracy: number;
   };
-  timeSeriesData: {
-    date: string;
-    conversations: number;
-    messages: number;
-    escalations: number;
-  }[];
-  intentBreakdown: {
-    intent: string;
-    count: number;
-    percentage: number;
-  }[];
-  staffActivity: {
-    staffPhone: string;
-    commandCount: number;
-    successRate: number;
-    lastActive: string;
-  }[];
+  intentBreakdown: { intent: string; count: number; percentage: number }[];
 }
 
+const intentColors: Record<string, string> = {
+  'vehicle_search': '#3b82f6',
+  'price_inquiry': '#10b981',
+  'test_drive': '#f59e0b',
+  'support': '#8b5cf6',
+  'other': '#6b7280'
+};
+
 function AnalyticsPageInternal() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeDepartment, setActiveDepartment] = useState<Department>('sales');
-  const [isLoading, setIsLoading] = useState(true);
+  const tenantId = searchParams?.get('tenantId') || '';
+
+  const [activeDepartment, setActiveDepartment] = useState<'sales' | 'whatsapp'>('sales');
   const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
-  const [whatsappAnalytics, setWhatsappAnalytics] = useState<WhatsAppAnalytics | null>(null);
-  const [insights, setInsights] = useState<string[]>([]);
-  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('week');
+  const [whatsappAnalytics, setWhatsappAnalytics] = useState<WhatsappAnalytics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab && ['sales', 'whatsapp'].includes(tab)) {
-      setActiveDepartment(tab as Department);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      loadAnalytics();
-      loadInsights(user.tenantId);
-    }
-  }, []);
-
-  const loadInsights = async (tid: string) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        console.warn('[Analytics] No auth token found for insights');
-        return;
-      }
-
-      const res = await fetch(`/api/v1/reports/management-insights?period=monthly&tenantId=${tid}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status === 401) {
-        console.warn('[Analytics] Token expired in insights, redirecting to login');
-        localStorage.clear();
-        window.location.href = '/login';
-        return;
-      }
-
-      const data = await res.json();
-      if (data.managementInsights) {
-        setInsights(data.managementInsights.slice(0, 3));
-      }
-    } catch (e) {
-      console.error('Failed to load insights:', e);
-    }
-  };
-
-  const loadAnalytics = async () => {
+  const loadData = useCallback(async () => {
+    if (!tenantId) return;
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-      const storedUser = localStorage.getItem('user');
-      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+      const [salesRes, kpiRes, waRes] = await Promise.all([
+        api.get(`/api/v1/analytics/sales-stats?tenantId=${tenantId}`),
+        api.get(`/api/v1/analytics/kpis?tenantId=${tenantId}`),
+        api.get(`/api/v1/analytics/whatsapp?tenantId=${tenantId}`)
+      ]);
 
-      // Validate token exists before making API calls
-      if (!token) {
-        console.warn('[Analytics] No auth token found, redirecting to login');
-        window.location.href = '/login';
-        return;
-      }
-
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const salesRes = await fetch('/api/v1/analytics/sales', { headers });
-      if (salesRes.status === 401) {
-        console.warn('[Analytics] Token expired, redirecting to login');
-        localStorage.clear();
-        window.location.href = '/login';
-        return;
-      }
-      if (salesRes.ok) {
-        const salesData = await salesRes.json();
-        setSalesStats(salesData.data);
-      }
-
-      const kpiRes = await fetch('/api/v1/analytics/kpi', { headers });
-      if (kpiRes.status === 401) {
-        localStorage.clear();
-        window.location.href = '/login';
-        return;
-      }
-      if (kpiRes.ok) {
-        const kpiResult = await kpiRes.json();
-        setKpiData(kpiResult.data);
-      }
-
-      if (parsedUser?.tenantId) {
-        const waRes = await fetch(`/api/v1/whatsapp-ai/analytics?tenantId=${parsedUser.tenantId}&range=${timeRange}`);
-        if (waRes.ok) {
-          const waData = await waRes.json();
-          if (waData.success) setWhatsappAnalytics(waData.data);
-        }
-      }
+      if (salesRes.success) setSalesStats(salesRes.data);
+      if (kpiRes.success) setKpiData(kpiRes.data);
+      if (waRes.success) setWhatsappAnalytics(waRes.data);
+    } catch (error) {
+      console.error('Failed to load analytics data:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [tenantId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const formatRupiah = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount);
   };
 
   return (
     <div className="p-4 md:p-6 pb-20">
       {/* Header */}
-      {/* Header - Elegant Rich Modern (Matched to Main Dashboard) */}
       <div className="mb-4">
         <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-3 md:px-5 py-2 md:py-3 shadow-md">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-0.5">
               <Link href="/dashboard/whatsapp-ai" className="text-slate-400 hover:text-white transition-colors text-[10px] flex items-center gap-1">
-                ← Back to WhatsApp AI
+                ← Back
               </Link>
             </div>
             <h1 className="text-sm md:text-xl font-bold text-white truncate leading-tight">
@@ -221,7 +113,7 @@ function AnalyticsPageInternal() {
       </div>
 
       {/* Department Tabs */}
-      <div className="border-b border-gray-200 mb-4">
+      <div className="border-b border-gray-200 mb-2">
         <nav className="flex gap-2" aria-label="Tabs">
           <button
             onClick={() => setActiveDepartment('sales')}
@@ -254,9 +146,9 @@ function AnalyticsPageInternal() {
 
       {/* Sales Report Tab Content */}
       {!isLoading && activeDepartment === 'sales' && (
-        <div className="space-y-4 animate-in fade-in duration-500">
-          <div className="space-y-4">
-            {/* Summary Cards - Main Dashboard Style */}
+        <div className="space-y-2 animate-in fade-in duration-500">
+          <div className="space-y-3">
+            {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
                 <p className="text-[10px] md:text-xs text-gray-500">Total Penjualan</p>
@@ -270,7 +162,7 @@ function AnalyticsPageInternal() {
               </div>
               <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
                 <p className="text-[10px] md:text-xs text-gray-500">Total Inventory</p>
-                <p className="text-lg md:text-xl font-bold text-gray-900 leading-tight">{kpiData?.raw.totalInventory || 0}</p>
+                <p className="text-lg md:text-xl font-bold text-gray-900 leading-tight">{kpiData?.raw?.totalInventory || 0}</p>
                 <p className="text-[9px] text-gray-500 mt-0.5">Stok tersedia</p>
               </div>
               <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
@@ -288,212 +180,91 @@ function AnalyticsPageInternal() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
                 <div className="text-[10px] text-blue-800 leading-snug">
-                  <span className="font-bold">Performa Penjualan:</span> {(salesStats?.totalSales || 0) >= 5 ? 'Status stabil dengan volume sehat.' : 'Perlu perhatian khusus.'}
+                  <span className="font-bold">Performa Penjualan:</span> {(salesStats?.totalSales || 0) >= 5 ? 'Status stabil.' : 'Perlu perhatian.'}
                 </div>
                 <div className="text-[10px] text-blue-800 leading-snug">
-                  <span className="font-bold">Inventory Strategy:</span> Turnover rate saat ini {kpiData?.inventoryTurnover || 0}%. Target optimal 20%.
+                  <span className="font-bold">Inventory Strategy:</span> Turnover {kpiData?.inventoryTurnover || 0}%. Target 20%.
                 </div>
               </div>
             </div>
 
-            {/* KPI Charts Section - Matched to Main Dashboard */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
+            {/* KPI Charts Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               {/* KPI Penjualan */}
-              <div className="bg-white rounded-lg shadow-sm p-3 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col items-center">
-                <h4 className="text-xs font-bold text-gray-800 mb-2 flex items-center gap-2 self-start w-full">
-                  <span className="text-base">📊</span> Metrix Penjualan
-                </h4>
-                <div className="flex items-center justify-center py-1.5 mb-2 scale-90 md:scale-100">
-                  <div className="relative w-24 h-24">
-                    <svg className="w-full h-full" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
-                      <circle
-                        cx="18" cy="18" r="15.9155"
-                        fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="3.5"
-                        strokeDasharray={`${kpiData?.penjualanShowroom || 0} ${100 - (kpiData?.penjualanShowroom || 0)}`}
-                        strokeLinecap="round"
-                        transform="rotate(-90 18 18)"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
-                      <span className="text-[8px] text-gray-600 font-medium">Target</span>
-                    </div>
+              <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-200 flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-800 mb-2 self-start w-full">📊 Metrix Penjualan</h4>
+                <div className="relative w-24 h-24 mb-2">
+                  <svg className="w-full h-full" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3b82f6" strokeWidth="3.5" strokeDasharray={`${kpiData?.penjualanShowroom || 0} ${100 - (kpiData?.penjualanShowroom || 0)}`} strokeLinecap="round" transform="rotate(-90 18 18)" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
                   </div>
                 </div>
-                <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-green-500"></span>
-                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">ATV</span>
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.atv || 0}%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-purple-500"></span>
-                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Inventory Turnover</span>
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-blue-500"></span>
-                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Penjualan Showroom</span>
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.penjualanShowroom || 0}%</span>
-                  </div>
-                </div>
-                <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
-                  <p className="text-[7px] md:text-[8px] leading-snug text-blue-500">
-                    Target: 20% inventory sold per month
-                  </p>
+                <div className="w-full space-y-1 pt-2 border-t border-gray-100">
+                  <div className="flex justify-between text-[10px]"><span>ATV</span><span className="font-bold">{kpiData?.atv || 0}%</span></div>
+                  <div className="flex justify-between text-[10px]"><span>Turnover</span><span className="font-bold">{kpiData?.inventoryTurnover || 0}%</span></div>
                 </div>
               </div>
 
               {/* KPI Pelanggan */}
-              <div className="bg-white rounded-lg shadow-sm p-3 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col items-center">
-                <h4 className="text-xs font-bold text-gray-800 mb-2 flex items-center gap-2 self-start w-full">
-                  <span className="text-base">👥</span> Metrix Pelanggan
-                </h4>
-                <div className="flex items-center justify-center py-1.5 mb-2 scale-90 md:scale-100">
-                  <div className="relative w-24 h-24">
-                    <svg className="w-full h-full" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
-                      <circle
-                        cx="18" cy="18" r="15.9155"
-                        fill="none"
-                        stroke="#f59e0b"
-                        strokeWidth="3.5"
-                        strokeDasharray={`${kpiData?.nps || 0} ${100 - (kpiData?.nps || 0)}`}
-                        strokeLinecap="round"
-                        transform="rotate(-90 18 18)"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
-                      <span className="text-[8px] text-gray-600 font-medium">NPS</span>
-                    </div>
+              <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-200 flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-800 mb-2 self-start w-full">👥 Metrix Pelanggan</h4>
+                <div className="relative w-24 h-24 mb-2">
+                  <svg className="w-full h-full" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f59e0b" strokeWidth="3.5" strokeDasharray={`${kpiData?.nps || 0} ${100 - (kpiData?.nps || 0)}`} strokeLinecap="round" transform="rotate(-90 18 18)" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
                   </div>
                 </div>
-                <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-teal-500"></span>
-                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Customer Retention</span>
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.customerRetention || 0}%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-amber-500"></span>
-                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">NPS (Satisfaction)</span>
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.nps || 0}%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-cyan-500"></span>
-                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Lead Conversion</span>
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.raw?.leadConversion || 0}%</span>
-                  </div>
-                </div>
-                <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
-                  <p className="text-[7px] md:text-[8px] leading-snug text-amber-500">
-                    Target: NPS &gt; 50% (Excellent)
-                  </p>
+                <div className="w-full space-y-1 pt-2 border-t border-gray-100">
+                  <div className="flex justify-between text-[10px]"><span>Retention</span><span className="font-bold">{kpiData?.customerRetention || 0}%</span></div>
+                  <div className="flex justify-between text-[10px]"><span>Conversion</span><span className="font-bold">{kpiData?.leadConversion || 0}%</span></div>
                 </div>
               </div>
 
               {/* KPI Operasional */}
-              <div className="bg-white rounded-lg shadow-sm p-3 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col items-center">
-                <h4 className="text-xs font-bold text-gray-800 mb-2 flex items-center gap-2 self-start w-full">
-                  <span className="text-base">⚙️</span> Metrix Operasional
-                </h4>
-                <div className="flex items-center justify-center py-1.5 mb-2 scale-90 md:scale-100">
-                  <div className="relative w-24 h-24">
-                    <svg className="w-full h-full" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
-                      <circle
-                        cx="18" cy="18" r="15.9155"
-                        fill="none"
-                        stroke="#8b5cf6"
-                        strokeWidth="3.5"
-                        strokeDasharray={`${kpiData?.efficiency || 0} ${100 - (kpiData?.efficiency || 0)}`}
-                        strokeLinecap="round"
-                        transform="rotate(-90 18 18)"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
-                      <span className="text-[8px] text-gray-600 font-medium">Efficiency</span>
-                    </div>
+              <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-200 flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-800 mb-2 self-start w-full">⚙️ Metrix Operasional</h4>
+                <div className="relative w-24 h-24 mb-2">
+                  <svg className="w-full h-full" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#8b5cf6" strokeWidth="3.5" strokeDasharray={`${kpiData?.efficiency || 0} ${100 - (kpiData?.efficiency || 0)}`} strokeLinecap="round" transform="rotate(-90 18 18)" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
                   </div>
                 </div>
-                <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-indigo-500"></span>
-                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Sales per Employee</span>
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.salesPerEmployee || 0}%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-violet-500"></span>
-                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Overall Efficiency</span>
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.efficiency || 0}%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-rose-500"></span>
-                      <span className="text-[10px] md:text-xs text-gray-700 font-medium">Inventory Velocity</span>
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
-                  </div>
-                </div>
-                <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
-                  <p className="text-[7px] md:text-[8px] leading-snug text-violet-500">
-                    Target: 2 vehicles/employee/month
-                  </p>
+                <div className="w-full space-y-1 pt-2 border-t border-gray-100">
+                  <div className="flex justify-between text-[10px]"><span>Sales/Emp</span><span className="font-bold">{kpiData?.salesPerEmployee || 0}%</span></div>
+                  <div className="flex justify-between text-[10px]"><span>Velocity</span><span className="font-bold">{kpiData?.inventoryTurnover || 0}%</span></div>
                 </div>
               </div>
             </div>
           </div>
 
-          <hr className="border-gray-100" />
-
           {/* Report Categories Grid */}
-          <section className="pt-2">
+          <section className="pt-1">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-3 md:p-4 bg-gray-50 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-2">
+              <div className="p-2 md:p-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-lg">📂</div>
-                  <div>
-                    <h3 className="text-base font-bold text-gray-900">Laporan Tersedia</h3>
-                    <p className="text-[10px] text-gray-500">Pilih kategori laporan untuk analisis</p>
-                  </div>
+                  <span className="text-lg">📂</span>
+                  <h3 className="text-sm font-bold text-gray-900">Laporan Tersedia</h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-white border border-gray-200 rounded-full text-[10px] font-bold text-gray-600 shadow-sm">
-                    15 TOTAL REPORTS
-                  </span>
-                </div>
+                <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">15 REPORTS</span>
               </div>
 
-              <div className="p-4 md:p-8 space-y-12">
+              <div className="p-3 md:p-5 space-y-5">
                 {/* Sales & Revenue */}
                 <section>
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">💰</span>
-                    <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Sales Revenue</h3>
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">6 REPORTS</span>
+                    <h3 className="text-xs font-bold text-gray-800 uppercase">Sales Revenue</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
                       { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand (1 Hal)', icon: '💰', href: '/dashboard/whatsapp-ai/analytics/reports/one-page-sales' },
                       { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit & volume', icon: '📊', href: '/dashboard/whatsapp-ai/analytics/reports/total-sales' },
@@ -501,69 +272,52 @@ function AnalyticsPageInternal() {
                       { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa', icon: '📋', href: '/dashboard/whatsapp-ai/analytics/reports/sales-summary' },
                       { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐', href: '/dashboard/whatsapp-ai/analytics/reports/sales-metrics' },
                       { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail', icon: '📑', href: '/dashboard/whatsapp-ai/analytics/reports/sales-report' },
-                    ].map(report => (
-                      <ReportCard key={report.id} report={report} />
-                    ))}
+                    ].map(report => <ReportCard key={report.id} report={report} />)}
                   </div>
                 </section>
-
-                <hr className="border-gray-100" />
 
                 {/* Inventory & Stock */}
                 <section>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xl">📦</span>
-                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Inventory & Stock Reports</h3>
-                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full">4 REPORTS</span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">📦</span>
+                    <h3 className="text-xs font-bold text-gray-800 uppercase">Inventory & Stock</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
-                      { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Ringkasan stok kendaraan tersedia', icon: '📦', href: '/dashboard/whatsapp-ai/analytics/reports/total-inventory' },
-                      { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan stok kritis & stok lama', icon: '⚠️', href: '/dashboard/whatsapp-ai/analytics/reports/low-stock-alert' },
-                      { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Analisis harga jual vs harga stok', icon: '💵', href: '/dashboard/whatsapp-ai/analytics/reports/average-price' },
-                      { id: 'inventory-listing', name: 'Vehicle Inventory Listing', desc: 'Katalog stok lengkap dengan foto', icon: '🚙', href: '/dashboard/whatsapp-ai/analytics/reports/inventory-listing' },
-                    ].map(report => (
-                      <ReportCard key={report.id} report={report} />
-                    ))}
+                      { id: 'total-inventory', name: 'Stock Report (Total)', desc: 'Ringkasan stok tersedia', icon: '📦', href: '/dashboard/whatsapp-ai/analytics/reports/total-inventory' },
+                      { id: 'low-stock-alert', name: 'Low Stock Alert', desc: 'Peringatan stok kritis', icon: '⚠️', href: '/dashboard/whatsapp-ai/analytics/reports/low-stock-alert' },
+                      { id: 'average-price', name: 'Rata-rata Harga (Avg)', desc: 'Analisis harga jual vs stok', icon: '💵', href: '/dashboard/whatsapp-ai/analytics/reports/average-price' },
+                      { id: 'inventory-listing', name: 'Vehicle Inventory Listing', desc: 'Katalog stok lengkap', icon: '🚙', href: '/dashboard/whatsapp-ai/analytics/reports/inventory-listing' },
+                    ].map(report => <ReportCard key={report.id} report={report} />)}
                   </div>
                 </section>
-
-                <hr className="border-gray-100" />
 
                 {/* Team & Performance */}
                 <section>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xl">🏆</span>
-                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Team & Performance</h3>
-                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full">2 REPORTS</span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🏆</span>
+                    <h3 className="text-xs font-bold text-gray-800 uppercase">Team & Performance</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
-                      { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking & produktivitas tim sales', icon: '🏆', href: '/dashboard/whatsapp-ai/analytics/reports/staff-performance' },
-                      { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Aktivitas transaksi terbaru', icon: '🔄', href: '/dashboard/whatsapp-ai/analytics/reports/recent-sales' },
-                    ].map(report => (
-                      <ReportCard key={report.id} report={report} />
-                    ))}
+                      { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking tim sales', icon: '🏆', href: '/dashboard/whatsapp-ai/analytics/reports/staff-performance' },
+                      { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Transaksi terbaru', icon: '🔄', href: '/dashboard/whatsapp-ai/analytics/reports/recent-sales' },
+                    ].map(report => <ReportCard key={report.id} report={report} />)}
                   </div>
                 </section>
 
-                <hr className="border-gray-100" />
-
                 {/* WhatsApp AI & Engagement */}
                 <section>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xl">🤖</span>
-                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">WhatsApp AI & Engagement</h3>
-                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">3 REPORTS</span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🤖</span>
+                    <h3 className="text-xs font-bold text-gray-800 uppercase">WhatsApp AI</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
-                      { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot & interaksi pelanggan', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics/reports/whatsapp-ai' },
-                      { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution rate', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics/reports/operational-metrics' },
-                      { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis ketertarikan & behavior', icon: '👥', href: '/dashboard/whatsapp-ai/analytics/reports/customer-metrics' },
-                    ].map(report => (
-                      <ReportCard key={report.id} report={report} />
-                    ))}
+                      { id: 'whatsapp-ai', name: 'WhatsApp AI Analytics', desc: 'Efektivitas bot', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics/reports/whatsapp-ai' },
+                      { id: 'operational-metrics', name: 'Metrik Operasional AI', desc: 'Response time & resolution', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics/reports/operational-metrics' },
+                      { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis behavior', icon: '👥', href: '/dashboard/whatsapp-ai/analytics/reports/customer-metrics' },
+                    ].map(report => <ReportCard key={report.id} report={report} />)}
                   </div>
                 </section>
               </div>
@@ -574,7 +328,7 @@ function AnalyticsPageInternal() {
 
       {/* WhatsApp AI Tab Content */}
       {!isLoading && activeDepartment === 'whatsapp' && (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-4 animate-in fade-in duration-500">
           {!whatsappAnalytics ? (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
               <div className="text-4xl mb-4">💬</div>
@@ -606,7 +360,7 @@ function AnalyticsPageInternal() {
               </div>
 
               {/* Performance Analysis Card */}
-              <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-5 shadow-sm">
+              <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-xl">🤖</span>
                   <h4 className="text-base font-bold text-gray-900">AI Performance Analysis</h4>
@@ -660,7 +414,6 @@ function AnalyticsPageInternal() {
           )}
         </div>
       )}
-
     </div>
   );
 }
@@ -694,7 +447,6 @@ function ReportCard({ report }: { report: { id: string; name: string; desc: stri
     </div>
   );
 }
-
 
 export default function AnalyticsPage() {
   return (
