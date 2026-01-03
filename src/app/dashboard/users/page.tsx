@@ -63,7 +63,25 @@ export default function UsersPage() {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES;
+
+      // Fallback: compute roleLevel from role if missing
+      let roleLevel = parsedUser.roleLevel;
+      if (!roleLevel || roleLevel === undefined) {
+        console.warn('[Users Page] roleLevel missing in localStorage, computing from role:', parsedUser.role);
+        // Compute from role string
+        const role = (parsedUser.role || '').toUpperCase();
+        if (role === 'OWNER') roleLevel = ROLE_LEVELS.OWNER; // 100
+        else if (role === 'ADMIN') roleLevel = ROLE_LEVELS.ADMIN; // 90
+        else if (role === 'SUPER_ADMIN') roleLevel = 110;
+        else roleLevel = ROLE_LEVELS.SALES; // 30
+
+        // Update localStorage with computed roleLevel
+        parsedUser.roleLevel = roleLevel;
+        localStorage.setItem('user', JSON.stringify(parsedUser));
+        console.log('[Users Page] Updated localStorage with roleLevel:', roleLevel);
+      }
+
+      console.log('[Users Page] User role:', parsedUser.role, 'roleLevel:', roleLevel);
       setUserRoleLevel(roleLevel);
 
       setTenantId(parsedUser.tenantId);
@@ -534,6 +552,7 @@ export default function UsersPage() {
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap text-right text-[10px] md:text-xs font-medium">
                         <button
                           onClick={() => {
+                            // Allow ADMIN (90+), OWNER (100+), SUPER_ADMIN (110+)
                             if (userRoleLevel < ROLE_LEVELS.ADMIN) {
                               alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
                               return;
@@ -541,11 +560,13 @@ export default function UsersPage() {
                             handleEditUser(user);
                           }}
                           className={`text-blue-600 hover:text-blue-900 mr-2 md:mr-3 ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                          title={userRoleLevel < ROLE_LEVELS.ADMIN ? 'Akses Ditolak: Hanya untuk Admin/Owner' : 'Edit User'}
                         >
                           <FaEdit className="inline" /> <span className="hidden md:inline">Edit</span>
                         </button>
                         <button
                           onClick={() => {
+                            // Allow ADMIN (90+), OWNER (100+), SUPER_ADMIN (110+)
                             if (userRoleLevel < ROLE_LEVELS.ADMIN) {
                               alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
                               return;
@@ -553,6 +574,7 @@ export default function UsersPage() {
                             handleDeleteUser(user.id);
                           }}
                           className={`text-red-600 hover:text-red-900 ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                          title={userRoleLevel < ROLE_LEVELS.ADMIN ? 'Akses Ditolak: Hanya untuk Admin/Owner' : 'Hapus User'}
                         >
                           <FaTrash className="inline" /> <span className="hidden md:inline">Hapus</span>
                         </button>
