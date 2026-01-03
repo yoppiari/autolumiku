@@ -70,8 +70,13 @@ export async function GET(request: NextRequest) {
       case '1y':
         startDate.setFullYear(now.getFullYear() - 1);
         break;
+      case 'month':
+      case 'this_month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
       default:
-        startDate.setDate(now.getDate() - 30);
+        // Default to current month to match KPI analytics consistency
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
     // Get sold vehicles in period

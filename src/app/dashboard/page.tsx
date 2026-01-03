@@ -553,14 +553,14 @@ export default function ShowroomDashboardPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-purple-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Inventory Turnover</span>
+                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Turnover</span>
                           </div>
                           <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-blue-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Penjualan Showroom</span>
+                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Showroom</span>
                           </div>
                           <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.penjualanShowroom || 0}%</span>
                         </div>
@@ -610,21 +610,21 @@ export default function ShowroomDashboardPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-teal-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Customer Retention</span>
+                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Retention</span>
                           </div>
                           <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.customerRetention || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-amber-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">NPS (Satisfaction)</span>
+                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">NPS Score</span>
                           </div>
                           <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.nps || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-cyan-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Lead Conversion</span>
+                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Conversion</span>
                           </div>
                           <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.raw?.leadConversion || 0}%</span>
                         </div>
@@ -674,21 +674,21 @@ export default function ShowroomDashboardPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-indigo-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Sales per Employee</span>
+                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Sales/Emp</span>
                           </div>
                           <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.salesPerEmployee || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-violet-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Overall Efficiency</span>
+                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Efficiency</span>
                           </div>
                           <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.efficiency || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-rose-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Inventory Velocity</span>
+                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Velocity</span>
                           </div>
                           <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
                         </div>

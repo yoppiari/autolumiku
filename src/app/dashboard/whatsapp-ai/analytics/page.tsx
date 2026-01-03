@@ -118,8 +118,8 @@ function AnalyticsPageInternal() {
         <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-3 md:px-5 py-2 md:py-3 shadow-md">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-0.5">
-              <Link href="/dashboard/whatsapp-ai" className="text-slate-400 hover:text-white transition-colors text-[10px] flex items-center gap-1">
-                ← Back
+              <Link href="/dashboard" className="text-slate-400 hover:text-white transition-colors text-[10px] flex items-center gap-1">
+                ← Dashboard Utama
               </Link>
             </div>
             <h1 className="text-sm md:text-xl font-bold text-white truncate leading-tight">
@@ -175,7 +175,7 @@ function AnalyticsPageInternal() {
               <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
                 <p className="text-[10px] md:text-xs text-gray-500">Total Penjualan</p>
                 <p className="text-lg md:text-xl font-bold text-gray-900 leading-tight">{salesStats?.totalSales || 0}</p>
-                <p className="text-[9px] text-green-600 mt-0.5">Unit terjual</p>
+                <p className="text-[9px] text-green-600 mt-0.5">Unit terjual (Bulan ini)</p>
               </div>
               <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
                 <p className="text-[10px] md:text-xs text-gray-500">Total Revenue</p>
@@ -288,11 +288,31 @@ function AnalyticsPageInternal() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
+                    <span className="text-[8px] text-gray-600 font-medium">Target Bulanan</span>
                   </div>
                 </div>
                 <div className="w-full space-y-1 pt-2 border-t border-gray-100">
-                  <div className="flex justify-between text-[10px]"><span>ATV</span><span className="font-bold">{kpiData?.atv || 0}%</span></div>
-                  <div className="flex justify-between text-[10px]"><span>Turnover</span><span className="font-bold">{kpiData?.inventoryTurnover || 0}%</span></div>
+                  <div className="flex justify-between text-[10px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                      <span className="text-gray-600">ATV</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{kpiData?.atv || 0}%</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                      <span className="text-gray-600">Turnover</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      <span className="text-gray-600">Showroom</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{kpiData?.penjualanShowroom || 0}%</span>
+                  </div>
                 </div>
               </div>
 
@@ -306,11 +326,31 @@ function AnalyticsPageInternal() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
+                    <span className="text-[8px] text-gray-600 font-medium">NPS Score</span>
                   </div>
                 </div>
                 <div className="w-full space-y-1 pt-2 border-t border-gray-100">
-                  <div className="flex justify-between text-[10px]"><span>Retention</span><span className="font-bold">{kpiData?.customerRetention || 0}%</span></div>
-                  <div className="flex justify-between text-[10px]"><span>Conversion</span><span className="font-bold">{kpiData?.leadConversion || 0}%</span></div>
+                  <div className="flex justify-between text-[10px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                      <span className="text-gray-600">Retention</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{kpiData?.customerRetention || 0}%</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      <span className="text-gray-600">NPS Score</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{kpiData?.nps || 0}%</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                      <span className="text-gray-600">Conversion</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{kpiData?.leadConversion || 0}%</span>
+                  </div>
                 </div>
               </div>
 
@@ -324,11 +364,31 @@ function AnalyticsPageInternal() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
+                    <span className="text-[8px] text-gray-600 font-medium">Efficiency</span>
                   </div>
                 </div>
                 <div className="w-full space-y-1 pt-2 border-t border-gray-100">
-                  <div className="flex justify-between text-[10px]"><span>Sales/Emp</span><span className="font-bold">{kpiData?.salesPerEmployee || 0}%</span></div>
-                  <div className="flex justify-between text-[10px]"><span>Velocity</span><span className="font-bold">{kpiData?.inventoryTurnover || 0}%</span></div>
+                  <div className="flex justify-between text-[10px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                      <span className="text-gray-600">Sales/Emp</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{kpiData?.salesPerEmployee || 0}%</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+                      <span className="text-gray-600">Efficiency</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{kpiData?.efficiency || 0}%</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      <span className="text-gray-600">Velocity</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
+                  </div>
                 </div>
               </div>
             </div>
