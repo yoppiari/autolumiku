@@ -39,6 +39,7 @@ export interface VehicleWithImages {
     id: string;
     make: string;
     model: string;
+    variant?: string;
     year: number;
     price: number;
     mileage?: number;
@@ -1191,8 +1192,8 @@ A: "Siap, terima kasih sudah mampir ke ${tenant.name}! Kalau butuh info lagi, la
       systemPrompt += vehicles
         .slice(0, 10)
         .map(
-          (v) =>
-            `• ${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))} | ${v.transmissionType || 'Manual'}${v.mileage ? ` | ${v.mileage.toLocaleString('id-ID')} km` : ''} | ${v.fuelType || 'Bensin'} | ${v.color || '-'}`
+          (v: any) =>
+            `• ${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} - Rp ${this.formatPrice(Number(v.price))} (ID: ${v.displayId || 'N/A'}) | ${v.transmissionType || 'Manual'}${v.mileage ? ` | ${v.mileage.toLocaleString('id-ID')} km` : ''} | ${v.fuelType || 'Bensin'} | ${v.color || '-'}`
         )
         .join("\n");
 
@@ -1224,6 +1225,20 @@ A: "Siap, terima kasih sudah mampir ke ${tenant.name}! Kalau butuh info lagi, la
       // No staff registered - tell AI to not give any contact
       systemPrompt += `\n\n⚠️ PENTING: Belum ada staff terdaftar. Kalau customer mau hubungi langsung, bilang "Silakan lanjutkan percakapan di sini, tim kami akan membantu Anda." JANGAN buat-buat nomor telepon!`;
     }
+
+    // Add AI Technical Skills information
+    systemPrompt += `
+🤖 KEMAMPUAN TEKNIS & SKILL AI:
+Showroom kami menggunakan teknologi AI canggih untuk memproses inventory:
+1. Computer Vision (Visi Komputer): Digunakan untuk mendeteksi seluruh kendaraan secara digital.
+2. Deteksi Objek (Object Detection): Mengidentifikasi lokasi kendaraan dalam gambar secara real-time menggunakan algoritma YOLO (You Only Look Once).
+3. Segmentasi Gambar (Image Segmentation): Membedakan piksel kendaraan dari latar belakang untuk pemahaman detail.
+4. Pelacakan Objek (Object Tracking): Mengikuti pergerakan kendaraan menggunakan algoritma ByteTrack.
+5. Pengenalan Plat Nomor Otomatis (ANPR): Membaca dan mengidentifikasi plat nomor kendaraan secara otomatis.
+6. Deep Learning (CNN): Menggunakan Convolutional Neural Networks yang dilatih dengan dataset besar untuk akurasi tinggi.
+
+Jika customer bertanya tentang bagaimana AI kami bekerja atau fitur teknologi di showroom, berikan penjelasan singkat berdasarkan poin di atas.
+`;
 
     // CRITICAL: DATA INTEGRITY RULES - 100% REAL DATA ONLY
     systemPrompt += `
@@ -1395,12 +1410,14 @@ CONTOH RESPON ESCALATED:
         id: true,
         make: true,
         model: true,
+        variant: true,
         year: true,
         price: true,
         mileage: true,
         transmissionType: true,
         fuelType: true,
         color: true,
+        displayId: true,
       },
       orderBy: { createdAt: "desc" },
       take: 15,
@@ -1870,8 +1887,10 @@ CONTOH RESPON ESCALATED:
         id: true,
         make: true,
         model: true,
+        variant: true,
         year: true,
         price: true,
+        displayId: true,
       },
       orderBy: { createdAt: "desc" },
       take: 5, // Limit to 5 most recent for faster response
@@ -2103,12 +2122,27 @@ CONTOH RESPON ESCALATED:
         status: 'AVAILABLE',
         ...(termConditions.length > 0 && { AND: termConditions }),
       },
-      include: {
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        variant: true,
+        year: true,
+        price: true,
+        mileage: true,
+        transmissionType: true,
+        fuelType: true,
+        color: true,
+        condition: true,
+        descriptionId: true,
+        features: true,
+        engineCapacity: true,
+        displayId: true,
         photos: {
           orderBy: [{ isMainPhoto: 'desc' }, { displayOrder: 'asc' }],
         },
-      },
-    });
+      }
+    }) as any;
 
     if (!vehicle) {
       console.log('[WhatsApp AI Chat] ❌ No vehicle found for detailed query');
@@ -2138,6 +2172,7 @@ CONTOH RESPON ESCALATED:
         id: vehicle.id,
         make: vehicle.make,
         model: vehicle.model,
+        variant: vehicle.variant || undefined,
         year: vehicle.year,
         price: Number(vehicle.price),
         mileage: vehicle.mileage || undefined,
@@ -2162,13 +2197,14 @@ CONTOH RESPON ESCALATED:
     const v = vehicleData;
     const priceFormatted = this.formatPrice(v.price);
 
-    let message = `📋 *DETAIL ${v.make.toUpperCase()} ${v.model.toUpperCase()} ${v.year}*\n`;
+    let message = `📋 *DETAIL ${v.make.toUpperCase()} ${v.model.toUpperCase()} ${v.variant ? v.variant.toUpperCase() : ''} ${v.year}*\n`;
     message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     // Basic specs
     message += `🚗 *Spesifikasi:*\n`;
+    message += `• ID Unit: ${v.displayId || 'Pusat'}\n`;
     message += `• Merek: ${v.make}\n`;
-    message += `• Model: ${v.model}\n`;
+    message += `• Model: ${v.model}${v.variant ? ` (${v.variant})` : ''}\n`;
     message += `• Tahun: ${v.year}\n`;
     message += `• Harga: Rp ${priceFormatted}\n`;
 
@@ -2277,7 +2313,7 @@ CONTOH RESPON ESCALATED:
 
         // Caption: only show full details on first photo, simpler for rest
         const caption = photoIndex === 0
-          ? `${v.make} ${v.model} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
+          ? `${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
           : `${v.make} ${v.model} ${v.year} (${photoIndex + 1}/${v.photos.length})`;
 
         images.push({ imageUrl, caption });
@@ -2401,12 +2437,14 @@ CONTOH RESPON ESCALATED:
         id: true,
         make: true,
         model: true,
+        variant: true,
         year: true,
         price: true,
         mileage: true,
         transmissionType: true,
         fuelType: true,
         color: true,
+        displayId: true,
       },
     });
 
