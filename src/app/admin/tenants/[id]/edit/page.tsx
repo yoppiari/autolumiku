@@ -37,6 +37,7 @@ export default function TenantEditPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
@@ -78,6 +79,7 @@ export default function TenantEditPage() {
     e.preventDefault();
     setIsSaving(true);
     setError(null);
+    setErrorDetails(null);
     setSyncStatus(null);
 
     try {
@@ -85,20 +87,23 @@ export default function TenantEditPage() {
 
       if (data.success) {
         // Show sync status if domain was changed
-        if (data.data?.traefikSynced === 'success') {
+        if (data.traefikSynced === 'success') {
           setSyncStatus('Traefik configuration synced successfully!');
-        } else if (data.data?.traefikSynced === 'failed') {
+        } else if (data.traefikSynced === 'failed') {
           setSyncStatus('Warning: Traefik sync failed. Please sync manually.');
+          if (data.traefikError) setErrorDetails(data.traefikError);
         }
 
-        alert('Tenant berhasil diupdate!' + (data.data?.traefikSynced === 'success' ? ' Domain dikonfigurasi di Traefik.' : ''));
+        alert('Tenant berhasil diupdate!' + (data.traefikSynced === 'success' ? ' Domain dikonfigurasi di Traefik.' : ''));
         router.push(`/admin/tenants/${tenantId}`);
       } else {
         setError(data.error || 'Failed to update tenant');
+        if (data.details) setErrorDetails(data.details);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating tenant:', error);
       setError('Failed to update tenant');
+      setErrorDetails(error.message);
     } finally {
       setIsSaving(false);
     }
@@ -108,6 +113,7 @@ export default function TenantEditPage() {
     setIsSyncing(true);
     setSyncStatus(null);
     setError(null);
+    setErrorDetails(null);
 
     try {
       const data = await api.post('/api/admin/tenants/sync-traefik', {});
@@ -117,10 +123,12 @@ export default function TenantEditPage() {
         alert('Traefik synced! All tenant domains are now configured.');
       } else {
         setError(data.error || 'Failed to sync Traefik');
+        if (data.details) setErrorDetails(data.details);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error syncing Traefik:', error);
       setError('Failed to sync Traefik configuration');
+      setErrorDetails(error.message);
     } finally {
       setIsSyncing(false);
     }
@@ -131,269 +139,322 @@ export default function TenantEditPage() {
   };
 
   const handleLogoUpload = async (file: File) => {
-    // MOCK DATA - Replace with real upload API when backend is ready
-    console.log('Uploading logo:', file.name);
-
-    // Simulate file upload and create a preview URL
     const reader = new FileReader();
     reader.onloadend = () => {
       const logoUrl = reader.result as string;
       setFormData(prev => ({ ...prev, logoUrl }));
-      console.log('Logo uploaded successfully');
     };
     reader.readAsDataURL(file);
-
-    // Simulate upload delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
   };
 
   const handleFaviconUpload = async (file: File) => {
-    // MOCK DATA - Replace with real upload API when backend is ready
-    console.log('Uploading favicon:', file.name);
-
-    // Simulate file upload and create a preview URL
     const reader = new FileReader();
     reader.onloadend = () => {
       const faviconUrl = reader.result as string;
       setFormData(prev => ({ ...prev, faviconUrl }));
-      console.log('Favicon uploaded successfully');
     };
     reader.readAsDataURL(file);
-
-    // Simulate upload delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600">Loading...</div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
         <button
           onClick={() => router.push(`/admin/tenants/${tenantId}`)}
-          className="text-sm text-gray-600 hover:text-gray-900 mb-4"
+          className="group flex items-center text-sm text-gray-500 hover:text-blue-600 mb-4 transition-colors"
         >
-          ← Kembali ke Detail Tenant
+          <span className="mr-2 group-hover:-translate-x-1 transition-transform">←</span>
+          Kembali ke Detail Tenant
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Edit Tenant</h1>
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Edit Tenant</h1>
+        <p className="text-gray-500 mt-1">Kelola konfigurasi, branding, dan domain untuk showroom ini.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Error Notification */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
-            {error}
-          </div>
-        )}
-
-        {syncStatus && (
-          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md">
-            {syncStatus}
-          </div>
-        )}
-
-        {/* Basic Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Dasar</h2>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Nama Tenant <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-                Subdomain <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="slug"
-                value={formData.slug}
-                onChange={(e) => handleChange('slug', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="showroom-1"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                URL identifier untuk tenant (e.g., auto.lumiku.com/catalog/showroom-1)
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
-                Custom Domain <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="domain"
-                value={formData.domain}
-                onChange={(e) => handleChange('domain', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="showroom1.auto.lumiku.com atau showroom1.com"
-                required
-              />
-              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm text-blue-800 font-medium mb-1">ℹ️ Petunjuk Setup Domain:</p>
-                <ol className="text-xs text-blue-700 space-y-1 ml-4 list-decimal">
-                  <li>Masukkan domain lengkap (subdomain atau custom domain)</li>
-                  <li>Contoh: <code className="bg-blue-100 px-1 py-0.5 rounded">showroom1.auto.lumiku.com</code> atau <code className="bg-blue-100 px-1 py-0.5 rounded">showroom1.com</code></li>
-                  <li>Arahkan A record domain ke IP server: <code className="bg-blue-100 px-1 py-0.5 rounded">cf.avolut.com</code></li>
-                  <li>Klik "Save" - Traefik akan otomatis di-sync jika domain berubah</li>
-                  <li>SSL certificate akan otomatis di-provision (~2 menit)</li>
-                </ol>
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <span className="text-red-500 text-xl font-bold">⚠️</span>
               </div>
-
-              {/* Manual Sync Button */}
-              <div className="mt-3 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleManualSync}
-                  disabled={isSyncing}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
-                >
-                  {isSyncing ? '🔄 Syncing...' : '🔄 Sync Traefik Manually'}
-                </button>
-                {syncStatus && (
-                  <span className="text-sm text-green-600 font-medium">
-                    {syncStatus}
-                  </span>
+              <div className="ml-3">
+                <h3 className="text-sm font-bold text-red-800">{error}</h3>
+                {errorDetails && (
+                  <div className="mt-2 text-xs text-red-700 font-mono bg-red-100/50 p-2 rounded border border-red-200 overflow-x-auto max-h-32">
+                    {errorDetails}
+                  </div>
                 )}
+                <p className="mt-2 text-xs text-red-600 italic">
+                  Database tenant tetap diupdate, namun sinkronisasi jaringan (Traefik) terkendala.
+                </p>
               </div>
-            </div>
-
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                id="status"
-                value={formData.status}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="active">Aktif</option>
-                <option value="inactive">Tidak Aktif</option>
-                <option value="suspended">Suspended</option>
-              </select>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Logo & Favicon */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Logo & Favicon</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Logo dan favicon yang di-upload akan digunakan di website catalog showroom Anda
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ImageUpload
-              label="Logo Showroom"
-              currentImageUrl={formData.logoUrl}
-              onUpload={handleLogoUpload}
-              helpText="PNG, JPG, atau SVG (max 5MB)"
-            />
-            <ImageUpload
-              label="Favicon"
-              currentImageUrl={formData.faviconUrl}
-              onUpload={handleFaviconUpload}
-              helpText="PNG, JPG, atau SVG (max 5MB) - Disarankan ukuran 32x32px"
-            />
+        {/* Success/Sync Notification */}
+        {syncStatus && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
+            <div className="flex">
+              <span className="text-green-500 mr-3">✅</span>
+              <p className="text-sm font-medium text-green-800">{syncStatus}</p>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Branding */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Warna & Tema</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="primaryColor" className="block text-sm font-medium text-gray-700 mb-1">
-                Warna Utama
-              </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="color"
-                  id="primaryColor"
-                  value={formData.primaryColor}
-                  onChange={(e) => handleChange('primaryColor', e.target.value)}
-                  className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={formData.primaryColor}
-                  onChange={(e) => handleChange('primaryColor', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Column 1: Core Configuration */}
+          <div className="space-y-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                  Informasi Dasar
+                </h2>
+              </div>
+              <div className="p-6 space-y-5">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-1.5 leading-tight">
+                    Nama Tenant <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="slug" className="block text-sm font-bold text-gray-700 mb-1.5 leading-tight">
+                    Subdomain (Slug) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="slug"
+                    value={formData.slug}
+                    onChange={(e) => handleChange('slug', e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono"
+                    placeholder="primamobil-id"
+                    required
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1.5 px-1 font-medium italic">
+                    Contoh: auto.lumiku.com/catalog/primamobil-id
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="status" className="block text-sm font-bold text-gray-700 mb-1.5">
+                    Status Operasional
+                  </label>
+                  <select
+                    id="status"
+                    value={formData.status}
+                    onChange={(e) => handleChange('status', e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-medium"
+                  >
+                    <option value="active">Aktif (Online)</option>
+                    <option value="inactive">Tidak Aktif</option>
+                    <option value="suspended">Suspended (Blokir)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label htmlFor="secondaryColor" className="block text-sm font-medium text-gray-700 mb-1">
-                Warna Sekunder
-              </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="color"
-                  id="secondaryColor"
-                  value={formData.secondaryColor}
-                  onChange={(e) => handleChange('secondaryColor', e.target.value)}
-                  className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={formData.secondaryColor}
-                  onChange={(e) => handleChange('secondaryColor', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-purple-600 rounded-full"></span>
+                  Konfigurasi Domain & Jaringan
+                </h2>
+              </div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <label htmlFor="domain" className="block text-sm font-bold text-gray-700 mb-1.5 leading-tight">
+                    Custom Domain / Hostname <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="domain"
+                      value={formData.domain}
+                      onChange={(e) => handleChange('domain', e.target.value)}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono text-blue-600 font-bold"
+                      placeholder="primamobil.id"
+                      required
+                    />
+                    <div className="absolute right-3 top-2.5 text-blue-400">🌐</div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50/80 border border-blue-100 rounded-2xl p-4">
+                  <h3 className="text-[11px] font-black text-blue-900 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    🚀 DNS Setup Guide
+                  </h3>
+                  <ul className="text-[10px] text-blue-800 space-y-2 font-medium">
+                    <li className="flex items-start gap-2">
+                      <span className="pt-0.5">1.</span>
+                      <span>Arahkan A Record / CNAME domain Anda ke IP server platform.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="pt-0.5">2.</span>
+                      <span>Setelah domain mengarah ke server, klik tombol Sync Traefik di bawah.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="pt-0.5">3.</span>
+                      <span>SSL (HTTPS) akan otomatis diaktifkan dalam waktu ~2 menit.</span>
+                    </li>
+                  </ul>
+
+                  <button
+                    type="button"
+                    onClick={handleManualSync}
+                    disabled={isSyncing}
+                    className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-blue-700 border border-blue-200 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm font-bold text-xs disabled:opacity-50 active:scale-95"
+                  >
+                    {isSyncing ? '🔄 Sedang Sinkronisasi...' : '🔄 Sinkronisasi Traefik (Manual)'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Column 2: Visual Branding */}
+          <div className="space-y-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                  Visual Branding & Media
+                </h2>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                  <ImageUpload
+                    label="Logo Showroom"
+                    currentImageUrl={formData.logoUrl}
+                    onUpload={handleLogoUpload}
+                    helpText="Format: PNG/SVG (Max 2MB)"
+                  />
+                  <ImageUpload
+                    label="Favicon Browser"
+                    currentImageUrl={formData.faviconUrl}
+                    onUpload={handleFaviconUpload}
+                    helpText="Ukuran: 32x32px (ICO/PNG)"
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label htmlFor="theme" className="block text-sm font-medium text-gray-700 mb-1">
-                Tema
-              </label>
-              <select
-                id="theme"
-                value={formData.theme}
-                onChange={(e) => handleChange('theme', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-indigo-600 rounded-full"></span>
+                  Warna & Tema Portal
+                </h2>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="primaryColor" className="block text-sm font-bold text-gray-700 mb-2 leading-tight">
+                      Warna Utama
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        id="primaryColor"
+                        value={formData.primaryColor}
+                        onChange={(e) => handleChange('primaryColor', e.target.value)}
+                        className="h-12 w-16 border-0 rounded-xl cursor-pointer p-0 bg-transparent ring-1 ring-gray-200"
+                      />
+                      <input
+                        type="text"
+                        value={formData.primaryColor}
+                        onChange={(e) => handleChange('primaryColor', e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono uppercase focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="secondaryColor" className="block text-sm font-bold text-gray-700 mb-2 leading-tight">
+                      Warna Sekunder
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        id="secondaryColor"
+                        value={formData.secondaryColor}
+                        onChange={(e) => handleChange('secondaryColor', e.target.value)}
+                        className="h-12 w-16 border-0 rounded-xl cursor-pointer p-0 bg-transparent ring-1 ring-gray-200"
+                      />
+                      <input
+                        type="text"
+                        value={formData.secondaryColor}
+                        onChange={(e) => handleChange('secondaryColor', e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono uppercase focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="theme" className="block text-sm font-bold text-gray-700 mb-2">
+                    Mode Tampilan Default
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => handleChange('theme', 'light')}
+                      className={`px-4 py-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${formData.theme === 'light' ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 shadow-sm' : 'bg-white border-gray-200 hover:border-blue-300'}`}
+                    >
+                      <span className="text-xl">☀️</span>
+                      <span className={`text-xs font-bold ${formData.theme === 'light' ? 'text-blue-700' : 'text-gray-600'}`}>Light Mode</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('theme', 'dark')}
+                      className={`px-4 py-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${formData.theme === 'dark' ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500 shadow-sm' : 'bg-white border-gray-200 hover:border-indigo-300'}`}
+                    >
+                      <span className="text-xl">🌙</span>
+                      <span className={`text-xs font-bold ${formData.theme === 'dark' ? 'text-indigo-700' : 'text-gray-600'}`}>Dark Mode</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Form Actions */}
-        <div className="flex justify-end space-x-4">
+        <div className="flex flex-col sm:flex-row justify-end items-center gap-4 pt-8 border-t border-gray-200">
           <button
             type="button"
             onClick={() => router.push(`/admin/tenants/${tenantId}`)}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full sm:w-auto px-8 py-3 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
             disabled={isSaving}
           >
             Batal
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="w-full sm:w-auto px-12 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 disabled:opacity-50 text-sm font-black uppercase tracking-wider"
             disabled={isSaving}
           >
-            {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+            {isSaving ? 'Menyimpan Perubahan...' : 'Simpan & Update Konfigurasi'}
           </button>
         </div>
       </form>

@@ -192,6 +192,7 @@ export async function POST(request: NextRequest) {
 
       // Auto-sync Traefik configuration for new domain
       let traefikSyncStatus = null;
+      let traefikErrorDetail = null;
       if (domain) {
         try {
           console.log('🔄 New tenant created with domain, syncing Traefik configuration...');
@@ -201,9 +202,10 @@ export async function POST(request: NextRequest) {
           });
           console.log('✅ Traefik sync completed:', stdout);
           traefikSyncStatus = 'success';
-        } catch (error) {
+        } catch (error: any) {
           console.error('❌ Traefik sync failed:', error);
           traefikSyncStatus = 'failed';
+          traefikErrorDetail = error.message;
         }
       }
 
@@ -212,6 +214,7 @@ export async function POST(request: NextRequest) {
         data: result.tenant,
         message: 'Tenant created successfully',
         traefikSynced: traefikSyncStatus,
+        traefikError: traefikErrorDetail,
       });
     } catch (error) {
       console.error('Error creating tenant:', error);

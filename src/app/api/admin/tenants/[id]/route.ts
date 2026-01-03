@@ -146,6 +146,8 @@ export async function PUT(
 
       // Auto-sync Traefik if domain was changed
       let traefikSyncStatus = null;
+      let traefikErrorDetail = null;
+
       if (domainChanged) {
         try {
           console.log('🔄 Domain changed, syncing Traefik configuration...');
@@ -155,9 +157,10 @@ export async function PUT(
           });
           console.log('✅ Traefik sync completed:', stdout);
           traefikSyncStatus = 'success';
-        } catch (error) {
+        } catch (error: any) {
           console.error('❌ Traefik sync failed:', error);
           traefikSyncStatus = 'failed';
+          traefikErrorDetail = error.message;
         }
       }
 
@@ -166,6 +169,7 @@ export async function PUT(
         data: updatedTenant,
         message: 'Tenant updated successfully',
         traefikSynced: traefikSyncStatus,
+        traefikError: traefikErrorDetail,
       });
     } catch (error) {
       console.error('Error updating tenant:', error);
