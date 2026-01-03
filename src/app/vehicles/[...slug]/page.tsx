@@ -79,8 +79,8 @@ function parseVehicleSlug(slug: string[]): { displayId: string | null; isUuid: b
   return { displayId, isUuid: false };
 }
 
-export default async function VehicleDetailPageSEO({ params }: PageProps) {
-  const { slug } = params;
+export default async function VehicleDetailPageSEO({ params }: { params: any }) {
+  const { slug } = await params;
   const headersList = headers();
   const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
 
@@ -316,8 +316,8 @@ export default async function VehicleDetailPageSEO({ params }: PageProps) {
   );
 }
 
-export async function generateMetadata({ params }: PageProps) {
-  const { slug } = params;
+export async function generateMetadata({ params }: { params: any }) {
+  const { slug } = await params;
   const { displayId, isUuid } = parseVehicleSlug(slug);
 
   if (!displayId) {

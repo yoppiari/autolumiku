@@ -26,8 +26,8 @@ import { prisma } from '@/lib/prisma';
 import { getBlogUrl } from '@/lib/utils/url-helper';
 
 
-export default async function BlogPage({ params }: { params: { slug: string } }) {
-    const { slug } = params;
+export default async function BlogPage({ params }: { params: any }) {
+    const { slug } = await params;
     const headersList = headers();
     const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
     const tenantDomain = headersList.get('x-tenant-domain');
@@ -134,58 +134,58 @@ export default async function BlogPage({ params }: { params: { slug: string } })
                                     post.featuredImage.length > 5;
 
                                 return (
-                                <div key={post.id} className="group cursor-pointer flex flex-col h-full">
-                                    <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`} className="block">
-                                        <div className="aspect-video relative rounded-2xl overflow-hidden mb-5">
-                                            {hasValidImage ? (
-                                                <img
-                                                    src={post.featuredImage!}
-                                                    alt={post.title}
-                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-700 to-zinc-900">
-                                                    <div className="text-center text-zinc-400">
-                                                        <svg className="w-16 h-16 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                                                        </svg>
-                                                        <span className="text-sm font-medium">Artikel</span>
+                                    <div key={post.id} className="group cursor-pointer flex flex-col h-full">
+                                        <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`} className="block">
+                                            <div className="aspect-video relative rounded-2xl overflow-hidden mb-5">
+                                                {hasValidImage ? (
+                                                    <img
+                                                        src={post.featuredImage!}
+                                                        alt={post.title}
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-700 to-zinc-900">
+                                                        <div className="text-center text-zinc-400">
+                                                            <svg className="w-16 h-16 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                                                            </svg>
+                                                            <span className="text-sm font-medium">Artikel</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                            {/* Date Badge */}
-                                            {post.publishedAt && (
-                                                <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
-                                                    {new Date(post.publishedAt).toLocaleDateString('id-ID', {
-                                                        year: 'numeric',
-                                                        month: 'long',
-                                                        day: 'numeric'
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </Link>
-
-                                    <div className="flex-1 flex flex-col">
-                                        <div className="text-xs text-primary font-bold mb-2 uppercase tracking-wide">
-                                            {post.authorName || 'Redaksi'}
-                                        </div>
-                                        <h3 className="text-2xl font-bold text-foreground mb-3 leading-tight group-hover:text-primary transition-colors">
-                                            <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`}>
-                                                {post.title}
-                                            </Link>
-                                        </h3>
-                                        <p className="text-muted-foreground line-clamp-3 mb-4 flex-1">
-                                            {getExcerpt(post.excerpt)}
-                                        </p>
-                                        <Link
-                                            href={`/catalog/${tenant.slug}/blog/${post.slug}`}
-                                            className="inline-flex items-center text-primary font-semibold hover:underline mt-auto"
-                                        >
-                                            Baca Selengkapnya
+                                                )}
+                                                {/* Date Badge */}
+                                                {post.publishedAt && (
+                                                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
+                                                        {new Date(post.publishedAt).toLocaleDateString('id-ID', {
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric'
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </Link>
+
+                                        <div className="flex-1 flex flex-col">
+                                            <div className="text-xs text-primary font-bold mb-2 uppercase tracking-wide">
+                                                {post.authorName || 'Redaksi'}
+                                            </div>
+                                            <h3 className="text-2xl font-bold text-foreground mb-3 leading-tight group-hover:text-primary transition-colors">
+                                                <Link href={`/catalog/${tenant.slug}/blog/${post.slug}`}>
+                                                    {post.title}
+                                                </Link>
+                                            </h3>
+                                            <p className="text-muted-foreground line-clamp-3 mb-4 flex-1">
+                                                {getExcerpt(post.excerpt)}
+                                            </p>
+                                            <Link
+                                                href={`/catalog/${tenant.slug}/blog/${post.slug}`}
+                                                className="inline-flex items-center text-primary font-semibold hover:underline mt-auto"
+                                            >
+                                                Baca Selengkapnya
+                                            </Link>
+                                        </div>
                                     </div>
-                                </div>
                                 );
                             })}
                         </div>

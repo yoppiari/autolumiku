@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import VehicleCard from '@/components/catalog/VehicleCard';
 import SearchFilters from '@/components/catalog/SearchFilters';
@@ -21,8 +21,9 @@ interface PageProps {
     };
 }
 
-export default function SearchPage({ params }: PageProps) {
-    const { slug } = params;
+export default function SearchPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
+    const resolvedParams = params instanceof Promise ? use(params) : params;
+    const { slug } = resolvedParams;
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();

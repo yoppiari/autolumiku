@@ -28,9 +28,9 @@ import {
 } from '@/lib/utils/url-helper';
 import { prisma } from '@/lib/prisma';
 
-export default async function ShowroomHomePage({ params }: { params: { slug: string } }) {
+export default async function ShowroomHomePage({ params }: { params: any }) {
   try {
-    const { slug } = params;
+    const { slug } = await params;
     const headersList = headers();
     const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
 

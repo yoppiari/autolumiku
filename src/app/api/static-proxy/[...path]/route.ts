@@ -16,11 +16,11 @@ const fileCache = new Map<string, Buffer>();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: any }
 ) {
   try {
     // Reconstruct the path from params
-    const pathSegments = params.path;
+    const { path: pathSegments } = await params;
     const requestedPath = pathSegments.join('/');
 
     // Decode URL-encoded brackets

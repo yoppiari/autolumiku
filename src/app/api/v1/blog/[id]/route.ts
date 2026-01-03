@@ -16,9 +16,9 @@ interface RouteParams {
 /**
  * GET /api/v1/blog/[id]
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: { params: any }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const searchParams = request.nextUrl.searchParams;
     const tenantId = searchParams.get('tenantId');
 
@@ -65,9 +65,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 /**
  * PUT /api/v1/blog/[id]
  */
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(request: NextRequest, { params }: { params: any }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { tenantId, ...updateData } = body;
 
@@ -149,9 +149,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 /**
  * DELETE /api/v1/blog/[id]
  */
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: { params: any }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const searchParams = request.nextUrl.searchParams;
     const tenantId = searchParams.get('tenantId');
 

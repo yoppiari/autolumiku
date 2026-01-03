@@ -48,8 +48,11 @@ const VALID_REPORT_TYPES: ReportType[] = [
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { type: string } }
+    { params }: { params: any }
 ) {
+    // Robustly handle both Next.js 14 (sync) and Next.js 15 (promise) params
+    const { type } = await params;
+
     // Authenticate
     const auth = await authenticateRequest(request);
     if (!auth.success || !auth.user) {
@@ -77,10 +80,10 @@ export async function GET(
         }
 
         // Validate report type
-        const reportType = params.type as ReportType;
+        const reportType = type as ReportType;
         if (!VALID_REPORT_TYPES.includes(reportType)) {
             return NextResponse.json(
-                { error: `Invalid report type: ${params.type}. Valid types: ${VALID_REPORT_TYPES.join(', ')}` },
+                { error: `Invalid report type: ${type}. Valid types: ${VALID_REPORT_TYPES.join(', ')}` },
                 { status: 400 }
             );
         }

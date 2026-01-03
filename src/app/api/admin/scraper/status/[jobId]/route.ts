@@ -9,11 +9,12 @@ import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: any }
 ) {
   return withSuperAdminAuth(request, async (request, auth) => {
     try {
-      const job = await scraperService.getJob(params.jobId);
+      const { jobId } = await params;
+      const job = await scraperService.getJob(jobId);
 
       if (!job) {
         return NextResponse.json(

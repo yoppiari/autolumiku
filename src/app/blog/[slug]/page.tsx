@@ -131,10 +131,11 @@ async function getRelatedVehicles(post: any, tenantId: string) {
 
 export async function generateMetadata({
   params,
-}: BlogPostPageProps): Promise<Metadata> {
+}: { params: any }): Promise<Metadata> {
+  const resolvedParams = await params;
   const tenant = await getTenantFromHeaders();
 
-  const post = await getBlogPost(params.slug, tenant.id, tenant.domain);
+  const post = await getBlogPost(resolvedParams.slug, tenant.id, tenant.domain);
 
   if (!post) {
     return {
@@ -173,10 +174,11 @@ export async function generateMetadata({
   };
 }
 
-export default async function BlogPostPage({ params }: BlogPostPageProps) {
+export default async function BlogPostPage({ params }: { params: any }) {
+  const resolvedParams = await params;
   const tenant = await getTenantFromHeaders();
 
-  const post = await getBlogPost(params.slug, tenant.id, tenant.domain);
+  const post = await getBlogPost(resolvedParams.slug, tenant.id, tenant.domain);
 
   if (!post) {
     notFound();

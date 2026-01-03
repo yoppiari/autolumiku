@@ -81,6 +81,15 @@ export interface ChatResponse {
 // ==================== WHATSAPP AI CHAT SERVICE ====================
 
 export class WhatsAppAIChatService {
+  // Words that should be ignored when searching for specific vehicles in conversational queries
+  private static readonly INDONESIAN_STOP_WORDS = [
+    'ada', 'apakah', 'punya', 'jual', 'cari', 'info', 'unit', 'mobil', 'stok', 'stock',
+    'buat', 'untuk', 'dong', 'ya', 'kak', 'min', 'admin', 'gan', 'bos', 'bang',
+    'tanya', 'lihat', 'mana', 'fotonya', 'foto', 'gambar', 'gak', 'nggak',
+    'bisa', 'tolong', 'tampilkan', 'kasih', 'berikan', 'tunjukin', 'tunjukkan', 'siap', 'ok',
+    'kan', 'kok', 'itu', 'ini', 'yang', 'dan', 'atau', 'apa', 'sih', 'deh'
+  ];
+
   /**
    * Generate AI response untuk customer message
    */
@@ -1010,11 +1019,11 @@ export class WhatsAppAIChatService {
 
     // Determine appropriate greeting based on time
     let timeGreeting: string;
-    if (hour >= 4 && hour < 11) {
+    if (hour >= 6 && hour < 12) {
       timeGreeting = "Selamat pagi";
-    } else if (hour >= 11 && hour < 15) {
+    } else if (hour >= 12 && hour < 16) {
       timeGreeting = "Selamat siang";
-    } else if (hour >= 15 && hour < 18) {
+    } else if (hour >= 16 && hour < 19) {
       timeGreeting = "Selamat sore";
     } else {
       timeGreeting = "Selamat malam";
@@ -1976,9 +1985,18 @@ CONTOH RESPON ESCALATED:
     console.log('[WhatsApp AI Chat] 📸 Fetching vehicles for query:', searchQuery);
     console.log('[WhatsApp AI Chat] Tenant ID:', tenantId);
 
-    // Parse search query into individual terms
-    const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(term => term.length > 0);
-    console.log('[WhatsApp AI Chat] Search terms:', searchTerms);
+    // Parse search query into individual terms and filter out stop words
+    const searchTerms = searchQuery.toLowerCase()
+      .split(/\s+/)
+      .filter(term => term.length > 0 && !this.INDONESIAN_STOP_WORDS.includes(term));
+
+    console.log('[WhatsApp AI Chat] Cleaned search terms:', searchTerms);
+
+    // If all terms were filtered out, it's a generic query
+    if (searchTerms.length === 0) {
+      console.log('[WhatsApp AI Chat] ⚠️ All terms filtered out, query is too generic');
+      return null;
+    }
 
     // Check if query contains specific vehicle identifiers (model name, stock code, etc.)
     const specificModels = [
@@ -2103,8 +2121,14 @@ CONTOH RESPON ESCALATED:
   ): Promise<VehicleWithImages | null> {
     console.log('[WhatsApp AI Chat] 📋 Fetching vehicle with FULL details for:', searchQuery);
 
-    // Parse search query into individual terms
-    const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(term => term.length > 0);
+    // Parse search query into individual terms and filter out stop words
+    const searchTerms = searchQuery.toLowerCase()
+      .split(/\s+/)
+      .filter(term => term.length > 0 && !this.INDONESIAN_STOP_WORDS.includes(term));
+
+    console.log('[WhatsApp AI Chat] Cleaned search terms for detail:', searchTerms);
+
+    if (searchTerms.length === 0) return null;
 
     // Build AND conditions for search
     const termConditions = searchTerms.map(term => ({

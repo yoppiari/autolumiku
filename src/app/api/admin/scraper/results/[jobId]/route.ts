@@ -9,15 +9,16 @@ import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: any }
 ) {
   return withSuperAdminAuth(request, async (request, auth) => {
     try {
+      const { jobId } = await params;
       const searchParams = request.nextUrl.searchParams;
       const status = searchParams.get('status') || undefined;
       const make = searchParams.get('make') || undefined;
 
-      const results = await scraperService.getResults(params.jobId, {
+      const results = await scraperService.getResults(jobId, {
         status,
         make,
       });

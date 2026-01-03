@@ -60,6 +60,15 @@ export function getTimeBasedGreeting(): string {
 // ==================== STAFF COMMAND SERVICE ====================
 
 export class StaffCommandService {
+  // Stop words for inventory search and conversational queries
+  private static readonly INDONESIAN_STOP_WORDS = [
+    'ada', 'apakah', 'punya', 'jual', 'cari', 'info', 'unit', 'mobil', 'stok', 'stock',
+    'buat', 'untuk', 'dong', 'ya', 'kak', 'min', 'admin', 'gan', 'bos', 'bang',
+    'tanya', 'lihat', 'mana', 'fotonya', 'foto', 'gambar', 'gak', 'nggak',
+    'bisa', 'tolong', 'tampilkan', 'kasih', 'berikan', 'tunjukin', 'tunjukkan', 'siap', 'ok',
+    'kan', 'kok', 'itu', 'ini', 'yang', 'dan', 'atau', 'apa', 'sih', 'deh'
+  ];
+
   /**
    * Parse command dari message
    * NOW ASYNC: Supports AI-powered natural language extraction
@@ -403,7 +412,7 @@ export class StaffCommandService {
     }
 
     const parts = cleanMessage.split(/\s+/).filter((p) => p);
-    const filter = parts.length > 1 ? parts[1] : null;
+    const filter = parts.length > 1 ? parts.slice(1).join(' ') : null;
 
     return {
       command: "inventory",
@@ -1700,9 +1709,31 @@ Silakan ketik nama report diatas. Kami siap membantu!`;
       if (["AVAILABLE", "BOOKED", "SOLD", "DELETED"].includes(upperFilter)) {
         whereClause.status = upperFilter;
       } else {
-        // Filter by make - also exclude DELETED by default
-        whereClause.make = { contains: filter, mode: "insensitive" as const };
-        whereClause.status = { not: "DELETED" };
+        // Multi-term search across make, model, variant, and displayId
+        const searchTerms = filter.toLowerCase()
+          .split(/\s+/)
+          .filter(t => t.length > 0 && !this.INDONESIAN_STOP_WORDS.includes(t));
+
+        if (searchTerms.length > 0) {
+          const termConditions = searchTerms.map(term => ({
+            OR: [
+              { make: { contains: term, mode: 'insensitive' as const } },
+              { model: { contains: term, mode: 'insensitive' as const } },
+              { variant: { contains: term, mode: 'insensitive' as const } },
+              { displayId: { contains: term, mode: 'insensitive' as const } },
+            ]
+          }));
+          whereClause.AND = termConditions;
+        } else {
+          // If all terms were filtered out (e.g. "kan", "ada"), treat as "show all available"
+          // This fixes: "inventory kan" -> "Tidak ditemukan..."
+          whereClause.status = { not: "DELETED" };
+        }
+
+        // Safety: If filtering resulted in 'show all', ensure we don't accidentally show deleted if not specified
+        if (!whereClause.status) {
+          whereClause.status = { not: "DELETED" };
+        }
       }
     } else {
       // By default, exclude DELETED vehicles from inventory list

@@ -9,14 +9,15 @@ import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { resultId: string } }
+  { params }: { params: any }
 ) {
   return withSuperAdminAuth(request, async (request, auth) => {
     try {
+      const { resultId } = await params;
       // TODO: Get user ID from session
       const userId = 'admin';
 
-      const result = await scraperService.approveResult(params.resultId, userId);
+      const result = await scraperService.approveResult(resultId, userId);
 
       return NextResponse.json({
         success: true,

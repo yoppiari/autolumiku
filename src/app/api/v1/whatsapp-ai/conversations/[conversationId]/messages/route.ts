@@ -11,10 +11,10 @@ import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { conversationId: string } }
+  { params }: { params: any }
 ) {
   try {
-    const conversationId = params.conversationId;
+    const { conversationId } = await params;
 
     if (!conversationId) {
       return NextResponse.json(
@@ -67,10 +67,10 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { conversationId: string } }
+  { params }: { params: any }
 ) {
   try {
-    const conversationId = params.conversationId;
+    const { conversationId } = await params;
     const { searchParams } = new URL(request.url);
     const messageId = searchParams.get("messageId");
 

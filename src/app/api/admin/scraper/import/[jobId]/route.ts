@@ -9,14 +9,15 @@ import { withSuperAdminAuth } from '@/lib/auth/middleware';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: any }
 ) {
   return withSuperAdminAuth(request, async (request, auth) => {
     try {
+      const { jobId } = await params;
       const body = await request.json().catch(() => ({}));
       const options = body.options || {};
 
-      const result = await scraperService.importResults(params.jobId, options);
+      const result = await scraperService.importResults(jobId, options);
 
       return NextResponse.json({
         success: true,

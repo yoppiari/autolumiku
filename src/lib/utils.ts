@@ -70,3 +70,24 @@ export function parseVehicleSlug(slug: string): { id: string; isUuid: boolean } 
   // but let the API try to find it as a direct Display ID.
   return { id: slug, isUuid: false };
 }
+
+/**
+ * Format number to Indonesian currency (IDR)
+ * Example: 150000000 -> Rp 150.000.000
+ */
+export function formatCurrency(num: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(num);
+}
+
+/**
+ * Format number with Indonesian locale
+ * Example: 1500.5 -> 1.500,5
+ */
+export function formatNumber(num: number): string {
+  return new Intl.NumberFormat('id-ID').format(num);
+}

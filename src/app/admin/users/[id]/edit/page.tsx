@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api-client';
@@ -29,9 +29,11 @@ interface Tenant {
     slug: string;
 }
 
-export default function EditUserPage({ params }: { params: { id: string } }) {
+export default function EditUserPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
     const router = useRouter();
-    const userId = params.id;
+    // Support both Next.js 14 (sync) and 15 (promise)
+    const resolvedParams = params instanceof Promise ? use(params) : params;
+    const userId = resolvedParams.id;
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);

@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import CatalogHeader from '@/components/catalog/CatalogHeader';
 import { SEOService } from '@/lib/services/catalog/seo.service';
@@ -17,8 +17,9 @@ interface PageProps {
   };
 }
 
-export default function VehicleDetailPage({ params }: PageProps) {
-  const { slug, id } = params;
+export default function VehicleDetailPage({ params }: { params: Promise<{ id: string, slug: string }> | { id: string, slug: string } }) {
+  const resolvedParams = params instanceof Promise ? use(params) : params;
+  const { slug, id } = resolvedParams;
 
   const [branding, setBranding] = useState<any>(null);
   const [vehicle, setVehicle] = useState<any>(null);
@@ -70,9 +71,8 @@ export default function VehicleDetailPage({ params }: PageProps) {
   const handleWhatsAppClick = () => {
     if (!vehicle) return;
 
-    const message = `Halo, saya tertarik dengan ${vehicle.year} ${vehicle.make} ${vehicle.model}${
-      vehicle.variant ? ` ${vehicle.variant}` : ''
-    } (ID: ${vehicle.displayId || vehicle.id.slice(0, 8)}). Bisa info lebih lanjut?`;
+    const message = `Halo, saya tertarik dengan ${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.variant ? ` ${vehicle.variant}` : ''
+      } (ID: ${vehicle.displayId || vehicle.id.slice(0, 8)}). Bisa info lebih lanjut?`;
 
     const phoneNumber = '6281234567890'; // TODO: Get from tenant settings
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
@@ -170,11 +170,10 @@ export default function VehicleDetailPage({ params }: PageProps) {
                   <button
                     key={photo.id}
                     onClick={() => setSelectedPhoto(index)}
-                    className={`rounded-lg overflow-hidden border-2 ${
-                      selectedPhoto === index
+                    className={`rounded-lg overflow-hidden border-2 ${selectedPhoto === index
                         ? 'border-blue-600'
                         : 'border-gray-200'
-                    }`}
+                      }`}
                   >
                     <img
                       src={photo.thumbnailUrl || photo.originalUrl}

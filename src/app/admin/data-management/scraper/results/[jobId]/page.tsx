@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -22,8 +22,9 @@ interface Result {
   url: string;
 }
 
-export default function ResultsPage({ params }: { params: { jobId: string } }) {
+export default function ResultsPage({ params }: { params: Promise<{ jobId: string }> | { jobId: string } }) {
   const router = useRouter();
+  const resolvedParams = params instanceof Promise ? use(params) : params;
   const [results, setResults] = useState<Result[]>([]);
   const [filteredResults, setFilteredResults] = useState<Result[]>([]);
   const [search, setSearch] = useState('');
@@ -37,7 +38,7 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
 
   useEffect(() => {
     loadResults();
-  }, [params.jobId]);
+  }, [resolvedParams.jobId]);
 
   useEffect(() => {
     filterResults();
@@ -45,7 +46,7 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
 
   const loadResults = async () => {
     try {
-      const res = await fetch(`/api/admin/scraper/results/${params.jobId}`);
+      const res = await fetch(`/api/admin/scraper/results/${resolvedParams.jobId}`);
 
       if (!res.ok) {
         throw new Error('Job not found or failed to load results');
@@ -139,7 +140,7 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
     if (!confirm('Import all approved results to production?')) return;
 
     try {
-      const res = await fetch(`/api/admin/scraper/import/${params.jobId}`, {
+      const res = await fetch(`/api/admin/scraper/import/${resolvedParams.jobId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -366,11 +367,10 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      result.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      result.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span className={`px-2 py-1 text-xs rounded-full ${result.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        result.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
+                          'bg-yellow-100 text-yellow-800'
+                      }`}>
                       {result.status}
                     </span>
                   </td>
@@ -434,11 +434,10 @@ export default function ResultsPage({ params }: { params: { jobId: string } }) {
             <div className="p-6">
               {/* Status Badge */}
               <div className="mb-6">
-                <span className={`px-3 py-1 text-sm rounded-full ${
-                  selectedResult.status === 'approved' ? 'bg-green-100 text-green-800' :
-                  selectedResult.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
+                <span className={`px-3 py-1 text-sm rounded-full ${selectedResult.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    selectedResult.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
+                      'bg-yellow-100 text-yellow-800'
+                  }`}>
                   {selectedResult.status.toUpperCase()}
                 </span>
                 {selectedResult.confidence > 0 && (

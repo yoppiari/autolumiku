@@ -23,9 +23,9 @@ import { prisma } from '@/lib/prisma';
 export default async function BlogPostPage({
     params
 }: {
-    params: { slug: string; postSlug: string }
+    params: any
 }) {
-    const { slug, postSlug } = params;
+    const { slug, postSlug } = await params;
     const headersList = headers();
     const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
     const tenantDomain = headersList.get('x-tenant-domain');

@@ -16,11 +16,11 @@ const execAsync = promisify(exec);
 // GET /api/admin/tenants/[id] - Get tenant details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: any }
 ) {
   return withSuperAdminAuth(request, async (request, auth) => {
     try {
-      const { id } = params;
+      const { id } = await params;
 
       const tenant = await prisma.tenant.findUnique({
         where: { id },
@@ -65,11 +65,11 @@ export async function GET(
 // PUT /api/admin/tenants/[id] - Update tenant
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: any }
 ) {
   return withSuperAdminAuth(request, async (request, auth) => {
     try {
-      const { id } = params;
+      const { id } = await params;
       const body = await request.json();
 
       const {
@@ -183,11 +183,11 @@ export async function PUT(
 // DELETE /api/admin/tenants/[id] - Delete tenant
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: any }
 ) {
   return withSuperAdminAuth(request, async (request, auth) => {
     try {
-      const { id } = params;
+      const { id } = await params;
 
       // Check if tenant exists
       const tenant = await prisma.tenant.findUnique({

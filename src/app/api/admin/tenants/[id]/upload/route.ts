@@ -10,10 +10,10 @@ import { StorageService } from '@/lib/services/storage.service';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: any }
 ) {
   try {
-    const { id: tenantId } = params;
+    const { id: tenantId } = await params;
 
     // Get form data
     const formData = await request.formData();

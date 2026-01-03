@@ -37,9 +37,10 @@ function formatDate(date: Date): string {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: any }
 ) {
   try {
+    const { id } = await params;
     // Auth check
     const authResult = await authenticateRequest(request);
     if (!authResult.success || !authResult.user) {
@@ -62,7 +63,7 @@ export async function GET(
     // Get invoice with relations
     const invoice = await prisma.salesInvoice.findFirst({
       where: {
-        id: params.id,
+        id,
         tenantId,
       },
       include: {

@@ -42,10 +42,12 @@ interface PageProps {
   };
 }
 
-export default async function CatalogVehiclesPage({ params, searchParams }: PageProps) {
+export default async function CatalogVehiclesPage({ params, searchParams }: { params: any, searchParams: any }) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const headersList = headers();
   const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
-  const tenantSlug = params.slug;
+  const tenantSlug = resolvedParams.slug;
   const tenantDomain = headersList.get('x-tenant-domain');
 
   try {
@@ -330,7 +332,7 @@ export default async function CatalogVehiclesPage({ params, searchParams }: Page
   }
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<{
+export async function generateMetadata({ params }: { params: any }): Promise<{
   title: string;
   description: string;
 }> {

@@ -18,8 +18,8 @@ import { FaPhone, FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaClock } from 'react-
 import { prisma } from '@/lib/prisma';
 
 
-export default async function ContactPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function ContactPage({ params }: { params: any }) {
+  const { slug } = await params;
   const headersList = headers();
   const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
   const tenantDomain = headersList.get('x-tenant-domain');

@@ -105,7 +105,12 @@ export default function ReportDetailPage() {
         <div className="p-4 md:p-8 max-w-6xl mx-auto">
             {/* Breadcrumbs */}
             <nav className="flex mb-6 text-sm text-gray-500 gap-2">
-                <Link href="/dashboard/whatsapp-ai/analytics?tab=reports" className="hover:text-indigo-600">Analytics</Link>
+                <Link
+                    href={`/dashboard/whatsapp-ai/analytics?tab=${report?.id.startsWith('sales') || report?.id === 'one-page-sales' || report?.id === 'total-sales' || report?.id === 'sales-trends' || report?.id === 'sales-summary' || report?.id === 'sales-metrics' || report?.id === 'sales-report' ? 'sales' : 'whatsapp'}`}
+                    className="hover:text-indigo-600 transition-colors"
+                >
+                    Analytics
+                </Link>
                 <span>/</span>
                 <span className="text-gray-900 font-medium">Report Detail</span>
             </nav>
@@ -127,7 +132,7 @@ export default function ReportDetailPage() {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                    {report.metrics.map((m, i) => (
+                    {report?.metrics?.map((m, i) => (
                         <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-100 transition-hover hover:border-indigo-200">
                             <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">{m.label}</p>
                             <p className={`text-xl font-black ${m.color || 'text-gray-900'}`}>{m.value}</p>
@@ -148,7 +153,7 @@ export default function ReportDetailPage() {
                         <div className="flex flex-col items-center gap-8 py-4">
                             {report.chartType === 'bar' ? (
                                 <div className="w-full space-y-6">
-                                    {report.chartData.map((item, i) => (
+                                    {report?.chartData?.map((item, i) => (
                                         <div key={i} className="space-y-2">
                                             <div className="flex justify-between text-sm font-bold text-gray-700">
                                                 <span>{item.label}</span>
@@ -166,7 +171,7 @@ export default function ReportDetailPage() {
                                             </div>
                                         </div>
                                     ))}
-                                    {report.chartData.length === 0 && (
+                                    {(!report?.chartData || report.chartData.length === 0) && (
                                         <div className="h-40 flex items-center justify-center text-gray-400 italic">
                                             No data available for visualization
                                         </div>
@@ -218,7 +223,7 @@ export default function ReportDetailPage() {
 
                                     {/* Legend for Pie/Donut */}
                                     <div className="flex-1 space-y-4 w-full">
-                                        {report.chartData.map((item, i) => (
+                                        {report?.chartData?.map((item, i) => (
                                             <div key={i} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
@@ -239,7 +244,7 @@ export default function ReportDetailPage() {
                             <span className="text-indigo-600">🧐</span> Deep Analysis
                         </h3>
                         <div className="space-y-4">
-                            {report.analysis.map((point, i) => (
+                            {report?.analysis?.map((point, i) => (
                                 <div key={i} className="flex gap-4 items-start p-4 bg-gray-50 rounded-xl border-l-4 border-indigo-500">
                                     <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-xs font-bold text-indigo-600 shadow-sm border border-indigo-50 flex-shrink-0">
                                         {i + 1}
@@ -247,6 +252,9 @@ export default function ReportDetailPage() {
                                     <p className="text-sm text-gray-700 leading-relaxed font-medium">{point}</p>
                                 </div>
                             ))}
+                            {(!report?.analysis || report.analysis.length === 0) && (
+                                <p className="text-gray-400 italic text-sm p-4">Analisis mendalam belum tersedia untuk periode ini.</p>
+                            )}
                         </div>
                     </div>
                 </div>
