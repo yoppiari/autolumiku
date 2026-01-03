@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
       pageViewsByVehicle.map(async (view) => {
         const vehicle = await prisma.vehicle.findUnique({
           where: { id: view.vehicleId as string },
-          include: { tenant: { select: { name: true } } },
+          include: { tenant: { select: { id: true, name: true } } },
         });
         if (!vehicle || vehicle.status === 'DELETED') return null;
         return {
@@ -205,6 +205,7 @@ export async function GET(request: NextRequest) {
           model: vehicle?.model || 'Unknown',
           year: vehicle?.year || 0,
           count: view._count.id,
+          tenantId: vehicle?.tenantId,
           tenantName: vehicle?.tenant.name || 'Unknown',
         };
       })
@@ -233,7 +234,7 @@ export async function GET(request: NextRequest) {
       soldVehiclesByModel.map(async (item) => {
         const tenant = await prisma.tenant.findUnique({
           where: { id: item.tenantId },
-          select: { name: true },
+          select: { id: true, name: true },
         });
         return {
           vehicleId: `${item.make}-${item.model}`, // Composite ID for aggregation
@@ -241,6 +242,7 @@ export async function GET(request: NextRequest) {
           model: item.model,
           year: item.year,
           count: item._count.id,
+          tenantId: item.tenantId,
           tenantName: tenant?.name || 'Unknown',
         };
       })
@@ -269,7 +271,7 @@ export async function GET(request: NextRequest) {
       leadsByModel.map(async (item) => {
         const tenant = await prisma.tenant.findUnique({
           where: { id: item.tenantId },
-          select: { name: true },
+          select: { id: true, name: true },
         });
 
         // Split interestedIn which usually stores "Make Model"
@@ -283,6 +285,7 @@ export async function GET(request: NextRequest) {
           model,
           year: now.getFullYear(),
           count: item._count.id,
+          tenantId: item.tenantId,
           tenantName: tenant?.name || 'Unknown',
         };
       })
@@ -310,7 +313,7 @@ export async function GET(request: NextRequest) {
       availableByModel.map(async (item) => {
         const tenant = await prisma.tenant.findUnique({
           where: { id: item.tenantId },
-          select: { name: true },
+          select: { id: true, name: true },
         });
         return {
           vehicleId: `${item.make}-${item.model}`,
@@ -318,6 +321,7 @@ export async function GET(request: NextRequest) {
           model: item.model,
           year: item.year,
           count: item._count.id,
+          tenantId: item.tenantId,
           tenantName: tenant?.name || 'Unknown',
         };
       })

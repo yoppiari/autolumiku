@@ -37,6 +37,7 @@ interface VehicleStat {
   model: string;
   year: number;
   count: number;
+  tenantId?: string;
   tenantName?: string;
   percentage?: number;
 }
@@ -119,16 +120,41 @@ const AnalyticsDashboard: React.FC = () => {
 
   // Map tenant IDs to consistent colors
   const tenantColors = React.useMemo(() => {
-    if (!analytics?.tenantSummary) return {};
     const mapping: Record<string, string> = {};
+    if (!analytics) return mapping;
+
+    // First pass: use tenant summary to establish base colors
     analytics.tenantSummary.forEach((tenant, index) => {
-      mapping[tenant.tenantName] = COLOR_PALETTE[index % COLOR_PALETTE.length];
       mapping[tenant.tenantId] = COLOR_PALETTE[index % COLOR_PALETTE.length];
+      mapping[tenant.tenantName] = COLOR_PALETTE[index % COLOR_PALETTE.length];
     });
+
+    // Second pass: ensure any other referenced tenants get a color
+    const allStats = [
+      ...analytics.mostCollected,
+      ...analytics.mostViewed,
+      ...analytics.mostAsked,
+      ...analytics.mostSold
+    ];
+
+    allStats.forEach(stat => {
+      if (stat.tenantId && !mapping[stat.tenantId]) {
+        // Use hash of ID to pick a color if not in summary
+        let hash = 0;
+        for (let i = 0; i < stat.tenantId.length; i++) {
+          hash = stat.tenantId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        mapping[stat.tenantId] = COLOR_PALETTE[Math.abs(hash) % COLOR_PALETTE.length];
+      }
+      if (stat.tenantName && !mapping[stat.tenantName]) {
+        mapping[stat.tenantName] = mapping[stat.tenantId || ''] || '#3b82f6';
+      }
+    });
+
     return mapping;
   }, [analytics]);
 
-  const getTenantColor = (nameOrId: string) => tenantColors[nameOrId] || '#3b82f6';
+  const getTenantColor = (idOrName: string) => tenantColors[idOrName] || '#3b82f6';
 
   if (isLoading) {
     return (
@@ -206,6 +232,20 @@ const AnalyticsDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Tenant Legend */}
+      <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
+        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tenant Legend:</span>
+        {analytics.tenantSummary.map(tenant => (
+          <div key={tenant.tenantId} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+            <span
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: getTenantColor(tenant.tenantId) }}
+            ></span>
+            {tenant.tenantName}
+          </div>
+        ))}
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -252,12 +292,21 @@ const AnalyticsDashboard: React.FC = () => {
               <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
               <YAxis />
               <Tooltip
-                formatter={(value, name) => [`${value} vehicles`, 'Count']}
+                formatter={(value, name, props) => {
+                  const data = props.payload;
+                  return [
+                    <div key="tooltip">
+                      <p className="font-bold">{value} vehicles</p>
+                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
+                    </div>,
+                    'Count'
+                  ];
+                }}
                 labelFormatter={(label) => `Vehicle: ${label}`}
               />
               <Bar dataKey="count">
                 {analytics.mostCollected.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantName || '')} />
+                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantId || entry.tenantName || 'default')} />
                 ))}
               </Bar>
             </BarChart>
@@ -273,12 +322,21 @@ const AnalyticsDashboard: React.FC = () => {
               <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
               <YAxis />
               <Tooltip
-                formatter={(value, name) => [`${value.toLocaleString()} views`, 'Views']}
+                formatter={(value, name, props) => {
+                  const data = props.payload;
+                  return [
+                    <div key="tooltip">
+                      <p className="font-bold">{value.toLocaleString()} views</p>
+                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
+                    </div>,
+                    'Views'
+                  ];
+                }}
                 labelFormatter={(label) => `Vehicle: ${label}`}
               />
               <Bar dataKey="count">
                 {analytics.mostViewed.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantName || '')} />
+                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantId || entry.tenantName || 'default')} />
                 ))}
               </Bar>
             </BarChart>
@@ -297,12 +355,21 @@ const AnalyticsDashboard: React.FC = () => {
               <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
               <YAxis />
               <Tooltip
-                formatter={(value, name) => [`${value} inquiries`, 'Inquiries']}
+                formatter={(value, name, props) => {
+                  const data = props.payload;
+                  return [
+                    <div key="tooltip">
+                      <p className="font-bold">{value} inquiries</p>
+                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
+                    </div>,
+                    'Inquiries'
+                  ];
+                }}
                 labelFormatter={(label) => `Vehicle: ${label}`}
               />
               <Bar dataKey="count">
                 {analytics.mostAsked.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantName || '')} />
+                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantId || entry.tenantName || 'default')} />
                 ))}
               </Bar>
             </BarChart>
@@ -318,12 +385,21 @@ const AnalyticsDashboard: React.FC = () => {
               <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
               <YAxis />
               <Tooltip
-                formatter={(value, name) => [`${value} sold`, 'Sold']}
+                formatter={(value, name, props) => {
+                  const data = props.payload;
+                  return [
+                    <div key="tooltip">
+                      <p className="font-bold">{value} sold</p>
+                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
+                    </div>,
+                    'Sold'
+                  ];
+                }}
                 labelFormatter={(label) => `Vehicle: ${label}`}
               />
               <Bar dataKey="count">
                 {analytics.mostSold.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantName || '')} />
+                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantId || entry.tenantName || 'default')} />
                 ))}
               </Bar>
             </BarChart>
