@@ -19,8 +19,11 @@ interface ReorderItem {
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: any }
 ) {
+  // Robustly handle both Next.js 14 (sync) and Next.js 15 (promise) params
+  const { id } = await params;
+
   // Authenticate request
   const auth = await authenticateRequest(request);
   if (!auth.success || !auth.user) {
@@ -30,11 +33,7 @@ export async function PATCH(
     );
   }
 
-  // RBAC: All authenticated roles can access vehicle photos
-  // Sales, Admin, Owner, Super Admin all have access
-
   try {
-    const { id } = params;
     const { id: searchId, isUuid } = parseVehicleSlug(id);
 
     // Resolve vehicleId to actual UUID if it's a slug

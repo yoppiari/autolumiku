@@ -8,9 +8,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: any }
 ) {
-    const reportId = params.id;
+    // Robustly handle both Next.js 14 (sync) and Next.js 15 (promise) params
+    const resolvedParams = await params;
+    const reportId = resolvedParams?.id;
+
+    if (!reportId) {
+        return NextResponse.json({ success: false, error: 'Missing reportId' }, { status: 400 });
+    }
 
     // Authenticate request
     const auth = await authenticateRequest(request);
