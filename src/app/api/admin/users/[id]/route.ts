@@ -44,7 +44,7 @@ export async function GET(
 
             return NextResponse.json({
                 success: true,
-                data: userWithoutPassword,
+                data: { ...userWithoutPassword, isActive: true },
             });
 
         } catch (error) {
@@ -140,7 +140,6 @@ export async function PATCH(
                 lastName,
                 role,
                 tenantId: role === 'super_admin' ? null : tenantId,
-                isActive,
                 emailVerified,
                 phone: phone !== undefined ? phone : existingUser.phone,
             };
@@ -169,7 +168,7 @@ export async function PATCH(
             return NextResponse.json({
                 success: true,
                 message: 'User updated successfully',
-                data: userWithoutPassword,
+                data: { ...userWithoutPassword, isActive: true },
             });
 
         } catch (error) {

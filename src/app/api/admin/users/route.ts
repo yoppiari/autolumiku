@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
 
         return {
           ...user,
+          isActive: true, // Defaulting to true since DB field doesn't exist yet but user is active
           isWhatsAppActive: auth ? auth.isActive : false,
           phone: user.phone || auth?.phoneNumber || null
         };

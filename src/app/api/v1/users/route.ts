@@ -254,14 +254,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    // Check if user already exists in THIS specific tenant
+    // Note: Same email can exist in different tenants
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        tenantId: tenantId
+      },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { error: 'User with this email already exists in this showroom' },
         { status: 409 }
       );
     }
