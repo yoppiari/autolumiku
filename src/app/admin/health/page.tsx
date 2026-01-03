@@ -66,6 +66,16 @@ const AnalyticsDashboard: React.FC = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(60);
+  const [selectedTenantIds, setSelectedTenantIds] = useState<string[]>([]);
+  const [activeChartTab, setActiveChartTab] = useState<'mostCollected' | 'mostViewed' | 'mostAsked' | 'mostSold'>('mostCollected');
+
+  // Initialize selected tenants when data loads
+  useEffect(() => {
+    if (analytics?.tenantSummary) {
+      // By default select all active tenants
+      setSelectedTenantIds(prev => prev.length === 0 ? analytics.tenantSummary.map(t => t.tenantId) : prev);
+    }
+  }, [analytics]);
 
   // Load analytics data from API
   useEffect(() => {
@@ -281,136 +291,10 @@ const AnalyticsDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Charts Row 1 - Most Collected & Most Viewed */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Most Collected Vehicles */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Collected Vehicles</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.mostCollected}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
-              <YAxis />
-              <Tooltip
-                formatter={(value, name, props) => {
-                  const data = props.payload;
-                  return [
-                    <div key="tooltip">
-                      <p className="font-bold">{value} vehicles</p>
-                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
-                    </div>,
-                    'Count'
-                  ];
-                }}
-                labelFormatter={(label) => `Vehicle: ${label}`}
-              />
-              <Bar dataKey="count">
-                {analytics.mostCollected.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantId || entry.tenantName || 'default')} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Most Viewed Vehicles */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Viewed Vehicles</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.mostViewed}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
-              <YAxis />
-              <Tooltip
-                formatter={(value, name, props) => {
-                  const data = props.payload;
-                  return [
-                    <div key="tooltip">
-                      <p className="font-bold">{value.toLocaleString()} views</p>
-                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
-                    </div>,
-                    'Views'
-                  ];
-                }}
-                labelFormatter={(label) => `Vehicle: ${label}`}
-              />
-              <Bar dataKey="count">
-                {analytics.mostViewed.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantId || entry.tenantName || 'default')} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Charts Row 2 - Most Asked & Most Sold */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Most Asked Vehicles */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Asked Vehicles (AI Conversations)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.mostAsked}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
-              <YAxis />
-              <Tooltip
-                formatter={(value, name, props) => {
-                  const data = props.payload;
-                  return [
-                    <div key="tooltip">
-                      <p className="font-bold">{value} inquiries</p>
-                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
-                    </div>,
-                    'Inquiries'
-                  ];
-                }}
-                labelFormatter={(label) => `Vehicle: ${label}`}
-              />
-              <Bar dataKey="count">
-                {analytics.mostAsked.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantId || entry.tenantName || 'default')} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Most Sold Vehicles */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Sold Vehicles</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.mostSold}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
-              <YAxis />
-              <Tooltip
-                formatter={(value, name, props) => {
-                  const data = props.payload;
-                  return [
-                    <div key="tooltip">
-                      <p className="font-bold">{value} sold</p>
-                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
-                    </div>,
-                    'Sold'
-                  ];
-                }}
-                labelFormatter={(label) => `Vehicle: ${label}`}
-              />
-              <Bar dataKey="count">
-                {analytics.mostSold.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantId || entry.tenantName || 'default')} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Time Series Chart */}
+      {/* Time Series Chart - Moved Up for Better Visibility */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Trends (Last 7 Days)</h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250}>
           <BarChart data={analytics.timeSeriesData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
@@ -425,9 +309,114 @@ const AnalyticsDashboard: React.FC = () => {
         </ResponsiveContainer>
       </div>
 
+      {/* Consolidated Vehicle Statistics Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="border-b border-gray-100 bg-gray-50 px-6 py-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Vehicles</h3>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: 'mostViewed', label: 'Most Viewed', color: 'bg-green-100 text-green-700' },
+              { id: 'mostAsked', label: 'Most Asked', color: 'bg-yellow-100 text-yellow-700' },
+              { id: 'mostSold', label: 'Most Sold', color: 'bg-purple-100 text-purple-700' },
+              { id: 'mostCollected', label: 'Most Collected', color: 'bg-blue-100 text-blue-700' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveChartTab(tab.id as any)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeChartTab === tab.id
+                  ? tab.color + ' ring-2 ring-offset-1 ring-gray-200'
+                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-6">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={analytics[activeChartTab]}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} interval={0} fontSize={12} />
+              <YAxis />
+              <Tooltip
+                formatter={(value, name, props) => {
+                  const data = props.payload;
+                  return [
+                    <div key="tooltip">
+                      <p className="font-bold">{value.toLocaleString()} {activeChartTab === 'mostViewed' ? 'views' : activeChartTab === 'mostAsked' ? 'inquiries' : activeChartTab === 'mostSold' ? 'sold' : 'units'}</p>
+                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
+                    </div>,
+                    'Count'
+                  ];
+                }}
+              />
+              <Bar dataKey="count">
+                {analytics[activeChartTab].map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantId || entry.tenantName || 'default')} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       {/* Tenant Summary Table */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Tenant Performance Summary</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Tenant Performance Summary</h3>
+
+          <div className="relative group">
+            <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+              <span className="mr-1">🏳️</span>
+              Filter Tenants
+              <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded-full ml-1">
+                {selectedTenantIds.length}
+              </span>
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Dropdown Checklist */}
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 p-2 hidden group-hover:block z-10">
+              <div className="mb-2 pb-2 border-b border-gray-100 flex justify-between items-center px-1">
+                <span className="text-xs font-bold text-gray-500 uppercase">Select Tenants</span>
+                <button
+                  onClick={() => setSelectedTenantIds(analytics?.tenantSummary.map(t => t.tenantId) || [])}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Select All
+                </button>
+              </div>
+              <div className="max-h-60 overflow-y-auto space-y-1">
+                {analytics?.tenantSummary.map(tenant => (
+                  <label key={tenant.tenantId} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedTenantIds.includes(tenant.tenantId)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedTenantIds([...selectedTenantIds, tenant.tenantId]);
+                        } else {
+                          setSelectedTenantIds(selectedTenantIds.filter((id: string) => id !== tenant.tenantId));
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                    />
+                    <span className="text-sm text-gray-700 truncate">{tenant.tenantName}</span>
+                    <span
+                      className="w-2 h-2 rounded-full ml-auto flex-shrink-0"
+                      style={{ backgroundColor: getTenantColor(tenant.tenantId) }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -441,31 +430,33 @@ const AnalyticsDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {analytics.tenantSummary.map((tenant) => (
-                <tr key={tenant.tenantId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="w-3 h-3 rounded-full shadow-sm border border-black/5"
-                        style={{ backgroundColor: getTenantColor(tenant.tenantId) }}
-                      ></span>
-                      {tenant.tenantName}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalVehicles}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.soldVehicles}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalViews.toLocaleString()}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalInquiries}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tenant.conversionRate >= 18 ? 'bg-green-100 text-green-800' :
-                      tenant.conversionRate >= 15 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                      {tenant.conversionRate}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {analytics.tenantSummary
+                .filter(tenant => selectedTenantIds.includes(tenant.tenantId))
+                .map((tenant) => (
+                  <tr key={tenant.tenantId} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-3 h-3 rounded-full shadow-sm border border-black/5"
+                          style={{ backgroundColor: getTenantColor(tenant.tenantId) }}
+                        ></span>
+                        {tenant.tenantName}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalVehicles}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.soldVehicles}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalViews.toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalInquiries}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tenant.conversionRate >= 18 ? 'bg-green-100 text-green-800' :
+                        tenant.conversionRate >= 15 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                        {tenant.conversionRate}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
