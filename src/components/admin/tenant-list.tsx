@@ -169,98 +169,61 @@ export default function TenantList({
             <thead className="bg-gray-50">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('name')}
                 >
-                  Nama Tenant
+                  NAMA TENANT
                   {sortField === 'name' && (
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('subdomain')}
-                >
-                  Subdomain
-                  {sortField === 'subdomain' && (
-                    <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Custom Domain
-                </th>
-                <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('status')}
-                >
-                  Status
-                  {sortField === 'status' && (
-                    <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </th>
-                <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('createdAt')}
                 >
-                  Dibuat
+                  DIBUAT
                   {sortField === 'createdAt' && (
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Audit & Quick Action
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  AUDIT & QUICK ACTION
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Aksi
+                <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  AKSI
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTenants.map((tenant) => (
                 <tr key={tenant.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <a
-                      href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard` : `https://${tenant.subdomain}.autolumiku.com/dashboard`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group block"
-                    >
-                      <div className="text-sm font-medium text-blue-600 group-hover:underline">
-                        {tenant.name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {tenant.id.slice(0, 8)}...
-                      </div>
-                    </a>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{tenant.subdomain}</div>
-                    <div className="text-sm text-gray-400">.autolumiku.com</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {tenant.customDomain ? (
-                      <a
-                        href={`https://${tenant.customDomain}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-2 group"
-                      >
-                        <div className="text-sm text-blue-600 group-hover:underline">{tenant.customDomain}</div>
-                        <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">
-                          Custom
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-blue-600 hover:underline cursor-pointer" onClick={() => onTenantSelect?.(tenant)}>
+                          {tenant.name}
                         </span>
-                      </a>
-                    ) : (
-                      <span className="text-sm text-gray-400 italic">-</span>
-                    )}
+                        <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold rounded-full ${statusColors[tenant.status]}`}>
+                          {statusLabels[tenant.status]}
+                        </span>
+                      </div>
+                      <div className="flex flex-col text-[11px] text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-400">ID:</span> {tenant.id.slice(0, 8)}...
+                        </div>
+                        <div className="flex items-center gap-1 font-mono">
+                          <span className="text-gray-400">URL:</span> {tenant.customDomain || `${tenant.subdomain}.autolumiku.com`}
+                        </div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[tenant.status]}`}>
-                      {statusLabels[tenant.status]}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {format(new Date(tenant.createdAt), 'dd MMM yyyy', { locale: id })}
+                    <div className="text-sm text-gray-900 font-medium">
+                      {format(new Date(tenant.createdAt), 'dd MMM yyyy', { locale: id })}
+                    </div>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-tighter">
+                      Created Date
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col space-y-1">
