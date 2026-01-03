@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    let { tenantId, email, firstName, lastName, phone, role } = body;
+    let { tenantId, email, firstName, lastName, phone, role, password } = body;
 
     // Normalize phone number for consistent format
     const normalizedPhone = normalizePhoneNumber(phone);
@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
         phone: normalizedPhone,
         role: normalizedRole,
         roleLevel: getRoleLevel(normalizedRole),
-        passwordHash: await bcrypt.hash('temporary_password', 10), // In production: generate random password
+        passwordHash: await bcrypt.hash(password || 'temporary_password', 10),
         emailVerified: false,
       },
       select: {

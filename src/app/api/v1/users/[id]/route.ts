@@ -11,6 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 import { authenticateRequest } from '@/lib/auth/middleware';
 
 /**
@@ -174,7 +175,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { firstName, lastName, phone, role } = body;
+    const { firstName, lastName, phone, role, password } = body;
 
     // Normalize phone number for consistent format
     const normalizedPhone = normalizePhoneNumber(phone);
@@ -220,6 +221,7 @@ export async function PUT(
         phone: normalizedPhone,
         role: normalizedRole,
         roleLevel: getRoleLevel(normalizedRole),
+        ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
       },
       select: {
         id: true,
