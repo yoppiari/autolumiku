@@ -1046,7 +1046,6 @@ export class MessageOrchestratorService {
       message.includes('total penjualan') ||
       message.includes('total penjualan showroom') ||
       message.includes('staff performance') ||
-      message.includes('recent sales') ||
       message.includes('low stock alert') ||
       message.includes('low stock') ||
       message.includes('total revenue') ||

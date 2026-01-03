@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { withSuperAdminAuth } from '@/lib/auth/middleware';
+import { withPlatformAuth } from '@/lib/auth/middleware';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -15,7 +15,7 @@ const execAsync = promisify(exec);
 
 // GET /api/admin/tenants - List all tenants
 export async function GET(request: NextRequest) {
-  return withSuperAdminAuth(request, async (request, auth) => {
+  return withPlatformAuth(request, async (request, auth) => {
     try {
       // TODO: Add admin authentication check
       // const session = await getServerSession(authOptions);
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/tenants - Create new tenant
 export async function POST(request: NextRequest) {
-  return withSuperAdminAuth(request, async (request, auth) => {
+  return withPlatformAuth(request, async (request, auth) => {
     try {
       // TODO: Add admin authentication check
 

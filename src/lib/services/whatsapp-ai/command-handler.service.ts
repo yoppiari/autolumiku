@@ -23,6 +23,7 @@ import {
 } from '@/lib/reports/comprehensive-report-pdf';
 import { ReportDataService } from '@/lib/reports/report-data-service';
 import { VehicleInventoryPDF } from '@/lib/reports/vehicle-inventory-pdf';
+import { InsightEngine } from '@/lib/reports/insight-engine';
 import * as fs from 'fs';
 import * as path from 'path';
 import { StaffCommandService } from './staff-command.service';
@@ -178,7 +179,6 @@ function isReportCommand(cmd: string): boolean {
     'total sales',
     'sales total',
     'staff performance',
-    'recent sales',
     'low stock alert',
     'total revenue',
     'total inventory',
@@ -487,7 +487,6 @@ export async function handleReportCommand(
 
     // Staff
     'staff performance': generateStaffPerformanceText,
-    'recent sales': generateRecentSalesText,
 
     // Inventory
     'low stock alert': generateLowStockText,
@@ -730,17 +729,7 @@ https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
   return { success: true, message, followUp: true };
 }
 
-async function generateRecentSalesText(ctx: CommandContext): Promise<CommandResult> {
-  const data = await fetchSalesData(ctx, 7); // Last 7 days
-  const message = `💰 *PENJUALAN TERKINI (7 Hari)*
 
-Total Unit: ${data.summary.totalSalesCount}
-Revenue: ${formatCurrency(data.summary.totalSalesValue)}
-
-🔗 *Lihat Semua Transaksi:*
-https://primamobil.id/dashboard/invoices`;
-  return { success: true, message, followUp: true };
-}
 
 async function generateLowStockText(ctx: CommandContext): Promise<CommandResult> {
   // Minimal logic for low stock

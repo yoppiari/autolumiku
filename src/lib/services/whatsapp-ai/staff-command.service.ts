@@ -2167,8 +2167,8 @@ export class StaffCommandService {
     const { type } = params;
 
     // 1. Role Authorization
-    const authorizedRoles = ['ADMIN', 'OWNER', 'SUPER_ADMIN'];
-    const user = await prisma.user.findFirst({
+    // Find user directly by checking users in the current tenant or global admins
+    const potentialUsers = await prisma.user.findMany({
       where: {
         AND: [
           { phone: { not: null } },
@@ -2179,32 +2179,24 @@ export class StaffCommandService {
             ]
           }
         ]
+      },
+      select: {
+        id: true,
+        phone: true,
+        role: true,
+        tenantId: true
       }
     });
 
-    // Check if user exists and match phone with normalization
-    // We need to loop or find specifically because of normalization
-    let authorizedUser = null;
-    if (user) {
-      // Find all potential users for this phone across the allowed scopes
-      const potentialUsers = await prisma.user.findMany({
-        where: {
-          OR: [
-            { tenantId },
-            { tenantId: null }
-          ]
-        }
-      });
+    // Find the specific user by normalized phone
+    const authorizedUser = potentialUsers.find(u =>
+      u.phone && this.normalizePhone(u.phone) === this.normalizePhone(staffPhone)
+    );
 
-      for (const u of potentialUsers) {
-        if (u.phone && this.normalizePhone(u.phone) === this.normalizePhone(staffPhone)) {
-          authorizedUser = u;
-          break;
-        }
-      }
-    }
+    const authorizedRoles = ['ADMIN', 'OWNER', 'SUPER_ADMIN'];
 
     if (!authorizedUser || !authorizedRoles.includes(authorizedUser.role.toUpperCase())) {
+      console.log(`[StaffCommand] Unauthorized report access attempt. Phone: ${staffPhone}, User: ${authorizedUser?.id}, Role: ${authorizedUser?.role}`);
       return {
         success: false,
         message: "Maaf kak, fitur report ini khusus untuk Admin / Owner / Super Admin saja ya! 🙏",
@@ -2219,12 +2211,19 @@ export class StaffCommandService {
     }
 
     // 2. Fetch Report
-    const reportText = await WhatsAppReportService.getReport(type, tenantId);
-
-    return {
-      success: true,
-      message: reportText,
-    };
+    try {
+      const reportText = await WhatsAppReportService.getReport(type, tenantId);
+      return {
+        success: true,
+        message: reportText,
+      };
+    } catch (error: any) {
+      console.error(`[StaffCommand] Error generating report '${type}':`, error);
+      return {
+        success: false,
+        message: "Maaf, terjadi kesalahan saat membuat report. Silakan coba lagi.",
+      };
+    }
   }
 }
 

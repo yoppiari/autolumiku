@@ -402,7 +402,7 @@ function AnalyticsPageInternal() {
                   <span className="text-lg">📂</span>
                   <h3 className="text-sm font-bold text-gray-900">Laporan Tersedia</h3>
                 </div>
-                <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">15 REPORTS</span>
+                <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">14 REPORTS</span>
               </div>
 
               <div className="p-3 md:p-5 space-y-5">
@@ -449,7 +449,6 @@ function AnalyticsPageInternal() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
                       { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking tim sales', icon: '🏆', href: '/dashboard/whatsapp-ai/analytics/reports/staff-performance' },
-                      { id: 'recent-sales', name: 'Penjualan Terkini', desc: 'Transaksi terbaru', icon: '🔄', href: '/dashboard/whatsapp-ai/analytics/reports/recent-sales' },
                     ].map(report => <ReportCard key={report.id} report={report} />)}
                   </div>
                 </section>

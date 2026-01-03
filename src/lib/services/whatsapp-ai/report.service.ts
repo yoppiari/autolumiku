@@ -47,9 +47,7 @@ export class WhatsAppReportService {
             case 'staff_performance':
             case 'performa_sales':
                 return await this.getStaffPerformance(tenantId);
-            case 'recent_sales':
-            case 'penjualan_7_hari':
-                return await this.getRecentSales(tenantId);
+
 
             // ✅ WhatsApp AI & Customer
             case 'ai_analytics':
@@ -82,7 +80,7 @@ export class WhatsAppReportService {
             _sum: { price: true }
         });
 
-        const totalRevenue = totalValue._sum.price || 0;
+        const totalRevenue = totalValue._sum.price ? Number(totalValue._sum.price) : 0;
 
         let msg = `📊 *LAPORAN PENJUALAN LENGKAP*\n\n`;
         msg += `📈 Total Unit Terjual: *${totalCount} unit*\n`;
@@ -101,7 +99,7 @@ export class WhatsAppReportService {
         if (sold.length > 0) {
             msg += `*5 Penjualan Terakhir:*\n`;
             sold.forEach((v, i) => {
-                msg += `${i + 1}. ${v.make} ${v.model} (${v.year}) - Rp ${formatCurrency(v.price || 0)}\n`;
+                msg += `${i + 1}. ${v.make} ${v.model} (${v.year}) - Rp ${formatCurrency(Number(v.price || 0))}\n`;
             });
             msg += `\n`;
         }
@@ -160,7 +158,7 @@ export class WhatsAppReportService {
             _sum: { price: true }
         });
 
-        const totalRev = stats._sum.price || 0;
+        const totalRev = stats._sum.price ? Number(stats._sum.price) : 0;
 
         let msg = `💰 *TOTAL PENDAPATAN*\n\n`;
         msg += `Akumulasi pendapatan: *Rp ${formatCurrency(totalRev)}*\n\n`;
@@ -264,7 +262,7 @@ export class WhatsAppReportService {
         const totalRev = await prisma.vehicle.aggregate({ where: { tenantId, status: 'SOLD' }, _sum: { price: true } });
         const totalStock = await prisma.vehicle.count({ where: { tenantId, status: 'AVAILABLE' } });
 
-        return `📝 *RINGKASAN CEPAT*\n\n💰 Revenue: Rp ${formatCurrency(totalRev._sum.price || 0)}\n📦 Stok Aktif: ${totalStock} unit\n\n🔗 *Dashboard Utama:* https://primamobil.id/dashboard`;
+        return `📝 *RINGKASAN CEPAT*\n\n💰 Revenue: Rp ${formatCurrency(totalRev._sum.price ? Number(totalRev._sum.price) : 0)}\n📦 Stok Aktif: ${totalStock} unit\n\n🔗 *Dashboard Utama:* https://primamobil.id/dashboard`;
     }
 
     // ==================== INVENTORY & STOCK REPORTS ====================
@@ -276,7 +274,7 @@ export class WhatsAppReportService {
             _sum: { price: true }
         });
 
-        const totalValue = value._sum.price || 0;
+        const totalValue = value._sum.price ? Number(value._sum.price) : 0;
 
         let msg = `📦 *LAPORAN STOK KESELURUHAN*\n\n`;
         msg += `• Unit Tersedia: *${total} unit*\n`;
@@ -319,7 +317,7 @@ export class WhatsAppReportService {
 
         let msg = `🚗 *DAFTAR KENDARAAN TERBARU*\n\n`;
         vehicles.forEach((v, i) => {
-            msg += `${i + 1}. ${v.make} ${v.model} (${v.year}) - Rp ${formatCurrency(v.price || 0)}\n`;
+            msg += `${i + 1}. ${v.make} ${v.model} (${v.year}) - Rp ${formatCurrency(Number(v.price || 0))}\n`;
         });
 
         msg += `\n🧮 *RUMUSAN:*\n`;
@@ -364,7 +362,7 @@ export class WhatsAppReportService {
             _avg: { price: true }
         });
 
-        const avgPrice = Math.floor(stats._avg.price || 0);
+        const avgPrice = Math.floor(stats._avg.price ? Number(stats._avg.price) : 0);
 
         let msg = `🧮 *ANALISIS RATA-RATA HARGA*\n\n`;
         msg += `Rata-rata harga unit tersedia: \n*Rp ${formatCurrency(avgPrice)}*\n\n`;
@@ -431,28 +429,7 @@ export class WhatsAppReportService {
         return msg;
     }
 
-    private static async getRecentSales(tenantId: string): Promise<string> {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const count = await prisma.vehicle.count({
-            where: { tenantId, status: 'SOLD', updatedAt: { gte: sevenDaysAgo } }
-        });
-
-        let msg = `📅 *PENJUALAN 7 HARI TERAKHIR*\n\n`;
-        msg += `Berhasil menjual *${count} unit* 🔥\n\n`;
-
-        msg += `🧐 *ANALISA:*\n`;
-        if (count > 0) {
-            msg += `• Aktivitas penjualan dalam seminggu terakhir cukup aktif.\n`;
-        } else {
-            msg += `• Tidak ada penjualan dalam 7 hari terakhir. Perlu push promosi.\n`;
-        }
-        msg += `\n`;
-
-        msg += `🔗 *Daftar Invoices:* https://primamobil.id/dashboard/invoices`;
-        return msg;
-    }
 
     // ==================== WHATSAPP AI & CUSTOMER REPORTS ====================
 

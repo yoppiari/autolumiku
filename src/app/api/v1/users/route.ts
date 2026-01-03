@@ -12,28 +12,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authenticateRequest, type AuthResult } from '@/lib/auth/middleware';
+import { getRoleLevelFromRole } from '@/lib/rbac';
 
-/**
- * Get roleLevel based on role name
- * Used for access control comparisons
- */
-function getRoleLevel(role: string): number {
-  switch (role.toUpperCase()) {
-    case 'OWNER':
-      return 100;
-    case 'ADMIN':
-    case 'SUPER_ADMIN':
-      return 90;
-    case 'MANAGER':
-      return 70;
-    case 'FINANCE':
-      return 60;
-    case 'SALES':
-      return 30;
-    default:
-      return 30;
-  }
-}
 
 /**
  * Sync WhatsApp conversations to mark as staff when user is registered
@@ -281,7 +261,7 @@ export async function POST(request: NextRequest) {
         lastName: lastName || '',
         phone: normalizedPhone,
         role: normalizedRole,
-        roleLevel: getRoleLevel(normalizedRole),
+        roleLevel: getRoleLevelFromRole(normalizedRole),
         passwordHash: await bcrypt.hash(password || 'temporary_password', 10),
         emailVerified: false,
       },

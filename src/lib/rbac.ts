@@ -20,10 +20,12 @@
 
 // Role levels - higher number = more access
 export const ROLE_LEVELS = {
-  SALES: 30, // Sales - vehicle operations
-  ADMIN: 90, // Admin - team, whatsapp, blog management
-  OWNER: 100, // Owner - full tenant access
-  SUPER_ADMIN: 110, // Super Admin - platform access
+  STAFF: 30, // Staff/Sales - limited tenant access
+  SALES: 30, // Legacy support for Sales
+  MANAGER: 70, // Manager - tenant management features (Epic 4.3)
+  ADMIN: 90, // Admin - multi-tenant access & admin features
+  OWNER: 100, // Owner - full single tenant access
+  SUPER_ADMIN: 110, // Super Admin - full platform access
 } as const;
 
 export type RoleLevel = (typeof ROLE_LEVELS)[keyof typeof ROLE_LEVELS];
@@ -171,10 +173,13 @@ export function getRoleLevelFromRole(role: string): number {
       return ROLE_LEVELS.OWNER;
     case "ADMIN":
       return ROLE_LEVELS.ADMIN;
+    case "MANAGER":
+      return ROLE_LEVELS.MANAGER;
     case "SALES":
-      return ROLE_LEVELS.SALES;
+    case "STAFF":
+      return ROLE_LEVELS.STAFF;
     default:
-      return ROLE_LEVELS.SALES;
+      return ROLE_LEVELS.STAFF;
   }
 }
 
@@ -185,7 +190,8 @@ export function getRoleName(roleLevel: number): string {
   if (roleLevel >= ROLE_LEVELS.SUPER_ADMIN) return 'Super Admin';
   if (roleLevel >= ROLE_LEVELS.OWNER) return 'Owner';
   if (roleLevel >= ROLE_LEVELS.ADMIN) return 'Admin';
-  return 'Staff/Sales';
+  if (roleLevel >= ROLE_LEVELS.MANAGER) return 'Manager';
+  return 'Staff';
 }
 
 /**

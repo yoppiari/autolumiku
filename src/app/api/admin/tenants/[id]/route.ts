@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { withSuperAdminAuth } from '@/lib/auth/middleware';
+import { withPlatformAuth } from '@/lib/auth/middleware';
 
 const execAsync = promisify(exec);
 
@@ -18,7 +18,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: any }
 ) {
-  return withSuperAdminAuth(request, async (request, auth) => {
+  return withPlatformAuth(request, async (request, auth) => {
     try {
       const { id } = await params;
 
@@ -67,7 +67,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: any }
 ) {
-  return withSuperAdminAuth(request, async (request, auth) => {
+  return withPlatformAuth(request, async (request, auth) => {
     try {
       const { id } = await params;
       const body = await request.json();
@@ -189,7 +189,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: any }
 ) {
-  return withSuperAdminAuth(request, async (request, auth) => {
+  return withPlatformAuth(request, async (request, auth) => {
     try {
       const { id } = await params;
 

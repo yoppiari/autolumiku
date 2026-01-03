@@ -20,7 +20,6 @@ export class ReportDataService {
             'sales-report',
             'sales-metrics',
             'sales-trends',
-            'recent-sales',
             'total-sales',
             'total-revenue',
             'average-price',
@@ -91,7 +90,7 @@ export class ReportDataService {
                 .sort((a, b) => b.count - a.count);
 
             // Recent sales detail
-            if (reportType === 'recent-sales' || reportType === 'sales-report') {
+            if (reportType === 'sales-report') {
                 data.recentSalesDetail = soldVehicles.map((v) => ({
                     displayId: v.displayId || 'N/A',
                     make: v.make,

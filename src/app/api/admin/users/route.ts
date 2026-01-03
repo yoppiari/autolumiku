@@ -6,13 +6,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { withSuperAdminAuth } from '@/lib/auth/middleware';
+import { withPlatformAuth } from '@/lib/auth/middleware';
+import { getRoleLevelFromRole } from '@/lib/rbac';
 
 /**
  * GET /api/admin/users - List all users
  */
 export async function GET(request: NextRequest) {
-  return withSuperAdminAuth(request, async (request, auth) => {
+  return withPlatformAuth(request, async (request, auth) => {
     try {
       // TODO: Add admin authentication check
       // const session = await getServerSession(authOptions);
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
  * POST /api/admin/users - Create new user
  */
 export async function POST(request: NextRequest) {
-  return withSuperAdminAuth(request, async (request, auth) => {
+  return withPlatformAuth(request, async (request, auth) => {
     try {
       // TODO: Add admin authentication check
 
@@ -156,6 +157,7 @@ export async function POST(request: NextRequest) {
             firstName,
             lastName: lastName || '',
             role,
+            roleLevel: getRoleLevelFromRole(role),
             emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
             phone: phone || existingUser.phone,
             passwordHash: await bcrypt.hash(password, 10),
@@ -202,6 +204,7 @@ export async function POST(request: NextRequest) {
           lastName: lastName || '',
           passwordHash: await bcrypt.hash(password, 10),
           role,
+          roleLevel: getRoleLevelFromRole(role),
           tenantId: tenantId || null,
           phone: phone || '',
           emailVerified: emailVerified !== undefined ? emailVerified : false,

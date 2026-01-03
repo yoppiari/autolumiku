@@ -63,7 +63,7 @@ export default function UsersPage() {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role,
+          role: user.role.toLowerCase(),
           tenantId: user.tenantId,
           tenantName: user.tenant?.name,
           emailVerified: user.emailVerified,

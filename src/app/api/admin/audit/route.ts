@@ -5,13 +5,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withSuperAdminAuth } from '@/lib/auth/middleware';
+import { withPlatformAuth } from '@/lib/auth/middleware';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/admin/audit - List all audit logs
 export async function GET(request: NextRequest) {
-  return withSuperAdminAuth(request, async (request, auth) => {
+  return withPlatformAuth(request, async (request, auth) => {
     try {
       // TODO: Add admin authentication check
       // const session = await getServerSession(authOptions);

@@ -423,44 +423,7 @@ async function getRawReportData(id: string, tenantId?: string) {
             };
         }
 
-        case 'recent-sales': {
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-            const recent = await prisma.vehicle.findMany({
-                where: withTenant({ status: 'SOLD', updatedAt: { gte: sevenDaysAgo } }),
-                orderBy: { updatedAt: 'desc' },
-                select: { make: true, model: true, price: true, updatedAt: true }
-            });
-
-            const totalValue = recent.reduce((sum, v) => sum + Number(v.price), 0);
-
-            return {
-                id,
-                name: 'Penjualan Terkini',
-                icon: '🔄',
-                formula: 'Recent Sales = Units SOLD in last 7 days',
-                analysis: [
-                    `Dalam 7 hari terakhir, showroom berhasil menjual ${recent.length} unit.`,
-                    `Total revenue seminggu terakhir mencapai Rp ${formatCurrency(totalValue)}.`,
-                    'Tren penjualan menunjukkan minat beli yang positif.'
-                ],
-                recommendations: [
-                    'Follow up kepuasan pelanggan yang baru saja serah terima unit.',
-                    'Gunakan testimoni pembeli terbaru untuk konten marketing.',
-                ],
-                metrics: [
-                    { label: 'Weekly Sales', value: recent.length, color: 'text-green-600' },
-                    { label: 'Weekly Revenue', value: `Rp ${formatCurrency(totalValue)}` },
-                    { label: 'Veloctiy', value: (recent.length / 7).toFixed(1) + ' / day' },
-                    { label: 'Status', value: 'ACTIVE' }
-                ],
-                chartType: 'bar',
-                chartData: [
-                    { label: 'Sales', value: recent.length > 0 ? 100 : 0, color: '#10b981' }
-                ]
-            };
-        }
 
         case 'sales-trends': {
             const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);

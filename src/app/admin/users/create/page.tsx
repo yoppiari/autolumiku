@@ -65,10 +65,19 @@ export default function CreateUserPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      };
+
+      // If role becomes super_admin or admin, clear tenantId
+      if (name === 'role' && (value === 'super_admin' || value === 'admin')) {
+        newData.tenantId = '';
+      }
+
+      return newData;
+    });
   };
 
   const validateForm = () => {
@@ -81,6 +90,11 @@ export default function CreateUserPage() {
     if (formData.password.length < 8) errors.push('Password minimal 8 karakter');
     if (formData.password !== formData.confirmPassword) errors.push('Password dan konfirmasi tidak cocok');
 
+    // Tenant requirement check
+    if ((formData.role === 'manager' || formData.role === 'staff') && !formData.tenantId) {
+      errors.push('Tenant wajib dipilih untuk role Manager atau Staff');
+    }
+
     return errors;
   };
 
@@ -89,7 +103,7 @@ export default function CreateUserPage() {
 
     const errors = validateForm();
     if (errors.length > 0) {
-      alert('Error:\\n' + errors.join('\\n'));
+      alert('Error:\n' + errors.join('\n'));
       return;
     }
 
@@ -239,7 +253,6 @@ export default function CreateUserPage() {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Pilih Role</option>
                 <option value="staff">Staff</option>
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
@@ -249,21 +262,28 @@ export default function CreateUserPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tenant
+                Tenant {formData.role === 'manager' || formData.role === 'staff' ? '*' : ''}
               </label>
               <select
                 name="tenantId"
                 value={formData.tenantId}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={formData.role === 'super_admin' || formData.role === 'admin'}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${formData.role === 'super_admin' || formData.role === 'admin' ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''
+                  }`}
               >
-                <option value="">Platform Admin / Pilih Tenant...</option>
-                <option value="">-- Platform Admin (No Tenant) --</option>
-                {tenants.map(tenant => (
-                  <option key={tenant.id} value={tenant.id}>
-                    {tenant.name}
-                  </option>
-                ))}
+                {formData.role === 'super_admin' || formData.role === 'admin' ? (
+                  <option value="">Platform Admin (Akses Semua Tenant)</option>
+                ) : (
+                  <>
+                    <option value="">Pilih Tenant...</option>
+                    {tenants.map(tenant => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.name}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
           </div>
@@ -317,20 +337,29 @@ export default function CreateUserPage() {
       </div>
 
       {/* Role Information */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-4">Informasi Role</h3>
-        <div className="space-y-3 text-sm text-blue-800">
-          <div>
-            <strong>Super Admin:</strong> Akses penuh ke semua fitur platform
+      <div className="mt-6 bg-blue-50/50 border border-blue-100 rounded-xl p-6 shadow-sm">
+        <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Informasi Role
+        </h3>
+        <div className="space-y-4">
+          <div className="flex gap-3">
+            <span className="font-black text-blue-700 min-w-[100px]">Super Admin:</span>
+            <span className="text-blue-800">Akses penuh ke semua fitur platform</span>
           </div>
-          <div>
-            <strong>Admin:</strong> Akses ke semua tenant dan fitur admin
+          <div className="flex gap-3">
+            <span className="font-black text-blue-700 min-w-[100px]">Admin:</span>
+            <span className="text-blue-800">Akses ke semua tenant dan fitur admin</span>
           </div>
-          <div>
-            <strong>Manager:</strong> Akses ke tenant tertentu dan fitur manajemen
+          <div className="flex gap-3">
+            <span className="font-black text-blue-700 min-w-[100px]">Manager:</span>
+            <span className="text-blue-800">Akses ke tenant tertentu dan fitur manajemen</span>
           </div>
-          <div>
-            <strong>Staff:</strong> Akses terbatas ke tenant tertentu
+          <div className="flex gap-3">
+            <span className="font-black text-blue-700 min-w-[100px]">Staff:</span>
+            <span className="text-blue-800">Akses terbatas ke tenant tertentu</span>
           </div>
         </div>
       </div>

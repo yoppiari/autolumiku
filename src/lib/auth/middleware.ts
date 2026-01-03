@@ -222,10 +222,48 @@ export async function withSuperAdminAuth(
 }
 
 /**
+ * Middleware wrapper to protect platform-level routes (Super Admin & Platform Admin)
+ * Allows Super Admin OR (Admin with NO tenantId)
+ */
+export async function withPlatformAuth(
+  request: NextRequest,
+  handler: (request: NextRequest, auth: AuthResult) => Promise<NextResponse>
+): Promise<NextResponse> {
+  const auth = await authenticateRequest(request);
+
+  if (!auth.success) {
+    return NextResponse.json(
+      { error: auth.error || 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  const user = auth.user;
+  if (!user) {
+    return NextResponse.json({ error: 'User not found' }, { status: 401 });
+  }
+
+  // PLATFORM ACCESS RULES:
+  // 1. Super Admin (Level 110) - always allowed
+  // 2. Admin (Level 90) but ONLY if they have NO tenantId (Platform-wide Admin)
+  const isSuperAdmin = user.role === 'super_admin';
+  const isPlatformAdmin = user.role === 'admin' && !user.tenantId;
+
+  if (!isSuperAdmin && !isPlatformAdmin) {
+    return NextResponse.json(
+      { error: 'Forbidden - Platform Admin access required' },
+      { status: 403 }
+    );
+  }
+
+  return handler(request, auth);
+}
+
+/**
  * Get user permissions based on role
  */
 export function getUserPermissions(role: string): string[] {
-  switch (role) {
+  switch (role.toLowerCase()) {
     case 'super_admin':
       return [
         'tenant:create', 'tenant:read', 'tenant:update', 'tenant:delete',
@@ -252,10 +290,17 @@ export function getUserPermissions(role: string): string[] {
         'blog:create', 'blog:update', 'blog:delete',
         'catalog:update',
       ];
+    case 'manager':
+      return [
+        'inventory:read', 'inventory:create', 'inventory:update',
+        'leads:read', 'leads:update', 'leads:create',
+        'analytics:read',
+      ];
+    case 'staff':
     case 'sales':
       return [
-        'inventory:read', 'inventory:create',
-        'leads:read', 'leads:update',
+        'inventory:read', 'inventory:create', 'inventory:update',
+        'leads:read', 'leads:create', 'leads:update',
       ];
     default:
       return [];

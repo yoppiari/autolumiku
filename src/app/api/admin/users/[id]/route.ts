@@ -6,7 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { withSuperAdminAuth } from '@/lib/auth/middleware';
+import { withPlatformAuth } from '@/lib/auth/middleware';
+import { getRoleLevelFromRole } from '@/lib/rbac';
 
 /**
  * GET /api/admin/users/[id] - Get single user
@@ -15,7 +16,7 @@ export async function GET(
     request: NextRequest,
     { params }: { params: any }
 ) {
-    return withSuperAdminAuth(request, async () => {
+    return withPlatformAuth(request, async () => {
         try {
             const { id } = await params;
 
@@ -64,7 +65,7 @@ export async function PATCH(
     request: NextRequest,
     { params }: { params: any }
 ) {
-    return withSuperAdminAuth(request, async (request) => {
+    return withPlatformAuth(request, async (request) => {
         try {
             const { id } = await params;
             const body = await request.json();
@@ -139,6 +140,7 @@ export async function PATCH(
                 firstName,
                 lastName,
                 role,
+                ...(role ? { roleLevel: getRoleLevelFromRole(role) } : {}),
                 tenantId: role === 'super_admin' ? null : tenantId,
                 emailVerified,
                 phone: phone !== undefined ? phone : existingUser.phone,
@@ -188,7 +190,7 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: any }
 ) {
-    return withSuperAdminAuth(request, async () => {
+    return withPlatformAuth(request, async () => {
         try {
             const { id } = await params;
 
