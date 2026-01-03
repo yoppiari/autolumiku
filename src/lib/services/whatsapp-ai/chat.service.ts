@@ -1502,6 +1502,80 @@ DATABASE PENGETAHUAN KENDARAAN (Toyota Astra Indonesia):
 - 4WD: Super Select 4WD II
 - Harga kisaran: 560-750 juta
 
+**SUZUKI ERTIGA (2023+)**
+- Varian: GL MT, GL AT, GX MT, GX AT, Sport MT, Sport AT
+- Mesin: 1.5L K15B (105 PS), VVT
+- Transmisi: Manual 5-speed / Automatic 4-speed
+- Fitur Sport: Sporty Bodykit, Touchscreen 10", Rear Parking Camera, Leather Seat
+- Kapasitas: 7 penumpang (3 baris)
+- Harga kisaran: 230-290 juta
+
+**SUZUKI XL7 (2023+)**
+- Varian: Beta MT, Beta AT, Alpha MT, Alpha AT, Zeta AT
+- Mesin: 1.5L K15B (105 PS), VVT
+- Transmisi: Manual 5-speed / Automatic 4-speed
+- Fitur Zeta: Smart Play Cast, 360 View Camera, Cruise Control, Paddle Shift
+- Ground Clearance: 200mm (lebih tinggi dari Ertiga)
+- Kapasitas: 7 penumpang
+- Harga kisaran: 250-310 juta
+
+**SUZUKI BALENO (2023+)**
+- Varian: MT, AT, Hatchback Premium
+- Mesin: 1.4L K14B (95 PS), VVT
+- Transmisi: Manual 5-speed / Automatic 4-speed
+- Fitur: Smart Play Cast, Reverse Camera, Keyless Entry, Push Start Button
+- Tipe: Hatchback 5-pintu
+- Harga kisaran: 230-270 juta
+
+**SUZUKI IGNIS (2023+)**
+- Varian: GL MT, GL AGS, GX MT, GX AGS
+- Mesin: 1.2L K12M (83 PS), Dual Jet VVT
+- Transmisi: Manual 5-speed / AGS (Auto Gear Shift)
+- Fitur GX: LED Headlamp, Touchscreen 7", Reverse Camera, Alloy Wheels
+- Tipe: Urban Compact SUV
+- Harga kisaran: 180-230 juta
+
+**SUZUKI JIMNY (2023+)**
+- Varian: 1.5 MT 4WD, 1.5 AT 4WD
+- Mesin: 1.5L K15B (102 PS), VVT
+- Transmisi: Manual 5-speed / Automatic 4-speed
+- 4WD: Part-time 4WD dengan Low Range, Brake LSD Traction Control
+- Fitur: Ladder Frame Chassis, Approach Angle 37°, Departure Angle 49°
+- Tipe: Off-road Legend
+- Harga kisaran: 430-470 juta
+
+**SUZUKI CARRY PICKUP (2023+)**
+- Varian: 1.5 WD, 1.5 FD (Flat Deck)
+- Mesin: 1.5L K15B (97 PS), VVT
+- Transmisi: Manual 5-speed
+- Kapasitas Angkut: 800 kg
+- Fitur: Power Steering, AC, Radio
+- Harga kisaran: 160-180 juta
+
+**SUZUKI S-PRESSO (2023+)**
+- Varian: GL MT, GL AGS, GX MT, GX AGS
+- Mesin: 1.0L K10B (68 PS), VVT
+- Transmisi: Manual 5-speed / AGS
+- Fitur GX: Touchscreen 7", Reverse Camera, Roof Rail
+- Tipe: Entry SUV Compact
+- Harga kisaran: 120-160 juta
+
+**SUZUKI SWIFT (2023+)**
+- Varian: GL MT, GL AT, GX MT, GX AT
+- Mesin: 1.2L K12M (83 PS), Dual Jet VVT
+- Transmisi: Manual 5-speed / Automatic CVT
+- Fitur GX: LED Headlamp, Touchscreen 7", Cruise Control, Paddle Shift
+- Tipe: Sporty Hatchback
+- Harga kisaran: 210-260 juta
+
+**SUZUKI KARIMUN WAGON R (2023+)**
+- Varian: GA MT, GL MT, GL AGS, GS MT, GS AGS
+- Mesin: 1.0L K10B (68 PS), VVT
+- Transmisi: Manual 5-speed / AGS
+- Fitur GS: Touchscreen 7", Reverse Camera, Keyless Entry
+- Tipe: Tall Wagon (ruang kabin luas)
+- Harga kisaran: 120-160 juta
+
 CARA MENGGUNAKAN DATABASE:
 1. Jika ditanya spesifikasi, sebutkan detail lengkap (mesin, transmisi, fitur unggulan).
 2. Jika ditanya perbandingan varian, jelaskan perbedaan fitur dan harga.
