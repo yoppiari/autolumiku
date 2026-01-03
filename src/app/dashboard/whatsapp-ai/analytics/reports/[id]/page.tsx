@@ -145,61 +145,91 @@ export default function ReportDetailPage() {
                             <span className="text-indigo-600">📊</span> Data Visualization
                         </h3>
 
-                        <div className="flex flex-col md:flex-row items-center gap-8 py-4">
-                            {/* Simplified Pie/Donut Chart Component */}
-                            <div className="relative w-48 h-48 md:w-64 md:h-64 flex-shrink-0">
-                                <svg className="w-full h-full" viewBox="0 0 36 36">
-                                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f3f4f6" strokeWidth="4" />
-                                    {(() => {
-                                        let accumulatedPercent = 0;
-                                        const hasData = report.chartData.some(d => d.value > 0);
-
-                                        if (!hasData) return null;
-
-                                        return report.chartData.map((segment, idx) => {
-                                            const val = Number(segment.value) || 0;
-                                            const length = (val / 100) * 100;
-                                            const dashArray = `${length} ${100 - length}`;
-                                            const offset = 100 - accumulatedPercent;
-                                            accumulatedPercent += length;
-                                            return (
-                                                <circle
-                                                    key={idx}
-                                                    cx="18" cy="18" r="15.9155"
-                                                    fill="none"
-                                                    stroke={segment.color}
-                                                    strokeWidth="4"
-                                                    strokeDasharray={dashArray}
-                                                    strokeDashoffset={offset}
-                                                    strokeLinecap="round"
-                                                    transform="rotate(-90 18 18)"
+                        <div className="flex flex-col items-center gap-8 py-4">
+                            {report.chartType === 'bar' ? (
+                                <div className="w-full space-y-6">
+                                    {report.chartData.map((item, i) => (
+                                        <div key={i} className="space-y-2">
+                                            <div className="flex justify-between text-sm font-bold text-gray-700">
+                                                <span>{item.label}</span>
+                                                <span>{item.value}%</span>
+                                            </div>
+                                            <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200">
+                                                <div
+                                                    className="h-full rounded-full transition-all duration-1000 ease-out shadow-sm"
+                                                    style={{
+                                                        width: `${item.value}%`,
+                                                        backgroundColor: item.color,
+                                                        boxShadow: `0 0 10px ${item.color}40`
+                                                    }}
                                                 />
-                                            );
-                                        });
-                                    })()}
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-3xl font-black text-gray-900">
-                                        {report.chartData.some(d => d.value > 0) ? '100%' : '0%'}
-                                    </span>
-                                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">
-                                        {report.chartType === 'donut' || report.chartType === 'pie' ? 'Total Share' : 'Distribution'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Legend */}
-                            <div className="flex-1 space-y-4 w-full">
-                                {report.chartData.map((item, i) => (
-                                    <div key={i} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                                            <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+                                            </div>
                                         </div>
-                                        <span className="text-sm font-black text-gray-900">{item.value}%</span>
+                                    ))}
+                                    {report.chartData.length === 0 && (
+                                        <div className="h-40 flex items-center justify-center text-gray-400 italic">
+                                            No data available for visualization
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col md:flex-row items-center gap-8 w-full">
+                                    {/* Pie/Donut Chart Component */}
+                                    <div className="relative w-48 h-48 md:w-64 md:h-64 flex-shrink-0">
+                                        <svg className="w-full h-full" viewBox="0 0 36 36">
+                                            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f3f4f6" strokeWidth="4" />
+                                            {(() => {
+                                                let accumulatedPercent = 0;
+                                                const hasData = report.chartData.some(d => d.value > 0);
+
+                                                if (!hasData) return null;
+
+                                                return report.chartData.map((segment, idx) => {
+                                                    const val = Number(segment.value) || 0;
+                                                    const length = (val / 100) * 100;
+                                                    const dashArray = `${length} ${100 - length}`;
+                                                    const offset = 100 - accumulatedPercent;
+                                                    accumulatedPercent += length;
+                                                    return (
+                                                        <circle
+                                                            key={idx}
+                                                            cx="18" cy="18" r="15.9155"
+                                                            fill="none"
+                                                            stroke={segment.color}
+                                                            strokeWidth="4"
+                                                            strokeDasharray={dashArray}
+                                                            strokeDashoffset={offset}
+                                                            strokeLinecap="round"
+                                                            transform="rotate(-90 18 18)"
+                                                        />
+                                                    );
+                                                });
+                                            })()}
+                                        </svg>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                            <span className="text-3xl font-black text-gray-900">
+                                                {report.chartData.some(d => d.value > 0) ? '100%' : '0%'}
+                                            </span>
+                                            <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest text-center">
+                                                {report.chartType === 'donut' || report.chartType === 'pie' ? 'Total Share' : 'Distribution'}
+                                            </span>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
+
+                                    {/* Legend for Pie/Donut */}
+                                    <div className="flex-1 space-y-4 w-full">
+                                        {report.chartData.map((item, i) => (
+                                            <div key={i} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
+                                                    <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+                                                </div>
+                                                <span className="text-sm font-black text-gray-900">{item.value}%</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
