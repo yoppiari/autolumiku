@@ -136,101 +136,45 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if email already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
+      // Check if user already exists in THIS SPECIFIC tenant
+      const targetTenantId = tenantId || null;
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          email: email.toLowerCase(),
+          tenantId: targetTenantId
+        },
         include: { tenant: true }
       });
 
       if (existingUser) {
         // SCENARIO 1: User exists in the SAME user-selected tenant -> UPDATE (Upsert)
-        // Treat checking for "Showroom Jakarta" specifically if needed, but tenantId match is safer
-        if (existingUser.tenantId === tenantId) {
-          console.log(`♻️ User ${email} exists in same tenant. Updating...`);
-          const updatedUser = await prisma.user.update({
-            where: { id: existingUser.id },
-            data: {
-              firstName,
-              lastName: lastName || '',
-              role,
-              emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
-              phone: phone || existingUser.phone,
-              // Update password only if provided and different? 
-              // For admin create, we usually overwrite password if provided.
-              passwordHash: await bcrypt.hash(password, 10),
-            },
-            include: {
-              tenant: {
-                select: { id: true, name: true, slug: true }
-              }
+        console.log(`♻️ User ${email} exists in target tenant ${targetTenantId || 'Platform'}. Updating...`);
+        const updatedUser = await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            firstName,
+            lastName: lastName || '',
+            role,
+            emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
+            phone: phone || existingUser.phone,
+            passwordHash: await bcrypt.hash(password, 10),
+          },
+          include: {
+            tenant: {
+              select: { id: true, name: true, slug: true }
             }
-          });
-
-          return NextResponse.json({
-            success: true,
-            message: 'User berhasil diperbarui (Upsert)',
-            data: updatedUser,
-          });
-        }
-
-        // SCENARIO 2: User exists in a DUMMY tenant -> DELETE & RECREATE
-        const dummyTenants = [
-          "Tenant 1 Demo",
-          "Showroom Jakarta Premium",
-          "Showroom Jakarta",
-          "Dealer Mobil",
-          "AutoMobil",
-          "AutoLumiku Platform"
-        ];
-        const isDummyUser = existingUser.tenant && dummyTenants.includes(existingUser.tenant.name);
-
-
-        if (isDummyUser) {
-          console.log(`♻️ Auto-cleaning dummy user ${email} from ${existingUser.tenant?.name}`);
-          await prisma.user.delete({ where: { id: existingUser.id } });
-          // Fall through to create new user below
-        } else {
-          // SCENARIO 2.5: Creating a Platform Admin OR Promoting to Super Admin
-          // If tenantId is null OR role is 'super_admin', we treat this as a promotion
-          if (!tenantId || role === 'super_admin') {
-            const isPromotion = role === 'super_admin' || role === 'admin';
-            console.log(`🔼 Promoting ${email} from ${existingUser.tenant?.name} to Platform Admin (Role: ${role})`);
-
-            const promotedUser = await prisma.user.update({
-              where: { id: existingUser.id },
-              data: {
-                firstName,
-                lastName: lastName || '',
-                role,
-                emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
-                phone: phone || existingUser.phone,
-                passwordHash: await bcrypt.hash(password, 10),
-                tenantId: null, // Force null for super_admin/platform admin
-              },
-              include: {
-                tenant: {
-                  select: { id: true, name: true, slug: true }
-                }
-              }
-            });
-
-            return NextResponse.json({
-              success: true,
-              message: `User berhasil dipromosikan ke ${role === 'super_admin' ? 'Super Admin' : 'Platform Admin'} dari ${existingUser.tenant?.name}`,
-              data: promotedUser,
-            });
           }
+        });
 
-          // SCENARIO 3: User exists in a DIFFERENT, REAL tenant -> CONFLICT
-          return NextResponse.json(
-            {
-              success: false,
-              error: `Email sudah terdaftar di tenant lain: ${existingUser.tenant?.name}`,
-            },
-            { status: 409 }
-          );
-        }
+        return NextResponse.json({
+          success: true,
+          message: 'User berhasil diperbarui (Upsert di tenant)',
+          data: updatedUser,
+        });
       }
+
+      // If we are here, the user doesn't exist in THIS tenant.
+      // We can safely create a NEW record even if the email exists in another tenant.
 
       // Check if tenant exists (skip if tenantId is null for Platform Admins)
       if (tenantId) {

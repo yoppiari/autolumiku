@@ -17,6 +17,16 @@ interface TenantEditForm {
   status: string;
 }
 
+interface TenantUpdateResponse {
+  success: boolean;
+  data: any;
+  message?: string;
+  error?: string;
+  traefikSynced?: string;
+  traefikError?: string;
+  details?: string;
+}
+
 export default function TenantEditPage() {
   const params = useParams();
   const router = useRouter();
@@ -83,7 +93,7 @@ export default function TenantEditPage() {
     setSyncStatus(null);
 
     try {
-      const data = await api.put(`/api/admin/tenants/${tenantId}`, formData);
+      const data = await api.put(`/api/admin/tenants/${tenantId}`, formData) as TenantUpdateResponse;
 
       if (data.success) {
         // Show sync status if domain was changed
@@ -116,7 +126,7 @@ export default function TenantEditPage() {
     setErrorDetails(null);
 
     try {
-      const data = await api.post('/api/admin/tenants/sync-traefik', {});
+      const data = await api.post('/api/admin/tenants/sync-traefik', {}) as TenantUpdateResponse;
 
       if (data.success) {
         setSyncStatus('✅ Traefik configuration synced successfully!');
@@ -242,15 +252,20 @@ export default function TenantEditPage() {
                   <label htmlFor="slug" className="block text-sm font-bold text-gray-700 mb-1.5 leading-tight">
                     Subdomain (Slug) <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => handleChange('slug', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono"
-                    placeholder="primamobil-id"
-                    required
-                  />
+                  <div className="flex">
+                    <input
+                      type="text"
+                      id="slug"
+                      value={formData.slug}
+                      onChange={(e) => handleChange('slug', e.target.value)}
+                      className="flex-1 min-w-0 px-4 py-2.5 border border-gray-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono z-10"
+                      placeholder="primamobil-id"
+                      required
+                    />
+                    <span className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 bg-gray-50 text-gray-400 text-[10px] md:text-sm rounded-r-xl whitespace-nowrap overflow-hidden font-medium">
+                      .autolumiku.com
+                    </span>
+                  </div>
                   <p className="text-[10px] text-gray-500 mt-1.5 px-1 font-medium italic">
                     Contoh: auto.lumiku.com/catalog/primamobil-id
                   </p>

@@ -22,16 +22,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user
-    const user = await prisma.user.findUnique({
+    // Find user by email and request context (tenant domain)
+    const host = request.headers.get('host') || '';
+    const users = await prisma.user.findMany({
       where: { email: email.toLowerCase() },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        tenantId: true,
-      },
+      include: { tenant: true }
     });
+
+    if (users.length === 0) {
+      // For security, don't reveal if email exists
+      return NextResponse.json<ForgotPasswordResponse>(
+        {
+          success: true,
+          method: 'email',
+          message:
+            'Jika email terdaftar, instruksi reset password akan dikirim.',
+        },
+        { status: 200 }
+      );
+    }
+
+    // Disambiguation
+    let user = users[0];
+    if (users.length > 1) {
+      const match = users.find(u => u.tenant?.domain === host);
+      if (match) {
+        user = match;
+      } else {
+        // Find platform admin or first available
+        const platform = users.find(u => u.tenantId === null);
+        user = platform || users[0];
+      }
+    }
 
     // For security, don't reveal if email exists
     if (!user) {

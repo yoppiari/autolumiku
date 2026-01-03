@@ -77,7 +77,7 @@ model Tenant {
 
 model User {
   id           String  @id @default(uuid())
-  email        String  @unique
+  email        String
   passwordHash String
   firstName    String
   lastName     String
@@ -87,6 +87,8 @@ model User {
   // Role: OWNER(100), ADMIN(90), MANAGER(70), FINANCE(60), SALES(30)
   role      String @default("SALES")
   roleLevel Int    @default(30) // Permission level for access control
+
+  @@unique([email, tenantId])
 
   // Email Verification
   emailVerified           Boolean   @default(false)

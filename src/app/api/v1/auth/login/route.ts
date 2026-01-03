@@ -67,9 +67,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email
-    console.log('[Login] Querying database for user...');
-    const user = await prisma.user.findUnique({
+    // Find users by email (now multiple possible)
+    console.log('[Login] Querying database for users matching email...');
+    const users = await prisma.user.findMany({
       where: { email: email.toLowerCase() },
       select: {
         id: true,
@@ -84,16 +84,52 @@ export async function POST(request: NextRequest) {
         failedLoginAttempts: true,
         lockedUntil: true,
       },
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            domain: true,
+            slug: true,
+            name: true,
+          }
+        }
+      }
     });
 
-    if (!user) {
-      console.log('[Login] User not found');
+    if (users.length === 0) {
+      console.log('[Login] No user found with this email');
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       );
     }
-    console.log(`[Login] User found: ${user.id}, Role: ${user.role}`);
+
+    // DISAMBIGUATION LOGIC:
+    // If multiple users, find the best fit based on request origin (Host)
+    let user = users[0];
+    if (users.length > 1) {
+      const host = request.headers.get('host') || '';
+      console.log(`[Login] Multiple accounts found for ${email}. Identifying best fit for host: ${host}`);
+
+      // 1. Try to find user matching this host domain
+      const hostMatch = users.find(u => u.tenant?.domain === host);
+
+      // 2. Try to find user matching platform (auto.lumiku.com or tenantId is null)
+      const platformMatch = users.find(u => u.tenantId === null);
+
+      if (hostMatch) {
+        user = hostMatch;
+        console.log(`[Login] Match found by host domain: ${user.tenant?.name}`);
+      } else if (platformMatch && (host.includes('auto.lumiku.com') || host === 'localhost:3000')) {
+        user = platformMatch;
+        console.log(`[Login] Match found as platform admin`);
+      } else {
+        // Default to first user, but log a warning if it's ambiguous
+        console.warn(`[Login] Ambiguous login for ${email}. Defaulting to first matching account.`);
+      }
+    }
+
+    console.log(`[Login] Authenticating as User ID: ${user.id}, Tenant: ${user.tenantId || 'Platform'}, Role: ${user.role}`);
 
     // Check if account is locked
     if (user.lockedUntil && user.lockedUntil > new Date()) {
