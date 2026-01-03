@@ -65,11 +65,18 @@ export async function GET(request: NextRequest) {
 
       // Merge status into user objects
       const usersWithStatus = users.map(user => {
-        const auth = staffAuths.find(a => a.userId === user.id);
+        // Find auth by userId first
+        let auth = staffAuths.find(a => a.userId === user.id);
+
+        // If not found by userId but user has a phone, find by phoneNumber
+        if (!auth && user.phone) {
+          const cleanedUserPhone = user.phone.replace(/\D/g, '');
+          auth = staffAuths.find(a => a.phoneNumber.replace(/\D/g, '') === cleanedUserPhone);
+        }
+
         return {
           ...user,
           isWhatsAppActive: auth ? auth.isActive : false,
-          // If the user object doesn't have a phone but auth does, we can use it
           phone: user.phone || auth?.phoneNumber || null
         };
       });

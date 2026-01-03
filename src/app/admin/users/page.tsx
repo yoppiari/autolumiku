@@ -261,23 +261,23 @@ export default function UsersPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  User
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  USER
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  ROLE
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tenant
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  TENANT
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  WhatsApp / No
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  WHATSAPP / NO
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Terakhir Login
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  TERAKHIR LOGIN
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Aksi
+                <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  AKSI
                 </th>
               </tr>
             </thead>
@@ -287,10 +287,11 @@ export default function UsersPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col space-y-1">
                       <div className="flex items-center space-x-2">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-bold text-gray-900">
                           {user.firstName} {user.lastName}
                         </div>
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${user.isWhatsAppActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black ${user.isWhatsAppActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          <span className={`flex h-1.5 w-1.5 rounded-full mr-1 ${user.isWhatsAppActive ? 'bg-green-500 animate-pulse' : 'bg-red-600 animate-pulse'}`}></span>
                           {user.isWhatsAppActive ? 'WA: ACTIVE' : 'WA: NOT ACTIVE'}
                         </span>
                       </div>
@@ -310,8 +311,9 @@ export default function UsersPage() {
                               alert('Terjadi kesalahan: ' + (error as Error).message);
                             }
                           }}
-                          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium cursor-pointer hover:opacity-80 transition-opacity ${getStatusBadgeColor(user.isActive)}`}
+                          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black cursor-pointer hover:opacity-80 transition-opacity ${getStatusBadgeColor(user.isActive)}`}
                         >
+                          <span className={`flex h-1.5 w-1.5 rounded-full mr-1 ${user.isActive ? 'bg-green-500 animate-pulse' : 'bg-red-600 animate-pulse'}`}></span>
                           {user.isActive ? 'LOGIN: ACTIVE' : 'LOGIN: Tidak Aktif'}
                         </button>
                         <div className="text-sm text-gray-400 font-mono">
@@ -343,7 +345,7 @@ export default function UsersPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Belum pernah login'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex space-x-2">
                       <Link
                         href={`/admin/users/${user.id}/edit`}
