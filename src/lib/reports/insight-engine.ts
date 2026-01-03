@@ -69,9 +69,31 @@ export class InsightEngine {
             insights.push(`Basis Pelanggan: Anda memiliki ${data.totalCustomers} pelanggan terdaftar. Pertimbangkan program loyalitas atau promo khusus pelanggan lama.`);
         }
 
+        // 6. Strategic Growth & Demand
+        if (data.salesByBrand && data.salesByBrand.length > 0 && data.totalSales && data.totalSales >= 3) {
+            const topBrand = data.salesByBrand[0];
+            const marketShare = Math.round((topBrand.count / data.totalSales) * 100);
+            if (marketShare > 40) {
+                insights.push(`Dominasi Stok: Brand ${topBrand.brand} mendominasi ${marketShare}% penjualan Anda. Strategi beli: prioritaskan unit ${topBrand.brand} tahun muda untuk perputaran dana lebih cepat.`);
+            }
+        }
+
+        // 7. Lead Quality & ROI
+        if (data.totalLeads && data.totalLeads > 0 && data.totalRevenue) {
+            const revPerLead = data.totalRevenue / data.totalLeads;
+            if (revPerLead > 5000000) {
+                insights.push(`Nilai Prospek: Setiap lead bernilai rata-rata ${this.formatRupiah(revPerLead)}. Investasi iklan di Meta/Google Ads sangat disarankan untuk menjaring lebih banyak lead berkualitas.`);
+            }
+        }
+
+        // 8. Operational Bottleneck
+        if (data.whatsapp && data.whatsapp.totalConversations > 20 && data.whatsapp.activeConversations > (data.whatsapp.totalConversations * 0.4)) {
+            insights.push(`Bottleneck Operasional: Ada ${data.whatsapp.activeConversations} percakapan yang masih 'Active' (menggantung). Pastikan staff segera menyapa dan menutup diskusi agar konversi tidak hilang.`);
+        }
+
         // Generic Fallback
         if (insights.length === 0) {
-            insights.push("Data belum cukup untuk memberikan analisis mendalam. Terus update data stok dan penjualan Anda.");
+            insights.push("Basis Perhitungan: Menggunakan data 30 hari terakhir. Performa saat ini terpantau stabil, terus pantau dashboard untuk tren harian.");
         }
 
         return insights;

@@ -151,9 +151,9 @@ export default function ShowroomDashboardPage() {
       loadSubscription(parsedUser.tenantId);
       loadDashboardStats(parsedUser.tenantId);
       loadAnalytics(parsedUser.tenantId);
-      loadKpiData();
-      loadRecentSales();
-      loadLowStockItems();
+      loadKpiData(parsedUser.tenantId);
+      loadRecentSales(parsedUser.tenantId);
+      loadLowStockItems(parsedUser.tenantId);
     }
   }, []);
 
@@ -210,10 +210,10 @@ export default function ShowroomDashboardPage() {
     }
   };
 
-  const loadKpiData = async () => {
+  const loadKpiData = async (tenantId: string) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/v1/analytics/kpi', {
+      const response = await fetch(`/api/v1/analytics/kpi?tenantId=${tenantId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -227,10 +227,10 @@ export default function ShowroomDashboardPage() {
     }
   };
 
-  const loadRecentSales = async () => {
+  const loadRecentSales = async (tenantId: string) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/v1/vehicles?status=SOLD&limit=5&sortBy=updatedAt&sortOrder=desc', {
+      const response = await fetch(`/api/v1/vehicles?status=SOLD&limit=5&sortBy=updatedAt&sortOrder=desc&tenantId=${tenantId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -244,17 +244,23 @@ export default function ShowroomDashboardPage() {
     }
   };
 
-  const loadLowStockItems = async () => {
+  const loadLowStockItems = async (tenantId: string) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/v1/vehicles?status=AVAILABLE&limit=5&sortBy=price&sortOrder=asc', {
+      const response = await fetch(`/api/v1/vehicles?status=AVAILABLE&limit=20&sortBy=createdAt&sortOrder=asc&tenantId=${tenantId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
         const data = await response.json();
-        // Filter to only show items with price < 200M (indicating lower stock or older inventory)
-        const lowStock = (data.data?.vehicles || []).filter((v: any) => v.price < 200000000).slice(0, 5);
-        setLowStockItems(lowStock);
+        // Professional Logic: "Low Stock" in used car context means vehicles that have been in stock too long (> 60 days)
+        const now = Date.now();
+        const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+        const stagnantInventory = (data.data?.vehicles || []).filter((v: any) => {
+          const createdAt = new Date(v.createdAt).getTime();
+          return (now - createdAt) > sixtyDaysMs;
+        }).slice(0, 5);
+
+        setLowStockItems(stagnantInventory);
       }
     } catch (error) {
       console.error('Failed to load low stock items:', error);

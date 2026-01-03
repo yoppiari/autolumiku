@@ -71,150 +71,57 @@ export default function LeadsDashboard() {
   useEffect(() => {
     const loadLeadsData = async () => {
       setIsLoading(true);
-      
-      // Mock leads data from WhatsApp integration
-      const mockLeads: Lead[] = [
-        {
-          id: '1',
-          customerName: 'Budi Santoso',
-          phone: '+62-812-3456-7890',
-          whatsappNumber: '+62-812-3456-7890',
-          email: 'budi.santoso@email.com',
-          vehicleInterest: 'Toyota Avanza 2023',
-          budget: '200-250 juta',
-          urgency: 'high',
-          status: 'new',
-          source: 'whatsapp',
-          message: 'Halo, saya tertarik dengan Toyota Avanza 2023 yang diiklankan. Apakah masih tersedia?',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
-          tenantName: 'Showroom Jakarta',
-          createdAt: '2025-11-23T10:30:00Z',
-        },
-        {
-          id: '2',
-          customerName: 'Siti Nurhaliza',
-          phone: '+62-813-4567-8901',
-          whatsappNumber: '+62-813-4567-8901',
-          vehicleInterest: 'Honda CR-V 2023',
-          budget: '300-350 juta',
-          urgency: 'medium',
-          status: 'contacted',
-          source: 'whatsapp',
-          message: 'Minta info lebih lanjut tentang Honda CR-V, warna putih',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
-          tenantName: 'Showroom Jakarta',
-          createdAt: '2025-11-23T09:15:00Z',
-          lastContactAt: '2025-11-23T11:00:00Z',
-          assignedTo: 'Sales Team A',
-        },
-        {
-          id: '3',
-          customerName: 'Ahmad Pratama',
-          phone: '+62-814-5678-9012',
-          whatsappNumber: '+62-814-5678-9012',
-          vehicleInterest: 'Mitsubishi Xpander 2024',
-          budget: '250-300 juta',
-          urgency: 'high',
-          status: 'interested',
-          source: 'website',
-          message: 'Submit form dari website, tertarik dengan Xpander',
-          tenantId: '5536722c-78e5-4dcd-9d35-d16858add414', // MOCK_DATA
-          tenantName: 'Dealer Mobil',
-          createdAt: '2025-11-22T16:20:00Z',
-          lastContactAt: '2025-11-23T08:30:00Z',
-          assignedTo: 'Sales Team B',
-        },
-        {
-          id: '4',
-          customerName: 'Rina Wijaya',
-          phone: '+62-815-6789-0123',
-          whatsappNumber: '+62-815-6789-0123',
-          vehicleInterest: 'Suzuki Ertiga 2023',
-          budget: '180-220 juta',
-          urgency: 'low',
-          status: 'converted',
-          source: 'whatsapp',
-          message: 'Sudah deal dan melakukan pembayaran untuk Suzuki Ertiga',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
-          tenantName: 'Showroom Jakarta',
-          createdAt: '2025-11-20T14:45:00Z',
-          lastContactAt: '2025-11-22T10:15:00Z',
-          assignedTo: 'Sales Team A',
-        },
-      ];
+      try {
+        const response = await fetch(`/api/admin/leads?status=${statusFilter === 'all' ? '' : statusFilter.toUpperCase()}&source=${sourceFilter === 'all' ? '' : sourceFilter}&search=${searchTerm}`);
+        const result = await response.json();
 
-      // Mock WhatsApp settings
-      const mockWhatsAppSettings: WhatsAppSettings[] = [
-        {
-          id: '1',
-          tenantId: '8dd6398e-b2d2-4724-858f-ef9cfe6cd5ed', // MOCK_DATA
-          tenantName: 'Showroom Jakarta',
-          phoneNumber: '+62-21-5550-1234',
-          isActive: true,
-          defaultMessage: 'Halo! Terima kasih telah menghubungi Showroom Jakarta. Ada yang bisa kami bantu?',
-          autoReply: true,
-          workingHours: {
-            start: '08:00',
-            end: '17:00',
-            timezone: 'Asia/Jakarta',
-          },
-        },
-        {
-          id: '2',
-          tenantId: '5536722c-78e5-4dcd-9d35-d16858add414', // MOCK_DATA
-          tenantName: 'Dealer Mobil',
-          phoneNumber: '+62-22-6666-5678',
-          isActive: true,
-          defaultMessage: 'Selamat datang di Dealer Mobil! Kami siap membantu Anda.',
-          autoReply: false,
-          workingHours: {
-            start: '09:00',
-            end: '18:00',
-            timezone: 'Asia/Jakarta',
-          },
-        },
-      ];
+        if (result.success) {
+          const normalizedLeads = result.data.leads.map((l: any) => ({
+            id: l.id,
+            customerName: l.name,
+            phone: l.phone,
+            whatsappNumber: l.whatsappNumber || l.phone,
+            email: l.email,
+            vehicleInterest: l.interestedIn,
+            budget: l.budgetRange,
+            urgency: l.priority?.toLowerCase() || 'medium',
+            status: l.status?.toLowerCase() || 'new',
+            source: l.source?.toLowerCase() || 'whatsapp',
+            message: l.message,
+            tenantId: l.tenantId,
+            tenantName: l.tenant?.name || 'Showroom',
+            createdAt: l.createdAt,
+          }));
 
-      // Calculate stats
-      type LeadStatsType = {
-        total: number;
-        new: number;
-        contacted: number;
-        interested: number;
-        converted: number;
-        conversionRate: number;
-        [key: string]: number;
-      };
+          setLeads(normalizedLeads);
 
-      const leadStats = mockLeads.reduce((acc: LeadStatsType, lead) => {
-        acc.total++;
-        if (acc[lead.status] !== undefined) {
-          acc[lead.status]++;
+          if (result.data.stats) {
+            setStats({
+              total: result.data.stats.total,
+              new: result.data.stats.new,
+              contacted: result.data.stats.contacted,
+              interested: result.data.stats.interested,
+              converted: result.data.stats.converted,
+              conversionRate: result.data.stats.conversionRate,
+            });
+          }
         }
-
-        return acc;
-      }, { total: 0, new: 0, contacted: 0, interested: 0, converted: 0, conversionRate: 0 } as LeadStatsType);
-
-      // Calculate conversion rate
-      if (leadStats.total > 0) {
-        leadStats.conversionRate = Math.round((leadStats.converted / leadStats.total) * 100 * 10) / 10;
+      } catch (error) {
+        console.error('Failed to load leads:', error);
+      } finally {
+        setIsLoading(false);
       }
-
-      setLeads(mockLeads);
-      setStats(leadStats);
-      setWhatsAppSettings(mockWhatsAppSettings);
-      setIsLoading(false);
     };
 
     loadLeadsData();
-  }, []);
+  }, [statusFilter, sourceFilter, searchTerm]);
 
   // Filter leads
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.phone.includes(searchTerm) ||
-                         lead.vehicleInterest?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.tenantName.toLowerCase().includes(searchTerm.toLowerCase());
+      lead.phone.includes(searchTerm) ||
+      lead.vehicleInterest?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.tenantName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     const matchesSource = sourceFilter === 'all' || lead.source === sourceFilter;
@@ -262,12 +169,22 @@ export default function LeadsDashboard() {
   };
 
   const handleStatusChange = async (leadId: string, newStatus: string) => {
-    // Mock API call
-    console.log('Updating lead status:', leadId, newStatus);
-    
-    setLeads(prev => prev.map(lead => 
-      lead.id === leadId ? { ...lead, status: newStatus as any } : lead
-    ));
+    try {
+      const response = await fetch(`/api/admin/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus.toUpperCase() })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setLeads(prev => prev.map(lead =>
+          lead.id === leadId ? { ...lead, status: newStatus as any } : lead
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to update lead status:', error);
+    }
   };
 
   if (isLoading) {
@@ -383,9 +300,8 @@ export default function LeadsDashboard() {
             <div key={setting.id} className="border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-medium text-gray-900">{setting.tenantName}</h3>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                  setting.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${setting.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
                   {setting.isActive ? 'Aktif' : 'Tidak Aktif'}
                 </span>
               </div>

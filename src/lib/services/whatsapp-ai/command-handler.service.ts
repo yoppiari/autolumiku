@@ -560,72 +560,122 @@ Ketik nama report (contoh: "sales report" atau "whatsapp ai") untuk mendapatkan 
 // ============================================================================
 
 async function generateSalesReportText(ctx: CommandContext): Promise<CommandResult> {
-  const data = await fetchSalesData(ctx, 30);
-  const formattedValue = formatCurrency(data.summary.totalSalesValue);
-  const avgPrice = formatCurrency(data.avgPrice);
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
+
+  const data = await ReportDataService.gather('sales-report', ctx.tenantId, startDate, now);
+  const insights = InsightEngine.generate(data);
+
+  const formattedValue = formatCurrency(data.totalRevenue || 0);
+  const avgPrice = formatCurrency(data.avgPrice || 0);
 
   const message = `📊 *LAPORAN PENJUALAN (30 Hari)*
+_Data Real-time: ${formatDate(now)}_
 
-💰 *Total Penjualan*: ${data.summary.totalSalesCount} unit
+💰 *Total Terjual*: ${data.totalSales} unit
 💵 *Total Revenue*: ${formattedValue}
 🏷️ *Rata-rata Harga*: ${avgPrice}
 
 *Top Brand:*
-${data.byMake.slice(0, 3).map((m: any, i: number) => `${i + 1}. ${m.make}: ${m.count} unit (${formatCurrency(m.value)})`).join('\n')}
+${(data.salesByBrand || []).slice(0, 3).map((m: any, i: number) => `${i + 1}. ${m.brand}: ${m.count} unit`).join('\n')}
 
-🔗 *Lihat Detail & Grafik Lengkap:*
-https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+💡 *DEEP ANALYSIS & STRATEGIC:*
+${insights.slice(0, 3).map(ins => `• ${ins}`).join('\n')}
+
+🔗 *Dashboard Lengkap:*
+https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales
+
+_Powered by AutoLumiku Real-time Analytics_`;
 
   return { success: true, message, followUp: true };
 }
 
 async function generateInventoryReportText(ctx: CommandContext): Promise<CommandResult> {
-  const data = await fetchInventoryData(ctx);
-  const totalValue = formatCurrency(data.totalValue);
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
 
-  const message = `📦 *LAPORAN INVENTORY*
+  const data = await ReportDataService.gather('total-inventory', ctx.tenantId, startDate, now);
+  const insights = InsightEngine.generate(data);
+  const totalValue = formatCurrency(data.totalRevenue || 0); // Using gather's revenue context for inventory if needed, or recalculate
 
-Total Stok: ${data.totalStock} unit
-Total Nilai Aset: ${totalValue}
-Rata-rata Umur Stok: ${data.avgDaysInStock} hari
+  const message = `📦 *LAPORAN INVENTORY SHOWROOM*
+_Data Real-time: ${formatDate(now)}_
 
-🔗 *Lihat Inventory Lengkap:*
-https://primamobil.id/dashboard/vehicles`;
+Total Stok: *${data.totalInventory} unit*
+Estimasi Aset: *${formatCurrency(data.avgStockPrice! * data.totalInventory!)}*
+Rata-rata Harga: *${formatCurrency(data.avgStockPrice || 0)}*
+
+💡 *STRATEGIC INSIGHTS:*
+${insights.filter(i => i.includes('Stok') || i.includes('Aset')).slice(0, 2).map(ins => `• ${ins}`).join('\n')}
+
+🔗 *Inventory Detail:*
+https://primamobil.id/dashboard/vehicles
+
+_Data akurat & sinkron dengan database terbaru._`;
 
   return { success: true, message, followUp: true };
 }
 
 async function generateWhatsAppAIReportText(ctx: CommandContext): Promise<CommandResult> {
-  const data = await fetchWhatsAppAIData(ctx, 30);
-  if (!data) return { success: false, message: "Gagal mengambil data AI." };
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
+
+  const data = await ReportDataService.gather('whatsapp-analytics', ctx.tenantId, startDate, now);
+  if (!data || !data.whatsapp) return { success: false, message: "Gagal mengambil data AI real-time." };
+
+  const insights = InsightEngine.generate(data);
 
   const message = `🤖 *WHATSAPP AI ANALYTICS (30 Hari)*
+_Metodologi: Real-time Message Parsing_
 
-💬 *Total Percakapan*: ${data.overview.totalConversations}
-⚡ *Response Rate AI*: ${data.overview.aiResponseRate}%
-👥 *Handled by Staff*: ${data.overview.escalatedConversations} (${100 - data.overview.aiAccuracy}%)
+💬 *Total Percakapan*: ${data.whatsapp.totalConversations}
+⚡ *Response Rate AI*: ${data.whatsapp.aiResponseRate}%
+👥 *Eskalasi Staff*: ${data.whatsapp.escalationRate}%
+⏱️ *Avg Response Time*: ${data.whatsapp.avgResponseTime} detik
 
-*Top Topik:*
-${data.intentBreakdown.slice(0, 3).map((i: any) => `• ${i.intent}: ${i.count} (${i.percentage}%)`).join('\n')}
+*Top Inquiry:*
+${(data.whatsapp.intentBreakdown || []).slice(0, 3).map((i: any) => `• ${i.intent}: ${i.count} (${i.percentage}%)`).join('\n')}
 
-🔗 *Analisis Detail:*
-https://primamobil.id/dashboard/whatsapp-ai/analytics`;
+💡 *AI STRATEGIC INSIGHTS:*
+${insights.filter(i => i.includes('AI') || i.includes('Beban') || i.includes('Minat')).slice(0, 3).map(ins => `• ${ins}`).join('\n')}
+
+🔗 *Analisis Detail Interaksi:*
+https://primamobil.id/dashboard/whatsapp-ai/analytics
+
+_Sistem memantau percakapan secara 24/7._`;
 
   return { success: true, message, followUp: true };
 }
 
 async function generateStaffPerformanceText(ctx: CommandContext): Promise<CommandResult> {
-  const data = await fetchStaffPerformance(ctx, 30);
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
+
+  const data = await ReportDataService.gather('staff-performance', ctx.tenantId, startDate, now);
+  const insights = InsightEngine.generate(data);
 
   const message = `👥 *STAFF PERFORMANCE (30 Hari)*
+_Metrik: Total Unit Terjual_
 
-Total Sales Staff: ${data.totalStaff}
+Total Staff Sales: ${(data.staffPerformance || []).length} orang
+Total Unit Terjual: ${data.totalSales || 0} unit
 
 *Top Performers:*
-${data.topPerformers.slice(0, 3).map((s: any, i: number) => `${i + 1}. ${s.name}: ${s.count} unit (${formatCurrency(s.value)})`).join('\n')}
+${(data.staffPerformance || []).slice(0, 3).map((s: any, i: number) =>
+    `${i + 1}. *${s.name}*: ${s.sales} unit (${formatCurrency(s.revenue)})`
+  ).join('\n')}
 
-🔗 *Lihat Detail Kinerja:*
-https://primamobil.id/dashboard/users`; // Assuming users or sales dashboard
+💡 *STRATEGIC HR INSIGHTS:*
+${insights.filter(i => i.includes('SDM')).slice(0, 2).map(ins => `• ${ins}`).join('\n')}
+
+🔗 *Manajemen Staff:*
+https://primamobil.id/dashboard/admin/users
+
+_Data berdasarkan unit dengan status SOLD._`;
 
   return { success: true, message, followUp: true };
 }
@@ -636,13 +686,26 @@ async function generateSalesMetricsText(ctx: CommandContext): Promise<CommandRes
 }
 
 async function generateCustomerMetricsText(ctx: CommandContext): Promise<CommandResult> {
-  // Placeholder - could fetch specific customer data if needed
-  const message = `👥 *METRIK PELANGGAN*
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
 
-Analisis pelanggan tersedia lengkap di dashboard.
+  const data = await ReportDataService.gather('customer-metrics', ctx.tenantId, startDate, now);
 
-🔗 *Lihat di Dashboard:*
-https://primamobil.id/dashboard/leads`;
+  const message = `👥 *METRIK PELANGGAN & LEAD*
+_Data Real-time: ${formatDate(now)}_
+
+🔥 *Leads Baru (30 hari)*: ${data.totalLeads || 0} prospek
+✅ *Total Pelanggan*: ${data.totalCustomers || 0} terdaftar
+
+🔗 *Manajemen Lead:*
+https://primamobil.id/dashboard/leads
+
+🔗 *Manajemen Pelanggan:*
+https://primamobil.id/dashboard/admin/users
+
+_Sistem memantau asal sumber leads secara otomatis._`;
+
   return { success: true, message, followUp: true };
 }
 
@@ -1173,7 +1236,15 @@ async function generateVehicleInventoryListingPDF(context: CommandContext): Prom
 
   // Calculate metrics
   const activeVehicles = vehiclesWithImages.filter(v => v.status === 'AVAILABLE' || v.status === 'BOOKED').length;
-  const totalLeads = 0; // TODO: Integrate with leads table when available
+
+  // Real leads count
+  const totalLeads = await prisma.lead.count({
+    where: {
+      tenantId: context.tenantId,
+      createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+    }
+  });
+
   const followUpRequired = vehiclesWithImages.filter(v => v.status === 'BOOKED').length;
 
   // Set period (last 30 days)
