@@ -65,6 +65,8 @@ export default function WhatsAppAIDashboard() {
     staffCommands: 0,
     avgResponseTime: 0,
     aiAccuracy: 0,
+    todayConversations: 0,
+    todayMessages: 0,
   });
   const [aiConfig, setAiConfig] = useState<AIConfig | null>(null);
   const [aiHealth, setAiHealth] = useState<AIHealthState | null>(null);
@@ -201,16 +203,18 @@ export default function WhatsAppAIDashboard() {
   return (
     <div className="p-4 md:p-6 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
       {/* Header - Extra left padding on mobile to avoid hamburger menu */}
-      <div className="mb-4 md:mb-6 flex-shrink-0 pl-10 md:pl-0">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <span className="text-3xl md:text-4xl">💬</span>
-          WhatsApp AI Dashboard
-        </h1>
-        <p className="text-gray-600 text-sm md:text-base mt-1">Asisten virtual 24/7 untuk customer dan staff operations</p>
+      <div className="mb-2 md:mb-3 flex-shrink-0 pl-10 md:pl-0 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <span className="text-2xl md:text-3xl">💬</span>
+            WhatsApp AI Dashboard
+          </h1>
+          <p className="text-gray-600 text-[10px] md:text-sm mt-0.5">Asisten virtual 24/7 untuk customer dan staff operations</p>
+        </div>
       </div>
 
       {/* Connection Status - With AI Controls inside */}
-      <div className={`p-4 md:p-5 rounded-xl shadow-md border-2 mb-4 md:mb-6 flex-shrink-0 transition-all ${status.isConnected
+      <div className={`p-3 md:p-4 rounded-xl shadow-sm border-2 mb-3 md:mb-4 flex-shrink-0 transition-all ${status.isConnected
         ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
         : 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300'
         }`}>
@@ -351,73 +355,55 @@ export default function WhatsAppAIDashboard() {
 
         {/* Navigation Cards - Improved */}
         {status.isConnected && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 mb-4 md:mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-3 md:mb-4">
             <Link
               href="/dashboard/whatsapp-ai/conversations"
-              className="group bg-white p-5 md:p-6 rounded-xl shadow-md border-2 border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all transform hover:-translate-y-1"
+              className="group bg-white p-3 md:p-4 rounded-xl shadow-sm border-2 border-gray-100 hover:border-blue-500 hover:shadow-md transition-all transform hover:-translate-y-1"
             >
-              <div className="flex items-center gap-4">
-                <div className="text-4xl md:text-5xl">💬</div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-base md:text-lg text-gray-900 group-hover:text-blue-600 transition-colors mb-1">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl md:text-4xl">💬</div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-sm md:text-base text-gray-900 group-hover:text-blue-600 transition-colors mb-0.5 truncate">
                     Conversations
                   </h3>
-                  <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
-                    Monitor customer chats and staff commands in real-time
+                  <p className="text-[10px] md:text-xs text-gray-600 leading-tight line-clamp-1">
+                    Monitor chats in real-time
                   </p>
                 </div>
-              </div>
-              <div className="mt-3 flex items-center text-blue-600 text-sm font-semibold group-hover:text-blue-700">
-                View all
-                <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
               </div>
             </Link>
 
             <Link
               href="/dashboard/whatsapp-ai/analytics"
-              className="group bg-white p-5 md:p-6 rounded-xl shadow-md border-2 border-gray-200 hover:border-purple-500 hover:shadow-xl transition-all transform hover:-translate-y-1"
+              className="group bg-white p-3 md:p-4 rounded-xl shadow-sm border-2 border-gray-100 hover:border-purple-500 hover:shadow-md transition-all transform hover:-translate-y-1"
             >
-              <div className="flex items-center gap-4">
-                <div className="text-4xl md:text-5xl">📊</div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-base md:text-lg text-gray-900 group-hover:text-purple-600 transition-colors mb-1">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl md:text-4xl">📊</div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-sm md:text-base text-gray-900 group-hover:text-purple-600 transition-colors mb-0.5 truncate">
                     Analytics
                   </h3>
-                  <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
-                    AI performance metrics and conversation insights
+                  <p className="text-[10px] md:text-xs text-gray-600 leading-tight line-clamp-1">
+                    Performance metrics
                   </p>
                 </div>
-              </div>
-              <div className="mt-3 flex items-center text-purple-600 text-sm font-semibold group-hover:text-purple-700">
-                View reports
-                <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
               </div>
             </Link>
 
             <Link
               href="/dashboard/whatsapp-ai/config"
-              className="group bg-white p-5 md:p-6 rounded-xl shadow-md border-2 border-gray-200 hover:border-orange-500 hover:shadow-xl transition-all transform hover:-translate-y-1"
+              className="group bg-white p-3 md:p-4 rounded-xl shadow-sm border-2 border-gray-100 hover:border-orange-500 hover:shadow-md transition-all transform hover:-translate-y-1"
             >
-              <div className="flex items-center gap-4">
-                <div className="text-4xl md:text-5xl">⚙️</div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-base md:text-lg text-gray-900 group-hover:text-orange-600 transition-colors mb-1">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl md:text-4xl">⚙️</div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-sm md:text-base text-gray-900 group-hover:text-orange-600 transition-colors mb-0.5 truncate">
                     Configuration
                   </h3>
-                  <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
-                    AI personality, business hours, and feature settings
+                  <p className="text-[10px] md:text-xs text-gray-600 leading-tight line-clamp-1">
+                    AI behavior settings
                   </p>
                 </div>
-              </div>
-              <div className="mt-3 flex items-center text-orange-600 text-sm font-semibold group-hover:text-orange-700">
-                Configure
-                <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
               </div>
             </Link>
           </div>
@@ -425,10 +411,10 @@ export default function WhatsAppAIDashboard() {
 
         {/* Executive Summary Card - Improved */}
         {status.isConnected && (
-          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 rounded-xl border-l-4 border-green-600 p-4 md:p-6 shadow-md">
+          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 rounded-xl border-l-4 border-green-600 p-3 md:p-4 shadow-sm">
             {/* Header */}
-            <h4 className="text-sm md:text-base font-bold text-green-900 uppercase tracking-wide mb-3 md:mb-4 flex items-center gap-2">
-              <span className="text-xl md:text-2xl">📋</span>
+            <h4 className="text-xs md:text-sm font-bold text-green-900 uppercase tracking-wide mb-2 md:mb-3 flex items-center gap-2">
+              <span className="text-lg md:text-xl">📋</span>
               <span className="leading-tight">Executive Summary</span>
             </h4>
 

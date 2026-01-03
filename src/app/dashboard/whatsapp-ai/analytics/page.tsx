@@ -200,47 +200,47 @@ function AnalyticsPageInternal() {
     <div className="p-4 md:p-6 pb-20">
       {/* Header */}
       {/* Header - Elegant Rich Modern (Matched to Main Dashboard) */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-lg">
+      <div className="mb-4">
+        <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-3 md:px-5 py-2 md:py-3 shadow-md">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <Link href="/dashboard/whatsapp-ai" className="text-slate-400 hover:text-white transition-colors text-xs flex items-center gap-1">
+            <div className="flex items-center gap-2 mb-0.5">
+              <Link href="/dashboard/whatsapp-ai" className="text-slate-400 hover:text-white transition-colors text-[10px] flex items-center gap-1">
                 ← Back to WhatsApp AI
               </Link>
             </div>
-            <h1 className="text-base md:text-2xl font-bold text-white truncate">
+            <h1 className="text-sm md:text-xl font-bold text-white truncate leading-tight">
               Sales & Analytics Report
             </h1>
-            <p className="text-xs md:text-sm text-slate-300">Laporan performa & analisis showroom</p>
+            <p className="text-[10px] md:text-sm text-slate-300">Laporan performa & analisis showroom</p>
           </div>
-          <span className="inline-flex items-center px-2 md:px-3 py-1 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 ml-2 flex-shrink-0">
-            <span className="w-1.5 md:w-2 h-1.5 md:h-2 bg-emerald-400 rounded-full mr-1 md:mr-2 animate-pulse"></span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 ml-2 flex-shrink-0">
+            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-1.5 animate-pulse"></span>
             Live Data
           </span>
         </div>
       </div>
 
       {/* Department Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="flex gap-4" aria-label="Tabs">
+      <div className="border-b border-gray-200 mb-4">
+        <nav className="flex gap-2" aria-label="Tabs">
           <button
             onClick={() => setActiveDepartment('sales')}
-            className={`py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${activeDepartment === 'sales'
+            className={`py-2 px-3 border-b-2 font-medium text-xs flex items-center gap-2 whitespace-nowrap ${activeDepartment === 'sales'
               ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
           >
-            <span className="text-lg">📊</span>
+            <span className="text-base">📊</span>
             <span>Sales Report</span>
           </button>
           <button
             onClick={() => setActiveDepartment('whatsapp')}
-            className={`py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${activeDepartment === 'whatsapp'
+            className={`py-2 px-3 border-b-2 font-medium text-xs flex items-center gap-2 whitespace-nowrap ${activeDepartment === 'whatsapp'
               ? 'border-green-500 text-green-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
           >
-            <span className="text-lg">💬</span>
+            <span className="text-base">💬</span>
             <span>WhatsApp AI</span>
           </button>
         </nav>
@@ -254,57 +254,57 @@ function AnalyticsPageInternal() {
 
       {/* Sales Report Tab Content */}
       {!isLoading && activeDepartment === 'sales' && (
-        <div className="space-y-8 animate-in fade-in duration-500">
-          <div className="space-y-6">
+        <div className="space-y-4 animate-in fade-in duration-500">
+          <div className="space-y-4">
             {/* Summary Cards - Main Dashboard Style */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:shadow-md transition-shadow border border-gray-100">
-                <p className="text-xs md:text-sm text-gray-500">Total Penjualan</p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900">{salesStats?.totalSales || 0}</p>
-                <p className="text-[10px] md:text-xs text-green-600 mt-1">Unit terjual</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
+                <p className="text-[10px] md:text-xs text-gray-500">Total Penjualan</p>
+                <p className="text-lg md:text-xl font-bold text-gray-900 leading-tight">{salesStats?.totalSales || 0}</p>
+                <p className="text-[9px] text-green-600 mt-0.5">Unit terjual</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:shadow-md transition-shadow border border-gray-100">
-                <p className="text-xs md:text-sm text-gray-500">Total Revenue</p>
-                <p className="text-xl md:text-2xl font-bold text-blue-600">{formatRupiah(salesStats?.totalRevenue || 0)}</p>
-                <p className="text-[10px] md:text-xs text-gray-500 mt-1">Omzet keseluruhan</p>
+              <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
+                <p className="text-[10px] md:text-xs text-gray-500">Total Revenue</p>
+                <p className="text-lg md:text-xl font-bold text-blue-600 leading-tight">{formatRupiah(salesStats?.totalRevenue || 0)}</p>
+                <p className="text-[9px] text-gray-500 mt-0.5">Omzet</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:shadow-md transition-shadow border border-gray-100">
-                <p className="text-xs md:text-sm text-gray-500">Total Inventory</p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900">{kpiData?.raw.totalInventory || 0}</p>
-                <p className="text-[10px] md:text-xs text-gray-500 mt-1">Stok tersedia</p>
+              <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
+                <p className="text-[10px] md:text-xs text-gray-500">Total Inventory</p>
+                <p className="text-lg md:text-xl font-bold text-gray-900 leading-tight">{kpiData?.raw.totalInventory || 0}</p>
+                <p className="text-[9px] text-gray-500 mt-0.5">Stok tersedia</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:shadow-md transition-shadow border border-gray-100">
-                <p className="text-xs md:text-sm text-gray-500">Top Brand</p>
-                <p className="text-xl md:text-2xl font-bold text-purple-600 truncate">{salesStats?.topBrands?.[0]?.brand || '-'}</p>
-                <p className="text-[10px] md:text-xs text-gray-500 mt-1">{salesStats?.topBrands?.[0]?.count || 0} unit</p>
+              <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
+                <p className="text-[10px] md:text-xs text-gray-500">Top Brand</p>
+                <p className="text-lg md:text-xl font-bold text-purple-600 truncate leading-tight">{salesStats?.topBrands?.[0]?.brand || '-'}</p>
+                <p className="text-[9px] text-gray-500 mt-0.5">{salesStats?.topBrands?.[0]?.count || 0} unit</p>
               </div>
             </div>
 
             {/* Analysis Summary */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-l-4 border-blue-600 p-4 shadow-sm">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xl">📋</span>
-                <h4 className="text-sm font-bold text-blue-900 uppercase">Executive Analysis</h4>
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-l-4 border-blue-600 p-3 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">📋</span>
+                <h4 className="text-xs font-bold text-blue-900 uppercase">Executive Analysis</h4>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="text-xs text-blue-800 leading-relaxed">
-                  <span className="font-bold">Performa Penjualan:</span> {(salesStats?.totalSales || 0) >= 5 ? 'Status stabil dengan volume penjualan yang sehat.' : 'Perlu perhatian khusus pada strategi leads & pricing.'}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                <div className="text-[10px] text-blue-800 leading-snug">
+                  <span className="font-bold">Performa Penjualan:</span> {(salesStats?.totalSales || 0) >= 5 ? 'Status stabil dengan volume sehat.' : 'Perlu perhatian khusus.'}
                 </div>
-                <div className="text-xs text-blue-800 leading-relaxed">
-                  <span className="font-bold">Inventory Strategy:</span> Turnover rate saat ini di level {kpiData?.inventoryTurnover || 0}%. Target optimal adalah 20% unit terjual per bulan.
+                <div className="text-[10px] text-blue-800 leading-snug">
+                  <span className="font-bold">Inventory Strategy:</span> Turnover rate saat ini {kpiData?.inventoryTurnover || 0}%. Target optimal 20%.
                 </div>
               </div>
             </div>
 
             {/* KPI Charts Section - Matched to Main Dashboard */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
               {/* KPI Penjualan */}
-              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col">
-                <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
-                  <span className="text-lg">📊</span> Metrix Penjualan
+              <div className="bg-white rounded-lg shadow-sm p-3 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-800 mb-2 flex items-center gap-2 self-start w-full">
+                  <span className="text-base">📊</span> Metrix Penjualan
                 </h4>
-                <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
-                  <div className="relative w-28 h-28 md:w-32 md:h-32">
+                <div className="flex items-center justify-center py-1.5 mb-2 scale-90 md:scale-100">
+                  <div className="relative w-24 h-24">
                     <svg className="w-full h-full" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
                       <circle
@@ -318,8 +318,8 @@ function AnalyticsPageInternal() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl md:text-3xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
-                      <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">Monthly Target</span>
+                      <span className="text-xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
+                      <span className="text-[8px] text-gray-600 font-medium">Target</span>
                     </div>
                   </div>
                 </div>
@@ -354,12 +354,12 @@ function AnalyticsPageInternal() {
               </div>
 
               {/* KPI Pelanggan */}
-              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col">
-                <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
-                  <span className="text-lg">👥</span> Metrix Pelanggan
+              <div className="bg-white rounded-lg shadow-sm p-3 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-800 mb-2 flex items-center gap-2 self-start w-full">
+                  <span className="text-base">👥</span> Metrix Pelanggan
                 </h4>
-                <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
-                  <div className="relative w-28 h-28 md:w-32 md:h-32">
+                <div className="flex items-center justify-center py-1.5 mb-2 scale-90 md:scale-100">
+                  <div className="relative w-24 h-24">
                     <svg className="w-full h-full" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
                       <circle
@@ -373,8 +373,8 @@ function AnalyticsPageInternal() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl md:text-3xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
-                      <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">NPS Score</span>
+                      <span className="text-xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
+                      <span className="text-[8px] text-gray-600 font-medium">NPS</span>
                     </div>
                   </div>
                 </div>
@@ -409,12 +409,12 @@ function AnalyticsPageInternal() {
               </div>
 
               {/* KPI Operasional */}
-              <div className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col">
-                <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
-                  <span className="text-lg">⚙️</span> Metrix Operasional
+              <div className="bg-white rounded-lg shadow-sm p-3 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-800 mb-2 flex items-center gap-2 self-start w-full">
+                  <span className="text-base">⚙️</span> Metrix Operasional
                 </h4>
-                <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
-                  <div className="relative w-28 h-28 md:w-32 md:h-32">
+                <div className="flex items-center justify-center py-1.5 mb-2 scale-90 md:scale-100">
+                  <div className="relative w-24 h-24">
                     <svg className="w-full h-full" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
                       <circle
@@ -428,8 +428,8 @@ function AnalyticsPageInternal() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl md:text-3xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
-                      <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">Efficiency</span>
+                      <span className="text-xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
+                      <span className="text-[8px] text-gray-600 font-medium">Efficiency</span>
                     </div>
                   </div>
                 </div>
@@ -468,14 +468,14 @@ function AnalyticsPageInternal() {
           <hr className="border-gray-100" />
 
           {/* Report Categories Grid */}
-          <section className="pt-4">
+          <section className="pt-2">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-4 md:p-6 bg-gray-50 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-xl">📂</div>
+              <div className="p-3 md:p-4 bg-gray-50 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-lg">📂</div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Laporan Tersedia</h3>
-                    <p className="text-xs text-gray-500">Pilih kategori laporan untuk melihat detail analisis</p>
+                    <h3 className="text-base font-bold text-gray-900">Laporan Tersedia</h3>
+                    <p className="text-[10px] text-gray-500">Pilih kategori laporan untuk analisis</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -488,19 +488,19 @@ function AnalyticsPageInternal() {
               <div className="p-4 md:p-8 space-y-12">
                 {/* Sales & Revenue */}
                 <section>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xl">💰</span>
-                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Sales Revenue Semua</h3>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">💰</span>
+                    <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Sales Revenue</h3>
                     <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">6 REPORTS</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     {[
-                      { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand distribution (1 Hal)', icon: '💰', href: '/dashboard/whatsapp-ai/analytics/reports/one-page-sales' },
-                      { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit terjual & volume', icon: '📊', href: '/dashboard/whatsapp-ai/analytics/reports/total-sales' },
-                      { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan penjualan harian', icon: '📈', href: '/dashboard/whatsapp-ai/analytics/reports/sales-trends' },
-                      { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa untuk management', icon: '📋', href: '/dashboard/whatsapp-ai/analytics/reports/sales-summary' },
+                      { id: 'one-page-sales', name: 'Sales & Revenue Report', desc: 'Metrik keuangan & brand (1 Hal)', icon: '💰', href: '/dashboard/whatsapp-ai/analytics/reports/one-page-sales' },
+                      { id: 'total-sales', name: 'Total Penjualan', desc: 'Data akumulasi unit & volume', icon: '📊', href: '/dashboard/whatsapp-ai/analytics/reports/total-sales' },
+                      { id: 'sales-trends', name: 'Tren Penjualan Bulanan', desc: 'Analisis pertumbuhan harian', icon: '📈', href: '/dashboard/whatsapp-ai/analytics/reports/sales-trends' },
+                      { id: 'sales-summary', name: 'Sales Executive Summary', desc: 'Ringkasan performa', icon: '📋', href: '/dashboard/whatsapp-ai/analytics/reports/sales-summary' },
                       { id: 'sales-metrics', name: 'Metrik Penjualan', desc: 'KPI Penjualan, ATV & Turnover', icon: '📐', href: '/dashboard/whatsapp-ai/analytics/reports/sales-metrics' },
-                      { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail transaksi', icon: '📑', href: '/dashboard/whatsapp-ai/analytics/reports/sales-report' },
+                      { id: 'sales-report', name: 'Laporan Penjualan Lengkap', desc: 'Full data dump & detail', icon: '📑', href: '/dashboard/whatsapp-ai/analytics/reports/sales-report' },
                     ].map(report => (
                       <ReportCard key={report.id} report={report} />
                     ))}
@@ -586,30 +586,30 @@ function AnalyticsPageInternal() {
           ) : (
             <>
               {/* Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                  <p className="text-xs text-gray-500 mb-1">Total Conversations</p>
-                  <p className="text-2xl font-bold text-gray-900">{whatsappAnalytics.overview.totalConversations}</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
+                  <p className="text-[10px] text-gray-500 mb-0.5">Total Conversations</p>
+                  <p className="text-xl font-bold text-gray-900 leading-tight">{whatsappAnalytics.overview.totalConversations}</p>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                  <p className="text-xs text-gray-500 mb-1">Messages Handled</p>
-                  <p className="text-2xl font-bold text-blue-600">{whatsappAnalytics.overview.totalMessages}</p>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
+                  <p className="text-[10px] text-gray-500 mb-0.5">Messages Handled</p>
+                  <p className="text-xl font-bold text-blue-600 leading-tight">{whatsappAnalytics.overview.totalMessages}</p>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                  <p className="text-xs text-gray-500 mb-1">AI Response Rate</p>
-                  <p className="text-2xl font-bold text-green-600">{whatsappAnalytics.overview.aiResponseRate}%</p>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
+                  <p className="text-[10px] text-gray-500 mb-0.5">AI Response Rate</p>
+                  <p className="text-xl font-bold text-green-600 leading-tight">{whatsappAnalytics.overview.aiResponseRate}%</p>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                  <p className="text-xs text-gray-500 mb-1">Escalation Rate</p>
-                  <p className="text-2xl font-bold text-red-600">{whatsappAnalytics.overview.escalationRate}%</p>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
+                  <p className="text-[10px] text-gray-500 mb-0.5">Escalation Rate</p>
+                  <p className="text-xl font-bold text-red-600 leading-tight">{whatsappAnalytics.overview.escalationRate}%</p>
                 </div>
               </div>
 
               {/* Performance Analysis Card */}
-              <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-2xl">🤖</span>
-                  <h4 className="text-lg font-bold text-gray-900">AI Performance Analysis</h4>
+              <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-xl">🤖</span>
+                  <h4 className="text-base font-bold text-gray-900">AI Performance Analysis</h4>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="flex flex-col items-center">
@@ -667,27 +667,27 @@ function AnalyticsPageInternal() {
 
 function ReportCard({ report }: { report: { id: string; name: string; desc: string; icon: string; href?: string } }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group flex flex-col justify-between h-full">
-      <div>
-        <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:bg-blue-50 transition-colors">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:p-4 hover:shadow-md transition-shadow group flex flex-col justify-between h-full">
+      <div className="mb-2">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-50 rounded-lg flex items-center justify-center text-lg mb-2 group-hover:bg-blue-50 transition-colors">
           {report.icon}
         </div>
-        <h4 className="text-base font-bold text-gray-900 mb-2">{report.name}</h4>
-        <p className="text-xs text-gray-500 mb-6 leading-relaxed line-clamp-2">{report.desc}</p>
+        <h4 className="text-xs md:text-sm font-bold text-gray-900 mb-1">{report.name}</h4>
+        <p className="text-[10px] text-gray-500 leading-tight line-clamp-2">{report.desc}</p>
       </div>
 
       {report.href ? (
         <Link
           href={report.href}
-          className="w-full py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-sm transition-all"
+          className="w-full py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-sm transition-all"
         >
           <span>View Report</span>
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </Link>
       ) : (
-        <button disabled className="w-full py-2.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-400 cursor-not-allowed">
+        <button disabled className="w-full py-1.5 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-400 cursor-not-allowed">
           Coming Soon
         </button>
       )}
