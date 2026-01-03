@@ -110,7 +110,25 @@ const AnalyticsDashboard: React.FC = () => {
     }
   }, [autoRefresh, refreshInterval, selectedTimeRange]);
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+  // Professional color palette for dynamic mapping
+  const COLOR_PALETTE = [
+    '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+    '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
+    '#6366f1', '#f97316', '#14b8a6', '#d946ef'
+  ];
+
+  // Map tenant IDs to consistent colors
+  const tenantColors = React.useMemo(() => {
+    if (!analytics?.tenantSummary) return {};
+    const mapping: Record<string, string> = {};
+    analytics.tenantSummary.forEach((tenant, index) => {
+      mapping[tenant.tenantName] = COLOR_PALETTE[index % COLOR_PALETTE.length];
+      mapping[tenant.tenantId] = COLOR_PALETTE[index % COLOR_PALETTE.length];
+    });
+    return mapping;
+  }, [analytics]);
+
+  const getTenantColor = (nameOrId: string) => tenantColors[nameOrId] || '#3b82f6';
 
   if (isLoading) {
     return (
@@ -233,11 +251,15 @@ const AnalyticsDashboard: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
               <YAxis />
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name) => [`${value} vehicles`, 'Count']}
                 labelFormatter={(label) => `Vehicle: ${label}`}
               />
-              <Bar dataKey="count" fill="#3b82f6" />
+              <Bar dataKey="count">
+                {analytics.mostCollected.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantName || '')} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -250,11 +272,15 @@ const AnalyticsDashboard: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
               <YAxis />
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name) => [`${value.toLocaleString()} views`, 'Views']}
                 labelFormatter={(label) => `Vehicle: ${label}`}
               />
-              <Bar dataKey="count" fill="#10b981" />
+              <Bar dataKey="count">
+                {analytics.mostViewed.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantName || '')} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -270,11 +296,15 @@ const AnalyticsDashboard: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
               <YAxis />
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name) => [`${value} inquiries`, 'Inquiries']}
                 labelFormatter={(label) => `Vehicle: ${label}`}
               />
-              <Bar dataKey="count" fill="#f59e0b" />
+              <Bar dataKey="count">
+                {analytics.mostAsked.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantName || '')} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -287,11 +317,15 @@ const AnalyticsDashboard: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} />
               <YAxis />
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name) => [`${value} sold`, 'Sold']}
                 labelFormatter={(label) => `Vehicle: ${label}`}
               />
-              <Bar dataKey="count" fill="#ef4444" />
+              <Bar dataKey="count">
+                {analytics.mostSold.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getTenantColor(entry.tenantName || '')} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -333,17 +367,24 @@ const AnalyticsDashboard: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {analytics.tenantSummary.map((tenant) => (
                 <tr key={tenant.tenantId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tenant.tenantName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-3 h-3 rounded-full shadow-sm border border-black/5"
+                        style={{ backgroundColor: getTenantColor(tenant.tenantId) }}
+                      ></span>
+                      {tenant.tenantName}
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalVehicles}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.soldVehicles}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalViews.toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalInquiries}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      tenant.conversionRate >= 18 ? 'bg-green-100 text-green-800' :
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tenant.conversionRate >= 18 ? 'bg-green-100 text-green-800' :
                       tenant.conversionRate >= 15 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
+                        'bg-red-100 text-red-800'
+                      }`}>
                       {tenant.conversionRate}%
                     </span>
                   </td>
