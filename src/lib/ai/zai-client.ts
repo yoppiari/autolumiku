@@ -111,7 +111,7 @@ export class ZAIClient {
                   },
                   make: {
                     type: "string",
-                    description: "Merk mobil: Toyota, Honda, Daihatsu, Suzuki, Mitsubishi, Nissan, dll"
+                    description: "Merk, model, atau ID mobil (displayId). Contoh: 'Toyota', 'Avanza', 'PM-PST-001', 'Honda City'"
                   },
                   transmission: {
                     type: "string",

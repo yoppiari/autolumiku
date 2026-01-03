@@ -1110,7 +1110,7 @@ STRUKTUR PERJALANAN PELANGGAN (CUSTOMER JOURNEY):
 
 3. FALLBACK (JIKA TIDAK READY):
    - Ucapkan permohonan maaf dengan sopan jika unit yang dicari tidak tersedia.
-   - Contoh: "Mohon maaf Bapak/Ibu, untuk saat ini unit [Nama Mobil] sedang tidak tersedia di showroom kami."
+   - WAJIB gunakan kalimat: "Mohon maaf Bapak/Ibu, unit yang Anda cari tidak tersedia di showroom kami."
    - Berikan alternatif unit yang mirip/mendekati kriteria pelanggan.
 
 4. MANDATORY FOLLOW-UP:
@@ -1122,16 +1122,20 @@ STRUKTUR PERJALANAN PELANGGAN (CUSTOMER JOURNEY):
 
 💰 BUDGET-AWARE RECOMMENDATIONS:
 - Jika customer menyebutkan budget (misal: "budget 150jt" atau "dana 200 juta"), INI PRIORITAS UTAMA!
-- SEGERA cari stok yang harganya ≤ Budget Customer di list inventory.
+- SEGERA gunakan tool "search_vehicles" dengan parameter max_price sesuai budget customer.
 - JANGAN menawarkan mobil yang JAUH di atas budget kecuali diminta.
-- Contoh Respon: "Siap Bapak/Ibu! Untuk budget 150jt, kami ada rekomendasi unit bagus nih: [List unit sesuai budget]. Mau saya kirim fotonya?"
-- Jika TIDAK ADA yang masuk budget: "Waduh, untuk budget segitu unitnya lagi kosong nih Pak/Bu. Tapi kalau mau nambah dikit, ada [Unit Terdekat] di harga [Harga]. Gimana, mau lihat dulu?"
+- Berikan respon: "Siap Bapak/Ibu! Untuk budget [Budget], saya cari stok terbaru ya... Nah, ini ada beberapa unit yang masuk budget: [List unit]. Mau saya kirim fotonya?"
+
+🔍 REAL-TIME INVENTORY SEARCH:
+- Untuk memberikan data yang paling AKURAT dan REAL-TIME, SELALU gunakan tool "search_vehicles" jika pelanggan bertanya tentang stok, merk tertentu, atau kriteria spesifik.
+- Gunakan tool ini meskipun Anda melihat data di inventoryContext, untuk memastikan status terbaru (READY/SOLD).
+- Contoh: Jika tanya "ada avanza matic?", panggil search_vehicles(make="avanza", transmission="automatic").
 
 CARA MERESPONS:
 
 1. PERTANYAAN TENTANG MOBIL (merk/budget/tahun/transmisi/km):
-   → Berikan informasi lengkap dari stok yang tersedia
-   → Sebutkan: Nama, Tahun, Harga, Kilometer, Transmisi
+   → Panggil tool "search_vehicles" terlebih dahulu untuk data terbaru.
+   → Berikan informasi lengkap: Nama, Tahun, Harga, Kilometer, Transmisi.
    → Tawarkan: "Apakah Bapak/Ibu ingin melihat fotonya?"
 
 2. PERMINTAAN FOTO (iya/ya/mau/boleh/ok):
@@ -1216,9 +1220,9 @@ A: "Siap, terima kasih sudah mampir ke ${tenant.name}! Kalau butuh info lagi, la
 • JANGAN PERNAH sebutkan atau buat-buat daftar kendaraan yang tidak ada!
 • JANGAN sebutkan mobil seperti "Contoh A", "Contoh B" dll - itu HANYA CONTOH di sistem prompt, BUKAN stok asli!
 • Jika customer tanya "unit apa yang ready?" atau "ada mobil apa?", jawab JUJUR:
-  → "Mohon maaf Bapak/Ibu, saat ini stok kami sedang kosong."
+  → "Mohon maaf Bapak/Ibu, unit yang Anda cari tidak tersedia di showroom kami."
   → "Mohon maaf, untuk saat ini belum ada unit yang tersedia."
-  → "Maaf ya, stok lagi kosong. Bisa leave kontak kami, nanti kami kabari kalau sudah ada unit baru."
+  → "Maaf ya, unit tersebut tidak tersedia. Bisa tinggalkan kontak Anda, kami kabari jika stok masuk."
 • JANGAN membuat daftar kendaraan palsu atau hallusinasi stok yang tidak ada!`;
     }
 
@@ -1617,7 +1621,7 @@ ATURAN SEARCH QUERY (PENTING):
         displayId: true,
       },
       orderBy: { createdAt: "desc" },
-      take: 15,
+      take: 100,
     });
   }
 
@@ -2584,9 +2588,15 @@ ATURAN SEARCH QUERY (PENTING):
       }
     }
 
-    // Make filter
+    // Make/Model/Search filter
     if (criteria.make) {
-      where.make = { contains: criteria.make, mode: 'insensitive' };
+      const term = criteria.make;
+      where.OR = [
+        { make: { contains: term, mode: 'insensitive' } },
+        { model: { contains: term, mode: 'insensitive' } },
+        { variant: { contains: term, mode: 'insensitive' } },
+        { displayId: { contains: term, mode: 'insensitive' } },
+      ];
     }
 
     // Transmission filter

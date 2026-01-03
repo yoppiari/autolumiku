@@ -272,8 +272,8 @@ async function handleUniversalCommand(
   helpMsg += `   Contoh: status PM-PST-001 SOLD\n\n`;
 
   helpMsg += `🚙 Edit Kendaraan\n`;
-  helpMsg += `   Ketik: Edit/ Ubah/ Rubah/ Ganti [ID] [Detail kendaraan/ informasi dasar/ harga]\n`;
-  helpMsg += `   Contoh: Ganti PM-PST-001 Hybrid / Ubah PM-PST-001 AT / Edit PM-PST-001 85000 km\n\n`;
+  helpMsg += `   Ketik: Edit/ Ubah/ Rubah/ Ganti [Detail]\n`;
+  helpMsg += `   Contoh: "edit PM-PST-001 harga 175 jt", "ubah PM-PST-001 hybrid", "ganti PM-PST-001 95000 km"\n\n`;
 
   if (isAdmin) {
     helpMsg += `👮‍♂️ MENU ADMIN & OWNER (LOG & ANALYTICS)\n`;

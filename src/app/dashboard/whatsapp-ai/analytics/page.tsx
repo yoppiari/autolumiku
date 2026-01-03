@@ -81,9 +81,9 @@ function AnalyticsPageInternal() {
     setIsLoading(true);
     try {
       const [salesRes, kpiRes, waRes] = await Promise.all([
-        api.get(`/api/v1/analytics/sales-stats?tenantId=${tenantId}`),
-        api.get(`/api/v1/analytics/kpis?tenantId=${tenantId}`),
-        api.get(`/api/v1/analytics/whatsapp?tenantId=${tenantId}`)
+        api.get(`/api/v1/analytics/sales?tenantId=${tenantId}`),
+        api.get(`/api/v1/analytics/kpi?tenantId=${tenantId}`),
+        api.get(`/api/v1/whatsapp-ai/analytics?tenantId=${tenantId}`)
       ]);
 
       if (salesRes.success) setSalesStats(salesRes.data);
@@ -195,17 +195,83 @@ function AnalyticsPageInternal() {
             </div>
 
             {/* Analysis Summary */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-l-4 border-blue-600 p-3 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">📋</span>
-                <h4 className="text-xs font-bold text-blue-900 uppercase">Executive Analysis</h4>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-                <div className="text-[10px] text-blue-800 leading-snug">
-                  <span className="font-bold">Performa Penjualan:</span> {(salesStats?.totalSales || 0) >= 5 ? 'Status stabil.' : 'Perlu perhatian.'}
+            <div className="bg-white rounded-2xl shadow-lg border border-indigo-100 overflow-hidden mb-6">
+              <div className="bg-gradient-to-r from-indigo-700 to-blue-600 px-4 py-3 flex items-center gap-3">
+                <span className="text-xl bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">📋</span>
+                <div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Executive Analysis</h4>
+                  <p className="text-[10px] text-indigo-100 opacity-80">AI-powered business insight & recommendations</p>
                 </div>
-                <div className="text-[10px] text-blue-800 leading-snug">
-                  <span className="font-bold">Inventory Strategy:</span> Turnover {kpiData?.inventoryTurnover || 0}%. Target 20%.
+              </div>
+              <div className="p-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Analysis Menyeluruh */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-indigo-900">
+                      <span className="text-lg">🔍</span>
+                      <h5 className="text-xs font-bold uppercase">Analysis Menyeluruh</h5>
+                    </div>
+                    <div className="bg-indigo-50/50 rounded-xl p-3 border border-indigo-50">
+                      <p className="text-[11px] text-indigo-800 leading-relaxed">
+                        {(salesStats?.totalSales || 0) === 0 ? (
+                          <>
+                            <span className="font-bold text-red-600">Performa Kritis:</span> Belum ada unit terjual dalam periode ini. Strategi penjualan perlu ditinjau ulang segera untuk menggerakkan stok yang ada.
+                          </>
+                        ) : (salesStats?.totalSales || 0) < 5 ? (
+                          <>
+                            <span className="font-bold text-amber-600">Perlu Perhatian:</span> Penjualan mulai berjalan namun masih di bawah target bulanan. Fokus pada peningkatan volume penjualan unit entry-level.
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-bold text-emerald-600">Performa Stabil:</span> Volume penjualan menunjukkan tren positif. Pastikan ketersediaan stok untuk model-model terlaris terjaga.
+                          </>
+                        )}
+                        {" "}Brand terpopuler saat ini adalah <span className="font-bold text-indigo-900">{salesStats?.topBrands?.[0]?.brand || 'belum teridentifikasi'}</span>.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Review Kekurangan */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-red-900">
+                      <span className="text-lg">📉</span>
+                      <h5 className="text-xs font-bold uppercase">Review Kekurangan</h5>
+                    </div>
+                    <div className="bg-red-50/50 rounded-xl p-3 border border-red-50">
+                      <p className="text-[11px] text-red-800 leading-relaxed">
+                        <span className="font-bold">Indikator Lemah:</span>
+                        <ul className="list-disc ml-4 mt-1 space-y-1">
+                          {(kpiData?.inventoryTurnover || 0) < 10 && (
+                            <li>Turnover stok ({kpiData?.inventoryTurnover || 0}%) jauh di bawah target optimal 20%.</li>
+                          )}
+                          {(kpiData?.leadConversion || 0) < 15 && (
+                            <li>Konversi leads ke penjualan ({kpiData?.leadConversion || 0}%) masih belum optimal.</li>
+                          )}
+                          {(salesStats?.totalSales || 0) === 0 && (
+                            <li>Zero Sales Velocity: Stok tidak bergerak dalam 30 hari terakhir.</li>
+                          )}
+                        </ul>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Saran & Strategi */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-900">
+                      <span className="text-lg">🚀</span>
+                      <h5 className="text-xs font-bold uppercase">Saran & Strategi</h5>
+                    </div>
+                    <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-50">
+                      <p className="text-[11px] text-emerald-800 leading-relaxed">
+                        <span className="font-bold">Rekomendasi Owner:</span>
+                        <ul className="list-disc ml-4 mt-1 space-y-1">
+                          <li>Prioritaskan "Clearance Sale" untuk stok lama guna mencapai target <span className="font-bold">Turnover 20%</span>.</li>
+                          <li>Optimalkan follow-up otomatis via WhatsApp AI untuk meningkatkan konversi.</li>
+                          <li>Tingkatkan promosi digital pada brand <span className="font-bold">{salesStats?.topBrands?.[0]?.brand || 'High-Demand'}</span>.</li>
+                        </ul>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

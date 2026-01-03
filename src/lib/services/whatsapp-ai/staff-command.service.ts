@@ -1657,7 +1657,7 @@ export class StaffCommandService {
       `   Contoh: \`status PM-PST-001 SOLD\`\n\n` +
       `🚙 *Edit Kendaraan*\n` +
       `   Ketik: \`Edit\` / \`Ubah\` / \`Rubah\` / \`Ganti\` [Detail]\n` +
-      `   Contoh: "edit harga 150jt", "ganti foto"\n\n` +
+      `   Contoh: "edit PM-PST-001 harga 175 jt", "ubah PM-PST-001 hybrid", "ganti PM-PST-001 95000 km"\n\n` +
       `🔍 *Cari Mobil*\n` +
       `   Contoh: "ada honda city?", "cari fortuner diesel"\n\n` +
       `👮‍♂️ *MENU LAPORAN DETAIL (ADMIN/OWNER)*\n` +

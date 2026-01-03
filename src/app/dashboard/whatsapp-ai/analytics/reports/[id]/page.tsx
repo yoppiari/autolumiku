@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { api } from '@/lib/api-client';
 import { ROLE_LEVELS } from '@/lib/rbac';
 
 interface ReportDetailData {
@@ -24,48 +25,30 @@ export default function ReportDetailPage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [report, setReport] = useState<ReportDetailData | null>(null);
+    const [tenantId, setTenantId] = useState<string>('');
 
     useEffect(() => {
-        // Fetch report data from API
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                const user = JSON.parse(storedUser);
+                if (user.tenantId) setTenantId(user.tenantId);
+            } catch (e) {
+                console.error('Failed to parse user from localStorage');
+            }
+        }
+    }, []);
+
+    useEffect(() => {
         const fetchReportData = async () => {
+            if (!reportId || !tenantId) return;
             setIsLoading(true);
             try {
-                let url = `/api/v1/analytics/reports/${reportId}`;
-                const storedUser = localStorage.getItem('user');
-                const token = localStorage.getItem('authToken'); // Fixed: use 'authToken' instead of 'token'
-
-
-                if (storedUser) {
-                    const user = JSON.parse(storedUser);
-                    if (user.tenantId) {
-                        url += `?tenantId=${user.tenantId}`;
-                    }
-                }
-
-                const headers: HeadersInit = {
-                    'Content-Type': 'application/json',
-                };
-
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(url, { headers });
-
-                if (response.status === 401) {
-                    console.warn('[Report Detail] Token expired, redirecting to login');
-                    localStorage.clear();
-                    window.location.href = '/login';
-                    return;
-                }
-
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success) {
-                        setReport(result.data);
-                    }
+                const result = await api.get(`/api/v1/analytics/reports/${reportId}?tenantId=${tenantId}`);
+                if (result.success) {
+                    setReport(result.data);
                 } else {
-                    console.error('Report fetch failed:', response.status);
+                    console.error('Report fetch failed:', result.error);
                 }
             } catch (error) {
                 console.error('Failed to fetch report data:', error);
@@ -74,10 +57,8 @@ export default function ReportDetailPage() {
             }
         };
 
-        if (reportId) {
-            fetchReportData();
-        }
-    }, [reportId]);
+        fetchReportData();
+    }, [reportId, tenantId]);
 
     if (isLoading) {
         return (
@@ -93,9 +74,10 @@ export default function ReportDetailPage() {
     if (!report) {
         return (
             <div className="p-6 text-center">
-                <h2 className="text-xl font-bold">Report not found</h2>
-                <Link href="/dashboard/whatsapp-ai/analytics?tab=reports" className="text-blue-600 mt-4 inline-block">
-                    Return to Dashboard
+                <h2 className="text-xl font-bold text-gray-800">Report Not Found</h2>
+                <p className="text-gray-500 mt-2 mb-6">Maaf, laporan yang Anda cari tidak tersedia atau terjadi kesalahan saat memuat data.</p>
+                <Link href="/dashboard/whatsapp-ai/analytics" className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-md">
+                    Return to Analytics
                 </Link>
             </div>
         );

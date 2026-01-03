@@ -54,10 +54,14 @@ export async function GET(
     }
 
     try {
-        // Pass tenantId (string | null) to getReportData. 
-        // We will assert it as string | undefined inside or handle null means global.
         const data = await getReportData(reportId, tenantId || undefined);
-        return NextResponse.json({ success: true, data });
+
+        // Recursive function to ensure all BigInts are converted to Numbers for JSON serialization
+        const safeData = JSON.parse(JSON.stringify(data, (key, value) =>
+            typeof value === 'bigint' ? Number(value) : value
+        ));
+
+        return NextResponse.json({ success: true, data: safeData });
     } catch (error: any) {
         console.error(`[Report API] Error generating report ${reportId}:`, error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -655,7 +659,7 @@ async function getRawReportData(id: string, tenantId?: string) {
         case 'customer-metrics': {
             const conversations = await prisma.whatsAppConversation.findMany({
                 where: withTenant({ startedAt: { gte: startOfMonth } }),
-                select: { status: true, metadata: true }
+                select: { status: true }
             });
 
             const uniqueCustomers = conversations.length;
