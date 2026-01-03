@@ -712,15 +712,60 @@ export class WhatsAppAIChatService {
     ];
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
 
-    // Check if photos were already sent recently (last 3 messages)
-    const recentPhotos = messageHistory
-      .slice(-3)
-      .filter(m => m.role === "assistant" && (m.content.includes("Ini foto") || m.content.includes("Honda City 2006")));
+    // Determine vehicle name from query or history first
+    const vehiclePatterns = [
+      /pm-[a-zA-Z0-9]+-\d+/i, // Unit IDs like PM-PST-001
+      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\-]+(?:\s+[\w\-]+)?\s*(?:20\d{2}|19\d{2})?/gi,
+      /\b(Innova\s*Reborn?|Fortuner|Pajero\s*Sport|Xpander|Rush|Terios|Ertiga|Avanza|Xenia|Brio|Jazz|Calya|Sigra|Ayla|Agya|HRV|CRV|BRV|Yaris|Camry|Alphard|City|Civic)\s*(?:20\d{2}|19\d{2})?\b/gi,
+    ];
 
-    if (recentPhotos.length > 0) {
-      console.log(`[SmartFallback] ⚠️ Photos already sent recently (${recentPhotos.length} times), skipping to prevent spam`);
+    let vehicleName = "";
+    const lastAiMsg = messageHistory.filter(m => m.role === "assistant").pop();
+
+    // Try to extract from current message
+    for (const pattern of vehiclePatterns) {
+      const match = msg.match(pattern);
+      if (match && match[0]) {
+        vehicleName = match[0].trim();
+        break;
+      }
+    }
+
+    // Try to extract from last AI message if not in current
+    if (!vehicleName && lastAiMsg) {
+      for (const pattern of vehiclePatterns) {
+        const match = lastAiMsg.content.match(pattern);
+        if (match && match[0]) {
+          vehicleName = match[0].trim();
+          break;
+        }
+      }
+    }
+
+    // Detect correction/objection keywords
+    const correctionKeywords = ['bukan', 'salah', 'keliru', 'nggak', 'gak', 'bkn', 'kok', 'tadi', 'yang saya cari', 'yang saya maksud'];
+    const isCorrection = (correctionKeywords.some(k => msg.includes(k)) && (msg.includes('kirim') || msg.includes('itu') || msg.includes('tadi'))) ||
+      (msg.startsWith('kok ') || msg.startsWith('bukan '));
+
+    if (isCorrection) {
+      console.log(`[SmartFallback] ⚠️ Correction detected: "${msg}"`);
       return {
-        message: `Foto-foto sudah dikirim sebelumnya ya 😊\n\nAda pertanyaan lain tentang unit ini?`,
+        message: `Waduh, mohon maaf Bapak/Ibu! 🙏 Sepertinya saya salah memberikan informasi tadi. \n\nBisa diinfokan kembali unit apa yang sedang Bapak/Ibu cari? Saya akan pastikan datanya benar kali ini. 😊`,
+        shouldEscalate: true, // Escalate to human because AI made a mistake
+      };
+    }
+
+    // Check if photos were already sent recently (last 3 messages) for THIS specific vehicle
+    const recentPhotosSent = messageHistory
+      .slice(-3)
+      .filter(m => m.role === "assistant" &&
+        m.content.includes("Ini foto") &&
+        (vehicleName ? m.content.toLowerCase().includes(vehicleName.toLowerCase().split(' ')[0]) : true));
+
+    if (recentPhotosSent.length > 0 && isPhotoConfirmation) {
+      console.log(`[SmartFallback] ⚠️ Photos for ${vehicleName || 'vehicle'} already sent recently, skipping to prevent spam`);
+      return {
+        message: `Foto-foto unit ${vehicleName || ''} sudah saya kirimkan di atas ya Bapak/Ibu 😊\n\nApakah ada bagian detail lain yang ingin dilihat? Atau ada pertanyaan tentang unit ini?`,
         shouldEscalate: false,
       };
     }
@@ -744,36 +789,7 @@ export class WhatsAppAIChatService {
         /\b(Innova\s*Reborn?|Fortuner|Pajero\s*Sport|Xpander|Rush|Terios|Ertiga|Avanza|Xenia|Brio|Jazz|Calya|Sigra|Ayla|Agya|HRV|CRV|BRV|Yaris|Camry|Alphard|City|Civic)\s*(?:20\d{2}|19\d{2})?\b/gi,
       ];
 
-      let vehicleName = "";
-
-      // Try to extract from last AI message first
-      if (lastAiMsg) {
-        for (const pattern of vehiclePatterns) {
-          const match = lastAiMsg.content.match(pattern);
-          if (match && match[0]) {
-            vehicleName = match[0].trim()
-              .replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|yang).*$/i, "")
-              .trim();
-            console.log(`[SmartFallback] Found vehicle in AI message: "${vehicleName}"`);
-            break;
-          }
-        }
-      }
-
-      // Fallback: check all messages in history
-      if (!vehicleName) {
-        const vehicleModelsLower = ['innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'crv', 'hrv', 'brv', 'yaris', 'camry', 'calya', 'sigra', 'xpander', 'city'];
-        for (const historyMsg of [...messageHistory].reverse()) {
-          for (const model of vehicleModelsLower) {
-            if (historyMsg.content.toLowerCase().includes(model)) {
-              vehicleName = model.charAt(0).toUpperCase() + model.slice(1);
-              console.log(`[SmartFallback] Found vehicle in history: "${vehicleName}"`);
-              break;
-            }
-          }
-          if (vehicleName) break;
-        }
-      }
+      // vehicleName is already extracted above
 
       // Check if user is asking for DETAILED photos
       const detailPatterns = [
@@ -892,7 +908,7 @@ export class WhatsAppAIChatService {
       );
 
       if (matchingVehicle) {
-        const price = Math.round(Number(matchingVehicle.price) / 100).toLocaleString('id-ID');
+        const price = Number(matchingVehicle.price).toLocaleString('id-ID'); // Fix: Remove / 100 division
         const response = `Ada nih ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}! 🚗✨\n\n` +
           `💰 Harga: Rp ${price}\n` +
           `⚙️ Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
