@@ -35,40 +35,65 @@ export interface VehicleDataExtractionResult {
 
 // ==================== SYSTEM PROMPT ====================
 
-const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `Kamu adalah asisten yang membantu extract data mobil dari pesan WhatsApp.
-Pengguna adalah orang awam yang tidak paham teknologi, jadi terima format apapun.
+const VEHICLE_EXTRACTION_SYSTEM_PROMPT = `Kamu adalah AI expert otomotif yang bertugas mengekstrak data spesifikasi mobil dari pesan teks.
+Kamu memiliki pengetahuan mendalam tentang spesifikasi mobil di Indonesia (seperti data dari oto.com).
 
-PENTING: Pahami berbagai cara penulisan:
-- Harga: 120jt, 120 juta, Rp 120jt, 120JT, seratus dua puluh juta, 120000000
-- KM: 30rb, 30 ribu, 30.000, 30000, km 30rb, kilometer 30000
-- Transmisi: MT/manual/Manual, AT/matic/Matic/automatic/Automatic, CVT
-- Warna: hitam, Hitam, abu-abu, abu abu, silver, putih metalik, merah maroon
-- Bahan bakar: bensin, solar, diesel, hybrid, listrik, electric
-- CC mesin: 1200cc, 1500cc, 1.5L, 2000cc, 2.0L
-- Varian: E, G, S, RS, Satya, Veloz, Type R, Sport, Luxury, Base
+TUGAS UTAMA:
+1. Ekstrak data eksplisit yang ditulis user.
+2. LENGKAPI data yang hilang ("hallucinate based on facts") menggunakan pengetahuan otomotifmu jika user tidak menyebutkannya.
 
-Contoh input yang HARUS bisa dipahami:
-- "Brio 2020 120jt hitam" → Honda Brio
-- "avanza 2019 km 50rb 140 juta silver matic" → Toyota Avanza
-- "xenia 2018 manual putih harga 95jt km 80000" → Daihatsu Xenia
-- "jazz rs 2017 at merah 165jt" → Honda Jazz, variant: "RS"
-- "brio satya 2020 1200cc bensin hitam" → Honda Brio, variant: "Satya", engineCapacity: "1200cc", fuelType: "Bensin"
-- "avanza veloz 2021 1500cc diesel silver" → Toyota Avanza, variant: "Veloz", engineCapacity: "1500cc", fuelType: "Diesel"
-- "xpander ultimate 2022 1500cc bensin matic" → Mitsubishi Xpander, variant: "Ultimate"
+DATA YANG HARUS DIEKSTRAK (Return JSON):
+{
+  "make": "Toyota",              // Merk (Toyota, Honda, dll)
+  "model": "Avanza",             // Model (Avanza, Brio, dll)
+  "year": 2020,                  // Tahun (integer)
+  "price": 150000000,            // Harga dalam Rupiah (integer)
+  "mileage": 50000,              // Kilometer (integer, null jika tidak ada)
+  "color": "Hitam",              // Warna (Title Case)
+  "transmission": "Manual",      // Manual/Automatic/CVT
+  "fuelType": "Bensin",          // Bensin/Diesel/Hybrid/Electric
+  "engineCapacity": "1500cc",    // Kapasitas mesin (string)
+  "variant": "G"                 // Varian (G, E, RS, Veloz, dll)
+}
 
-Return ONLY valid JSON (no explanation):
-{"make":"Honda","model":"Brio","year":2020,"price":120000000,"mileage":null,"color":"Hitam","transmission":"Manual","fuelType":"Bensin","engineCapacity":"1200cc","variant":"Satya"}
+ATURAN INFERENSI (HUBUNGKAN TITIK-TITIK):
+- Jika user hanya sebut "Pajero Sport", INFERENSI bahwa fuelType="Diesel" dan engineCapacity="2400cc" (umumnya).
+- Jika user sebut "Fortuner VRZ", INFERENSI fuelType="Diesel" dan transmission="Automatic".
+- Jika user sebut "Brio Satya", INFERENSI fuelType="Bensin", engineCapacity="1200cc".
+- Jika user sebut harga "150", asumsikan "150 juta" -> 150000000.
+- Jika user sebut "km 50", asumsikan "50 ribu" -> 50000 (jika tahun muda).
+- Jika data varian sangat spesifik (misal "Civic Turbo"), lengkapi data teknisnya.
 
-Jika data kurang, tebak yang masuk akal:
-- Tidak ada KM → mileage: null (JANGAN set 0, biarkan null)
-- Tidak ada warna → color: "Unknown"
-- Tidak ada transmisi → transmission: "Manual"
-- Tidak ada merk tapi ada model → auto-detect merk dari model
-- Tidak ada bahan bakar → fuelType: "Bensin" (default mobil Indonesia)
-- Tidak ada CC → engineCapacity: null (biarkan kosong)
-- Tidak ada varian → variant: null (biarkan kosong)
+FORMAT ANGKA INDONESIA:
+- Harga: "150jt", "150 juta", "150.000.000", "150" -> 150000000
+- KM: "30rb", "30 ribu", "30.000", "30k" -> 30000
 
-JANGAN return error kecuali benar-benar tidak bisa dipahami.`;
+CONTOH INPUT & OUTPUT SMART:
+Input: "fortuner vrz 2019 hitam 450jt"
+Output: {
+  "make": "Toyota", 
+  "model": "Fortuner", 
+  "variant": "VRZ", 
+  "year": 2019, 
+  "price": 450000000, 
+  "color": "Hitam",
+  "transmission": "Automatic",  // Inferensi: VRZ pasti matic
+  "fuelType": "Diesel",         // Inferensi: VRZ umumnya diesel
+  "engineCapacity": "2400cc"    // Inferensi
+}
+
+Input: "brio 2021 satya e"
+Output: {
+  "make": "Honda",
+  "model": "Brio",
+  "variant": "Satya E",
+  "year": 2021,
+  "transmission": "Manual",   // Default guess jika tidak disebut
+  "fuelType": "Bensin",
+  "engineCapacity": "1200cc"
+}
+
+JANGAN return error jika bisa ditebak/inferensi. Prioritaskan kelengkapan data.`;
 
 // ==================== SERVICE ====================
 
@@ -275,16 +300,33 @@ export class VehicleDataExtractorService {
       extractedData.year = parseInt(yearMatch[1]);
     }
 
-    // Extract price (support: harga 150juta, 150 juta, 150jt, Rp 120jt, Rp.120jt, 150000000)
+    // Extract price (support: harga 150juta, 150 juta, 150jt, Rp 120jt, Rp.120jt, 150000000, 120)
     // First try "Rp" prefix format (common in WhatsApp messages)
-    let priceMatch = text.match(/(?:Rp\.?\s*)(\d+(?:[.,]\d+)?)\s*(juta|jt|m)?/i);
+    let priceMatch = text.match(/(?:Rp\.?\s*)(\d+(?:[.,]\d+)?)\s*(juta|jt|m|M)?/i);
     if (!priceMatch) {
       // Fallback to "harga" prefix
-      priceMatch = text.match(/(?:harga|price)\s*:?\s*(\d+(?:[.,]\d+)?)\s*(juta|jt|m)?/i);
+      priceMatch = text.match(/(?:harga|price)\s*:?\s*(\d+(?:[.,]\d+)?)\s*(juta|jt|m|M)?/i);
     }
     if (!priceMatch) {
       // Try standalone number with jt/juta suffix
-      priceMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(juta|jt)\b/i);
+      priceMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(juta|jt|m|M)\b/i);
+    }
+
+    // Fallback: Check for numbers that look like price (e.g. "120" followed by nothing specific, or "120 2020")
+    // Context heuristic: If > 50 and < 2000, likely price in millions if year matches separately
+    if (!priceMatch) {
+      const possiblePrice = text.match(/\b(\d{2,4})\b/g);
+      if (possiblePrice) {
+        for (const numStr of possiblePrice) {
+          const val = parseInt(numStr);
+          // If not a year (1990-2030) and roughly in price range (50-2000 millions)
+          if ((val < 1980 || val > 2030) && val >= 50 && val <= 5000) {
+            // Assume this is price in millions (e.g. 120 -> 120jt)
+            priceMatch = [numStr, numStr, 'jt'];
+            break;
+          }
+        }
+      }
     }
 
     if (priceMatch) {
@@ -293,11 +335,14 @@ export class VehicleDataExtractorService {
       const num = parseFloat(numStr);
       const unit = priceMatch[2]?.toLowerCase();
 
-      if (unit === 'juta' || unit === 'jt' || unit === 'm') {
+      if (unit === 'juta' || unit === 'jt' || unit === 'm' || unit === 'M') {
         extractedData.price = Math.round(num * 1000000);
       } else if (num > 10000000) {
         // Large number, assume raw rupiah
         extractedData.price = Math.round(num);
+      } else if (!unit && num >= 50 && num <= 5000) {
+        // Inferred millions from context heuristic above
+        extractedData.price = Math.round(num * 1000000);
       }
     } else {
       // Fallback: look for large numbers (likely price in full rupiah)
