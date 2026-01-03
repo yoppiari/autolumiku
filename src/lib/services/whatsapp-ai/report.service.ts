@@ -11,52 +11,66 @@ export class WhatsAppReportService {
         switch (reportType.toLowerCase()) {
             // ✅ Sales & Revenue
             case 'sales_report':
+            case 'sales-report':
             case 'laporan_penjualan':
                 return await this.getSalesReport(tenantId);
             case 'total_sales':
+            case 'total-sales':
             case 'total_penjualan':
                 return await this.getTotalSales(tenantId);
             case 'total_revenue':
+            case 'one-page-sales':
             case 'pendapatan':
                 return await this.getTotalRevenue(tenantId);
             case 'sales_trends':
+            case 'sales-trends':
             case 'tren_penjualan':
                 return await this.getSalesTrends(tenantId);
             case 'sales_metrics':
+            case 'sales-metrics':
             case 'metrik_penjualan':
                 return await this.getSalesMetrics(tenantId);
             case 'sales_summary':
+            case 'sales-summary':
             case 'ringkasan_cepat':
                 return await this.getSalesSummary(tenantId);
 
             // ✅ Inventory & Stock
             case 'total_inventory':
+            case 'total-inventory':
             case 'laporan_stok':
                 return await this.getTotalInventory(tenantId);
             case 'vehicle_listing':
+            case 'inventory-listing':
             case 'daftar_kendaraan':
                 return await this.getVehicleListing(tenantId);
             case 'low_stock_alert':
+            case 'low-stock-alert':
             case 'peringatan_stok':
                 return await this.getLowStockAlert(tenantId);
             case 'average_price':
+            case 'average-price':
             case 'analisis_harga':
                 return await this.getAveragePrice(tenantId);
 
             // ✅ Team & Performance
             case 'staff_performance':
+            case 'staff-performance':
             case 'performa_sales':
                 return await this.getStaffPerformance(tenantId);
 
 
             // ✅ WhatsApp AI & Customer
             case 'ai_analytics':
+            case 'whatsapp-ai':
             case 'performa_bot':
                 return await this.getAIAnalytics(tenantId);
             case 'customer_metrics':
+            case 'customer-metrics':
             case 'analisis_pelanggan':
                 return await this.getCustomerMetrics(tenantId);
             case 'operational_metrics':
+            case 'operational-metrics':
             case 'efisiensi_chat':
                 return await this.getOperationalMetrics(tenantId);
 

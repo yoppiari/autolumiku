@@ -24,6 +24,8 @@ export class ReportDataService {
             'total-revenue',
             'average-price',
             'sales-summary',
+            'one-page-sales',
+            'inventory-listing',
         ].includes(reportType) || needsAllData;
 
         const needsInventoryData = [
@@ -34,17 +36,22 @@ export class ReportDataService {
             'total-inventory',
             'average-price',
             'sales-summary',
+            'inventory-listing',
+            'one-page-sales',
         ].includes(reportType) || needsAllData;
 
         const needsStaffData = [
             'sales-report',
             'staff-performance',
             'operational-metrics',
+            'sales-summary',
         ].includes(reportType) || needsAllData;
 
         const needsWhatsAppData = [
             'whatsapp-analytics',
             'customer-metrics',
+            'whatsapp-ai',
+            'operational-metrics',
         ].includes(reportType) || needsAllData;
 
         // Variables for KPI calculation
@@ -377,7 +384,10 @@ export class ReportDataService {
             'sales-metrics',
             'customer-metrics',
             'operational-metrics',
+            'operational-metrics',
             'sales-report',
+            'one-page-sales',
+            'sales-summary',
         ].includes(reportType) || needsAllData;
 
         if (needsKPIs) {

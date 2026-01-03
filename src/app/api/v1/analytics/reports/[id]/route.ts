@@ -127,7 +127,7 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'Sales & Revenue Report',
+                name: 'Total Revenue',
                 icon: '💰',
                 formula: 'Total Revenue = Σ (Unit Sale Price)\nATV = Total Revenue / Total Units Sold\nData based on current month activity.',
                 analysis: [
@@ -170,7 +170,7 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'Stock Report (Total)',
+                name: 'Total Inventory',
                 icon: '📦',
                 formula: 'Total Stock = AVAILABLE + BOOKED\nTotal Value = Σ(Asking Price of unsold units)',
                 analysis: [
@@ -212,7 +212,7 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'Rata-rata Harga (Avg)',
+                name: 'Average Price',
                 icon: '💵',
                 formula: 'Avg Price = Total Value / Unit Count\nComparison between inventory value and actual realization.',
                 analysis: [
@@ -267,7 +267,7 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'Performa Staff',
+                name: 'Staff Performance',
                 icon: '🏆',
                 formula: 'Sales Share = (Staff Units / Total Units) * 100%\nRanking based on confirmed SOLD status this month.',
                 analysis: [
@@ -396,13 +396,13 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'Vehicle Inventory Listing',
+                name: 'Vehicle Listing',
                 icon: '🚙',
                 formula: 'Active Listing = Units with status AVAILABLE\nInventory Quality = Share of Excellent Condition.',
                 analysis: [
                     `Daftar inventori saat ini mencakup ${inventory.length} unit terbaru yang siap jual.`,
                     `${Math.round((shareExcellent / (inventory.length || 1)) * 100)}% dari unit terbaru berada dalam kondisi Excellent.`,
-                    `Total kapital aset yang tertahan di inventori adalah Rp ${formatCurrency(totalValue._sum.price || 0)}.`
+                    `Total kapital aset yang tertahan di inventori adalah Rp ${formatCurrency(Number(totalValue._sum.price || 0))}.`
                 ],
                 recommendations: [
                     'Update foto profil untuk 3 unit terlama di listing agar terlihat fresh kembali.',
@@ -411,7 +411,7 @@ async function getRawReportData(id: string, tenantId?: string) {
                 ],
                 metrics: [
                     { label: 'Recent Units', value: inventory.length, color: 'text-blue-600' },
-                    { label: 'Asset Value', value: `Rp ${formatCurrency(totalValue._sum.price || 0)}` },
+                    { label: 'Asset Value', value: `Rp ${formatCurrency(Number(totalValue._sum.price || 0))}` },
                     { label: 'Quality Ratio', value: `${Math.round((shareExcellent / (inventory.length || 1)) * 100)}%` },
                     { label: 'Display Status', value: 'ONLINE' }
                 ],
@@ -439,7 +439,7 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'Tren Penjualan Bulanan',
+                name: 'Tren Penjualan',
                 icon: '📈',
                 formula: 'Growth % = ((Current - Previous) / Previous) * 100\nComparison between this month and last month.',
                 analysis: [
@@ -477,11 +477,11 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'Sales Executive Summary',
+                name: 'Sales Summary',
                 icon: '📋',
                 formula: 'Summary = Total SOLD units aggregation + Current Stock status.',
                 analysis: [
-                    `Akumulasi pendapatan dari awal hingga saat ini mencapai Rp ${formatCurrency(sold._sum.price || 0)}.`,
+                    `Akumulasi pendapatan dari awal hingga saat ini mencapai Rp ${formatCurrency(Number(sold._sum.price || 0))}.`,
                     `Total unit yang berhasil dikonversi adalah ${sold._count} unit.`,
                     `Kapasitas showroom saat ini memiliki ${stock} unit siap jual.`
                 ],
@@ -490,7 +490,7 @@ async function getRawReportData(id: string, tenantId?: string) {
                     'Pastikan perputaran kas (cashflow) seimbang antara belanja unit dan hasil penjualan.',
                 ],
                 metrics: [
-                    { label: 'Total Revenue', value: `Rp ${formatCurrency(sold._sum.price || 0)}`, color: 'text-indigo-600' },
+                    { label: 'Total Revenue', value: `Rp ${formatCurrency(Number(sold._sum.price || 0))}`, color: 'text-indigo-600' },
                     { label: 'Total Converted', value: sold._count },
                     { label: 'Active Stock', value: stock, color: 'text-blue-600' },
                     { label: 'Health Score', value: 'OPTIMAL' }
@@ -592,7 +592,7 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'Metrik Operasional AI',
+                name: 'Metrik Operasional',
                 icon: '⚙️',
                 formula: 'AI Efficiency = (AI Responses / Total Messages) * 100\nEscalation Rate = Hand-off to human.',
                 analysis: [
@@ -631,7 +631,7 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'Metrik Pelanggan',
+                name: 'Customer Metrics',
                 icon: '👥',
                 formula: 'Resolution Rate = (Closed / Total Conversations) * 100\nIndicator of interaction completion.',
                 analysis: [
@@ -670,7 +670,7 @@ async function getRawReportData(id: string, tenantId?: string) {
 
             return {
                 id,
-                name: 'WhatsApp AI Analytics (Deep Dive)',
+                name: 'WhatsApp AI Analytics',
                 icon: '🤖',
                 formula: 'AI Independence = (1 - Escalation Rate)\nSystem Load = AI Responses share.',
                 analysis: [
