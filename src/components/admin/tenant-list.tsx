@@ -177,6 +177,15 @@ export default function TenantList({
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  DOMAIN
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  SUBDOMAIN
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  NO. WA AI
+                </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('createdAt')}
@@ -203,19 +212,36 @@ export default function TenantList({
                         <span className="text-sm font-bold text-blue-600 hover:underline cursor-pointer" onClick={() => onTenantSelect?.(tenant)}>
                           {tenant.name}
                         </span>
-                        <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold rounded-full ${statusColors[tenant.status]}`}>
-                          {statusLabels[tenant.status]}
-                        </span>
+                        <div className="relative flex items-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded-full ${statusColors[tenant.status]}`}>
+                            {(tenant.status === 'active' || tenant.status === 'suspended') && (
+                              <span className={`flex h-1.5 w-1.5 rounded-full mr-1.5 ${tenant.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-red-600 animate-pulse'}`}></span>
+                            )}
+                            {statusLabels[tenant.status]}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col text-[11px] text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <span className="text-gray-400">ID:</span> {tenant.id.slice(0, 8)}...
-                        </div>
-                        <div className="flex items-center gap-1 font-mono">
-                          <span className="text-gray-400">URL:</span> {tenant.customDomain || `${tenant.subdomain}.autolumiku.com`}
-                        </div>
+                      <div className="text-[10px] text-gray-400">
+                        ID: {tenant.id.slice(0, 8)}...
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {tenant.customDomain ? (
+                      <span className="text-sm font-medium text-gray-900">{tenant.customDomain}</span>
+                    ) : (
+                      <span className="text-sm text-gray-400 font-italic">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-900 font-mono">{tenant.subdomain}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {tenant.waNumber ? (
+                      <span className="text-sm font-bold text-green-600 font-mono">{tenant.waNumber}</span>
+                    ) : (
+                      <span className="text-[10px] text-gray-400 italic">Not Connected</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 font-medium">

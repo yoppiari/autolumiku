@@ -20,6 +20,7 @@ export interface Tenant {
   dbName: string;
   status: TenantStatus;
   adminUserId: string;
+  waNumber?: string;
   createdAt: Date;
   updatedAt: Date;
 }

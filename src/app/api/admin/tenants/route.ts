@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         },
         include: {
           subscription: true,
+          aimeowAccount: true,
           _count: {
             select: {
               users: true,

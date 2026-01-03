@@ -29,6 +29,7 @@ export default function TenantsPage() {
           dbName: `autolumiku_tenant_${t.slug}`,
           status: t.status || 'active',
           adminUserId: t.createdBy,
+          waNumber: t.aimeowAccount?.phoneNumber,
           createdAt: new Date(t.createdAt),
           updatedAt: new Date(t.updatedAt),
         }));
