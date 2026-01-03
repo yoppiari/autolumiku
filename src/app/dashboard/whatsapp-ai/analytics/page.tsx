@@ -48,13 +48,33 @@ const intentColors: Record<string, string> = {
 
 function AnalyticsPageInternal() {
   const searchParams = useSearchParams();
-  const tenantId = searchParams?.get('tenantId') || '';
+  const [tenantId, setTenantId] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const tid = searchParams?.get('tenantId');
+    if (tid) {
+      setTenantId(tid);
+    } else {
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          if (user.tenantId) setTenantId(user.tenantId);
+          else setIsLoading(false);
+        } catch (e) {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    }
+  }, [searchParams]);
 
   const [activeDepartment, setActiveDepartment] = useState<'sales' | 'whatsapp'>('sales');
   const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [whatsappAnalytics, setWhatsappAnalytics] = useState<WhatsappAnalytics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     if (!tenantId) return;
@@ -77,8 +97,10 @@ function AnalyticsPageInternal() {
   }, [tenantId]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (tenantId) {
+      loadData();
+    }
+  }, [tenantId, loadData]);
 
   const formatRupiah = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
