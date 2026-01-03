@@ -2058,6 +2058,10 @@ ATURAN SEARCH QUERY (PENTING):
         { model: { contains: term, mode: 'insensitive' as const } },
         { variant: { contains: term, mode: 'insensitive' as const } },
         { displayId: { contains: term, mode: 'insensitive' as const } },
+        { transmission: { contains: term, mode: 'insensitive' as const } },
+        { fuelType: { contains: term, mode: 'insensitive' as const } },
+        { color: { contains: term, mode: 'insensitive' as const } },
+        { engineCapacity: { contains: term, mode: 'insensitive' as const } },
       ]
     }));
 
