@@ -83,8 +83,6 @@ export async function POST(request: NextRequest) {
         emailVerified: true,
         failedLoginAttempts: true,
         lockedUntil: true,
-      },
-      include: {
         tenant: {
           select: {
             id: true,
