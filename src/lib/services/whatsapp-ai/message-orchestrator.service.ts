@@ -2494,9 +2494,10 @@ export class MessageOrchestratorService {
       // Closing with satisfaction + thanks
       /^(sudah|uda[h]?|udh)\s*(ok[ea]?y?|sip|clear|jelas).*?(makasih|terima\s*kasih|thanks)?/i,
 
-      // No more questions
-      /^(tidak|gak?|nggak?|ga)\s*(ada)?\s*(pertanyaan|tanya|lagi)/i,
-      /^(cukup|sudah|uda[h]?)\s*(dulu|sekian)/i,
+      // No more questions / No thanks
+      /^(tidak|gak?|nggak?|ga)\s*(ada)?\s*(pertanyaan|tanya|lagi|makasih|terima\s*kasih|thanks)/i,
+      /^(tidak|gak?|nggak?|ga)(\s*,\s*)?(makasih|terima\s*kasih|thanks)/i,
+      /^(cukup|cuup|sudah|uda[h]?)\s*(dulu|sekian)?/i,
     ];
 
     // Check if message matches any closing pattern
