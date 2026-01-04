@@ -249,5 +249,18 @@ To apply pending fixes:
 
 ---
 
-**Last Updated**: 2026-01-04 14:45 WIB
+### 11. **Dashboard Analytics Accuracy & Feature Isolation** ✓
+**Location**: `src/app/api/v1/analytics/`, `src/app/api/v1/dashboard/stats/`, and KPI routes.
+**Issue**: Analytics were still referencing hidden Invoice/Finance features; needed real-time database-driven accuracy.
+**Fix Applied**:
+- **Real-time Synchronization**: Applied `force-dynamic` to all analytics endpoints to ensure zero-latency data from the database.
+- **Validated Revenue Logic**: Switched revenue tracking from Invoice tables to actual **SOLD** vehicle status transactions.
+- **Finance Module Deactivation**: Zeroed out the finance analytics department and removed it from professional PDF/Excel exports.
+- **RBAC Alignment**: Simplified team statistics to focus exclusively on active **Sales/Staff** and **Admin/Owner** roles.
+
+**Status**: ✅ COMPLETED
+
+---
+
+**Last Updated**: 2026-01-04 15:20 WIB
 **Updated By**: Antigravity AI Assistant

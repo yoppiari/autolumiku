@@ -72,51 +72,24 @@ export async function GET(request: NextRequest) {
       prisma.vehicle.count({ where: { tenantId, status: 'BOOKED' } }),
     ]);
 
-    // Get invoice statistics
-    const invoiceStats = await prisma.salesInvoice.groupBy({
-      by: ['status'],
-      where: { tenantId },
-      _count: { id: true },
-      _sum: { grandTotal: true },
+    // Revenue calculation from sold vehicles (actual valid data)
+    const recentSoldVehicles = await prisma.vehicle.findMany({
+      where: {
+        tenantId,
+        status: 'SOLD',
+        updatedAt: { gte: startDate },
+      },
+      select: { price: true },
     });
 
-    const invoiceSummary = {
-      draft: 0,
-      unpaid: 0,
-      partialPaid: 0,
-      paid: 0,
-      voided: 0,
-      totalValue: 0,
-      paidValue: 0,
+    const totalSoldRevenue = recentSoldVehicles.reduce((sum, v) => sum + Number(v.price), 0);
+    const paidRevenue = totalSoldRevenue; // Assume sold = paid for simplified showroom flow
+
+    const summaryData = {
+      totalSoldRevenue,
+      paidRevenue,
+      soldCount: recentSoldVehicles.length,
     };
-
-    invoiceStats.forEach((stat) => {
-      const count = stat._count.id;
-      const value = Number(stat._sum.grandTotal || 0);
-
-      switch (stat.status) {
-        case 'draft':
-          invoiceSummary.draft = count;
-          break;
-        case 'unpaid':
-        case 'sent':
-          invoiceSummary.unpaid += count;
-          invoiceSummary.totalValue += value;
-          break;
-        case 'partial':
-          invoiceSummary.partialPaid = count;
-          invoiceSummary.totalValue += value;
-          break;
-        case 'paid':
-          invoiceSummary.paid = count;
-          invoiceSummary.paidValue += value;
-          invoiceSummary.totalValue += value;
-          break;
-        case 'void':
-          invoiceSummary.voided = count;
-          break;
-      }
-    });
 
     // Get team statistics
     const teamStats = await prisma.user.groupBy({
@@ -139,8 +112,6 @@ export async function GET(request: NextRequest) {
 
       const role = stat.role.toUpperCase();
       if (role === 'SALES' || role === 'STAFF') teamSummary.sales += count;
-      else if (role === 'FINANCE') teamSummary.finance += count;
-      else if (role === 'MANAGER') teamSummary.manager += count;
       else if (role === 'ADMIN' || role === 'OWNER') teamSummary.admin += count;
     });
 
@@ -199,7 +170,7 @@ export async function GET(request: NextRequest) {
             ? ((soldVehicles / totalVehicles) * 100).toFixed(1)
             : '0.0',
         },
-        invoices: invoiceSummary,
+        summary: summaryData,
         team: teamSummary,
         recentSales: recentSales.map((v) => ({
           ...v,

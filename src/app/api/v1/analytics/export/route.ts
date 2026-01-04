@@ -111,7 +111,6 @@ export async function POST(request: NextRequest) {
 
     // Gather analytics data based on department
     let salesData = null;
-    let financeData = null;
     let whatsappData = null;
 
     if (department === 'sales' || department === 'all') {
@@ -227,70 +226,6 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    if (department === 'finance' || department === 'all') {
-      // Get invoice data - wrap in try/catch in case table doesn't exist
-      try {
-        const invoices = await prisma.salesInvoice.findMany({
-          where: { tenantId },
-          select: {
-            invoiceNumber: true,
-            status: true,
-            grandTotal: true,
-            paidAmount: true,
-            dueDate: true,
-          },
-        });
-
-        const summary = {
-          total: invoices.length,
-          draft: 0,
-          unpaid: 0,
-          partial: 0,
-          paid: 0,
-          voided: 0,
-          totalValue: 0,
-          collected: 0,
-          outstanding: 0,
-        };
-
-        invoices.forEach((inv) => {
-          const total = Number(inv.grandTotal);
-          const paid = Number(inv.paidAmount || 0);
-
-          switch (inv.status) {
-            case 'draft':
-              summary.draft++;
-              break;
-            case 'unpaid':
-            case 'sent':
-              summary.unpaid++;
-              summary.totalValue += total;
-              summary.outstanding += total;
-              break;
-            case 'partial':
-              summary.partial++;
-              summary.totalValue += total;
-              summary.collected += paid;
-              summary.outstanding += total - paid;
-              break;
-            case 'paid':
-              summary.paid++;
-              summary.totalValue += total;
-              summary.collected += total;
-              break;
-            case 'void':
-              summary.voided++;
-              break;
-          }
-        });
-
-        financeData = { summary };
-      } catch (error) {
-        console.error('[Analytics Export] Sales invoices table does not exist, skipping finance data:', error);
-        // Set financeData to null/empty when table doesn't exist
-        financeData = null;
-      }
-    }
 
     if (department === 'whatsapp-ai' || department === 'all') {
       try {
