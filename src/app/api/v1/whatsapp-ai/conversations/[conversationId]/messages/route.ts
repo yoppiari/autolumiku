@@ -23,9 +23,16 @@ export async function GET(
       );
     }
 
-    // Get messages
+    const { searchParams } = new URL(request.url);
+    const allIdsParam = searchParams.get("allIds");
+    const conversationIds = allIdsParam ? allIdsParam.split(",") : [conversationId];
+
+    // Get messages from all requested conversations
     const messages = await prisma.whatsAppMessage.findMany({
-      where: { conversationId },
+      where: {
+        conversationId: { in: conversationIds },
+        conversation: { status: { not: "deleted" } } // Exclude messages from deleted conversations
+      },
       orderBy: { createdAt: "asc" },
     });
 

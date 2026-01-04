@@ -122,6 +122,7 @@ export default function ConversationsPage() {
         const parsedUser = JSON.parse(storedUser);
         const tenantId = parsedUser.tenantId;
 
+        // Use a flag to prevent multiple rapid fetches if needed
         const response = await fetch(`/api/v1/whatsapp-ai/conversations?tenantId=${tenantId}`);
         const data = await response.json();
 
@@ -136,6 +137,9 @@ export default function ConversationsPage() {
     };
 
     loadConversations();
+    // Refresh periodically
+    const interval = setInterval(loadConversations, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   // Track which phones have been requested (to avoid duplicate API calls)
@@ -170,12 +174,16 @@ export default function ConversationsPage() {
               const cleanPhone = phone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '');
               if (!cleanPhone) return;
 
+              // Get tenantId from local storage
+              const storedUser = localStorage.getItem('user');
+              const tenantId = storedUser ? JSON.parse(storedUser).tenantId : null;
+
               const response = await fetch(
-                `/api/v1/whatsapp-ai/profile-picture?phone=${cleanPhone}`
+                `/api/v1/whatsapp-ai/profile-picture?phone=${cleanPhone}${tenantId ? `&tenantId=${tenantId}` : ''}`
               );
               const data = await response.json();
 
-              console.log(`[Profile Pictures] ${cleanPhone}:`, data.hasPicture ? 'HAS PICTURE' : 'no picture');
+              console.log(`[Profile Pictures] ${cleanPhone} (Tenant: ${tenantId}):`, data.hasPicture ? 'HAS PICTURE' : 'no picture');
 
               if (data.success && data.hasPicture && data.pictureUrl) {
                 setProfilePictures(prev => {
@@ -261,11 +269,12 @@ export default function ConversationsPage() {
   }, []);
 
   // Load messages for selected conversation
-  const loadMessages = async (conversationId: string) => {
+  const loadMessages = async (conversationId: string, allIds?: string[]) => {
     setIsLoadingMessages(true);
 
     try {
-      const response = await fetch(`/api/v1/whatsapp-ai/conversations/${conversationId}/messages`);
+      const idsQuery = allIds && allIds.length > 0 ? `?allIds=${allIds.join(',')}` : '';
+      const response = await fetch(`/api/v1/whatsapp-ai/conversations/${conversationId}/messages${idsQuery}`);
       const data = await response.json();
 
       if (data.success) {
@@ -278,10 +287,21 @@ export default function ConversationsPage() {
     }
   };
 
+  // Periodically refresh messages for selected conversation
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    const interval = setInterval(() => {
+      loadMessages(selectedConversation.id, selectedConversation.allConversationIds);
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [selectedConversation]);
+
   // Handle conversation selection
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation);
-    loadMessages(conversation.id);
+    loadMessages(conversation.id, conversation.allConversationIds);
   };
 
   // Export staff contacts to vCard (like WhatsApp)
@@ -541,8 +561,8 @@ END:VCARD`;
       const data = await response.json();
       if (data.success) {
         setMessageInput('');
-        // Reload messages
-        loadMessages(selectedConversation.id);
+        // Reload messages with full history
+        loadMessages(selectedConversation.id, selectedConversation.allConversationIds);
       } else {
         alert('Gagal mengirim pesan: ' + (data.error || 'Unknown error'));
       }
@@ -986,8 +1006,9 @@ END:VCARD`;
   // Handle conversation selection dengan mobile support
   const handleSelectConversationMobile = (conversation: Conversation) => {
     setSelectedConversation(conversation);
-    loadMessages(conversation.id);
-    setShowChatOnMobile(true); // Show chat panel on mobile
+    loadMessages(conversation.id, conversation.allConversationIds);
+    setShowChatOnMobile(true);
+    // Hide notifications count for this convo locally
   };
 
   // Back to list on mobile

@@ -19,11 +19,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Soft delete - mark as deleted instead of removing
-    // This excludes conversation from stats but keeps data for audit
-    await prisma.whatsAppConversation.update({
+    // Hard delete - remove permanently from database
+    // This also removes all associated messages due to onDelete: Cascade
+    await prisma.whatsAppConversation.delete({
       where: { id: conversationId },
-      data: { status: "deleted" },
     });
 
     return NextResponse.json({

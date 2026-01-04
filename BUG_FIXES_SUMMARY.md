@@ -40,60 +40,25 @@ This document outlines all bugs identified from user-provided screenshots and th
 
 ## 🔨 PENDING FIXES
 
-### 2. **Photo Gallery - Touch/Drag Support Enhancement**
-**Location**: `src/app/dashboard/vehicles/[id]/edit/page.tsx` (lines 635-840)
-**Issue**: Photos need better drag-and-drop support for touch screens (smartphones/smartscreen laptops)
+### 2. **Photo Gallery - UX & Mobile Visibility** ✓
+**Location**: `src/app/dashboard/vehicles/[id]/edit/page.tsx`
+**Issue**: Long photo lists made editing cumbersome; needed better visibility management.
+**Fix Applied**:
+- Implemented **Scrollable Photo Container** with max-height to keep the UI compact.
+- Added responsive instructions for drag-and-drop (desktop) vs arrow buttons (mobile).
 
-**Proposed Solution**:
-1. Add scrollable container with max-height around photo grid:
-```tsx
-<div className="max-h-[400px] md:max-h-[500px] overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-    {/* Photos here */}
-  </div>
-</div>
-```
-
-2. Enhance mobile touch support instructions:
-```tsx
-<p className="text-xs text-gray-500 mt-1">
-  💡 <span className="hidden md:inline">Drag foto untuk mengubah urutan</span>
-  <span className="md:hidden">Gunakan tombol atas/bawah untuk mengatur urutan</span>
-</p>
-```
-
-3. The up/down arrow buttons are already implemented for mobile (lines 696-756)
-
-**Status**: Ready to implement - requires careful testing on touch devices
+**Status**: ✅ COMPLETED
 
 ---
 
-### 3. **WhatsApp Conversations - 3-Dot Menu Auto-Hide**
-**Location**: `src/app/dashboard/whatsapp-ai/conversations/page.tsx` (lines 1295-1327)
-**Issue**: 3-dot menu button should auto-hide and only show on hover/touch
+### 3. **WhatsApp Conversations - 3-Dot Menu & Touch Support** ✓
+**Location**: `src/app/dashboard/whatsapp-ai/conversations/page.tsx`
+**Issue**: 3-dot menu button was difficult to access on mobile; needed explicit touch support.
+**Fix Applied**:
+- Added `active:opacity-100` to the menu trigger for immediate visibility on tap.
+- Ensured the menu is accessible on smartphones without needing a hover state.
 
-**Current Implementation**: Already has auto-hide functionality
-```tsx
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id);
-}}
-  className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opacity ${
-    activeMessageMenu === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-  }`}
->
-```
-
-**Enhancement Needed**:
-- Add touch/tap support for mobile:
-```tsx
-className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opacity ${
-  activeMessageMenu === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 active:opacity-100'
-}`}
-```
-
-**Status**: Minor enhancement required
+**Status**: ✅ COMPLETED
 
 ---
 
@@ -113,35 +78,15 @@ className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opac
 
 ---
 
-### 5. **WhatsApp Conversations - Profile Photos**
-**Location**: `src/app/dashboard/whatsapp-ai/conversations/page.tsx` (lines 138-188)
-**Issue**: When WhatsApp offline, profile photos should match actual WhatsApp display
+### 5. **WhatsApp Conversations - Profile Photos & Real-time Sync** ✓
+**Location**: `src/app/dashboard/whatsapp-ai/conversations/page.tsx`
+**Issue**: Profile photos were often initials instead of real WhatsApp photos; lack of real-time updates.
+**Fix Applied**:
+- Included `tenantId` in profile picture API requests to ensure correct account targeting.
+- Implemented **Auto-Refresh** for conversations (every 60s) and active chat messages (every 10s).
+- Ensured profile pictures fallback to initials only on actual load failure.
 
-**Current Implementation**:
-```tsx
-const loadProfilePictures = async () => {
-  // Fetches profile pictures from WhatsApp API
-  const ppResponse = await fetch(`/api/v1/whatsapp-ai/profile-picture?phone=${phone}`);
-  // Falls back to generated avatar if not available
-}
-```
-
-**Enhancement**: Already has fallback mechanism
-```tsx
-{profilePic ? (
-  <img src={profilePic} alt="" className="w-full h-full rounded-full object-cover shadow-sm"
-    onError={(e) => {
-      (e.target as HTMLImageElement).style.display = 'none';
-      (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-    }}
-  />
-) : null}
-<div className={`${profilePic ? 'hidden' : ''} /* Fallback avatar */`}>
-  {avatar.initials}
-</div>
-```
-
-**Status**: ✓ Already handles offline/error cases correctly
+**Status**: ✅ COMPLETED with real-time sync
 
 ---
 
@@ -356,5 +301,17 @@ To apply pending fixes:
 
 ---
 
-**Last Updated**: 2026-01-04 12:45 WIB
+### 10. **Trash Data Handling & Full Chat History** ✓
+**Location**: `src/app/api/v1/whatsapp-ai/` and `src/app/dashboard/whatsapp-ai/conversations/page.tsx`
+**Issue**: Deleted data should not exist in DB or analytics; previous history was not visible across sessions.
+**Fix Applied**:
+- Switched from soft delete to **Hard Delete** for conversations to ensure data is completely removed from DB and analytics.
+- Updated message API to support fetching **Full Conversation History** across multiple session IDs for a customer.
+- Selection bar now supports bulk deletion and clear selection.
+
+**Status**: ✅ COMPLETED
+
+---
+
+**Last Updated**: 2026-01-04 14:35 WIB
 **Updated By**: Antigravity AI Assistant
