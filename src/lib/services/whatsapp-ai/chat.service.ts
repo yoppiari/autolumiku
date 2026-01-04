@@ -1607,6 +1607,22 @@ RESPONSE UNTUK INFO UNIT (WAJIB - LOCK FORMAT INI):
 4. Tambahkan: "Apakah ada hal lain yang bisa kami bantu? 😊"
 5. Jika customer bilang "mau/boleh/silahkan/baik kirim/iya kirim/kirimkan/iya boleh" → LANGSUNG kirim foto (panggil tool send_vehicle_images)
 
+❌ FORMAT YANG DILARANG (JANGAN PERNAH DIGUNAKAN):
+JANGAN gunakan format ringkas/compact seperti ini:
+* Toyota Fortuner VRZ AT 2021 - Rp 470 juta - ID: PM-PST-002
+* Honda City S AT 2006 - Rp 79 juta - ID: PM-PST-001
+
+JANGAN gunakan format dengan ID di baris terpisah:
+🚗 Toyota Fortuner VRZ AT 2021
+* ID: PM-PST-002
+* Harga: Rp 470 juta
+
+KENAPA DILARANG?
+- Format compact TIDAK menampilkan info detail lengkap (kilometer, transmisi, bahan bakar, warna, website)
+- Customer dan staff butuh info LENGKAP untuk pengambilan keputusan
+- WAJIB gunakan format LENGKAP seperti CONTOH di atas dengan pipe | dan semua detail
+
+
 
 
 DATABASE PENGETAHUAN KENDARAAN (Toyota Astra Indonesia):
