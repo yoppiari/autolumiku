@@ -99,6 +99,14 @@ export default function ConversationsPage() {
   // State untuk profile pictures
   const [profilePictures, setProfilePictures] = useState<Record<string, string | null>>({});
 
+  // New states for header menu functionality
+  const [isChatSearchActive, setIsChatSearchActive] = useState(false);
+  const [chatSearchTerm, setChatSearchTerm] = useState('');
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [isFavorited, setIsFavorited] = useState<Record<string, boolean>>({});
+
   // Load conversations
   useEffect(() => {
     const loadConversations = async () => {
@@ -1233,7 +1241,11 @@ END:VCARD`;
                   </div>
 
                   <div className="flex items-center gap-1 md:gap-2">
-                    <button className="p-1.5 md:p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors">
+                    <button
+                      onClick={() => setIsChatSearchActive(!isChatSearchActive)}
+                      className={`p-1.5 md:p-1 rounded-full transition-colors ${isChatSearchActive ? 'bg-green-100 text-green-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
+                      title="Cari dalam chat"
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
@@ -1243,7 +1255,7 @@ END:VCARD`;
                     <div className="relative group">
                       <button
                         onClick={() => setActiveMessageMenu(activeMessageMenu === 'header-options' ? null : 'header-options')}
-                        className="p-1.5 md:p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors"
+                        className={`p-1.5 md:p-1 rounded-full transition-colors ${activeMessageMenu === 'header-options' ? 'bg-gray-200 text-gray-800' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -1251,24 +1263,68 @@ END:VCARD`;
                       </button>
 
                       {activeMessageMenu === 'header-options' && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[60]">
-                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700">
-                            <span className="w-4">ℹ️</span> Info grup
+                        <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[60]">
+                          <button
+                            onClick={() => {
+                              setShowInfoModal(true);
+                              setActiveMessageMenu(null);
+                            }}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-700"
+                          >
+                            <span className="w-5 flex justify-center text-blue-500">ℹ️</span> Info {selectedConversation.isStaff ? 'Tim' : 'Customer'}
                           </button>
-                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700">
-                            <span className="w-4">✅</span> Pilih pesan
+                          <button
+                            onClick={() => {
+                              setIsSelectionMode(true);
+                              setActiveMessageMenu(null);
+                            }}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-700"
+                          >
+                            <span className="w-5 flex justify-center text-green-500">✅</span> Pilih pesan
                           </button>
-                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700">
-                            <span className="w-4">❤️</span> Tambah ke favorit
+                          <button
+                            onClick={() => {
+                              const phone = selectedConversation.customerPhone;
+                              setIsFavorited(prev => ({ ...prev, [phone]: !prev[phone] }));
+                              setActiveMessageMenu(null);
+                            }}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-700"
+                          >
+                            <span className={`w-5 flex justify-center text-red-500 transition-transform ${isFavorited[selectedConversation.customerPhone] ? 'scale-125' : ''}`}>
+                              {isFavorited[selectedConversation.customerPhone] ? '❤️' : '🤍'}
+                            </span>
+                            {isFavorited[selectedConversation.customerPhone] ? 'Hapus dari favorit' : 'Tambah ke favorit'}
                           </button>
-                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700 border-b border-gray-100">
-                            <span className="w-4">❌</span> Tutup chat
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Tutup/Selesaikan percakapan dengan ${formatPhoneNumber(selectedConversation.customerPhone)}?`)) {
+                                // Mock status update
+                                alert('Percakapan ditandai sebagai selesai');
+                              }
+                              setActiveMessageMenu(null);
+                            }}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-700 border-b border-gray-100"
+                          >
+                            <span className="w-5 flex justify-center text-gray-500">❌</span> Tutup chat
                           </button>
-                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-red-600">
-                            <span className="w-4">🗑️</span> Hapus semua chat
+                          <button
+                            onClick={(e) => {
+                              handleDeleteConversation(selectedConversation.id, e as any);
+                              setActiveMessageMenu(null);
+                            }}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-red-600 font-medium"
+                          >
+                            <span className="w-5 flex justify-center">🗑️</span> Hapus semua chat
                           </button>
-                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700">
-                            <span className="w-4">🧹</span> Bersihkan pilih chat
+                          <button
+                            onClick={() => {
+                              setSelectedMessageIds([]);
+                              setIsSelectionMode(false);
+                              setActiveMessageMenu(null);
+                            }}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-600"
+                          >
+                            <span className="w-5 flex justify-center">🧹</span> Bersihkan pilih chat
                           </button>
                         </div>
                       )}
@@ -1300,6 +1356,81 @@ END:VCARD`;
                 {/* Background Overlay to ensure readability */}
                 <div className="absolute inset-0 bg-[#e5ddd5]/60 pointer-events-none z-0"></div>
 
+                {/* Chat Search Bar */}
+                {isChatSearchActive && selectedConversation && (
+                  <div className="sticky top-0 left-0 right-0 bg-white shadow-md p-2 z-[40] flex items-center gap-2 mb-2 animate-in slide-in-from-top-4 duration-200">
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={chatSearchTerm}
+                        onChange={(e) => setChatSearchTerm(e.target.value)}
+                        placeholder="Cari pesan..."
+                        className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        autoFocus
+                      />
+                      <svg
+                        className="absolute left-3 top-2.5 h-4 w-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setIsChatSearchActive(false);
+                        setChatSearchTerm('');
+                      }}
+                      className="text-sm text-gray-500 hover:text-gray-700 font-medium px-2"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                )}
+
+                {/* Message Selection Bar */}
+                {isSelectionMode && (
+                  <div className="sticky top-0 left-0 right-0 bg-green-600 text-white p-2 z-[40] flex items-center justify-between px-4 mb-2 animate-in slide-in-from-top-4 duration-200 shadow-md">
+                    <div className="flex items-center gap-4">
+                      <button onClick={() => setIsSelectionMode(false)} className="hover:bg-green-700 p-1 rounded transition-colors">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                      <span className="text-sm font-semibold">{selectedMessageIds.length} pesan terpilih</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {selectedMessageIds.length > 0 && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Hapus ${selectedMessageIds.length} pesan terpilih?`)) {
+                              selectedMessageIds.forEach(id => handleDeleteMessage(id));
+                              setSelectedMessageIds([]);
+                              setIsSelectionMode(false);
+                            }
+                          }}
+                          className="p-1 px-3 bg-red-500 hover:bg-red-600 rounded text-xs font-bold transition-colors flex items-center gap-1.5"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Hapus Terpilih
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setSelectedMessageIds([]);
+                          setIsSelectionMode(false);
+                        }}
+                        className="text-white/80 hover:text-white text-xs"
+                      >
+                        Selesai
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="relative z-10 w-full flex flex-col space-y-3 md:space-y-2">
                   {isLoadingMessages ? (
                     <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -1311,84 +1442,119 @@ END:VCARD`;
                     </div>
                   ) : (
                     <>
-                      {messages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'}`}
-                        >
-                          {/* Message bubble */}
-                          <div className="relative group max-w-[85%] md:max-w-[75%]">
-                            <div
-                              className={`rounded-lg px-3 py-2 md:px-2.5 md:py-1.5 shadow-sm ${msg.direction === 'inbound'
-                                ? 'bg-white text-gray-900 rounded-tl-none'
-                                : msg.aiResponse
-                                  ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none'
-                                  : 'bg-[#d9fdd3] text-gray-900 rounded-tr-none'
-                                }`}
-                            >
-                              {msg.direction === 'inbound' && (
-                                <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
-                                  <span className="text-[11px] md:text-[10px] font-semibold text-green-700">
-                                    {msg.senderType === 'staff' ? '👨\u200D💼' : '👤'}
-                                  </span>
-                                  {msg.intent && (
-                                    <span className="text-[11px] md:text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
-                                  )}
-                                </div>
-                              )}
-                              {msg.direction === 'outbound' && (
-                                <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
-                                  <span className="text-[11px] md:text-[10px] font-semibold text-blue-700">
-                                    {msg.senderType === 'ai' ? '🤖' : '👨\u200D💼'}
-                                  </span>
-                                </div>
-                              )}
-                              <p className="text-[13px] md:text-xs whitespace-pre-wrap break-words leading-relaxed pr-5">{msg.content}</p>
-                              <div className="flex items-center justify-end mt-1 md:mt-0.5 space-x-1">
-                                <span className="text-[10px] md:text-[9px] text-gray-500">
-                                  {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                                {msg.direction === 'outbound' && (
-                                  <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
-                                )}
-                              </div>
+                      {(() => {
+                        const filteredMessages = chatSearchTerm
+                          ? messages.filter(msg =>
+                            msg.content.toLowerCase().includes(chatSearchTerm.toLowerCase())
+                          )
+                          : messages;
 
-                              {/* Dropdown trigger button - appears on hover/tap */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id);
-                                }}
-                                className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opacity ${activeMessageMenu === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                                  }`}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              </button>
-                            </div>
-
-                            {/* Dropdown menu */}
-                            {activeMessageMenu === msg.id && (
-                              <div
-                                ref={messageMenuRef}
-                                className="absolute top-8 right-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[120px] z-50"
-                              >
-                                <button
-                                  onClick={() => handleDeleteMessage(msg.id)}
-                                  disabled={isDeletingMessage}
-                                  className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-red-600 disabled:opacity-50"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  <span className="text-sm">{isDeletingMessage ? 'Menghapus...' : 'Hapus'}</span>
-                                </button>
+                        return filteredMessages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'} group/row items-center gap-2`}
+                          >
+                            {/* Selection Checkbox */}
+                            {isSelectionMode && (
+                              <div className={`flex items-center justify-center transition-all ${msg.direction === 'inbound' ? 'order-first' : 'order-last'}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedMessageIds.includes(msg.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedMessageIds(prev => [...prev, msg.id]);
+                                    } else {
+                                      setSelectedMessageIds(prev => prev.filter(id => id !== msg.id));
+                                    }
+                                  }}
+                                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                                />
                               </div>
                             )}
+
+                            {/* Message bubble */}
+                            <div className="relative group max-w-[85%] md:max-w-[75%]">
+                              <div
+                                className={`rounded-lg px-3 py-2 md:px-2.5 md:py-1.5 shadow-sm transition-colors ${selectedMessageIds.includes(msg.id) ? 'ring-2 ring-green-500 bg-green-50' : ''} ${msg.direction === 'inbound'
+                                  ? 'bg-white text-gray-900 rounded-tl-none'
+                                  : msg.aiResponse
+                                    ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none'
+                                    : 'bg-[#d9fdd3] text-gray-900 rounded-tr-none'
+                                  }`}
+                                onClick={() => {
+                                  if (isSelectionMode) {
+                                    if (selectedMessageIds.includes(msg.id)) {
+                                      setSelectedMessageIds(prev => prev.filter(id => id !== msg.id));
+                                    } else {
+                                      setSelectedMessageIds(prev => [...prev, msg.id]);
+                                    }
+                                  }
+                                }}
+                              >
+                                {msg.direction === 'inbound' && (
+                                  <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
+                                    <span className="text-[11px] md:text-[10px] font-semibold text-green-700">
+                                      {msg.senderType === 'staff' ? '👨‍💼' : '👤'}
+                                    </span>
+                                    {msg.intent && (
+                                      <span className="text-[11px] md:text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
+                                    )}
+                                  </div>
+                                )}
+                                {msg.direction === 'outbound' && (
+                                  <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
+                                    <span className="text-[11px] md:text-[10px] font-semibold text-blue-700">
+                                      {msg.senderType === 'ai' ? '🤖' : '👨‍💼'}
+                                    </span>
+                                  </div>
+                                )}
+                                <p className="text-[13px] md:text-xs whitespace-pre-wrap break-words leading-relaxed pr-5">{msg.content}</p>
+                                <div className="flex items-center justify-end mt-1 md:mt-0.5 space-x-1">
+                                  <span className="text-[10px] md:text-[9px] text-gray-500">
+                                    {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  {msg.direction === 'outbound' && (
+                                    <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
+                                  )}
+                                </div>
+
+                                {/* Dropdown trigger button - appears on hover/tap */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id);
+                                  }}
+                                  className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opacity ${activeMessageMenu === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                    }`}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </button>
+                              </div>
+
+                              {/* Dropdown menu */}
+                              {activeMessageMenu === msg.id && (
+                                <div
+                                  ref={messageMenuRef}
+                                  className="absolute top-8 right-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[120px] z-50"
+                                >
+                                  <button
+                                    onClick={() => handleDeleteMessage(msg.id)}
+                                    disabled={isDeletingMessage}
+                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-red-600 disabled:opacity-50"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    <span className="text-sm">{isDeletingMessage ? 'Menghapus...' : 'Hapus'}</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ));
+                      })()}
                       <div ref={messagesEndRef} />
                     </>
                   )}
@@ -1960,8 +2126,109 @@ END:VCARD`;
               </div>
             </div>
           </div>
-        )
-      }
+        )}
+
+      {/* Info Modal */}
+      {showInfoModal && selectedConversation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4 text-gray-900">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 bg-gradient-to-r from-green-600 to-green-700 text-white relative">
+              <button
+                onClick={() => setShowInfoModal(false)}
+                className="absolute top-4 right-4 text-white/80 hover:text-white"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="flex flex-col items-center">
+                {(() => {
+                  const avatar = getAvatarProps(selectedConversation.customerPhone, selectedConversation.customerName, selectedConversation.isStaff);
+                  const profilePic = profilePictures[selectedConversation.customerPhone];
+                  return (
+                    <div className="relative w-24 h-24 mb-4">
+                      {profilePic ? (
+                        <img src={profilePic} alt="" className="w-full h-full rounded-full object-cover border-4 border-white/30 shadow-lg" />
+                      ) : (
+                        <div className={`w-full h-full rounded-full flex items-center justify-center ${avatar.color} text-white font-bold text-3xl shadow-lg border-4 border-white/30`}>
+                          {avatar.initials}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                <h3 className="text-2xl font-bold">{formatPhoneNumber(selectedConversation.customerPhone)}</h3>
+                <p className="text-white/80">{selectedConversation.isStaff ? 'Anggota Tim' : 'Customer'}</p>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Status</p>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${selectedConversation.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    <span className="text-sm font-semibold capitalize">{selectedConversation.status}</span>
+                  </div>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Pesan</p>
+                  <p className="text-sm font-semibold">{selectedConversation.messageCount} chat</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-gray-400 font-bold uppercase block mb-2">Intent Terakhir</label>
+                  <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100">
+                    {selectedConversation.lastIntent?.replace('customer_', '') || 'General Inquiry'}
+                  </span>
+                </div>
+
+                {selectedConversation.lastMessageAt && (
+                  <div>
+                    <label className="text-xs text-gray-400 font-bold uppercase block mb-1">Terakhir Aktif</label>
+                    <p className="text-sm text-gray-700">
+                      {new Date(selectedConversation.lastMessageAt).toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 flex gap-3">
+                <button
+                  onClick={() => {
+                    const phone = selectedConversation.customerPhone;
+                    setIsFavorited(prev => ({ ...prev, [phone]: !prev[phone] }));
+                  }}
+                  className={`flex-1 py-2.5 rounded-lg border-2 font-bold text-sm transition-all flex items-center justify-center gap-2 ${isFavorited[selectedConversation.customerPhone]
+                    ? 'bg-red-50 border-red-500 text-red-600'
+                    : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                    }`}
+                >
+                  {isFavorited[selectedConversation.customerPhone] ? '❤️ Favorit' : '🤍 Jadikan Favorit'}
+                </button>
+                <button
+                  onClick={() => {
+                    handleDeleteConversation(selectedConversation.id, { stopPropagation: () => { } } as any);
+                    setShowInfoModal(false);
+                  }}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg font-bold text-sm hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  🗑️ Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

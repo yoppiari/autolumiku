@@ -458,16 +458,32 @@ export default function EditVehiclePage() {
           </svg>
           Kembali ke Daftar Kendaraan
         </Link>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Edit Kendaraan</h1>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">
-            {vehicle?.displayId || `ID: ${vehicleId.slice(0, 8)}...`}
-          </span>
-          {vehicle?.licensePlate && (
-            <span className="text-sm text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded border border-blue-200">
-              🔒 {vehicle.licensePlate}
-            </span>
-          )}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Edit Kendaraan</h1>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                {vehicle?.displayId || `ID: ${vehicleId.slice(0, 8)}...`}
+              </span>
+              {vehicle?.licensePlate && (
+                <span className="text-sm text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                  🔒 {vehicle.licensePlate}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <a
+            href={`https://primamobil.id/vehicles/${vehicleId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm self-start md:self-center"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            Lihat di Katalog
+          </a>
         </div>
       </div>
 
@@ -622,10 +638,10 @@ export default function EditVehiclePage() {
         </div>
 
         {/* Status Info */}
-        <div className="mt-4 text-sm text-gray-500">
-          <p>• <strong>Ready:</strong> Kendaraan siap dijual, tampil di katalog</p>
-          <p>• <strong>Booking:</strong> Customer sudah DP, unit reserved</p>
-          <p>• <strong>Sold:</strong> Unit terjual, Anda tercatat sebagai sales closing</p>
+        <div className="mt-4 text-sm text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100 italic">
+          <p>• <strong>Ready:</strong> Unit dipublikasikan ke <a href="https://primamobil.id/vehicles" target="_blank" className="text-blue-600 hover:underline">primamobil.id/vehicles</a></p>
+          <p>• <strong>Booking:</strong> Unit tetap di katalog namun bertanda &quot;Booking&quot;</p>
+          <p>• <strong>Sold:</strong> Unit terjual, akan otomatis terhapus dari katalog publik</p>
         </div>
       </div>
 
@@ -1091,61 +1107,6 @@ export default function EditVehiclePage() {
               </p>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status Kendaraan <span className="text-red-500">*</span>
-              </label>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, status: 'AVAILABLE' })}
-                  className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.status === 'AVAILABLE'
-                      ? 'bg-green-50 border-green-500 text-green-700 shadow-sm'
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                    }`}
-                >
-                  <span className="text-lg">✅</span>
-                  <span className="font-semibold text-sm">Tersedia</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, status: 'BOOKED' })}
-                  className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.status === 'BOOKED'
-                      ? 'bg-yellow-50 border-yellow-500 text-yellow-700 shadow-sm'
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                    }`}
-                >
-                  <span className="text-lg animate-pulse text-yellow-600">🕒</span>
-                  <span className="font-semibold text-sm">Booking</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, status: 'SOLD' })}
-                  className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.status === 'SOLD'
-                      ? 'bg-red-50 border-red-500 text-red-700 shadow-sm'
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                    }`}
-                >
-                  <span className="text-lg">💰</span>
-                  <span className="font-semibold text-sm">Terjual</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, status: 'DRAFT' })}
-                  className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.status === 'DRAFT'
-                      ? 'bg-gray-50 border-gray-400 text-gray-700 shadow-sm'
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                    }`}
-                >
-                  <span className="text-lg">📝</span>
-                  <span className="font-semibold text-sm">Draft</span>
-                </button>
-              </div>
-              <input type="hidden" name="status" value={formData.status} />
-            </div>
           </div>
         </div>
 
@@ -1330,7 +1291,7 @@ export default function EditVehiclePage() {
             Batal
           </Link>
         </div>
-      </form>
-    </div>
+      </form >
+    </div >
   );
 }
