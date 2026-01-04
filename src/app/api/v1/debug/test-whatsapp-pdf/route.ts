@@ -9,6 +9,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { WhatsAppCommandPDF } from '@/lib/reports/whatsapp-command-pdf';
 
+// Prevent static generation - this route needs database access at runtime
+export const dynamic = 'force-dynamic';
+
+
 export async function GET(request: NextRequest) {
   const results: any = {
     timestamp: new Date().toISOString(),
