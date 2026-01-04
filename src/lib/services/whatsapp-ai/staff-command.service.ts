@@ -1681,33 +1681,49 @@ export class StaffCommandService {
 
     // Apply filter
     if (filter) {
+      const lowerFilter = filter.toLowerCase();
       const upperFilter = filter.toUpperCase();
-      if (["AVAILABLE", "BOOKED", "SOLD", "DELETED"].includes(upperFilter)) {
+
+      // Check if it's a direct status match (with "ready" and "stok" mapping)
+      const isAvailableFilter = upperFilter === "AVAILABLE" || upperFilter === "READY" ||
+        upperFilter === "STOK" || lowerFilter === "ready" ||
+        lowerFilter === "stok" || lowerFilter === "tersedia";
+
+      if (isAvailableFilter) {
+        whereClause.status = "AVAILABLE";
+      } else if (["BOOKED", "SOLD", "DELETED"].includes(upperFilter)) {
         whereClause.status = upperFilter;
       } else {
         // Multi-term search across make, model, variant, and displayId
-        const searchTerms = filter.toLowerCase()
-          .split(/\s+/)
-          .filter(t => t.length > 0 && !this.INDONESIAN_STOP_WORDS.includes(t));
+        const terms = lowerFilter.split(/\s+/).filter((t: string) => t.length > 0);
+
+        // Check if any term is "ready" or "available"
+        const hasReadyTerm = terms.some((t: string) => t === 'ready' || t === 'stok' || t === 'tersedia' || t === 'stokready');
+        if (hasReadyTerm) {
+          whereClause.status = "AVAILABLE";
+        }
+
+        const searchTerms = terms.filter((t: string) => !this.INDONESIAN_STOP_WORDS.includes(t) &&
+          t !== 'ready' && t !== 'stok' && t !== 'tersedia' && t !== 'stokready');
 
         if (searchTerms.length > 0) {
-          const termConditions = searchTerms.map(term => ({
+          const termConditions = searchTerms.map((term: string) => ({
             OR: [
               { make: { contains: term, mode: 'insensitive' as const } },
               { model: { contains: term, mode: 'insensitive' as const } },
               { variant: { contains: term, mode: 'insensitive' as const } },
               { displayId: { contains: term, mode: 'insensitive' as const } },
+              { transmissionType: { contains: term, mode: 'insensitive' as const } },
             ]
           }));
-          whereClause.AND = termConditions;
-        } else {
-          // If all terms were filtered out (e.g. "kan", "ada"), treat as "show all available"
-          // This fixes: "inventory kan" -> "Tidak ditemukan..."
-          whereClause.status = { not: "DELETED" };
-        }
 
-        // Safety: If filtering resulted in 'show all', ensure we don't accidentally show deleted if not specified
-        if (!whereClause.status) {
+          if (whereClause.status) {
+            whereClause.AND = termConditions;
+          } else {
+            whereClause.AND = termConditions;
+            whereClause.status = { not: "DELETED" };
+          }
+        } else if (!whereClause.status) {
           whereClause.status = { not: "DELETED" };
         }
       }
@@ -1731,32 +1747,41 @@ export class StaffCommandService {
       };
     }
 
-    // Group by status
-    const byStatus = vehicles.reduce(
-      (acc, v) => {
-        acc[v.status] = (acc[v.status] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
-
     let message = `📋 * DAFTAR STOK KENDARAAN *\n`;
     if (filter) message += `Filter: "${filter}"\n`;
     message += `Total: ${vehicles.length} unit\n\n`;
 
     vehicles.forEach((v, idx) => {
       const statusEmoji = v.status === "AVAILABLE" ? "✅" : v.status === "BOOKED" ? "🔒" : "💰";
-      message += `${idx + 1}. * ${v.make} ${v.model} ${v.year}*\n`;
-      message += `   ID: \`${v.displayId || v.id.slice(-6)}\`\n`;
-      message += `   Status: ${statusEmoji} ${v.status} | Rp ${this.formatPrice(Number(v.price), true)}\n\n`;
+      const id = v.displayId || v.id.slice(-6).toUpperCase();
+      const transmission = v.transmissionType || 'Manual';
+      const variant = v.variant ? ` ${v.variant}` : '';
+      const km = v.mileage ? v.mileage.toLocaleString('id-ID') : '-';
+      const fuel = v.fuelType || 'Bensin';
+      const color = v.color || '-';
+      const priceFormatted = this.formatPrice(Number(v.price), true);
+
+      // Generate website link
+      const makeSlug = v.make.toLowerCase().replace(/\s+/g, '-');
+      const modelSlug = v.model.toLowerCase().replace(/\s+/g, '-');
+      const websiteUrl = `https://primamobil.id/vehicles/${makeSlug}-${modelSlug}-${v.year}-${id}`;
+
+      message += `${idx + 1}. 🚗 ${v.make} ${v.model}${variant} ${transmission} ${v.year}  ${statusEmoji} ${v.status}\n`;
+      message += `   ID: ${id}\n`;
+      message += `   Harga: | Rp ${priceFormatted}\n`;
+      message += `   Kilometer: ${km} km\n`;
+      message += `   Transmisi: ${transmission}\n`;
+      message += `   Bahan bakar: ${fuel}\n`;
+      message += `   Warna: ${color}\n`;
+      message += `   🎯 Website: ${websiteUrl}\n\n`;
     });
 
     if (vehicles.length === 20) {
-      message += `_Menampilkan 20 unit terbaru..._\n`;
+      message += `_Menampilkan 20 unit terbaru..._\n\n`;
     }
 
     message += `Ketik \`status [ID] SOLD\` untuk update status.\n`;
-    message += `Apakah ada hal lain yang bisa kami bantu?`;
+    message += `Apakah ada hal lain yang bisa kami bantu? 😊`;
 
     return {
       success: true,
