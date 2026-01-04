@@ -449,14 +449,17 @@ export default function EditVehiclePage() {
   const totalPhotos = existingPhotosCount + photos.length;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <Link href="/dashboard/vehicles" className="text-blue-600 hover:underline mb-2 inline-block">
-          ← Kembali ke Daftar Kendaraan
+    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+      {/* Header - Improved spacing */}
+      <div className="mb-4">
+        <Link href="/dashboard/vehicles" className="text-blue-600 hover:underline inline-flex items-center gap-1 mb-3">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Kembali ke Daftar Kendaraan
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Edit Kendaraan</h1>
-        <div className="flex items-center gap-2 mt-1">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Edit Kendaraan</h1>
+        <div className="flex items-center gap-2 mt-2">
           <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">
             {vehicle?.displayId || `ID: ${vehicleId.slice(0, 8)}...`}
           </span>
@@ -649,124 +652,157 @@ export default function EditVehiclePage() {
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {vehicle?.photos.map((photo: any, index: number) => (
-                  <div
-                    key={photo.id}
-                    draggable
-                    onDragStart={() => handleExistingDragStart(index)}
-                    onDragEnter={() => handleExistingDragEnter(index)}
-                    onDragEnd={handleExistingDragEnd}
-                    onDragOver={(e) => e.preventDefault()}
-                    className={`relative group cursor-move transition-all hover:scale-105 ${draggedExistingIndex === index ? 'opacity-50 scale-95' : ''
-                      }`}
-                  >
-                    {/* Drag Handle */}
-                    <div className="absolute top-1 left-1 bg-gray-800 bg-opacity-75 text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 3h2v2H9V3zm4 0h2v2h-2V3zM9 7h2v2H9V7zm4 0h2v2h-2V7zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2z" />
-                      </svg>
-                      <span className="text-xs font-semibold">#{index + 1}</span>
-                    </div>
-
-                    {/* Photo Image */}
-                    <img
-                      src={photo.thumbnailUrl || photo.originalUrl}
-                      alt={`Photo ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 group-hover:border-blue-400"
-                    />
-
-                    {/* Main Photo Badge - First photo is always main */}
-                    {index === 0 && (
-                      <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold flex items-center gap-1">
-                        ⭐ Utama
-                      </div>
-                    )}
-
-                    {/* Quality Score Badge */}
-                    {photo.qualityScore && (
-                      <div className={`absolute bottom-1 right-1 text-xs px-2 py-1 rounded font-semibold ${photo.validationStatus === 'VALID' ? 'bg-green-100 text-green-800' :
-                        photo.validationStatus === 'LOW_QUALITY' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                        {photo.qualityScore}
-                      </div>
-                    )}
-
-                    {/* Mobile Reorder Buttons - Always visible on mobile */}
-                    <div className="absolute bottom-1 left-1 flex gap-1 sm:hidden z-20">
-                      {/* Move Up Button */}
-                      <button
-                        type="button"
-                        disabled={index === 0}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (index === 0 || !vehicle) return;
-                          const newPhotos = [...vehicle.photos];
-                          [newPhotos[index - 1], newPhotos[index]] = [newPhotos[index], newPhotos[index - 1]];
-                          setVehicle({ ...vehicle, photos: newPhotos });
-                          // Save to server
-                          setSavingPhotoOrder(true);
-                          try {
-                            const token = localStorage.getItem('authToken');
-                            await fetch(`/api/v1/vehicles/${vehicleId}/photos/reorder`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json', ...(token && { 'Authorization': `Bearer ${token}` }) },
-                              body: JSON.stringify({ photos: newPhotos.map((p, i) => ({ photoId: p.id, displayOrder: i })) }),
-                            });
-                          } catch (err) { console.error(err); }
-                          setSavingPhotoOrder(false);
-                        }}
-                        className={`p-1.5 rounded-full shadow-lg ${index === 0 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
-                        title="Pindah ke atas"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden pr-1 pb-2 custom-scrollbar focus-within:ring-2 focus-within:ring-green-100 rounded-lg">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-1">
+                  {vehicle?.photos.map((photo: any, index: number) => (
+                    <div
+                      key={photo.id}
+                      draggable
+                      onDragStart={() => handleExistingDragStart(index)}
+                      onDragEnter={() => handleExistingDragEnter(index)}
+                      onDragEnd={handleExistingDragEnd}
+                      onDragOver={(e) => e.preventDefault()}
+                      className={`relative group cursor-move transition-all hover:scale-105 ${draggedExistingIndex === index ? 'opacity-50 scale-95' : ''
+                        }`}
+                    >
+                      {/* Drag Handle */}
+                      <div className="absolute top-1 left-1 bg-gray-800 bg-opacity-75 text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M9 3h2v2H9V3zm4 0h2v2h-2V3zM9 7h2v2H9V7zm4 0h2v2h-2V7zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2z" />
                         </svg>
-                      </button>
-                      {/* Move Down Button */}
-                      <button
-                        type="button"
-                        disabled={index === (vehicle?.photos.length || 0) - 1}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!vehicle || index === vehicle.photos.length - 1) return;
-                          const newPhotos = [...vehicle.photos];
-                          [newPhotos[index], newPhotos[index + 1]] = [newPhotos[index + 1], newPhotos[index]];
-                          setVehicle({ ...vehicle, photos: newPhotos });
-                          // Save to server
-                          setSavingPhotoOrder(true);
-                          try {
-                            const token = localStorage.getItem('authToken');
-                            await fetch(`/api/v1/vehicles/${vehicleId}/photos/reorder`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json', ...(token && { 'Authorization': `Bearer ${token}` }) },
-                              body: JSON.stringify({ photos: newPhotos.map((p, i) => ({ photoId: p.id, displayOrder: i })) }),
-                            });
-                          } catch (err) { console.error(err); }
-                          setSavingPhotoOrder(false);
-                        }}
-                        className={`p-1.5 rounded-full shadow-lg ${index === (vehicle?.photos.length || 0) - 1 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
-                        title="Pindah ke bawah"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                    </div>
+                        <span className="text-xs font-semibold">#{index + 1}</span>
+                      </div>
 
-                    {/* Action Buttons (show on hover - desktop) */}
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded-lg transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      {/* Set as Main Button - only show if not first photo */}
-                      {index !== 0 && (
+                      {/* Photo Image */}
+                      <img
+                        src={photo.thumbnailUrl || photo.originalUrl}
+                        alt={`Photo ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 group-hover:border-blue-400"
+                      />
+
+                      {/* Main Photo Badge - First photo is always main */}
+                      {index === 0 && (
+                        <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold flex items-center gap-1">
+                          ⭐ Utama
+                        </div>
+                      )}
+
+                      {/* Quality Score Badge */}
+                      {photo.qualityScore && (
+                        <div className={`absolute bottom-1 right-1 text-xs px-2 py-1 rounded font-semibold ${photo.validationStatus === 'VALID' ? 'bg-green-100 text-green-800' :
+                          photo.validationStatus === 'LOW_QUALITY' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                          {photo.qualityScore}
+                        </div>
+                      )}
+
+                      {/* Mobile Reorder Buttons - Always visible on mobile */}
+                      <div className="absolute bottom-1 left-1 flex gap-1 sm:hidden z-20">
+                        {/* Move Up Button */}
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (index === 0 || !vehicle) return;
+                            const newPhotos = [...vehicle.photos];
+                            [newPhotos[index - 1], newPhotos[index]] = [newPhotos[index], newPhotos[index - 1]];
+                            setVehicle({ ...vehicle, photos: newPhotos });
+                            // Save to server
+                            setSavingPhotoOrder(true);
+                            try {
+                              const token = localStorage.getItem('authToken');
+                              await fetch(`/api/v1/vehicles/${vehicleId}/photos/reorder`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json', ...(token && { 'Authorization': `Bearer ${token}` }) },
+                                body: JSON.stringify({ photos: newPhotos.map((p, i) => ({ photoId: p.id, displayOrder: i })) }),
+                              });
+                            } catch (err) { console.error(err); }
+                            setSavingPhotoOrder(false);
+                          }}
+                          className={`p-1.5 rounded-full shadow-lg ${index === 0 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
+                          title="Pindah ke atas"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                          </svg>
+                        </button>
+                        {/* Move Down Button */}
+                        <button
+                          type="button"
+                          disabled={index === (vehicle?.photos.length || 0) - 1}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!vehicle || index === vehicle.photos.length - 1) return;
+                            const newPhotos = [...vehicle.photos];
+                            [newPhotos[index], newPhotos[index + 1]] = [newPhotos[index + 1], newPhotos[index]];
+                            setVehicle({ ...vehicle, photos: newPhotos });
+                            // Save to server
+                            setSavingPhotoOrder(true);
+                            try {
+                              const token = localStorage.getItem('authToken');
+                              await fetch(`/api/v1/vehicles/${vehicleId}/photos/reorder`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json', ...(token && { 'Authorization': `Bearer ${token}` }) },
+                                body: JSON.stringify({ photos: newPhotos.map((p, i) => ({ photoId: p.id, displayOrder: i })) }),
+                              });
+                            } catch (err) { console.error(err); }
+                            setSavingPhotoOrder(false);
+                          }}
+                          className={`p-1.5 rounded-full shadow-lg ${index === (vehicle?.photos.length || 0) - 1 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
+                          title="Pindah ke bawah"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Action Buttons (show on hover - desktop) */}
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded-lg transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                        {/* Set as Main Button - only show if not first photo */}
+                        {index !== 0 && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (confirm('Jadikan foto ini sebagai foto utama?')) {
+                                try {
+                                  const token = localStorage.getItem('authToken');
+                                  const response = await fetch(`/api/v1/vehicles/${vehicleId}/photos/${photo.id}/main`, {
+                                    method: 'PUT',
+                                    headers: {
+                                      ...(token && { 'Authorization': `Bearer ${token}` }),
+                                    },
+                                  });
+                                  if (response.ok) {
+                                    fetchVehicle();
+                                  } else {
+                                    alert('Gagal mengubah foto utama');
+                                  }
+                                } catch (err) {
+                                  alert('Terjadi kesalahan');
+                                }
+                              }
+                            }}
+                            className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 shadow-lg"
+                            title="Set as main photo"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                          </button>
+                        )}
+
+                        {/* Delete Button */}
                         <button
                           type="button"
                           onClick={async () => {
-                            if (confirm('Jadikan foto ini sebagai foto utama?')) {
+                            if (confirm('Hapus foto ini? Tindakan ini tidak dapat dibatalkan.')) {
                               try {
                                 const token = localStorage.getItem('authToken');
-                                const response = await fetch(`/api/v1/vehicles/${vehicleId}/photos/${photo.id}/main`, {
-                                  method: 'PUT',
+                                const response = await fetch(`/api/v1/vehicles/${vehicleId}/photos/${photo.id}`, {
+                                  method: 'DELETE',
                                   headers: {
                                     ...(token && { 'Authorization': `Bearer ${token}` }),
                                   },
@@ -774,208 +810,18 @@ export default function EditVehiclePage() {
                                 if (response.ok) {
                                   fetchVehicle();
                                 } else {
-                                  alert('Gagal mengubah foto utama');
+                                  alert('Gagal menghapus foto');
                                 }
                               } catch (err) {
                                 alert('Terjadi kesalahan');
                               }
                             }
                           }}
-                          className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 shadow-lg"
-                          title="Set as main photo"
-                        >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
-                        </button>
-                      )}
-
-                      {/* Delete Button */}
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (confirm('Hapus foto ini? Tindakan ini tidak dapat dibatalkan.')) {
-                            try {
-                              const token = localStorage.getItem('authToken');
-                              const response = await fetch(`/api/v1/vehicles/${vehicleId}/photos/${photo.id}`, {
-                                method: 'DELETE',
-                                headers: {
-                                  ...(token && { 'Authorization': `Bearer ${token}` }),
-                                },
-                              });
-                              if (response.ok) {
-                                fetchVehicle();
-                              } else {
-                                alert('Gagal menghapus foto');
-                              }
-                            } catch (err) {
-                              alert('Terjadi kesalahan');
-                            }
-                          }
-                        }}
-                        className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg"
-                        title="Delete photo"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Quality Summary */}
-              {vehicle?.photos.some((p: any) => p.qualityScore) && (
-                <div className="mt-3 p-2 bg-gray-50 rounded-md">
-                  <p className="text-xs text-gray-600">
-                    💡 <strong>Kualitas Foto:</strong> Hijau = Baik (70+), Kuning = Cukup (50-69), Merah = Kurang (&lt;50)
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Upload New Photos */}
-          <div>
-            <p className="text-sm text-gray-600 mb-2">
-              Upload Foto Baru {totalPhotos > 0 && `(${photos.length} foto baru, total: ${totalPhotos}/${MAX_PHOTOS})`}
-            </p>
-
-            {/* Drop Zone */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragging
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-300 hover:border-gray-400'
-                }`}
-            >
-              <svg
-                className="w-12 h-12 text-gray-400 mx-auto mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
-              <p className="text-gray-600 mb-2">
-                Drag & drop foto di sini, atau{' '}
-                <label className="text-blue-600 hover:underline cursor-pointer">
-                  pilih file
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={(e) => handlePhotoSelect(e.target.files)}
-                    className="hidden"
-                  />
-                </label>
-              </p>
-              <p className="text-sm text-gray-500">
-                Max {MAX_PHOTOS} foto • Max 10MB per foto
-              </p>
-            </div>
-
-            {/* New Photos Preview */}
-            {photos.length > 0 && (
-              <div className="mt-4">
-                {/* Instructions */}
-                <div className="mb-3 p-2 bg-blue-50 rounded-md">
-                  <p className="text-xs text-blue-800">
-                    💡 <strong>Drag foto</strong> untuk mengatur urutan. Foto pertama akan jadi foto utama.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {photos.map((photo, index) => (
-                    <div
-                      key={photo.id}
-                      draggable
-                      onDragStart={() => handleDragStart(index)}
-                      onDragEnter={() => handleDragEnter(index)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => e.preventDefault()}
-                      className={`relative group cursor-move transition-all ${draggedIndex === index ? 'opacity-50 scale-95' : ''
-                        }`}
-                    >
-                      {/* Drag Handle */}
-                      <div className="absolute top-1 left-1 bg-gray-800 bg-opacity-75 text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10">
-                        <svg
-                          className="w-3 h-3"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M9 3h2v2H9V3zm4 0h2v2h-2V3zM9 7h2v2H9V7zm4 0h2v2h-2V7zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2z" />
-                        </svg>
-                        <span className="text-xs font-semibold">#{index + 1}</span>
-                      </div>
-
-                      <img
-                        src={photo.preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border-2 border-green-200"
-                      />
-
-                      {/* Main Photo Badge */}
-                      {index === 0 && (
-                        <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded font-semibold">
-                          ⭐ MAIN
-                        </div>
-                      )}
-
-                      {/* New Badge */}
-                      {index !== 0 && (
-                        <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded">
-                          Baru #{index + 1}
-                        </div>
-                      )}
-
-                      {/* Action Buttons (show on hover) */}
-                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {/* Set as Main button */}
-                        {index !== 0 && (
-                          <button
-                            type="button"
-                            onClick={() => handleSetMainPhoto(index)}
-                            className="bg-green-600 text-white rounded-full p-1 hover:bg-green-700"
-                            title="Set as main photo"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                            </svg>
-                          </button>
-                        )}
-
-                        {/* Delete button */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePhoto(photo.id)}
-                          className="bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                          className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg"
                           title="Delete photo"
                         >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       </div>
@@ -983,16 +829,174 @@ export default function EditVehiclePage() {
                   ))}
                 </div>
               </div>
-            )}
-          </div>
 
-          {photos.length > 0 && (
-            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <p className="text-sm text-yellow-800">
-                ⚠️ <strong>Note:</strong> Foto baru belum tersimpan. Klik "Simpan Perubahan" untuk mengupload foto.
+              {/* Mobile Reorder Tip */}
+              <p className="mt-3 text-[10px] text-gray-400 sm:hidden">
+                Tip: Gunakan tombol panah pada foto untuk menggeser urutan di layar sentuh.
               </p>
             </div>
           )}
+
+          {/* Upload New Photos with extra spacing for easier scrolling */}
+          <div className="mt-10 pt-6 border-t border-gray-100">
+            <h3 className="text-sm font-medium text-gray-700 mb-4">Upload Foto Baru</h3>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 mb-2">
+                Upload Foto Baru {totalPhotos > 0 && `(${photos.length} foto baru, total: ${totalPhotos}/${MAX_PHOTOS})`}
+              </p>
+
+              {/* Drop Zone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragging
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-gray-400'
+                  }`}
+              >
+                <svg
+                  className="w-12 h-12 text-gray-400 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                <p className="text-gray-600 mb-2">
+                  Drag & drop foto di sini, atau{' '}
+                  <label className="text-blue-600 hover:underline cursor-pointer">
+                    pilih file
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => handlePhotoSelect(e.target.files)}
+                      className="hidden"
+                    />
+                  </label>
+                </p>
+                <p className="text-sm text-gray-500">
+                  Max {MAX_PHOTOS} foto • Max 10MB per foto
+                </p>
+              </div>
+
+              {/* New Photos Preview */}
+              {photos.length > 0 && (
+                <div className="mt-4">
+                  {/* Instructions */}
+                  <div className="mb-3 p-2 bg-blue-50 rounded-md">
+                    <p className="text-xs text-blue-800">
+                      💡 <strong>Drag foto</strong> untuk mengatur urutan. Foto pertama akan jadi foto utama.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {photos.map((photo, index) => (
+                      <div
+                        key={photo.id}
+                        draggable
+                        onDragStart={() => handleDragStart(index)}
+                        onDragEnter={() => handleDragEnter(index)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => e.preventDefault()}
+                        className={`relative group cursor-move transition-all ${draggedIndex === index ? 'opacity-50 scale-95' : ''
+                          }`}
+                      >
+                        {/* Drag Handle */}
+                        <div className="absolute top-1 left-1 bg-gray-800 bg-opacity-75 text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10">
+                          <svg
+                            className="w-3 h-3"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M9 3h2v2H9V3zm4 0h2v2h-2V3zM9 7h2v2H9V7zm4 0h2v2h-2V7zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2z" />
+                          </svg>
+                          <span className="text-xs font-semibold">#{index + 1}</span>
+                        </div>
+
+                        <img
+                          src={photo.preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border-2 border-green-200"
+                        />
+
+                        {/* Main Photo Badge */}
+                        {index === 0 && (
+                          <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded font-semibold">
+                            ⭐ MAIN
+                          </div>
+                        )}
+
+                        {/* New Badge */}
+                        {index !== 0 && (
+                          <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded">
+                            Baru #{index + 1}
+                          </div>
+                        )}
+
+                        {/* Action Buttons (show on hover) */}
+                        <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Set as Main button */}
+                          {index !== 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetMainPhoto(index)}
+                              className="bg-green-600 text-white rounded-full p-1 hover:bg-green-700"
+                              title="Set as main photo"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                              </svg>
+                            </button>
+                          )}
+
+                          {/* Delete button */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePhoto(photo.id)}
+                            className="bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                            title="Delete photo"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {photos.length > 0 && (
+              <div className="mt-4 bg-yellow-50 border border-yellow-100 rounded-lg p-3">
+                <p className="text-xs text-yellow-800">
+                  ⚠️ <strong>Note:</strong> Foto baru ini belum disimpan. Pastikan Anda mengklik tombol <strong>"Simpan Perubahan"</strong> di bawah untuk mengupload.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Basic Information */}
@@ -1087,22 +1091,60 @@ export default function EditVehiclePage() {
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status <span className="text-red-500">*</span>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status Kendaraan <span className="text-red-500">*</span>
               </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="DRAFT">Draft</option>
-                <option value="AVAILABLE">Tersedia</option>
-                <option value="BOOKED">Booking</option>
-                <option value="SOLD">Terjual</option>
-              </select>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: 'AVAILABLE' })}
+                  className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.status === 'AVAILABLE'
+                      ? 'bg-green-50 border-green-500 text-green-700 shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                    }`}
+                >
+                  <span className="text-lg">✅</span>
+                  <span className="font-semibold text-sm">Tersedia</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: 'BOOKED' })}
+                  className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.status === 'BOOKED'
+                      ? 'bg-yellow-50 border-yellow-500 text-yellow-700 shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                    }`}
+                >
+                  <span className="text-lg animate-pulse text-yellow-600">🕒</span>
+                  <span className="font-semibold text-sm">Booking</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: 'SOLD' })}
+                  className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.status === 'SOLD'
+                      ? 'bg-red-50 border-red-500 text-red-700 shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                    }`}
+                >
+                  <span className="text-lg">💰</span>
+                  <span className="font-semibold text-sm">Terjual</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: 'DRAFT' })}
+                  className={`flex-1 min-w-[120px] px-4 py-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.status === 'DRAFT'
+                      ? 'bg-gray-50 border-gray-400 text-gray-700 shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                    }`}
+                >
+                  <span className="text-lg">📝</span>
+                  <span className="font-semibold text-sm">Draft</span>
+                </button>
+              </div>
+              <input type="hidden" name="status" value={formData.status} />
             </div>
           </div>
         </div>

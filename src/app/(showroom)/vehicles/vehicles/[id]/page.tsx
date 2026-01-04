@@ -137,13 +137,49 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           {/* Left Column - Photos */}
           <div>
             {/* Main Photo */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-4">
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-4 relative">
               {mainPhoto ? (
-                <img
-                  src={mainPhoto.originalUrl}
-                  alt={`${vehicle.make} ${vehicle.model}`}
-                  className="w-full h-96 object-cover"
-                />
+                <>
+                  <img
+                    src={mainPhoto.originalUrl}
+                    alt={`${vehicle.make} ${vehicle.model}`}
+                    className="w-full h-96 object-cover"
+                  />
+
+                  {/* Status Overlay */}
+                  {vehicle.status === 'SOLD' && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="bg-red-600 text-white px-8 py-4 rounded-lg transform -rotate-12 border-4 border-white font-black text-4xl shadow-2xl">
+                        TERJUAL
+                      </div>
+                    </div>
+                  )}
+
+                  {vehicle.status === 'BOOKED' && (
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                      <div className="bg-yellow-500 text-white px-8 py-4 rounded-lg transform -rotate-12 border-4 border-white font-black text-4xl shadow-2xl animate-pulse">
+                        BOOKING
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Badges */}
+                  <div className="absolute top-4 left-4 flex gap-2">
+                    {vehicle.status === 'SOLD' ? (
+                      <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                        SUDAH TERJUAL
+                      </span>
+                    ) : vehicle.status === 'BOOKED' ? (
+                      <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                        SEDANG DI-BOOKING
+                      </span>
+                    ) : (
+                      <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                        READY STOCK
+                      </span>
+                    )}
+                  </div>
+                </>
               ) : (
                 <div className="w-full h-96 bg-gray-200 flex items-center justify-center">
                   <svg
@@ -171,8 +207,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                     key={photo.id}
                     onClick={() => setSelectedPhoto(index)}
                     className={`rounded-lg overflow-hidden border-2 ${selectedPhoto === index
-                        ? 'border-blue-600'
-                        : 'border-gray-200'
+                      ? 'border-blue-600'
+                      : 'border-gray-200'
                       }`}
                   >
                     <img

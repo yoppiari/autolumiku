@@ -41,6 +41,7 @@ export default function PublicVehicleCard({
   waNumber,
 }: PublicVehicleCardProps) {
   const isSold = vehicle.status === 'SOLD';
+  const isBooked = vehicle.status === 'BOOKED';
 
   // Helper to format price
   const formatPrice = (price: number) => {
@@ -88,10 +89,10 @@ export default function PublicVehicleCard({
             interval={8000}
             grayscale={isSold}
             overlay={
-              isSold && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
-                  <span className="text-white text-2xl font-bold tracking-wider rotate-[-15deg] bg-red-600 px-4 py-2 rounded">
-                    TERJUAL
+              (isSold || isBooked) && (
+                <div className={`absolute inset-0 ${isSold ? 'bg-black/40' : 'bg-black/20'} flex items-center justify-center z-20`}>
+                  <span className={`text-white text-2xl font-bold tracking-wider rotate-[-15deg] ${isSold ? 'bg-red-600' : 'bg-yellow-500'} px-4 py-2 rounded shadow-xl`}>
+                    {isSold ? 'TERJUAL' : 'BOOKING'}
                   </span>
                 </div>
               )
@@ -109,6 +110,11 @@ export default function PublicVehicleCard({
                       />
                     </svg>
                     SOLD
+                  </div>
+                ) : isBooked ? (
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-yellow-500 text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-lg z-10">
+                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                    BOOKING
                   </div>
                 ) : (
                   <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-green-500 text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-lg z-10">

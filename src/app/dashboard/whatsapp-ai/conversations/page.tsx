@@ -1022,8 +1022,8 @@ END:VCARD`;
               <button
                 onClick={() => setFilterType('all')}
                 className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${filterType === 'all'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 Semua ({conversations.filter(c => !(c.isEscalated && c.status === 'closed')).length})
@@ -1031,8 +1031,8 @@ END:VCARD`;
               <button
                 onClick={() => setFilterType('customer')}
                 className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${filterType === 'customer'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 Customer
@@ -1040,8 +1040,8 @@ END:VCARD`;
               <button
                 onClick={() => setFilterType('staff')}
                 className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${filterType === 'staff'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 Tim
@@ -1049,8 +1049,8 @@ END:VCARD`;
               <button
                 onClick={() => setFilterType('escalated')}
                 className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${filterType === 'escalated'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 Escalated ({conversations.filter(c => c.isEscalated && c.status !== 'closed').length})
@@ -1096,13 +1096,17 @@ END:VCARD`;
                             >
                               {avatar.initials}
                             </div>
-                            {conv.isStaff && (
-                              <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 md:w-3 md:h-3 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                                <svg className="w-2.5 h-2.5 md:w-2 md:h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <div
+                              className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${conv.status === 'active' ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
+                                } animate-pulse`}
+                              title={conv.status === 'active' ? 'Online' : 'Offline'}
+                            >
+                              {conv.isStaff && (
+                                <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
-                              </span>
-                            )}
+                              )}
+                            </div>
                           </div>
                         );
                       })()}
@@ -1205,13 +1209,16 @@ END:VCARD`;
                           >
                             {avatar.initials}
                           </div>
-                          {selectedConversation.isStaff && (
-                            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 md:w-3 md:h-3 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                              <svg className="w-2.5 h-2.5 md:w-2 md:h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <div
+                            className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${selectedConversation.status === 'active' ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
+                              } animate-pulse`}
+                          >
+                            {selectedConversation.isStaff && (
+                              <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
-                            </span>
-                          )}
+                            )}
+                          </div>
                         </div>
                       );
                     })()}
@@ -1224,11 +1231,53 @@ END:VCARD`;
                       </p>
                     </div>
                   </div>
-                  <div>
+
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <button className="p-1.5 md:p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </button>
+
+                    {/* Conversations Options Menu */}
+                    <div className="relative group">
+                      <button
+                        onClick={() => setActiveMessageMenu(activeMessageMenu === 'header-options' ? null : 'header-options')}
+                        className="p-1.5 md:p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                      </button>
+
+                      {activeMessageMenu === 'header-options' && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[60]">
+                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700">
+                            <span className="w-4">ℹ️</span> Info grup
+                          </button>
+                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700">
+                            <span className="w-4">✅</span> Pilih pesan
+                          </button>
+                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700">
+                            <span className="w-4">❤️</span> Tambah ke favorit
+                          </button>
+                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700 border-b border-gray-100">
+                            <span className="w-4">❌</span> Tutup chat
+                          </button>
+                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-red-600">
+                            <span className="w-4">🗑️</span> Hapus semua chat
+                          </button>
+                          <button className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700">
+                            <span className="w-4">🧹</span> Bersihkan pilih chat
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                     <span
                       className={`px-2 py-0.5 md:py-0.5 rounded-full text-[11px] md:text-[10px] font-medium ${selectedConversation.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
                         }`}
                     >
                       {selectedConversation.status}
@@ -1237,105 +1286,119 @@ END:VCARD`;
                 </div>
               </div>
 
-              {/* Messages - Responsive padding and sizing */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-3 space-y-3 md:space-y-2 bg-[#e5ddd5]">
-                {isLoadingMessages ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-8 w-8 md:h-6 md:w-6 border-b-2 border-green-600"></div>
-                  </div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center text-gray-500 py-8 text-sm">
-                    <p>Belum ada pesan</p>
-                  </div>
-                ) : (
-                  <>
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'}`}
-                      >
-                        {/* Message bubble with dropdown - max-w on wrapper for proper flex alignment */}
-                        <div className="relative group max-w-[85%] md:max-w-[75%]">
-                          <div
-                            className={`rounded-lg px-3 py-2 md:px-2.5 md:py-1.5 shadow-sm ${msg.direction === 'inbound'
+              {/* Messages Area with custom background */}
+              <div
+                className="flex-1 overflow-y-auto p-4 md:p-3 relative"
+                style={{
+                  backgroundColor: '#e5ddd5',
+                  backgroundImage: 'url("/images/chat-bg-watermark.png")',
+                  backgroundSize: '400px',
+                  backgroundRepeat: 'repeat',
+                  backgroundBlendMode: 'overlay'
+                }}
+              >
+                {/* Background Overlay to ensure readability */}
+                <div className="absolute inset-0 bg-[#e5ddd5]/60 pointer-events-none z-0"></div>
+
+                <div className="relative z-10 w-full flex flex-col space-y-3 md:space-y-2">
+                  {isLoadingMessages ? (
+                    <div className="flex items-center justify-center h-full min-h-[200px]">
+                      <div className="animate-spin rounded-full h-8 w-8 md:h-6 md:w-6 border-b-2 border-green-600"></div>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center text-gray-500 py-12 text-sm">
+                      <p>Belum ada pesan</p>
+                    </div>
+                  ) : (
+                    <>
+                      {messages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`flex ${msg.direction === 'inbound' ? 'justify-start' : 'justify-end'}`}
+                        >
+                          {/* Message bubble */}
+                          <div className="relative group max-w-[85%] md:max-w-[75%]">
+                            <div
+                              className={`rounded-lg px-3 py-2 md:px-2.5 md:py-1.5 shadow-sm ${msg.direction === 'inbound'
                                 ? 'bg-white text-gray-900 rounded-tl-none'
                                 : msg.aiResponse
                                   ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none'
                                   : 'bg-[#d9fdd3] text-gray-900 rounded-tr-none'
-                              }`}
-                          >
-                            {msg.direction === 'inbound' && (
-                              <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
-                                <span className="text-[11px] md:text-[10px] font-semibold text-green-700">
-                                  {msg.senderType === 'staff' ? '👨‍💼' : '👤'}
-                                </span>
-                                {msg.intent && (
-                                  <span className="text-[11px] md:text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
-                                )}
-                              </div>
-                            )}
-                            {msg.direction === 'outbound' && (
-                              <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
-                                <span className="text-[11px] md:text-[10px] font-semibold text-blue-700">
-                                  {msg.senderType === 'ai' ? '🤖' : '👨‍💼'}
-                                </span>
-                              </div>
-                            )}
-                            <p className="text-[13px] md:text-xs whitespace-pre-wrap break-words leading-relaxed pr-5">{msg.content}</p>
-                            <div className="flex items-center justify-end mt-1 md:mt-0.5 space-x-1">
-                              <span className="text-[10px] md:text-[9px] text-gray-500">
-                                {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                              {msg.direction === 'outbound' && (
-                                <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
-                              )}
-                            </div>
-
-                            {/* Dropdown trigger button - appears on hover/tap */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id);
-                              }}
-                              className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opacity ${activeMessageMenu === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                                 }`}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </button>
-                          </div>
+                              {msg.direction === 'inbound' && (
+                                <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
+                                  <span className="text-[11px] md:text-[10px] font-semibold text-green-700">
+                                    {msg.senderType === 'staff' ? '👨\u200D💼' : '👤'}
+                                  </span>
+                                  {msg.intent && (
+                                    <span className="text-[11px] md:text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
+                                  )}
+                                </div>
+                              )}
+                              {msg.direction === 'outbound' && (
+                                <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
+                                  <span className="text-[11px] md:text-[10px] font-semibold text-blue-700">
+                                    {msg.senderType === 'ai' ? '🤖' : '👨\u200D💼'}
+                                  </span>
+                                </div>
+                              )}
+                              <p className="text-[13px] md:text-xs whitespace-pre-wrap break-words leading-relaxed pr-5">{msg.content}</p>
+                              <div className="flex items-center justify-end mt-1 md:mt-0.5 space-x-1">
+                                <span className="text-[10px] md:text-[9px] text-gray-500">
+                                  {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                {msg.direction === 'outbound' && (
+                                  <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
+                                )}
+                              </div>
 
-                          {/* Dropdown menu - positioned inside bubble area */}
-                          {activeMessageMenu === msg.id && (
-                            <div
-                              ref={messageMenuRef}
-                              className="absolute top-8 right-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[120px] z-50"
-                            >
+                              {/* Dropdown trigger button - appears on hover/tap */}
                               <button
-                                onClick={() => handleDeleteMessage(msg.id)}
-                                disabled={isDeletingMessage}
-                                className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-red-600 disabled:opacity-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id);
+                                }}
+                                className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opacity ${activeMessageMenu === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                  }`}
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
-                                <span className="text-sm">{isDeletingMessage ? 'Menghapus...' : 'Hapus'}</span>
                               </button>
                             </div>
-                          )}
+
+                            {/* Dropdown menu */}
+                            {activeMessageMenu === msg.id && (
+                              <div
+                                ref={messageMenuRef}
+                                className="absolute top-8 right-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[120px] z-50"
+                              >
+                                <button
+                                  onClick={() => handleDeleteMessage(msg.id)}
+                                  disabled={isDeletingMessage}
+                                  className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-red-600 disabled:opacity-50"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  <span className="text-sm">{isDeletingMessage ? 'Menghapus...' : 'Hapus'}</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </>
-                )}
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Message Input - Responsive */}
               <div className="px-3 md:px-2 py-3 md:py-2 border-t border-gray-200 bg-[#f0f2f5]">
                 <div className="flex items-center space-x-2 md:space-x-2">
-                  {/* Attachment Button */}
+                  {/* ... and so on until the end of this block */}
                   <div className="relative" ref={attachmentMenuRef}>
                     <button
                       onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
@@ -1475,424 +1538,430 @@ END:VCARD`;
       />
 
       {/* Image Upload Modal */}
-      {showImageUrlModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">📷 Kirim Foto</h3>
+      {
+        showImageUrlModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+              <h3 className="text-lg font-semibold mb-4">📷 Kirim Foto</h3>
 
-            {/* Mode Tabs */}
-            <div className="flex mb-4 border-b border-gray-200">
-              <button
-                onClick={() => setImageUploadMode('file')}
-                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${imageUploadMode === 'file'
+              {/* Mode Tabs */}
+              <div className="flex mb-4 border-b border-gray-200">
+                <button
+                  onClick={() => setImageUploadMode('file')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${imageUploadMode === 'file'
                     ? 'border-green-500 text-green-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                📱 Upload File
-              </button>
-              <button
-                onClick={() => setImageUploadMode('url')}
-                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${imageUploadMode === 'url'
+                    }`}
+                >
+                  📱 Upload File
+                </button>
+                <button
+                  onClick={() => setImageUploadMode('url')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${imageUploadMode === 'url'
                     ? 'border-green-500 text-green-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                🔗 Paste URL
-              </button>
-            </div>
+                    }`}
+                >
+                  🔗 Paste URL
+                </button>
+              </div>
 
-            <div className="space-y-4">
-              {/* File Upload Mode */}
-              {imageUploadMode === 'file' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pilih Gambar *
-                  </label>
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
-                  >
-                    {selectedFile ? (
-                      <div className="space-y-2">
-                        <div className="text-4xl">🖼️</div>
-                        <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedFile(null);
-                            if (fileInputRef.current) {
-                              fileInputRef.current.value = '';
-                            }
-                          }}
-                          className="text-xs text-red-500 hover:text-red-700"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="text-4xl">📤</div>
-                        <p className="text-sm text-gray-600">
-                          Klik untuk memilih gambar
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          JPG, PNG, WebP, GIF (maks 10MB)
-                        </p>
-                      </div>
-                    )}
+              <div className="space-y-4">
+                {/* File Upload Mode */}
+                {imageUploadMode === 'file' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Pilih Gambar *
+                    </label>
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
+                    >
+                      {selectedFile ? (
+                        <div className="space-y-2">
+                          <div className="text-4xl">🖼️</div>
+                          <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFile(null);
+                              if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                              }
+                            }}
+                            className="text-xs text-red-500 hover:text-red-700"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="text-4xl">📤</div>
+                          <p className="text-sm text-gray-600">
+                            Klik untuk memilih gambar
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            JPG, PNG, WebP, GIF (maks 10MB)
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Bisa dari smartphone, laptop, atau penyimpanan lokal
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Bisa dari smartphone, laptop, atau penyimpanan lokal
-                  </p>
-                </div>
-              )}
+                )}
 
-              {/* URL Mode */}
-              {imageUploadMode === 'url' && (
+                {/* URL Mode */}
+                {imageUploadMode === 'url' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      URL Gambar *
+                    </label>
+                    <input
+                      type="url"
+                      value={imageUrlInput}
+                      onChange={(e) => setImageUrlInput(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Paste URL gambar dari Google Drive, Dropbox, atau website lain
+                    </p>
+                  </div>
+                )}
+
+                {/* Caption - shared for both modes */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    URL Gambar *
+                    Caption (opsional)
                   </label>
                   <input
-                    type="url"
-                    value={imageUrlInput}
-                    onChange={(e) => setImageUrlInput(e.target.value)}
-                    placeholder="https://example.com/image.jpg"
+                    type="text"
+                    value={imageCaptionInput}
+                    onChange={(e) => setImageCaptionInput(e.target.value)}
+                    placeholder="Keterangan gambar..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Paste URL gambar dari Google Drive, Dropbox, atau website lain
-                  </p>
+                </div>
+              </div>
+
+              {/* Progress indicator */}
+              {(isUploading || isSending) && uploadProgress && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                    <span className="text-sm text-blue-700">{uploadProgress}</span>
+                  </div>
                 </div>
               )}
 
-              {/* Caption - shared for both modes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Caption (opsional)
-                </label>
-                <input
-                  type="text"
-                  value={imageCaptionInput}
-                  onChange={(e) => setImageCaptionInput(e.target.value)}
-                  placeholder="Keterangan gambar..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Progress indicator */}
-            {(isUploading || isSending) && uploadProgress && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-                  <span className="text-sm text-blue-700">{uploadProgress}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowImageUrlModal(false);
-                  setImageUrlInput('');
-                  setImageCaptionInput('');
-                  setSelectedFile(null);
-                  setUploadProgress('');
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowImageUrlModal(false);
+                    setImageUrlInput('');
+                    setImageCaptionInput('');
+                    setSelectedFile(null);
+                    setUploadProgress('');
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                  }}
+                  disabled={isUploading || isSending}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSendImage}
+                  disabled={
+                    (imageUploadMode === 'file' && !selectedFile) ||
+                    (imageUploadMode === 'url' && !imageUrlInput.trim()) ||
+                    isSending ||
+                    isUploading
                   }
-                }}
-                disabled={isUploading || isSending}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleSendImage}
-                disabled={
-                  (imageUploadMode === 'file' && !selectedFile) ||
-                  (imageUploadMode === 'url' && !imageUrlInput.trim()) ||
-                  isSending ||
-                  isUploading
-                }
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isUploading ? 'Mengupload...' : isSending ? 'Mengirim...' : 'Kirim Foto'}
-              </button>
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploading ? 'Mengupload...' : isSending ? 'Mengirim...' : 'Kirim Foto'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Emoji Picker Modal */}
-      {showEmojiPicker && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-4 w-full max-w-sm mx-4">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-semibold">😊 Pilih Emoji</h3>
-              <button
-                onClick={() => setShowEmojiPicker(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
+      {
+        showEmojiPicker && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-4 w-full max-w-sm mx-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-semibold">😊 Pilih Emoji</h3>
+                <button
+                  onClick={() => setShowEmojiPicker(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
 
-            {/* Emoji Categories */}
-            <div className="space-y-3">
-              {/* Smileys */}
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Ekspresi</p>
-                <div className="flex flex-wrap gap-2">
-                  {['😊', '😄', '😁', '🤗', '😍', '🥰', '😎', '🤩', '😇', '🙂', '😉', '😋'].map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        setMessageInput((prev) => prev + emoji);
-                        setShowEmojiPicker(false);
-                      }}
-                      className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
+              {/* Emoji Categories */}
+              <div className="space-y-3">
+                {/* Smileys */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Ekspresi</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['😊', '😄', '😁', '🤗', '😍', '🥰', '😎', '🤩', '😇', '🙂', '😉', '😋'].map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          setMessageInput((prev) => prev + emoji);
+                          setShowEmojiPicker(false);
+                        }}
+                        className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Gestures */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Gestur</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['👍', '👏', '🙏', '🤝', '💪', '✌️', '👌', '🤞', '👋', '🙌', '💯', '⭐'].map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          setMessageInput((prev) => prev + emoji);
+                          setShowEmojiPicker(false);
+                        }}
+                        className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Objects - Cars & Business */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Mobil & Bisnis</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['🚗', '🚙', '🚕', '🏎️', '🚘', '💰', '💵', '💳', '📱', '📞', '✅', '❌'].map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          setMessageInput((prev) => prev + emoji);
+                          setShowEmojiPicker(false);
+                        }}
+                        className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Celebration */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Perayaan</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['🎉', '🎊', '🥳', '🎁', '🏆', '🔥', '💥', '✨', '🌟', '❤️', '💖', '💝'].map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          setMessageInput((prev) => prev + emoji);
+                          setShowEmojiPicker(false);
+                        }}
+                        className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Gestures */}
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Gestur</p>
-                <div className="flex flex-wrap gap-2">
-                  {['👍', '👏', '🙏', '🤝', '💪', '✌️', '👌', '🤞', '👋', '🙌', '💯', '⭐'].map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        setMessageInput((prev) => prev + emoji);
-                        setShowEmojiPicker(false);
-                      }}
-                      className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
+              <div className="mt-4 pt-3 border-t border-gray-200">
+                <button
+                  onClick={() => setShowEmojiPicker(false)}
+                  className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
+                >
+                  Tutup
+                </button>
               </div>
-
-              {/* Objects - Cars & Business */}
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Mobil & Bisnis</p>
-                <div className="flex flex-wrap gap-2">
-                  {['🚗', '🚙', '🚕', '🏎️', '🚘', '💰', '💵', '💳', '📱', '📞', '✅', '❌'].map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        setMessageInput((prev) => prev + emoji);
-                        setShowEmojiPicker(false);
-                      }}
-                      className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Celebration */}
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Perayaan</p>
-                <div className="flex flex-wrap gap-2">
-                  {['🎉', '🎊', '🥳', '🎁', '🏆', '🔥', '💥', '✨', '🌟', '❤️', '💖', '💝'].map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        setMessageInput((prev) => prev + emoji);
-                        setShowEmojiPicker(false);
-                      }}
-                      className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-gray-200">
-              <button
-                onClick={() => setShowEmojiPicker(false)}
-                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
-              >
-                Tutup
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Document Upload Modal */}
-      {showDocumentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">📄 Kirim Dokumen</h3>
+      {
+        showDocumentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+              <h3 className="text-lg font-semibold mb-4">📄 Kirim Dokumen</h3>
 
-            {/* Mode Tabs */}
-            <div className="flex mb-4 border-b border-gray-200">
-              <button
-                onClick={() => setDocumentUploadMode('file')}
-                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${documentUploadMode === 'file'
+              {/* Mode Tabs */}
+              <div className="flex mb-4 border-b border-gray-200">
+                <button
+                  onClick={() => setDocumentUploadMode('file')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${documentUploadMode === 'file'
                     ? 'border-green-500 text-green-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                📱 Upload File
-              </button>
-              <button
-                onClick={() => setDocumentUploadMode('url')}
-                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${documentUploadMode === 'url'
+                    }`}
+                >
+                  📱 Upload File
+                </button>
+                <button
+                  onClick={() => setDocumentUploadMode('url')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${documentUploadMode === 'url'
                     ? 'border-green-500 text-green-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                🔗 Paste URL
-              </button>
-            </div>
+                    }`}
+                >
+                  🔗 Paste URL
+                </button>
+              </div>
 
-            <div className="space-y-4">
-              {/* File Upload Mode */}
-              {documentUploadMode === 'file' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pilih Dokumen *
-                  </label>
-                  <div
-                    onClick={() => documentInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
-                  >
-                    {selectedDocument ? (
-                      <div className="space-y-2">
-                        <div className="text-4xl">
-                          {selectedDocument.name.endsWith('.pdf') ? '📕' :
-                            selectedDocument.name.match(/\.docx?$/) ? '📘' :
-                              selectedDocument.name.match(/\.xlsx?$/) ? '📗' :
-                                selectedDocument.name.match(/\.pptx?$/) ? '📙' : '📄'}
+              <div className="space-y-4">
+                {/* File Upload Mode */}
+                {documentUploadMode === 'file' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Pilih Dokumen *
+                    </label>
+                    <div
+                      onClick={() => documentInputRef.current?.click()}
+                      className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
+                    >
+                      {selectedDocument ? (
+                        <div className="space-y-2">
+                          <div className="text-4xl">
+                            {selectedDocument?.name?.endsWith('.pdf') ? '📕' :
+                              selectedDocument?.name?.match(/\.docx?$/) ? '📘' :
+                                selectedDocument?.name?.match(/\.xlsx?$/) ? '📗' :
+                                  selectedDocument?.name?.match(/\.pptx?$/) ? '📙' : '📄'}
+                          </div>
+                          <p className="text-sm font-medium text-gray-900 truncate px-2">{selectedDocument?.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {selectedDocument ? (selectedDocument.size / 1024 / 1024).toFixed(2) : '0.00'} MB
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDocument(null);
+                              if (documentInputRef.current) {
+                                documentInputRef.current.value = '';
+                              }
+                            }}
+                            className="text-xs text-red-500 hover:text-red-700"
+                          >
+                            Hapus
+                          </button>
                         </div>
-                        <p className="text-sm font-medium text-gray-900 truncate px-2">{selectedDocument.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {(selectedDocument.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDocument(null);
-                            if (documentInputRef.current) {
-                              documentInputRef.current.value = '';
-                            }
-                          }}
-                          className="text-xs text-red-500 hover:text-red-700"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="text-4xl">📤</div>
-                        <p className="text-sm text-gray-600">
-                          Klik untuk memilih dokumen
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          PDF, Word, Excel, PowerPoint (maks 25MB)
-                        </p>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="text-4xl">📤</div>
+                          <p className="text-sm text-gray-600">
+                            Klik untuk memilih dokumen
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            PDF, Word, Excel, PowerPoint (maks 25MB)
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Bisa dari smartphone, laptop, atau penyimpanan lokal
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Bisa dari smartphone, laptop, atau penyimpanan lokal
-                  </p>
-                </div>
-              )}
+                )}
 
-              {/* URL Mode */}
-              {documentUploadMode === 'url' && (
+                {/* URL Mode */}
+                {documentUploadMode === 'url' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      URL Dokumen *
+                    </label>
+                    <input
+                      type="url"
+                      value={documentUrlInput}
+                      onChange={(e) => setDocumentUrlInput(e.target.value)}
+                      placeholder="https://drive.google.com/file/..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Paste URL dokumen dari Google Drive, Dropbox, atau website lain
+                    </p>
+                  </div>
+                )}
+
+                {/* Caption - shared for both modes */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    URL Dokumen *
+                    Keterangan (opsional)
                   </label>
                   <input
-                    type="url"
-                    value={documentUrlInput}
-                    onChange={(e) => setDocumentUrlInput(e.target.value)}
-                    placeholder="https://drive.google.com/file/..."
+                    type="text"
+                    value={documentCaptionInput}
+                    onChange={(e) => setDocumentCaptionInput(e.target.value)}
+                    placeholder="Keterangan dokumen..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Paste URL dokumen dari Google Drive, Dropbox, atau website lain
-                  </p>
+                </div>
+              </div>
+
+              {/* Progress indicator */}
+              {(isUploadingDocument || isSending) && uploadProgress && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                    <span className="text-sm text-blue-700">{uploadProgress}</span>
+                  </div>
                 </div>
               )}
 
-              {/* Caption - shared for both modes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Keterangan (opsional)
-                </label>
-                <input
-                  type="text"
-                  value={documentCaptionInput}
-                  onChange={(e) => setDocumentCaptionInput(e.target.value)}
-                  placeholder="Keterangan dokumen..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Progress indicator */}
-            {(isUploadingDocument || isSending) && uploadProgress && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-                  <span className="text-sm text-blue-700">{uploadProgress}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowDocumentModal(false);
-                  setDocumentUrlInput('');
-                  setDocumentCaptionInput('');
-                  setSelectedDocument(null);
-                  setUploadProgress('');
-                  if (documentInputRef.current) {
-                    documentInputRef.current.value = '';
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowDocumentModal(false);
+                    setDocumentUrlInput('');
+                    setDocumentCaptionInput('');
+                    setSelectedDocument(null);
+                    setUploadProgress('');
+                    if (documentInputRef.current) {
+                      documentInputRef.current.value = '';
+                    }
+                  }}
+                  disabled={isUploadingDocument || isSending}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSendDocument}
+                  disabled={
+                    (documentUploadMode === 'file' && !selectedDocument) ||
+                    (documentUploadMode === 'url' && !documentUrlInput.trim()) ||
+                    isSending ||
+                    isUploadingDocument
                   }
-                }}
-                disabled={isUploadingDocument || isSending}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleSendDocument}
-                disabled={
-                  (documentUploadMode === 'file' && !selectedDocument) ||
-                  (documentUploadMode === 'url' && !documentUrlInput.trim()) ||
-                  isSending ||
-                  isUploadingDocument
-                }
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isUploadingDocument ? 'Mengupload...' : isSending ? 'Mengirim...' : 'Kirim Dokumen'}
-              </button>
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploadingDocument ? 'Mengupload...' : isSending ? 'Mengirim...' : 'Kirim Dokumen'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </div>
   );
 }
