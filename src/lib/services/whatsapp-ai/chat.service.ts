@@ -399,6 +399,25 @@ export class WhatsAppAIChatService {
                 // Build vehicle names for potential photo sending
                 const vehicleNames = searchResults.map(v => `${v.make} ${v.model}`).join(' ');
                 console.log('[WhatsApp AI Chat] Vehicles found:', vehicleNames);
+
+                // Add search results to the response message so the user sees them
+                if (!responseMessage.includes(searchResults[0].make)) {
+                  let searchResultText = `\n\nDitemukan ${searchResults.length} mobil yang cocok:\n`;
+                  searchResults.slice(0, 5).forEach(v => {
+                    const priceJuta = Math.round(Number(v.price) / 1000000);
+                    // Use displayId if available, otherwise simplified ID
+                    const id = v.displayId || v.id.substring(0, 6).toUpperCase();
+                    searchResultText += `• [${id}] ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} Jt\n`;
+                  });
+
+                  if (searchResults.length > 5) {
+                    searchResultText += `...dan ${searchResults.length - 5} lainnya.\n`;
+                  }
+
+                  searchResultText += `\nKetik "Info [ID Mobil]" untuk detailnya ya!`;
+
+                  responseMessage += searchResultText;
+                }
               }
             } else if (toolCall.function.name === 'upload_vehicle') {
               const args = JSON.parse(toolCall.function.arguments);
@@ -1543,7 +1562,9 @@ SIMULASI PENGETAHUAN OTOMOTIF (Expert Knowledge):
 - Kamu memiliki database pengetahuan mobil Indonesia (seperti oto.com, Toyota Astra).
 - Jika customer tanya "Brio Satya vs RS bedanya apa?", JELASKAN dengan detail teknis (velg, fitur, interior).
 - Jika customer tanya "Pajero Dakar fitur apa aja?", sebutkan sunroof, paddle shift, rem parkir elektrik, dll.
+- Jika customer tanya "Pajero Dakar fitur apa aja?", sebutkan sunroof, paddle shift, rem parkir elektrik, dll.
 - Gunakan pengetahuan ini untuk menjawab pertanyaan teknis user meskipun data tidak ada di database inventory.
+- PENTING: Saat menyebutkan mobil spesifik dari inventory, SELALU sertakan ID Kendaraan di awal. Contoh: "[PM-PST-001] Toyota Avanza 2021".
 
 DATABASE PENGETAHUAN KENDARAAN (Toyota Astra Indonesia):
 

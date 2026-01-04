@@ -630,7 +630,7 @@ export class StaffCommandService {
       color: (newData?.color && newData?.color !== "Unknown") ? newData.color :
         (existingData?.color && existingData?.color !== "Unknown") ? existingData.color : "Unknown",
       transmission: (newData?.transmission && newData?.transmission !== "Unknown") ? newData.transmission :
-        (existingData?.transmission && existingData?.transmission !== "Unknown") ? existingData.transmission : "Manual",
+        (existingData?.transmission && existingData?.transmission !== "Unknown") ? existingData.transmission : "Unknown",
     };
   }
 
