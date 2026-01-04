@@ -400,21 +400,40 @@ export class WhatsAppAIChatService {
                 const vehicleNames = searchResults.map(v => `${v.make} ${v.model}`).join(' ');
                 console.log('[WhatsApp AI Chat] Vehicles found:', vehicleNames);
 
-                // Add search results to the response message so the user sees them
+                // Add search results to the response message with FULL DETAILS
+                // Format must match system prompt: pipe separator with all vehicle details
                 if (!responseMessage.includes(searchResults[0].make)) {
-                  let searchResultText = `\n\nDitemukan ${searchResults.length} mobil yang cocok:\n`;
+                  let searchResultText = `\n\nDitemukan ${searchResults.length} mobil yang cocok:\n\n`;
+
                   searchResults.slice(0, 5).forEach(v => {
                     const priceJuta = Math.round(Number(v.price) / 1000000);
-                    // Use displayId if available, otherwise simplified ID
                     const id = v.displayId || v.id.substring(0, 6).toUpperCase();
-                    searchResultText += `• [${id}] ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} Jt\n`;
+                    const transmission = v.transmissionType || '-';
+                    const fuel = v.fuelType || '-';
+                    const color = v.color || '-';
+                    const km = v.mileage ? v.mileage.toLocaleString('id-ID') : '-';
+
+                    // Format: 🚗 [Make] [Model] [Variant] [Transmission] [Year] | [ID]
+                    const variant = v.variant ? ` ${v.variant}` : '';
+                    searchResultText += `🚗 ${v.make} ${v.model}${variant} ${transmission} ${v.year} | ${id}\n`;
+                    searchResultText += `* Harga: Rp ${priceJuta} juta\n`;
+                    searchResultText += `* Kilometer: ${km} km\n`;
+                    searchResultText += `* Transmisi: ${transmission}\n`;
+                    searchResultText += `* Bahan bakar: ${fuel}\n`;
+                    searchResultText += `* Warna: ${color}\n`;
+
+                    // Add website link
+                    const modelSlug = v.model.toLowerCase().replace(/\s+/g, '-');
+                    const makeSlug = v.make.toLowerCase();
+                    searchResultText += `* 🎯 Website: https://primamobil.id/vehicles/${makeSlug}-${modelSlug}-${v.year}-${id}\n\n`;
                   });
 
                   if (searchResults.length > 5) {
-                    searchResultText += `...dan ${searchResults.length - 5} lainnya.\n`;
+                    searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
                   }
 
-                  searchResultText += `\nKetik "Info [ID Mobil]" untuk detailnya ya!`;
+                  searchResultText += `Mau lihat fotonya? 📸 (silahkan berikan respon: mau/ boleh/ silahkan/ baik kirim/ iya kirim/ kirimkan/ iya boleh)\n\n`;
+                  searchResultText += `Apakah ada hal lain yang bisa kami bantu? 😊`;
 
                   responseMessage += searchResultText;
                 }
@@ -1124,7 +1143,7 @@ Jika staff bertanya seperti "perlu input ID?", "bagaimana formatnya?", "cara edi
 COMMAND YANG PERLU ID KENDARAAN:
 ✅ Edit/Ubah/Ganti data kendaraan:
    Format: edit [ID] [field] [nilai baru]
-   Contoh: "edit PM-PST-001 kilometer 5000"
+   Contoh: "edit PM-PST-001 5000 km"
    Contoh: "ganti PM-PST-002 warna merah"
    Contoh: "rubah PM-PST-001 harga 85jt"
    
@@ -1960,8 +1979,9 @@ ATURAN SEARCH QUERY (PENTING):
   ): string {
     let context = "";
 
-    // Include last 5 messages for better context (important for photo confirmations)
-    const recentHistory = messageHistory.slice(-5);
+    // Include last 10 messages for better context (increased from 5)
+    // Important for remembering vehicle discussions and multi-turn conversations
+    const recentHistory = messageHistory.slice(-10);
     if (recentHistory.length > 0) {
       context += "Chat sebelumnya:\n";
       recentHistory.forEach((msg) => {
