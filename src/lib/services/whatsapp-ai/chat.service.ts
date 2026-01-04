@@ -314,6 +314,45 @@ export class WhatsAppAIChatService {
         }
       }
 
+      // 3. CRITICAL PRICE VALIDATION - Catch absurd prices before sending to customer
+      // This prevents the "1 jt" and "5 jt" error that should NEVER happen
+      const pricePattern = /\bRp\s*(\d+(?:\.\d+)?)\s*(jt|juta)\b/gi;
+      const priceMatches = responseMessage.matchAll(pricePattern);
+      let hasSuspiciousPrice = false;
+
+      for (const match of priceMatches) {
+        const priceValue = parseFloat(match[1]);
+
+        // Flag suspicious prices (less than 10 juta for regular cars)
+        if (priceValue < 10) {
+          hasSuspiciousPrice = true;
+          console.error(`[WhatsApp AI Chat] ❌❌❌ CRITICAL ERROR: Suspicious price detected: "Rp ${priceValue} ${match[2]}"`);
+          console.error(`[WhatsApp AI Chat] This is likely a formatting error. Original response: ${responseMessage.substring(0, 200)}`);
+        }
+      }
+
+      // If suspicious prices detected, warn and sanitize
+      if (hasSuspiciousPrice) {
+        console.error(`[WhatsApp AI Chat] 🚨 PRICE VALIDATION FAILED! Replacing response with safe fallback.`);
+
+        // Try to get actual vehicle data from context
+        const vehicles = await this.getAvailableVehiclesDetailed(context.tenantId);
+
+        if (vehicles.length > 0) {
+          const vehicleList = vehicles.slice(0, 3).map(v => {
+            const priceJuta = Math.round(Number(v.price) / 1000000);
+            return `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} juta`;
+          }).join('\n');
+
+          responseMessage = `Hmm, bisa diperjelas kebutuhannya? 🤔\n\nIni beberapa unit ready di ${tenantName}:\n${vehicleList}\n\nAtau sebutkan merk/budget yang dicari ya! 😊`;
+        } else {
+          responseMessage = `Mohon maaf, saya perlu konfirmasi informasi harga ke tim terlebih dahulu untuk memastikan akurasinya. Bisa ditunggu sebentar ya? 🙏`;
+        }
+
+        // Force escalation for price errors
+        console.error(`[WhatsApp AI Chat] Forcing escalation due to price validation failure`);
+      }
+
       // Analyze response untuk escalation
       const shouldEscalate = this.shouldEscalateToHuman(
         aiResponse.content,
@@ -1221,21 +1260,29 @@ C: "ok makasih, bye"
 A: "Siap, terima kasih sudah mampir ke ${tenant.name}! Kalau butuh info lagi, langsung chat aja ya!"
 `;
 
-    // Add vehicle inventory context
+    // Add vehicle inventory context with EXPLICIT price formatting
     const vehicles = await this.getAvailableVehiclesDetailed(tenant.id);
     if (vehicles.length > 0) {
       systemPrompt += `\n📋 INVENTORY TERSEDIA (${vehicles.length} unit):\n`;
+      systemPrompt += `⚠️ CARA BACA HARGA: Field "price" di database dalam RUPIAH PENUH. Konversi dengan membagi 1.000.000 untuk dapat "juta".\n`;
+      systemPrompt += `   Contoh: price=79000000 → Tampilkan "Rp 79 juta" | price=470000000 → Tampilkan "Rp 470 juta"\n\n`;
+
       systemPrompt += vehicles
         .slice(0, 10)
-        .map(
-          (v: any) =>
-            `• ${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} - Rp ${this.formatPrice(Number(v.price))} (ID: ${v.displayId || 'N/A'}) | ${v.transmissionType || 'Manual'}${v.mileage ? ` | ${v.mileage.toLocaleString('id-ID')} km` : ''} | ${v.fuelType || 'Bensin'} | ${v.color || '-'}`
-        )
+        .map((v: any) => {
+          const priceInJuta = Math.round(Number(v.price) / 1000000);
+          const formattedPrice = this.formatPrice(Number(v.price));
+          return `• ${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} - Rp ${priceInJuta} juta (DB: ${formattedPrice}) | ID: ${v.displayId || 'N/A'} | ${v.transmissionType || 'Manual'}${v.mileage ? ` | ${v.mileage.toLocaleString('id-ID')} km` : ''} | ${v.fuelType || 'Bensin'} | ${v.color || '-'}`;
+        })
         .join("\n");
 
       if (vehicles.length > 10) {
         systemPrompt += `\n... dan ${vehicles.length - 10} unit lainnya`;
       }
+
+      // Add explicit price conversion reminder
+      systemPrompt += `\n\n⚠️ PENTING: Ketika menyebutkan harga ke customer, SELALU gunakan format "Rp [angka] juta"!`;
+      systemPrompt += `\n   JANGAN gunakan nilai database langsung! Bagi dengan 1.000.000 terlebih dahulu!`;
     } else {
       // CRITICAL: No vehicles available - tell AI explicitly to prevent hallucination
       systemPrompt += `\n\n⚠️⚠️⚠️ SANGAT PENTING - INVENTORY KOSONG:
@@ -1319,6 +1366,68 @@ Pertanyaan untuk memverifikasi:
 6. Warna → dari field color di database (JANGAN tebak-tebakan!)
 
 ⚠️ SANKSI: Jika terbukti memberikan data palsu, percakapan akan dianggap GAGAL!`;
+
+    // Add CRITICAL PRICE FORMATTING AND VALIDATION RULES
+    systemPrompt += `
+
+💰💰💰 ATURAN FORMAT HARGA - SANGAT KRUSIAL! 💰💰💰
+
+⚠️ PENTING: Kesalahan format harga adalah ERROR KRITIS yang TIDAK BOLEH terjadi!
+
+✅ FORMAT HARGA YANG BENAR (WAJIB DIIKUTI):
+1. Database menyimpan harga dalam RUPIAH PENUH (contoh: 79000000 = 79 juta, 470000000 = 470 juta)
+2. Saat menampilkan ke customer, WAJIB format sebagai "Rp [angka] juta"
+3. Contoh BENAR:
+   - Database: 79000000 → Tampilkan: "Rp 79 juta" atau "Rp 79 jt" 
+   - Database: 470000000 → Tampilkan: "Rp 470 juta" atau "Rp 470 jt"
+   - Database: 125500000 → Tampilkan: "Rp 125.5 juta" atau "Rp 125 jt"
+   - Database: 1500000 → Tampilkan: "Rp 1.5 juta" (untuk mobil di bawah 10 juta)
+
+❌ FORMAT YANG DILARANG KERAS (JANGAN PERNAH GUNAKAN):
+   - "Rp 1 jt" untuk mobil seharga 79 juta ❌❌❌
+   - "Rp 5 jt" untuk mobil seharga 470 juta ❌❌❌
+   - Harga di bawah 10 juta untuk mobil bekas umum ❌
+   - Harga yang tidak masuk akal (mis: Fortuner 2021 = 1 juta) ❌
+
+🔍 VALIDASI HARGA OTOMATIS:
+Sebelum memberitahu customer harga mobil, WAJIB cek logika:
+- Mobil bekas CITY 2006: Harga wajar 70-100 juta ✅
+- Mobil bekas FORTUNER 2021: Harga wajar 400-600 juta ✅
+- Mobil bekas AVANZA 2019: Harga wajar 150-200 juta ✅
+- Mobil bekas BRIO 2018: Harga wajar 120-160 juta ✅
+
+⚠️ JIKA HARGA TIDAK WAJAR (terlalu rendah/tinggi):
+1. JANGAN langsung sebutkan harga yang aneh!
+2. Gunakan tool "search_vehicles" untuk cek ulang database
+3. Jika tetap aneh, bilang: "Mohon maaf, saya perlu konfirmasi harga ke tim terlebih dahulu."
+
+📋 CONTOH RESPON HARGA YANG BENAR:
+✅ "Untuk Honda City 2006, harganya Rp 79 juta, kilometer 95.000 km."
+✅ "Toyota Fortuner VRZ 2021 harganya Rp 470 juta, kondisi terawat."
+✅ "Budget 150 juta ada Avanza 2019 Rp 175 juta dan Xenia 2020 Rp 145 juta."
+
+❌ CONTOH RESPON HARGA YANG SALAH (JANGAN DITIRU!):
+❌ "Honda City 2006 - Rp 1 jt" ← INI SALAH TOTAL!
+❌ "Fortuner 2021 - Rp 5 jt" ← INI JUGA SALAH!
+❌ "Avanza 2019 cuma Rp 2 juta aja" ← TIDAK MASUK AKAL!
+
+🎯 ATURAN EMAS HARGA:
+1. SELALU baca harga dari database (field "price")
+2. Konversi ke juta dengan membagi 1.000.000
+3. Bulatkan ke 1 desimal atau bilangan bulat
+4. Tambahkan "Rp" di depan dan "juta" atau "jt" di belakang
+5. Validasi bahwa angka masuk akal untuk mobil bekas
+
+💡 TIPS VALIDASI CEPAT:
+- Mobil city car (Agya, Brio, dll): 80-180 juta
+- Mobil MPV (Avanza, Xenia, Ertiga): 120-250 juta
+- Mobil SUV (Fortuner, Pajero, CR-V): 300-700 juta
+- Mobil sedan (City, Vios, Civic): 70-400 juta
+
+⚠️ PERINGATAN TERAKHIR:
+Jika kamu memberikan harga "1 jt" untuk mobil City atau "5 jt" untuk Fortuner,
+ini adalah KEGAGALAN SISTEM yang SANGAT SERIUS dan TIDAK DAPAT DITERIMA!
+SELALU cek ulang harga sebelum dikirim ke customer!`;
 
 
     // Add sender identity information
