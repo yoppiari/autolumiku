@@ -239,16 +239,17 @@ export class WhatsAppAIChatService {
       let aiResponse;
       const tenantName = account.tenant.name || "Showroom";
       try {
-        // Add a race condition with manual timeout (30s max for better UX)
+        // Add a race condition with manual timeout (60s max for better UX)
         const apiCallPromise = zaiClient.generateText({
           systemPrompt,
           userPrompt: conversationContext,
+          temperature: 0.3, // Low temperature for consistent, factual responses
         });
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
-            reject(new Error('ZAI API call timed out after 30 seconds'));
-          }, 30000); // 30 second timeout - faster feedback for customers
+            reject(new Error('ZAI API call timed out after 60 seconds'));
+          }, 60000); // 30 second timeout - faster feedback for customers
         });
 
         aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
@@ -1125,9 +1126,7 @@ export class WhatsAppAIChatService {
     // Professional, formal, friendly and helpful personality
     let systemPrompt = `Kamu adalah ${config.aiName}, asisten virtual profesional dari ${tenant.name} (showroom mobil bekas di ${tenant.city || "Indonesia"}).
 
-⏰ WAKTU SAAT INI (WIB - Jakarta):
-- Tanggal: ${dateStr}
-- Jam: ${timeStr} WIB
+
 ⏰ WAKTU SAAT INI (WIB - Jakarta):
 - Tanggal: ${dateStr}
 - Jam: ${timeStr} WIB

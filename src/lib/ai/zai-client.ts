@@ -80,13 +80,13 @@ export class ZAIClient {
             type: "function",
             function: {
               name: "send_vehicle_images",
-              description: "Kirim foto mobil ke customer via WhatsApp. PANGGIL LANGSUNG ketika: 1) Customer bilang 'iya/ya/mau/boleh/ok/oke/yup/sip/kirim/gas/lanjut' setelah ditawari foto, 2) Customer minta foto (ada foto/lihat gambar/kirimin foto), 3) Customer tertarik dan konfirmasi. JANGAN panggil jika customer menolak atau tanya hal lain.",
+              description: "Kirim foto kendaraan. Panggil saat customer confirm mau lihat foto (iya/boleh/mau/kirim) atau minta foto eksplisit. Jangan panggil jika menolak.",
               parameters: {
                 type: "object",
                 properties: {
                   search_query: {
                     type: "string",
-                    description: "Nama mobil dari percakapan sebelumnya. Contoh: 'Brio', 'Avanza', 'Jazz', 'Brio Agya'. Ambil dari konteks chat."
+                    description: "Nama mobil dari konteks chat. Contoh: 'Brio', 'Avanza', 'PM-PST-001'."
                   }
                 },
                 required: ["search_query"]
@@ -97,34 +97,34 @@ export class ZAIClient {
             type: "function",
             function: {
               name: "search_vehicles",
-              description: "Cari mobil berdasarkan kriteria customer (budget, merk, transmisi, tahun, dll). Panggil ini untuk menjawab pertanyaan tentang ketersediaan mobil.",
+              description: "Cari mobil berdasarkan kriteria (budget, merk, transmisi, dll). Gunakan untuk menjawab pertanyaan ketersediaan stok.",
               parameters: {
                 type: "object",
                 properties: {
                   min_price: {
                     type: "number",
-                    description: "Harga minimum dalam Rupiah. Contoh: budget 100jt → min_price: 100000000"
+                    description: "Harga min (Rupiah). Contoh: 100jt → 100000000"
                   },
                   max_price: {
                     type: "number",
-                    description: "Harga maksimum dalam Rupiah. Contoh: budget 150jt → max_price: 150000000"
+                    description: "Harga max (Rupiah). Contoh: 150jt → 150000000"
                   },
                   make: {
                     type: "string",
-                    description: "Merk, model, atau ID mobil (displayId). Contoh: 'Toyota', 'Avanza', 'PM-PST-001', 'Honda City'"
+                    description: "Merk/Model/ID. Contoh: 'Toyota', 'Avanza', 'PM-PST-001'"
                   },
                   transmission: {
                     type: "string",
                     enum: ["manual", "automatic", "matic", "at", "mt"],
-                    description: "Jenis transmisi: manual/mt atau automatic/matic/at"
+                    description: "Transmisi: manual/mt atau automatic/matic/at"
                   },
                   min_year: {
                     type: "integer",
-                    description: "Tahun minimal. Contoh: 'tahun 2020 ke atas' → min_year: 2020"
+                    description: "Tahun min"
                   },
                   max_year: {
                     type: "integer",
-                    description: "Tahun maksimal"
+                    description: "Tahun max"
                   },
                   fuel_type: {
                     type: "string",
@@ -134,11 +134,11 @@ export class ZAIClient {
                   sort_by: {
                     type: "string",
                     enum: ["newest", "oldest", "price_low", "price_high", "mileage_low"],
-                    description: "Urutan: newest (terbaru), oldest (terlama), price_low (termurah), price_high (termahal), mileage_low (km terendah)"
+                    description: "Urutan sort"
                   },
                   limit: {
                     type: "integer",
-                    description: "Jumlah hasil maksimal (default 5)"
+                    description: "Max hasil (default 5)"
                   }
                 }
               }
@@ -148,38 +148,38 @@ export class ZAIClient {
             type: "function",
             function: {
               name: "upload_vehicle",
-              description: "Upload a new vehicle to inventory. Call this when staff provides vehicle information to add to the showroom catalog. Staff may say 'upload', 'tambah mobil', 'input mobil', etc.",
+              description: "Upload vehicle baru. Panggil saat staff memberi info mobil baru untuk ditambahkan ke katalog.",
               parameters: {
                 type: "object",
                 properties: {
                   make: {
                     type: "string",
-                    description: "Vehicle manufacturer/brand (e.g., 'Toyota', 'Honda', 'Daihatsu', 'Suzuki', 'Mitsubishi')"
+                    description: "Merk (e.g. Toyota)"
                   },
                   model: {
                     type: "string",
-                    description: "Vehicle model name (e.g., 'Avanza', 'Brio', 'Xenia', 'Ertiga', 'Xpander')"
+                    description: "Model (e.g. Avanza)"
                   },
                   year: {
                     type: "integer",
-                    description: "Manufacturing year (e.g., 2020, 2021, 2024)"
+                    description: "Tahun (e.g. 2021)"
                   },
                   price: {
                     type: "number",
-                    description: "Vehicle price in Indonesian Rupiah (IDR). Convert shorthand to full number: '120jt' = 120000000, '95juta' = 95000000, '250rb' = 250000"
+                    description: "Harga (Rupiah full number)"
                   },
                   mileage: {
                     type: "number",
-                    description: "Mileage in kilometers. Convert shorthand: '30rb' = 30000, '50ribu' = 50000, '100000km' = 100000. If not mentioned, use 0."
+                    description: "KM (number)"
                   },
                   color: {
                     type: "string",
-                    description: "Vehicle color in Indonesian (e.g., 'Hitam', 'Putih', 'Silver', 'Merah', 'Abu-abu'). If not mentioned, use 'Unknown'."
+                    description: "Warna"
                   },
                   transmission: {
                     type: "string",
                     enum: ["Manual", "Automatic", "CVT"],
-                    description: "Transmission type. Convert: 'MT/manual/Manual' → 'Manual', 'AT/matic/Matic/automatic' → 'Automatic', 'CVT/cvt' → 'CVT'. If not mentioned, use 'Manual'."
+                    description: "Transmisi"
                   }
                 },
                 required: ["make", "model", "year", "price"]
@@ -190,26 +190,26 @@ export class ZAIClient {
             type: "function",
             function: {
               name: "edit_vehicle",
-              description: "Edit/update vehicle data in inventory. Call when staff wants to change vehicle information. Staff may say 'rubah', 'ganti', 'update', 'ubah', 'edit', 'koreksi'. Examples: 'rubah bensin jadi diesel', 'ganti tahun 2016 ke 2018', 'update harga 150jt'.",
+              description: "Edit data kendaraan. Panggil saat staff ingin ubah info (misal: 'ganti harga', 'rubah km', 'koreksi tahun').",
               parameters: {
                 type: "object",
                 properties: {
                   vehicle_id: {
                     type: "string",
-                    description: "Vehicle displayId (e.g., 'PM-PST-001') or UUID. If not provided, will use last uploaded vehicle from context."
+                    description: "DisplayId (PM-PST-XXX) atau UUID"
                   },
                   field: {
                     type: "string",
                     enum: ["year", "price", "mileage", "color", "transmission", "fuelType", "make", "model", "variant", "engineCapacity", "condition"],
-                    description: "Field to update. Map Indonesian terms: tahun→year, harga→price, km→mileage, warna→color, transmisi→transmission, bensin/diesel→fuelType, merek→make, tipe→model, varian→variant, cc→engineCapacity, kondisi→condition"
+                    description: "Field target (e.g. price, mileage, color)"
                   },
                   old_value: {
                     type: "string",
-                    description: "Original value to replace (optional, for confirmation). E.g., 'bensin', '2016', 'hitam'"
+                    description: "Nilai lama (opsional)"
                   },
                   new_value: {
                     type: "string",
-                    description: "New value to set. E.g., 'diesel', '2018', 'putih', '150jt' (price will be converted)"
+                    description: "Nilai baru"
                   }
                 },
                 required: ["field", "new_value"]
