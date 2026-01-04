@@ -180,7 +180,7 @@ export class MessageOrchestratorService {
 
         // Update conversation with user info if not already set
         // ALL registered users (STAFF/SALES, ADMIN, OWNER, SUPER_ADMIN) should be marked as isStaff
-        const validStaffRoles = ['SALES', 'STAFF', 'MANAGER', 'FINANCE', 'ADMIN', 'OWNER', 'SUPER_ADMIN'];
+        const validStaffRoles = ['SALES', 'STAFF', 'ADMIN', 'OWNER', 'SUPER_ADMIN'];
         if (!conversation.isStaff && (user.roleLevel >= 30 || validStaffRoles.includes(user.role.toUpperCase()))) {
           await prisma.whatsAppConversation.update({
             where: { id: conversation.id },

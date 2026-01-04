@@ -22,8 +22,6 @@
 export const ROLE_LEVELS = {
   STAFF: 30, // Staff/Sales - limited tenant access
   SALES: 30, // Legacy support for Sales
-  FINANCE: 60, // Finance - access to ledger and invoices
-  MANAGER: 70, // Manager - tenant management features
   ADMIN: 90, // Admin - multi-tenant access & admin features
   OWNER: 100, // Owner - full single tenant access
   SUPER_ADMIN: 110, // Super Admin - full platform access
@@ -63,8 +61,8 @@ export const PAGE_ACCESS: Record<string, { minRole: number; excludeRoles?: numbe
   '/dashboard/blog': { minRole: ROLE_LEVELS.SALES },
   '/dashboard/blog/create': { minRole: ROLE_LEVELS.SALES },
   '/dashboard/blog/edit': { minRole: ROLE_LEVELS.SALES },
-  // Invoices - Finance+
-  '/dashboard/invoices': { minRole: ROLE_LEVELS.FINANCE },
+  // Invoices - HIDDEN
+  '/dashboard/invoices': { minRole: ROLE_LEVELS.SUPER_ADMIN, excludeRoles: [30, 70, 90, 100] },
   // Reports - Admin+
   '/dashboard/reports': { minRole: ROLE_LEVELS.ADMIN },
 };
@@ -126,14 +124,14 @@ export const permissions = {
   canEditVehicle: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
   canChangeVehicleStatus: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
 
-  // Invoice - Finance, Admin, Owner
-  canViewInvoice: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
-  canCreateInvoice: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
-  canEditInvoice: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
-  canRecordPayment: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
-  canExportInvoicePDF: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
-  canVoidInvoice: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
-  canViewInvoiceReport: (roleLevel: number) => roleLevel >= ROLE_LEVELS.FINANCE,
+  // Invoice - HIDDEN for all showroom roles
+  canViewInvoice: (roleLevel: number) => false,
+  canCreateInvoice: (roleLevel: number) => false,
+  canEditInvoice: (roleLevel: number) => false,
+  canRecordPayment: (roleLevel: number) => false,
+  canExportInvoicePDF: (roleLevel: number) => false,
+  canVoidInvoice: (roleLevel: number) => false,
+  canViewInvoiceReport: (roleLevel: number) => false,
 
   // Analytics - Visible to all, but actions restricted
   canViewAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
@@ -176,10 +174,6 @@ export function getRoleLevelFromRole(role: string): number {
       return ROLE_LEVELS.OWNER;
     case "ADMIN":
       return ROLE_LEVELS.ADMIN;
-    case "MANAGER":
-      return ROLE_LEVELS.MANAGER;
-    case "FINANCE":
-      return ROLE_LEVELS.FINANCE;
     case "SALES":
     case "STAFF":
       return ROLE_LEVELS.STAFF;
@@ -195,7 +189,6 @@ export function getRoleName(roleLevel: number): string {
   if (roleLevel >= ROLE_LEVELS.SUPER_ADMIN) return 'Super Admin';
   if (roleLevel >= ROLE_LEVELS.OWNER) return 'Owner';
   if (roleLevel >= ROLE_LEVELS.ADMIN) return 'Admin';
-  if (roleLevel >= ROLE_LEVELS.MANAGER) return 'Manager';
   return 'Staff';
 }
 

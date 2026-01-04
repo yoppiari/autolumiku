@@ -322,10 +322,6 @@ export default function UsersPage() {
         return 'bg-amber-100 text-amber-800';
       case 'ADMIN':
         return 'bg-purple-100 text-purple-800';
-      case 'MANAGER':
-        return 'bg-blue-100 text-blue-800';
-      case 'FINANCE':
-        return 'bg-cyan-100 text-cyan-800';
       case 'SALES':
         return 'bg-green-100 text-green-800';
       default:
@@ -339,10 +335,6 @@ export default function UsersPage() {
         return 'Owner';
       case 'ADMIN':
         return 'Admin';
-      case 'MANAGER':
-        return 'Manager';
-      case 'FINANCE':
-        return 'Finance';
       case 'SALES':
         return 'Staff/Sales';
       default:
@@ -457,8 +449,6 @@ export default function UsersPage() {
             <option value="all">Semua Role</option>
             <option value="OWNER">Owner</option>
             <option value="ADMIN">Admin</option>
-            <option value="MANAGER">Manager</option>
-            <option value="FINANCE">Finance</option>
             <option value="SALES">Staff/Sales</option>
           </select>
         </div>

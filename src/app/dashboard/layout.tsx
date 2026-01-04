@@ -180,12 +180,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // All navigation items with role requirements based on Excel access matrix
   // NOTE: Analytics moved to WhatsApp AI page (/dashboard/whatsapp-ai/analytics)
+  // NOTE: Invoice feature is HIDDEN for all roles
   const allNavigation: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠', minRole: ROLE_LEVELS.SALES },
     // Vehicles - Visible to all
     { name: 'Vehicles', href: '/dashboard/vehicles', icon: '🚗', minRole: ROLE_LEVELS.SALES },
-    // Invoices - Visible to Finance+
-    { name: 'Invoices', href: '/dashboard/invoices', icon: '🧾', minRole: ROLE_LEVELS.FINANCE },
     // Team - Visible to all
     { name: 'Team', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.SALES },
     // WhatsApp AI - Visible to all

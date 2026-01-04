@@ -135,14 +135,13 @@ const filteredConversations = conversations.filter((conv) => {
 
 ---
 
-### 9. **Team Staff Functionality & RBAC Refinement** ✓
-**Issue**: Support various roles (Sales, Finance, Manager, Admin, Owner) and ensure correct access control.
+### 9. **Team Staff & RBAC Centralization** ✓
+**Issue**: Support core showroom roles (Sales, Admin, Owner) and ensure correct access control.
 **Fix Applied**:
-- Added **FINANCE (60)** role to `ROLE_LEVELS` in central RBAC.
-- Enabled **Invoices** feature in sidebar and page access for Finance, Admin, and Owner.
-- Updated **Team Management UI** to support all roles in create/edit modals with updated access descriptions.
-- Updated **WhatsApp AI Orchestrator** and **Sync Staff API** to recognize all roles as staff.
-- Corrected role level mapping for consistent permission checks across the platform.
+- Centralized RBAC logic in `src/lib/rbac.ts` with explicit role levels.
+- Updated **Team Management UI** to handle core roles with appropriate descriptions.
+- Updated **WhatsApp AI Orchestrator** and **Sync Staff API** to accurately identify staff members.
+- Hidden unused financial/invoice modules from the dashboard for all roles.
 
 **Status**: ✅ COMPLETED
 
