@@ -505,6 +505,13 @@ export class IntentClassifierService {
     message: string,
     hasMedia: boolean = false
   ): IntentClassificationResult | null {
+    // STRICT RULE: If message contains a question mark, it's NOT a command
+    // This allows staff to ask the AI questions (e.g. "Stok ada apa aja?") 
+    // without triggering the strict staff command parser.
+    if (message.includes("?")) {
+      return null;
+    }
+
     // Check upload vehicle command patterns
     if (STAFF_COMMAND_PATTERNS.upload_vehicle.some((p) => p.test(message))) {
       return {
