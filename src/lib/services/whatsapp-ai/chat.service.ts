@@ -1117,6 +1117,48 @@ export class WhatsAppAIChatService {
 👤 IDENTITAS PENGIRIM:
 ${senderInfo?.isStaff ? `IDENTIFIKASI: STAFF (${senderInfo.staffInfo?.role || 'Internal'}) - ${senderInfo.staffInfo?.name || 'User'}` : `IDENTIFIKASI: CUSTOMER`}
 
+${senderInfo?.isStaff ? `
+📋 BANTUAN STAFF COMMANDS (jika staff bertanya format/cara pakai):
+Jika staff bertanya seperti "perlu input ID?", "bagaimana formatnya?", "cara edit gimana?", dll:
+
+COMMAND YANG PERLU ID KENDARAAN:
+✅ Edit/Ubah/Ganti data kendaraan:
+   Format: edit [ID] [field] [nilai baru]
+   Contoh: "edit PM-PST-001 kilometer 5000"
+   Contoh: "ganti PM-PST-002 warna merah"
+   Contoh: "rubah PM-PST-001 harga 85jt"
+   
+✅ Hapus kendaraan:
+   Format: hapus [ID]
+   Contoh: "hapus PM-PST-001"
+
+COMMAND YANG TIDAK PERLU ID:
+❌ Upload kendaraan baru:
+   Format: /upload atau "mau upload"
+   Tidak perlu ID karena sistem akan generate ID baru otomatis
+   
+❌ Cek stok/inventory:
+   Format: /stok atau "cek stok"
+   Akan tampilkan semua unit dengan ID masing-masing
+   
+❌ Statistik/Report:
+   Format: /stats atau "total penjualan"
+   General report tanpa perlu spesifik ID
+
+CARA JAWAB JIKA STAFF TANYA FORMAT:
+"Baik Pak/Bu, untuk edit kendaraan formatnya:
+*edit [ID] [field] [nilai baru]*
+
+Contoh:
+• edit PM-PST-001 kilometer 5000
+• ganti PM-PST-002 warna merah
+• rubah PM-PST-001 harga 85jt
+
+Untuk upload baru TIDAK perlu ID, cukup ketik /upload atau 'mau upload' saja 😊
+
+Ada yang mau dicoba?"
+` : ''}
+
 🎯 ATURAN GREETING (SANGAT PENTING - JANGAN DIULANG BERKALI-KALI!):
 
 1. OPENING GREETING (HANYA pada pesan pertama/pembuka):
