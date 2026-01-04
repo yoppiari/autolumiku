@@ -332,18 +332,19 @@ export class WhatsAppAIChatService {
 
       // 3. CRITICAL PRICE VALIDATION - Catch absurd prices before sending to customer
       // This prevents the "1 jt" and "5 jt" error that should NEVER happen
-      const pricePattern = /\bRp\s*(\d+(?:\.\d+)?)\s*(jt|juta)\b/gi;
-      const priceMatches = responseMessage.matchAll(pricePattern);
+      // Relaxed: Only flag if it's LIKELY a vehicle price (not DP/Cicilan) and very low
+      const pricePattern = /\bHarga:\s*Rp\s*(\d+(?:\.\d+)?)\s*(jt|juta)\b/gi;
+      const priceMatches = Array.from(responseMessage.matchAll(pricePattern));
       let hasSuspiciousPrice = false;
 
       for (const match of priceMatches) {
         const priceValue = parseFloat(match[1]);
 
-        // Flag suspicious prices (less than 10 juta for regular cars)
+        // Flag suspicious prices (less than 10 juta for regular cars in "Harga:" context)
         if (priceValue < 10) {
           hasSuspiciousPrice = true;
-          console.error(`[WhatsApp AI Chat] ❌❌❌ CRITICAL ERROR: Suspicious price detected: "Rp ${priceValue} ${match[2]}"`);
-          console.error(`[WhatsApp AI Chat] This is likely a formatting error. Original response: ${responseMessage.substring(0, 200)}`);
+          console.error(`[WhatsApp AI Chat] ❌❌❌ CRITICAL ERROR: Suspicious price detected in "Harga:" context: "Rp ${priceValue} ${match[2]}"`);
+          console.error(`[WhatsApp AI Chat] Original response snippet: ${responseMessage.substring(0, 200)}`);
         }
       }
 
@@ -355,12 +356,10 @@ export class WhatsAppAIChatService {
         const vehicles = await this.getAvailableVehiclesDetailed(context.tenantId);
 
         if (vehicles.length > 0) {
-          const vehicleList = vehicles.slice(0, 3).map(v => {
-            const priceJuta = Math.round(Number(v.price) / 1000000);
-            return `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} juta`;
-          }).join('\n');
-
-          responseMessage = `Hmm, bisa diperjelas kebutuhannya? 🤔\n\nIni beberapa unit ready di ${tenantName}:\n${vehicleList}\n\nAtau sebutkan merk/budget yang dicari ya! 😊`;
+          const vehicleList = this.formatVehicleListDetailed(vehicles.slice(0, 3));
+          responseMessage = `Berikut unit ready di Prima Mobil:\n\n${vehicleList}\n\n` +
+            `Mau lihat fotonya? 📸 (silahkan berikan respon: mau/ boleh/ silahkan/ baik kirim/ iya kirim/ kirimkan/ iya boleh)\n\n` +
+            `Apakah ada hal lain yang bisa kami bantu? 😊`;
         } else {
           responseMessage = `Mohon maaf, saya perlu konfirmasi informasi harga ke tim terlebih dahulu untuk memastikan akurasinya. Bisa ditunggu sebentar ya? 🙏`;
         }
@@ -419,30 +418,8 @@ export class WhatsAppAIChatService {
                 // Add search results to the response message with FULL DETAILS
                 // Format must match system prompt: pipe separator with all vehicle details
                 if (!responseMessage.includes(searchResults[0].make)) {
-                  let searchResultText = `\n\nDitemukan ${searchResults.length} mobil yang cocok:\n\n`;
-
-                  searchResults.slice(0, 5).forEach(v => {
-                    const priceJuta = Math.round(Number(v.price) / 1000000);
-                    const id = v.displayId || v.id.substring(0, 6).toUpperCase();
-                    const transmission = v.transmissionType || '-';
-                    const fuel = v.fuelType || '-';
-                    const color = v.color || '-';
-                    const km = v.mileage ? v.mileage.toLocaleString('id-ID') : '-';
-
-                    // Format: 🚗 [Make] [Model] [Variant] [Transmission] [Year] | [ID]
-                    const variant = v.variant ? ` ${v.variant}` : '';
-                    searchResultText += `🚗 ${v.make} ${v.model}${variant} ${transmission} ${v.year} | ${id}\n`;
-                    searchResultText += `* Harga: Rp ${priceJuta} juta\n`;
-                    searchResultText += `* Kilometer: ${km} km\n`;
-                    searchResultText += `* Transmisi: ${transmission}\n`;
-                    searchResultText += `* Bahan bakar: ${fuel}\n`;
-                    searchResultText += `* Warna: ${color}\n`;
-
-                    // Add website link
-                    const modelSlug = v.model.toLowerCase().replace(/\s+/g, '-');
-                    const makeSlug = v.make.toLowerCase();
-                    searchResultText += `* 🎯 Website: https://primamobil.id/vehicles/${makeSlug}-${modelSlug}-${v.year}-${id}\n\n`;
-                  });
+                  const vehicleList = this.formatVehicleListDetailed(searchResults.slice(0, 5));
+                  let searchResultText = `\n\nDitemukan ${searchResults.length} mobil yang cocok:\n\n${vehicleList}\n\n`;
 
                   if (searchResults.length > 5) {
                     searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
@@ -589,6 +566,38 @@ export class WhatsAppAIChatService {
         ...(smartFallback.images && { images: smartFallback.images }),
       };
     }
+  }
+
+  /**
+   * Format vehicle list with full details matching user's visual requirement
+   */
+  private static formatVehicleListDetailed(vehicles: any[]): string {
+    return vehicles.map(v => {
+      const priceJuta = Math.round(Number(v.price) / 1000000);
+      const id = v.displayId || v.id.substring(0, 6).toUpperCase();
+      const transmission = v.transmissionType || 'Manual';
+      const variant = v.variant ? ` ${v.variant}` : '';
+      const km = v.mileage ? v.mileage.toLocaleString('id-ID') : '-';
+      const fuel = v.fuelType || 'Bensin';
+      const color = v.color || '-';
+
+      // Generate SEO friendly website URL
+      const makeSlug = v.make.toLowerCase().replace(/\s+/g, '-');
+      const modelSlug = v.model.toLowerCase().replace(/\s+/g, '-');
+      const year = v.year;
+
+      const websiteUrl = `https://primamobil.id/vehicles/${makeSlug}-${modelSlug}-${year}-${id}`;
+
+      // Format matching user request:
+      // 🚗 [Merk] [Model] [Varian] [Transmisi] [Tahun] | [ID]
+      return `🚗 ${v.make} ${v.model}${variant} ${transmission} ${v.year} | ${id}\n` +
+        `* Harga: Rp ${priceJuta} juta\n` +
+        `* Kilometer: ${km} km\n` +
+        `* Transmisi: ${transmission}\n` +
+        `* Bahan bakar: ${fuel}\n` +
+        `* Warna: ${color}\n` +
+        `* 🎯 Website: ${websiteUrl}`;
+    }).join('\n\n');
   }
 
   /**
@@ -1192,6 +1201,7 @@ export class WhatsAppAIChatService {
       }
 
       systemPrompt += '\n\n⚠️ PENTING: Ketika menyebutkan harga ke customer, SELALU gunakan format "Rp [angka] juta"!';
+      systemPrompt += '\n⚠️ DETAIL UNIT: SELALU sertakan ID unit, detail transmisi, kilometer, dan link website (https://primamobil.id/vehicles/[slug-merk]-[slug-model]-[tahun]-[id]) jika memberikan info unit spesifik.';
     } else {
       systemPrompt += '\n\n⚠️⚠️⚠️ SANGAT PENTING - INVENTORY KOSONG:\n' +
         '• Saat ini TIDAK ADA unit mobil yang tersedia/ready stock di showroom\n' +
