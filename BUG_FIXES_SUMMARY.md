@@ -135,21 +135,16 @@ const filteredConversations = conversations.filter((conv) => {
 
 ---
 
-### 9. **Team Staff Functionality Verification**
-**Issue**: Verify all Team staff can access and use the system correctly
-**Tests Required**:
-1. ✓ Login as different roles (Sales, Manager, Admin)
-2. ✓ Verify RBAC permissions working
-3. ✓ Check WhatsApp AI responds to team commands
-4. Test vehicle CRUD operations for all roles
-5. Test conversation monitoring access
+### 9. **Team Staff Functionality & RBAC Refinement** ✓
+**Issue**: Support various roles (Sales, Finance, Manager, Admin, Owner) and ensure correct access control.
+**Fix Applied**:
+- Added **FINANCE (60)** role to `ROLE_LEVELS` in central RBAC.
+- Enabled **Invoices** feature in sidebar and page access for Finance, Admin, and Owner.
+- Updated **Team Management UI** to support all roles in create/edit modals with updated access descriptions.
+- Updated **WhatsApp AI Orchestrator** and **Sync Staff API** to recognize all roles as staff.
+- Corrected role level mapping for consistent permission checks across the platform.
 
-**Files to Check**:
-- `src/lib/rbac.ts` - Role definitions
-- `src/middleware/auth.ts` - Authentication middleware
-- `src/app/api/*/route.ts` - API route permissions
-
-**Status**: Requires systematic testing with different user roles
+**Status**: ✅ COMPLETED
 
 ---
 

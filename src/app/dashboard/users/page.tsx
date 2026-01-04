@@ -322,6 +322,10 @@ export default function UsersPage() {
         return 'bg-amber-100 text-amber-800';
       case 'ADMIN':
         return 'bg-purple-100 text-purple-800';
+      case 'MANAGER':
+        return 'bg-blue-100 text-blue-800';
+      case 'FINANCE':
+        return 'bg-cyan-100 text-cyan-800';
       case 'SALES':
         return 'bg-green-100 text-green-800';
       default:
@@ -335,6 +339,10 @@ export default function UsersPage() {
         return 'Owner';
       case 'ADMIN':
         return 'Admin';
+      case 'MANAGER':
+        return 'Manager';
+      case 'FINANCE':
+        return 'Finance';
       case 'SALES':
         return 'Staff/Sales';
       default:
@@ -449,6 +457,8 @@ export default function UsersPage() {
             <option value="all">Semua Role</option>
             <option value="OWNER">Owner</option>
             <option value="ADMIN">Admin</option>
+            <option value="MANAGER">Manager</option>
+            <option value="FINANCE">Finance</option>
             <option value="SALES">Staff/Sales</option>
           </select>
         </div>
@@ -797,11 +807,13 @@ export default function UsersPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="SALES">Staff/Sales</option>
+                    <option value="FINANCE">Finance</option>
+                    <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Admin</option>
                     <option value="OWNER">Owner</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    Staff/Sales tidak bisa akses fitur Analytics, Tim, dan Pengaturan
+                    Staff & Manager dapat mengelola Kendaraan. Admin & Owner mengelola Tim & Pengaturan.
                   </p>
                 </div>
 
@@ -962,11 +974,13 @@ export default function UsersPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="SALES">Staff/Sales</option>
+                    <option value="FINANCE">Finance</option>
+                    <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Admin</option>
                     <option value="OWNER">Owner</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    Staff/Sales tidak bisa akses fitur Analytics, Tim, dan Pengaturan
+                    Staff & Manager dapat mengelola Kendaraan. Admin & Owner mengelola Tim & Pengaturan.
                   </p>
                 </div>
 
