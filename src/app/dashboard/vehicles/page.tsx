@@ -230,11 +230,11 @@ export default function VehiclesPage() {
 
   const getStatusColor = (status: VehicleStatus) => {
     switch (status) {
-      case 'DRAFT': return 'bg-gray-100 text-gray-800';
-      case 'AVAILABLE': return 'bg-green-100 text-green-800 border border-green-300';
-      case 'BOOKED': return 'bg-yellow-100 text-yellow-800 border border-yellow-300';
-      case 'SOLD': return 'bg-red-100 text-red-800 border border-red-300 font-semibold';
-      case 'DELETED': return 'bg-red-100 text-red-800';
+      case 'DRAFT': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'AVAILABLE': return 'bg-green-500 text-white border-green-600 animate-status-ready';
+      case 'BOOKED': return 'bg-amber-500 text-white border-amber-600 animate-status-booking';
+      case 'SOLD': return 'bg-rose-600 text-white border-rose-700 font-bold animate-status-sold';
+      case 'DELETED': return 'bg-red-100 text-red-800 border-red-200';
     }
   };
 
@@ -338,17 +338,17 @@ export default function VehiclesPage() {
           <span className="text-sm md:text-lg font-bold text-gray-800">{stats.total}</span>
           <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-gray-600 font-medium">Total</span>
         </div>
-        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-green-50 border-2 border-green-400 rounded-full shadow-sm flex-shrink-0">
-          <span className="text-sm md:text-lg font-bold text-green-600">{stats.available}</span>
-          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-green-700 font-medium">Tersedia</span>
+        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-gradient-to-br from-green-400 to-green-600 border-2 border-green-300 rounded-full shadow-md flex-shrink-0 animate-status-ready">
+          <span className="text-sm md:text-lg font-bold text-white">{stats.available}</span>
+          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-white/90 font-bold">Tersedia</span>
         </div>
-        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-yellow-50 border-2 border-yellow-400 rounded-full shadow-sm flex-shrink-0">
-          <span className="text-sm md:text-lg font-bold text-yellow-600">{stats.booked}</span>
-          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-yellow-700 font-medium">Booking</span>
+        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-gradient-to-br from-amber-400 to-amber-600 border-2 border-amber-300 rounded-full shadow-md flex-shrink-0 animate-status-booking">
+          <span className="text-sm md:text-lg font-bold text-white">{stats.booked}</span>
+          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-white/90 font-bold">Booking</span>
         </div>
-        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-red-50 border-2 border-red-400 rounded-full shadow-sm flex-shrink-0">
-          <span className="text-sm md:text-lg font-bold text-red-600">{stats.sold}</span>
-          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-red-700 font-medium">Terjual</span>
+        <div className="px-2.5 md:px-4 py-1.5 md:py-2 bg-gradient-to-br from-rose-400 to-rose-600 border-2 border-rose-300 rounded-full shadow-md flex-shrink-0 animate-status-sold">
+          <span className="text-sm md:text-lg font-bold text-white">{stats.sold}</span>
+          <span className="ml-1 md:ml-1.5 text-[10px] md:text-sm text-white/90 font-bold">Terjual</span>
         </div>
       </div>
 
@@ -531,8 +531,13 @@ export default function VehiclesPage() {
                       <h3 className="font-semibold text-sm text-gray-900 truncate">
                         {vehicle.make} {vehicle.model}
                       </h3>
-                      <span className={`inline-block px-1.5 py-0.5 text-[10px] font-medium rounded mt-0.5 ${getStatusColor(vehicle.status)}`}>
-                        {getStatusLabel(vehicle.status)}
+                      <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mt-1 border shadow-sm ${getStatusColor(vehicle.status)}`}>
+                        <span className="flex items-center gap-1">
+                          {(vehicle.status === 'AVAILABLE' || vehicle.status === 'BOOKED' || vehicle.status === 'SOLD') && (
+                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                          )}
+                          {getStatusLabel(vehicle.status)}
+                        </span>
                       </span>
                     </div>
                   </div>

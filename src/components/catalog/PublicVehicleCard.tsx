@@ -101,25 +101,19 @@ export default function PublicVehicleCard({
               <>
                 {/* Status Badge */}
                 {isSold ? (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600 text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-lg z-10">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    SOLD
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-rose-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-xl z-20 animate-status-sold border border-rose-400/30">
+                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                    TERJUAL
                   </div>
                 ) : isBooked ? (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-yellow-500 text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-lg z-10">
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-xl z-20 animate-status-booking border border-amber-300/30">
                     <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                     BOOKING
                   </div>
                 ) : (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-green-500 text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-lg z-10">
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-xl z-20 animate-status-ready border border-green-300/30">
                     <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                    Ready
+                    TERSEDIA
                   </div>
                 )}
                 {/* Vehicle ID Badge - Bottom Left */}

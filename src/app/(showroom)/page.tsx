@@ -231,18 +231,23 @@ export default async function ShowroomHomePage() {
                 const mainPhoto = vehicle.photos[0];
                 return (
                   <Card key={vehicle.id} className="hover:shadow-xl transition-shadow">
-                    <CardHeader className="p-0">
+                    <CardHeader className="p-0 relative group">
                       {mainPhoto ? (
                         <img
                           src={mainPhoto.thumbnailUrl || mainPhoto.originalUrl}
                           alt={`${vehicle.make} ${vehicle.model}`}
-                          className="w-full h-48 object-cover rounded-t-lg"
+                          className="w-full h-48 object-cover rounded-t-lg transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
                         <div className="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center">
                           <span className="text-gray-400">No Image</span>
                         </div>
                       )}
+                      {/* Status Badge */}
+                      <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg border border-green-300/30 flex items-center gap-1.5 animate-status-ready z-10">
+                        <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                        READY STOCK
+                      </div>
                     </CardHeader>
                     <CardContent className="p-4">
                       <CardTitle className="text-lg mb-2">

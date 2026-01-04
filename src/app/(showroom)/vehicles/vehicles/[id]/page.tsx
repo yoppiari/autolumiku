@@ -166,15 +166,18 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                   {/* Badges */}
                   <div className="absolute top-4 left-4 flex gap-2">
                     {vehicle.status === 'SOLD' ? (
-                      <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                      <span className="bg-rose-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-xl border border-rose-400/30 flex items-center gap-2 animate-status-sold">
+                        <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                         SUDAH TERJUAL
                       </span>
                     ) : vehicle.status === 'BOOKED' ? (
-                      <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                      <span className="bg-amber-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-xl border border-amber-300/30 flex items-center gap-2 animate-status-booking">
+                        <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                         SEDANG DI-BOOKING
                       </span>
                     ) : (
-                      <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                      <span className="bg-green-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-xl border border-green-300/30 flex items-center gap-2 animate-status-ready">
+                        <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                         READY STOCK
                       </span>
                     )}
