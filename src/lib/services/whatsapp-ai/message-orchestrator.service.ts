@@ -23,6 +23,7 @@ export interface IncomingMessage {
   clientId: string; // Aimeow client UUID (required for sendDocumentBase64)
   tenantId: string;
   from: string;
+  customerName?: string; // Push name or verified name from WhatsApp
   message: string;
   mediaUrl?: string;
   mediaType?: string;
@@ -106,7 +107,8 @@ export class MessageOrchestratorService {
         const conversation = await this.getOrCreateConversation(
           incoming.accountId,
           incoming.tenantId,
-          incoming.from
+          incoming.from,
+          incoming.customerName
         );
         await this.saveIncomingMessage(conversation.id, incoming);
         return {
@@ -136,7 +138,8 @@ export class MessageOrchestratorService {
       const conversation = await this.getOrCreateConversation(
         incoming.accountId,
         incoming.tenantId,
-        incoming.from
+        incoming.from,
+        incoming.customerName
       );
 
       // 1.5. Lookup user by phone number (for ALL messages, not just commands)
@@ -1330,9 +1333,10 @@ export class MessageOrchestratorService {
   private static async getOrCreateConversation(
     accountId: string,
     tenantId: string,
-    customerPhone: string
+    customerPhone: string,
+    customerName?: string
   ) {
-    console.log(`[Orchestrator] Getting/creating conversation - accountId: ${accountId}, tenantId: ${tenantId}, phone: ${customerPhone}`);
+    console.log(`[Orchestrator] Getting/creating conversation - accountId: ${accountId}, tenantId: ${tenantId}, phone: ${customerPhone}, name: ${customerName}`);
 
     const normalizedPhone = this.normalizePhoneForLookup(customerPhone);
     const isLID = customerPhone.includes("@lid");
@@ -1526,6 +1530,7 @@ export class MessageOrchestratorService {
           accountId,
           tenantId,
           customerPhone, // Store LID temporarily, will be updated when real phone is known
+          customerName: customerName || null,
           isStaff: false,
           conversationType: "customer",
           status: "active",

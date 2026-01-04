@@ -142,6 +142,17 @@ export default function ConversationsPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Periodic refresh for profile pictures to retry failures
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Clear the ref to allow re-fetching (retrying)
+      loadedPhonesRef.current.clear();
+      // This will trigger the profile picture loader effect
+      setConversations(prev => [...prev]);
+    }, 60000); // Retry every 60 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   // Track which phones have been requested (to avoid duplicate API calls)
   const loadedPhonesRef = useRef<Set<string>>(new Set());
 
@@ -440,10 +451,12 @@ END:VCARD`;
     document.body.removeChild(link);
   };
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change - REMOVED per user request for manual scroll
+  /*
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+  */
 
   // Close attachment menu when clicking outside
   useEffect(() => {

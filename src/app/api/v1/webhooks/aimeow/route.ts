@@ -293,9 +293,13 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Extract customer name from Aimeow payload if available
+      const customerName = message.pushName || message.sender?.pushName || message.senderName || message.verifiedName;
+
       try {
         await handleIncomingMessage(account, {
           from: normalizedFrom,
+          customerName: customerName,
           message: messageText,
           mediaUrl: mediaUrl,
           mediaType: mediaType,
@@ -366,12 +370,12 @@ export async function POST(request: NextRequest) {
  * UPDATED: Now uses MessageOrchestratorService for full AI processing
  */
 async function handleIncomingMessage(account: any, data: any) {
-  const { from, message, mediaUrl, mediaType, messageId } = data;
+  const { from, customerName, message, mediaUrl, mediaType, messageId } = data;
 
   try {
     console.log("=".repeat(60));
     console.log(`[Webhook] 📨 PROCESSING INCOMING MESSAGE`);
-    console.log(`[Webhook] From: ${from}`);
+    console.log(`[Webhook] From: ${from} (${customerName || 'No name'})`);
     console.log(`[Webhook] MessageId: ${messageId}`);
     console.log(`[Webhook] Message text: "${message || '(empty)'}"`);
     console.log(`[Webhook] MediaUrl: ${mediaUrl || '(none)'}`);
@@ -413,6 +417,7 @@ async function handleIncomingMessage(account: any, data: any) {
       clientId: account.clientId, // Aimeow client UUID (required for sendDocumentBase64)
       tenantId: account.tenantId,
       from,
+      customerName,
       message,
       mediaUrl,
       mediaType,
