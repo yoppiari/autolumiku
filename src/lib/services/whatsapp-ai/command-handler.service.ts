@@ -140,8 +140,7 @@ function isUniversalCommand(cmd: string): boolean {
   const universalCommands = [
     // Help commands are universal
     'help', 'bantuan', 'panduan', 'cara', 'guide', 'menu', 'fitur', 'tool', 'perintah', 'penggunaan', 'command',
-    'halo', 'halo admin', 'halo owner', 'halo staff',
-    'hi', 'hello',
+    // 'halo', 'halo admin', 'halo owner', 'halo staff', 'hi', 'hello', // Let AI handle greetings
   ];
   return universalCommands.some(c => cmd.includes(c));
 }
@@ -196,6 +195,7 @@ function isReportCommand(cmd: string): boolean {
     'laporan penjualan lengkap',
     'laporan lengkap',
     'sales report lengkap',
+    'penjualan showroom'
   ];
 
   // Check for exact phrase matches (with word boundaries)
@@ -223,65 +223,30 @@ async function handleUniversalCommand(
 ): Promise<CommandResult> {
   const { tenantId, userRoleLevel } = context;
 
-  // Get time-based greeting (Selamat pagi/siang/sore/malam)
-  const now = new Date();
-  const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-  const hour = wibTime.getHours();
-  let timeGreeting = "Selamat malam";
-  if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
-  else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
-  else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+  // Use the new CLEAN AND CONCISE format
+  const helpMsg = `
+📋 *PANDUAN STAFF* (Format baru, lebih ringkas):
+Jika staff bingung, arahkan ke format berikut:
 
-  // Get tenant info
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
-    select: { name: true },
-  });
-  const tenantName = tenant?.name || "Prima Mobil";
+📸 *UPLOAD*:
+   • Ketik: *upload* (ikut flow)
+   • _Atau:_ "upload [nama] [tahun] [harga]"
 
-  // Get active vehicle count
-  const availableCount = await prisma.vehicle.count({
-    where: { tenantId, status: "AVAILABLE" },
-  });
+📋 *CEK STOK*:
+   • Ketik: *stok* [filter]
+   • _Contoh:_ "stok ready", "stok brio"
 
-  const isAdmin = userRoleLevel >= 90; // ADMIN/OWNER
+🔄 *UPDATE STATUS*:
+   • Ketik: *status [ID] [SOLD/BOOKED]*
+   • _Contoh:_ "status PM-PST-001 SOLD"
 
-  let helpMsg = `${timeGreeting}, Halo!\n\n`;
-  helpMsg += `Selamat datang di showroom kami\n`;
-  helpMsg += `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n`;
-  helpMsg += `Ada yang bisa kami bantu?\n\n`;
-  helpMsg += `Saat ini terdapat ${availableCount} unit kendaraan tersedia di ${tenantName}.\n\n`;
+🚙 *EDIT DATA*:
+   • Ketik: *edit [ID] [data]*
+   • _Contoh:_ "edit PM-PST-001 harga 150jt"
 
-  helpMsg += `Layanan yang tersedia:\n\n`;
-
-  helpMsg += `📸 Upload Kendaraan Baru\n`;
-  helpMsg += `   Ketik: upload\n`;
-  helpMsg += `   Lalu kirim foto + info mobil\n`;
-  helpMsg += `   Contoh: "upload Brio 2020 120jt hitam matic km 30rb"\n\n`;
-
-  helpMsg += `📋 Cek Stok Kendaraan\n`;
-  helpMsg += `   Ketik: inventory atau stok\n`;
-  helpMsg += `   Filter: inventory AVAILABLE\n\n`;
-
-  helpMsg += `📊 Lihat Statistik\n`;
-  helpMsg += `   Ketik: stats atau laporan\n`;
-  helpMsg += `   Period: stats today / stats week / stats month\n\n`;
-
-  helpMsg += `🔄 Update Status Kendaraan\n`;
-  helpMsg += `   Ketik: status [ID] [STATUS]\n`;
-  helpMsg += `   Contoh: status PM-PST-001 SOLD\n\n`;
-
-  helpMsg += `🚙 Edit Kendaraan\n`;
-  helpMsg += `   Ketik: Edit/ Ubah/ Rubah/ Ganti [Detail]\n`;
-  helpMsg += `   Contoh: "edit PM-PST-001 harga 175 jt", "ubah PM-PST-001 hybrid", "ganti PM-PST-001 95000 km"\n\n`;
-
-  if (isAdmin) {
-    helpMsg += `👮‍♂️ MENU ADMIN & OWNER (LOG & ANALYTICS)\n`;
-    helpMsg += `Dapatkan ringkasan performa & link dashboard detail.\n`;
-    helpMsg += `Ketik: "sales report", "Total Inventory", atau "staff performance"\n\n`;
-  }
-
-  helpMsg += `Silakan ketik perintah yang diinginkan. Kami siap membantu!`;
+👮‍♂️ *ADMIN*:
+   • _Ketik:_ "sales report", "staff performance"
+`;
 
   return {
     success: true,
@@ -303,20 +268,23 @@ async function handleStaffOperationCommand(
   if (userRoleLevel < 30) return null;
 
   // Identify intent from command keywords
+  // STRICT START-OF-STRING MATCHING to avoid natural language false positives
   let intent: MessageIntent | null = null;
   const msg = cmd.toLowerCase().trim();
 
+  // Match command at START of string (optional / prefix)
+  const startsWith = (keyword: string) => new RegExp(`^(\\/)?${keyword}\\b`, 'i').test(msg);
+
   // Mapping based on IntentClassifier patterns
-  if (msg.startsWith('status') || msg.includes('update status') || msg.includes('ubah status')) {
+  if (startsWith('status') || msg.includes('update status') || msg.includes('ubah status')) {
     intent = 'staff_update_status';
-  } else if (msg.includes('inventory') || msg.includes('stok') || msg.includes('stock')) {
+  } else if (startsWith('inventory') || startsWith('stok') || startsWith('stock')) {
     intent = 'staff_check_inventory';
-  } else if (msg.includes('stats') || msg.includes('statistik') || msg.includes('laporan')) {
-    // Only if NOT a PDF command (which is checked before this function)
+  } else if (startsWith('stats') || startsWith('statistik') || startsWith('laporan')) {
     intent = 'staff_get_stats';
-  } else if (msg.includes('edit') || msg.includes('ubah') || msg.includes('rubah') || msg.includes('ganti')) {
+  } else if (startsWith('edit') || startsWith('ubah') || startsWith('rubah') || startsWith('ganti')) {
     intent = 'staff_edit_vehicle';
-  } else if (msg.startsWith('upload') || msg.startsWith('tambah') || msg.startsWith('input')) {
+  } else if (startsWith('upload') || startsWith('tambah') || startsWith('input')) {
     intent = 'staff_upload_vehicle';
   }
 

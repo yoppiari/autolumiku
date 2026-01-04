@@ -1636,33 +1636,31 @@ export class StaffCommandService {
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `📋 *MENU STAFF*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `*1️⃣ UPLOAD MOBIL BARU*\n` +
-      `Selamat malam, Halo!\n\n` +
-      `Selamat datang di showroom kami\n` +
-      `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
-      `Ada yang bisa kami bantu? (Ketik "menu" untuk opsi lengkap)\n\n` +
-      `Layanan yang biasa digunakan:\n\n` +
-      `📸 *Upload Kendaraan Baru*\n` +
-      `   Ketik: \`upload\`\n` +
-      `   Lalu kirim foto + info mobil\n` +
-      `   Contoh: "upload Brio 2020 120jt hitam matic km 30rb"\n\n` +
-      `📋 *Cek Stok Kendaraan*\n` +
-      `   Ketik: \`inventory\` atau \`stok\`\n` +
-      `   Filter: \`inventory AVAILABLE\`\n\n` +
-      `📊 *Lihat Statistik*\n` +
-      `   Ketik: \`stats\` atau \`laporan\`\n` +
-      `   Period: \`stats today\` / \`stats week\` / \`stats month\`\n\n` +
-      `🔄 *Update Status Kendaraan*\n` +
-      `   Ketik: \`status [ID] [STATUS]\`\n` +
-      `   Contoh: \`status PM-PST-001 SOLD\`\n\n` +
-      `🚙 *Edit Kendaraan*\n` +
-      `   Ketik: \`Edit\` / \`Ubah\` / \`Rubah\` / \`Ganti\` [Detail]\n` +
-      `   Contoh: "edit PM-PST-001 harga 175 jt", "ubah PM-PST-001 hybrid", "ganti PM-PST-001 95000 km"\n\n` +
-      `🔍 *Cari Mobil*\n` +
-      `   Contoh: "ada honda city?", "cari fortuner diesel"\n\n` +
-      `👮‍♂️ *MENU LAPORAN DETAIL (ADMIN/OWNER)*\n` +
-      `• "Sales Report", "Total Revenue", "Staff Performance"\n` +
-      `• "WhatsApp AI Analytics", "Customer Metrics"`;
+      `📸 *UPLOAD KENDARAAN*\n` +
+      `Ketik: *upload* (ikuti instruksi)\n` +
+      `_Atau:_ "upload Brio 2020 120jt" (langsung)\n\n` +
+
+      `📋 *CEK STOK*\n` +
+      `Ketik: *stok* [spasi] [filter]\n` +
+      `_Contoh:_ "stok brio", "stok ready"\n\n` +
+
+      `📊 *STATISTIK*\n` +
+      `Ketik: *stats* atau *laporan*\n` +
+      `_Opsi:_ stats today / week / month\n\n` +
+
+      `🔄 *UPDATE STATUS*\n` +
+      `Ketik: *status [ID] [SOLD/BOOKED/AVAILABLE]*\n` +
+      `_Contoh:_ "status PM-PST-001 SOLD"\n\n` +
+
+      `🚙 *EDIT DATA*\n` +
+      `Ketik: *edit [ID] [data]*\n` +
+      `_Contoh:_ "edit PM-PST-001 harga 175jt"\n\n` +
+
+      `🔍 *CARI MOBIL*\n` +
+      `_Contoh:_ "cari fortuner diesel", "ada brio?"\n\n` +
+
+      `👮‍♂️ *MENU ADMIN*\n` +
+      `_Ketik:_ "sales report", "staff performance"`;
 
     return {
       success: true,

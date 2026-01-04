@@ -991,14 +991,29 @@ export class MessageOrchestratorService {
     // Check if message contains command keywords (more flexible matching)
     // Check if message contains command keywords (Universal + Operational)
     // REMOVED: greetings (halo, hi, etc) to allow AI to handle them naturally for staff
-    const isUniversalCommand = [
+    const universalCommands = [
       'help', 'bantuan', 'panduan', 'cara pakai', 'menu', 'fitur', 'perintah', 'command',
-      // 'halo', 'halo admin', 'halo owner', 'halo staff', 'hi', 'hello', // Let AI handle greetings
       'upload', 'tambah', 'input',
       'inventory', 'stok', 'stock',
       'status', 'update', 'ubah', 'edit', 'rubah',
       'statistik', 'stats', 'laporan'
-    ].some(k => message.includes(k));
+    ];
+
+    // STRICT CHECK:
+    // 1. Must START with the keyword (with optional '/')
+    // 2. Must NOT contain '?' (if it's a question, let AI handle it)
+    // 3. Must be a distinct word (followed by space or end of string)
+    // Exception: 'help' or 'bantuan' might be asked as a question, but generally commands are directives.
+
+    const isQuestion = message.includes('?');
+    const isUniversalCommand = !isQuestion && universalCommands.some(k => {
+      // Regex: Start with optional '/', then keyword, then word boundary
+      // e.g. "stok" matches "^(/)?stok\b"
+      // "stok brio" matches
+      // "cek stok" DOES NOT match
+      const pattern = new RegExp(`^(\\/)?${k}\\b`, 'i');
+      return pattern.test(message);
+    });
 
     // CRITICAL FIX: If incoming.from is LID, use verifiedStaffPhone from conversation for user lookup
     // This fixes the issue where verify command links LID to real phone, but commands still use LID
