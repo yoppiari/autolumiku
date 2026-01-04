@@ -14,6 +14,7 @@ export interface TenantBranding {
   secondaryColor: string;
   theme: string;
   domain: string | null;
+  whatsappNumber: string | null;
 }
 
 export class BrandingService {
@@ -54,13 +55,25 @@ export class BrandingService {
         secondaryColor: true,
         theme: true,
         domain: true,
+        whatsappNumber: true,
       },
     });
 
     if (!tenant) return null;
 
+    // Get AI WhatsApp number if active
+    const aimeowAccount = await prisma.aimeowAccount.findUnique({
+      where: { tenantId: tenant.id },
+      select: { phoneNumber: true, isActive: true },
+    });
+
+    const activeWhatsApp = aimeowAccount?.isActive && aimeowAccount?.phoneNumber
+      ? aimeowAccount.phoneNumber
+      : tenant.whatsappNumber;
+
     return {
       ...tenant,
+      whatsappNumber: activeWhatsApp,
       tenantId: tenant.id,
     };
   }

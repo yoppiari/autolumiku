@@ -74,7 +74,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     const message = `Halo, saya tertarik dengan ${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.variant ? ` ${vehicle.variant}` : ''
       } (ID: ${vehicle.displayId || vehicle.id.slice(0, 8)}). Bisa info lebih lanjut?`;
 
-    const phoneNumber = '6281234567890'; // TODO: Get from tenant settings
+    const phoneNumber = branding?.whatsappNumber || '6281234567890';
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
       message
     )}`;

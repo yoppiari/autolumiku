@@ -66,7 +66,7 @@ export default async function ShowroomHomePage() {
   const featuredVehicles = await prisma.vehicle.findMany({
     where: {
       tenantId,
-      status: 'AVAILABLE',
+      status: { in: ['AVAILABLE', 'BOOKED'] },
     },
     orderBy: {
       createdAt: 'desc',
@@ -115,10 +115,10 @@ export default async function ShowroomHomePage() {
   // Get stats
   const [totalVehicles, totalMakes] = await Promise.all([
     prisma.vehicle.count({
-      where: { tenantId, status: 'AVAILABLE' },
+      where: { tenantId, status: { in: ['AVAILABLE', 'BOOKED'] } },
     }),
     prisma.vehicle.findMany({
-      where: { tenantId, status: 'AVAILABLE' },
+      where: { tenantId, status: { in: ['AVAILABLE', 'BOOKED'] } },
       select: { make: true },
       distinct: ['make'],
     }),
@@ -244,10 +244,17 @@ export default async function ShowroomHomePage() {
                         </div>
                       )}
                       {/* Status Badge */}
-                      <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg border border-green-300/30 flex items-center gap-1.5 animate-status-ready z-10">
-                        <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                        READY STOCK
-                      </div>
+                      {vehicle.status === 'BOOKED' ? (
+                        <div className="absolute top-3 left-3 bg-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg border border-amber-300/30 flex items-center gap-1.5 animate-status-booking z-10">
+                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                          UNIT BOOKING
+                        </div>
+                      ) : (
+                        <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg border border-green-300/30 flex items-center gap-1.5 animate-status-ready z-10">
+                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                          READY STOCK
+                        </div>
+                      )}
                     </CardHeader>
                     <CardContent className="p-4">
                       <CardTitle className="text-lg mb-2">

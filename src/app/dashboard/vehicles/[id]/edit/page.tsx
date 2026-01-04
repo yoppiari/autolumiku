@@ -500,15 +500,15 @@ export default function EditVehiclePage() {
         {/* Current Status Display */}
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-600 mb-1">Status Saat Ini:</p>
-          <span className={`inline-block px-4 py-2 rounded-full font-bold text-lg ${formData.status === 'AVAILABLE' ? 'bg-green-100 text-green-800 border-2 border-green-400' :
-            formData.status === 'BOOKED' ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-400' :
-              formData.status === 'SOLD' ? 'bg-red-100 text-red-800 border-2 border-red-400' :
-                'bg-gray-100 text-gray-800 border-2 border-gray-400'
+          <span className={`inline-block px-4 py-2 rounded-full font-bold text-lg shadow-sm border-2 ${formData.status === 'AVAILABLE' ? 'bg-green-500 text-white border-green-600 animate-status-ready' :
+            formData.status === 'BOOKED' ? 'bg-amber-500 text-white border-amber-600 animate-status-booking' :
+              formData.status === 'SOLD' ? 'bg-rose-600 text-white border-rose-700 font-bold animate-status-sold' :
+                'bg-gray-100 text-gray-800 border-gray-400'
             }`}>
-            {formData.status === 'AVAILABLE' ? '✅ Ready / Tersedia' :
-              formData.status === 'BOOKED' ? '📋 Booking / DP' :
-                formData.status === 'SOLD' ? '🎉 Sold / Terjual' :
-                  '📝 Draft'}
+            {formData.status === 'AVAILABLE' ? '✅ READY STOCK' :
+              formData.status === 'BOOKED' ? '📋 UNIT BOOKING' :
+                formData.status === 'SOLD' ? '🎉 UNIT TERJUAL' :
+                  '📝 DRAFT'}
           </span>
         </div>
 

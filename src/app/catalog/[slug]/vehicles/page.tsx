@@ -106,7 +106,7 @@ export default async function CatalogVehiclesPage({ params, searchParams }: { pa
 
     const where: any = {
       tenantId: tenant.id,
-      status: 'AVAILABLE',
+      status: { in: ['AVAILABLE', 'BOOKED', 'SOLD'] },
     };
 
     if (search) {
@@ -143,7 +143,7 @@ export default async function CatalogVehiclesPage({ params, searchParams }: { pa
     const allVehiclesForFilters = await prisma.vehicle.findMany({
       where: {
         tenantId: tenant.id,
-        status: 'AVAILABLE',
+        status: { in: ['AVAILABLE', 'BOOKED', 'SOLD'] },
       },
       select: {
         make: true,
@@ -240,7 +240,7 @@ export default async function CatalogVehiclesPage({ params, searchParams }: { pa
                     Stok Kendaraan Tersedia
                   </h1>
                   <p className="text-muted-foreground">
-                    Menampilkan {transformedVehicles.length} unit yang ready stok
+                    Menampilkan {transformedVehicles.length} unit ({transformedVehicles.filter(v => v.status === 'AVAILABLE').length} Ready, {transformedVehicles.filter(v => v.status === 'BOOKED').length} Booking)
                   </p>
                 </div>
               </div>

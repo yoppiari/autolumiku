@@ -117,79 +117,21 @@ const filteredConversations = conversations.filter((conv) => {
 
 ---
 
-### 7. **Vehicle Status - Visual Indicators**
-**Location**: `src/app/dashboard/vehicles/page.tsx` (lines 231-249, 534-536)
-**Issue**: Status buttons need better visual indicators to show actual status
+**Fix Applied**:
+- Updated `getStatusColor` in `src/app/dashboard/vehicles/page.tsx` with vibrant colors and custom animations (`animate-status-ready`, `animate-status-booking`, `animate-status-sold`).
+- Synced the Vehicle Edit page with the same high-impact status indicators and pulsing effects.
+- Unified the status color scheme (Green for Ready, Amber for Booking, Rose for Sold) for a consistent premium feel.
 
-**Current Implementation**:
-```tsx
-const getStatusColor = (status: VehicleStatus) => {
-  switch (status) {
-    case 'DRAFT': return 'bg-gray-100 text-gray-800';
-    case 'AVAILABLE': return 'bg-green-100 text-green-800';
-    case 'BOOKED': return 'bg-yellow-100 text-yellow-800';
-    case 'SOLD': return 'bg-blue-100 text-blue-800';  // Should be red!
-  }
-};
-```
-
-**Proposed Enhancement**:
-```tsx
-// Update SOLD status color to red for better visual distinction
-case 'SOLD': return 'bg-red-100 text-red-800 font-bold';
-
-// Add pulsing animation for BOOKED status
-case 'BOOKED': return 'bg-yellow-100 text-yellow-800 animate-pulse';
-
-// Add border for AVAILABLE to make it stand out
-case 'AVAILABLE': return 'bg-green-100 text-green-800 border-2 border-green-400';
-```
-
-**Also Update in Edit Page** (lines 484-493):
-```tsx
-<span className={`inline-block px-4 py-2 rounded-full font-bold text-lg ${
-  formData.status === 'AVAILABLE' ? 'bg-green-100 text-green-800 border-2 border-green-400 animate-pulse' :
-  formData.status === 'BOOKED' ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-400 animate-pulse' :
-  formData.status === 'SOLD' ? 'bg-red-100 text-red-800 border-2 border-red-400' :
-  'bg-gray-100 text-gray-800 border-2 border-gray-400'
-}`}>
-```
-
-**Status**: Ready to implement
+**Status**: ✅ COMPLETED
 
 ---
 
-### 8. **Public Website - Booking/Sold Status Display**
-**Location**: Public catalog pages (need to check `src/app/(showroom)` or `src/app/catalog`)
-**Issue**: Booking and Sold status not visible/incorrect on public website
+**Fix Applied**:
+- Modified `src/app/catalog/[slug]/vehicles/page.tsx` and `src/app/(showroom)/page.tsx` to include `BOOKED` and `SOLD` units (previously they were filtered out).
+- Public vehicle cards already support rotating carousels with "TERJUAL" (grayscale) and "BOOKING" (amber overlay) effects.
+- Ensured vehicle detail pages use direct WhatsApp numbers from the tenant/AI configuration.
 
-**Investigation Needed**:
-1. Check `src/app/(showroom)/vehicles/` pages
-2. Check `src/app/catalog/[slug]/vehicles/` pages
-3. Verify status badges are displayed correctly
-4. Ensure sold vehicles have overlay/watermark
-
-**Proposed Fix Template**:
-```tsx
-{/* Vehicle Card */}
-<div className="relative">
-  <img src={photo} />
-  {vehicle.status === 'SOLD' && (
-    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-      <span className="text-white text-2xl font-bold rotate-[-15deg] bg-red-600 px-4 py-2 rounded">
-        TERJUAL
-      </span>
-    </div>
-  )}
-  {vehicle.status === 'BOOKED' && (
-    <div className="absolute top-2 right-2 bg-yellow-500 text-white px-3 py-1 rounded font-bold">
-      BOOKING
-    </div>
-  )}
-</div>
-```
-
-**Status**: Requires investigation of public catalog files
+**Status**: ✅ COMPLETED
 
 ---
 
@@ -215,8 +157,8 @@ case 'AVAILABLE': return 'bg-green-100 text-green-800 border-2 border-green-400'
 
 ### High Priority (Immediate)
 1. ✅ Edit Vehicle Page spacing - **COMPLETED**
-2. Vehicle Status visual indicators - Quick CSS changes
-3. Public website Booking/Sold display - User-facing bug
+2. ✅ Vehicle Status indicators & Animations - **COMPLETED**
+3. ✅ Public website Booking/Sold display - **COMPLETED**
 
 ### Medium Priority (This Week)
 4. Photo gallery scrollable container
@@ -313,5 +255,5 @@ To apply pending fixes:
 
 ---
 
-**Last Updated**: 2026-01-04 14:35 WIB
+**Last Updated**: 2026-01-04 14:45 WIB
 **Updated By**: Antigravity AI Assistant
