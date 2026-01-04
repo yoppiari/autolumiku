@@ -640,8 +640,8 @@ export default function EditVehiclePage() {
         {/* Status Info */}
         <div className="mt-4 text-sm text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100 italic">
           <p>• <strong>Ready:</strong> Unit dipublikasikan ke <a href="https://primamobil.id/vehicles" target="_blank" className="text-blue-600 hover:underline">primamobil.id/vehicles</a></p>
-          <p>• <strong>Booking:</strong> Unit tetap di katalog namun bertanda &quot;Booking&quot;</p>
-          <p>• <strong>Sold:</strong> Unit terjual, akan otomatis terhapus dari katalog publik</p>
+          <p>• <strong>Booking:</strong> Unit tetap di katalog namun bertanda &quot;Booking&quot; (dengan efek animasi glow)</p>
+          <p>• <strong>Sold:</strong> Unit terjual, akan otomatis bertanda &quot;Terjual&quot; di katalog publik</p>
         </div>
       </div>
 
@@ -656,7 +656,10 @@ export default function EditVehiclePage() {
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-medium text-gray-700">
                   Foto Saat Ini ({existingPhotosCount})
-                  <span className="ml-2 text-xs text-gray-500">• Drag foto untuk mengubah urutan</span>
+                  <span className="ml-2 text-xs text-gray-500">
+                    • <span className="hidden md:inline">Drag foto untuk mengubah urutan</span>
+                    <span className="md:hidden">Gunakan tombol panah untuk mengatur urutan</span>
+                  </span>
                 </p>
                 {savingPhotoOrder && (
                   <span className="text-xs text-blue-600 flex items-center gap-1">
@@ -668,8 +671,8 @@ export default function EditVehiclePage() {
                   </span>
                 )}
               </div>
-              <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden pr-1 pb-2 custom-scrollbar focus-within:ring-2 focus-within:ring-green-100 rounded-lg">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-1">
+              <div className="max-h-[400px] md:max-h-[500px] overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50 custom-scrollbar focus-within:ring-2 focus-within:ring-blue-100">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   {vehicle?.photos.map((photo: any, index: number) => (
                     <div
                       key={photo.id}
@@ -678,15 +681,15 @@ export default function EditVehiclePage() {
                       onDragEnter={() => handleExistingDragEnter(index)}
                       onDragEnd={handleExistingDragEnd}
                       onDragOver={(e) => e.preventDefault()}
-                      className={`relative group cursor-move transition-all hover:scale-105 ${draggedExistingIndex === index ? 'opacity-50 scale-95' : ''
+                      className={`relative group cursor-move transition-all hover:shadow-md ${draggedExistingIndex === index ? 'opacity-50 scale-95' : 'hover:scale-[1.02]'
                         }`}
                     >
                       {/* Drag Handle */}
-                      <div className="absolute top-1 left-1 bg-gray-800 bg-opacity-75 text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M9 3h2v2H9V3zm4 0h2v2h-2V3zM9 7h2v2H9V7zm4 0h2v2h-2V7zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2z" />
+                      <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm text-white rounded px-1.5 py-0.5 flex items-center gap-1 z-10 text-[10px]">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                         </svg>
-                        <span className="text-xs font-semibold">#{index + 1}</span>
+                        <span className="font-bold">#{index + 1}</span>
                       </div>
 
                       {/* Photo Image */}
@@ -698,23 +701,23 @@ export default function EditVehiclePage() {
 
                       {/* Main Photo Badge - First photo is always main */}
                       {index === 0 && (
-                        <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold flex items-center gap-1">
+                        <div className="absolute top-1 right-1 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm border border-white/30">
                           ⭐ Utama
                         </div>
                       )}
 
                       {/* Quality Score Badge */}
                       {photo.qualityScore && (
-                        <div className={`absolute bottom-1 right-1 text-xs px-2 py-1 rounded font-semibold ${photo.validationStatus === 'VALID' ? 'bg-green-100 text-green-800' :
+                        <div className={`absolute bottom-2 right-2 text-[10px] px-1.5 py-0.5 rounded font-bold shadow-sm ${photo.validationStatus === 'VALID' ? 'bg-green-100 text-green-800' :
                           photo.validationStatus === 'LOW_QUALITY' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-red-100 text-red-800'
                           }`}>
-                          {photo.qualityScore}
+                          {photo.qualityScore}%
                         </div>
                       )}
 
                       {/* Mobile Reorder Buttons - Always visible on mobile */}
-                      <div className="absolute bottom-1 left-1 flex gap-1 sm:hidden z-20">
+                      <div className="absolute bottom-2 left-2 flex gap-1 sm:hidden z-20">
                         {/* Move Up Button */}
                         <button
                           type="button"
@@ -737,11 +740,10 @@ export default function EditVehiclePage() {
                             } catch (err) { console.error(err); }
                             setSavingPhotoOrder(false);
                           }}
-                          className={`p-1.5 rounded-full shadow-lg ${index === 0 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
-                          title="Pindah ke atas"
+                          className={`p-1.5 rounded-full shadow-lg ${index === 0 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white border border-white/20`}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                           </svg>
                         </button>
                         {/* Move Down Button */}
@@ -766,11 +768,10 @@ export default function EditVehiclePage() {
                             } catch (err) { console.error(err); }
                             setSavingPhotoOrder(false);
                           }}
-                          className={`p-1.5 rounded-full shadow-lg ${index === (vehicle?.photos.length || 0) - 1 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white`}
-                          title="Pindah ke bawah"
+                          className={`p-1.5 rounded-full shadow-lg ${index === (vehicle?.photos.length || 0) - 1 ? 'bg-gray-400' : 'bg-blue-600 active:bg-blue-700'} text-white border border-white/20`}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
                         </button>
                       </div>

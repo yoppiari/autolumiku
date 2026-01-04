@@ -1524,7 +1524,7 @@ END:VCARD`;
                                     e.stopPropagation();
                                     setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id);
                                   }}
-                                  className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opacity ${activeMessageMenu === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                  className={`absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-opacity ${activeMessageMenu === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 active:opacity-100'
                                     }`}
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
