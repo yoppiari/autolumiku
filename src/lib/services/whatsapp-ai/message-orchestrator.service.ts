@@ -275,13 +275,15 @@ export class MessageOrchestratorService {
         /^(tolong|help)\s*$/i,                       // tolong, help (alone)
         /^(menu|fitur)$/i,                           // menu, fitur (alone)
         /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
+        /\b(foto|gambar|lihat|stok|inventory)\s*(nya|dong|ya|aja|mana)?\??$/i, // "fotonya mana?", "stoknya ada?"
+        /^(ada|punya)\s+(foto|gambar|stok|unit)/i,    // "ada foto", "punya stok"
       ];
 
       const normalizedMessage = (incoming.message || "").trim();
       const isGreeting = greetingPatterns.some(p => p.test(normalizedMessage));
       const isEscapeMessage = escapePatterns.some(p => p.test(normalizedMessage));
 
-      if (conversation.conversationState === "upload_vehicle" && !isGreeting && !isEscapeMessage && !normalizedMessage.toLowerCase().includes("batal")) {
+      if (conversation.conversationState === "upload_vehicle" && !isGreeting && !isEscapeMessage && !normalizedMessage.includes("?") && !normalizedMessage.toLowerCase().includes("batal")) {
         // Staff is in middle of vehicle upload flow (and NOT sending a greeting, question, or cancel)
         // NOTE: Command sudah diproses di awal, jadi code ini hanya untuk vehicle data/foto
         console.log(`[Orchestrator] 💾 Upload vehicle flow - processing data/foto`);
@@ -297,7 +299,7 @@ export class MessageOrchestratorService {
           isStaff: true,
           isCustomer: false,
         };
-      } else if (conversation.conversationState === "upload_vehicle" && (isGreeting || isEscapeMessage || normalizedMessage.toLowerCase().includes("batal"))) {
+      } else if (conversation.conversationState === "upload_vehicle" && (isGreeting || isEscapeMessage || normalizedMessage.includes("?") || normalizedMessage.toLowerCase().includes("batal"))) {
         // User sent greeting, question, or "batal" while in upload flow - reset conversation state
         console.log(`[Orchestrator] 🔄 Greeting/question/cancel detected in upload flow, resetting conversation state`);
 
@@ -696,7 +698,7 @@ export class MessageOrchestratorService {
           classification.intent,
           incoming.message,
           false, // isStaff = false (since this block is for customers)
-          null   // staffInfo
+          undefined   // staffInfo
         );
 
         responseMessage = result.message;
