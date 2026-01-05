@@ -1170,6 +1170,7 @@ export class WhatsAppAIChatService {
       systemPrompt += '\n' + STAFF_COMMAND_HELP;
       systemPrompt += '\n' + STAFF_TROUBLESHOOTING;
       systemPrompt += '\n' + STAFF_EDIT_FEATURE;
+      systemPrompt += '\n' + STAFF_RULES;
     }
 
     // 5. CORE COMMUNICATION RULES

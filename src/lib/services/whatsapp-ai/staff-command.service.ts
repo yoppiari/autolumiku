@@ -1747,41 +1747,42 @@ export class StaffCommandService {
       };
     }
 
-    let message = `📋 * DAFTAR STOK KENDARAAN *\n`;
-    if (filter) message += `Filter: "${filter}"\n`;
-    message += `Total: ${vehicles.length} unit\n\n`;
+    let message = `Baik, ini daftar mobil yang saat ini tersedia di showroom kami:\n\n`;
+    if (filter) message = `Berikut daftar mobil dengan filter "${filter}":\n\n`;
 
     vehicles.forEach((v, idx) => {
-      const statusEmoji = v.status === "AVAILABLE" ? "✅" : v.status === "BOOKED" ? "🔒" : "💰";
       const id = v.displayId || v.id.slice(-6).toUpperCase();
       const transmission = v.transmissionType || 'Manual';
       const variant = v.variant ? ` ${v.variant}` : '';
       const km = v.mileage ? v.mileage.toLocaleString('id-ID') : '-';
       const fuel = v.fuelType || 'Bensin';
       const color = v.color || '-';
-      const priceFormatted = this.formatPrice(Number(v.price), true);
+      const priceJuta = Math.round(Number(v.price) / 1000000);
 
       // Generate website link
       const makeSlug = v.make.toLowerCase().replace(/\s+/g, '-');
       const modelSlug = v.model.toLowerCase().replace(/\s+/g, '-');
       const websiteUrl = `https://primamobil.id/vehicles/${makeSlug}-${modelSlug}-${v.year}-${id}`;
 
-      message += `${idx + 1}. 🚗 ${v.make} ${v.model}${variant} ${transmission} ${v.year}  ${statusEmoji} ${v.status}\n`;
-      message += `   ID: ${id}\n`;
-      message += `   Harga: | Rp ${priceFormatted}\n`;
-      message += `   Kilometer: ${km} km\n`;
-      message += `   Transmisi: ${transmission}\n`;
-      message += `   Bahan bakar: ${fuel}\n`;
-      message += `   Warna: ${color}\n`;
-      message += `   🎯 Website: ${websiteUrl}\n\n`;
+      message += `🚗 *${v.make} ${v.model}${variant} ${transmission} ${v.year}* | ${id}\n`;
+      message += `• Harga: Rp ${priceJuta} juta\n`;
+      message += `• Kilometer: ${km} km\n`;
+      message += `• Transmisi: ${transmission}\n`;
+      message += `• Bahan bakar: ${fuel}\n`;
+      message += `• Warna: ${color}\n`;
+      message += `• 🎯 Website: ${websiteUrl}\n\n`;
     });
+
+    message += `Total stok tersedia: ${vehicles.length} unit\n\n`;
+    message += `Mau saya kirim foto salah satu unitnya? 😊\n\n`;
 
     if (vehicles.length === 20) {
       message += `_Menampilkan 20 unit terbaru..._\n\n`;
     }
 
-    message += `Ketik \`status [ID] SOLD\` untuk update status.\n`;
-    message += `Apakah ada hal lain yang bisa kami bantu? 😊`;
+    message += `💡 *TIPS STAFF:*\n`;
+    message += `• Update Status: \`status [ID] SOLD\`\n`;
+    message += `• Edit Data: \`edit [ID] harga 150jt\`\n`;
 
     return {
       success: true,

@@ -291,6 +291,44 @@ export class VehicleEditService {
       });
       const dashboardUrl = `${baseUrl}/dashboard/vehicles/${vehicleSlug}/edit`;
 
+      // Re-fetch vehicle for accurate detailed card
+      const updatedVehicle = await prisma.vehicle.findUnique({
+        where: { id: vehicle.id },
+        select: {
+          id: true,
+          displayId: true,
+          make: true,
+          model: true,
+          year: true,
+          variant: true,
+          transmissionType: true,
+          mileage: true,
+          fuelType: true,
+          color: true,
+          price: true,
+        }
+      });
+
+      let detailedCard = "";
+      if (updatedVehicle) {
+        const id = updatedVehicle.displayId || updatedVehicle.id.slice(-6).toUpperCase();
+        const priceJuta = Math.round(Number(updatedVehicle.price) / 1000000);
+        const transmission = updatedVehicle.transmissionType || 'Manual';
+        const variant = updatedVehicle.variant ? ` ${updatedVehicle.variant}` : '';
+        const km = updatedVehicle.mileage ? updatedVehicle.mileage.toLocaleString('id-ID') : '-';
+        const fuel = updatedVehicle.fuelType || 'Bensin';
+        const color = updatedVehicle.color || '-';
+
+        detailedCard = `\n\n📋 *DATA TERBARU:* \n` +
+          `🚗 *${updatedVehicle.make} ${updatedVehicle.model}${variant} ${transmission} ${updatedVehicle.year}* | ${id}\n` +
+          `• Harga: Rp ${priceJuta} juta\n` +
+          `• Kilometer: ${km} km\n` +
+          `• Transmisi: ${transmission}\n` +
+          `• Bahan bakar: ${fuel}\n` +
+          `• Warna: ${color}\n` +
+          `• 🎯 Website: ${vehicleUrl}\n\n`;
+      }
+
       if (changes.length === 1) {
         // Single field change
         const change = changes[0];
@@ -299,9 +337,9 @@ export class VehicleEditService {
         message =
           `✅ Berhasil update ${vehicleName}!\n\n` +
           `${change.fieldLabel}: ${formattedOld} → ${formattedNew}\n` +
-          `ID: ${vehicle.displayId || vehicle.id}\n\n` +
-          `🌐 Website:\n${vehicleUrl}\n\n` +
-          `📊 Dashboard:\n${dashboardUrl}`;
+          `ID: ${vehicle.displayId || vehicle.id}\n` +
+          detailedCard +
+          `Mau saya kirim fotonya? 😊`;
       } else {
         // Multi-field changes
         const changeLines = changes.map((c) => {
@@ -311,10 +349,10 @@ export class VehicleEditService {
         });
         message =
           `✅ Berhasil update ${vehicleName}!\n\n` +
-          `Perubahan:\n${changeLines.join("\n")}\n\n` +
-          `ID: ${vehicle.displayId || vehicle.id}\n\n` +
-          `🌐 Website:\n${vehicleUrl}\n\n` +
-          `📊 Dashboard:\n${dashboardUrl}`;
+          `*Perubahan:*\n${changeLines.join("\n")}\n` +
+          `ID: ${vehicle.displayId || vehicle.id}\n` +
+          detailedCard +
+          `Mau saya kirim fotonya? 😊`;
       }
 
       // Add partial error info if some fields failed

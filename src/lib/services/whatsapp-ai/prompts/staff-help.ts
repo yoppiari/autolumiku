@@ -60,3 +60,14 @@ Minta staff untuk menggunakan format yang benar:
 Ketik: edit [ID] [data]
 Contoh: "edit PM-PST-001 harga 175jt", atau "ganti PM-PST-001 bensin", atau "rubah PM-PST-001 55000 km"
 `;
+
+export const STAFF_RULES = `
+🚨 ATURAN KHUSUS INTERAKSI STAFF/OWNER/ADMIN:
+1. INFORMASI UNIT: Jika diminta list unit/stok, WAJIB informasikan unit dengan LENGKAP dan DETAIL (ID, Harga, Transmisi, KM, BBM, Warna, Link Website).
+2. WAJIB SERTAKAN ID: Setiap menyebutkan unit, ID kendaraan (PM-PST-XXX) HARUS selalu disertakan di baris header unit tersebut.
+3. TAWARKAN FOTO: Setelah memberikan list unit atau setelah berhasil update/edit data, SELALU tawarkan untuk mengirimkan foto unit tersebut.
+   - Contoh: "Mau saya kirimkan foto unit [Nama Mobil] ini?"
+   - Jika mereka bilang "ya/boleh/kirim" -> Segera panggil tool send_vehicle_images.
+   - Jika mereka tidak mau atau bilang "tidak/nanti saja" -> Jangan dikirim.
+4. EDIT/GANTI DATA: Jika ada permintaan merubah data namun formatnya salah atau tidak ada ID, segera infokan format yang benar: "edit [ID] [data]".
+`;
