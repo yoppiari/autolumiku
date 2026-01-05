@@ -2155,9 +2155,9 @@ export class StaffCommandService {
         valueExtractor: m => m[1].trim()
       },
 
-      // 5. Year: "rubah tahun 2017", "ganti jadi 2018"
+      // 5. Year: "rubah tahun 2017", "ganti jadi 2018", "rubah [ID] 2017"
       {
-        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*tahun\s*(?:ke|jadi|menjadi)?\s*(\d{4})/i,
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:tahun)?\s*(?:ke|jadi|menjadi)?\s*(\d{4})/i,
         field: 'year',
         valueExtractor: m => m[1]
       },
@@ -2176,16 +2176,23 @@ export class StaffCommandService {
         valueExtractor: m => m[1]
       },
 
-      // 8. Status: "rubah status booked", "ganti status sold"
+      // 8. Status: "rubah status booked", "rubah [ID] booked"
       {
+        // Explicit "status" keyword
         pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*status\s*(?:ke|jadi|menjadi)?\s*(\w+)/i,
         field: 'status',
         valueExtractor: m => m[1]
       },
-
-      // 8. Condition: "rubah kondisi bekas", "ganti jadi baru"
       {
-        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*kondisi\s*(?:ke|jadi|menjadi)?\s*(baru|bekas|used|new)/i,
+        // Implicit status (strictly matched values)
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:ke|jadi|menjadi)?\s*(booked|sold|terjual|laku|available|ready|tersedia|deleted|hapus)\s*$/i,
+        field: 'status',
+        valueExtractor: m => m[1]
+      },
+
+      // 8. Condition: "rubah kondisi bekas", "ganti [ID] baru"
+      {
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:kondisi)?\s*(?:ke|jadi|menjadi)?\s*(baru|bekas|used|new)/i,
         field: 'condition',
         valueExtractor: m => {
           const val = m[1].toLowerCase();
@@ -2225,12 +2232,14 @@ export class StaffCommandService {
       isValid: false,
       error: `Format perintah edit tidak dikenali.\n\n` +
         `💡 *Panduan Edit Data:*\n` +
-        `Ketik: "edit [ID/Mobil] [data]"\n\n` +
+        `Ketik: "edit [ID] [data]"\n\n` +
         `*Contoh Perintah:*\n` +
-        `• "edit PM-PST-001 km 50000"\n` +
-        `• "rubah brio 2021 jadi matic"\n` +
-        `• "status PM-PST-002 sold"\n` +
-        `• "ganti harga 150jt"`,
+        `• "rubah PM-PST-001 booked" (Update Status)\n` +
+        `• "ganti PM-PST-001 sold"\n` +
+        `• "rubah PM-PST-001 bekas"\n` +
+        `• "rubah PM-PST-001 biru"\n` +
+        `• "ganti PM-PST-001 2017" (Update Tahun)\n` +
+        `• "ganti PM-PST-002 250jt" (Update Harga)`,
     };
   }
 
