@@ -2157,8 +2157,9 @@ export class StaffCommandService {
       },
 
       // 5. Year: "rubah tahun 2017", "ganti jadi 2018", "rubah [ID] 2017"
+      // Added lookahead to prevent matching engine capacity (e.g. 2000 cc) or price/mileage
       {
-        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:tahun)?\s*(?:ke|jadi|menjadi)?\s*(\d{4})/i,
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:tahun)?\s*(?:ke|jadi|menjadi)?\s*((?:19|20)\d{2})(?!\s*(?:cc|km|jt|juta|jf|m|miliar|bio))/i,
         field: 'year',
         valueExtractor: m => m[1]
       },
