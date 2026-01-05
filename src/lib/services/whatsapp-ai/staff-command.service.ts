@@ -379,21 +379,38 @@ export class StaffCommandService {
 
     const [cmd, vehicleId, status] = parts;
 
+    // Support aliases in validation
+    const statusMap: Record<string, string> = {
+      'booking': 'BOOKED', 'booked': 'BOOKED', 'book': 'BOOKED',
+      'sold': 'SOLD', 'terjual': 'SOLD', 'laku': 'SOLD', 'sold out': 'SOLD',
+      'available': 'AVAILABLE', 'ready': 'AVAILABLE', 'ada': 'AVAILABLE', 'tersedia': 'AVAILABLE',
+      'delete': 'DELETED', 'deleted': 'DELETED', 'hapus': 'DELETED'
+    };
+
+    const normalizeStatus = statusMap[status.toLowerCase()] || status.toUpperCase();
     const validStatuses = ["AVAILABLE", "BOOKED", "SOLD", "DELETED"];
-    if (!validStatuses.includes(status.toUpperCase())) {
+
+    if (!validStatuses.includes(normalizeStatus)) {
       return {
         command: "status",
         params: {},
         isValid: false,
-        error: `Status "${status}" ga valid kak\n\nPilihan: AVAILABLE, BOOKED, SOLD, DELETED`,
+        error: `Status "${status}" belum dikenali kak.\n\n` +
+          `📋 *Pilihan Status:*\n` +
+          `• *AVAILABLE* (Ready/Tersedia)\n` +
+          `• *BOOKED* (Booking)\n` +
+          `• *SOLD* (Terjual/Laku)\n` +
+          `• *DELETED* (Hapus)\n\n` +
+          `💡 *Contoh:*\n` +
+          `"status PM-PST-001 booking"`,
       };
     }
 
     return {
       command: "status",
       params: {
-        vehicleId,
-        status: status.toUpperCase(),
+        vehicleId: vehicleId.toUpperCase(),
+        status: normalizeStatus, // Pass normalized status directly
       },
       isValid: true,
     };
@@ -2206,7 +2223,14 @@ export class StaffCommandService {
       command: "edit_vehicle",
       params: {},
       isValid: false,
-      error: "Format tidak dikenali. Contoh: 'rubah km 50000' atau 'ganti bensin jadi diesel'",
+      error: `Format perintah edit tidak dikenali.\n\n` +
+        `💡 *Panduan Edit Data:*\n` +
+        `Ketik: "edit [ID/Mobil] [data]"\n\n` +
+        `*Contoh Perintah:*\n` +
+        `• "edit PM-PST-001 km 50000"\n` +
+        `• "rubah brio 2021 jadi matic"\n` +
+        `• "status PM-PST-002 sold"\n` +
+        `• "ganti harga 150jt"`,
     };
   }
 
