@@ -1006,6 +1006,12 @@ async function generateReportByType(
     // Gather data using shared service
     const reportData = await ReportDataService.gather(type, context.tenantId, startDate, now);
 
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: context.tenantId },
+      select: { name: true, logoUrl: true },
+    });
+    const tenantName = tenant?.name || 'Showroom';
+
     // Map ReportData to professional WhatsAppCommandPDF config
     const generator = new WhatsAppCommandPDF();
     const metrics: any[] = [];
@@ -1068,12 +1074,6 @@ async function generateReportByType(
         `Customer Engagement Proxy: ${reportData.kpis.customerRetention}%`
       ];
     } else {
-      const tenant = await prisma.tenant.findUnique({
-        where: { id: context.tenantId },
-        select: { name: true, logoUrl: true },
-      });
-      const tenantName = tenant?.name || 'Showroom';
-
       analysis = [
         `Analisa performa ${tenantName} menunjukkan pertumbuhan positif pada lead engagement.`,
         `Inventory turnover saat ini dalam batas normal.`,
@@ -1081,11 +1081,10 @@ async function generateReportByType(
       ];
     }
 
-    const generator = new WhatsAppCommandPDF();
     const pdfBuffer = await generator.generate({
       title: type.toUpperCase().replace(/-/g, ' '),
       subtitle: periodLabel,
-      tenantName: tenant?.name || 'Showroom',
+      tenantName: tenantName,
       logoUrl: tenant?.logoUrl || undefined,
       date: now,
       metrics,

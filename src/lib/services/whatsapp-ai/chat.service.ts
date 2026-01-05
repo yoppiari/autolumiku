@@ -2365,19 +2365,6 @@ export class WhatsAppAIChatService {
     const vehicleId = vehicleIdMatch ? vehicleIdMatch[0].toUpperCase() : undefined;
 
     // Field detection patterns
-    const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
-      // Mileage: "rubah km 50000", "km jadi 50000", "update kilometer 30000"
-      { pattern: /(?:rubah|ganti|ubah|update|edit)\s*(?:km|kilometer|odometer)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'mileage', valueExtractor: m => m[1] },
-      { pattern: /(?:km|kilometer)\s*(?:ke|jadi|menjadi)\s*(\d+)/i, field: 'mileage', valueExtractor: m => m[1] },
-
-      // Fuel type: "ganti bensin jadi diesel", "ubah ke diesel"
-      { pattern: /(?:rubah|ganti|ubah)\s*(?:bahan\s*bakar|fuel|bensin|solar)?\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[1] },
-      { pattern: /(?:rubah|ganti|ubah)\s*(bensin|diesel|hybrid|electric)\s*(?:ke|jadi|menjadi)\s*(diesel|bensin|hybrid|electric|listrik)/i, field: 'fuelType', valueExtractor: m => m[2] },
-
-      // Year: "ganti tahun ke 2018", "ubah tahun 2016 jadi 2018"
-      { pattern: /(?:rubah|ganti|ubah|update)\s*tahun\s*(?:\d+\s*)?(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
-      { pattern: /tahun\s*(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
-
     const fuelTypesRegex = '(?:bensin|diesel|hybrid|electric|listrik|solar)';
     const transmissionRegex = '(?:matic|manual|automatic|cvt|at|mt)';
     const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas)';
