@@ -2417,7 +2417,7 @@ export class MessageOrchestratorService {
       let processedBuffer: Buffer = photoBuffer;
       try {
         const plateResult = await PlateDetectionService.processImage(photoBuffer, {
-          tenantName: tenant?.name || 'PRIMA MOBIL',
+          tenantName: tenant?.name || 'Showroom',
           tenantLogoUrl: tenant?.logoUrl || undefined,
         });
         processedBuffer = plateResult.covered;

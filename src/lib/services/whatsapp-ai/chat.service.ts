@@ -2378,31 +2378,59 @@ export class WhatsAppAIChatService {
       { pattern: /(?:rubah|ganti|ubah|update)\s*tahun\s*(?:\d+\s*)?(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
       { pattern: /tahun\s*(?:ke|jadi|menjadi)\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
 
-      // Price: "update harga 150jt", "ganti harga ke 200000000"
+    const fuelTypesRegex = '(?:bensin|diesel|hybrid|electric|listrik|solar)';
+    const transmissionRegex = '(?:matic|manual|automatic|cvt|at|mt)';
+    const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas)';
+
+    const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
+      // 1. Price: "rubah harga 150jt", "update 200jt" (require jt/juta or 'harga')
       {
-        pattern: /(?:rubah|ganti|ubah|update)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta)?)/i, field: 'price', valueExtractor: m => {
+        pattern: /(?:rubah|ganti|ubah|update)(?:\s+.*?)\s*(?:harga)?\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta))/i,
+        field: 'price',
+        valueExtractor: m => {
           const val = m[1].toLowerCase();
-          if (val.includes('jt') || val.includes('juta')) {
-            return String(parseInt(val) * 1000000);
-          }
-          return val;
+          return String(parseInt(val) * 1000000);
         }
       },
-
-      // Transmission: "ganti transmisi ke matic", "ubah ke manual"
       {
-        pattern: /(?:rubah|ganti|ubah)\s*(?:transmisi)?\s*(?:ke|jadi|menjadi)\s*(matic|manual|automatic|cvt|at|mt)/i, field: 'transmission', valueExtractor: m => {
+        pattern: /(?:rubah|ganti|ubah|update)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+)/i,
+        field: 'price',
+        valueExtractor: m => m[1]
+      },
+
+      // 2. Year: "ubah tahun 2017", "ganti jadi 2018"
+      { pattern: /(?:rubah|ganti|ubah|update)\s*tahun\s*(?:ke|jadi|menjadi)?\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
+
+      // 3. Fuel type: "ganti diesel", "rubah ke hybrid"
+      {
+        pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:bahan\\s*bakar|fuel)?\\s*(?:ke|jadi|menjadi)?\\s*(${fuelTypesRegex})`, 'i'),
+        field: 'fuelType',
+        valueExtractor: m => m[1]
+      },
+
+      // 4. Transmission: "ganti jadi manual", "ubah transmisi matic"
+      {
+        pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:transmisi)?\\s*(?:ke|jadi|menjadi)?\\s*(${transmissionRegex})`, 'i'),
+        field: 'transmissionType',
+        valueExtractor: m => {
           const val = m[1].toLowerCase();
-          if (val === 'matic' || val === 'at' || val === 'automatic') return 'automatic';
+          if (val === 'matic' || val === 'at' || val === 'automatic' || val === 'cvt') return 'automatic';
           if (val === 'manual' || val === 'mt') return 'manual';
           return val;
         }
       },
 
-      // Color: "ganti warna ke hitam", "ubah warna putih jadi merah"
-      { pattern: /(?:rubah|ganti|ubah)\s*warna\s*(?:\w+\s*)?(?:ke|jadi|menjadi)\s*(\w+)/i, field: 'color', valueExtractor: m => m[1] },
+      // 5. Mileage: "ubah km 50000", "ganti jadi 30000 km"
+      { pattern: /(?:rubah|ganti|ubah|update)\s*(?:km|kilometer|odometer)\s*(?:ke|jadi|menjadi)?\s*(\d+)\s*(?:km)?/i, field: 'mileage', valueExtractor: m => m[1] },
 
-      // Engine capacity: "ubah cc ke 1500", "ganti kapasitas mesin 1497"
+      // 6. Color: "ganti jadi merah", "rubah warna biru"
+      {
+        pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:warna)?\\s*(?:ke|jadi|menjadi)?\\s*(${colorsRegex})`, 'i'),
+        field: 'color',
+        valueExtractor: m => m[1]
+      },
+
+      // 7. Engine capacity: "ubah cc ke 1500", "ganti kapasitas mesin 1497"
       { pattern: /(?:rubah|ganti|ubah)\s*(?:cc|kapasitas\s*mesin)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'engineCapacity', valueExtractor: m => m[1] },
     ];
 

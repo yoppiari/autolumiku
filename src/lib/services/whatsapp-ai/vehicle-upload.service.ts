@@ -214,7 +214,7 @@ export class WhatsAppVehicleUploadService {
       if (!staff) {
         return {
           success: false,
-          message: 'Mohon maaf, nomor WhatsApp Anda belum terdaftar.\n\nSilakan hubungi admin untuk pendaftaran di: primamobil.id/dashboard/users',
+          message: `Mohon maaf, nomor WhatsApp Anda belum terdaftar.\n\nSilakan hubungi admin untuk pendaftaran di Dashboard ${tenant?.name || 'Showroom'}`,
           error: 'Staff not found in tenant',
         };
       }
@@ -349,7 +349,7 @@ export class WhatsAppVehicleUploadService {
 
               try {
                 const plateResult = await PlateDetectionService.processImage(photoBuffer, {
-                  tenantName: tenant?.name || 'PRIMA MOBIL',
+                  tenantName: tenant?.name || 'Showroom',
                   tenantLogoUrl: tenant?.logoUrl || undefined,
                 });
                 processedBuffer = plateResult.covered;
@@ -509,7 +509,7 @@ export class WhatsAppVehicleUploadService {
         errorMessage += `Ukuran foto terlalu besar. Mohon resize terlebih dahulu (maksimal 5MB).\n`;
       } else if (error.message.includes('Staff') || error.message.includes('staff')) {
         errorMessage += `Nomor WhatsApp belum terdaftar.\n`;
-        errorMessage += `Silakan hubungi admin: primamobil.id/dashboard/users\n`;
+        errorMessage += `Silakan hubungi admin melalui Dashboard ${tenant?.name || 'Showroom'}\n`;
       } else {
         errorMessage += `Silakan coba kirim ulang.\n`;
         errorMessage += `Format: "Brio 2020 120jt hitam matic km 30rb"\n`;

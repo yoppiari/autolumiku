@@ -383,7 +383,7 @@ export class AIHealthMonitorService {
       const statusText = status === "disabled" ? "NONAKTIF" : "TERGANGGU";
 
       const message =
-        `${statusEmoji} *AI PRIMA MOBIL ${statusText}*\n` +
+        `${statusEmoji} *AI ${account.tenant.name.toUpperCase()} ${statusText}*\n` +
         `━━━━━━━━━━━━━━━━━━━━━\n\n` +
         `⚠️ AI mengalami ${errorCount} error berturut-turut\n\n` +
         `📋 *Detail Error:*\n` +
@@ -456,7 +456,7 @@ export class AIHealthMonitorService {
       });
 
       const message =
-        `🟢 *AI PRIMA MOBIL AKTIF KEMBALI*\n` +
+        `🟢 *AI ${account.tenant.name.toUpperCase()} AKTIF KEMBALI*\n` +
         `━━━━━━━━━━━━━━━━━━━━━\n\n` +
         `✅ AI sudah kembali normal!\n\n` +
         `📋 *Detail:*\n` +
@@ -524,7 +524,7 @@ export class AIHealthMonitorService {
       });
 
       const message =
-        `🔴 *AI PRIMA MOBIL DINONAKTIFKAN*\n` +
+        `🔴 *AI ${account.tenant.name.toUpperCase()} DINONAKTIFKAN*\n` +
         `━━━━━━━━━━━━━━━━━━━━━\n\n` +
         `⚠️ AI dinonaktifkan secara manual\n\n` +
         `📋 *Alasan:*\n` +

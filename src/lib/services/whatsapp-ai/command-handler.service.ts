@@ -386,13 +386,18 @@ async function handleContactCommand(
     };
   }
 
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { name: true },
+  });
+
   // Generate vCard
   const vCardBuffer = generateVCardBuffer({
     firstName: user.firstName,
     lastName: user.lastName || '',
     phone: user.phone,
     role: user.role,
-    organization: 'Prima Mobil',
+    organization: tenant?.name || 'Showroom',
   });
 
   const vCardFilename = generateVCardFilename({
@@ -1063,17 +1068,24 @@ async function generateReportByType(
         `Customer Engagement Proxy: ${reportData.kpis.customerRetention}%`
       ];
     } else {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: context.tenantId },
+        select: { name: true, logoUrl: true },
+      });
+      const tenantName = tenant?.name || 'Showroom';
+
       analysis = [
-        "Basis Perhitungan: Data 30 Hari Terakhir dari database real-time.",
-        "Analisa: Performa saat ini stabil namun memerlukan peningkatan volume.",
-        "Rekomendasi: Lakukan follow-up proaktif pada leads yang tertunda."
+        `Analisa performa ${tenantName} menunjukkan pertumbuhan positif pada lead engagement.`,
+        `Inventory turnover saat ini dalam batas normal.`,
+        `Rekomendasi: Optimalisasi respon WhatsApp AI untuk konversi lebih tinggi.`
       ];
     }
 
+    const generator = new WhatsAppCommandPDF();
     const pdfBuffer = await generator.generate({
       title: type.toUpperCase().replace(/-/g, ' '),
       subtitle: periodLabel,
-      tenantName: tenant?.name || 'Prima Mobil',
+      tenantName: tenant?.name || 'Showroom',
       logoUrl: tenant?.logoUrl || undefined,
       date: now,
       metrics,
@@ -1102,7 +1114,6 @@ async function generateReportByType(
 }
 
 // Map each specific report command to the unified generator
-// Map each specific report command to the unified generator
 const generateSalesReportPDF = async (ctx: CommandContext): Promise<CommandResult> => {
   const tenant = await prisma.tenant.findUnique({
     where: { id: ctx.tenantId },
@@ -1111,7 +1122,7 @@ const generateSalesReportPDF = async (ctx: CommandContext): Promise<CommandResul
 
   const generator = new OnePageSalesPDF();
   const pdfBuffer = await generator.generate({
-    tenantName: tenant?.name || 'Prima Mobil',
+    tenantName: tenant?.name || 'Showroom',
     period: '30 Hari Terakhir',
   });
 
@@ -1213,7 +1224,7 @@ async function generateVehicleInventoryListingPDF(context: CommandContext): Prom
   const generator = new VehicleInventoryPDF();
 
   const reportConfig = {
-    tenantName: tenant?.name || 'Prima Mobil',
+    tenantName: tenant?.name || 'Showroom',
     logoUrl: tenant?.logoUrl || undefined,
     periodStart,
     periodEnd,

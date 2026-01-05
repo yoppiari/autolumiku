@@ -65,6 +65,7 @@ const FIELD_MAP: Record<string, string> = {
   // Transmission
   transmisi: "transmissionType",
   transmission: "transmissionType",
+  transmissiontype: "transmissionType",
   // Fuel type
   bensin: "fuelType",
   solar: "fuelType",
