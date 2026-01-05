@@ -57,7 +57,7 @@ export default async function VehiclesPage() {
   const vehicles = await prisma.vehicle.findMany({
     where: {
       tenantId: tenant.id,
-      status: 'AVAILABLE',
+      status: { in: ['AVAILABLE', 'BOOKED', 'SOLD'] },
     },
     include: {
       photos: {

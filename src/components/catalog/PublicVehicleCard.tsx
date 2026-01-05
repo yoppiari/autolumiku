@@ -90,10 +90,22 @@ export default function PublicVehicleCard({
             grayscale={isSold}
             overlay={
               (isSold || isBooked) && (
-                <div className={`absolute inset-0 ${isSold ? 'bg-black/40' : 'bg-black/20'} flex items-center justify-center z-20`}>
-                  <span className={`text-white text-2xl font-bold tracking-wider rotate-[-15deg] ${isSold ? 'bg-red-600' : 'bg-yellow-500'} px-4 py-2 rounded shadow-xl`}>
-                    {isSold ? 'TERJUAL' : 'BOOKING'}
-                  </span>
+                <div className={`absolute inset-0 ${isSold ? 'bg-black/50' : 'bg-black/30'} flex items-center justify-center z-20 transition-all duration-500`}>
+                  <div className={`
+                    transform -rotate-[15deg]
+                    px-6 py-2 md:px-8 md:py-3
+                    rounded-lg
+                    border-2
+                    ${isSold ? 'border-red-400/50 bg-red-600/85' : 'border-amber-400/50 bg-amber-500/85'}
+                    backdrop-blur-sm
+                    shadow-2xl
+                    flex items-center justify-center
+                    animate-in zoom-in-50 duration-300
+                  `}>
+                    <span className="text-white text-xl md:text-3xl font-black tracking-widest uppercase drop-shadow-lg">
+                      {isSold ? 'TERJUAL' : 'BOOKING'}
+                    </span>
+                  </div>
                 </div>
               )
             }
