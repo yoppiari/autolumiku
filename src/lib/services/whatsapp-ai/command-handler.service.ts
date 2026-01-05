@@ -1003,13 +1003,8 @@ async function generateReportByType(
     startDate.setDate(now.getDate() - 30);
     const periodLabel = '30 Hari Terakhir';
 
-    // Gather data using shared service
     const reportData = await ReportDataService.gather(type, context.tenantId, startDate, now);
 
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: context.tenantId },
-      select: { name: true, logoUrl: true },
-    });
     const tenantName = tenant?.name || 'Showroom';
 
     // Map ReportData to professional WhatsAppCommandPDF config
