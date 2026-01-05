@@ -2101,18 +2101,18 @@ export class StaffCommandService {
     const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas|ungu|merah muda|pink|cokelat|krem|cream|beige|champagne|tembaga|bronze|titanium|magnesium)';
 
     const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
-      // 1. Price: "rubah harga 150jt", "update PM-PST-001 200jt" (require jt/juta or 'harga')
+      // 1. Price: "rubah harga 150jt", "update PM-PST-001 200jt", "ganti [ID] 250jf" (typo tolerance)
       {
-        pattern: /(?:rubah|ganti|ubah|update|edit)(?:\s+.*?)\s*(?:harga)?\s*(?:ke|jadi|menjadi)?\s*(\d+(?:[.,]\d+)?\s*(?:jt|juta|m|miliar|bio))/i,
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:harga)?\s*(?:ke|jadi|menjadi)?\s*(\d+(?:[.,]\d+)?\s*(?:jt|juta|m|miliar|bio|jf))/i,
         field: 'price',
         valueExtractor: m => {
           const val = m[1].toLowerCase();
           // Check for 'm' suffix which means Miliar (billion)
-          if (val.includes('m')) {
+          if (val.includes('m') || val.includes('bio')) {
             const num = parseFloat(val.replace(/[^\d.,]/g, '').replace(',', '.'));
             return String(Math.round(num * 1000000000));
           }
-          // Default: jt/juta
+          // Default: jt/juta (including 'jf' typo)
           const num = parseFloat(val.replace(/[^\d.,]/g, '').replace(',', '.'));
           return String(Math.round(num * 1000000));
         }
@@ -2143,8 +2143,9 @@ export class StaffCommandService {
       },
 
       // 4. Color: "rubah warna biru", "ganti jadi hitam", "rubah pm-pst-001 silver"
+      // 4. Color: "rubah warna biru", "ganti jadi hitam", "rubah [ID] biru"
       {
-        pattern: new RegExp(`(?:rubah|ganti|ubah|update|edit)(?:\\s+.*?)\\s*(?:warna)?\\s*(?:ke|jadi|menjadi)?\\s*(${colorsRegex})`, 'i'),
+        pattern: new RegExp(`(?:rubah|ganti|ubah|update|edit)(?:.*?)?\\s*(?:warna)?\\s*(?:ke|jadi|menjadi)?\\s*(${colorsRegex})`, 'i'),
         field: 'color',
         valueExtractor: m => m[1]
       },
@@ -2232,14 +2233,16 @@ export class StaffCommandService {
       isValid: false,
       error: `Format perintah edit tidak dikenali.\n\n` +
         `💡 *Panduan Edit Data:*\n` +
-        `Ketik: "edit [ID] [data]"\n\n` +
+        `Ketik: "edit [ID] [data]"\n` +
+        `_(Pastikan ID Unit selalu diinput)_\n\n` +
         `*Contoh Perintah:*\n` +
-        `• "rubah PM-PST-001 booked" (Update Status)\n` +
+        `• "rubah PM-PST-001 booked"\n` +
         `• "ganti PM-PST-001 sold"\n` +
         `• "rubah PM-PST-001 bekas"\n` +
+        `• "ganti PM-PST-001 baru"\n` +
         `• "rubah PM-PST-001 biru"\n` +
-        `• "ganti PM-PST-001 2017" (Update Tahun)\n` +
-        `• "ganti PM-PST-002 250jt" (Update Harga)`,
+        `• "rubah PM-PST-001 tahun 2017"\n` +
+        `• "ganti PM-PST-002 250jt"`,
     };
   }
 
