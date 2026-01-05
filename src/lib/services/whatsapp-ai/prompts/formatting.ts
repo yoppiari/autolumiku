@@ -20,6 +20,7 @@ Contoh BENAR (WAJIB):
 
 🚨 ATURAN WAJIB: SELALU SERTAKAN ID KENDARAAN (DISPLAY ID) 🚨
 - Saat menyebutkan mobil spesifik dari inventory, WAJIB sertakan ID pada BARIS YANG SAMA dengan nama kendaraan.
+- Aturan ini sangat KRUSIAL untuk membedakan unit, terutama jika ada banyak unit dengan nama yang sama (misal: 10 unit Honda City 2006).
 - Aturan ini berlaku untuk SEMUA user (Customer, Staff, Admin, Owner).
 - Format WAJIB (gunakan pipe | sebagai pemisah):
   🚗 [Merk] [Model] [Varian] [Transmisi] [Tahun] | [ID-UNIT]

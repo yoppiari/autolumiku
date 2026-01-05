@@ -628,7 +628,7 @@ export class WhatsAppAIChatService {
     try {
       vehicles = await prisma.vehicle.findMany({
         where: { tenantId, status: "AVAILABLE" },
-        select: { make: true, model: true, year: true, price: true, mileage: true, transmissionType: true, color: true },
+        select: { id: true, displayId: true, make: true, model: true, year: true, price: true, mileage: true, transmissionType: true, color: true },
         take: 10,
       });
     } catch (e) { /* ignore */ }
@@ -941,7 +941,11 @@ export class WhatsAppAIChatService {
         // No specific vehicle or no images - try ANY available vehicles
         console.log(`[SmartFallback] 🔄 Trying to fetch any available vehicle photos...`);
         const anyVehicles = await prisma.vehicle.findMany({
-          where: { tenantId, status: 'AVAILABLE' },
+          where: {
+            tenantId,
+            status: 'AVAILABLE',
+            photos: { some: {} } // ONLY vehicles with photos
+          },
           include: {
             photos: { orderBy: { isMainPhoto: 'desc' }, take: 1 },
           },
@@ -1600,7 +1604,11 @@ export class WhatsAppAIChatService {
         console.log(`[PhotoConfirm DEBUG] 🔄 Entering fallback: send any available photos...`);
         try {
           const anyVehicles = await prisma.vehicle.findMany({
-            where: { tenantId, status: 'AVAILABLE' },
+            where: {
+              tenantId,
+              status: 'AVAILABLE',
+              photos: { some: {} } // ONLY vehicles with photos
+            },
             include: {
               photos: {
                 orderBy: { isMainPhoto: 'desc' },
@@ -1932,6 +1940,7 @@ export class WhatsAppAIChatService {
         where: {
           tenantId,
           status: 'AVAILABLE',
+          photos: { some: {} } // ONLY vehicles with photos
         },
         include: {
           photos: {
@@ -2180,9 +2189,10 @@ export class WhatsAppAIChatService {
         }
 
         // Caption: only show full details on first photo, simpler for rest
+        const id = v.displayId || v.id.substring(0, 8).toUpperCase();
         const caption = photoIndex === 0
-          ? `${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
-          : `${v.make} ${v.model} ${v.year} (${photoIndex + 1}/${v.photos.length})`;
+          ? `${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} | ${id} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
+          : `${v.make} ${v.model} ${v.year} | ${id} (${photoIndex + 1}/${v.photos.length})`;
 
         images.push({ imageUrl, caption });
       }
