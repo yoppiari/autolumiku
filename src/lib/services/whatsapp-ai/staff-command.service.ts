@@ -63,6 +63,7 @@ export class StaffCommandService {
   // Stop words for inventory search and conversational queries
   private static readonly INDONESIAN_STOP_WORDS = [
     'ada', 'apakah', 'punya', 'jual', 'cari', 'info', 'unit', 'mobil', 'stok', 'stock',
+    'list', 'listing', 'daftar', 'semua', 'all', // Added 'list' based on user feedback
     'buat', 'untuk', 'dong', 'ya', 'kak', 'min', 'admin', 'gan', 'bos', 'bang',
     'tanya', 'lihat', 'mana', 'fotonya', 'foto', 'gambar', 'gak', 'nggak',
     'bisa', 'tolong', 'tampilkan', 'kasih', 'berikan', 'tunjukin', 'tunjukkan', 'siap', 'ok',
