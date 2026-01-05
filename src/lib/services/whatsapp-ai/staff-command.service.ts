@@ -1527,9 +1527,19 @@ export class StaffCommandService {
       };
     }
 
-    // FIX: Validate status against allowed values before update
+    // Normalize status aliases
+    const statusMap: Record<string, string> = {
+      'booking': 'BOOKED', 'booked': 'BOOKED', 'book': 'BOOKED',
+      'sold': 'SOLD', 'terjual': 'SOLD', 'laku': 'SOLD', 'sold out': 'SOLD',
+      'available': 'AVAILABLE', 'ready': 'AVAILABLE', 'ada': 'AVAILABLE', 'tersedia': 'AVAILABLE',
+      'delete': 'DELETED', 'deleted': 'DELETED', 'hapus': 'DELETED'
+    };
+
+    const normalizedStatus = statusMap[status.toLowerCase()] || status.toUpperCase();
+
+    // FX: Validate status against allowed values before update
     const validStatuses = ["AVAILABLE", "BOOKED", "SOLD", "DELETED"];
-    if (!validStatuses.includes(status)) {
+    if (!validStatuses.includes(normalizedStatus)) {
       return {
         success: false,
         message: `Status "${status}" ga valid kak 🤔\n\nPilihan: AVAILABLE, BOOKED, SOLD, DELETED`,
@@ -1539,7 +1549,7 @@ export class StaffCommandService {
     // Update status with proper typing
     const updated = await prisma.vehicle.update({
       where: { id: vehicle.id },
-      data: { status: status as "AVAILABLE" | "BOOKED" | "SOLD" | "DELETED" },
+      data: { status: normalizedStatus as "AVAILABLE" | "BOOKED" | "SOLD" | "DELETED" },
     });
 
     // Log history
@@ -1552,7 +1562,7 @@ export class StaffCommandService {
         snapshot: {}, // Full vehicle snapshot would go here
         changedFields: ["status"],
         previousValues: { status: vehicle.status },
-        newValues: { status },
+        newValues: { status: normalizedStatus },
         changedBy: staffPhone,
       },
     });
@@ -2149,6 +2159,13 @@ export class StaffCommandService {
         valueExtractor: m => m[1]
       },
 
+      // 8. Status: "rubah status booked", "ganti status sold"
+      {
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*status\s*(?:ke|jadi|menjadi)?\s*(\w+)/i,
+        field: 'status',
+        valueExtractor: m => m[1]
+      },
+
       // 8. Condition: "rubah kondisi bekas", "ganti jadi baru"
       {
         pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*kondisi\s*(?:ke|jadi|menjadi)?\s*(baru|bekas|used|new)/i,
@@ -2204,6 +2221,21 @@ export class StaffCommandService {
     conversationId: string
   ): Promise<CommandExecutionResult> {
     try {
+      // Intercept 'status' field edits and redirect to handleUpdateStatus
+      if (params.field === 'status') {
+        if (!params.vehicleId) {
+          return {
+            success: false,
+            message: "Untuk update status, mohon sertakan ID kendaraan.\nContoh: 'status PM-PST-001 SOLD'",
+          };
+        }
+        return this.handleUpdateStatus(
+          { vehicleId: params.vehicleId, status: params.newValue },
+          tenantId,
+          staffPhone
+        );
+      }
+
       // Import VehicleEditService
       const { VehicleEditService } = await import('./vehicle-edit.service');
 
