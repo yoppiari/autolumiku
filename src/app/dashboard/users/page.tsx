@@ -460,18 +460,18 @@ export default function UsersPage() {
         <div className="flex-[3] min-h-[200px] bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
           <div className="flex-1 overflow-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0 z-10">
+              <thead className="bg-gray-50 sticky top-0 z-10 transition-all">
                 <tr>
-                  <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 md:px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-auto">
                     Nama
                   </th>
-                  <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  <th className="px-2 md:px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell w-[25%]">
                     Email
                   </th>
-                  <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 md:px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[15%]">
                     Role
                   </th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-[120px]">
                     Aksi
                   </th>
                 </tr>
@@ -520,11 +520,23 @@ export default function UsersPage() {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8 md:h-10 md:w-10 relative">
                             {user.phone && whatsAppProfiles[user.phone]?.hasPicture && whatsAppProfiles[user.phone]?.pictureUrl ? (
-                              <img
-                                src={whatsAppProfiles[user.phone].pictureUrl!}
-                                alt={`${user.firstName} ${user.lastName}`}
-                                className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover border border-gray-100 shadow-sm"
-                              />
+                              <>
+                                <img
+                                  src={whatsAppProfiles[user.phone].pictureUrl!}
+                                  alt={`${user.firstName} ${user.lastName}`}
+                                  className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover border border-gray-100 shadow-sm"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                                <div className="hidden h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center absolute top-0 left-0">
+                                  <span className="text-blue-600 font-bold text-xs md:text-sm">
+                                    {user.firstName.charAt(0)}
+                                    {user.lastName?.charAt(0) || ''}
+                                  </span>
+                                </div>
+                              </>
                             ) : (
                               <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
                                 <span className="text-blue-600 font-bold text-xs md:text-sm">

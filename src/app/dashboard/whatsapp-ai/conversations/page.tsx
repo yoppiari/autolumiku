@@ -1141,7 +1141,7 @@ END:VCARD`;
                             <div
                               className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${conv.status === 'active' ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
                                 } animate-pulse`}
-                              title={conv.status === 'active' ? 'Online' : 'Offline'}
+                              title={conv.status === 'active' ? 'Sesi Chat Aktif' : 'Sesi Chat Habis/Tutup'}
                             >
                               {conv.isStaff && (
                                 <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -1269,7 +1269,13 @@ END:VCARD`;
                         {formatPhoneNumber(selectedConversation.customerPhone)}
                       </h2>
                       <p className="text-xs text-gray-500">
-                        {selectedConversation.isStaff ? 'Tim' : 'Customer'}
+                        {selectedConversation.isStaff ? (() => {
+                          const member = teamMembers.find(m =>
+                            m.phone?.replace(/\D/g, '') === selectedConversation.customerPhone.replace(/\D/g, '') ||
+                            selectedConversation.customerPhone.includes(m.phone?.replace(/\D/g, '') || 'XYZ')
+                          );
+                          return member ? (member.role === 'SALES' ? 'Sales / Staff' : member.role) : 'Tim';
+                        })() : 'Customer'}
                       </p>
                     </div>
                   </div>
@@ -2182,7 +2188,15 @@ END:VCARD`;
                   return (
                     <div className="relative w-24 h-24 mb-4">
                       {profilePic ? (
-                        <img src={profilePic} alt="" className="w-full h-full rounded-full object-cover border-4 border-white/30 shadow-lg" />
+                        <img
+                          src={profilePic}
+                          alt=""
+                          className="w-full h-full rounded-full object-cover border-4 border-white/30 shadow-lg"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
                       ) : (
                         <div className={`w-full h-full rounded-full flex items-center justify-center ${avatar.color} text-white font-bold text-3xl shadow-lg border-4 border-white/30`}>
                           {avatar.initials}
@@ -2192,14 +2206,22 @@ END:VCARD`;
                   );
                 })()}
                 <h3 className="text-2xl font-bold">{formatPhoneNumber(selectedConversation.customerPhone)}</h3>
-                <p className="text-white/80">{selectedConversation.isStaff ? 'Anggota Tim' : 'Customer'}</p>
+                <p className="text-white/80">
+                  {selectedConversation.isStaff ? (() => {
+                    const member = teamMembers.find(m =>
+                      m.phone?.replace(/\D/g, '') === selectedConversation.customerPhone.replace(/\D/g, '') ||
+                      selectedConversation.customerPhone.includes(m.phone?.replace(/\D/g, '') || 'XYZ')
+                    );
+                    return member ? (member.role === 'SALES' ? 'Sales / Staff' : member.role) : 'Anggota Tim';
+                  })() : 'Customer'}
+                </p>
               </div>
             </div>
 
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Status</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Status Sesi</p>
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${selectedConversation.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}></span>
                     <span className="text-sm font-semibold capitalize">{selectedConversation.status}</span>
