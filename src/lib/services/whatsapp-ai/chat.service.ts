@@ -786,19 +786,21 @@ export class WhatsAppAIChatService {
     }
 
     // ==================== STOP COMMAND ====================
-    // Check if user wants to stop receiving photos
+    // User says "stop" when AI keeps sending wrong info/photos repeatedly
+    // This indicates AI made mistakes - acknowledge and offer correct help
     const stopPatterns = [
       /^(stop|berhenti|cukup|udah|sudah|kagak|ndak|gak|nga)$/i,
       /\b(stop|berhenti|cukup|jangan)\s*(kirim|kasi|tunjuk|lagi|terus)\b/i,
       /\b(cukup|udah|sudah)\b.*(foto|gambar|itu)\b/i,
+      /\b(salah|keliru|bukan)\s*(itu|ini|yang)\b/i,
     ];
     const isStopCommand = stopPatterns.some(p => p.test(msg));
 
     if (isStopCommand) {
-      console.log(`[SmartFallback] 🛑 Stop command detected: "${msg}"`);
+      console.log(`[SmartFallback] 🛑 Stop command detected: "${msg}" - AI may have made repeated errors`);
       return {
-        message: `Siap, saya stop! 👍\n\nAda yang lain bisa saya bantu? 😊`,
-        shouldEscalate: false,
+        message: `Mohon maaf atas kesalahan informasi sebelumnya 🙏\n\nSaya stop dulu. Bisa diinfokan ulang unit yang Bapak/Ibu cari? Sebutkan ID unit (contoh: PM-PST-001) agar saya bisa memberikan info yang tepat. 😊`,
+        shouldEscalate: true, // Escalate because AI was making mistakes
       };
     }
 
