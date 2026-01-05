@@ -2143,8 +2143,7 @@ export class StaffCommandService {
         }
       },
 
-      // 4. Color: "rubah warna biru", "ganti jadi hitam", "rubah pm-pst-001 silver"
-      // 4. Color: "rubah warna biru", "ganti jadi hitam", "rubah [ID] biru"
+      // 4. Color: "rubah [ID] biru", "ganti [ID] hitam", "edit [ID] silver"
       {
         pattern: new RegExp(`(?:rubah|ganti|ubah|update|edit)(?:.*?)?\\s*(?:warna)?\\s*(?:ke|jadi|menjadi)?\\s*(${colorsRegex})`, 'i'),
         field: 'color',
@@ -2157,7 +2156,7 @@ export class StaffCommandService {
         valueExtractor: m => m[1].trim()
       },
 
-      // 5. Year: "rubah tahun 2017", "ganti jadi 2018", "rubah [ID] 2017"
+      // 5. Year: "rubah [ID] tahun 2017", "ganti [ID] 2022", "edit [ID] jadi 2018"
       // Added lookahead to prevent matching engine capacity (e.g. 2000 cc) or price/mileage
       {
         pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:tahun)?\s*(?:ke|jadi|menjadi)?\s*((?:19|20)\d{2})(?!\s*(?:cc|km|jt|juta|m|miliar|bio))/i,
@@ -2179,7 +2178,7 @@ export class StaffCommandService {
         valueExtractor: m => m[1]
       },
 
-      // 8. Status: "rubah status booked", "rubah [ID] booked"
+      // 8. Status: "rubah [ID] booked", "ganti [ID] sold", "ganti [ID] status booked"
       {
         // Explicit "status" keyword
         pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*status\s*(?:ke|jadi|menjadi)?\s*(\w+)/i,
@@ -2193,7 +2192,7 @@ export class StaffCommandService {
         valueExtractor: m => m[1]
       },
 
-      // 8. Condition: "rubah kondisi bekas", "ganti [ID] baru"
+      // 9. Condition: "rubah [ID] bekas", "ganti [ID] baru"
       {
         pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:kondisi)?\s*(?:ke|jadi|menjadi)?\s*(baru|bekas|used|new)/i,
         field: 'condition',
