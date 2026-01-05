@@ -2101,9 +2101,9 @@ export class StaffCommandService {
     const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas|ungu|merah muda|pink|cokelat|krem|cream|beige|champagne|tembaga|bronze|titanium|magnesium)';
 
     const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
-      // 1. Price: "rubah harga 150jt", "update PM-PST-001 200jt", "ganti [ID] 250jf" (typo tolerance)
+      // 1. Price: "rubah harga 150jt", "update PM-PST-001 200jt", "ganti [ID] 2M" (Strict units: jt/juta/m/miliar/milliar)
       {
-        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:harga)?\s*(?:ke|jadi|menjadi)?\s*(\d+(?:[.,]\d+)?\s*(?:jt|juta|m|miliar|bio|jf))/i,
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:harga)?\s*(?:ke|jadi|menjadi)?\s*(\d+(?:[.,]\d+)?\s*(?:jt|juta|m|miliar|milliar|bio))/i,
         field: 'price',
         valueExtractor: m => {
           const val = m[1].toLowerCase();
@@ -2112,7 +2112,7 @@ export class StaffCommandService {
             const num = parseFloat(val.replace(/[^\d.,]/g, '').replace(',', '.'));
             return String(Math.round(num * 1000000000));
           }
-          // Default: jt/juta (including 'jf' typo)
+          // Default: jt/juta
           const num = parseFloat(val.replace(/[^\d.,]/g, '').replace(',', '.'));
           return String(Math.round(num * 1000000));
         }
@@ -2159,7 +2159,7 @@ export class StaffCommandService {
       // 5. Year: "rubah tahun 2017", "ganti jadi 2018", "rubah [ID] 2017"
       // Added lookahead to prevent matching engine capacity (e.g. 2000 cc) or price/mileage
       {
-        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:tahun)?\s*(?:ke|jadi|menjadi)?\s*((?:19|20)\d{2})(?!\s*(?:cc|km|jt|juta|jf|m|miliar|bio))/i,
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:.*?)?\s*(?:tahun)?\s*(?:ke|jadi|menjadi)?\s*((?:19|20)\d{2})(?!\s*(?:cc|km|jt|juta|m|miliar|bio))/i,
         field: 'year',
         valueExtractor: m => m[1]
       },
