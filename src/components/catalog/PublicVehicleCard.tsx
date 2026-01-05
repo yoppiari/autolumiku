@@ -113,24 +113,24 @@ export default function PublicVehicleCard({
               <>
                 {/* Status Badge */}
                 {isSold ? (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-rose-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-xl z-20 animate-status-sold border border-rose-400/30">
-                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-rose-600 text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-xl z-20 animate-status-sold border border-rose-400/30">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
                     TERJUAL
                   </div>
                 ) : isBooked ? (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-xl z-20 animate-status-booking border border-amber-300/30">
-                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-amber-500 text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-xl z-20 animate-status-booking border border-amber-300/30">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
                     BOOKING
                   </div>
                 ) : (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-xl z-20 animate-status-ready border border-green-300/30">
-                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-green-500 text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-xl z-20 animate-status-ready border border-green-300/30">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
                     TERSEDIA
                   </div>
                 )}
                 {/* Vehicle ID Badge - Bottom Left */}
                 {vehicle.displayId && (
-                  <div className="absolute bottom-8 left-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg z-20">
+                  <div className="absolute bottom-8 left-3 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-lg z-20">
                     {vehicle.displayId}
                   </div>
                 )}
