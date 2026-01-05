@@ -532,7 +532,7 @@ export default function EditVehiclePage() {
                   });
                   if (response.ok) {
                     setFormData(prev => ({ ...prev, status: 'AVAILABLE' }));
-                    alert('✅ Status berhasil diubah ke READY');
+                    alert('✅ Status berhasil diubah ke Tersedia');
                   } else {
                     alert('Gagal mengubah status');
                   }
@@ -542,12 +542,17 @@ export default function EditVehiclePage() {
               }
             }}
             disabled={formData.status === 'AVAILABLE'}
-            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${formData.status === 'AVAILABLE'
-              ? 'bg-green-200 text-green-600 cursor-not-allowed'
-              : 'bg-green-500 text-white hover:bg-green-600 shadow-md hover:shadow-lg'
+            className={`px-6 py-2 rounded-full font-bold text-base flex items-center gap-2 transition-all shadow-sm ${formData.status === 'AVAILABLE'
+              ? 'bg-green-500 text-white ring-4 ring-green-100 cursor-default'
+              : 'bg-white text-gray-500 border border-gray-200 hover:bg-green-50 hover:text-green-600 hover:border-green-200'
               }`}
           >
-            ✅ Ready
+            {formData.status === 'AVAILABLE' ? (
+              <svg className="w-5 h-5 bg-white text-green-500 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+            ) : (
+              <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+            )}
+            Tersedia
           </button>
 
           {/* Booking Button */}
@@ -568,7 +573,7 @@ export default function EditVehiclePage() {
                   });
                   if (response.ok) {
                     setFormData(prev => ({ ...prev, status: 'BOOKED' }));
-                    alert('📋 Status berhasil diubah ke BOOKING');
+                    alert('📋 Status berhasil diubah ke Booking');
                   } else {
                     alert('Gagal mengubah status');
                   }
@@ -578,12 +583,17 @@ export default function EditVehiclePage() {
               }
             }}
             disabled={formData.status === 'BOOKED'}
-            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${formData.status === 'BOOKED'
-              ? 'bg-yellow-200 text-yellow-600 cursor-not-allowed'
-              : 'bg-yellow-500 text-white hover:bg-yellow-600 shadow-md hover:shadow-lg'
+            className={`px-6 py-2 rounded-full font-bold text-base flex items-center gap-2 transition-all shadow-sm ${formData.status === 'BOOKED'
+              ? 'bg-amber-500 text-white ring-4 ring-amber-100 cursor-default'
+              : 'bg-white text-gray-500 border border-gray-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200'
               }`}
           >
-            📋 Booking
+            {formData.status === 'BOOKED' ? (
+              <svg className="w-5 h-5 bg-white text-amber-500 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+            ) : (
+              <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+            )}
+            Booking
           </button>
 
           {/* Sold Button */}
@@ -628,12 +638,17 @@ export default function EditVehiclePage() {
               }
             }}
             disabled={formData.status === 'SOLD'}
-            className={`px-6 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all ${formData.status === 'SOLD'
-              ? 'bg-red-200 text-red-600 cursor-not-allowed'
-              : 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg'
+            className={`px-6 py-2 rounded-full font-bold text-base flex items-center gap-2 transition-all shadow-sm ${formData.status === 'SOLD'
+              ? 'bg-rose-600 text-white ring-4 ring-rose-100 cursor-default'
+              : 'bg-white text-gray-500 border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200'
               }`}
           >
-            🎉 Sold
+            {formData.status === 'SOLD' ? (
+              <svg className="w-5 h-5 bg-white text-rose-600 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+            ) : (
+              <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+            )}
+            Terjual
           </button>
         </div>
 
