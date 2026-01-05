@@ -123,10 +123,13 @@ export async function POST(request: NextRequest) {
         phone,
       } = body;
 
+      // Normalize role to uppercase immediately
+      const upperRole = (role || '').toUpperCase();
+
       // Validate required fields
       // Allow tenantId to be null/empty ONLY if role is super_admin or admin (Platform Admin)
-      const isPlatformRole = role === 'super_admin' || role === 'admin';
-      if (!email || !firstName || !password || !role || (!tenantId && !isPlatformRole)) {
+      const isPlatformRole = upperRole === 'SUPER_ADMIN' || upperRole === 'ADMIN';
+      if (!email || !firstName || !password || !upperRole || (!tenantId && !isPlatformRole)) {
         return NextResponse.json(
           {
             success: false,
@@ -156,8 +159,8 @@ export async function POST(request: NextRequest) {
           data: {
             firstName,
             lastName: lastName || '',
-            role,
-            roleLevel: getRoleLevelFromRole(role),
+            role: upperRole,
+            roleLevel: getRoleLevelFromRole(upperRole),
             emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
             phone: phone || existingUser.phone,
             passwordHash: await bcrypt.hash(password, 10),
@@ -203,8 +206,8 @@ export async function POST(request: NextRequest) {
           firstName,
           lastName: lastName || '',
           passwordHash: await bcrypt.hash(password, 10),
-          role: role.toUpperCase(),
-          roleLevel: getRoleLevelFromRole(role),
+          role: upperRole,
+          roleLevel: getRoleLevelFromRole(upperRole),
           tenantId: tenantId || null,
           phone: phone || '',
           emailVerified: emailVerified !== undefined ? emailVerified : false,

@@ -2118,8 +2118,12 @@ export class StaffCommandService {
       },
     ];
 
+    // Use msgWithoutId for field pattern matching to avoid ID numbers (like 001)
+    // interfering with field values (like mileage or year)
+    const msgForFields = msg.replace(/pm-\w+-\d+/gi, '').replace(/\s+/g, ' ').trim();
+
     for (const { pattern, field, valueExtractor } of patterns) {
-      const match = msg.match(pattern);
+      const match = msgForFields.match(pattern);
       if (match) {
         const newValue = valueExtractor(match);
         console.log(`[Staff Command] ✏️ Edit parsed: field=${field}, newValue=${newValue}, vehicleId=${vehicleId || 'from context'}`);

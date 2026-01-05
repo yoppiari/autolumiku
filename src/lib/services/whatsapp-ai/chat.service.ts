@@ -358,7 +358,7 @@ export class WhatsAppAIChatService {
 
         if (vehicles.length > 0) {
           const vehicleList = this.formatVehicleListDetailed(vehicles.slice(0, 3));
-          responseMessage = `Berikut unit ready di Prima Mobil:\n\n${vehicleList}\n\n` +
+          responseMessage = `Berikut unit ready di ${tenantName}:\n\n${vehicleList}\n\n` +
             `Mau lihat fotonya? 📸 (silahkan berikan respon: mau/ boleh/ silahkan/ baik kirim/ iya kirim/ kirimkan/ iya boleh)\n\n` +
             `Apakah ada hal lain yang bisa kami bantu? 😊`;
         } else {
@@ -687,7 +687,7 @@ export class WhatsAppAIChatService {
 
         personalizedGreeting = `${timeGreeting}, ${userName}! 👋\n\n`;
         personalizedGreeting += `Selamat datang kembali di ${tenantName}!\n`;
-        personalizedGreeting += `Saya mengenali Anda sebagai ${roleLabel} Prima Mobil. `;
+        personalizedGreeting += `Saya mengenali Anda sebagai ${roleLabel} ${tenantName}. `;
         personalizedGreeting += `Ada yang bisa saya bantu hari ini?${vehiclePreview}`;
       } else {
         // Generic greeting for unidentified users
@@ -2406,8 +2406,12 @@ export class WhatsAppAIChatService {
       { pattern: /(?:rubah|ganti|ubah)\s*(?:cc|kapasitas\s*mesin)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'engineCapacity', valueExtractor: m => m[1] },
     ];
 
+    // Use msgWithoutId for field pattern matching to avoid ID numbers (like 001)
+    // interfering with field values (like mileage or year)
+    const msgForFields = msg.replace(/pm-\w+-\d+/gi, '').replace(/\s+/g, ' ').trim();
+
     for (const { pattern, field, valueExtractor } of patterns) {
-      const match = msg.match(pattern);
+      const match = msgForFields.match(pattern);
       if (match) {
         const newValue = valueExtractor(match);
         console.log(`[WhatsApp AI Chat] Fallback detected edit: field=${field}, newValue=${newValue}, vehicleId=${vehicleId || 'from context'}`);
