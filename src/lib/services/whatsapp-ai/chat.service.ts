@@ -359,8 +359,12 @@ export class WhatsAppAIChatService {
         if (vehicles.length > 0) {
           const vehicleList = this.formatVehicleListDetailed(vehicles.slice(0, 3));
           responseMessage = `Berikut unit ready di ${tenantName}:\n\n${vehicleList}\n\n` +
-            `Mau lihat fotonya? 📸 (silahkan berikan respon: mau/ boleh/ silahkan/ baik kirim/ iya kirim/ kirimkan/ iya boleh)\n\n` +
-            `Apakah ada hal lain yang bisa kami bantu? 😊`;
+            `Mau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))`;
+
+          return {
+            message: responseMessage,
+            shouldEscalate: false
+          };
         } else {
           responseMessage = `Mohon maaf, saya perlu konfirmasi informasi harga ke tim terlebih dahulu untuk memastikan akurasinya. Bisa ditunggu sebentar ya? 🙏`;
         }
@@ -426,7 +430,9 @@ export class WhatsAppAIChatService {
                     searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
                   }
 
-                  searchResultText += `Mau lihat fotonya? 📸 (silahkan berikan respon: mau/ boleh/ silahkan/ baik kirim/ iya kirim/ kirimkan/ iya boleh)\n\n`;
+                  searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
+
+                  searchResultText += `Mau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))\n\n`;
                   searchResultText += `Apakah ada hal lain yang bisa kami bantu? 😊`;
 
                   responseMessage += searchResultText;
@@ -978,7 +984,7 @@ export class WhatsAppAIChatService {
           }).join('\n');
           console.log(`[SmartFallback] ⚠️ No photos available, returning vehicle list`);
           return {
-            message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
+            message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))`,
             shouldEscalate: false,
           };
         }
@@ -995,7 +1001,7 @@ export class WhatsAppAIChatService {
           return `• ${v.make} ${v.model} ${v.year} | ${id}`;
         }).join('\n');
         return {
-          message: `Maaf, sedang ada kendala menampilkan foto 🙏\n\nUnit yang tersedia:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
+          message: `Maaf, sedang ada kendala menampilkan foto 🙏\n\nUnit yang tersedia:\n${vehicleList}\n\nMau lihat fotonya? 📸 (Silakan ketik: "ya foto [ID UNIT]")`,
           shouldEscalate: false,
         };
       }
@@ -1041,7 +1047,11 @@ export class WhatsAppAIChatService {
               const id = v.displayId || v.id.substring(0, 6).toUpperCase();
               return `• ${v.make} ${v.model} ${v.year} | ${id}`;
             }).join('\n')}\n\n` +
-            `Mau info yang mana? 😊`,
+            `Tapi ada pilihan lain nih 🚗✨\n${vehicles.slice(0, 3).map(v => {
+              const id = v.displayId || v.id.substring(0, 6).toUpperCase();
+              return `• ${v.make} ${v.model} ${v.year} | ${id}`;
+            }).join('\n')}\n\n` +
+            `Mau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit)) 😊`,
           shouldEscalate: false,
         };
       }
@@ -1533,68 +1543,59 @@ export class WhatsAppAIChatService {
       /\b(Innova|Avanza|Xenia|Brio|Jazz|Ertiga|Rush|Terios|Fortuner|Pajero|Alphard|Civic|Accord|CRV|HRV|BRV|Yaris|Camry|Calya|Sigra|Ayla|Agya|Xpander|Livina|City|Mobilio|Freed|Vios|Corolla|Raize|Rocky|Confero|Almaz|Cortez|Serena)\s*(?:Reborn)?\s*(?:20\d{2}|19\d{2})?/gi,
     ];
 
-    let vehicleName = "";
-    // Try to extract from AI message first (if exists)
-    if (lastAiMsg) {
-      for (const pattern of vehiclePatterns) {
-        const match = lastAiMsg.content.match(pattern);
-        if (match && match[0]) {
-          vehicleName = match[0].trim();
-          // Clean up: remove trailing words like "dengan", "harga", "diesel", "matic" etc.
-          vehicleName = vehicleName.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|at|mt).*$/i, "").trim();
-          break;
-        }
-      }
+    // Priority 1: Check for explicit Vehicle ID in current message
+    // Matches: "PM-PST-001", "id pm-pst-001", "foto unit pm-pst-001"
+    const idMatch = userMessage.match(/pm-[a-zA-Z0-9]+-\d+/i);
+    if (idMatch) {
+      vehicleName = idMatch[0].toUpperCase();
+      console.log(`[PhotoConfirm DEBUG] 🎯 Found EXPLICIT Vehicle ID: "${vehicleName}"`);
     }
 
-    // Fallback: Try to extract from user's earlier messages in history
+    // Priority 2: Try to extract vehicle name from history/AI message
     if (!vehicleName) {
-      console.log(`[WhatsApp AI Chat] Trying to extract vehicle from conversation history...`);
-      for (const msg of [...messageHistory].reverse()) {
+      // Try to extract from AI message first (if exists)
+      if (lastAiMsg) {
         for (const pattern of vehiclePatterns) {
-          const match = msg.content.match(pattern);
+          const match = lastAiMsg.content.match(pattern);
           if (match && match[0]) {
             vehicleName = match[0].trim();
             vehicleName = vehicleName.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|at|mt).*$/i, "").trim();
-            console.log(`[WhatsApp AI Chat] Found vehicle in history: "${vehicleName}"`);
             break;
           }
         }
-        if (vehicleName) break;
       }
-    }
 
-    // Last resort: Try to extract vehicle from user's CURRENT message
-    if (!vehicleName) {
-      console.log(`[WhatsApp AI Chat] Trying to extract vehicle from current user message...`);
-      const currentMsg = userMessage.toLowerCase();
-      const vehicleModels = ['innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'accord', 'crv', 'hrv', 'brv', 'yaris', 'camry', 'calya', 'sigra', 'ayla', 'agya', 'xpander', 'livina', 'city', 'mobilio', 'freed', 'vios', 'corolla'];
-      for (const model of vehicleModels) {
-        if (currentMsg.includes(model)) {
-          vehicleName = model.charAt(0).toUpperCase() + model.slice(1);
-          console.log(`[WhatsApp AI Chat] Found vehicle in current message: "${vehicleName}"`);
-          break;
+      // Fallback: Try to extract from user's earlier messages in history
+      if (!vehicleName) {
+        console.log(`[WhatsApp AI Chat] Trying to extract vehicle from conversation history...`);
+        for (const msg of [...messageHistory].reverse()) {
+          for (const pattern of vehiclePatterns) {
+            const match = msg.content.match(pattern);
+            if (match && match[0]) {
+              vehicleName = match[0].trim();
+              vehicleName = vehicleName.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|at|mt).*$/i, "").trim();
+              console.log(`[WhatsApp AI Chat] Found vehicle in history: "${vehicleName}"`);
+              break;
+            }
+          }
+          if (vehicleName) break;
         }
       }
-    }
 
-    // Still no vehicle? Check user messages for vehicle mentions
-    if (!vehicleName && messageHistory.length > 0) {
-      console.log(`[WhatsApp AI Chat] Checking user messages for vehicle mentions...`);
-      const userMessages = messageHistory.filter(m => m.role === "user");
-      for (const msg of [...userMessages].reverse()) {
+      // Last resort: Try to extract vehicle from user's CURRENT message
+      if (!vehicleName) {
+        console.log(`[WhatsApp AI Chat] Trying to extract vehicle from current user message...`);
+        const currentMsg = userMessage.toLowerCase();
         const vehicleModels = ['innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'accord', 'crv', 'hrv', 'brv', 'yaris', 'camry', 'calya', 'sigra', 'ayla', 'agya', 'xpander', 'livina', 'city', 'mobilio', 'freed', 'vios', 'corolla'];
         for (const model of vehicleModels) {
-          if (msg.content.toLowerCase().includes(model)) {
+          if (currentMsg.includes(model)) {
             vehicleName = model.charAt(0).toUpperCase() + model.slice(1);
-            console.log(`[WhatsApp AI Chat] Found vehicle in user history: "${vehicleName}"`);
+            console.log(`[WhatsApp AI Chat] Found vehicle in current message: "${vehicleName}"`);
             break;
           }
         }
-        if (vehicleName) break;
       }
     }
-
     if (!vehicleName) {
       console.log(`[PhotoConfirm DEBUG] ⚠️ Could not extract vehicle name from any source`);
 
@@ -1649,7 +1650,7 @@ export class WhatsAppAIChatService {
             }).join('\n');
             console.log(`[PhotoConfirm DEBUG] ⚠️ Vehicles found but no photos, returning list`);
             return {
-              message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
+              message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau lihat fotonya? 📸 (Silakan ketik: "ya foto [ID UNIT]")`,
               shouldEscalate: false,
               confidence: 0.8,
             };
