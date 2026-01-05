@@ -43,6 +43,7 @@ export interface ProcessingResult {
 
 // Track recent messages to prevent double responses
 const recentMessages = new Map<string, { timestamp: number; messageId: string }>();
+const stopSignals = new Map<string, boolean>(); // Track stop requests per user
 const DUPLICATE_WINDOW_MS = 3000; // 3 seconds window for duplicate detection
 
 /**
@@ -132,6 +133,45 @@ export class MessageOrchestratorService {
       }
     });
     keysToDelete.forEach(key => recentMessages.delete(key));
+
+    // CHECK FOR STOP/CANCEL COMMANDS (Priority High)
+    // Stops any ongoing operations like bulk photo sending
+    const stopPatterns = /^(cukup|sudah|berhenti|stop|sudah\s*cukup|cukup\s*ya)$/i;
+    const normalizedMsg = (incoming.message || "").trim();
+    if (stopPatterns.test(normalizedMsg)) {
+      console.log(`[Orchestrator] 🛑 STOP command detected from ${incoming.from}`);
+      const stopKey = `${incoming.accountId}:${incoming.from}`;
+      stopSignals.set(stopKey, true);
+
+      // We can respond immediately here
+      // But we need a valid conversation ID. Let's try to get it or create it briefly.
+      try {
+        const conversation = await this.getOrCreateConversation(
+          incoming.accountId,
+          incoming.tenantId,
+          incoming.from,
+          incoming.customerName
+        );
+
+        await this.sendResponse(
+          incoming.accountId,
+          incoming.from,
+          "Baik, saya berhenti ya. 👌",
+          conversation.id,
+          "system_command" as MessageIntent
+        );
+
+        return {
+          success: true,
+          conversationId: conversation.id,
+          intent: "system_command",
+          responseMessage: "Baik, saya berhenti ya. 👌",
+          escalated: false,
+        };
+      } catch (e) {
+        console.error(`[Orchestrator] Failed to process stop command:`, e);
+      }
+    }
 
     try {
       // 1. Get or create conversation
@@ -1993,6 +2033,16 @@ export class MessageOrchestratorService {
           let successCount = 0;
 
           for (let i = 0; i < images.length; i++) {
+            // Check for stop signal before sending each image
+            const stopKey = `${accountId}:${to}`;
+            if (stopSignals.get(stopKey)) {
+              console.log(`[Orchestrator sendResponse] 🛑 Stop signal detected for ${to}. Aborting image sequence at ${i}/${images.length}.`);
+              stopSignals.delete(stopKey); // Clear signal
+              // Send a small acknowledgment that we stopped?
+              // Maybe not needed since we sent "Baik, saya berhenti" in the command handler
+              break;
+            }
+
             const img = images[i];
             console.log(`[Orchestrator sendResponse] Sending image ${i + 1}/${images.length}: ${img.imageUrl}`);
 
