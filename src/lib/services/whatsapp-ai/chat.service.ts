@@ -1543,6 +1543,8 @@ export class WhatsAppAIChatService {
       /\b(Innova|Avanza|Xenia|Brio|Jazz|Ertiga|Rush|Terios|Fortuner|Pajero|Alphard|Civic|Accord|CRV|HRV|BRV|Yaris|Camry|Calya|Sigra|Ayla|Agya|Xpander|Livina|City|Mobilio|Freed|Vios|Corolla|Raize|Rocky|Confero|Almaz|Cortez|Serena)\s*(?:Reborn)?\s*(?:20\d{2}|19\d{2})?/gi,
     ];
 
+    let vehicleName = "";
+
     // Priority 1: Check for explicit Vehicle ID in current message
     // Matches: "PM-PST-001", "id pm-pst-001", "foto unit pm-pst-001"
     const idMatch = userMessage.match(/pm-[a-zA-Z0-9]+-\d+/i);
@@ -1833,6 +1835,41 @@ export class WhatsAppAIChatService {
   ): Promise<Array<{ imageUrl: string; caption?: string }> | null> {
     console.log('[WhatsApp AI Chat] 📸 Fetching vehicles for query:', searchQuery);
     console.log('[WhatsApp AI Chat] Tenant ID:', tenantId);
+
+    // CRITICAL FIX: Check for explicit Vehicle ID first (PM-PST-XXX)
+    // If ID is found, query EXACTLY that vehicle
+    const idMatch = searchQuery.match(/pm-[a-zA-Z0-9]+-\d+/i);
+    if (idMatch) {
+      const explicitId = idMatch[0].toUpperCase();
+      console.log(`[WhatsApp AI Chat] 🎯 Explicit ID detected in query: ${explicitId}`);
+
+      const specificVehicle = await prisma.vehicle.findFirst({
+        where: {
+          tenantId,
+          displayId: explicitId, // Exact match on displayId
+          // removed status constraint to allow finding BOOKED/SOLD items if requested explicitly
+        },
+        include: {
+          photos: {
+            orderBy: { isMainPhoto: 'desc' },
+          },
+        },
+      });
+
+      if (specificVehicle) {
+        if (specificVehicle.photos && specificVehicle.photos.length > 0) {
+          console.log(`[WhatsApp AI Chat] ✅ Found specific vehicle ${explicitId} with ${specificVehicle.photos.length} photos`);
+          return this.buildImageArray([specificVehicle]);
+        } else {
+          console.log(`[WhatsApp AI Chat] ⚠️ Found specific vehicle ${explicitId} but NO photos`);
+          return null;
+        }
+      } else {
+        console.log(`[WhatsApp AI Chat] ❌ Specific vehicle ${explicitId} not found in database`);
+        // Fallthrough to normal search in case it wasn't a displayId but looking like one?
+        // But usually PM-PST-XXX is strictly an ID.
+      }
+    }
 
     // Parse search query into individual terms and filter out stop words
     const searchTerms = searchQuery.toLowerCase()
