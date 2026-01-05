@@ -966,7 +966,10 @@ export class WhatsAppAIChatService {
           }
 
           // Vehicles exist but NO photos at all
-          const vehicleList = anyVehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n');
+          const vehicleList = anyVehicles.slice(0, 3).map(v => {
+            const id = v.displayId || v.id.substring(0, 8).toUpperCase();
+            return `• ${v.make} ${v.model} ${v.year} | ${id}`;
+          }).join('\n');
           console.log(`[SmartFallback] ⚠️ No photos available, returning vehicle list`);
           return {
             message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
@@ -981,7 +984,10 @@ export class WhatsAppAIChatService {
       // NEVER fall through to generic response!
       console.log(`[SmartFallback] ⚠️ Final fallback for photo request`);
       if (vehicles.length > 0) {
-        const vehicleList = vehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n');
+        const vehicleList = vehicles.slice(0, 3).map(v => {
+          const id = v.displayId || v.id.substring(0, 8).toUpperCase();
+          return `• ${v.make} ${v.model} ${v.year} | ${id}`;
+        }).join('\n');
         return {
           message: `Maaf, sedang ada kendala menampilkan foto 🙏\n\nUnit yang tersedia:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
           shouldEscalate: false,
@@ -1627,7 +1633,10 @@ export class WhatsAppAIChatService {
           }
           // Vehicles exist but no photos available
           if (anyVehicles.length > 0) {
-            const vehicleList = anyVehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n');
+            const vehicleList = anyVehicles.slice(0, 3).map(v => {
+              const id = v.displayId || v.id.substring(0, 8).toUpperCase();
+              return `• ${v.make} ${v.model} ${v.year} | ${id}`;
+            }).join('\n');
             console.log(`[PhotoConfirm DEBUG] ⚠️ Vehicles found but no photos, returning list`);
             return {
               message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau info detail yang mana? 😊`,
