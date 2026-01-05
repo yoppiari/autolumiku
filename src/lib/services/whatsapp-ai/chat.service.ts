@@ -17,6 +17,7 @@ import {
   STAFF_COMMAND_HELP,
   STAFF_TROUBLESHOOTING,
   STAFF_EDIT_FEATURE,
+  STAFF_RULES,
   getCustomerJourneyRules,
   getResponseGuidelines
 } from "./prompts";
@@ -1024,7 +1025,10 @@ export class WhatsAppAIChatService {
       } else {
         return {
           message: `Wah, maaf ya ${searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1)} belum tersedia saat ini 🙏\n\n` +
-            `Tapi ada pilihan lain nih 🚗✨\n${vehicles.slice(0, 3).map(v => `• ${v.make} ${v.model} ${v.year}`).join('\n')}\n\n` +
+            `Tapi ada pilihan lain nih 🚗✨\n${vehicles.slice(0, 3).map(v => {
+              const id = v.displayId || v.id.substring(0, 6).toUpperCase();
+              return `• ${v.make} ${v.model} ${v.year} | ${id}`;
+            }).join('\n')}\n\n` +
             `Mau info yang mana? 😊`,
           shouldEscalate: false,
         };
@@ -1046,7 +1050,8 @@ export class WhatsAppAIChatService {
         const list = relevantVehicles.slice(0, 3).map(v => {
           // Fix: Price is already in Rupiah, convert to juta for display
           const priceJuta = Math.round(Number(v.price) / 1000000);
-          return `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} juta`;
+          const id = v.displayId || v.id.substring(0, 6).toUpperCase();
+          return `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} juta | ${id}`;
         }).join('\n');
 
         return {
@@ -1171,6 +1176,7 @@ export class WhatsAppAIChatService {
       systemPrompt += '\n' + STAFF_TROUBLESHOOTING;
       systemPrompt += '\n' + STAFF_EDIT_FEATURE;
       systemPrompt += '\n' + STAFF_RULES;
+      systemPrompt += '\n⚠️ PENTING UNTUK STAFF: Selalu sertakan ID kendaraan (displayId), dan detail disetiap informasi unit mobil yang diberikan.';
     }
 
     // 5. CORE COMMUNICATION RULES
@@ -1184,13 +1190,13 @@ export class WhatsAppAIChatService {
     systemPrompt += getResponseGuidelines();
 
     // 8. DYNAMIC INVENTORY CONTEXT
-    const vehicles = await this.getAvailableVehiclesDetailed(tenant.id);
-    if (vehicles.length > 0) {
-      systemPrompt += '\n📋 INVENTORY TERSEDIA (' + vehicles.length + ' unit):\n';
+    const inventory = await this.getAvailableVehiclesDetailed(tenant.id);
+    if (inventory.length > 0) {
+      systemPrompt += '\n📋 INVENTORY TERSEDIA (' + inventory.length + ' unit):\n';
       systemPrompt += '⚠️ CARA BACA HARGA: Field "price" di database dalam RUPIAH PENUH. Konversi dengan membagi 1.000.000 untuk dapat "juta".\n';
       systemPrompt += '   Contoh: price=79000000 → Tampilkan "Rp 79 juta" | price=470000000 → Tampilkan "Rp 470 juta"\n\n';
 
-      systemPrompt += vehicles
+      systemPrompt += inventory
         .slice(0, 10)
         .map((v: any) => {
           const priceInJuta = Math.round(Number(v.price) / 1000000);
@@ -1199,8 +1205,8 @@ export class WhatsAppAIChatService {
         })
         .join("\n");
 
-      if (vehicles.length > 10) {
-        systemPrompt += '\n... dan ' + (vehicles.length - 10) + ' unit lainnya';
+      if (inventory.length > 10) {
+        systemPrompt += '\n... dan ' + (inventory.length - 10) + ' unit lainnya';
       }
 
       systemPrompt += '\n\n⚠️ PENTING: Ketika menyebutkan harga ke customer, SELALU gunakan format "Rp [angka] juta"!';
@@ -1811,7 +1817,7 @@ export class WhatsAppAIChatService {
     // Parse search query into individual terms and filter out stop words
     const searchTerms = searchQuery.toLowerCase()
       .split(/\s+/)
-      .filter(term => term.length > 0 && !this.INDONESIAN_STOP_WORDS.includes(term));
+      .filter(term => term.length > 0 && !WhatsAppAIChatService.INDONESIAN_STOP_WORDS.includes(term));
 
     console.log('[WhatsApp AI Chat] Cleaned search terms:', searchTerms);
 
@@ -1951,7 +1957,7 @@ export class WhatsAppAIChatService {
     // Parse search query into individual terms and filter out stop words
     const searchTerms = searchQuery.toLowerCase()
       .split(/\s+/)
-      .filter(term => term.length > 0 && !this.INDONESIAN_STOP_WORDS.includes(term));
+      .filter(term => term.length > 0 && !WhatsAppAIChatService.INDONESIAN_STOP_WORDS.includes(term));
 
     console.log('[WhatsApp AI Chat] Cleaned search terms for detail:', searchTerms);
 

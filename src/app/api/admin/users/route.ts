@@ -199,11 +199,11 @@ export async function POST(request: NextRequest) {
       // Create new user (if not upserted)
       const user = await prisma.user.create({
         data: {
-          email,
+          email: email.toLowerCase(),
           firstName,
           lastName: lastName || '',
           passwordHash: await bcrypt.hash(password, 10),
-          role,
+          role: role.toUpperCase(),
           roleLevel: getRoleLevelFromRole(role),
           tenantId: tenantId || null,
           phone: phone || '',
@@ -226,12 +226,16 @@ export async function POST(request: NextRequest) {
         data: user,
       });
 
-    } catch (error) {
-      console.error('Create user error:', error);
+    } catch (error: any) {
+      console.error('❌ Create user error:', error);
+      // Log more details if it's a Prisma error
+      if (error.code) console.error('Prisma Error Code:', error.code);
+      if (error.meta) console.error('Prisma Error Meta:', error.meta);
+
       return NextResponse.json(
         {
           success: false,
-          error: 'Internal server error',
+          error: error.message || 'Internal server error',
         },
         { status: 500 }
       );
