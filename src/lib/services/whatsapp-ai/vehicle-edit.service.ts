@@ -164,8 +164,9 @@ export class VehicleEditService {
           success: false,
           message:
             `Kendaraan ${searchInfo} tidak ditemukan.\n\n` +
-            `Pastikan nama/ID kendaraan benar atau upload kendaraan terlebih dahulu.\n` +
-            `Contoh: edit PM-PST-001 tahun 2020\nAtau: ubah innova 2019 jadi bensin`,
+            `🚙 *EDIT DATA*\n` +
+            `Ketik: *edit [ID] [data]*\n` +
+            `Contoh: "edit PM-PST-001 harga 175jt", atau "ganti PM-PST-001 bensin", atau "rubah PM-PST-001 55000 km"`,
           error: "Vehicle not found",
         };
       }

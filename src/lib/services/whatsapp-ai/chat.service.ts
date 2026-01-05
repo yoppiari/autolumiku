@@ -1010,9 +1010,11 @@ export class WhatsAppAIChatService {
       );
 
       if (matchingVehicle) {
-        const price = Number(matchingVehicle.price).toLocaleString('id-ID'); // Fix: Remove / 100 division
-        const response = `Ada nih ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}! 🚗✨\n\n` +
-          `💰 Harga: Rp ${price}\n` +
+        const priceJuta = Math.round(Number(matchingVehicle.price) / 1000000);
+        const id = matchingVehicle.displayId || matchingVehicle.id.substring(0, 6).toUpperCase();
+
+        const response = `Ada nih ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year} | ${id} 🚗✨\n\n` +
+          `💰 Harga: Rp ${priceJuta} juta\n` +
           `⚙️ Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
           `${matchingVehicle.mileage ? `📊 Kilometer: ${matchingVehicle.mileage.toLocaleString('id-ID')} km\n` : ''}` +
           `🎨 Warna: ${matchingVehicle.color || '-'}\n\n` +

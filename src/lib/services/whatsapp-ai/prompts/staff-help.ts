@@ -20,7 +20,7 @@ Jika staff bingung, arahkan ke format berikut:
 
 🚙 *EDIT DATA*:
    • Ketik: *edit [ID] [data]*
-   • _Contoh:_ "edit PM-PST-001 harga 150jt"
+   • _Contoh:_ "edit PM-PST-001 harga 175jt", atau "ganti PM-PST-001 bensin", atau "rubah PM-PST-001 55000 km"
 
 👮‍♂️ *ADMIN*:
    • _Ketik:_ "sales report", "staff performance"
@@ -31,7 +31,7 @@ export const STAFF_TROUBLESHOOTING = `
 Jika staff/admin mengalami kendala (gagal upload, error, atau bingung caranya):
 1. BERIKAN PANDUAN LANGSUNG: "Jangan khawatir Pak/Bu [Nama], ikuti langkah ini ya:"
 2. Untuk UPLOAD: "Ketik 'upload' > Kirim foto (tunggu 'foto diterima') > Ketik data mobilnya."
-3. Untuk EDIT: "Ketik langsung: 'edit [nama field] jadi [nilai baru]'. Contoh: 'edit harga jadi 150jt'."
+3. Untuk EDIT: "Ketik langsung: 'edit [ID] [data]'. Contoh: 'edit PM-PST-001 harga jadi 175jt'."
 4. Jika ERROR FOTO: "Coba kirim fotonya satu per satu ya, kadang WA pending kalau kirim banyak sekaligus."
 5. Yakinkan mereka bahwa sistem siap membantu.
 
@@ -47,11 +47,16 @@ export const STAFF_EDIT_FEATURE = `
 ✏️ FITUR EDIT KENDARAAN (KHUSUS STAFF):
 Staff ini BISA mengedit data kendaraan yang sudah diupload.
 
-WAJIB PANGGIL TOOL edit_vehicle jika staff minta edit! Contoh:
-- "rubah km 50000" → PANGGIL edit_vehicle(field="mileage", new_value="50000")
-- "ganti bensin jadi diesel" → PANGGIL edit_vehicle(field="fuelType", new_value="diesel")
-- "ubah tahun ke 2018" → PANGGIL edit_vehicle(field="year", new_value="2018")
-- "update harga 150jt" → PANGGIL edit_vehicle(field="price", new_value="150000000")
-- "ganti transmisi ke matic" → PANGGIL edit_vehicle(field="transmission", new_value="automatic")
-- "rubah warna ke hitam" → PANGGIL edit_vehicle(field="color", new_value="hitam")
+WAJIB GUNAKAN FORMAT: "edit [ID] [data]"
+Contoh:
+- "edit PM-PST-001 km 50000" → PANGGIL edit_vehicle(vehicle_id="PM-PST-001", field="mileage", new_value="50000")
+- "edit PM-PST-001 bensin jadi diesel" → PANGGIL edit_vehicle(vehicle_id="PM-PST-001", field="fuelType", new_value="diesel")
+- "edit PM-PST-001 tahun ke 2018" → PANGGIL edit_vehicle(vehicle_id="PM-PST-001", field="year", new_value="2018")
+- "edit PM-PST-001 harga 175jt" → PANGGIL edit_vehicle(vehicle_id="PM-PST-001", field="price", new_value="175000000")
+
+⚠️ JIKA STAFF TIDAK MENYERTAKAN ID:
+Minta staff untuk menggunakan format yang benar:
+🚙 *EDIT DATA*
+Ketik: edit [ID] [data]
+Contoh: "edit PM-PST-001 harga 175jt", atau "ganti PM-PST-001 bensin", atau "rubah PM-PST-001 55000 km"
 `;
