@@ -1001,7 +1001,7 @@ export class WhatsAppAIChatService {
           return `• ${v.make} ${v.model} ${v.year} | ${id}`;
         }).join('\n');
         return {
-          message: `Maaf, sedang ada kendala menampilkan foto 🙏\n\nUnit yang tersedia:\n${vehicleList}\n\nMau lihat fotonya? 📸 (Silakan ketik: "ya foto [ID UNIT]")`,
+          message: `Maaf, sedang ada kendala menampilkan foto 🙏\n\nUnit yang tersedia:\n${vehicleList}\n\nMau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))`,
           shouldEscalate: false,
         };
       }
@@ -1652,7 +1652,7 @@ export class WhatsAppAIChatService {
             }).join('\n');
             console.log(`[PhotoConfirm DEBUG] ⚠️ Vehicles found but no photos, returning list`);
             return {
-              message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau lihat fotonya? 📸 (Silakan ketik: "ya foto [ID UNIT]")`,
+              message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))`,
               shouldEscalate: false,
               confidence: 0.8,
             };
