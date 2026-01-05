@@ -2071,16 +2071,23 @@ export class StaffCommandService {
     // Example: "rubah PM-PST-001 km 50000" -> Now matches because of non-greedy wildcard
     const fuelTypesRegex = '(?:bensin|diesel|hybrid|electric|listrik|solar)';
     const transmissionRegex = '(?:matic|manual|automatic|cvt|at|mt)';
-    const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas)';
+    const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas|ungu|merah muda|pink|cokelat|krem|cream|beige|champagne|tembaga|bronze|titanium|magnesium)';
 
     const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
       // 1. Price: "rubah harga 150jt", "update PM-PST-001 200jt" (require jt/juta or 'harga')
       {
-        pattern: /(?:rubah|ganti|ubah|update|edit)(?:\s+.*?)\s*(?:harga)?\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta))/i,
+        pattern: /(?:rubah|ganti|ubah|update|edit)(?:\s+.*?)\s*(?:harga)?\s*(?:ke|jadi|menjadi)?\s*(\d+(?:[.,]\d+)?\s*(?:jt|juta|m|miliar|bio))/i,
         field: 'price',
         valueExtractor: m => {
           const val = m[1].toLowerCase();
-          return String(parseInt(val) * 1000000);
+          // Check for 'm' suffix which means Miliar (billion)
+          if (val.includes('m')) {
+            const num = parseFloat(val.replace(/[^\d.,]/g, '').replace(',', '.'));
+            return String(Math.round(num * 1000000000));
+          }
+          // Default: jt/juta
+          const num = parseFloat(val.replace(/[^\d.,]/g, '').replace(',', '.'));
+          return String(Math.round(num * 1000000));
         }
       },
       {

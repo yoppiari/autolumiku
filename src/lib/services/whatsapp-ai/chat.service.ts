@@ -2367,7 +2367,7 @@ export class WhatsAppAIChatService {
     // Field detection patterns
     const fuelTypesRegex = '(?:bensin|diesel|hybrid|electric|listrik|solar)';
     const transmissionRegex = '(?:matic|manual|automatic|cvt|at|mt)';
-    const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas)';
+    const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas|ungu|merah muda|pink|cokelat|krem|cream|beige|champagne|tembaga|bronze|titanium|magnesium)';
 
     const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
       // 1. Price: "rubah harga 150jt", "update 200jt" (require jt/juta or 'harga')
