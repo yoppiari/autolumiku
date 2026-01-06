@@ -459,7 +459,7 @@ export class AimeowClientService {
       console.log(`[Aimeow Send Image] Payload:`, JSON.stringify(payload, null, 2));
 
       // Use /send-images endpoint
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
+      let response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
