@@ -1102,6 +1102,15 @@ export class WhatsAppAIChatService {
         // 🔥 If user has shown HIGH PURCHASE INTENT, be more proactive and offer to send photos to admin/staff
         if (hasHighPurchaseIntent) {
           console.log(`[SmartFallback] 🎯 High intent + no photos → Escalate to staff with promise to send`);
+
+          // Check if we just sent this exact message to avoid repetition
+          if (lastAiMsg && lastAiMsg.content.includes("segera koordinasikan dengan tim kami")) {
+            return {
+              message: `Siap kak! Permintaan foto${vehicleName ? ` ${vehicleName}` : ''} sudah saya teruskan ke tim kami. Mohon ditunggu sebentar ya, fotonya akan segera dikirimkan! 📸😊`,
+              shouldEscalate: false
+            };
+          }
+
           return {
             message: `Tentu kak! Saya akan segera koordinasikan dengan tim kami untuk mengirimkan foto detail unit yang Bapak/Ibu minati. 📸\n\n` +
               `Unit yang tersedia:\n${vehicleList}\n\n` +
@@ -1297,7 +1306,7 @@ export class WhatsAppAIChatService {
 
         if (dpPercentages.length > 1) {
           // Comparative Mode
-          fullSimulationText = `${timeGreeting}! 👋\n\nTentu kak! Ini perbandingan simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}*:\n\n`;
+          fullSimulationText = `${timeGreeting}! 👋\n\nTentu kak! Ini perbandingan simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}* ${targetVehicle.displayId ? `| ${targetVehicle.displayId}` : ''}:\n\n`;
           fullSimulationText += `💰 Harga Mobil: Rp ${Math.round(Number(targetVehicle.price)).toLocaleString('id-ID')}\n\n`;
 
           dpPercentages.forEach((dp, index) => {
@@ -1326,12 +1335,12 @@ export class WhatsAppAIChatService {
             null,
             dpPercentages[0]
           );
-          fullSimulationText = `${timeGreeting}! 👋\n\nTentu kak! Ini estimasi simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}*:\n\n` +
+          fullSimulationText = `${timeGreeting}! 👋\n\nTentu kak! Ini estimasi simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}* ${targetVehicle.displayId ? `| ${targetVehicle.displayId}` : ''}:\n\n` +
             simulation + `\n\n`;
         }
 
         return {
-          message: fullSimulationText + `_Bapak/Ibu ingin kami bantu hubungkan dengan tim Sales kami untuk hitungan pastinya?_ 😊`,
+          message: fullSimulationText + `Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`,
           shouldEscalate: false,
         };
       } else {
