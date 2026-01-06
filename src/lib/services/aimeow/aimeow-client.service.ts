@@ -401,10 +401,6 @@ export class AimeowClientService {
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       console.log(`[Aimeow Send Image] 📸 Sending image to ${to}`);
-      console.log(`[Aimeow Send Image] Image URL: ${imageUrl}`);
-      console.log(`[Aimeow Send Image] Caption: ${caption || 'none'}`);
-      console.log(`[Aimeow Send Image] Original clientId: ${clientId}`);
-      console.log(`[Aimeow Send Image] AIMEOW_BASE_URL: ${AIMEOW_BASE_URL}`);
 
       // Validate image URL
       if (!imageUrl || imageUrl.trim() === '') {
@@ -443,7 +439,6 @@ export class AimeowClientService {
 
       // Determine MIME type dynamically
       const mimeType = this.getMimeTypeFromUrl(imageUrl);
-      console.log(`[Aimeow Send Image] Detected MIME type: ${mimeType}`);
 
       // Build payload for /send-images endpoint (PLURAL)
       // This endpoint is more robust and correctly handles image previews
@@ -462,7 +457,6 @@ export class AimeowClientService {
       };
 
       console.log(`[Aimeow Send Image] Using clientId: ${apiClientId}`);
-      console.log(`[Aimeow Send Image] Payload:`, JSON.stringify(payload, null, 2));
 
       // Use /send-images endpoint
       let response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {

@@ -720,11 +720,6 @@ export class WhatsAppAIChatService {
     const looksLikeAICapability = aiCapabilityPatterns.some(p => p.test(msg));
     const isExplicitContactRequest = /\b(nomer|nomor|wa|whatsapp|kontak|contact|telp|telepon|phone)\b/i.test(msg); // Strictly NO "no" here
 
-    console.log(`[SmartFallback DEBUG] Identity Check for "${msg}":`);
-    aiCapabilityPatterns.forEach((p, i) => console.log(`  Pattern ${i} (${p.source}): ${p.test(msg)}`));
-    console.log(`  looksLikeAICapability: ${looksLikeAICapability}`);
-    console.log(`  isExplicitContactRequest: ${isExplicitContactRequest}`);
-
     if (looksLikeAICapability && !isExplicitContactRequest) {
       console.log(`[SmartFallback] 🤖 AI Capability/Identity detected in fallback: "${msg}"`);
 
