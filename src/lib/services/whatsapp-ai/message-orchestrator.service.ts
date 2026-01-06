@@ -746,6 +746,23 @@ export class MessageOrchestratorService {
         responseImages = result.images;
 
         console.log(`[Orchestrator] AI greeting response: ${responseMessage?.substring(0, 50)}...`);
+      } else if (classification.intent === "customer_ai_capability") {
+        // ==================== AI CAPABILITY QUERY (AI 5.0) ====================
+        console.log(`[Orchestrator] AI Capability Question - Routing to AI for direct response`);
+
+        // Use standard customer inquiry handler but with specific intent
+        // The updated system prompt in identity.ts will handle the response content
+        const result = await this.handleCustomerInquiry(
+          conversation,
+          classification.intent,
+          incoming.message,
+          classification.isStaff, // Preserve staff status
+          undefined
+        );
+
+        responseMessage = result.message;
+        escalated = result.escalated;
+        responseImages = result.images;
       } else {
         // Handle customer inquiry dengan AI
         console.log(`[Orchestrator] Routing to AI customer inquiry handler`);

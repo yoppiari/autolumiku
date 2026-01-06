@@ -29,6 +29,7 @@ export type MessageIntent =
   | "customer_negative"            // New: rejection/negative response
   | "customer_closing"             // New: closing/thanks
   | "customer_contact_inquiry"     // New: asking for sales/admin/phone
+  | "customer_ai_capability"       // New: asking about AI tech/skills
   | "staff_greeting"
   | "staff_upload_vehicle"
   | "staff_update_status"
@@ -221,6 +222,18 @@ const CUSTOMER_PATTERNS = {
     /\b(sales|admin|marketing|staff)\b.*\b(siapa|mana|nomer|nomor|no|wa|kontak|hubungin|ada)\b/i,
     /^(minta|kirim|boleh)\s+(nomer|nomor|no|wa|kontak|sales|admin)/i,
     /\b(hubungi|hubungin|kontak)\s+(siapa|mana)\b/i,
+  ],
+  // New: AI Capability patterns (AI 5.0)
+  ai_capability: [
+    /^(kamu|anda)\s+(pakai|menggunakan)\s+(teknologi|ai|sistem|bot|robot)/i,
+    /^(seberapa|berapa)\s+(pintar|cerdas|canggih)/i,
+    /^(bagaimana|gimana)\s+(cara|kamu)\s+(kerja|transaksi|tau|tahu|dapat|mengerti)/i,
+    /^(apa|siapa)\s+(kamu|anda)\s+(sebenarnya|itu|sih)/i,
+    /\b(skill|kemampuan|kelebihan|keunggulan|bisa apa)\b/i,
+    /\b(chatbot|chat bot|ai|robot|bot)\b/i,
+    /^(teknologi|sistem)\s+(apa|yang)/i,
+    /^(kamu|anda)\s+(robot|manusia|orang|mesin)/i,
+    /^(halusinasi|fake|palsu|bohong)/i, // Anti-hallucination questions
   ],
 };
 
@@ -745,6 +758,15 @@ export class IntentClassifierService {
       if (maxConfidence === 0.95) {
         detectedIntent = "customer_contact_inquiry";
         reason = "Detected contact inquiry (asking for sales/phone)";
+      }
+    }
+
+    // 11. Check AI Capability inquiry (AI 5.0)
+    if (CUSTOMER_PATTERNS.ai_capability.some((p) => p.test(message))) {
+      maxConfidence = Math.max(maxConfidence, 0.98); // Very high confidence for specific AI questions
+      if (maxConfidence === 0.98) {
+        detectedIntent = "customer_ai_capability";
+        reason = "Detected AI capability/identity question";
       }
     }
 
