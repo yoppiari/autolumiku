@@ -296,7 +296,10 @@ export class WhatsAppAIChatService {
       // (Pre-processing of AI response text moved to bottom to ensure it covers tool results)
 
       // 2b. LAZINESS FILTER - Catch and replace "cek dulu" or "mohon ditunggu"
-      if (responseMessage.toLowerCase().includes("cek dulu") || responseMessage.toLowerCase().includes("mohon ditunggu")) {
+      // ONLY if no tool calls are being made (if tool calls exist, "checking" is valid)
+      const hasToolCalls = aiResponse.toolCalls && aiResponse.toolCalls.length > 0;
+
+      if (!hasToolCalls && (responseMessage.toLowerCase().includes("cek dulu") || responseMessage.toLowerCase().includes("mohon ditunggu"))) {
         console.log(`[WhatsApp AI Chat] ⚠️ Laziness detected in response: "${responseMessage}"`);
         // If the AI is being lazy, we force it to look for vehicles
         const vehicles = await this.getAvailableVehiclesDetailed(context.tenantId);
@@ -490,7 +493,7 @@ export class WhatsAppAIChatService {
       }
 
       // 3. LAZINESS FILTER - Catch and replace "cek dulu" or "mohon ditunggu"
-      if (responseMessage.toLowerCase().includes("cek dulu") || responseMessage.toLowerCase().includes("mohon ditunggu")) {
+      if (!hasToolCalls && (responseMessage.toLowerCase().includes("cek dulu") || responseMessage.toLowerCase().includes("mohon ditunggu"))) {
         console.log(`[WhatsApp AI Chat] ⚠️ Laziness detected in response: "${responseMessage}"`);
         const vehicles = await this.getAvailableVehiclesDetailed(context.tenantId);
         if (vehicles.length > 0) {
@@ -513,7 +516,9 @@ export class WhatsAppAIChatService {
       }
 
       // 4. Ensure Mandatory Follow-up Question
-      if (!responseMessage.toLowerCase().includes("bantu") && !responseMessage.toLowerCase().includes("terima kasih") && responseMessage.length > 0) {
+      const endsWithQuestion = responseMessage.trim().endsWith("?") || responseMessage.trim().endsWith("😊");
+
+      if (!endsWithQuestion && !responseMessage.toLowerCase().includes("bantu") && !responseMessage.toLowerCase().includes("terima kasih") && responseMessage.length > 0) {
         responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
       }
 
@@ -1402,7 +1407,8 @@ export class WhatsAppAIChatService {
     // 8. DYNAMIC INVENTORY CONTEXT
     const inventory = await this.getAvailableVehiclesDetailed(tenant.id);
     if (inventory.length > 0) {
-      systemPrompt += '\n📋 INVENTORY TERSEDIA (' + inventory.length + ' unit):\n';
+      systemPrompt += '\n📋 INVENTORY TERSEDIA (PARTIAL LIST - ' + inventory.length + ' unit):\n';
+      systemPrompt += '⚠️ LIST INI TIDAK LENGKAP! Hanya menampilkan 10 unit terbaru. Jika user cari mobil budget/tipe yang TIDAK ada di list ini, WAJIB GUNAKAN tool search_vehicles!\n';
       systemPrompt += '⚠️ CARA BACA HARGA: Field "price" di database dalam RUPIAH PENUH. Konversi dengan membagi 1.000.000 untuk dapat "juta".\n';
       systemPrompt += '   Contoh: price=79000000 → Tampilkan "Rp 79 juta" | price=470000000 → Tampilkan "Rp 470 juta"\n\n';
 
