@@ -1310,6 +1310,15 @@ export class WhatsAppAIChatService {
       // Use the DETAILED formatter
       const list = WhatsAppAIChatService.formatVehicleListDetailed(recommendations);
 
+      // Check if we should suppress the greeting (if AI just said it)
+      // Check last AI message
+      // Note: This needs access to message history, but handleCustomerInquiry signature doesn't have it easily available in this snippet.
+      // However, we can just be smarter about the string.
+
+      const greetingPrefix = `${timeGreeting}! 👋`;
+      // If we are in a conversation flow (implied by this being a fallback), maybe just drop the greeting?
+      // Or we can just use a shorter one.
+
       return {
         message: `${timeGreeting}! 👋\n\nMohon maaf, sepertinya unit spesifik yang Bapak/Ibu cari belum tersedia saat ini. 🙏\n\n` +
           `Namun jangan khawatir! Kami memiliki beberapa rekomendasi unit premium/terbaik yang *READY STOCK* dan mungkin cocok untuk Anda:\n\n${list}\n\n` +
@@ -1637,6 +1646,9 @@ export class WhatsAppAIChatService {
       /\b(mana|kirim|kasih|tunjuk)\b.*\b(foto|gambar)/i,
       /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
       /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
+      // Info/Detail requests (NEW)
+      /\b(info|detail|spesifikasi|spek)\b/i,
+      /\b(minta|bagi)\b.*\b(info|detail|data)\b/i,
       // Other confirmations
       /silahkan|silakan/i,
       /ditunggu/i,
@@ -1644,7 +1656,7 @@ export class WhatsAppAIChatService {
       /kirim\s*(aja|dong|ya|in)?/i,
       /kirimin\s*(dong|ya|aja)?/i,
       /kirimkan\s*(dong|ya)?/i,
-      /boleh\s*(dong|ya|lah|aja|silahkan|silakan|banget)?/i,
+      /boleh\s*(dong|ya|lah|aja|silahkan|silakan|banget|info|detail)?/i,
       /ok\s*(kirim|dong|ya|lanjut)?/i,
       /sip\s*(ditunggu|tunggu|lanjut)?/i,
       /mau\s*(dong|ya|lah|lihat|banget)?/i,
@@ -1829,13 +1841,14 @@ export class WhatsAppAIChatService {
 
     console.log(`[PhotoConfirm DEBUG] ✅ Vehicle name extracted: "${vehicleName} "`);
 
-    // Check if user is asking for DETAILED photos (interior, exterior, semua, lengkap, dll)
+    // Check if user is asking for DETAILED photos (interior, exterior, semua, lengkap, dll) OR just "info"
     const detailPatterns = [
       /\b(detail|lengkap|semua|all)\b/i,
       /\b(interior|eksterior|dalam|luar)\b/i,
       /\b(dashboard|jok|bagasi|mesin)\b/i,
       /\bfoto.*(semua|lengkap|detail)\b/i,
       /\b(semua|lengkap).*(foto|gambar)\b/i,
+      /\b(info|spesifikasi|spek)\b/i, // Added info/spek to trigger detailed view
     ];
     const wantsDetailedPhotos = detailPatterns.some(p => p.test(userMessage));
     console.log(`[PhotoConfirm DEBUG] Wants detailed photos: ${wantsDetailedPhotos}`);
