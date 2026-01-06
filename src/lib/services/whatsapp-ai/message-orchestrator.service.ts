@@ -923,6 +923,23 @@ export class MessageOrchestratorService {
 
       // 5. Send response if generated
       if (responseMessage || responseImages) {
+
+        // GLOBAL CHECK: Suppress images if user asked to stop/no photos
+        // This prevents AI from sending photos when user explicitly said "cuma minta detail", "bukan foto", etc.
+        const stopPhotoKeywords = [
+          'no photo', 'no foto', 'jangan foto', 'bukan foto', 'ga usah foto', 'nggak usah foto', 'gak usah foto',
+          'hanya info', 'cuma info', 'info aja', 'keterangan aja', 'detail aja',
+          'bukan minta foto', 'bukan minta fotonya', 'jangan kirim foto'
+        ];
+
+        // Check if ANY keyword is in the message (case insensitive)
+        const userRefusedPhotos = stopPhotoKeywords.some(k => incoming.message.toLowerCase().includes(k));
+
+        if (userRefusedPhotos && responseImages && responseImages.length > 0) {
+          console.log(`[Orchestrator] 📷 User explicitly refused photos (matched "${incoming.message}") - suppressing ${responseImages.length} images`);
+          responseImages = undefined;
+        }
+
         console.log(`[Orchestrator] Sending response to ${incoming.from}`);
         await this.sendResponse(
           incoming.accountId,
@@ -2080,6 +2097,13 @@ export class MessageOrchestratorService {
                 successCount++;
                 if (!result.messageId) result.messageId = imageResult.messageId;
               }
+            }
+
+            // Check stop signal AGAIN after sending, to skip delay if stopped
+            if (stopSignals.get(stopKey)) {
+              console.log(`[Orchestrator sendResponse] 🛑 Stop signal detected after image ${i + 1}. Stopping.`);
+              stopSignals.delete(stopKey);
+              break;
             }
 
             // Delay between images to avoid rate limiting (800ms)

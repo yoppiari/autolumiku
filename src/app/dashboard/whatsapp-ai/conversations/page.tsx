@@ -648,6 +648,32 @@ END:VCARD`;
     }
   };
 
+  // Clear chat history handler
+  const handleClearChatHistory = async () => {
+    if (!selectedConversation) return;
+
+    if (!window.confirm('Bersihkan seluruh riwayat chat ini? Pesan akan dihapus dari database dashboard (tetap ada di HP customer).')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/v1/whatsapp-ai/conversations/${selectedConversation.id}/messages?deleteAll=true`,
+        { method: 'DELETE' }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setMessages([]); // Clear local state
+        setActiveMessageMenu(null); // Close menu
+      } else {
+        alert('Gagal membersihkan chat: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error clearing chat:', error);
+      alert('Gagal membersihkan chat');
+    }
+  };
+
   // Send manual message
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation || isSending) return;
@@ -1457,14 +1483,10 @@ END:VCARD`;
                             <span className="w-5 flex justify-center">🗑️</span> Hapus semua chat
                           </button>
                           <button
-                            onClick={() => {
-                              setSelectedMessageIds([]);
-                              setIsSelectionMode(false);
-                              setActiveMessageMenu(null);
-                            }}
+                            onClick={handleClearChatHistory}
                             className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-600"
                           >
-                            <span className="w-5 flex justify-center">🧹</span> Bersihkan pilih chat
+                            <span className="w-5 flex justify-center">🧹</span> Bersihkan riwayat chat
                           </button>
                         </div>
                       )}

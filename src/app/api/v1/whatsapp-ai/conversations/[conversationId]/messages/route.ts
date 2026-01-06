@@ -88,11 +88,28 @@ export async function DELETE(
       );
     }
 
-    if (!messageId) {
+    const deleteAll = searchParams.get("deleteAll") === 'true';
+
+    if (!messageId && !deleteAll) {
       return NextResponse.json(
-        { success: false, error: "Missing messageId" },
+        { success: false, error: "Missing messageId or deleteAll param" },
         { status: 400 }
       );
+    }
+
+    if (deleteAll) {
+      // Delete all messages for this conversation
+      // Note: We skip attempting to delete from WhatsApp remote for bulk delete to avoid API limits/timeouts
+      await prisma.whatsAppMessage.deleteMany({
+        where: { conversationId }
+      });
+
+      console.log(`[Conversation Messages API] Deleted ALL messages for conversation ${conversationId}`);
+
+      return NextResponse.json({
+        success: true,
+        message: "All messages deleted successfully",
+      });
     }
 
     // Get message with conversation details for WhatsApp deletion
