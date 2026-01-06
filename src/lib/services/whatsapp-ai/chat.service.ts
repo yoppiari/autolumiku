@@ -202,7 +202,7 @@ export class WhatsAppAIChatService {
       }
 
       let aiResponse: any = null;
-      let images: any[] = [];
+      let resultImages: Array<{ imageUrl: string; caption?: string }> | null = null;
 
       // ==================== PRE-AI PHOTO CONFIRMATION HANDLER ====================
       // Handle photo confirmations BEFORE calling AI to avoid AI failures breaking the flow
@@ -218,7 +218,7 @@ export class WhatsAppAIChatService {
           content: photoConfirmResult.message,
           images: photoConfirmResult.images
         };
-        images = photoConfirmResult.images || [];
+        resultImages = photoConfirmResult.images || [];
       } else {
         // Build system prompt with sender info
         console.log(`[WhatsApp AI Chat] Building system prompt for tenant: ${account.tenant.name}`);
@@ -386,7 +386,6 @@ export class WhatsAppAIChatService {
       const processingTime = Date.now() - startTime;
 
       // Handle tool calls (function calling)
-      let images: Array<{ imageUrl: string; caption?: string }> | null = null;
       let uploadRequest: any = null;
       let editRequest: any = null;
 
@@ -404,10 +403,10 @@ export class WhatsAppAIChatService {
 
               console.log('[WhatsApp AI Chat] 📸 AI requested vehicle images for:', searchQuery);
 
-              images = await this.fetchVehicleImagesByQuery(searchQuery, context.tenantId);
+              resultImages = await this.fetchVehicleImagesByQuery(searchQuery, context.tenantId);
 
-              if (images && images.length > 0) {
-                console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} images to send`);
+              if (resultImages && resultImages.length > 0) {
+                console.log(`[WhatsApp AI Chat] ✅ Found ${resultImages.length} images to send`);
               } else {
                 console.log('[WhatsApp AI Chat] ⚠️ No images found for query:', searchQuery);
               }
@@ -500,15 +499,15 @@ export class WhatsAppAIChatService {
       }
 
       // If AI sent images but no text, add default message
-      if (images && images.length > 0 && !responseMessage) {
-        responseMessage = `Siap! Ini foto ${images.length > 1 ? 'mobil-mobilnya' : 'mobilnya'} ya 📸👇`;
+      if (resultImages && resultImages.length > 0 && !responseMessage) {
+        responseMessage = `Siap! Ini foto ${resultImages.length > 1 ? 'mobil-mobilnya' : 'mobilnya'} ya 📸👇`;
         console.log('[WhatsApp AI Chat] Added default image message:', responseMessage);
       }
 
       // If images requested but none found, add helpful message
       if (aiResponse.toolCalls?.some(tc =>
         tc.type === 'function' && 'function' in tc && tc.function.name === 'send_vehicle_images'
-      ) && (!images || images.length === 0)) {
+      ) && (!resultImages || resultImages.length === 0)) {
         responseMessage = responseMessage || 'Maaf kak, saat ini galeri foto unit sedang kami perbarui untuk kualitas terbaik. 👋 Adakah hal lain yang bisa kami bantu? 😊';
       }
 
@@ -517,7 +516,7 @@ export class WhatsAppAIChatService {
         shouldEscalate,
         confidence: 0.85,
         processingTime,
-        ...(images && images.length > 0 && { images }),
+        ...(resultImages && resultImages.length > 0 && { images: resultImages }),
         ...(uploadRequest && { uploadRequest }),
         ...(editRequest && { editRequest }),
       };
