@@ -1628,7 +1628,19 @@ END:VCARD`;
                                         if (intent.includes('owner')) return 'Owner';
                                         if (intent.includes('admin')) return 'Admin';
                                         if (intent.includes('staff') || msg.senderType === 'staff') return 'Staff';
-                                        return selectedConversation?.isStaff ? 'Staff' : 'Customer';
+                                        return selectedConversation?.isStaff ? (() => {
+                                          const phone = selectedConversation.customerPhone;
+                                          const member = teamMembers.find(m =>
+                                            (m.phone && m.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')) ||
+                                            phone.includes(m.phone?.replace(/\D/g, '') || 'XYZ')
+                                          );
+                                          if (member) {
+                                            if (member.role === 'OWNER') return 'Owner';
+                                            if (member.role === 'ADMIN') return 'Admin';
+                                            return 'Staff';
+                                          }
+                                          return 'Staff';
+                                        })() : 'Customer';
                                       })()}
                                     </span>
                                     {msg.intent && (
@@ -1650,7 +1662,12 @@ END:VCARD`;
                                           const intent = msg.intent || '';
                                           if (intent.includes('owner')) return 'Owner';
                                           if (intent.includes('admin')) return 'Admin';
-                                          if (intent.includes('staff') || msg.senderType === 'staff') return 'Staff';
+                                          // Check if it's a staff member responding
+                                          if (msg.senderType === 'staff' || intent.includes('staff')) {
+                                            // Ideally we should know WHICH staff, but for outbound we usually assume it's the system user or linked account
+                                            // If we have metadata about the sender, use it. Otherwise, default to Staff.
+                                            return 'Staff';
+                                          }
                                           return 'Staff';
                                         })()
                                       }
@@ -1660,7 +1677,12 @@ END:VCARD`;
                                 <p className="text-[13px] md:text-xs whitespace-pre-wrap break-words leading-relaxed pr-5">{msg.content}</p>
                                 <div className="flex items-center justify-end mt-1 md:mt-0.5 space-x-1">
                                   <span className="text-[10px] md:text-[9px] text-gray-500">
-                                    {new Date(msg.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    {(() => {
+                                      const d = new Date(msg.createdAt);
+                                      const time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+                                      const date = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'numeric', year: 'numeric' });
+                                      return `[${time}, ${date}]`;
+                                    })()}
                                   </span>
                                   {msg.direction === 'outbound' && (
                                     <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
