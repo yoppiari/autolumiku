@@ -467,7 +467,11 @@ export class WhatsAppAIChatService {
       // 1. Critical Showroom Name Check
       const showroomName = account?.tenant?.name || "Showroom Kami";
 
-      // 2. SELF-HEALING GREETINGS (The "Always Greeting" Rule)
+      // 2. SELF-HEALING GREETINGS (Context-Aware)
+      // Only add greeting if:
+      // - This is a new conversation (first few messages)
+      // - User's last message was a greeting
+      // - Previous AI response didn't have a greeting (avoid double-greeting)
       if (responseMessage.length > 0) {
         const now = new Date();
         const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
@@ -487,8 +491,20 @@ export class WhatsAppAIChatService {
           lowerResponse.startsWith("halo") ||
           lowerResponse.startsWith("hai");
 
-        if (!startsWithGreeting) {
+        // ✅ FIX: Check conversation context before adding greeting
+        const isNewConversation = context.messageHistory.length <= 2;
+        const lastUserMsg = context.messageHistory.filter(m => m.role === "user").pop();
+        const userLastMsgContent = lastUserMsg?.content?.toLowerCase().trim() || "";
+        const lastUserMsgIsGreeting = /^(halo|hai|hi|selamat|pagi|siang|sore|malam|assalam)/i.test(userLastMsgContent);
+
+        // Only add greeting if conversation needs it
+        const conversationNeedsGreeting = isNewConversation || lastUserMsgIsGreeting;
+
+        if (!startsWithGreeting && conversationNeedsGreeting) {
           responseMessage = `${timeGreeting}! 👋\n\n${responseMessage.trim()}`;
+          console.log(`[WhatsApp AI Chat] 👋 Added greeting (new conversation: ${isNewConversation}, user greeted: ${lastUserMsgIsGreeting})`);
+        } else if (!startsWithGreeting && !conversationNeedsGreeting) {
+          console.log(`[WhatsApp AI Chat] ℹ️ Skipped greeting (mid-conversation, user message: "${userLastMsgContent.substring(0, 30)}...")`);
         }
       }
 
@@ -1287,7 +1303,8 @@ export class WhatsAppAIChatService {
       };
     }
 
-    // Default: Try to be helpful based on available inventory
+    // ==================== BUDGET-AWARE VEHICLE RECOMMENDATION ====================
+    // ✅ FIX: Extract budget from user message and filter vehicles accordingly
     if (vehicles.length > 0) {
       // Get time greeting for consistency
       const now = new Date();
@@ -1296,6 +1313,63 @@ export class WhatsAppAIChatService {
       if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
       else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
       else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
+      // Extract budget from current message
+      const budget = WhatsAppAIChatService.extractBudget(msg);
+
+      // If no budget in current message, check recent conversation history (last 3 messages)
+      let budgetFromHistory: number | null = null;
+      if (!budget) {
+        const recentHistory = messageHistory.slice(-3).map(m => m.content).join(' ');
+        budgetFromHistory = WhatsAppAIChatService.extractBudget(recentHistory);
+      }
+
+      const finalBudget = budget || budgetFromHistory;
+
+      // If user mentioned a budget, filter vehicles by budget
+      if (finalBudget) {
+        console.log(`[SmartFallback] 💰 Budget detected: Rp ${Math.round(finalBudget / 1000000)} juta`);
+
+        // Allow up to 30% over budget for flexibility
+        const maxPrice = finalBudget * 1.3;
+        const budgetVehicles = vehicles.filter(v => Number(v.price) <= maxPrice);
+
+        if (budgetVehicles.length > 0) {
+          // Sort by price (closest to budget first)
+          budgetVehicles.sort((a, b) => {
+            const diffA = Math.abs(Number(a.price) - finalBudget);
+            const diffB = Math.abs(Number(b.price) - finalBudget);
+            return diffA - diffB;
+          });
+
+          const list = WhatsAppAIChatService.formatVehicleListDetailed(budgetVehicles.slice(0, 3));
+          console.log(`[SmartFallback] ✅ Found ${budgetVehicles.length} vehicles within budget`);
+
+          return {
+            message: `Untuk budget sekitar Rp ${Math.round(finalBudget / 1000000)} juta, kami punya unit ready berikut:\n\n${list}\n\nMau lihat fotonya atau info lebih detail? 📸😊`,
+            shouldEscalate: false,
+          };
+        } else {
+          // No vehicles within budget - be honest and show closest option
+          const closestVehicle = [...vehicles].sort((a, b) =>
+            Math.abs(Number(a.price) - finalBudget) - Math.abs(Number(b.price) - finalBudget)
+          )[0];
+          const closestPrice = Math.round(Number(closestVehicle.price) / 1000000);
+          const id = closestVehicle.displayId || closestVehicle.id.substring(0, 6).toUpperCase();
+
+          console.log(`[SmartFallback] ⚠️ No vehicles within budget Rp ${Math.round(finalBudget / 1000000)}jt, closest: ${closestVehicle.make} ${closestVehicle.model} at Rp ${closestPrice}jt`);
+
+          return {
+            message: `Mohon maaf, untuk budget Rp ${Math.round(finalBudget / 1000000)} juta saat ini belum ada unit ready yang pas. 🙏\n\n` +
+              `Unit terdekat yang kami punya:\n• ${closestVehicle.make} ${closestVehicle.model} ${closestVehicle.year} - Rp ${closestPrice} juta | ${id}\n\n` +
+              `Apakah budget bisa disesuaikan atau ingin coba cari unit lain? 😊`,
+            shouldEscalate: false,
+          };
+        }
+      }
+
+      // No budget mentioned - show premium/popular vehicles (original behavior)
+      console.log(`[SmartFallback] ℹ️ No budget mentioned, showing premium vehicles`);
 
       // 1. Try to find "High Class" units first (SUV, MPV Premium, etc)
       const highClassKeywords = ['fortuner', 'pajero', 'palisade', 'terra', 'alphard', 'vellfire', 'crv', 'cx-5', 'santa fe', 'innova zenix', 'innova reborn'];
@@ -1315,17 +1389,8 @@ export class WhatsAppAIChatService {
       // Use the DETAILED formatter
       const list = WhatsAppAIChatService.formatVehicleListDetailed(recommendations);
 
-      // Check if we should suppress the greeting (if AI just said it)
-      // Check last AI message
-      // Note: This needs access to message history, but handleCustomerInquiry signature doesn't have it easily available in this snippet.
-      // However, we can just be smarter about the string.
-
-      const greetingPrefix = `${timeGreeting}! 👋`;
-      // If we are in a conversation flow (implied by this being a fallback), maybe just drop the greeting?
-      // Or we can just use a shorter one.
-
       return {
-        message: `${timeGreeting}! 👋\n\nMohon maaf, sepertinya unit spesifik yang Bapak/Ibu cari belum tersedia saat ini. 🙏\n\n` +
+        message: `Mohon maaf, sepertinya unit spesifik yang Bapak/Ibu cari belum tersedia saat ini. 🙏\n\n` +
           `Namun jangan khawatir! Kami memiliki beberapa rekomendasi unit premium/terbaik yang *READY STOCK* dan mungkin cocok untuk Anda:\n\n${list}\n\n` +
           `Apakah ada dari unit di atas yang menarik perhatian Bapak/Ibu? Atau ingin dibantu carikan jenis lain? 😊`,
         shouldEscalate: false,
@@ -1427,6 +1492,14 @@ export class WhatsAppAIChatService {
 
       systemPrompt += '\n\n⚠️ PENTING: Ketika menyebutkan harga ke customer, SELALU gunakan format "Rp [angka] juta"!';
       systemPrompt += '\n⚠️ DETAIL UNIT: SELALU sertakan ID unit, detail transmisi, kilometer, dan link website (https://primamobil.id/vehicles/[slug-merk]-[slug-model]-[tahun]-[id]) jika memberikan info unit spesifik.';
+
+      // ✅ NEW: Critical budget handling rules
+      systemPrompt += '\n\n🚨 CRITICAL BUDGET RULES:';
+      systemPrompt += '\n• Jika customer sebutkan budget (contoh: "65 jt", "budget 100 juta", "ada budget 150 jt"), WAJIB cari unit dalam range tersebut!';
+      systemPrompt += '\n• Gunakan tool search_vehicles dengan max_price = budget * 1.3 (toleransi 30%)';
+      systemPrompt += '\n• JANGAN PERNAH rekomendasikan unit yang harganya 2x lipat budget atau lebih! (contoh: budget 65jt, jangan tawarkan unit 345jt)';
+      systemPrompt += '\n• Jika tidak ada unit sesuai budget, JUJUR bilang: "Mohon maaf, untuk budget Rp X juta belum ada unit ready yang pas"';
+      systemPrompt += '\n• Lalu tunjukkan unit terdekat dan tanyakan apakah budget bisa disesuaikan';
     } else {
       systemPrompt += '\n\n⚠️⚠️⚠️ SANGAT PENTING - INVENTORY KOSONG:\n' +
         '• Saat ini TIDAK ADA unit mobil yang tersedia/ready stock di showroom\n' +
@@ -1931,6 +2004,30 @@ export class WhatsAppAIChatService {
       orderBy: { createdAt: "desc" },
       take: 5, // Limit to 5 most recent for faster response
     });
+  }
+
+  /**
+   * Extract budget from user message
+   * Supports patterns: "65 jt", "65jt", "budget 65 juta", "anggaran 100 jt", etc.
+   */
+  private static extractBudget(message: string): number | null {
+    if (!message) return null;
+
+    const msg = message.toLowerCase();
+
+    // Pattern 1: "budget 65 jt", "anggaran 100 juta", "dana 50jt"
+    const withKeyword = msg.match(/(?:budget|anggaran|dana|harga|price)\s*(\d+)\s*(jt|juta|million)/i);
+    if (withKeyword) {
+      return parseInt(withKeyword[1]) * 1000000;
+    }
+
+    // Pattern 2: "65 jt", "100 juta", "50jt" (standalone numbers)
+    const standalone = msg.match(/\b(\d+)\s*(jt|juta)\b/i);
+    if (standalone) {
+      return parseInt(standalone[1]) * 1000000;
+    }
+
+    return null;
   }
 
   /**
