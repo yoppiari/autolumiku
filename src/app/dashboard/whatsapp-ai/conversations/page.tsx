@@ -107,7 +107,38 @@ export default function ConversationsPage() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isFavorited, setIsFavorited] = useState<Record<string, boolean>>({});
 
+  // State for AI config (to get AI name)
+  const [aiConfig, setAiConfig] = useState<{ aiName: string } | null>(null);
+
+  // State for real-time WhatsApp registration status
+  const [whatsAppStatus, setWhatsAppStatus] = useState<Record<string, boolean>>({});
+
+  // Load AI config to get AI name
+  useEffect(() => {
+    const loadAiConfig = async () => {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+
+        const parsedUser = JSON.parse(storedUser);
+        const tenantId = parsedUser.tenantId;
+
+        const response = await fetch(`/api/v1/whatsapp-ai/config?tenantId=${tenantId}`);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setAiConfig({ aiName: data.data.aiName || 'AI Assistant' });
+        }
+      } catch (error) {
+        console.error('Error loading AI config:', error);
+      }
+    };
+
+    loadAiConfig();
+  }, []);
+
   // Load conversations
+
   useEffect(() => {
     const loadConversations = async () => {
       setIsLoading(true);
@@ -217,7 +248,59 @@ export default function ConversationsPage() {
     loadProfilePictures();
   }, [conversations]);
 
+  // Load WhatsApp registration status for all conversations (real-time check)
+  useEffect(() => {
+    const loadWhatsAppStatuses = async () => {
+      if (conversations.length === 0) return;
+
+      console.log('[WhatsApp Status] Checking registration status for all conversations...');
+
+      // Load statuses in parallel (max 5 at a time to avoid overwhelming the API)
+      const batchSize = 5;
+      const phones = conversations.map(conv => conv.customerPhone);
+
+      for (let i = 0; i < phones.length; i += batchSize) {
+        const batch = phones.slice(i, i + batchSize);
+
+        await Promise.all(
+          batch.map(async (phone) => {
+            try {
+              // Clean phone number
+              const cleanPhone = phone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '');
+              if (!cleanPhone) return;
+
+              const response = await fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${cleanPhone}`);
+              const data = await response.json();
+
+              if (data.success) {
+                setWhatsAppStatus(prev => ({
+                  ...prev,
+                  [phone]: data.isRegistered || false
+                }));
+                console.log(`[WhatsApp Status] ${cleanPhone}: ${data.isRegistered ? 'REGISTERED ✅' : 'NOT REGISTERED ❌'}`);
+              } else {
+                setWhatsAppStatus(prev => ({ ...prev, [phone]: false }));
+              }
+            } catch (error) {
+              console.error(`[WhatsApp Status] Error checking ${phone}:`, error);
+              setWhatsAppStatus(prev => ({ ...prev, [phone]: false }));
+            }
+          })
+        );
+      }
+
+      console.log('[WhatsApp Status] ✅ Status check completed');
+    };
+
+    loadWhatsAppStatuses();
+
+    // Refresh status every 2 minutes (WhatsApp status can change)
+    const interval = setInterval(loadWhatsAppStatuses, 120000);
+    return () => clearInterval(interval);
+  }, [conversations]);
+
   // Load tenant info and team members for contact info
+
   useEffect(() => {
     const loadTenantAndTeam = async () => {
       try {
@@ -1139,9 +1222,11 @@ END:VCARD`;
                               {avatar.initials}
                             </div>
                             <div
-                              className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${conv.status === 'active' ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
+                              className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${whatsAppStatus[conv.customerPhone]
+                                ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]'
+                                : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
                                 } animate-pulse`}
-                              title={conv.status === 'active' ? 'Sesi Chat Aktif' : 'Sesi Chat Habis/Tutup'}
+                              title={whatsAppStatus[conv.customerPhone] ? 'WhatsApp Terdaftar (Active)' : 'WhatsApp Tidak Terdaftar'}
                             >
                               {conv.isStaff && (
                                 <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -1534,17 +1619,37 @@ END:VCARD`;
                                 {msg.direction === 'inbound' && (
                                   <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
                                     <span className="text-[11px] md:text-[10px] font-semibold text-green-700">
-                                      {msg.senderType === 'staff' ? '👨‍💼' : '👤'}
+                                      👨‍💼 →
+                                    </span>
+                                    <span className="text-[11px] md:text-[10px] font-bold text-gray-800">
+                                      {(() => {
+                                        if (selectedConversation?.isStaff) {
+                                          const intent = msg.intent || '';
+                                          if (intent.includes('owner')) return 'Owner';
+                                          if (intent.includes('admin')) return 'Admin';
+                                          if (intent.includes('sales') || msg.senderType === 'staff') return 'Staff';
+                                          return 'Staff';
+                                        }
+                                        return 'Customer';
+                                      })()}
                                     </span>
                                     {msg.intent && (
-                                      <span className="text-[11px] md:text-[10px] text-gray-500">{msg.intent.replace('customer_', '').replace('staff_', '')}</span>
+                                      <span className="text-[11px] md:text-[10px] text-gray-500">
+                                        • {msg.intent.replace('customer_', '').replace('staff_', '')}
+                                      </span>
                                     )}
                                   </div>
                                 )}
                                 {msg.direction === 'outbound' && (
                                   <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
                                     <span className="text-[11px] md:text-[10px] font-semibold text-blue-700">
-                                      {msg.senderType === 'ai' ? '🤖' : '👨‍💼'}
+                                      {msg.senderType === 'ai' || msg.aiResponse ? '🤖 →' : '👨‍💼 →'}
+                                    </span>
+                                    <span className="text-[11px] md:text-[10px] font-bold text-gray-800">
+                                      {msg.senderType === 'ai' || msg.aiResponse
+                                        ? (aiConfig?.aiName || 'AI Assistant')
+                                        : 'Admin'
+                                      }
                                     </span>
                                   </div>
                                 )}
