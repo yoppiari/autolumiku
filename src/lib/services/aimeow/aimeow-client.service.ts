@@ -321,7 +321,10 @@ export class AimeowClientService {
 
       if (mediaUrl) {
         endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`;
-        payload.images = [mediaUrl]; // Array of image URLs
+        payload.images = [{
+          url: mediaUrl,
+          caption: message
+        }]; // Array of image objects
         payload.viewOnce = false;     // Display inline, not as download link
         payload.isViewOnce = false;   // Alternative field name
         payload.mimetype = 'image/jpeg';  // Required for inline display
@@ -446,8 +449,10 @@ export class AimeowClientService {
       // This endpoint is more robust and correctly handles image previews
       const payload: Record<string, any> = {
         phone: to,
-        images: [imageUrl],   // Must be an array
-        caption: caption,
+        images: [{
+          url: imageUrl,
+          caption: caption
+        }],
         viewOnce: false,      // Display inline, not as download link
         isViewOnce: false,    // Alternative field name
         mimetype: mimeType,   // Dynamic MIME type
@@ -477,7 +482,10 @@ export class AimeowClientService {
 
         const imagesPayload = {
           phone: to,
-          images: [imageUrl],
+          images: [{
+            url: imageUrl,
+            caption: caption
+          }],
           viewOnce: false,      // Display inline, not as download link
           isViewOnce: false,    // Alternative field name
           mimetype: mimeType,   // Dynamic MIME type
@@ -787,7 +795,10 @@ export class AimeowClientService {
 
       const payload = {
         phone: to,
-        images,
+        images: images.map(img => ({
+          url: img.imageUrl,
+          caption: img.caption
+        })),
         viewOnce: false,      // Display inline, not as download link
         isViewOnce: false,    // Alternative field name
         mimetype: 'image/jpeg',  // Required for inline display
