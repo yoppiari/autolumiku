@@ -466,153 +466,148 @@ export class AimeowClientService {
         },
         body: JSON.stringify(payload),
       });
-      method: "POST",
-        headers: {
-        "Content-Type": "application/json",
-        },
-      body: JSON.stringify(payload),
-      });
 
-    // If /send-image fails, try /send-images with array format
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log(`[Aimeow Send Image] /send-image failed (${response.status}): ${errorText}`);
-      console.log(`[Aimeow Send Image] Trying /send-images endpoint instead...`);
 
-      const imagesPayload = {
-        phone: to,
-        images: [imageUrl],
-        viewOnce: false,      // Display inline, not as download link
-        isViewOnce: false,    // Alternative field name
-        mimetype: mimeType,   // Dynamic MIME type
-        mimeType: mimeType,   // Alternative field name
-        type: 'image',           // Explicitly set type as image
-        mediaType: 'image',      // Alternative field name
-        ...(caption && { caption }),
+      // If /send-image fails, try /send-images with array format
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log(`[Aimeow Send Image] /send-image failed (${response.status}): ${errorText}`);
+        console.log(`[Aimeow Send Image] Trying /send-images endpoint instead...`);
+
+        const imagesPayload = {
+          phone: to,
+          images: [imageUrl],
+          viewOnce: false,      // Display inline, not as download link
+          isViewOnce: false,    // Alternative field name
+          mimetype: mimeType,   // Dynamic MIME type
+          mimeType: mimeType,   // Alternative field name
+          type: 'image',           // Explicitly set type as image
+          mediaType: 'image',      // Alternative field name
+          ...(caption && { caption }),
+        };
+
+        response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(imagesPayload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Aimeow Send Image] ❌ Both endpoints failed: ${errorText}`);
+        throw new Error(`Failed to send image: ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log(`[Aimeow Send Image] ✅ Success:`, data);
+
+      return {
+        success: true,
+        messageId: data.messageId || data.id || `img_${Date.now()}`,
       };
-
-      response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(imagesPayload),
-      });
+    } catch (error: any) {
+      console.error(`[Aimeow Send Image] ❌ Error:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Aimeow Send Image] ❌ Both endpoints failed: ${errorText}`);
-      throw new Error(`Failed to send image: ${response.statusText} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log(`[Aimeow Send Image] ✅ Success:`, data);
-
-    return {
-      success: true,
-      messageId: data.messageId || data.id || `img_${Date.now()}`,
-    };
-  } catch(error: any) {
-    console.error(`[Aimeow Send Image] ❌ Error:`, error);
-    return {
-      success: false,
-      error: error.message,
-    };
   }
-}
 
   /**
    * Send document via WhatsApp (PDF, Word, Excel, PowerPoint)
    */
   static async sendDocument(
-  clientId: string,
-  to: string,
-  documentUrl: string,
-  filename ?: string,
-  caption ?: string
-): Promise < { success: boolean; messageId?: string; error?: string } > {
-  try {
-    console.log(`[Aimeow Send Document] 📄 Sending document to ${to}`);
-    console.log(`[Aimeow Send Document] Document URL: ${documentUrl}`);
-    console.log(`[Aimeow Send Document] Filename: ${filename || 'auto'}`);
-    console.log(`[Aimeow Send Document] Caption: ${caption || 'none'}`);
+    clientId: string,
+    to: string,
+    documentUrl: string,
+    filename?: string,
+    caption?: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Send Document] 📄 Sending document to ${to}`);
+      console.log(`[Aimeow Send Document] Document URL: ${documentUrl}`);
+      console.log(`[Aimeow Send Document] Filename: ${filename || 'auto'}`);
+      console.log(`[Aimeow Send Document] Caption: ${caption || 'none'}`);
 
-    // Validate document URL
-    if(!documentUrl || documentUrl.trim() === '') {
-  console.error(`[Aimeow Send Document] ❌ Invalid document URL: empty or null`);
-  return { success: false, error: 'Document URL is empty' };
-}
+      // Validate document URL
+      if (!documentUrl || documentUrl.trim() === '') {
+        console.error(`[Aimeow Send Document] ❌ Invalid document URL: empty or null`);
+        return { success: false, error: 'Document URL is empty' };
+      }
 
-// Validate clientId format - same as sendImage
-let apiClientId = clientId;
-if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
-  console.log(`[Aimeow Send Document] ⚠️ ClientId in wrong format, fetching correct UUID...`);
+      // Validate clientId format - same as sendImage
+      let apiClientId = clientId;
+      if (clientId.includes("@s.whatsapp.net") || !clientId.includes("-")) {
+        console.log(`[Aimeow Send Document] ⚠️ ClientId in wrong format, fetching correct UUID...`);
 
-  const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
-  if (clientsResponse.ok) {
-    const clients = await clientsResponse.json();
-    const connectedClient = clients.find((c: any) => c.isConnected === true);
+        const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+        if (clientsResponse.ok) {
+          const clients = await clientsResponse.json();
+          const connectedClient = clients.find((c: any) => c.isConnected === true);
 
-    if (connectedClient) {
-      apiClientId = connectedClient.id;
-      console.log(`[Aimeow Send Document] ✅ Using correct UUID: ${apiClientId}`);
-    } else {
-      throw new Error("No connected client found on Aimeow");
-    }
-  }
-}
+          if (connectedClient) {
+            apiClientId = connectedClient.id;
+            console.log(`[Aimeow Send Document] ✅ Using correct UUID: ${apiClientId}`);
+          } else {
+            throw new Error("No connected client found on Aimeow");
+          }
+        }
+      }
 
-// Build payload for document sending
-const payload: Record<string, any> = {
-  phone: to,
-  url: documentUrl,
-  documentUrl: documentUrl,
-  file: documentUrl,
-  mediaType: 'document',
-};
+      // Build payload for document sending
+      const payload: Record<string, any> = {
+        phone: to,
+        url: documentUrl,
+        documentUrl: documentUrl,
+        file: documentUrl,
+        mediaType: 'document',
+      };
 
-if (filename) {
-  payload.filename = filename;
-  payload.fileName = filename;
-}
+      if (filename) {
+        payload.filename = filename;
+        payload.fileName = filename;
+      }
 
-if (caption) {
-  payload.caption = caption;
-}
+      if (caption) {
+        payload.caption = caption;
+      }
 
-console.log(`[Aimeow Send Document] Using clientId: ${apiClientId}`);
-console.log(`[Aimeow Send Document] Payload:`, JSON.stringify(payload, null, 2));
+      console.log(`[Aimeow Send Document] Using clientId: ${apiClientId}`);
+      console.log(`[Aimeow Send Document] Payload:`, JSON.stringify(payload, null, 2));
 
-// Send document using /send-document endpoint
-const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-document`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify(payload),
-});
+      // Send document using /send-document endpoint
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-document`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-if (!response.ok) {
-  const errorText = await response.text();
-  console.error(`[Aimeow Send Document] ❌ All endpoints failed: ${errorText}`);
-  throw new Error(`Failed to send document: ${response.statusText} - ${errorText}`);
-}
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Aimeow Send Document] ❌ All endpoints failed: ${errorText}`);
+        throw new Error(`Failed to send document: ${response.statusText} - ${errorText}`);
+      }
 
-const data = await response.json();
-console.log(`[Aimeow Send Document] ✅ Success:`, data);
+      const data = await response.json();
+      console.log(`[Aimeow Send Document] ✅ Success:`, data);
 
-return {
-  success: true,
-  messageId: data.messageId || data.id || `doc_${Date.now()}`,
-};
+      return {
+        success: true,
+        messageId: data.messageId || data.id || `doc_${Date.now()}`,
+      };
     } catch (error: any) {
-  console.error(`[Aimeow Send Document] ❌ Error:`, error);
-  return {
-    success: false,
-    error: error.message,
-  };
-}
+      console.error(`[Aimeow Send Document] ❌ Error:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   /**
@@ -625,77 +620,77 @@ return {
    * @param caption - Optional caption for the document
    */
   static async sendDocumentBase64(
-  clientId: string,
-  to: string,
-  base64Data: string,
-  filename: string,
-  caption ?: string
-): Promise < { success: boolean; messageId?: string; error?: string } > {
-  try {
-    console.log(`[Aimeow Send Document Base64] 📄 Sending document to ${to}`);
-    console.log(`[Aimeow Send Document Base64] Filename: ${filename}`);
-    console.log(`[Aimeow Send Document Base64] Base64 size: ${base64Data.length} chars`);
-    console.log(`[Aimeow Send Document Base64] Caption: ${caption || 'none'}`);
+    clientId: string,
+    to: string,
+    base64Data: string,
+    filename: string,
+    caption?: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Send Document Base64] 📄 Sending document to ${to}`);
+      console.log(`[Aimeow Send Document Base64] Filename: ${filename}`);
+      console.log(`[Aimeow Send Document Base64] Base64 size: ${base64Data.length} chars`);
+      console.log(`[Aimeow Send Document Base64] Caption: ${caption || 'none'}`);
 
-    // Validate base64 data
-    if(!base64Data || base64Data.trim() === '') {
-  console.error(`[Aimeow Send Document Base64] ❌ Invalid base64 data: empty or null`);
-  return { success: false, error: 'Base64 data is empty' };
-}
+      // Validate base64 data
+      if (!base64Data || base64Data.trim() === '') {
+        console.error(`[Aimeow Send Document Base64] ❌ Invalid base64 data: empty or null`);
+        return { success: false, error: 'Base64 data is empty' };
+      }
 
-// Validate filename
-if (!filename || filename.trim() === '') {
-  console.error(`[Aimeow Send Document Base64] ❌ Invalid filename: empty or null`);
-  return { success: false, error: 'Filename is empty' };
-}
+      // Validate filename
+      if (!filename || filename.trim() === '') {
+        console.error(`[Aimeow Send Document Base64] ❌ Invalid filename: empty or null`);
+        return { success: false, error: 'Filename is empty' };
+      }
 
-// Resolve clientId to UUID
-const apiClientId = await this.resolveClientId(clientId);
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
-// Build payload for base64 document sending
-const payload: Record<string, any> = {
-  phone: to,
-  base64Data: base64Data,
-  filename: filename,
-  mimeType: 'application/pdf',
-};
+      // Build payload for base64 document sending
+      const payload: Record<string, any> = {
+        phone: to,
+        base64Data: base64Data,
+        filename: filename,
+        mimeType: 'application/pdf',
+      };
 
-if (caption) {
-  payload.caption = caption;
-}
+      if (caption) {
+        payload.caption = caption;
+      }
 
-console.log(`[Aimeow Send Document Base64] Using clientId: ${apiClientId}`);
-console.log(`[Aimeow Send Document Base64] Sending base64 payload (${Math.round(base64Data.length / 1024)}KB)`);
+      console.log(`[Aimeow Send Document Base64] Using clientId: ${apiClientId}`);
+      console.log(`[Aimeow Send Document Base64] Sending base64 payload (${Math.round(base64Data.length / 1024)}KB)`);
 
-// Send document using /send-document-base64 endpoint
-const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-document-base64`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify(payload),
-});
+      // Send document using /send-document-base64 endpoint
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-document-base64`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-if (!response.ok) {
-  const errorText = await response.text();
-  console.error(`[Aimeow Send Document Base64] ❌ Endpoint failed: ${errorText}`);
-  throw new Error(`Failed to send document: ${response.statusText} - ${errorText}`);
-}
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Aimeow Send Document Base64] ❌ Endpoint failed: ${errorText}`);
+        throw new Error(`Failed to send document: ${response.statusText} - ${errorText}`);
+      }
 
-const data = await response.json();
-console.log(`[Aimeow Send Document Base64] ✅ Success:`, data);
+      const data = await response.json();
+      console.log(`[Aimeow Send Document Base64] ✅ Success:`, data);
 
-return {
-  success: true,
-  messageId: data.messageId || data.id || `doc_${Date.now()}`,
-};
+      return {
+        success: true,
+        messageId: data.messageId || data.id || `doc_${Date.now()}`,
+      };
     } catch (error: any) {
-  console.error(`[Aimeow Send Document Base64] ❌ Error:`, error);
-  return {
-    success: false,
-    error: error.message,
-  };
-}
+      console.error(`[Aimeow Send Document Base64] ❌ Error:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   /**
@@ -707,316 +702,290 @@ return {
    * @param phoneNumber - Contact phone number for WhatsApp click-to-chat
    */
   static async sendContact(
-  clientId: string,
-  to: string,
-  vCardUrl: string,
-  displayName: string,
-  phoneNumber: string
-): Promise < { success: boolean; messageId?: string; error?: string } > {
-  try {
-    console.log(`[Aimeow Send Contact] 📇 Sending contact to ${to}`);
-    console.log(`[Aimeow Send Contact] Contact: ${displayName} (${phoneNumber})`);
+    clientId: string,
+    to: string,
+    vCardUrl: string,
+    displayName: string,
+    phoneNumber: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Send Contact] 📇 Sending contact to ${to}`);
+      console.log(`[Aimeow Send Contact] Contact: ${displayName} (${phoneNumber})`);
 
-    // Resolve clientId to UUID
-    const apiClientId = await this.resolveClientId(clientId);
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
-    // Build payload for contact sending
-    const payload = {
-      phone: to,
-      contact: {
-        displayName: displayName,
-        vCard: vCardUrl,
-      },
-    };
+      // Build payload for contact sending
+      const payload = {
+        phone: to,
+        contact: {
+          displayName: displayName,
+          vCard: vCardUrl,
+        },
+      };
 
-    console.log(`[Aimeow Send Contact] Using clientId: ${apiClientId}`);
-    console.log(`[Aimeow Send Contact] Payload:`, JSON.stringify(payload, null, 2));
+      console.log(`[Aimeow Send Contact] Using clientId: ${apiClientId}`);
+      console.log(`[Aimeow Send Contact] Payload:`, JSON.stringify(payload, null, 2));
 
-    // Send contact using /send-contact endpoint (if available) or fallback to send as document
-    const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-contact`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+      // Send contact using /send-contact endpoint (if available) or fallback to send as document
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if(!response.ok) {
-  // If send-contact endpoint doesn't exist, send as document
-  console.log(`[Aimeow Send Contact] ⚠️ send-contact endpoint not available, sending as document`);
-  return await this.sendDocument(
-    apiClientId,
-    to,
-    vCardUrl,
-    `${displayName}.vcf`,
-    `📇 *Kontak ${displayName}*\n\nKlik file ini untuk simpan ke kontak.\n\n📱 WhatsApp: https://wa.me/${phoneNumber.replace(/\D/g, '')}`
-  );
-}
+      if (!response.ok) {
+        // If send-contact endpoint doesn't exist, send as document
+        console.log(`[Aimeow Send Contact] ⚠️ send-contact endpoint not available, sending as document`);
+        return await this.sendDocument(
+          apiClientId,
+          to,
+          vCardUrl,
+          `${displayName}.vcf`,
+          `📇 *Kontak ${displayName}*\n\nKlik file ini untuk simpan ke kontak.\n\n📱 WhatsApp: https://wa.me/${phoneNumber.replace(/\D/g, '')}`
+        );
+      }
 
-const data = await response.json();
-console.log(`[Aimeow Send Contact] ✅ Success:`, data);
+      const data = await response.json();
+      console.log(`[Aimeow Send Contact] ✅ Success:`, data);
 
-return {
-  success: true,
-  messageId: data.messageId || data.id || `contact_${Date.now()}`,
-};
+      return {
+        success: true,
+        messageId: data.messageId || data.id || `contact_${Date.now()}`,
+      };
     } catch (error: any) {
-  console.error(`[Aimeow Send Contact] ❌ Error:`, error);
-  // Fallback: send as document
-  console.log(`[Aimeow Send Contact] 🔄 Fallback: sending as document`);
-  return await this.sendDocument(
-    clientId,
-    to,
-    vCardUrl,
-    `${displayName}.vcf`,
-    `📇 *Kontak ${displayName}*\n\nKlik file ini untuk simpan ke kontak.\n\n📱 WhatsApp: https://wa.me/${phoneNumber.replace(/\D/g, '')}`
-  );
-}
+      console.error(`[Aimeow Send Contact] ❌ Error:`, error);
+      // Fallback: send as document
+      console.log(`[Aimeow Send Contact] 🔄 Fallback: sending as document`);
+      return await this.sendDocument(
+        clientId,
+        to,
+        vCardUrl,
+        `${displayName}.vcf`,
+        `📇 *Kontak ${displayName}*\n\nKlik file ini untuk simpan ke kontak.\n\n📱 WhatsApp: https://wa.me/${phoneNumber.replace(/\D/g, '')}`
+      );
+    }
   }
 
   /**
    * Send multiple images via WhatsApp
    */
   static async sendImages(
-  clientId: string,
-  to: string,
-  images: Array<{ imageUrl: string; caption?: string }>
-): Promise < { success: boolean; messageId?: string; error?: string } > {
-  try {
-    console.log(`[Aimeow Send Images] Sending ${images.length} images to ${to}`);
-    console.log(`[Aimeow Send Images] Original clientId: ${clientId}`);
+    clientId: string,
+    to: string,
+    images: Array<{ imageUrl: string; caption?: string }>
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Send Images] Sending ${images.length} images to ${to}`);
+      console.log(`[Aimeow Send Images] Original clientId: ${clientId}`);
 
-    // Resolve clientId to UUID
-    const apiClientId = await this.resolveClientId(clientId);
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
-    const payload = {
-      phone: to,
-      images,
-      viewOnce: false,      // Display inline, not as download link
-      isViewOnce: false,    // Alternative field name
-      mimetype: 'image/jpeg',  // Required for inline display
-      mimeType: 'image/jpeg',  // Alternative field name
-      type: 'image',           // Explicitly set type as image
-      mediaType: 'image',      // Alternative field name
-    };
+      const payload = {
+        phone: to,
+        images,
+        viewOnce: false,      // Display inline, not as download link
+        isViewOnce: false,    // Alternative field name
+        mimetype: 'image/jpeg',  // Required for inline display
+        mimeType: 'image/jpeg',  // Alternative field name
+        type: 'image',           // Explicitly set type as image
+        mediaType: 'image',      // Alternative field name
+      };
 
-    const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if(!response.ok) {
-  const errorText = await response.text();
-  console.error(`[Aimeow Send Images] Error: ${errorText}`);
-  throw new Error(`Failed to send images: ${response.statusText}`);
-}
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Aimeow Send Images] Error: ${errorText}`);
+        throw new Error(`Failed to send images: ${response.statusText}`);
+      }
 
-const data = await response.json();
-console.log(`[Aimeow Send Images] Success:`, data);
+      const data = await response.json();
+      console.log(`[Aimeow Send Images] Success:`, data);
 
-return {
-  success: true,
-  messageId: data.messageId || `imgs_${Date.now()}`,
-};
+      return {
+        success: true,
+        messageId: data.messageId || `imgs_${Date.now()}`,
+      };
     } catch (error: any) {
-  console.error(`[Aimeow Send Images] Error:`, error);
-  return {
-    success: false,
-    error: error.message,
-  };
-}
+      console.error(`[Aimeow Send Images] Error:`, error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   /**
    * Disconnect WhatsApp client
    */
-  static async disconnectClient(clientId: string): Promise < boolean > {
-  try {
-    const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`, {
-      method: "DELETE",
-    });
+  static async disconnectClient(clientId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`, {
+        method: "DELETE",
+      });
 
-    // If client not found (404), treat as already disconnected
-    if(!response.ok && response.status !== 404) {
-  throw new Error(`Failed to disconnect: ${response.statusText}`);
-}
+      // If client not found (404), treat as already disconnected
+      if (!response.ok && response.status !== 404) {
+        throw new Error(`Failed to disconnect: ${response.statusText}`);
+      }
 
-// If 404, client already deleted on Aimeow side - just update DB
-if (response.status === 404) {
-  console.warn(`Client ${clientId} not found on Aimeow - marking as disconnected in database`);
-}
+      // If 404, client already deleted on Aimeow side - just update DB
+      if (response.status === 404) {
+        console.warn(`Client ${clientId} not found on Aimeow - marking as disconnected in database`);
+      }
 
-// Update database regardless of Aimeow response (404 or success)
-await prisma.aimeowAccount.update({
-  where: { clientId },
-  data: {
-    connectionStatus: "disconnected",
-    isActive: false,
-  },
-});
+      // Update database regardless of Aimeow response (404 or success)
+      await prisma.aimeowAccount.update({
+        where: { clientId },
+        data: {
+          connectionStatus: "disconnected",
+          isActive: false,
+        },
+      });
 
-return true;
+      return true;
     } catch (error) {
-  console.error("Failed to disconnect client:", error);
-  return false;
-}
+      console.error("Failed to disconnect client:", error);
+      return false;
+    }
   }
 
   /**
    * Restart WhatsApp client
    * Aimeow tidak punya restart endpoint, jadi kita DELETE + CREATE new
    */
-  static async restartClient(tenantId: string, oldClientId: string, webhookUrl ?: string): Promise < {
-  success: boolean;
-  clientId?: string;
-  qrCode?: string;
-  error?: string;
-} > {
-  try {
-    // 1. Delete existing client dari Aimeow (ignore 404 if already deleted)
-    const deleteResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${oldClientId}`, {
-      method: "DELETE",
-    });
+  static async restartClient(tenantId: string, oldClientId: string, webhookUrl?: string): Promise<{
+    success: boolean;
+    clientId?: string;
+    qrCode?: string;
+    error?: string;
+  }> {
+    try {
+      // 1. Delete existing client dari Aimeow (ignore 404 if already deleted)
+      const deleteResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${oldClientId}`, {
+        method: "DELETE",
+      });
 
-    if(!deleteResponse.ok && deleteResponse.status !== 404) {
-  console.warn(`Failed to delete old client ${oldClientId}: ${deleteResponse.statusText}`);
-  // Continue anyway - we'll create a new one
-}
+      if (!deleteResponse.ok && deleteResponse.status !== 404) {
+        console.warn(`Failed to delete old client ${oldClientId}: ${deleteResponse.statusText}`);
+        // Continue anyway - we'll create a new one
+      }
 
-if (deleteResponse.status === 404) {
-  console.log(`Old client ${oldClientId} already deleted from Aimeow`);
-}
+      if (deleteResponse.status === 404) {
+        console.log(`Old client ${oldClientId} already deleted from Aimeow`);
+      }
 
-// 2. Delete dari database (soft delete dengan update)
-await prisma.aimeowAccount.update({
-  where: { clientId: oldClientId },
-  data: {
-    connectionStatus: "disconnected",
-    isActive: false,
-  },
-});
+      // 2. Delete dari database (soft delete dengan update)
+      await prisma.aimeowAccount.update({
+        where: { clientId: oldClientId },
+        data: {
+          connectionStatus: "disconnected",
+          isActive: false,
+        },
+      });
 
-// 3. Create new client
-const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/new`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    webhookUrl, // Pass webhook URL if provided
-  }),
-});
+      // 3. Create new client
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/new`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          webhookUrl, // Pass webhook URL if provided
+        }),
+      });
 
-if (!response.ok) {
-  const errorText = await response.text();
-  throw new Error(`Failed to create new client: ${response.statusText} - ${errorText}`);
-}
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create new client: ${response.statusText} - ${errorText}`);
+      }
 
-const data = await response.json();
-const newClientId = data.clientId || data.id;
+      const data = await response.json();
+      const newClientId = data.clientId || data.id;
 
-if (!newClientId) {
-  throw new Error("Failed to get new client ID from Aimeow API");
-}
+      if (!newClientId) {
+        throw new Error("Failed to get new client ID from Aimeow API");
+      }
 
-// Fetch the actual QR code string (raw data)
-const clientStatusResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${newClientId}`);
-let rawQrCode = "";
+      // Fetch the actual QR code string (raw data)
+      const clientStatusResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${newClientId}`);
+      let rawQrCode = "";
 
-if (clientStatusResponse.ok) {
-  const clientData = await clientStatusResponse.json();
-  rawQrCode = clientData.qrCode || "";
-}
+      if (clientStatusResponse.ok) {
+        const clientData = await clientStatusResponse.json();
+        rawQrCode = clientData.qrCode || "";
+      }
 
-const qrCodeToSave = rawQrCode || data.qr || data.qrUrl;
+      const qrCodeToSave = rawQrCode || data.qr || data.qrUrl;
 
-// 4. Update database dengan client ID baru
-await prisma.aimeowAccount.update({
-  where: { tenantId },
-  data: {
-    clientId: newClientId,
-    connectionStatus: "qr_ready",
-    qrCode: qrCodeToSave,
-    qrCodeExpiresAt: new Date(Date.now() + 120000),
-    isActive: false,
-    phoneNumber: "",
-    webhookUrl, // Save webhook URL
-  },
-});
+      // 4. Update database dengan client ID baru
+      await prisma.aimeowAccount.update({
+        where: { tenantId },
+        data: {
+          clientId: newClientId,
+          connectionStatus: "qr_ready",
+          qrCode: qrCodeToSave,
+          qrCodeExpiresAt: new Date(Date.now() + 120000),
+          isActive: false,
+          phoneNumber: "",
+          webhookUrl, // Save webhook URL
+        },
+      });
 
-return {
-  success: true,
-  clientId: newClientId,
-  qrCode: qrCodeToSave,
-};
+      return {
+        success: true,
+        clientId: newClientId,
+        qrCode: qrCodeToSave,
+      };
     } catch (error: any) {
-  console.error("Failed to restart client:", error);
-  return {
-    success: false,
-    error: error.message,
-  };
-}
+      console.error("Failed to restart client:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   /**
    * Get account by tenant ID
    */
   static async getAccountByTenant(tenantId: string) {
-  return await prisma.aimeowAccount.findUnique({
-    where: { tenantId },
-    include: {
-      aiConfig: true,
-    },
-  });
-}
+    return await prisma.aimeowAccount.findUnique({
+      where: { tenantId },
+      include: {
+        aiConfig: true,
+      },
+    });
+  }
 
   /**
    * Get account by client ID
    */
   static async getAccountByClientId(clientId: string) {
-  console.log(`[Aimeow] Looking up account by clientId: ${clientId}`);
+    console.log(`[Aimeow] Looking up account by clientId: ${clientId}`);
 
-  // Debug: List all accounts in database
-  const allAccounts = await prisma.aimeowAccount.findMany({
-    select: { id: true, clientId: true, phoneNumber: true, tenantId: true },
-  });
-  console.log(`[Aimeow] Total accounts in DB: ${allAccounts.length}`);
-  allAccounts.forEach((acc) => {
-    console.log(`[Aimeow] - Account ${acc.id}: clientId="${acc.clientId}", phone="${acc.phoneNumber}", tenant="${acc.tenantId}"`);
-  });
+    // Debug: List all accounts in database
+    const allAccounts = await prisma.aimeowAccount.findMany({
+      select: { id: true, clientId: true, phoneNumber: true, tenantId: true },
+    });
+    console.log(`[Aimeow] Total accounts in DB: ${allAccounts.length}`);
+    allAccounts.forEach((acc) => {
+      console.log(`[Aimeow] - Account ${acc.id}: clientId="${acc.clientId}", phone="${acc.phoneNumber}", tenant="${acc.tenantId}"`);
+    });
 
-  // Try exact match first
-  let account = await prisma.aimeowAccount.findUnique({
-    where: { clientId },
-    include: {
-      aiConfig: true,
-      tenant: true,
-    },
-  });
-
-  if (account) {
-    console.log(`[Aimeow] Found account by exact match: ${account.id}`);
-    return account;
-  }
-
-  console.log(`[Aimeow] No exact match found`);
-
-  // If not found and clientId contains "@s.whatsapp.net", try extracting the phone number
-  if (clientId.includes("@s.whatsapp.net")) {
-    const phoneNumber = clientId.split(":")[0];
-    console.log(`[Aimeow] Extracted phone number: ${phoneNumber}, searching by prefix/phone`);
-
-    // Try to find by phone number in clientId or by phone number field
-    account = await prisma.aimeowAccount.findFirst({
-      where: {
-        OR: [
-          { clientId: { startsWith: phoneNumber } },
-          { phoneNumber: phoneNumber },
-        ],
-      },
+    // Try exact match first
+    let account = await prisma.aimeowAccount.findUnique({
+      where: { clientId },
       include: {
         aiConfig: true,
         tenant: true,
@@ -1024,10 +993,64 @@ return {
     });
 
     if (account) {
-      console.log(`[Aimeow] Found account by phone lookup: ${account.id}, clientId: ${account.clientId}`);
-      // Don't update clientId - keep the original UUID for API calls
-      // Only update phone number if not already set
-      if (!account.phoneNumber) {
+      console.log(`[Aimeow] Found account by exact match: ${account.id}`);
+      return account;
+    }
+
+    console.log(`[Aimeow] No exact match found`);
+
+    // If not found and clientId contains "@s.whatsapp.net", try extracting the phone number
+    if (clientId.includes("@s.whatsapp.net")) {
+      const phoneNumber = clientId.split(":")[0];
+      console.log(`[Aimeow] Extracted phone number: ${phoneNumber}, searching by prefix/phone`);
+
+      // Try to find by phone number in clientId or by phone number field
+      account = await prisma.aimeowAccount.findFirst({
+        where: {
+          OR: [
+            { clientId: { startsWith: phoneNumber } },
+            { phoneNumber: phoneNumber },
+          ],
+        },
+        include: {
+          aiConfig: true,
+          tenant: true,
+        },
+      });
+
+      if (account) {
+        console.log(`[Aimeow] Found account by phone lookup: ${account.id}, clientId: ${account.clientId}`);
+        // Don't update clientId - keep the original UUID for API calls
+        // Only update phone number if not already set
+        if (!account.phoneNumber) {
+          console.log(`[Aimeow] Updating phone number to: ${phoneNumber}`);
+          await prisma.aimeowAccount.update({
+            where: { id: account.id },
+            data: { phoneNumber },
+          });
+          account.phoneNumber = phoneNumber;
+        }
+        return account;
+      } else {
+        console.log(`[Aimeow] No account found by phone number: ${phoneNumber}`);
+      }
+    }
+
+    // Last resort: if no account found and there's only one active account in DB, use that
+    // This handles the case where webhooks send JID but DB has UUID
+    if (!account && allAccounts.length === 1 && allAccounts[0].clientId) {
+      console.log(`[Aimeow] Only one account in DB, assuming it's the right one`);
+      const phoneNumber = clientId.includes("@s.whatsapp.net") ? clientId.split(":")[0] : "";
+
+      account = await prisma.aimeowAccount.findUnique({
+        where: { id: allAccounts[0].id },
+        include: {
+          aiConfig: true,
+          tenant: true,
+        },
+      });
+
+      if (account && phoneNumber) {
         console.log(`[Aimeow] Updating phone number to: ${phoneNumber}`);
         await prisma.aimeowAccount.update({
           where: { id: account.id },
@@ -1035,125 +1058,97 @@ return {
         });
         account.phoneNumber = phoneNumber;
       }
-      return account;
-    } else {
-      console.log(`[Aimeow] No account found by phone number: ${phoneNumber}`);
     }
+
+    return account;
   }
-
-  // Last resort: if no account found and there's only one active account in DB, use that
-  // This handles the case where webhooks send JID but DB has UUID
-  if (!account && allAccounts.length === 1 && allAccounts[0].clientId) {
-    console.log(`[Aimeow] Only one account in DB, assuming it's the right one`);
-    const phoneNumber = clientId.includes("@s.whatsapp.net") ? clientId.split(":")[0] : "";
-
-    account = await prisma.aimeowAccount.findUnique({
-      where: { id: allAccounts[0].id },
-      include: {
-        aiConfig: true,
-        tenant: true,
-      },
-    });
-
-    if (account && phoneNumber) {
-      console.log(`[Aimeow] Updating phone number to: ${phoneNumber}`);
-      await prisma.aimeowAccount.update({
-        where: { id: account.id },
-        data: { phoneNumber },
-      });
-      account.phoneNumber = phoneNumber;
-    }
-  }
-
-  return account;
-}
 
   /**
    * Get QR code untuk client
    */
-  static async getQRCode(clientId: string): Promise < {
-  success: boolean;
-  qrCode?: string;
-  error?: string;
-} > {
-  try {
-    const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/qr`);
+  static async getQRCode(clientId: string): Promise<{
+    success: boolean;
+    qrCode?: string;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/qr`);
 
-    if(!response.ok) {
-  throw new Error(`Failed to get QR code: ${response.statusText}`);
-}
+      if (!response.ok) {
+        throw new Error(`Failed to get QR code: ${response.statusText}`);
+      }
 
-const data = await response.json();
+      const data = await response.json();
 
-// Note: getQRCode endpoint usually returns HTML or raw string depending on implementation
-// But based on our findings, we might need to fetch client details to get the raw string
-// However, let's assume for this method we might get it from the response if it's the /qr endpoint
-// If this is the /api/v1/clients/{id}/qr endpoint (which returns JSON), then data.qrCode should be there.
-// If it's the HTML endpoint, this fetch would fail or return HTML string.
-// Let's try to fetch client details to be safe if data.qrCode is missing.
+      // Note: getQRCode endpoint usually returns HTML or raw string depending on implementation
+      // But based on our findings, we might need to fetch client details to get the raw string
+      // However, let's assume for this method we might get it from the response if it's the /qr endpoint
+      // If this is the /api/v1/clients/{id}/qr endpoint (which returns JSON), then data.qrCode should be there.
+      // If it's the HTML endpoint, this fetch would fail or return HTML string.
+      // Let's try to fetch client details to be safe if data.qrCode is missing.
 
-let qrCodeToSave = data.qrCode || data.qr || data.qrUrl;
+      let qrCodeToSave = data.qrCode || data.qr || data.qrUrl;
 
-if (!qrCodeToSave) {
-  const clientStatusResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`);
-  if (clientStatusResponse.ok) {
-    const clientData = await clientStatusResponse.json();
-    qrCodeToSave = clientData.qrCode;
-  }
-}
+      if (!qrCodeToSave) {
+        const clientStatusResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${clientId}`);
+        if (clientStatusResponse.ok) {
+          const clientData = await clientStatusResponse.json();
+          qrCodeToSave = clientData.qrCode;
+        }
+      }
 
-// Update database dengan QR baru
-await prisma.aimeowAccount.update({
-  where: { clientId },
-  data: {
-    qrCode: qrCodeToSave,
-    qrCodeExpiresAt: new Date(Date.now() + 120000),
-  },
-});
+      // Update database dengan QR baru
+      await prisma.aimeowAccount.update({
+        where: { clientId },
+        data: {
+          qrCode: qrCodeToSave,
+          qrCodeExpiresAt: new Date(Date.now() + 120000),
+        },
+      });
 
-return {
-  success: true,
-  qrCode: qrCodeToSave,
-};
+      return {
+        success: true,
+        qrCode: qrCodeToSave,
+      };
     } catch (error: any) {
-  console.error("Failed to get QR code:", error);
-  return {
-    success: false,
-    error: error.message,
-  };
-}
+      console.error("Failed to get QR code:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   /**
    * Fetch messages dari Aimeow
    */
-  static async fetchMessages(clientId: string, limit: number = 50): Promise < {
-  success: boolean;
-  messages?: any[];
-  error?: string;
-} > {
-  try {
-    const response = await fetch(
-      `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/messages?limit=${limit}`
-    );
+  static async fetchMessages(clientId: string, limit: number = 50): Promise<{
+    success: boolean;
+    messages?: any[];
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(
+        `${AIMEOW_BASE_URL}/api/v1/clients/${clientId}/messages?limit=${limit}`
+      );
 
-    if(!response.ok) {
-  throw new Error(`Failed to fetch messages: ${response.statusText}`);
-}
+      if (!response.ok) {
+        throw new Error(`Failed to fetch messages: ${response.statusText}`);
+      }
 
-const data = await response.json();
+      const data = await response.json();
 
-return {
-  success: true,
-  messages: data.messages || data,
-};
+      return {
+        success: true,
+        messages: data.messages || data,
+      };
     } catch (error: any) {
-  console.error("Failed to fetch messages:", error);
-  return {
-    success: false,
-    error: error.message,
-  };
-}
+      console.error("Failed to fetch messages:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   /**
@@ -1161,164 +1156,164 @@ return {
    * Tries multiple endpoint formats as Aimeow API structure may vary
    */
   static async deleteMessage(
-  clientId: string,
-  to: string,
-  aimeowMessageId: string
-): Promise < { success: boolean; error?: string } > {
-  try {
-    console.log(`[Aimeow Delete] 🗑️ Deleting message ${aimeowMessageId}`);
-    console.log(`[Aimeow Delete] To: ${to}, ClientId: ${clientId}`);
+    clientId: string,
+    to: string,
+    aimeowMessageId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`[Aimeow Delete] 🗑️ Deleting message ${aimeowMessageId}`);
+      console.log(`[Aimeow Delete] To: ${to}, ClientId: ${clientId}`);
 
-    // Resolve clientId to UUID
-    const apiClientId = await this.resolveClientId(clientId);
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
-    // Prepare payload
-    const payload = {
-      phone: to,
-      messageId: aimeowMessageId,
-    };
+      // Prepare payload
+      const payload = {
+        phone: to,
+        messageId: aimeowMessageId,
+      };
 
-    console.log(`[Aimeow Delete] Payload:`, JSON.stringify(payload, null, 2));
+      console.log(`[Aimeow Delete] Payload:`, JSON.stringify(payload, null, 2));
 
-    // Try multiple endpoint formats
-    const endpoints = [
-      { url: `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/delete-message`, method: 'POST' },
-      { url: `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/messages/${aimeowMessageId}`, method: 'DELETE' },
-      { url: `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/revoke-message`, method: 'POST' },
-    ];
+      // Try multiple endpoint formats
+      const endpoints = [
+        { url: `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/delete-message`, method: 'POST' },
+        { url: `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/messages/${aimeowMessageId}`, method: 'DELETE' },
+        { url: `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/revoke-message`, method: 'POST' },
+      ];
 
-    for(const endpoint of endpoints) {
-      try {
-        console.log(`[Aimeow Delete] Trying: ${endpoint.method} ${endpoint.url}`);
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`[Aimeow Delete] Trying: ${endpoint.method} ${endpoint.url}`);
 
-        const response = await fetch(endpoint.url, {
-          method: endpoint.method,
-          headers: { "Content-Type": "application/json" },
-          body: endpoint.method === 'POST' ? JSON.stringify(payload) : undefined,
-        });
+          const response = await fetch(endpoint.url, {
+            method: endpoint.method,
+            headers: { "Content-Type": "application/json" },
+            body: endpoint.method === 'POST' ? JSON.stringify(payload) : undefined,
+          });
 
-        console.log(`[Aimeow Delete] Response: ${response.status} ${response.statusText}`);
+          console.log(`[Aimeow Delete] Response: ${response.status} ${response.statusText}`);
 
-        if (response.ok) {
-          const data = await response.json().catch(() => ({}));
-          console.log(`[Aimeow Delete] ✅ Success:`, data);
-          return { success: true };
+          if (response.ok) {
+            const data = await response.json().catch(() => ({}));
+            console.log(`[Aimeow Delete] ✅ Success:`, data);
+            return { success: true };
+          }
+
+          const errorText = await response.text();
+          console.log(`[Aimeow Delete] Endpoint returned error: ${errorText}`);
+        } catch (endpointError: any) {
+          console.log(`[Aimeow Delete] Endpoint failed: ${endpointError.message}`);
         }
-
-        const errorText = await response.text();
-        console.log(`[Aimeow Delete] Endpoint returned error: ${errorText}`);
-      } catch (endpointError: any) {
-        console.log(`[Aimeow Delete] Endpoint failed: ${endpointError.message}`);
       }
-    }
 
       // If all endpoints fail, still return success for dashboard deletion
       // (message will be deleted from dashboard DB but may remain on WhatsApp)
       console.warn(`[Aimeow Delete] ⚠️ All Aimeow endpoints failed, but dashboard deletion will proceed`);
-    return { success: true };
+      return { success: true };
 
-  } catch(error: any) {
-    console.error(`[Aimeow Delete] ❌ Error:`, error.message);
-    return { success: false, error: error.message };
+    } catch (error: any) {
+      console.error(`[Aimeow Delete] ❌ Error:`, error.message);
+      return { success: false, error: error.message };
+    }
   }
-}
 
   static async downloadMedia(
-  clientId: string,
-  mediaId: string
-): Promise < { success: boolean; mediaUrl?: string; error?: string } > {
-  try {
-    console.log(`[Aimeow Download] Downloading media: ${mediaId} for client: ${clientId}`);
+    clientId: string,
+    mediaId: string
+  ): Promise<{ success: boolean; mediaUrl?: string; error?: string }> {
+    try {
+      console.log(`[Aimeow Download] Downloading media: ${mediaId} for client: ${clientId}`);
 
-    // Resolve clientId to UUID
-    const apiClientId = await this.resolveClientId(clientId);
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
-    // Try multiple endpoint formats
-    const endpoints = [
-      `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/messages/${mediaId}/media`,
-      `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/media/${mediaId}`,
-      `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/download-media/${mediaId}`,
-      `${AIMEOW_BASE_URL}/api/v1/media/${mediaId}`,
-    ];
+      // Try multiple endpoint formats
+      const endpoints = [
+        `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/messages/${mediaId}/media`,
+        `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/media/${mediaId}`,
+        `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/download-media/${mediaId}`,
+        `${AIMEOW_BASE_URL}/api/v1/media/${mediaId}`,
+      ];
 
-    for(const endpoint of endpoints) {
-      try {
-        console.log(`[Aimeow Download] Trying: ${endpoint}`);
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-        });
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`[Aimeow Download] Trying: ${endpoint}`);
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+          });
 
-        if (response.ok) {
-          const contentType = response.headers.get('content-type');
+          if (response.ok) {
+            const contentType = response.headers.get('content-type');
 
-          // If response is JSON, extract URL from it
-          if (contentType?.includes('application/json')) {
-            const data = await response.json();
-            const mediaUrl = data.url || data.mediaUrl || data.downloadUrl || data.link;
-            if (mediaUrl) {
-              console.log(`[Aimeow Download] ✅ Got URL from JSON: ${mediaUrl}`);
-              return { success: true, mediaUrl };
+            // If response is JSON, extract URL from it
+            if (contentType?.includes('application/json')) {
+              const data = await response.json();
+              const mediaUrl = data.url || data.mediaUrl || data.downloadUrl || data.link;
+              if (mediaUrl) {
+                console.log(`[Aimeow Download] ✅ Got URL from JSON: ${mediaUrl}`);
+                return { success: true, mediaUrl };
+              }
+            }
+
+            // If response is binary (image), the endpoint IS the media URL
+            if (contentType?.includes('image') || contentType?.includes('octet-stream')) {
+              console.log(`[Aimeow Download] ✅ Endpoint returns binary, using as URL: ${endpoint}`);
+              return { success: true, mediaUrl: endpoint };
             }
           }
-
-          // If response is binary (image), the endpoint IS the media URL
-          if (contentType?.includes('image') || contentType?.includes('octet-stream')) {
-            console.log(`[Aimeow Download] ✅ Endpoint returns binary, using as URL: ${endpoint}`);
-            return { success: true, mediaUrl: endpoint };
-          }
+        } catch (endpointError) {
+          console.log(`[Aimeow Download] Endpoint failed: ${endpoint}`);
         }
-      } catch (endpointError) {
-        console.log(`[Aimeow Download] Endpoint failed: ${endpoint}`);
       }
-    }
 
       console.error(`[Aimeow Download] ❌ All endpoints failed for mediaId: ${mediaId}`);
-    return { success: false, error: 'All download endpoints failed' };
-  } catch(error: any) {
-    console.error(`[Aimeow Download] ❌ Error:`, error.message);
-    return { success: false, error: error.message };
+      return { success: false, error: 'All download endpoints failed' };
+    } catch (error: any) {
+      console.error(`[Aimeow Download] ❌ Error:`, error.message);
+      return { success: false, error: error.message };
+    }
   }
-}
 
   static async getProfilePicture(
-  clientId: string,
-  phone: string
-): Promise < { success: boolean; pictureUrl?: string; hasPicture: boolean; error?: string } > {
-  try {
-    console.log(`[Aimeow Profile] Getting profile picture for ${phone}`);
+    clientId: string,
+    phone: string
+  ): Promise<{ success: boolean; pictureUrl?: string; hasPicture: boolean; error?: string }> {
+    try {
+      console.log(`[Aimeow Profile] Getting profile picture for ${phone}`);
 
-    // Resolve clientId to UUID
-    const apiClientId = await this.resolveClientId(clientId);
+      // Resolve clientId to UUID
+      const apiClientId = await this.resolveClientId(clientId);
 
-    // Clean phone number - remove any suffix
-    const cleanPhone = phone.replace(/@.*$/, '').replace(/[^0-9]/g, '');
+      // Clean phone number - remove any suffix
+      const cleanPhone = phone.replace(/@.*$/, '').replace(/[^0-9]/g, '');
 
-    const response = await fetch(
-      `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${cleanPhone}`,
-      {
-        headers: { 'Accept': 'application/json' },
+      const response = await fetch(
+        `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${cleanPhone}`,
+        {
+          headers: { 'Accept': 'application/json' },
+        }
+      );
+
+      if (!response.ok) {
+        console.log(`[Aimeow Profile] Failed to get profile picture: ${response.status}`);
+        return { success: false, hasPicture: false, error: `HTTP ${response.status}` };
       }
-    );
 
-    if(!response.ok) {
-  console.log(`[Aimeow Profile] Failed to get profile picture: ${response.status}`);
-  return { success: false, hasPicture: false, error: `HTTP ${response.status}` };
-}
+      const data = await response.json();
+      console.log(`[Aimeow Profile] Response:`, data);
 
-const data = await response.json();
-console.log(`[Aimeow Profile] Response:`, data);
-
-return {
-  success: true,
-  pictureUrl: data.pictureUrl || undefined,
-  hasPicture: data.hasPicture || false,
-  error: data.error,
-};
+      return {
+        success: true,
+        pictureUrl: data.pictureUrl || undefined,
+        hasPicture: data.hasPicture || false,
+        error: data.error,
+      };
     } catch (error: any) {
-  console.error(`[Aimeow Profile] ❌ Error:`, error.message);
-  return { success: false, hasPicture: false, error: error.message };
-}
+      console.error(`[Aimeow Profile] ❌ Error:`, error.message);
+      return { success: false, hasPicture: false, error: error.message };
+    }
   }
 
   /**
@@ -1328,63 +1323,63 @@ return {
    * 2. Prisma CUID format (cm5...)
    * 3. Fallback to first connected client
    */
-  private static async resolveClientId(clientId: string): Promise < string > {
-  // 1. If it's already a UUID, return it
-  if(clientId.includes("-") && !clientId.includes("@") && clientId.length > 20) {
-  return clientId;
-}
-
-console.log(`[Aimeow Resolve] ⚠️ ClientId needs resolution: ${clientId}`);
-
-// If it's a JID or LID, extract the core number
-const coreId = clientId.split(":")[0].split("@")[0];
-
-// 2. Try database lookup if it's a Prisma ID, JID, or stored clientId
-try {
-  const account = await prisma.aimeowAccount.findFirst({
-    where: {
-      OR: [
-        { id: clientId },
-        { clientId: clientId },
-        { phoneNumber: coreId },
-        { phoneNumber: `+${coreId}` },
-        { phoneNumber: `62${coreId.replace(/^0/, '')}` },
-        { phoneNumber: `0${coreId.replace(/^62/, '')}` },
-      ]
-    }
-  });
-
-  if (account && account.clientId.includes("-")) {
-    console.log(`[Aimeow Resolve] ✅ Resolved via DB: ${account.clientId}`);
-    return account.clientId;
-  }
-} catch (err) {
-  console.warn(`[Aimeow Resolve] DB lookup failed:`, err);
-}
-
-// 3. Last resort: fetch all clients from API and pick connected one
-try {
-  const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
-  if (response.ok) {
-    const clients = await response.json();
-    // If we have a phone number, try to match it
-    const matching = clients.find((c: any) => c.phone === coreId || c.phone === `+${coreId}`);
-    if (matching) {
-      console.log(`[Aimeow Resolve] ✅ Resolved via API phone match: ${matching.id}`);
-      return matching.id;
+  private static async resolveClientId(clientId: string): Promise<string> {
+    // 1. If it's already a UUID, return it
+    if (clientId.includes("-") && !clientId.includes("@") && clientId.length > 20) {
+      return clientId;
     }
 
-    const connected = clients.find((c: any) => c.isConnected);
-    if (connected) {
-      console.log(`[Aimeow Resolve] ⚠️ Fallback to connected client: ${connected.id}`);
-      return connected.id;
-    }
-  }
-} catch (err) {
-  console.error(`[Aimeow Resolve] API fallback failed:`, err);
-}
+    console.log(`[Aimeow Resolve] ⚠️ ClientId needs resolution: ${clientId}`);
 
-return clientId; // Return original as last fallback
+    // If it's a JID or LID, extract the core number
+    const coreId = clientId.split(":")[0].split("@")[0];
+
+    // 2. Try database lookup if it's a Prisma ID, JID, or stored clientId
+    try {
+      const account = await prisma.aimeowAccount.findFirst({
+        where: {
+          OR: [
+            { id: clientId },
+            { clientId: clientId },
+            { phoneNumber: coreId },
+            { phoneNumber: `+${coreId}` },
+            { phoneNumber: `62${coreId.replace(/^0/, '')}` },
+            { phoneNumber: `0${coreId.replace(/^62/, '')}` },
+          ]
+        }
+      });
+
+      if (account && account.clientId.includes("-")) {
+        console.log(`[Aimeow Resolve] ✅ Resolved via DB: ${account.clientId}`);
+        return account.clientId;
+      }
+    } catch (err) {
+      console.warn(`[Aimeow Resolve] DB lookup failed:`, err);
+    }
+
+    // 3. Last resort: fetch all clients from API and pick connected one
+    try {
+      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`);
+      if (response.ok) {
+        const clients = await response.json();
+        // If we have a phone number, try to match it
+        const matching = clients.find((c: any) => c.phone === coreId || c.phone === `+${coreId}`);
+        if (matching) {
+          console.log(`[Aimeow Resolve] ✅ Resolved via API phone match: ${matching.id}`);
+          return matching.id;
+        }
+
+        const connected = clients.find((c: any) => c.isConnected);
+        if (connected) {
+          console.log(`[Aimeow Resolve] ⚠️ Fallback to connected client: ${connected.id}`);
+          return connected.id;
+        }
+      }
+    } catch (err) {
+      console.error(`[Aimeow Resolve] API fallback failed:`, err);
+    }
+
+    return clientId; // Return original as last fallback
   }
 }
 
