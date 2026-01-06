@@ -2391,10 +2391,10 @@ export class WhatsAppAIChatService {
           originalUrl: photo.originalUrl?.substring(0, 100),
         });
 
-        // Prioritize JPG (originalUrl) for better WhatsApp mobile compatibility
-        // WebP format (medium/large) may not display on some mobile devices
-        // Fallback: originalUrl (JPG) → largeUrl → mediumUrl
-        let imageUrl = photo.originalUrl || photo.largeUrl || photo.mediumUrl;
+        // Prioritize Optimized WebP (large/medium) for better performance and guaranteed inline display
+        // Original JPGs can be too large (>5MB) causing WhatsApp to treat them as documents/downloads
+        // WhatsApp fully supports WebP now.
+        let imageUrl = photo.largeUrl || photo.mediumUrl || photo.originalUrl;
 
         if (!imageUrl) {
           console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for photo ${photoIndex + 1}`);

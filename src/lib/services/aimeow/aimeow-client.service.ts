@@ -368,6 +368,18 @@ export class AimeowClientService {
   }
 
   /**
+   * Helper: Get MIME type from URL extension
+   */
+  private static getMimeTypeFromUrl(url: string): string {
+    if (!url) return 'image/jpeg'; // Default
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.endsWith('.png')) return 'image/png';
+    if (lowerUrl.endsWith('.webp')) return 'image/webp';
+    if (lowerUrl.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg'; // Default for jpg, jpeg, and unknown
+  }
+
+  /**
    * Send single image via WhatsApp
    * Uses the same /send-images endpoint as sendMessage for consistency
    */
@@ -418,10 +430,13 @@ export class AimeowClientService {
         }
       }
 
+      // Determine MIME type dynamically
+      const mimeType = this.getMimeTypeFromUrl(imageUrl);
+      console.log(`[Aimeow Send Image] Detected MIME type: ${mimeType}`);
+
       // Build payload - try multiple field names for compatibility
       // Some Aimeow versions expect 'url', others 'imageUrl', others 'image'
       // IMPORTANT: viewOnce: false ensures image displays inline, not as download link
-      // IMPORTANT: mimetype must be specified for WhatsApp to display image inline
       const payload: Record<string, any> = {
         phone: to,
         url: imageUrl,        // Primary field for /send-image endpoint
@@ -429,8 +444,8 @@ export class AimeowClientService {
         image: imageUrl,      // Another alternative
         viewOnce: false,      // Display inline, not as download link
         isViewOnce: false,    // Alternative field name
-        mimetype: 'image/jpeg',  // Required for inline display
-        mimeType: 'image/jpeg',  // Alternative field name
+        mimetype: mimeType,   // Dynamic MIME type
+        mimeType: mimeType,   // Alternative field name
         type: 'image',           // Explicitly set type as image, not document
         mediaType: 'image',      // Alternative field name
       };
@@ -462,8 +477,8 @@ export class AimeowClientService {
           images: [imageUrl],
           viewOnce: false,      // Display inline, not as download link
           isViewOnce: false,    // Alternative field name
-          mimetype: 'image/jpeg',  // Required for inline display
-          mimeType: 'image/jpeg',  // Alternative field name
+          mimetype: mimeType,   // Dynamic MIME type
+          mimeType: mimeType,   // Alternative field name
           type: 'image',           // Explicitly set type as image
           mediaType: 'image',      // Alternative field name
           ...(caption && { caption }),
