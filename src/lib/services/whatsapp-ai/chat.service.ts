@@ -935,6 +935,22 @@ export class WhatsAppAIChatService {
       }
     }
 
+    // 🔥 PRIORITIZE ID: Even if we found a name like "Honda City", check if we have a specific ID in history
+    // IDs (PM-PST-XXX) are much more reliable for fetching photos!
+    const idPattern = /pm-[a-zA-Z0-9]+-\d+/i;
+    // Check if current extracted name is NOT an ID (it might be just "Honda City")
+    if (vehicleName && !idPattern.test(vehicleName)) {
+      const recentHistory = messageHistory.slice(-10);
+      for (const historyMsg of recentHistory.reverse()) {
+        const match = historyMsg.content.match(idPattern);
+        if (match && match[0]) {
+          console.log(`[SmartFallback] 🎯 Upgrading generic "${vehicleName}" to specific ID "${match[0]}" from context`);
+          vehicleName = match[0].trim();
+          break;
+        }
+      }
+    }
+
     // Detect correction/objection keywords
     const correctionKeywords = ['bukan', 'salah', 'keliru', 'nggak', 'gak', 'bkn', 'kok', 'tadi', 'yang saya cari', 'yang saya maksud'];
     const isCorrection = (correctionKeywords.some(k => msg.includes(k)) && (msg.includes('kirim') || msg.includes('itu') || msg.includes('tadi'))) ||
