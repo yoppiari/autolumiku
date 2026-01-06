@@ -14,6 +14,7 @@ import {
   FORMATTING_RULES,
   DATA_INTEGRITY_RULES,
   AUTOMOTIVE_KNOWLEDGE_BASE,
+  COMPANY_KNOWLEDGE_BASE,
   STAFF_COMMAND_HELP,
   STAFF_TROUBLESHOOTING,
   STAFF_EDIT_FEATURE,
@@ -1656,6 +1657,7 @@ export class WhatsAppAIChatService {
     // 10. DATA INTEGRITY & KNOWLEDGE BASE
     systemPrompt += '\n' + DATA_INTEGRITY_RULES;
     systemPrompt += '\n' + AUTOMOTIVE_KNOWLEDGE_BASE;
+    systemPrompt += '\n' + COMPANY_KNOWLEDGE_BASE;
 
     return systemPrompt;
   }
