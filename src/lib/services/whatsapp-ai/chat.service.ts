@@ -1413,7 +1413,30 @@ export class WhatsAppAIChatService {
 
     // ==================== BUDGET-AWARE VEHICLE RECOMMENDATION ====================
     // ✅ FIX: Extract budget from user message and filter vehicles accordingly
-    if (vehicles.length > 0) {
+    // ✅ BUT: Don't show budget template if user is asking SPECIFIC DETAIL QUESTIONS
+
+    // Check if question is about SPECIFIC DETAILS (capacity, type, color, transmission, specs)
+    const isSpecificDetailQuestion = /\b(kapasitas|tipe|jenis|warna|transmisi|mesin|cc|bensin|diesel|manual|automatic|matic|spesifikasi|spec|fitur|kelengkapan|interior|eksterior|bagasi)\b/i.test(msg);
+    const isTypeQuestion = /\b(suv|sedan|mpv|hatchback|lcgc|city car|pick.*up)\b.*\b(atau|apa|nggak|gak|bukan)\b/i.test(msg);
+
+    // If user is asking specific details, SKIP budget fallback - let AI handle it
+    if (isSpecificDetailQuestion || isTypeQuestion) {
+      console.log(`[SmartFallback] 🔍 Specific detail question detected, skipping budget fallback: "${msg}"`);
+      // Don't return budget template - fall through to end (will escalate or use AI)
+      // But we can try to give a helpful hint if we know the vehicle type
+
+      // Check if there's a vehicle name in the message
+      const vehicleNameMatch = msg.match(/\b(city|avanza|fortuner|xpander|rush|ertiga|brio|agya|innova|pajero|alphard|civic|crv|hrv)\b/i);
+
+      if (vehicleNameMatch) {
+        const vehicleName = vehicleNameMatch[0];
+        // This will be handled by AI with knowledge base
+        console.log(`[SmartFallback] 📚 Vehicle name detected: ${vehicleName}, letting AI knowledge base handle it`);
+      }
+
+      // Fall through - don't return budget template
+    } else if (vehicles.length > 0) {
+      // Original budget logic only if NOT a specific detail question
       // Get time greeting for consistency
       const now = new Date();
       const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();

@@ -1,4 +1,48 @@
 export const AUTOMOTIVE_KNOWLEDGE_BASE = `
+📚 KLASIFIKASI KENDARAAN (VEHICLE TYPES & CAPACITY):
+
+**TIPE KENDARAAN (Berdasarkan Body Type):**
+- SEDAN: Mobil penumpang 4-5 seat, bagasi terpisah, cocok untuk pemakaian pribadi/bisnis
+  → Contoh: Honda City, Toyota Vios, Honda Civic, Toyota Camry
+  → Kapasitas: 5 penumpang (2 depan, 3 belakang)
+  
+- HATCHBACK: Mobil compact 5 penumpang, bagasi menyatu dengan kabin
+  → Contoh: Honda Brio, Toyota Agya, Suzuki Swift, Suzuki Ignis
+  → Kapasitas: 5 penumpang (2 depan, 3 belakang)
+  
+- MPV (Multi-Purpose Vehicle): Mobil keluarga 7 penumpang, 3 baris kursi
+  → Contoh: Toyota Avanza, Xpander, Ertiga, Innova
+  → Kapasitas: 7 penumpang (biasanya konfigurasi 2-3-2)
+  
+- SUV (Sport Utility Vehicle): Mobil dengan ground clearance tinggi, bisa off-road
+  → Contoh: Fortuner, Pajero Sport, CR-V, Rush
+  → Kapasitas: 5-7 penumpang tergantung varian
+  → Ground Clearance: Biasanya >200mm
+  
+- LCGC (Low Cost Green Car): Mobil murah ramah lingkungan
+  → Contoh: Agya, Calya, Karimun Wagon R, Brio Satya
+  → Kapasitas: 5-7 penumpang tergantung model
+
+**ATURAN PENTING MENJAWAB PERTANYAAN TIPE KENDARAAN:**
+- Jika user tanya "Honda City itu SUV atau apa?" → Jawab: "Honda City adalah SEDAN, bukan SUV. Kapasitas 5 penumpang."
+- Jika user tanya "kapasitas berapa?" → Jawab kapasitas berdasar tipe (Sedan=5, MPV=7)
+- JANGAN fallback ke template budget jika pertanyaan spesifik tentang tipe/kapasitas!
+
+---
+
+**HONDA CITY (OLDER MODELS - 2003-2008 GEN):**
+- Tipe: SEDAN kompak
+- Kapasitas: 5 penumpang (2 depan, 3 belakang)
+- Mesin: 1.5L i-VTEC (110 PS) atau 1.3L i-DSI
+- Transmisi: Manual 5-speed / Automatic 5-speed atau CVT
+- Fitur: Power steering, AC, Central Lock, Power Window
+- Cocok untuk: Penggunaan harian di kota, first car, mobil keluarga kecil
+- Konsumsi BBM: ±12-15 km/L (dalam kota)
+- Kelebihan: Irit, parts murah, service mudah, resale value bagus
+- Harga bekas (2006): 70-100 juta (tergantung kondisi & km)
+
+---
+
 DATABASE PENGETAHUAN KENDARAAN (Toyota Astra Indonesia):
 
 **TOYOTA AVANZA/VELOZ (2022+)**
