@@ -2425,14 +2425,14 @@ export class MessageOrchestratorService {
     }
   }
 
-  /**
-   * Format price to Indonesian format
-   * Note: uploadRequest.price from AI is already in full IDR (e.g., 250000000 for 250 juta)
-   * Database stores in cents (x100), but this function receives raw IDR from AI parsing
-   */
-  private static formatPrice(price: number): string {
-    // Price is already in full IDR from AI parsing, just format it
-    return new Intl.NumberFormat("id-ID").format(price);
+  private static formatPrice(price: number | bigint | string): string {
+    // Convert to number for Intl.NumberFormat
+    const numPrice = typeof price === 'bigint' ? Number(price) :
+      typeof price === 'string' ? parseFloat(price) : Number(price);
+
+    if (isNaN(numPrice)) return '0';
+
+    return new Intl.NumberFormat("id-ID").format(Math.round(numPrice));
   }
 
   /**

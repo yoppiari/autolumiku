@@ -18,7 +18,7 @@ function getDatabaseUrl(): string {
     return '';
   }
 
-  const poolParams = 'connection_limit=10&pool_timeout=20&connect_timeout=10';
+  const poolParams = 'connection_limit=20&pool_timeout=30&connect_timeout=15';
 
   // Check if URL already has query parameters
   if (baseUrl.includes('?')) {

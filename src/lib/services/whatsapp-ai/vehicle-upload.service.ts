@@ -333,10 +333,10 @@ export class WhatsAppVehicleUploadService {
           console.warn(`[WhatsApp Vehicle Upload] ⚠️ All photo downloads failed - continuing without photos`);
           console.log(`[WhatsApp Vehicle Upload] 💡 Photos can be added later via dashboard`);
         } else {
-          // Step 6.2: Process each successfully downloaded photo
-          console.log(`[WhatsApp Vehicle Upload] 🔄 Processing ${successfulDownloads.length} photos...`);
+          // Step 6.2: Process each successfully downloaded photo IN PARALLEL
+          console.log(`[WhatsApp Vehicle Upload] 🔄 Processing ${successfulDownloads.length} photos in parallel...`);
 
-          for (const download of successfulDownloads) {
+          const processPromises = successfulDownloads.map(async (download, orderIndex) => {
             const i = download.index;
             const photoBuffer = download.buffer!;
 
@@ -354,15 +354,11 @@ export class WhatsAppVehicleUploadService {
                 });
                 processedBuffer = plateResult.covered;
                 platesDetected = plateResult.platesDetected;
-                if (platesDetected > 0) {
-                  console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1}: ${platesDetected} plate(s) covered`);
-                }
               } catch (plateError: any) {
                 console.error(`[WhatsApp Vehicle Upload] Plate detection failed for photo ${i + 1}:`, plateError.message);
-                // Continue with original photo if plate detection fails
               }
 
-              // Process photo (generate multiple sizes) - using covered version
+              // Process photo (generate multiple sizes)
               const processed = await ImageProcessingService.processPhoto(processedBuffer);
 
               // Generate filename
@@ -381,8 +377,6 @@ export class WhatsAppVehicleUploadService {
                 baseFilename
               );
 
-              console.log(`[WhatsApp Vehicle Upload] Photo ${i + 1} saved:`, uploadResult);
-
               // Create photo record in database
               await prisma.vehiclePhoto.create({
                 data: {
@@ -398,18 +392,21 @@ export class WhatsAppVehicleUploadService {
                   mimeType: processed.metadata.mimeType,
                   width: processed.metadata.width,
                   height: processed.metadata.height,
-                  isMainPhoto: processedPhotoCount === 0,  // First successfully processed photo is main
-                  displayOrder: processedPhotoCount,
+                  isMainPhoto: orderIndex === 0, // Preserve order from staff selection
+                  displayOrder: orderIndex,
                 },
               });
 
-              processedPhotoCount++;
+              return { success: true };
             } catch (photoError: any) {
               console.error(`[WhatsApp Vehicle Upload] Error processing photo ${i + 1}:`, photoError.message);
-              failedProcessing.push(i + 1);
-              // Continue with next photo
+              return { success: false, index: i + 1 };
             }
-          }
+          });
+
+          const results = await Promise.all(processPromises);
+          processedPhotoCount = results.filter(r => r.success).length;
+          results.filter(r => !r.success).forEach(r => failedProcessing.push((r as any).index));
 
           console.log('[WhatsApp Vehicle Upload] ✅ Processed', processedPhotoCount, 'of', photoUrls.length, 'photos');
         }

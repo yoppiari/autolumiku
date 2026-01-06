@@ -2232,14 +2232,14 @@ export class WhatsAppAIChatService {
     return null;
   }
 
-  /**
-   * Format price to Indonesian format
-   * Note: Database stores prices in full Rupiah (Rp 79jt = 79000000)
-   * No division needed - prices are already in correct format
-   */
-  private static formatPrice(price: number): string {
-    // Price is already in Rupiah, just format it
-    return new Intl.NumberFormat("id-ID").format(Math.round(price));
+  private static formatPrice(price: number | BigInt | string): string {
+    // Convert to number for Intl.NumberFormat
+    const numPrice = typeof price === 'bigint' ? Number(price) :
+      typeof price === 'string' ? parseFloat(price) : Number(price);
+
+    if (isNaN(numPrice)) return '0';
+
+    return new Intl.NumberFormat("id-ID").format(Math.round(numPrice));
   }
 
   /**

@@ -92,6 +92,8 @@ If no plates visible or uncertain, return: { "detected": false, "plates": [] }`,
     }
   }
 
+  private static readonly IS_ENABLED = false; // Globally disable for now to save latency/costs
+
   /**
    * Cover detected license plates with a logo or solid rectangle
    */
@@ -105,14 +107,14 @@ If no plates visible or uncertain, return: { "detected": false, "plates": [] }`,
       coverColor?: string;
     } = {}
   ): Promise<Buffer> {
+    if (!this.IS_ENABLED) {
+      return imageBuffer;
+    }
+
     if (plates.length === 0) {
       console.log('[Plate Detection] No plates to cover');
       return imageBuffer;
     }
-
-    // Force disable covering - requested by user to "remove watermark"
-    console.log('[Plate Detection] Plate covering DISABLED by configuration');
-    return imageBuffer;
 
     try {
       const metadata = await sharp(imageBuffer).metadata();
@@ -215,9 +217,16 @@ If no plates visible or uncertain, return: { "detected": false, "plates": [] }`,
     covered: Buffer;
     platesDetected: number;
   }> {
-    console.log('[Plate Detection] Starting plate detection and cover process...');
+    // 1. Check if enabled
+    if (!this.IS_ENABLED) {
+      return {
+        original: imageBuffer,
+        covered: imageBuffer,
+        platesDetected: 0,
+      };
+    }
 
-    // 1. Detect plates
+    // 2. Detect plates
     const detection = await this.detectPlates(imageBuffer);
 
     if (!detection.detected || detection.plates.length === 0) {
