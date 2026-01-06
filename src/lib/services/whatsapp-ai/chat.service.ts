@@ -1772,164 +1772,163 @@ export class WhatsAppAIChatService {
         }
       }
     }
-  }
-  if(!vehicleName) {
-    console.log(`[PhotoConfirm DEBUG] ⚠️ Could not extract vehicle name from any source`);
+    if (!vehicleName) {
+      console.log(`[PhotoConfirm DEBUG] ⚠️ Could not extract vehicle name from any source`);
 
-    // If user explicitly asks for photos (e.g., "iya mana fotonya"),
-    // try to send ANY recent available vehicle photos as last resort
-    if (userExplicitlyAsksPhoto) {
-      console.log(`[PhotoConfirm DEBUG] 🔄 Entering fallback: send any available photos...`);
-      try {
-        const anyVehicles = await prisma.vehicle.findMany({
-          where: {
-            tenantId,
-            status: 'AVAILABLE',
-            photos: { some: {} } // ONLY vehicles with photos
-          },
-          include: {
-            photos: {
-              orderBy: { isMainPhoto: 'desc' },
-              take: 1,
+      // If user explicitly asks for photos (e.g., "iya mana fotonya"),
+      // try to send ANY recent available vehicle photos as last resort
+      if (userExplicitlyAsksPhoto) {
+        console.log(`[PhotoConfirm DEBUG] 🔄 Entering fallback: send any available photos...`);
+        try {
+          const anyVehicles = await prisma.vehicle.findMany({
+            where: {
+              tenantId,
+              status: 'AVAILABLE',
+              photos: { some: {} } // ONLY vehicles with photos
             },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 2,
-        });
+            include: {
+              photos: {
+                orderBy: { isMainPhoto: 'desc' },
+                take: 1,
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 2,
+          });
 
-        console.log(`[PhotoConfirm DEBUG] Fallback query result: ${anyVehicles.length} vehicles found`);
-        anyVehicles.forEach((v, i) => {
-          console.log(`[PhotoConfirm DEBUG]   Vehicle ${i}: ${v.make} ${v.model}, photos: ${v.photos?.length || 0}`);
-          if (v.photos && v.photos.length > 0) {
-            console.log(`[PhotoConfirm DEBUG]     Photo URL: ${v.photos[0].originalUrl || v.photos[0].mediumUrl || 'NO URL'}`);
+          console.log(`[PhotoConfirm DEBUG] Fallback query result: ${anyVehicles.length} vehicles found`);
+          anyVehicles.forEach((v, i) => {
+            console.log(`[PhotoConfirm DEBUG]   Vehicle ${i}: ${v.make} ${v.model}, photos: ${v.photos?.length || 0}`);
+            if (v.photos && v.photos.length > 0) {
+              console.log(`[PhotoConfirm DEBUG]     Photo URL: ${v.photos[0].originalUrl || v.photos[0].mediumUrl || 'NO URL'}`);
+            }
+          });
+
+          if (anyVehicles.length > 0 && anyVehicles.some(v => v.photos?.length > 0)) {
+            console.log(`[PhotoConfirm DEBUG] ✅ Vehicles with photos found, building image array...`);
+            const images = this.buildImageArray(anyVehicles);
+            console.log(`[PhotoConfirm DEBUG] buildImageArray returned: ${images?.length || 0} images`);
+            if (images && images.length > 0) {
+              console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${images.length} images`);
+              return {
+                message: `Ini foto unit terbaru kami ya 📸👇\n\nAda yang mau ditanyakan tentang unit-unit ini? 😊`,
+                shouldEscalate: false,
+                confidence: 0.85,
+                images,
+              };
+            }
           }
-        });
-
-        if (anyVehicles.length > 0 && anyVehicles.some(v => v.photos?.length > 0)) {
-          console.log(`[PhotoConfirm DEBUG] ✅ Vehicles with photos found, building image array...`);
-          const images = this.buildImageArray(anyVehicles);
-          console.log(`[PhotoConfirm DEBUG] buildImageArray returned: ${images?.length || 0} images`);
-          if (images && images.length > 0) {
-            console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${images.length} images`);
+          // Vehicles exist but no photos available
+          if (anyVehicles.length > 0) {
+            const vehicleList = anyVehicles.slice(0, 3).map(v => {
+              const id = v.displayId || v.id.substring(0, 8).toUpperCase();
+              return `• ${v.make} ${v.model} ${v.year} | ${id}`;
+            }).join('\n');
             return {
-              message: `Ini foto unit terbaru kami ya 📸👇\n\nAda yang mau ditanyakan tentang unit-unit ini? 😊`,
+              message: `Maaf kak, saat ini galeri foto unit sedang kami perbarui untuk kualitas terbaik. 👋\n\nTapi kami punya unit ready menarik lainnya:\n${vehicleList}\n\nIngin saya kirimkan fotonya segera setelah siap? 😊`,
               shouldEscalate: false,
-              confidence: 0.85,
-              images,
+              confidence: 0.8,
             };
           }
+          console.log(`[PhotoConfirm DEBUG] ❌ No vehicles found at all`);
+        } catch (e: any) {
+          console.error(`[PhotoConfirm DEBUG] ❌ ERROR in fallback:`, e.message);
+          console.error(`[PhotoConfirm DEBUG] Error stack:`, e.stack);
         }
-        // Vehicles exist but no photos available
-        if (anyVehicles.length > 0) {
-          const vehicleList = anyVehicles.slice(0, 3).map(v => {
-            const id = v.displayId || v.id.substring(0, 8).toUpperCase();
-            return `• ${v.make} ${v.model} ${v.year} | ${id}`;
-          }).join('\n');
-          return {
-            message: `Maaf kak, saat ini galeri foto unit sedang kami perbarui untuk kualitas terbaik. 👋\n\nTapi kami punya unit ready menarik lainnya:\n${vehicleList}\n\nIngin saya kirimkan fotonya segera setelah siap? 😊`,
-            shouldEscalate: false,
-            confidence: 0.8,
-          };
-        }
-        console.log(`[PhotoConfirm DEBUG] ❌ No vehicles found at all`);
-      } catch (e: any) {
-        console.error(`[PhotoConfirm DEBUG] ❌ ERROR in fallback:`, e.message);
-        console.error(`[PhotoConfirm DEBUG] Error stack:`, e.stack);
+      } else {
+        console.log(`[PhotoConfirm DEBUG] ❌ userExplicitlyAsksPhoto is false, not entering fallback`);
       }
-    } else {
-      console.log(`[PhotoConfirm DEBUG] ❌ userExplicitlyAsksPhoto is false, not entering fallback`);
-    }
 
-    console.log(`[PhotoConfirm DEBUG] ❌ Returning NULL from handlePhotoConfirmationDirectly`);
-    return null;
-  }
+      console.log(`[PhotoConfirm DEBUG] ❌ Returning NULL from handlePhotoConfirmationDirectly`);
+      return null;
+    }
 
     console.log(`[PhotoConfirm DEBUG] ✅ Vehicle name extracted: "${vehicleName} "`);
 
-// Check if user is asking for DETAILED photos (interior, exterior, semua, lengkap, dll)
-const detailPatterns = [
-  /\b(detail|lengkap|semua|all)\b/i,
-  /\b(interior|eksterior|dalam|luar)\b/i,
-  /\b(dashboard|jok|bagasi|mesin)\b/i,
-  /\bfoto.*(semua|lengkap|detail)\b/i,
-  /\b(semua|lengkap).*(foto|gambar)\b/i,
-];
-const wantsDetailedPhotos = detailPatterns.some(p => p.test(userMessage));
-console.log(`[PhotoConfirm DEBUG] Wants detailed photos: ${wantsDetailedPhotos}`);
+    // Check if user is asking for DETAILED photos (interior, exterior, semua, lengkap, dll)
+    const detailPatterns = [
+      /\b(detail|lengkap|semua|all)\b/i,
+      /\b(interior|eksterior|dalam|luar)\b/i,
+      /\b(dashboard|jok|bagasi|mesin)\b/i,
+      /\bfoto.*(semua|lengkap|detail)\b/i,
+      /\b(semua|lengkap).*(foto|gambar)\b/i,
+    ];
+    const wantsDetailedPhotos = detailPatterns.some(p => p.test(userMessage));
+    console.log(`[PhotoConfirm DEBUG] Wants detailed photos: ${wantsDetailedPhotos}`);
 
-// Fetch vehicle images
-try {
-  // If user wants detailed photos, use fetchVehicleWithDetails for full info
-  if (wantsDetailedPhotos) {
-    console.log(`[PhotoConfirm DEBUG] Fetching DETAILED vehicle info for "${vehicleName}"...`);
-    const vehicleWithDetails = await this.fetchVehicleWithDetails(vehicleName, tenantId);
+    // Fetch vehicle images
+    try {
+      // If user wants detailed photos, use fetchVehicleWithDetails for full info
+      if (wantsDetailedPhotos) {
+        console.log(`[PhotoConfirm DEBUG] Fetching DETAILED vehicle info for "${vehicleName}"...`);
+        const vehicleWithDetails = await this.fetchVehicleWithDetails(vehicleName, tenantId);
 
-    if (vehicleWithDetails && vehicleWithDetails.images.length > 0) {
-      console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${vehicleWithDetails.images.length} images with DETAILS`);
-      const detailedMessage = this.buildVehicleDetailMessage(vehicleWithDetails.vehicle);
-      return {
-        message: detailedMessage,
-        shouldEscalate: false,
-        confidence: 0.95,
-        images: vehicleWithDetails.images,
-      };
+        if (vehicleWithDetails && vehicleWithDetails.images.length > 0) {
+          console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${vehicleWithDetails.images.length} images with DETAILS`);
+          const detailedMessage = this.buildVehicleDetailMessage(vehicleWithDetails.vehicle);
+          return {
+            message: detailedMessage,
+            shouldEscalate: false,
+            confidence: 0.95,
+            images: vehicleWithDetails.images,
+          };
+        }
+      }
+
+      // Regular photo request (not detailed)
+      console.log(`[PhotoConfirm DEBUG] Calling fetchVehicleImagesByQuery("${vehicleName}", "${tenantId}")...`);
+      const images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
+
+      console.log(`[PhotoConfirm DEBUG] fetchVehicleImagesByQuery returned: ${images?.length || 0} images`);
+      if (images && images.length > 0) {
+        console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${images.length} images for "${vehicleName}"`);
+        images.forEach((img, i) => {
+          console.log(`[PhotoConfirm DEBUG]   Image ${i}: ${img.imageUrl?.substring(0, 80)}...`);
+        });
+        return {
+          message: `Siap! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain tentang unit ini? 😊`,
+          shouldEscalate: false,
+          confidence: 0.95,
+          images,
+        };
+      } else {
+        console.log(`[PhotoConfirm DEBUG] ⚠️ No images found for "${vehicleName}", returning text response`);
+        return {
+          message: `Maaf kak, koleksi foto untuk ${vehicleName} sedang dalam proses kurasi oleh tim kami untuk kualitas terbaik. 👋\n\nAdakah unit lain yang ingin Anda lihat atau ada hal lain yang bisa kami bantu? 😊`,
+          shouldEscalate: false,
+          confidence: 0.9,
+        };
+      }
+    } catch (error: any) {
+      console.error(`[PhotoConfirm DEBUG] ❌ ERROR fetching images for "${vehicleName}":`, error.message);
+      console.error(`[PhotoConfirm DEBUG] Error stack:`, error.stack);
+      console.log(`[PhotoConfirm DEBUG] ❌ Returning NULL due to error`);
+      return null; // Let AI handle as fallback
     }
-  }
-
-  // Regular photo request (not detailed)
-  console.log(`[PhotoConfirm DEBUG] Calling fetchVehicleImagesByQuery("${vehicleName}", "${tenantId}")...`);
-  const images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
-
-  console.log(`[PhotoConfirm DEBUG] fetchVehicleImagesByQuery returned: ${images?.length || 0} images`);
-  if (images && images.length > 0) {
-    console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${images.length} images for "${vehicleName}"`);
-    images.forEach((img, i) => {
-      console.log(`[PhotoConfirm DEBUG]   Image ${i}: ${img.imageUrl?.substring(0, 80)}...`);
-    });
-    return {
-      message: `Siap! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain tentang unit ini? 😊`,
-      shouldEscalate: false,
-      confidence: 0.95,
-      images,
-    };
-  } else {
-    console.log(`[PhotoConfirm DEBUG] ⚠️ No images found for "${vehicleName}", returning text response`);
-    return {
-      message: `Maaf kak, koleksi foto untuk ${vehicleName} sedang dalam proses kurasi oleh tim kami untuk kualitas terbaik. 👋\n\nAdakah unit lain yang ingin Anda lihat atau ada hal lain yang bisa kami bantu? 😊`,
-      shouldEscalate: false,
-      confidence: 0.9,
-    };
-  }
-} catch (error: any) {
-  console.error(`[PhotoConfirm DEBUG] ❌ ERROR fetching images for "${vehicleName}":`, error.message);
-  console.error(`[PhotoConfirm DEBUG] Error stack:`, error.stack);
-  console.log(`[PhotoConfirm DEBUG] ❌ Returning NULL due to error`);
-  return null; // Let AI handle as fallback
-}
   }
 
   /**
    * Get available vehicles untuk context
    */
   private static async getAvailableVehicles(tenantId: string) {
-  return await prisma.vehicle.findMany({
-    where: {
-      tenantId,
-      status: "AVAILABLE",
-    },
-    select: {
-      id: true,
-      make: true,
-      model: true,
-      variant: true,
-      year: true,
-      price: true,
-      displayId: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 5, // Limit to 5 most recent for faster response
-  });
-}
+    return await prisma.vehicle.findMany({
+      where: {
+        tenantId,
+        status: "AVAILABLE",
+      },
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        variant: true,
+        year: true,
+        price: true,
+        displayId: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5, // Limit to 5 most recent for faster response
+    });
+  }
 
   /**
    * Format price to Indonesian format
@@ -1937,66 +1936,66 @@ try {
    * No division needed - prices are already in correct format
    */
   private static formatPrice(price: number): string {
-  // Price is already in Rupiah, just format it
-  return new Intl.NumberFormat("id-ID").format(Math.round(price));
-}
+    // Price is already in Rupiah, just format it
+    return new Intl.NumberFormat("id-ID").format(Math.round(price));
+  }
 
   /**
    * Check if within business hours
    */
   private static isWithinBusinessHours(
-  businessHours: any,
-  timezone: string
-): boolean {
-  const tz = timezone || "Asia/Jakarta";
-  const now = new Date();
-  const day = now
-    .toLocaleDateString("en-US", { weekday: "long", timeZone: tz })
-    .toLowerCase();
-  const currentHour = now.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: tz,
-  });
+    businessHours: any,
+    timezone: string
+  ): boolean {
+    const tz = timezone || "Asia/Jakarta";
+    const now = new Date();
+    const day = now
+      .toLocaleDateString("en-US", { weekday: "long", timeZone: tz })
+      .toLowerCase();
+    const currentHour = now.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: tz,
+    });
 
-  const todayHours = businessHours[day];
-  if (!todayHours || todayHours.open === "closed") {
-    return false;
+    const todayHours = businessHours[day];
+    if (!todayHours || todayHours.open === "closed") {
+      return false;
+    }
+
+    return currentHour >= todayHours.open && currentHour <= todayHours.close;
   }
-
-  return currentHour >= todayHours.open && currentHour <= todayHours.close;
-}
 
   /**
    * Determine if conversation should be escalated to human
    */
   private static shouldEscalateToHuman(
-  aiResponse: string,
-  intent: MessageIntent
-): boolean {
-  // Escalate if AI mentions uncertainty
-  const uncertaintyKeywords = [
-    "tidak yakin",
-    "tidak tahu",
-    "maaf saya tidak",
-    "hubungi staff",
-    "berbicara dengan staff",
-    "tidak dapat membantu",
-  ];
+    aiResponse: string,
+    intent: MessageIntent
+  ): boolean {
+    // Escalate if AI mentions uncertainty
+    const uncertaintyKeywords = [
+      "tidak yakin",
+      "tidak tahu",
+      "maaf saya tidak",
+      "hubungi staff",
+      "berbicara dengan staff",
+      "tidak dapat membantu",
+    ];
 
-  const hasUncertainty = uncertaintyKeywords.some((keyword) =>
-    aiResponse.toLowerCase().includes(keyword)
-  );
+    const hasUncertainty = uncertaintyKeywords.some((keyword) =>
+      aiResponse.toLowerCase().includes(keyword)
+    );
 
-  // Escalate for price negotiation (if not enabled in config)
-  const isPriceNegotiation =
-    intent === "customer_price_inquiry" &&
-    (aiResponse.toLowerCase().includes("nego") ||
-      aiResponse.toLowerCase().includes("diskon"));
+    // Escalate for price negotiation (if not enabled in config)
+    const isPriceNegotiation =
+      intent === "customer_price_inquiry" &&
+      (aiResponse.toLowerCase().includes("nego") ||
+        aiResponse.toLowerCase().includes("diskon"));
 
-  return hasUncertainty || isPriceNegotiation;
-}
+    return hasUncertainty || isPriceNegotiation;
+  }
 
   /**
    * Fetch vehicle images based on search query
@@ -2004,179 +2003,179 @@ try {
    * Does NOT fallback to unrelated vehicles - customer asked for specific vehicle!
    */
   private static async fetchVehicleImagesByQuery(
-  searchQuery: string,
-  tenantId: string
-): Promise < Array<{ imageUrl: string; caption?: string }> | null > {
-  console.log('[WhatsApp AI Chat] 📸 Fetching vehicles for query:', searchQuery);
-  console.log('[WhatsApp AI Chat] Tenant ID:', tenantId);
+    searchQuery: string,
+    tenantId: string
+  ): Promise<Array<{ imageUrl: string; caption?: string }> | null> {
+    console.log('[WhatsApp AI Chat] 📸 Fetching vehicles for query:', searchQuery);
+    console.log('[WhatsApp AI Chat] Tenant ID:', tenantId);
 
-  // CRITICAL FIX: Check for explicit Vehicle ID first (PM-PST-XXX)
-  // If ID is found, query EXACTLY that vehicle
-  const idMatch = searchQuery.match(/pm-[a-zA-Z0-9]+-\d+/i);
-  if(idMatch) {
-    const explicitId = idMatch[0].toUpperCase();
-    console.log(`[WhatsApp AI Chat] 🎯 Explicit ID detected in query: ${explicitId}`);
+    // CRITICAL FIX: Check for explicit Vehicle ID first (PM-PST-XXX)
+    // If ID is found, query EXACTLY that vehicle
+    const idMatch = searchQuery.match(/pm-[a-zA-Z0-9]+-\d+/i);
+    if (idMatch) {
+      const explicitId = idMatch[0].toUpperCase();
+      console.log(`[WhatsApp AI Chat] 🎯 Explicit ID detected in query: ${explicitId}`);
 
-    const specificVehicle = await prisma.vehicle.findFirst({
+      const specificVehicle = await prisma.vehicle.findFirst({
+        where: {
+          tenantId,
+          displayId: explicitId, // Exact match on displayId
+          // removed status constraint to allow finding BOOKED/SOLD items if requested explicitly
+        },
+        include: {
+          photos: {
+            orderBy: { isMainPhoto: 'desc' },
+          },
+        },
+      });
+
+      if (specificVehicle) {
+        if (specificVehicle.photos && specificVehicle.photos.length > 0) {
+          console.log(`[WhatsApp AI Chat] ✅ Found specific vehicle ${explicitId} with ${specificVehicle.photos.length} photos`);
+          return this.buildImageArray([specificVehicle]);
+        } else {
+          console.log(`[WhatsApp AI Chat] ⚠️ Found specific vehicle ${explicitId} but NO photos`);
+          return null;
+        }
+      } else {
+        console.log(`[WhatsApp AI Chat] ❌ Specific vehicle ${explicitId} not found in database`);
+        // Fallthrough to normal search in case it wasn't a displayId but looking like one?
+        // But usually PM-PST-XXX is strictly an ID.
+      }
+    }
+
+    // Parse search query into individual terms and filter out stop words
+    const searchTerms = searchQuery.toLowerCase()
+      .split(/\s+/)
+      .filter(term => term.length > 0 && !WhatsAppAIChatService.INDONESIAN_STOP_WORDS.includes(term));
+
+    console.log('[WhatsApp AI Chat] Cleaned search terms:', searchTerms);
+
+    // If all terms were filtered out, it's a generic query
+    if (searchTerms.length === 0) {
+      console.log('[WhatsApp AI Chat] ⚠️ All terms filtered out, query is too generic');
+      return null;
+    }
+
+    // Check if query contains specific vehicle identifiers (model name, stock code, etc.)
+    const specificModels = [
+      'innova', 'avanza', 'xenia', 'fortuner', 'rush', 'calya', 'sigra', 'brio', 'jazz', 'civic', 'accord',
+      'xpander', 'pajero', 'triton', 'ertiga', 'swift', 'baleno', 'livina', 'serena', 'terios', 'ayla',
+      'hiace', 'alphard', 'vellfire', 'yaris', 'vios', 'camry', 'corolla', 'raize', 'rocky', 'wuling',
+      'confero', 'cortez', 'almaz', 'hrv', 'crv', 'wrv', 'brv', 'br-v', 'hr-v', 'cr-v', 'wr-v',
+      // Additional models
+      'city', 'freed', 'mobilio', 'odyssey', 'stream', 'fit', 'shuttle', // Honda
+      'agya', 'granmax', 'luxio', 'taruna', 'feroza', // Daihatsu
+      'ranger', 'everest', 'ecosport', 'fiesta', 'focus', // Ford
+      'captiva', 'spin', 'trax', 'trailblazer', 'orlando', // Chevrolet
+      'tiguan', 'polo', 'golf', 'touran', // VW
+      'cx3', 'cx5', 'cx7', 'cx8', 'cx9', 'mazda2', 'mazda3', 'mazda6', 'biante', // Mazda
+      'juke', 'xtrail', 'x-trail', 'navara', 'terra', 'grand', 'march', 'note', // Nissan
+      'tucson', 'santa', 'stargazer', 'creta', 'kona', 'palisade', // Hyundai
+      'sportage', 'seltos', 'sonet', 'sorento', 'carnival', 'carens', // Kia
+      'outlander', 'delica', 'l300', // Mitsubishi
+    ];
+
+    const hasSpecificQuery = searchTerms.some(term =>
+      specificModels.includes(term) ||
+      // Stock code pattern (PM-PST-XXX, PM-XXX, etc.)
+      /^pm-?/i.test(term) ||
+      // Year pattern
+      /^20\d{2}$/.test(term)
+    );
+
+    // Query vehicles with photos
+    // IMPORTANT: If customer asked for SPECIFIC vehicle, only return 1!
+    // If generic query, can return up to 3
+    const maxVehicles = hasSpecificQuery ? 1 : 3;
+    console.log(`[WhatsApp AI Chat] hasSpecificQuery: ${hasSpecificQuery}, maxVehicles: ${maxVehicles}`);
+
+    // Build query: each search term must match at least one field (AND logic)
+    // This ensures "Honda City" only matches vehicles with BOTH "Honda" AND "City"
+    // Filter out year terms - we'll handle them separately
+    const yearTerms = searchTerms.filter(term => /^20\d{2}$/.test(term));
+    const nonYearTerms = searchTerms.filter(term => !/^20\d{2}$/.test(term));
+
+    const termConditions = nonYearTerms.map(term => ({
+      OR: [
+        { make: { contains: term, mode: 'insensitive' as const } },
+        { model: { contains: term, mode: 'insensitive' as const } },
+        { variant: { contains: term, mode: 'insensitive' as const } },
+        { displayId: { contains: term, mode: 'insensitive' as const } },
+        { transmission: { contains: term, mode: 'insensitive' as const } },
+        { fuelType: { contains: term, mode: 'insensitive' as const } },
+        { color: { contains: term, mode: 'insensitive' as const } },
+        { engineCapacity: { contains: term, mode: 'insensitive' as const } },
+      ]
+    }));
+
+    // Build year condition separately
+    const yearCondition = yearTerms.length > 0 ? parseInt(yearTerms[0], 10) : null;
+    if (yearCondition) {
+      console.log(`[WhatsApp AI Chat] Added year filter: ${yearCondition}`);
+    }
+
+    const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId,
-        displayId: explicitId, // Exact match on displayId
-        // removed status constraint to allow finding BOOKED/SOLD items if requested explicitly
+        status: 'AVAILABLE',
+        // AND logic: ALL terms must match (each term can match any field)
+        ...(termConditions.length > 0 && { AND: termConditions }),
+        // Year filter (if specified)
+        ...(yearCondition && { year: yearCondition }),
       },
       include: {
         photos: {
           orderBy: { isMainPhoto: 'desc' },
+          take: 5, // LIMIT: Max 5 photos to prevent flooding
         },
       },
+      take: maxVehicles, // Only 1 for specific query, up to 3 for generic
     });
 
-    if (specificVehicle) {
-      if (specificVehicle.photos && specificVehicle.photos.length > 0) {
-        console.log(`[WhatsApp AI Chat] ✅ Found specific vehicle ${explicitId} with ${specificVehicle.photos.length} photos`);
-        return this.buildImageArray([specificVehicle]);
-      } else {
-        console.log(`[WhatsApp AI Chat] ⚠️ Found specific vehicle ${explicitId} but NO photos`);
+    console.log(`[WhatsApp AI Chat] Found ${vehicles.length} vehicles matching query`);
+    vehicles.forEach(v => {
+      console.log(`[WhatsApp AI Chat]   - ${v.make} ${v.model} (${v.year}) | ID: ${v.displayId} | Photos: ${v.photos?.length || 0}`);
+    });
+
+    if (vehicles.length === 0) {
+      console.log('[WhatsApp AI Chat] ❌ No vehicles found for query:', searchQuery);
+
+      // IMPORTANT: If customer asked for a SPECIFIC vehicle/model, DO NOT fallback
+      // to random vehicles - this confuses customers and sends irrelevant photos!
+      if (hasSpecificQuery) {
+        console.log('[WhatsApp AI Chat] ⚠️ Customer asked for specific vehicle, NOT falling back to random vehicles');
         return null;
       }
-    } else {
-      console.log(`[WhatsApp AI Chat] ❌ Specific vehicle ${explicitId} not found in database`);
-      // Fallthrough to normal search in case it wasn't a displayId but looking like one?
-      // But usually PM-PST-XXX is strictly an ID.
+
+      // Only fallback to any vehicles if query was very generic (e.g., "mobil", "foto", "stok")
+      console.log('[WhatsApp AI Chat] 🔄 Generic query, trying broader search for any available vehicles...');
+      const anyVehicles = await prisma.vehicle.findMany({
+        where: {
+          tenantId,
+          status: 'AVAILABLE',
+          photos: { some: {} } // ONLY vehicles with photos
+        },
+        include: {
+          photos: {
+            orderBy: { isMainPhoto: 'desc' },
+            // Get ALL photos
+          },
+        },
+        take: 3,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (anyVehicles.length === 0) {
+        console.log('[WhatsApp AI Chat] ❌ No vehicles available at all');
+        return null;
+      }
+
+      console.log(`[WhatsApp AI Chat] Found ${anyVehicles.length} vehicles in broader search`);
+      return this.buildImageArray(anyVehicles);
     }
-  }
 
-    // Parse search query into individual terms and filter out stop words
-    const searchTerms = searchQuery.toLowerCase()
-    .split(/\s+/)
-    .filter(term => term.length > 0 && !WhatsAppAIChatService.INDONESIAN_STOP_WORDS.includes(term));
-
-  console.log('[WhatsApp AI Chat] Cleaned search terms:', searchTerms);
-
-  // If all terms were filtered out, it's a generic query
-  if(searchTerms.length === 0) {
-  console.log('[WhatsApp AI Chat] ⚠️ All terms filtered out, query is too generic');
-  return null;
-}
-
-// Check if query contains specific vehicle identifiers (model name, stock code, etc.)
-const specificModels = [
-  'innova', 'avanza', 'xenia', 'fortuner', 'rush', 'calya', 'sigra', 'brio', 'jazz', 'civic', 'accord',
-  'xpander', 'pajero', 'triton', 'ertiga', 'swift', 'baleno', 'livina', 'serena', 'terios', 'ayla',
-  'hiace', 'alphard', 'vellfire', 'yaris', 'vios', 'camry', 'corolla', 'raize', 'rocky', 'wuling',
-  'confero', 'cortez', 'almaz', 'hrv', 'crv', 'wrv', 'brv', 'br-v', 'hr-v', 'cr-v', 'wr-v',
-  // Additional models
-  'city', 'freed', 'mobilio', 'odyssey', 'stream', 'fit', 'shuttle', // Honda
-  'agya', 'granmax', 'luxio', 'taruna', 'feroza', // Daihatsu
-  'ranger', 'everest', 'ecosport', 'fiesta', 'focus', // Ford
-  'captiva', 'spin', 'trax', 'trailblazer', 'orlando', // Chevrolet
-  'tiguan', 'polo', 'golf', 'touran', // VW
-  'cx3', 'cx5', 'cx7', 'cx8', 'cx9', 'mazda2', 'mazda3', 'mazda6', 'biante', // Mazda
-  'juke', 'xtrail', 'x-trail', 'navara', 'terra', 'grand', 'march', 'note', // Nissan
-  'tucson', 'santa', 'stargazer', 'creta', 'kona', 'palisade', // Hyundai
-  'sportage', 'seltos', 'sonet', 'sorento', 'carnival', 'carens', // Kia
-  'outlander', 'delica', 'l300', // Mitsubishi
-];
-
-const hasSpecificQuery = searchTerms.some(term =>
-  specificModels.includes(term) ||
-  // Stock code pattern (PM-PST-XXX, PM-XXX, etc.)
-  /^pm-?/i.test(term) ||
-  // Year pattern
-  /^20\d{2}$/.test(term)
-);
-
-// Query vehicles with photos
-// IMPORTANT: If customer asked for SPECIFIC vehicle, only return 1!
-// If generic query, can return up to 3
-const maxVehicles = hasSpecificQuery ? 1 : 3;
-console.log(`[WhatsApp AI Chat] hasSpecificQuery: ${hasSpecificQuery}, maxVehicles: ${maxVehicles}`);
-
-// Build query: each search term must match at least one field (AND logic)
-// This ensures "Honda City" only matches vehicles with BOTH "Honda" AND "City"
-// Filter out year terms - we'll handle them separately
-const yearTerms = searchTerms.filter(term => /^20\d{2}$/.test(term));
-const nonYearTerms = searchTerms.filter(term => !/^20\d{2}$/.test(term));
-
-const termConditions = nonYearTerms.map(term => ({
-  OR: [
-    { make: { contains: term, mode: 'insensitive' as const } },
-    { model: { contains: term, mode: 'insensitive' as const } },
-    { variant: { contains: term, mode: 'insensitive' as const } },
-    { displayId: { contains: term, mode: 'insensitive' as const } },
-    { transmission: { contains: term, mode: 'insensitive' as const } },
-    { fuelType: { contains: term, mode: 'insensitive' as const } },
-    { color: { contains: term, mode: 'insensitive' as const } },
-    { engineCapacity: { contains: term, mode: 'insensitive' as const } },
-  ]
-}));
-
-// Build year condition separately
-const yearCondition = yearTerms.length > 0 ? parseInt(yearTerms[0], 10) : null;
-if (yearCondition) {
-  console.log(`[WhatsApp AI Chat] Added year filter: ${yearCondition}`);
-}
-
-const vehicles = await prisma.vehicle.findMany({
-  where: {
-    tenantId,
-    status: 'AVAILABLE',
-    // AND logic: ALL terms must match (each term can match any field)
-    ...(termConditions.length > 0 && { AND: termConditions }),
-    // Year filter (if specified)
-    ...(yearCondition && { year: yearCondition }),
-  },
-  include: {
-    photos: {
-      orderBy: { isMainPhoto: 'desc' },
-      take: 5, // LIMIT: Max 5 photos to prevent flooding
-    },
-  },
-  take: maxVehicles, // Only 1 for specific query, up to 3 for generic
-});
-
-console.log(`[WhatsApp AI Chat] Found ${vehicles.length} vehicles matching query`);
-vehicles.forEach(v => {
-  console.log(`[WhatsApp AI Chat]   - ${v.make} ${v.model} (${v.year}) | ID: ${v.displayId} | Photos: ${v.photos?.length || 0}`);
-});
-
-if (vehicles.length === 0) {
-  console.log('[WhatsApp AI Chat] ❌ No vehicles found for query:', searchQuery);
-
-  // IMPORTANT: If customer asked for a SPECIFIC vehicle/model, DO NOT fallback
-  // to random vehicles - this confuses customers and sends irrelevant photos!
-  if (hasSpecificQuery) {
-    console.log('[WhatsApp AI Chat] ⚠️ Customer asked for specific vehicle, NOT falling back to random vehicles');
-    return null;
-  }
-
-  // Only fallback to any vehicles if query was very generic (e.g., "mobil", "foto", "stok")
-  console.log('[WhatsApp AI Chat] 🔄 Generic query, trying broader search for any available vehicles...');
-  const anyVehicles = await prisma.vehicle.findMany({
-    where: {
-      tenantId,
-      status: 'AVAILABLE',
-      photos: { some: {} } // ONLY vehicles with photos
-    },
-    include: {
-      photos: {
-        orderBy: { isMainPhoto: 'desc' },
-        // Get ALL photos
-      },
-    },
-    take: 3,
-    orderBy: { createdAt: 'desc' },
-  });
-
-  if (anyVehicles.length === 0) {
-    console.log('[WhatsApp AI Chat] ❌ No vehicles available at all');
-    return null;
-  }
-
-  console.log(`[WhatsApp AI Chat] Found ${anyVehicles.length} vehicles in broader search`);
-  return this.buildImageArray(anyVehicles);
-}
-
-return this.buildImageArray(vehicles);
+    return this.buildImageArray(vehicles);
   }
 
   /**
@@ -2184,101 +2183,101 @@ return this.buildImageArray(vehicles);
    * Used when customer asks for detailed info about a specific vehicle
    */
   private static async fetchVehicleWithDetails(
-  searchQuery: string,
-  tenantId: string
-): Promise < VehicleWithImages | null > {
-  console.log('[WhatsApp AI Chat] 📋 Fetching vehicle with FULL details for:', searchQuery);
+    searchQuery: string,
+    tenantId: string
+  ): Promise<VehicleWithImages | null> {
+    console.log('[WhatsApp AI Chat] 📋 Fetching vehicle with FULL details for:', searchQuery);
 
-  // Parse search query into individual terms and filter out stop words
-  const searchTerms = searchQuery.toLowerCase()
-    .split(/\s+/)
-    .filter(term => term.length > 0 && !WhatsAppAIChatService.INDONESIAN_STOP_WORDS.includes(term));
+    // Parse search query into individual terms and filter out stop words
+    const searchTerms = searchQuery.toLowerCase()
+      .split(/\s+/)
+      .filter(term => term.length > 0 && !WhatsAppAIChatService.INDONESIAN_STOP_WORDS.includes(term));
 
-  console.log('[WhatsApp AI Chat] Cleaned search terms for detail:', searchTerms);
+    console.log('[WhatsApp AI Chat] Cleaned search terms for detail:', searchTerms);
 
-  if(searchTerms.length === 0) return null;
+    if (searchTerms.length === 0) return null;
 
-  // Build AND conditions for search
-  const termConditions = searchTerms.map(term => ({
-    OR: [
-      { make: { contains: term, mode: 'insensitive' as const } },
-      { model: { contains: term, mode: 'insensitive' as const } },
-      { variant: { contains: term, mode: 'insensitive' as const } },
-      { displayId: { contains: term, mode: 'insensitive' as const } },
-    ]
-  }));
+    // Build AND conditions for search
+    const termConditions = searchTerms.map(term => ({
+      OR: [
+        { make: { contains: term, mode: 'insensitive' as const } },
+        { model: { contains: term, mode: 'insensitive' as const } },
+        { variant: { contains: term, mode: 'insensitive' as const } },
+        { displayId: { contains: term, mode: 'insensitive' as const } },
+      ]
+    }));
 
-  const vehicle = await prisma.vehicle.findFirst({
-    where: {
-      tenantId,
-      status: 'AVAILABLE',
-      ...(termConditions.length > 0 && { AND: termConditions }),
-    },
-    select: {
-      id: true,
-      make: true,
-      model: true,
-      variant: true,
-      year: true,
-      price: true,
-      mileage: true,
-      transmissionType: true,
-      fuelType: true,
-      color: true,
-      condition: true,
-      descriptionId: true,
-      features: true,
-      engineCapacity: true,
-      displayId: true,
-      photos: {
-        orderBy: [{ isMainPhoto: 'desc' }, { displayOrder: 'asc' }],
+    const vehicle = await prisma.vehicle.findFirst({
+      where: {
+        tenantId,
+        status: 'AVAILABLE',
+        ...(termConditions.length > 0 && { AND: termConditions }),
       },
-    }
-  }) as any;
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        variant: true,
+        year: true,
+        price: true,
+        mileage: true,
+        transmissionType: true,
+        fuelType: true,
+        color: true,
+        condition: true,
+        descriptionId: true,
+        features: true,
+        engineCapacity: true,
+        displayId: true,
+        photos: {
+          orderBy: [{ isMainPhoto: 'desc' }, { displayOrder: 'asc' }],
+        },
+      }
+    }) as any;
 
-  if(!vehicle) {
-    console.log('[WhatsApp AI Chat] ❌ No vehicle found for detailed query');
-    return null;
-  }
+    if (!vehicle) {
+      console.log('[WhatsApp AI Chat] ❌ No vehicle found for detailed query');
+      return null;
+    }
 
     console.log(`[WhatsApp AI Chat] ✅ Found vehicle: ${vehicle.make} ${vehicle.model} with ${vehicle.photos.length} photos`);
 
-  // Build image array for this vehicle
-  const images = this.buildImageArray([vehicle]);
-  if(!images || images.length === 0) {
-  return null;
-}
+    // Build image array for this vehicle
+    const images = this.buildImageArray([vehicle]);
+    if (!images || images.length === 0) {
+      return null;
+    }
 
-// Parse features from JSON if available
-let features: string[] = [];
-if (vehicle.features) {
-  try {
-    features = Array.isArray(vehicle.features) ? (vehicle.features as string[]) : [];
-  } catch {
-    features = [];
-  }
-}
+    // Parse features from JSON if available
+    let features: string[] = [];
+    if (vehicle.features) {
+      try {
+        features = Array.isArray(vehicle.features) ? (vehicle.features as string[]) : [];
+      } catch {
+        features = [];
+      }
+    }
 
-return {
-  vehicle: {
-    id: vehicle.id,
-    make: vehicle.make,
-    model: vehicle.model,
-    variant: vehicle.variant || undefined,
-    year: vehicle.year,
-    price: Number(vehicle.price),
-    mileage: vehicle.mileage || undefined,
-    transmissionType: vehicle.transmissionType || undefined,
-    fuelType: vehicle.fuelType || undefined,
-    color: vehicle.color || undefined,
-    condition: vehicle.condition || undefined,
-    descriptionId: vehicle.descriptionId || undefined,
-    features,
-    engineCapacity: vehicle.engineCapacity || undefined,
-    displayId: vehicle.displayId || undefined,
-  },
-  images,
-};
+    return {
+      vehicle: {
+        id: vehicle.id,
+        make: vehicle.make,
+        model: vehicle.model,
+        variant: vehicle.variant || undefined,
+        year: vehicle.year,
+        price: Number(vehicle.price),
+        mileage: vehicle.mileage || undefined,
+        transmissionType: vehicle.transmissionType || undefined,
+        fuelType: vehicle.fuelType || undefined,
+        color: vehicle.color || undefined,
+        condition: vehicle.condition || undefined,
+        descriptionId: vehicle.descriptionId || undefined,
+        features,
+        engineCapacity: vehicle.engineCapacity || undefined,
+        displayId: vehicle.displayId || undefined,
+      },
+      images,
+    };
   }
 
   /**
@@ -2286,489 +2285,489 @@ return {
    * Includes all specs, features, and condition info
    */
   private static buildVehicleDetailMessage(vehicleData: VehicleWithImages['vehicle']): string {
-  const v = vehicleData;
-  const priceFormatted = this.formatPrice(v.price);
+    const v = vehicleData;
+    const priceFormatted = this.formatPrice(v.price);
 
-  let message = `📋 *DETAIL ${v.make.toUpperCase()} ${v.model.toUpperCase()} ${v.variant ? v.variant.toUpperCase() : ''} ${v.year}*\n`;
-  message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    let message = `📋 *DETAIL ${v.make.toUpperCase()} ${v.model.toUpperCase()} ${v.variant ? v.variant.toUpperCase() : ''} ${v.year}*\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  // Basic specs
-  message += `🚗 *Spesifikasi:*\n`;
-  message += `• ID Unit: ${v.displayId || 'Pusat'}\n`;
-  message += `• Merek: ${v.make}\n`;
-  message += `• Model: ${v.model}${v.variant ? ` (${v.variant})` : ''}\n`;
-  message += `• Tahun: ${v.year}\n`;
-  message += `• Harga: Rp ${priceFormatted}\n`;
+    // Basic specs
+    message += `🚗 *Spesifikasi:*\n`;
+    message += `• ID Unit: ${v.displayId || 'Pusat'}\n`;
+    message += `• Merek: ${v.make}\n`;
+    message += `• Model: ${v.model}${v.variant ? ` (${v.variant})` : ''}\n`;
+    message += `• Tahun: ${v.year}\n`;
+    message += `• Harga: Rp ${priceFormatted}\n`;
 
-  if (v.mileage) {
-    message += `• Kilometer: ${v.mileage.toLocaleString('id-ID')} km\n`;
-  }
-  if (v.transmissionType) {
-    const trans = v.transmissionType.toLowerCase() === 'automatic' ? 'Automatic (AT)' : 'Manual (MT)';
-    message += `• Transmisi: ${trans}\n`;
-  }
-  if (v.fuelType) {
-    message += `• Bahan Bakar: ${v.fuelType}\n`;
-  }
-  if (v.color) {
-    message += `• Warna: ${v.color}\n`;
-  }
-  if (v.engineCapacity) {
-    message += `• Mesin: ${v.engineCapacity}\n`;
-  }
-  if (v.condition) {
-    const conditionMap: Record<string, string> = {
-      'excellent': 'Sangat Baik',
-      'good': 'Baik',
-      'fair': 'Cukup',
-      'poor': 'Perlu Perbaikan'
-    };
-    message += `• Kondisi: ${conditionMap[v.condition.toLowerCase()] || v.condition}\n`;
-  }
-
-  // Description if available
-  if (v.descriptionId) {
-    message += `\n📝 *Deskripsi:*\n`;
-    // Truncate if too long for WhatsApp
-    const desc = v.descriptionId.length > 500 ? v.descriptionId.substring(0, 500) + '...' : v.descriptionId;
-    message += `${desc}\n`;
-  }
-
-  // Features if available
-  if (v.features && v.features.length > 0) {
-    message += `\n✨ *Fitur:*\n`;
-    v.features.slice(0, 8).forEach(f => {
-      message += `• ${f}\n`;
-    });
-    if (v.features.length > 8) {
-      message += `• ... dan ${v.features.length - 8} fitur lainnya\n`;
+    if (v.mileage) {
+      message += `• Kilometer: ${v.mileage.toLocaleString('id-ID')} km\n`;
     }
+    if (v.transmissionType) {
+      const trans = v.transmissionType.toLowerCase() === 'automatic' ? 'Automatic (AT)' : 'Manual (MT)';
+      message += `• Transmisi: ${trans}\n`;
+    }
+    if (v.fuelType) {
+      message += `• Bahan Bakar: ${v.fuelType}\n`;
+    }
+    if (v.color) {
+      message += `• Warna: ${v.color}\n`;
+    }
+    if (v.engineCapacity) {
+      message += `• Mesin: ${v.engineCapacity}\n`;
+    }
+    if (v.condition) {
+      const conditionMap: Record<string, string> = {
+        'excellent': 'Sangat Baik',
+        'good': 'Baik',
+        'fair': 'Cukup',
+        'poor': 'Perlu Perbaikan'
+      };
+      message += `• Kondisi: ${conditionMap[v.condition.toLowerCase()] || v.condition}\n`;
+    }
+
+    // Description if available
+    if (v.descriptionId) {
+      message += `\n📝 *Deskripsi:*\n`;
+      // Truncate if too long for WhatsApp
+      const desc = v.descriptionId.length > 500 ? v.descriptionId.substring(0, 500) + '...' : v.descriptionId;
+      message += `${desc}\n`;
+    }
+
+    // Features if available
+    if (v.features && v.features.length > 0) {
+      message += `\n✨ *Fitur:*\n`;
+      v.features.slice(0, 8).forEach(f => {
+        message += `• ${f}\n`;
+      });
+      if (v.features.length > 8) {
+        message += `• ... dan ${v.features.length - 8} fitur lainnya\n`;
+      }
+    }
+
+    message += `\n📸 Berikut foto-foto unitnya 👇`;
+
+    return message;
   }
-
-  message += `\n📸 Berikut foto-foto unitnya 👇`;
-
-  return message;
-}
 
   /**
    * Build image array from vehicles with proper URL handling
    */
   private static buildImageArray(vehicles: any[]): Array<{ imageUrl: string; caption?: string }> | null {
-  // Build image array with fallback URLs
-  // Convert relative URLs to full URLs for Aimeow
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
-  console.log(`[WhatsApp AI Chat] Base URL for images: ${baseUrl}`);
+    // Build image array with fallback URLs
+    // Convert relative URLs to full URLs for Aimeow
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+    console.log(`[WhatsApp AI Chat] Base URL for images: ${baseUrl}`);
 
-  const images: Array<{ imageUrl: string; caption?: string }> = [];
+    const images: Array<{ imageUrl: string; caption?: string }> = [];
 
-  for (const v of vehicles) {
-    console.log(`[WhatsApp AI Chat] Processing vehicle: ${v.make} ${v.model} ${v.year}`);
-    console.log(`[WhatsApp AI Chat] Photos count: ${v.photos?.length || 0}`);
+    for (const v of vehicles) {
+      console.log(`[WhatsApp AI Chat] Processing vehicle: ${v.make} ${v.model} ${v.year}`);
+      console.log(`[WhatsApp AI Chat] Photos count: ${v.photos?.length || 0}`);
 
-    if (!v.photos || v.photos.length === 0) {
-      console.log(`[WhatsApp AI Chat] ⚠️ No photos for ${v.make} ${v.model}`);
-      continue;
-    }
-
-    // Loop through ALL photos for this vehicle (not just the first one)
-    // This sends interior, exterior, dashboard, etc. as requested by customer
-    for (let photoIndex = 0; photoIndex < v.photos.length; photoIndex++) {
-      const photo = v.photos[photoIndex];
-      console.log(`[WhatsApp AI Chat] Photo ${photoIndex + 1}/${v.photos.length}:`, {
-        id: photo.id,
-        isMainPhoto: photo.isMainPhoto,
-        originalUrl: photo.originalUrl?.substring(0, 100),
-      });
-
-      // Prioritize JPG (originalUrl) for better WhatsApp mobile compatibility
-      // WebP format (medium/large) may not display on some mobile devices
-      // Fallback: originalUrl (JPG) → largeUrl → mediumUrl
-      let imageUrl = photo.originalUrl || photo.largeUrl || photo.mediumUrl;
-
-      if (!imageUrl) {
-        console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for photo ${photoIndex + 1}`);
+      if (!v.photos || v.photos.length === 0) {
+        console.log(`[WhatsApp AI Chat] ⚠️ No photos for ${v.make} ${v.model}`);
         continue;
       }
 
-      // Convert relative URL to full URL
-      if (imageUrl.startsWith('/')) {
-        imageUrl = `${baseUrl}${imageUrl}`;
+      // Loop through ALL photos for this vehicle (not just the first one)
+      // This sends interior, exterior, dashboard, etc. as requested by customer
+      for (let photoIndex = 0; photoIndex < v.photos.length; photoIndex++) {
+        const photo = v.photos[photoIndex];
+        console.log(`[WhatsApp AI Chat] Photo ${photoIndex + 1}/${v.photos.length}:`, {
+          id: photo.id,
+          isMainPhoto: photo.isMainPhoto,
+          originalUrl: photo.originalUrl?.substring(0, 100),
+        });
+
+        // Prioritize JPG (originalUrl) for better WhatsApp mobile compatibility
+        // WebP format (medium/large) may not display on some mobile devices
+        // Fallback: originalUrl (JPG) → largeUrl → mediumUrl
+        let imageUrl = photo.originalUrl || photo.largeUrl || photo.mediumUrl;
+
+        if (!imageUrl) {
+          console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for photo ${photoIndex + 1}`);
+          continue;
+        }
+
+        // Convert relative URL to full URL
+        if (imageUrl.startsWith('/')) {
+          imageUrl = `${baseUrl}${imageUrl}`;
+        }
+
+        // Ensure URL is properly encoded (handle spaces, special chars)
+        try {
+          const url = new URL(imageUrl);
+          imageUrl = url.toString();
+        } catch (e) {
+          console.log(`[WhatsApp AI Chat] ⚠️ Invalid URL format, using as-is: ${imageUrl}`);
+        }
+
+        // Caption: only show full details on first photo, simpler for rest
+        const id = v.displayId || v.id.substring(0, 8).toUpperCase();
+        const caption = photoIndex === 0
+          ? `${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} | ${id} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
+          : `${v.make} ${v.model} ${v.year} | ${id} (${photoIndex + 1}/${v.photos.length})`;
+
+        images.push({ imageUrl, caption });
       }
-
-      // Ensure URL is properly encoded (handle spaces, special chars)
-      try {
-        const url = new URL(imageUrl);
-        imageUrl = url.toString();
-      } catch (e) {
-        console.log(`[WhatsApp AI Chat] ⚠️ Invalid URL format, using as-is: ${imageUrl}`);
-      }
-
-      // Caption: only show full details on first photo, simpler for rest
-      const id = v.displayId || v.id.substring(0, 8).toUpperCase();
-      const caption = photoIndex === 0
-        ? `${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} | ${id} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
-        : `${v.make} ${v.model} ${v.year} | ${id} (${photoIndex + 1}/${v.photos.length})`;
-
-      images.push({ imageUrl, caption });
+      console.log(`[WhatsApp AI Chat] ✅ Added ${v.photos.length} photos for ${v.make} ${v.model}`);
     }
-    console.log(`[WhatsApp AI Chat] ✅ Added ${v.photos.length} photos for ${v.make} ${v.model}`);
+
+    console.log(`[WhatsApp AI Chat] ✅ Prepared ${images.length} vehicle images to send`);
+    console.log(`[WhatsApp AI Chat] Image URLs:`, images.map(i => i.imageUrl));
+
+    if (images.length === 0) {
+      console.log('[WhatsApp AI Chat] ⚠️ Vehicles found but no photos available');
+      return null;
+    }
+
+    return images;
   }
-
-  console.log(`[WhatsApp AI Chat] ✅ Prepared ${images.length} vehicle images to send`);
-  console.log(`[WhatsApp AI Chat] Image URLs:`, images.map(i => i.imageUrl));
-
-  if (images.length === 0) {
-    console.log('[WhatsApp AI Chat] ⚠️ Vehicles found but no photos available');
-    return null;
-  }
-
-  return images;
-}
 
   /**
    * Search vehicles by criteria (budget, make, transmission, year, fuel type, etc.)
    */
   private static async searchVehiclesByCriteria(
-  tenantId: string,
-  criteria: {
-  min_price?: number;
-  max_price?: number;
-  make?: string;
-  transmission?: string;
-  min_year?: number;
-  max_year?: number;
-  fuel_type?: string;
-  sort_by?: string;
-  limit?: number;
-}
-) {
-  console.log('[WhatsApp AI Chat] 🔍 Searching vehicles with criteria:', criteria);
-
-  // Build where clause
-  const where: any = {
-    tenantId,
-    status: 'AVAILABLE',
-  };
-
-  // Price filter (price in DB is already in Rupiah, not cents)
-  if (criteria.min_price || criteria.max_price) {
-    where.price = {};
-    if (criteria.min_price) {
-      where.price.gte = BigInt(criteria.min_price);
+    tenantId: string,
+    criteria: {
+      min_price?: number;
+      max_price?: number;
+      make?: string;
+      transmission?: string;
+      min_year?: number;
+      max_year?: number;
+      fuel_type?: string;
+      sort_by?: string;
+      limit?: number;
     }
-    if (criteria.max_price) {
-      where.price.lte = BigInt(criteria.max_price);
+  ) {
+    console.log('[WhatsApp AI Chat] 🔍 Searching vehicles with criteria:', criteria);
+
+    // Build where clause
+    const where: any = {
+      tenantId,
+      status: 'AVAILABLE',
+    };
+
+    // Price filter (price in DB is already in Rupiah, not cents)
+    if (criteria.min_price || criteria.max_price) {
+      where.price = {};
+      if (criteria.min_price) {
+        where.price.gte = BigInt(criteria.min_price);
+      }
+      if (criteria.max_price) {
+        where.price.lte = BigInt(criteria.max_price);
+      }
     }
-  }
 
-  // Make/Model/Search filter
-  if (criteria.make) {
-    const term = criteria.make;
-    where.OR = [
-      { make: { contains: term, mode: 'insensitive' } },
-      { model: { contains: term, mode: 'insensitive' } },
-      { variant: { contains: term, mode: 'insensitive' } },
-      { displayId: { contains: term, mode: 'insensitive' } },
-    ];
-  }
-
-  // Transmission filter
-  if (criteria.transmission) {
-    const trans = criteria.transmission.toLowerCase();
-    if (trans === 'manual' || trans === 'mt') {
-      where.transmissionType = { contains: 'manual', mode: 'insensitive' };
-    } else if (trans === 'automatic' || trans === 'matic' || trans === 'at' || trans === 'cvt') {
-      // Use AND with OR for automatic variants to avoid overwriting existing OR conditions
-      where.AND = where.AND || [];
-      where.AND.push({
-        OR: [
-          { transmissionType: { contains: 'automatic', mode: 'insensitive' } },
-          { transmissionType: { contains: 'matic', mode: 'insensitive' } },
-          { transmissionType: { contains: 'cvt', mode: 'insensitive' } },
-        ],
-      });
+    // Make/Model/Search filter
+    if (criteria.make) {
+      const term = criteria.make;
+      where.OR = [
+        { make: { contains: term, mode: 'insensitive' } },
+        { model: { contains: term, mode: 'insensitive' } },
+        { variant: { contains: term, mode: 'insensitive' } },
+        { displayId: { contains: term, mode: 'insensitive' } },
+      ];
     }
-  }
 
-  // Year filter
-  if (criteria.min_year || criteria.max_year) {
-    where.year = {};
-    if (criteria.min_year) {
-      where.year.gte = criteria.min_year;
+    // Transmission filter
+    if (criteria.transmission) {
+      const trans = criteria.transmission.toLowerCase();
+      if (trans === 'manual' || trans === 'mt') {
+        where.transmissionType = { contains: 'manual', mode: 'insensitive' };
+      } else if (trans === 'automatic' || trans === 'matic' || trans === 'at' || trans === 'cvt') {
+        // Use AND with OR for automatic variants to avoid overwriting existing OR conditions
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            { transmissionType: { contains: 'automatic', mode: 'insensitive' } },
+            { transmissionType: { contains: 'matic', mode: 'insensitive' } },
+            { transmissionType: { contains: 'cvt', mode: 'insensitive' } },
+          ],
+        });
+      }
     }
-    if (criteria.max_year) {
-      where.year.lte = criteria.max_year;
+
+    // Year filter
+    if (criteria.min_year || criteria.max_year) {
+      where.year = {};
+      if (criteria.min_year) {
+        where.year.gte = criteria.min_year;
+      }
+      if (criteria.max_year) {
+        where.year.lte = criteria.max_year;
+      }
     }
-  }
 
-  // Fuel type filter
-  if (criteria.fuel_type) {
-    where.fuelType = { contains: criteria.fuel_type, mode: 'insensitive' };
-  }
-
-  // Build order by
-  let orderBy: any = { createdAt: 'desc' }; // default: newest
-  if (criteria.sort_by) {
-    switch (criteria.sort_by) {
-      case 'newest':
-        orderBy = { createdAt: 'desc' };
-        break;
-      case 'oldest':
-        orderBy = { createdAt: 'asc' };
-        break;
-      case 'price_low':
-        orderBy = { price: 'asc' };
-        break;
-      case 'price_high':
-        orderBy = { price: 'desc' };
-        break;
-      case 'mileage_low':
-        orderBy = { mileage: 'asc' };
-        break;
+    // Fuel type filter
+    if (criteria.fuel_type) {
+      where.fuelType = { contains: criteria.fuel_type, mode: 'insensitive' };
     }
+
+    // Build order by
+    let orderBy: any = { createdAt: 'desc' }; // default: newest
+    if (criteria.sort_by) {
+      switch (criteria.sort_by) {
+        case 'newest':
+          orderBy = { createdAt: 'desc' };
+          break;
+        case 'oldest':
+          orderBy = { createdAt: 'asc' };
+          break;
+        case 'price_low':
+          orderBy = { price: 'asc' };
+          break;
+        case 'price_high':
+          orderBy = { price: 'desc' };
+          break;
+        case 'mileage_low':
+          orderBy = { mileage: 'asc' };
+          break;
+      }
+    }
+
+    const vehicles = await prisma.vehicle.findMany({
+      where,
+      orderBy,
+      take: criteria.limit || 5,
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        variant: true,
+        year: true,
+        price: true,
+        mileage: true,
+        transmissionType: true,
+        fuelType: true,
+        color: true,
+        displayId: true,
+      },
+    });
+
+    console.log(`[WhatsApp AI Chat] Found ${vehicles.length} vehicles matching criteria`);
+    return vehicles;
   }
-
-  const vehicles = await prisma.vehicle.findMany({
-    where,
-    orderBy,
-    take: criteria.limit || 5,
-    select: {
-      id: true,
-      make: true,
-      model: true,
-      variant: true,
-      year: true,
-      price: true,
-      mileage: true,
-      transmissionType: true,
-      fuelType: true,
-      color: true,
-      displayId: true,
-    },
-  });
-
-  console.log(`[WhatsApp AI Chat] Found ${vehicles.length} vehicles matching criteria`);
-  return vehicles;
-}
 
   /**
    * Get conversation history untuk context building
    */
   static async getConversationHistory(
-  conversationId: string,
-  limit: number = 5
-): Promise < Array < { role: "user" | "assistant"; content: string } >> {
-  const messages = await prisma.whatsAppMessage.findMany({
-    where: { conversationId },
-    orderBy: { createdAt: "desc" },
-    take: limit,
-    select: {
-      direction: true,
-      content: true,
-    },
-  });
+    conversationId: string,
+    limit: number = 5
+  ): Promise<Array<{ role: "user" | "assistant"; content: string }>> {
+    const messages = await prisma.whatsAppMessage.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        direction: true,
+        content: true,
+      },
+    });
 
-  // Reverse untuk chronological order
-  return messages.reverse().map((msg) => ({
-    role: msg.direction === "inbound" ? ("user" as const) : ("assistant" as const),
-    content: msg.content,
-  }));
-}
+    // Reverse untuk chronological order
+    return messages.reverse().map((msg) => ({
+      role: msg.direction === "inbound" ? ("user" as const) : ("assistant" as const),
+      content: msg.content,
+    }));
+  }
 
   /**
    * FALLBACK: Detect edit intent from user message when AI doesn't call the tool
    * Parses messages like "rubah km 50000", "ganti bensin jadi diesel", etc.
    */
   private static detectEditIntentFromText(
-  aiResponse: string,
-  userMessage: string
-): { vehicleId ?: string; field: string; oldValue ?: string; newValue: string } | null {
-  const msg = userMessage.toLowerCase().trim();
+    aiResponse: string,
+    userMessage: string
+  ): { vehicleId?: string; field: string; oldValue?: string; newValue: string } | null {
+    const msg = userMessage.toLowerCase().trim();
 
-  // Check if this looks like an edit request
-  const editKeywords = ['rubah', 'ganti', 'ubah', 'update', 'edit', 'koreksi', 'perbaiki'];
-  const hasEditKeyword = editKeywords.some(k => msg.includes(k));
-  if (!hasEditKeyword) return null;
+    // Check if this looks like an edit request
+    const editKeywords = ['rubah', 'ganti', 'ubah', 'update', 'edit', 'koreksi', 'perbaiki'];
+    const hasEditKeyword = editKeywords.some(k => msg.includes(k));
+    if (!hasEditKeyword) return null;
 
-  // Also check if AI response indicates it understood as edit
-  const aiIndicatesEdit = aiResponse.toLowerCase().includes('mengubah') ||
-    aiResponse.toLowerCase().includes('mengganti') ||
-    aiResponse.toLowerCase().includes('update');
-  if (!aiIndicatesEdit && !hasEditKeyword) return null;
+    // Also check if AI response indicates it understood as edit
+    const aiIndicatesEdit = aiResponse.toLowerCase().includes('mengubah') ||
+      aiResponse.toLowerCase().includes('mengganti') ||
+      aiResponse.toLowerCase().includes('update');
+    if (!aiIndicatesEdit && !hasEditKeyword) return null;
 
-  // Extract vehicle ID if mentioned (PM-PST-XXX format)
-  const vehicleIdMatch = msg.match(/pm-\w+-\d+/i);
-  const vehicleId = vehicleIdMatch ? vehicleIdMatch[0].toUpperCase() : undefined;
+    // Extract vehicle ID if mentioned (PM-PST-XXX format)
+    const vehicleIdMatch = msg.match(/pm-\w+-\d+/i);
+    const vehicleId = vehicleIdMatch ? vehicleIdMatch[0].toUpperCase() : undefined;
 
-  // Field detection patterns
-  const fuelTypesRegex = '(?:bensin|diesel|hybrid|electric|listrik|solar)';
-  const transmissionRegex = '(?:matic|manual|automatic|cvt|at|mt)';
-  const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas|ungu|merah muda|pink|cokelat|krem|cream|beige|champagne|tembaga|bronze|titanium|magnesium)';
+    // Field detection patterns
+    const fuelTypesRegex = '(?:bensin|diesel|hybrid|electric|listrik|solar)';
+    const transmissionRegex = '(?:matic|manual|automatic|cvt|at|mt)';
+    const colorsRegex = '(?:biru|merah|hitam|putih|silver|abu-abu|abu|hijau|kuning|coklat|metalik|jingga|orange|gold|emas|ungu|merah muda|pink|cokelat|krem|cream|beige|champagne|tembaga|bronze|titanium|magnesium)';
 
-  const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
-    // 1. Price: "rubah harga 150jt", "update 200jt" (require jt/juta or 'harga')
-    {
-      pattern: /(?:rubah|ganti|ubah|update)(?:\s+.*?)\s*(?:harga)?\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta))/i,
-      field: 'price',
-      valueExtractor: m => {
-        const val = m[1].toLowerCase();
-        return String(parseInt(val) * 1000000);
+    const patterns: Array<{ pattern: RegExp; field: string; valueExtractor: (m: RegExpMatchArray) => string }> = [
+      // 1. Price: "rubah harga 150jt", "update 200jt" (require jt/juta or 'harga')
+      {
+        pattern: /(?:rubah|ganti|ubah|update)(?:\s+.*?)\s*(?:harga)?\s*(?:ke|jadi|menjadi)?\s*(\d+(?:jt|juta))/i,
+        field: 'price',
+        valueExtractor: m => {
+          const val = m[1].toLowerCase();
+          return String(parseInt(val) * 1000000);
+        }
+      },
+      {
+        pattern: /(?:rubah|ganti|ubah|update)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+)/i,
+        field: 'price',
+        valueExtractor: m => m[1]
+      },
+
+      // 2. Year: "ubah tahun 2017", "ganti jadi 2018"
+      { pattern: /(?:rubah|ganti|ubah|update)\s*tahun\s*(?:ke|jadi|menjadi)?\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
+
+      // 3. Fuel type: "ganti diesel", "rubah ke hybrid"
+      {
+        pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:bahan\\s*bakar|fuel)?\\s*(?:ke|jadi|menjadi)?\\s*(${fuelTypesRegex})`, 'i'),
+        field: 'fuelType',
+        valueExtractor: m => m[1]
+      },
+
+      // 4. Transmission: "ganti jadi manual", "ubah transmisi matic"
+      {
+        pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:transmisi)?\\s*(?:ke|jadi|menjadi)?\\s*(${transmissionRegex})`, 'i'),
+        field: 'transmissionType',
+        valueExtractor: m => {
+          const val = m[1].toLowerCase();
+          if (val === 'matic' || val === 'at' || val === 'automatic' || val === 'cvt') return 'automatic';
+          if (val === 'manual' || val === 'mt') return 'manual';
+          return val;
+        }
+      },
+
+      // 5. Mileage: "ubah km 50000", "ganti jadi 30000 km"
+      { pattern: /(?:rubah|ganti|ubah|update)\s*(?:km|kilometer|odometer)\s*(?:ke|jadi|menjadi)?\s*(\d+)\s*(?:km)?/i, field: 'mileage', valueExtractor: m => m[1] },
+
+      // 6. Color: "ganti jadi merah", "rubah warna biru"
+      {
+        pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:warna)?\\s*(?:ke|jadi|menjadi)?\\s*(${colorsRegex})`, 'i'),
+        field: 'color',
+        valueExtractor: m => m[1]
+      },
+
+      // 7. Engine capacity: "ubah cc ke 1500", "ganti kapasitas mesin 1497"
+      { pattern: /(?:rubah|ganti|ubah)\s*(?:cc|kapasitas\s*mesin)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'engineCapacity', valueExtractor: m => m[1] },
+    ];
+
+    // Use msgWithoutId for field pattern matching to avoid ID numbers (like 001)
+    // interfering with field values (like mileage or year)
+    const msgForFields = msg.replace(/pm-\w+-\d+/gi, '').replace(/\s+/g, ' ').trim();
+
+    for (const { pattern, field, valueExtractor } of patterns) {
+      const match = msgForFields.match(pattern);
+      if (match) {
+        const newValue = valueExtractor(match);
+        console.log(`[WhatsApp AI Chat] Fallback detected edit: field=${field}, newValue=${newValue}, vehicleId=${vehicleId || 'from context'}`);
+        return { vehicleId, field, newValue };
       }
-    },
-    {
-      pattern: /(?:rubah|ganti|ubah|update)\s*harga\s*(?:ke|jadi|menjadi)?\s*(\d+)/i,
-      field: 'price',
-      valueExtractor: m => m[1]
-    },
-
-    // 2. Year: "ubah tahun 2017", "ganti jadi 2018"
-    { pattern: /(?:rubah|ganti|ubah|update)\s*tahun\s*(?:ke|jadi|menjadi)?\s*(\d{4})/i, field: 'year', valueExtractor: m => m[1] },
-
-    // 3. Fuel type: "ganti diesel", "rubah ke hybrid"
-    {
-      pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:bahan\\s*bakar|fuel)?\\s*(?:ke|jadi|menjadi)?\\s*(${fuelTypesRegex})`, 'i'),
-      field: 'fuelType',
-      valueExtractor: m => m[1]
-    },
-
-    // 4. Transmission: "ganti jadi manual", "ubah transmisi matic"
-    {
-      pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:transmisi)?\\s*(?:ke|jadi|menjadi)?\\s*(${transmissionRegex})`, 'i'),
-      field: 'transmissionType',
-      valueExtractor: m => {
-        const val = m[1].toLowerCase();
-        if (val === 'matic' || val === 'at' || val === 'automatic' || val === 'cvt') return 'automatic';
-        if (val === 'manual' || val === 'mt') return 'manual';
-        return val;
-      }
-    },
-
-    // 5. Mileage: "ubah km 50000", "ganti jadi 30000 km"
-    { pattern: /(?:rubah|ganti|ubah|update)\s*(?:km|kilometer|odometer)\s*(?:ke|jadi|menjadi)?\s*(\d+)\s*(?:km)?/i, field: 'mileage', valueExtractor: m => m[1] },
-
-    // 6. Color: "ganti jadi merah", "rubah warna biru"
-    {
-      pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:warna)?\\s*(?:ke|jadi|menjadi)?\\s*(${colorsRegex})`, 'i'),
-      field: 'color',
-      valueExtractor: m => m[1]
-    },
-
-    // 7. Engine capacity: "ubah cc ke 1500", "ganti kapasitas mesin 1497"
-    { pattern: /(?:rubah|ganti|ubah)\s*(?:cc|kapasitas\s*mesin)\s*(?:ke|jadi|menjadi)?\s*(\d+)/i, field: 'engineCapacity', valueExtractor: m => m[1] },
-  ];
-
-  // Use msgWithoutId for field pattern matching to avoid ID numbers (like 001)
-  // interfering with field values (like mileage or year)
-  const msgForFields = msg.replace(/pm-\w+-\d+/gi, '').replace(/\s+/g, ' ').trim();
-
-  for (const { pattern, field, valueExtractor } of patterns) {
-    const match = msgForFields.match(pattern);
-    if (match) {
-      const newValue = valueExtractor(match);
-      console.log(`[WhatsApp AI Chat] Fallback detected edit: field=${field}, newValue=${newValue}, vehicleId=${vehicleId || 'from context'}`);
-      return { vehicleId, field, newValue };
     }
-  }
 
-  return null;
-}
+    return null;
+  }
 
   /**
    * Calculate KKB Simulation
    * Provides installment estimates for various leasing partners
    */
   private static calculateKKBSimulation(
-  vehiclePrice: number,
-  inputDpAmount ?: number | null,
-  inputDpPercentage ?: number | null,
-  inputTenor ?: number | null,
-  options ?: { hideSyarat?: boolean; hideTitle?: boolean; hideHeader?: boolean }
-): string {
-  // 1. Determine DP
-  let dpAmount = 0;
-  let dpPercentage = 30; // Default 30%
+    vehiclePrice: number,
+    inputDpAmount?: number | null,
+    inputDpPercentage?: number | null,
+    inputTenor?: number | null,
+    options?: { hideSyarat?: boolean; hideTitle?: boolean; hideHeader?: boolean }
+  ): string {
+    // 1. Determine DP
+    let dpAmount = 0;
+    let dpPercentage = 30; // Default 30%
 
-  if (inputDpAmount) {
-    dpAmount = inputDpAmount;
-    dpPercentage = Math.round((dpAmount / vehiclePrice) * 100);
-  } else if (inputDpPercentage) {
-    dpPercentage = inputDpPercentage;
-    dpAmount = vehiclePrice * (dpPercentage / 100);
-  } else {
-    // Default
-    dpAmount = vehiclePrice * 0.3;
-  }
+    if (inputDpAmount) {
+      dpAmount = inputDpAmount;
+      dpPercentage = Math.round((dpAmount / vehiclePrice) * 100);
+    } else if (inputDpPercentage) {
+      dpPercentage = inputDpPercentage;
+      dpAmount = vehiclePrice * (dpPercentage / 100);
+    } else {
+      // Default
+      dpAmount = vehiclePrice * 0.3;
+    }
 
-  const principal = vehiclePrice - dpAmount;
+    const principal = vehiclePrice - dpAmount;
 
-  // 2. Define Leasing Rates (Estimasi Flat Rate per Tahun untuk Mobil Bekas)
-  // Rate biasanya naik seiring panjang tenor
-  const baseRates: Record<string, number[]> = {
-    // Tenor: 1, 2, 3, 4, 5 tahun (array index 0-4)
-    "BCA Finance": [4.5, 5.0, 5.5, 6.25, 7.0],
-    "Adira Finance": [8.0, 8.5, 9.0, 10.0, 11.0],
-    "WOM Finance": [8.5, 9.0, 9.5, 10.5, 11.5],
-    "Indomobil Finance": [7.5, 8.0, 8.5, 9.5, 10.5],
-    "Seva.id (Priority)": [6.0, 6.5, 7.0, 8.0, 9.0]
-  };
+    // 2. Define Leasing Rates (Estimasi Flat Rate per Tahun untuk Mobil Bekas)
+    // Rate biasanya naik seiring panjang tenor
+    const baseRates: Record<string, number[]> = {
+      // Tenor: 1, 2, 3, 4, 5 tahun (array index 0-4)
+      "BCA Finance": [4.5, 5.0, 5.5, 6.25, 7.0],
+      "Adira Finance": [8.0, 8.5, 9.0, 10.0, 11.0],
+      "WOM Finance": [8.5, 9.0, 9.5, 10.5, 11.5],
+      "Indomobil Finance": [7.5, 8.0, 8.5, 9.5, 10.5],
+      "Seva.id (Priority)": [6.0, 6.5, 7.0, 8.0, 9.0]
+    };
 
-  // 3. Determine Tenors to calculate
-  const tenors = inputTenor ? [inputTenor] : [3, 4, 5]; // Default calculate for 3, 4, 5 years if not specified
+    // 3. Determine Tenors to calculate
+    const tenors = inputTenor ? [inputTenor] : [3, 4, 5]; // Default calculate for 3, 4, 5 years if not specified
 
-  // 4. Build Result String
-  const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString('id-ID');
+    // 4. Build Result String
+    const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString('id-ID');
 
-  let result = options?.hideTitle ? "" : `📊 *SIMULASI KREDIT (KKB)*\n`;
-  if (!options?.hideHeader) {
-    result += `Harga Mobil: ${formatRp(vehiclePrice)}\n`;
-  }
-  result += `DP (${dpPercentage}%): ${formatRp(dpAmount)}\n`;
-  if (!options?.hideHeader) {
-    result += `Pokok Hutang: ${formatRp(principal)}\n\n`;
-  }
+    let result = options?.hideTitle ? "" : `📊 *SIMULASI KREDIT (KKB)*\n`;
+    if (!options?.hideHeader) {
+      result += `Harga Mobil: ${formatRp(vehiclePrice)}\n`;
+    }
+    result += `DP (${dpPercentage}%): ${formatRp(dpAmount)}\n`;
+    if (!options?.hideHeader) {
+      result += `Pokok Hutang: ${formatRp(principal)}\n\n`;
+    }
 
-  result += `*Est. Angsuran per Bulan:*\n`;
+    result += `*Est. Angsuran per Bulan:*\n`;
 
-  tenors.forEach(tenor => {
-    // Detail per leasing range
-    let minInstallment = Infinity;
-    let maxInstallment = 0;
-    let bestLeasing = "";
+    tenors.forEach(tenor => {
+      // Detail per leasing range
+      let minInstallment = Infinity;
+      let maxInstallment = 0;
+      let bestLeasing = "";
 
-    Object.entries(baseRates).forEach(([leasing, rates]) => {
-      // Safe access to rate (handle missing tenor index by taking last available)
-      const rateIndex = Math.min(tenor - 1, rates.length - 1);
-      const rate = rates[Math.max(0, rateIndex)];
+      Object.entries(baseRates).forEach(([leasing, rates]) => {
+        // Safe access to rate (handle missing tenor index by taking last available)
+        const rateIndex = Math.min(tenor - 1, rates.length - 1);
+        const rate = rates[Math.max(0, rateIndex)];
 
-      const totalInterest = principal * (rate / 100) * tenor;
-      const totalPayment = principal + totalInterest;
-      const monthly = totalPayment / (tenor * 12);
+        const totalInterest = principal * (rate / 100) * tenor;
+        const totalPayment = principal + totalInterest;
+        const monthly = totalPayment / (tenor * 12);
 
-      if (monthly < minInstallment) {
-        minInstallment = monthly;
-        bestLeasing = leasing.split(' ')[0]; // Take first word name
-      }
-      if (monthly > maxInstallment) maxInstallment = monthly;
+        if (monthly < minInstallment) {
+          minInstallment = monthly;
+          bestLeasing = leasing.split(' ')[0]; // Take first word name
+        }
+        if (monthly > maxInstallment) maxInstallment = monthly;
+      });
+
+      result += `\n🕒 *Tenor ${tenor} Tahun*\n`;
+      result += `• Est. Angsuran: ${formatRp(minInstallment)} - ${formatRp(maxInstallment)}\n`;
+      result += `• Estimasi Bunga: 4.5% - 11.5% flat p.a.\n`;
+      result += `• Partner Utama: ${bestLeasing}, Adira, Mandiri, dll.\n`;
     });
 
-    result += `\n🕒 *Tenor ${tenor} Tahun*\n`;
-    result += `• Est. Angsuran: ${formatRp(minInstallment)} - ${formatRp(maxInstallment)}\n`;
-    result += `• Estimasi Bunga: 4.5% - 11.5% flat p.a.\n`;
-    result += `• Partner Utama: ${bestLeasing}, Adira, Mandiri, dll.\n`;
-  });
+    if (!options?.hideSyarat) {
+      result += `\n📝 *Syarat Kredit Umum:*\n`;
+      result += `- KTP Suami & Istri\n`;
+      result += `- Kartu Keluarga (KK)\n`;
+      result += `- NPWP\n`;
+      result += `- PBB/AJB Rumah (Bukti Kepemilikan)\n`;
+      result += `- Rek. Tabungan 3 Bulan Terakhir\n`;
+      result += `- Slip Gaji (Karyawan) / SKU (Wiraswasta)`;
+    }
 
-  if (!options?.hideSyarat) {
-    result += `\n📝 *Syarat Kredit Umum:*\n`;
-    result += `- KTP Suami & Istri\n`;
-    result += `- Kartu Keluarga (KK)\n`;
-    result += `- NPWP\n`;
-    result += `- PBB/AJB Rumah (Bukti Kepemilikan)\n`;
-    result += `- Rek. Tabungan 3 Bulan Terakhir\n`;
-    result += `- Slip Gaji (Karyawan) / SKU (Wiraswasta)`;
+    return result;
   }
-
-  return result;
-}
 }
 
 export default WhatsAppAIChatService;
