@@ -657,8 +657,10 @@ END:VCARD`;
     }
 
     try {
+      const allIds = selectedConversation.allConversationIds;
+      const idsQuery = allIds && allIds.length > 0 ? `&allIds=${allIds.join(',')}` : '';
       const response = await fetch(
-        `/api/v1/whatsapp-ai/conversations/${selectedConversation.id}/messages?deleteAll=true`,
+        `/api/v1/whatsapp-ai/conversations/${selectedConversation.id}/messages?deleteAll=true${idsQuery}`,
         { method: 'DELETE' }
       );
       const data = await response.json();

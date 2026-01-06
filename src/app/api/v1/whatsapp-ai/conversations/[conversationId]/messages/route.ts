@@ -89,6 +89,8 @@ export async function DELETE(
     }
 
     const deleteAll = searchParams.get("deleteAll") === 'true';
+    const allIdsParam = searchParams.get("allIds");
+    const conversationIds = allIdsParam ? allIdsParam.split(",") : [conversationId];
 
     if (!messageId && !deleteAll) {
       return NextResponse.json(
@@ -101,10 +103,10 @@ export async function DELETE(
       // Delete all messages for this conversation
       // Note: We skip attempting to delete from WhatsApp remote for bulk delete to avoid API limits/timeouts
       await prisma.whatsAppMessage.deleteMany({
-        where: { conversationId }
+        where: { conversationId: { in: conversationIds } }
       });
 
-      console.log(`[Conversation Messages API] Deleted ALL messages for conversation ${conversationId}`);
+      console.log(`[Conversation Messages API] Deleted ALL messages for conversations: ${conversationIds.join(', ')}`);
 
       return NextResponse.json({
         success: true,
