@@ -917,6 +917,24 @@ export class WhatsAppAIChatService {
       }
     }
 
+    // 🔥 NEW: If still no vehicle name, check recent conversation history (last 10 messages)
+    // This is crucial for cases like: User asks "KKB Honda City", then later "kirim foto"
+    // We need to remember the Honda City from the KKB context!
+    if (!vehicleName) {
+      const recentHistory = messageHistory.slice(-10);
+      for (const historyMsg of recentHistory.reverse()) { // Check most recent first
+        for (const pattern of vehiclePatterns) {
+          const match = historyMsg.content.match(pattern);
+          if (match && match[0]) {
+            vehicleName = match[0].trim();
+            console.log(`[SmartFallback] 🔍 Found vehicle "${vehicleName}" in conversation history`);
+            break;
+          }
+        }
+        if (vehicleName) break;
+      }
+    }
+
     // Detect correction/objection keywords
     const correctionKeywords = ['bukan', 'salah', 'keliru', 'nggak', 'gak', 'bkn', 'kok', 'tadi', 'yang saya cari', 'yang saya maksud'];
     const isCorrection = (correctionKeywords.some(k => msg.includes(k)) && (msg.includes('kirim') || msg.includes('itu') || msg.includes('tadi'))) ||
@@ -957,6 +975,22 @@ export class WhatsAppAIChatService {
 
       // Get the last AI message
       const lastAiMsg = messageHistory.filter(m => m.role === "assistant").pop();
+
+      // ==================== HIGH PURCHASE INTENT DETECTION ====================
+      // Check if user has shown high purchase intent in recent conversation (last 10 messages)
+      // Indicators: KKB/credit simulation request, detailed vehicle questions, test drive inquiries
+      const recentMessages = messageHistory.slice(-10).map(m => m.content.toLowerCase()).join(' ');
+      const highIntentPatterns = [
+        /\b(kkb|kredit|cicilan|angsuran|simulasi|dp|down payment|uang muka)\b/i,
+        /\b(test drive|lihat unit|ke showroom|datang|kunjung)\b/i,
+        /\b(booking|pesan|reserved?|ambil)\b/i,
+      ];
+      const hasHighPurchaseIntent = highIntentPatterns.some(p => p.test(recentMessages));
+
+      if (hasHighPurchaseIntent) {
+        console.log(`[SmartFallback] 🔥 HIGH PURCHASE INTENT detected! (KKB/credit/booking in history)`);
+      }
+      // ========================================================================
 
       // Extract vehicle from AI message or conversation history
       const vehiclePatterns = [
@@ -1048,7 +1082,7 @@ export class WhatsAppAIChatService {
           }).join('\n');
           console.log(`[SmartFallback] ⚠️ No photos available, returning vehicle list`);
           return {
-            message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))`,
+            message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau lihat fotonya? 📸 (format: \"iya/ baik/ ya/ ok/ oke\" [ID] foto unit))`,
             shouldEscalate: false,
           };
         }
@@ -1064,6 +1098,19 @@ export class WhatsAppAIChatService {
           const id = v.displayId || v.id.substring(0, 8).toUpperCase();
           return `• ${v.make} ${v.model} ${v.year} | ${id}`;
         }).join('\n');
+
+        // 🔥 If user has shown HIGH PURCHASE INTENT, be more proactive and offer to send photos to admin/staff
+        if (hasHighPurchaseIntent) {
+          console.log(`[SmartFallback] 🎯 High intent + no photos → Escalate to staff with promise to send`);
+          return {
+            message: `Tentu kak! Saya akan segera koordinasikan dengan tim kami untuk mengirimkan foto detail unit yang Bapak/Ibu minati. 📸\n\n` +
+              `Unit yang tersedia:\n${vehicleList}\n\n` +
+              `Foto akan segera saya kirimkan atau bisa Bapak/Ibu hubungi tim sales kami langsung untuk foto dan info lebih detail. Apakah ada yang bisa saya bantu lainnya? 😊`,
+            shouldEscalate: false, // Don't escalate, but promise follow-up
+          };
+        }
+
+        // Regular fallback for low intent users
         return {
           message: `Maaf kak, saat ini sistem kami sedang melakukan sinkronisasi foto unit. 👋\n\nUnit yang tersedia saat ini:\n${vehicleList}\n\nIngin saya kirimkan fotonya segera setelah siap? 😊`,
           shouldEscalate: false,
@@ -1117,27 +1164,55 @@ export class WhatsAppAIChatService {
       }
     }
 
-    // Check if asking about price/budget
-    const priceMatch = msg.match(/(\d+)\s*(jt|juta|rb|ribu)/i);
-    if (priceMatch || msg.includes('harga') || msg.includes('budget') || msg.includes('murah')) {
-      const budget = priceMatch ? parseInt(priceMatch[1]) * (priceMatch[2].toLowerCase().includes('jt') || priceMatch[2].toLowerCase().includes('juta') ? 1000000 : 1000) : 0;
+    // Check if asking about price/budget - use extractBudget for consistent parsing
+    const budget = WhatsAppAIChatService.extractBudget(msg);
 
-      let relevantVehicles = vehicles;
-      if (budget > 0) {
-        // Fix: Price is already in Rupiah, no division needed
-        relevantVehicles = vehicles.filter(v => Number(v.price) <= budget * 1.2);
-      }
+    // Only proceed with budget-based filtering if a budget was explicitly mentioned
+    if (budget && budget > 0) {
+      console.log(`[SmartFallback] 💰 Budget query detected: Rp ${Math.round(budget / 1000000)} juta`);
+
+      // Filter vehicles within reasonable price range:
+      // - Minimum: 60% of budget (don't show vehicles that are too cheap)
+      // - Maximum: 120% of budget (allow some flexibility)
+      const minPrice = budget * 0.6;
+      const maxPrice = budget * 1.2;
+      const relevantVehicles = vehicles.filter(v => {
+        const price = Number(v.price);
+        return price >= minPrice && price <= maxPrice;
+      });
 
       if (relevantVehicles.length > 0) {
+        // Sort by price (closest to budget first)
+        relevantVehicles.sort((a, b) => {
+          const diffA = Math.abs(Number(a.price) - budget);
+          const diffB = Math.abs(Number(b.price) - budget);
+          return diffA - diffB;
+        });
+
         const list = relevantVehicles.slice(0, 3).map(v => {
-          // Fix: Price is already in Rupiah, convert to juta for display
           const priceJuta = Math.round(Number(v.price) / 1000000);
           const id = v.displayId || v.id.substring(0, 6).toUpperCase();
           return `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} juta | ${id}`;
         }).join('\n');
 
         return {
-          message: `Ada beberapa pilihan ${budget > 0 ? `di budget Rp ${budget / 1000000} juta` : ''} nih! 💰✨\n\n${list}\n\nMau info detail yang mana? 😊`,
+          message: `Ada beberapa pilihan di budget Rp ${Math.round(budget / 1000000)} juta nih! 💰✨\n\n${list}\n\nMau info detail yang mana? 😊`,
+          shouldEscalate: false,
+        };
+      } else {
+        // No vehicles within budget range - show closest option
+        const closestVehicle = [...vehicles].sort((a, b) =>
+          Math.abs(Number(a.price) - budget) - Math.abs(Number(b.price) - budget)
+        )[0];
+        const closestPrice = Math.round(Number(closestVehicle.price) / 1000000);
+        const id = closestVehicle.displayId || closestVehicle.id.substring(0, 6).toUpperCase();
+
+        console.log(`[SmartFallback] ⚠️ No vehicles within budget Rp ${Math.round(budget / 1000000)}jt, closest: ${closestVehicle.make} ${closestVehicle.model} at Rp ${closestPrice}jt`);
+
+        return {
+          message: `Mohon maaf, untuk budget Rp ${Math.round(budget / 1000000)} juta saat ini belum ada unit yang tersedia. 🙏\n\n` +
+            `Unit terdekat yang kami punya:\n• ${closestVehicle.make} ${closestVehicle.model} ${closestVehicle.year} - Rp ${closestPrice} juta | ${id}\n\n` +
+            `Apakah budget bisa disesuaikan atau ingin cari unit lain? 😊`,
           shouldEscalate: false,
         };
       }
