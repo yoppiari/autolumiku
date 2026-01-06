@@ -201,6 +201,9 @@ export class WhatsAppAIChatService {
         console.log(`[WhatsApp AI Chat] ✅ Staff detected - bypassing business hours check`);
       }
 
+      let aiResponse: any = null;
+      let images: any[] = [];
+
       // ==================== PRE-AI PHOTO CONFIRMATION HANDLER ====================
       // Handle photo confirmations BEFORE calling AI to avoid AI failures breaking the flow
       const photoConfirmResult = await this.handlePhotoConfirmationDirectly(
@@ -208,98 +211,74 @@ export class WhatsAppAIChatService {
         context.messageHistory,
         context.tenantId
       );
+
       if (photoConfirmResult) {
-        console.log(`[WhatsApp AI Chat] ✅ Photo confirmation handled directly - bypassing AI`);
-        return {
-          ...photoConfirmResult,
-          processingTime: Date.now() - startTime,
+        console.log(`[WhatsApp AI Chat] ✅ Photo confirmation handled directly - queuing for post-processing`);
+        aiResponse = {
+          content: photoConfirmResult.message,
+          images: photoConfirmResult.images
         };
-      }
+        images = photoConfirmResult.images || [];
+      } else {
+        // Build system prompt with sender info
+        console.log(`[WhatsApp AI Chat] Building system prompt for tenant: ${account.tenant.name}`);
+        const senderInfo = {
+          isStaff: context.isStaff || false,
+          staffInfo: context.staffInfo,
+          customerPhone: context.customerPhone,
+          isEscalated: context.isEscalated || false,
+        };
+        const systemPrompt = await this.buildSystemPrompt(
+          account.tenant || { name: "Showroom Kami", city: "Indonesia" },
+          config,
+          context.intent,
+          senderInfo
+        );
 
-      // Build system prompt with sender info
-      console.log(`[WhatsApp AI Chat] Building system prompt for tenant: ${account.tenant.name}`);
-      const senderInfo = {
-        isStaff: context.isStaff || false,
-        staffInfo: context.staffInfo,
-        customerPhone: context.customerPhone,
-        isEscalated: context.isEscalated || false,
-      };
-      const systemPrompt = await this.buildSystemPrompt(
-        account.tenant || { name: "Showroom Kami", city: "Indonesia" },
-        config,
-        context.intent,
-        senderInfo
-      );
-      console.log(`[WhatsApp AI Chat] System prompt built (${systemPrompt.length} chars), isStaff: ${senderInfo.isStaff}`);
+        // Build context dengan conversation history
+        const conversationContext = this.buildConversationContext(
+          context.messageHistory,
+          userMessage
+        );
 
-      // Build context dengan conversation history
-      console.log(`[WhatsApp AI Chat] Building conversation context with ${context.messageHistory.length} history messages`);
-      const conversationContext = this.buildConversationContext(
-        context.messageHistory,
-        userMessage
-      );
-      console.log(`[WhatsApp AI Chat] Conversation context built (${conversationContext.length} chars)`);
-
-      // Generate response dengan Z.ai
-      console.log(`[WhatsApp AI Chat] Creating ZAI client...`);
-      const zaiClient = createZAIClient();
-      if (!zaiClient) {
-        console.error(`[WhatsApp AI Chat] ZAI client is null - missing API key or base URL`);
-        throw new Error('ZAI client not configured. Please set ZAI_API_KEY and ZAI_BASE_URL environment variables.');
-      }
-      console.log(`[WhatsApp AI Chat] ZAI client created successfully. Calling API with params:`, {
-        systemPromptLength: systemPrompt.length,
-        userPromptLength: conversationContext.length,
-      });
-
-      let aiResponse;
-      const tenantName = account?.tenant?.name || "Showroom Kami";
-      try {
-        // Add a race condition with manual timeout (60s max for better UX)
-        const apiCallPromise = zaiClient.generateText({
-          systemPrompt,
-          userPrompt: conversationContext,
-          temperature: 0.3, // Low temperature for consistent, factual responses
-        });
-
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => {
-            reject(new Error('ZAI API call timed out after 60 seconds'));
-          }, 60000); // 30 second timeout - faster feedback for customers
-        });
-
-        aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
-
-        // Trim leading/trailing whitespace from AI response
-        if (aiResponse.content) {
-          aiResponse.content = aiResponse.content.trim();
+        // Generate response dengan Z.ai
+        const zaiClient = createZAIClient();
+        if (!zaiClient) {
+          throw new Error('ZAI client not configured.');
         }
 
-        console.log(`[WhatsApp AI Chat] ✅ AI response received successfully`);
-        console.log(`[WhatsApp AI Chat] Content length:`, aiResponse.content?.length || 0);
-
-        // If content is empty, use smart fallback with tenant name
-        if (!aiResponse.content || aiResponse.content.length === 0) {
-          console.log(`[WhatsApp AI Chat] ⚠️ Content empty, using smart fallback...`);
-          // Generate contextual fallback based on user message
-          const fallbackResult = await this.generateSmartFallback(
+        try {
+          // Add a race condition with manual timeout
+          const apiCallPromise = zaiClient.generateChatResponse({
+            systemPrompt,
+            conversationContext,
             userMessage,
-            context.messageHistory,
-            context.tenantId,
-            context
-          );
-          aiResponse = {
-            ...aiResponse,
-            content: fallbackResult.message,
-          };
-        }
+            model: process.env.ZAI_TEXT_MODEL || "glm-4.6",
+            temperature: config.temperature || 0.7,
+            tenantId: context.tenantId,
+          });
 
-        console.log(`[WhatsApp AI Chat] Response content (first 100 chars): ${aiResponse.content.substring(0, 100)}...`);
-      } catch (apiError: any) {
-        console.error(`[WhatsApp AI Chat] ❌ ZAI API call failed:`);
-        console.error(`[WhatsApp AI Chat] API Error name:`, apiError.name);
-        console.error(`[WhatsApp AI Chat] API Error message:`, apiError.message);
-        throw apiError;
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('ZAI API call timed out')), 45000);
+          });
+
+          aiResponse = await Promise.race([apiCallPromise, timeoutPromise]);
+
+          if (aiResponse.content) {
+            aiResponse.content = aiResponse.content.trim();
+          }
+
+          // If content is empty or tool calls present, handle accordingly
+          if (!aiResponse.content || aiResponse.content.length === 0) {
+            console.log(`[WhatsApp AI Chat] ⚠️ Content empty, using smart fallback...`);
+            const fallbackResult = await this.generateSmartFallback(userMessage, context.messageHistory, context.tenantId, context);
+            aiResponse = { ...aiResponse, content: fallbackResult.message };
+          }
+        } catch (apiError: any) {
+          console.error(`[WhatsApp AI Chat] ❌ ZAI API call failed, using fallback: ${apiError.message}`);
+          const fallbackResult = await this.generateSmartFallback(userMessage, context.messageHistory, context.tenantId, context);
+          aiResponse = { content: fallbackResult.message, shouldEscalate: true };
+        }
       }
 
       // ==================== POST-PROCESSING ====================
@@ -314,8 +293,14 @@ export class WhatsAppAIChatService {
         responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
       }
 
-      // 2. Initial Greeting Check (First message in conversation)
-      if (context.messageHistory.length <= 2 && responseMessage.length > 0) {
+      // 2. Initial Greeting & Identity Check
+      const isGreetingIntent = /^(halo|hai|hello|hi|pagi|siang|sore|malam|selamat)/i.test(userMessage.toLowerCase());
+      const isIdentityInquiry = /siapa|apa|identitas|kamu/i.test(userMessage.toLowerCase());
+      const showroomName = account?.tenant?.name || "Showroom Kami";
+
+      // We prepend time greeting if it's a short context OR if user is explicitly greeting/inquiring
+      // But actually, the user wants it MORE consistent. Let's make it more persistent.
+      if (responseMessage.length > 0) {
         // Get time-based greeting for Indonesian context
         const now = new Date();
         const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
@@ -325,9 +310,27 @@ export class WhatsAppAIChatService {
         else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
         else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
 
-        // Prepend time greeting if not already there
-        if (!responseMessage.toLowerCase().includes(timeGreeting.toLowerCase())) {
+        // Prepend time greeting if not already there (case insensitive check)
+        const lowerResponse = responseMessage.toLowerCase();
+        if (!lowerResponse.includes("selamat pagi") &&
+          !lowerResponse.includes("selamat siang") &&
+          !lowerResponse.includes("selamat sore") &&
+          !lowerResponse.includes("selamat malam") &&
+          !lowerResponse.includes("selamat datang")) {
+          // Only prepend if message doesn't start with a greeting already
           responseMessage = `${timeGreeting}! 👋\n\n${responseMessage}`;
+        }
+      }
+
+      // 2b. LAZINESS FILTER - Catch and replace "cek dulu" or "mohon ditunggu"
+      if (responseMessage.toLowerCase().includes("cek dulu") || responseMessage.toLowerCase().includes("mohon ditunggu")) {
+        console.log(`[WhatsApp AI Chat] ⚠️ Laziness detected in response: "${responseMessage}"`);
+        // If the AI is being lazy, we force it to look for vehicles
+        const vehicles = await this.getAvailableVehiclesDetailed(context.tenantId);
+        if (vehicles.length > 0) {
+          const vehicleList = this.formatVehicleListDetailed(vehicles.slice(0, 3));
+          responseMessage = `Mohon maaf kak, untuk ketersediaan unit saat ini bisa langsung cek daftar ready stock kami berikut ini ya:\n\n${vehicleList}\n\n` +
+            `Mau lihat fotonya? 📸 (Atau ada kriteria unit lain yang dicari?)`;
         }
       }
 
@@ -357,7 +360,7 @@ export class WhatsAppAIChatService {
 
         if (vehicles.length > 0) {
           const vehicleList = this.formatVehicleListDetailed(vehicles.slice(0, 3));
-          responseMessage = `Berikut unit ready di ${tenantName}:\n\n${vehicleList}\n\n` +
+          responseMessage = `Berikut unit ready di ${showroomName}:\n\n${vehicleList}\n\n` +
             `Mau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))`;
 
           return {
@@ -426,10 +429,6 @@ export class WhatsAppAIChatService {
                 if (!responseMessage.includes(searchResults[0].make)) {
                   const vehicleList = this.formatVehicleListDetailed(searchResults.slice(0, 5));
                   let searchResultText = `\n\nDitemukan ${searchResults.length} mobil yang cocok:\n\n${vehicleList}\n\n`;
-
-                  if (searchResults.length > 5) {
-                    searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
-                  }
 
                   searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
 

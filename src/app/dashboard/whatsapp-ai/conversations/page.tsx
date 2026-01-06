@@ -1624,14 +1624,11 @@ END:VCARD`;
                                     </span>
                                     <span className="text-[11px] md:text-[10px] font-bold text-gray-800">
                                       {(() => {
-                                        if (selectedConversation?.isStaff) {
-                                          const intent = msg.intent || '';
-                                          if (intent.includes('owner')) return 'Owner';
-                                          if (intent.includes('admin')) return 'Admin';
-                                          if (intent.includes('sales') || msg.senderType === 'staff') return 'Staff';
-                                          return 'Staff';
-                                        }
-                                        return 'Customer';
+                                        const intent = msg.intent || '';
+                                        if (intent.includes('owner')) return 'Owner';
+                                        if (intent.includes('admin')) return 'Admin';
+                                        if (intent.includes('staff') || msg.senderType === 'staff') return 'Staff';
+                                        return selectedConversation?.isStaff ? 'Staff' : 'Customer';
                                       })()}
                                     </span>
                                     {msg.intent && (
@@ -1648,8 +1645,11 @@ END:VCARD`;
                                     </span>
                                     <span className="text-[11px] md:text-[10px] font-bold text-gray-800">
                                       {msg.senderType === 'ai' || msg.aiResponse
-                                        ? (aiConfig?.aiName || 'AI Assistant')
-                                        : 'Admin'
+                                        ? (aiConfig?.aiName || 'Asisten Virtual')
+                                        : (() => {
+                                          const role = (selectedConversation?.isStaff ? 'Tim' : 'Admin');
+                                          return role;
+                                        })()
                                       }
                                     </span>
                                   </div>
