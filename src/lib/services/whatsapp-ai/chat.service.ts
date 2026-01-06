@@ -225,7 +225,7 @@ export class WhatsAppAIChatService {
         isEscalated: context.isEscalated || false,
       };
       const systemPrompt = await this.buildSystemPrompt(
-        account.tenant,
+        account.tenant || { name: "Showroom Kami", city: "Indonesia" },
         config,
         context.intent,
         senderInfo
@@ -253,7 +253,7 @@ export class WhatsAppAIChatService {
       });
 
       let aiResponse;
-      const tenantName = account.tenant.name || "Showroom";
+      const tenantName = account?.tenant?.name || "Showroom Kami";
       try {
         // Add a race condition with manual timeout (60s max for better UX)
         const apiCallPromise = zaiClient.generateText({
@@ -344,8 +344,7 @@ export class WhatsAppAIChatService {
         // Flag suspicious prices (less than 10 juta for regular cars in "Harga:" context)
         if (priceValue < 10) {
           hasSuspiciousPrice = true;
-          console.error(`[WhatsApp AI Chat] ❌❌❌ CRITICAL ERROR: Suspicious price detected in "Harga:" context: "Rp ${priceValue} ${match[2]}"`);
-          console.error(`[WhatsApp AI Chat] Original response snippet: ${responseMessage.substring(0, 200)}`);
+          console.log(`[WhatsApp AI Chat] Suspicious price detected: "Rp ${priceValue} ${match[2]}"`);
         }
       }
 
@@ -363,7 +362,9 @@ export class WhatsAppAIChatService {
 
           return {
             message: responseMessage,
-            shouldEscalate: false
+            shouldEscalate: false,
+            confidence: 0.8,
+            processingTime: Date.now() - startTime
           };
         } else {
           responseMessage = `Mohon maaf, saya perlu konfirmasi informasi harga ke tim terlebih dahulu untuk memastikan akurasinya. Bisa ditunggu sebentar ya? 🙏`;
@@ -607,22 +608,21 @@ export class WhatsAppAIChatService {
       const color = v.color || '-';
 
       // Generate SEO friendly website URL
-      const makeSlug = v.make.toLowerCase().replace(/\s+/g, '-');
-      const modelSlug = v.model.toLowerCase().replace(/\s+/g, '-');
-      const year = v.year;
+      const makeSlug = (v.make || 'mobil').toLowerCase().replace(/\s+/g, '-');
+      const modelSlug = (v.model || 'unit').toLowerCase().replace(/\s+/g, '-');
+      const year = v.year || 0;
 
       const websiteUrl = `https://primamobil.id/vehicles/${makeSlug}-${modelSlug}-${year}-${id}`;
 
       // Format matching user request:
-      // 🚗 [Merk] [Model] [Varian] [Transmisi] [Tahun] | [ID]
-      return `🚗 ${v.make} ${v.model}${variant} ${transmission} ${v.year} | ${id}\n` +
+      return `🚗 ${v.make || ''} ${v.model || ''}${variant} ${transmission} ${v.year || ''} | ${id}\n` +
         `* Harga: Rp ${priceJuta} juta\n` +
         `* Kilometer: ${km} km\n` +
         `* Transmisi: ${transmission}\n` +
         `* Bahan bakar: ${fuel}\n` +
         `* Warna: ${color}\n` +
         `* 🎯 Website: ${websiteUrl}`;
-    }).join('\n\n');
+    }).join("\n\n");
   }
 
   /**
@@ -691,8 +691,8 @@ export class WhatsAppAIChatService {
         const topVehicles = vehicles.slice(0, 3);
         vehiclePreview = "\n\n🚗 *Beberapa pilihan mobil kami:*\n";
         for (const v of topVehicles) {
-          const priceJuta = Math.round(v.price / 1000000);
-          vehiclePreview += `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} Juta\n`;
+          const priceJuta = Math.round(Number(v.price || 0) / 1000000);
+          vehiclePreview += `• ${v.make || ''} ${v.model || ''} ${v.year || ''} - Rp ${priceJuta} Juta\n`;
         }
         vehiclePreview += `\n_Ketik nama mobil untuk info lebih lengkap!_`;
       }
@@ -755,7 +755,10 @@ export class WhatsAppAIChatService {
           'Innova', 'Avanza', 'Xenia', 'Ertiga', 'Xpander', 'Rush', 'Terios',
           'Grand Livina', 'Livina', 'Spin', 'Apv', 'Luxio',
           'Pregio', 'Travello', 'Elf'
-        ].some(model => v.model.includes(model) || v.make.includes(model));
+        ].some(model =>
+          (v.model || '').toLowerCase().includes(model.toLowerCase()) ||
+          (v.make || '').toLowerCase().includes(model.toLowerCase())
+        );
 
         return isMPV && price <= budget * 1.3; // Allow 30% over budget
       });
@@ -1019,12 +1022,12 @@ export class WhatsAppAIChatService {
           return `• ${v.make} ${v.model} ${v.year} | ${id}`;
         }).join('\n');
         return {
-          message: `Maaf, sedang ada kendala menampilkan foto 🙏\n\nUnit yang tersedia:\n${vehicleList}\n\nMau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))`,
+          message: `Maaf kak, saat ini sistem kami sedang melakukan sinkronisasi foto unit. 👋\n\nUnit yang tersedia saat ini:\n${vehicleList}\n\nIngin saya kirimkan fotonya segera setelah siap? 😊`,
           shouldEscalate: false,
         };
       }
       return {
-        message: `Maaf, sedang ada kendala teknis untuk menampilkan foto 🙏\n\nSilakan coba lagi atau tanyakan info unit yang tersedia ya! 😊`,
+        message: `Maaf kak, saat ini asisten virtual kami sedang mengoptimalkan sistem galeri foto. 👋\n\nSilakan coba tanyakan kembali dalam beberapa saat atau tanyakan info unit lainnya ya! 😊`,
         shouldEscalate: false,
       };
     }
@@ -1145,8 +1148,8 @@ export class WhatsAppAIChatService {
     if (vehicles.length > 0) {
       const randomVehicles = vehicles.sort(() => Math.random() - 0.5).slice(0, 3);
       const list = randomVehicles.map(v => {
-        const price = Math.round(Number(v.price) / 100 / 1000000);
-        return `• ${v.make} ${v.model} ${v.year} - Rp ${price} jt`;
+        const price = Math.round(Number(v.price) / 1000000);
+        return `• ${v.make || ''} ${v.model || ''} ${v.year || ''} - Rp ${price} jt`;
       }).join('\n');
 
       return {
@@ -1205,7 +1208,7 @@ export class WhatsAppAIChatService {
 - Salam waktu yang tepat: "${timeGreeting}"
 `;
 
-    systemPrompt += getGreetingRules(timeGreeting, config, senderInfo, tenant.name);
+    systemPrompt += getGreetingRules(timeGreeting, config, senderInfo, tenant?.name || "Showroom Kami", tenant);
 
     // 3. ROLE & SENDER CONTEXT
     systemPrompt += getRolePrompt(senderInfo);
@@ -1443,21 +1446,7 @@ export class WhatsAppAIChatService {
   ): Promise<{ message: string; shouldEscalate: boolean; confidence: number; images?: Array<{ imageUrl: string; caption?: string }> } | null> {
     const msg = userMessage.trim().toLowerCase();
 
-    // ========== DEBUG LOGGING ==========
-    console.log(`[PhotoConfirm DEBUG] ========== START ==========`);
-    console.log(`[PhotoConfirm DEBUG] User message: "${userMessage}"`);
-    console.log(`[PhotoConfirm DEBUG] Message (lowercase): "${msg}"`);
-    console.log(`[PhotoConfirm DEBUG] TenantId: ${tenantId}`);
-    console.log(`[PhotoConfirm DEBUG] MessageHistory length: ${messageHistory.length}`);
-    if (messageHistory.length > 0) {
-      console.log(`[PhotoConfirm DEBUG] MessageHistory contents:`);
-      messageHistory.forEach((m, i) => {
-        console.log(`[PhotoConfirm DEBUG]   [${i}] ${m.role}: "${m.content.substring(0, 100)}..."`);
-      });
-    } else {
-      console.log(`[PhotoConfirm DEBUG] ⚠️ MessageHistory is EMPTY!`);
-    }
-    // ========== END DEBUG LOGGING ==========
+
 
     // ==================== APPRECIATION HANDLER (MUST BE FIRST!) ====================
     // Detect positive acknowledgment BEFORE photo confirmation check
@@ -1792,16 +1781,16 @@ export class WhatsAppAIChatService {
     businessHours: any,
     timezone: string
   ): boolean {
-    // Simplified check - dalam production perlu timezone handling proper
+    const tz = timezone || "Asia/Jakarta";
     const now = new Date();
     const day = now
-      .toLocaleDateString("en-US", { weekday: "long", timeZone: timezone })
+      .toLocaleDateString("en-US", { weekday: "long", timeZone: tz })
       .toLowerCase();
     const currentHour = now.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-      timeZone: timezone,
+      timeZone: tz,
     });
 
     const todayHours = businessHours[day];

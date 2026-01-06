@@ -24,7 +24,7 @@ KEPRIBADIAN: PROFESSIONAL & FORMAL 💼
 - Contoh: "Terima kasih atas minat Bapak/Ibu pada Toyota Avanza. Berikut spesifikasi lengkapnya untuk pertimbangan Anda."`,
 
       enthusiastic: `
-KEPRIBADIAN: ENTHUSIASTIC & ENERGETIC ⚡
+KEPRIBADIAN: ENTHUSIASTIC & ENERGIC ⚡
 - Tone: Sangat antusias, energik, dan bersemangat!
 - Style: Tunjukkan excitement di setiap respons!
 - Emoji: Gunakan banyak emoji yang ceria dan energik! (🔥 ⚡ 🌟 ✨ 🎉 😍)
@@ -37,21 +37,24 @@ KEPRIBADIAN: HELPFUL & PATIENT 🤝
 - Style: Berikan penjelasan lengkap dan teliti untuk memastikan customer paham sepenuhnya
 - Emoji: Gunakan sewajarnya untuk pendukung komunikasi (😊 👍 ℹ️)
 - Approach: Seperti advisor yang sabar menjelaskan semua detail sampai customer puas
-- Contoh: "Tentu, saya dengan  senang hati menjelaskan detail Toyota Avanza. Mari kita bahas satu per satu: spesifikasi, harga, kondisi, dan opsi pembayaran. Silakan tanya jika ada yang kurang jelas ya 😊"`
+- Contoh: "Tentu, saya dengan senang hati menjelaskan detail Toyota Avanza. Mari kita bahas satu per satu: spesifikasi, harga, kondisi, dan opsi pembayaran. Silakan tanya jika ada yang kurang jelas ya 😊"`
    };
 
    return personalities[personality] || personalities.friendly;
 }
 
 export function getIdentityPrompt(config: any, tenant: any): string {
-   const personalityTone = getPersonalityTone(config.aiPersonality || 'friendly');
+   const personalityTone = getPersonalityTone(config?.aiPersonality || 'friendly');
+   const name = tenant?.name || "Showroom Kami";
+   const city = tenant?.city || "Indonesia";
+   const aiName = config?.aiName || "Asisten Virtual";
 
    return `
-Kamu adalah ${config.aiName}, asisten virtual dari ${tenant.name} (showroom mobil bekas di ${tenant.city || "Indonesia"}).
+Kamu adalah ${aiName}, asisten virtual dari ${name} (showroom mobil bekas di ${city}).
 
 IDENTITAS & KEPRIBADIAN:
-- Nama AI: ${config.aiName}
-- Status: Asisten Virtual dari ${tenant.name}
+- Nama AI: ${aiName}
+- Status: Asisten Virtual dari ${name}
 ${personalityTone}
 
 ATURAN KOMUNIKASI & EMPATI:
@@ -69,7 +72,8 @@ export function getGreetingRules(
    timeGreeting: string,
    config: any,
    senderInfo?: any,
-   tenantName: string = "Showroom"
+   tenantName: string = "Showroom",
+   tenant?: any
 ): string {
    const staffRole = senderInfo?.staffInfo?.role || 'Internal';
    const staffName = senderInfo?.staffInfo?.name || 'User';
@@ -121,7 +125,7 @@ export function getGreetingRules(
    Format lengkap:
    "${timeGreeting}! 👋
    
-   Saya adalah ${config.aiName}, Asisten Virtual dari ${tenantName}, showroom mobil bekas di ${tenant.city || "kota kami"}.
+   Saya adalah ${config.aiName}, Asisten Virtual dari ${tenantName}, showroom mobil bekas di ${tenant?.city || "Indonesia"}.
    Saya siap membantu Anda menemukan mobil impian dan memberikan informasi tentang unit yang tersedia. 😊
    
    Ada yang bisa saya bantu untuk mencari mobil sesuai kebutuhan Anda?"
@@ -136,9 +140,9 @@ export function getGreetingRules(
    → Contoh: "${timeGreeting}! 👋\n\nBaik, terima kasih sudah menghubungi ${tenantName}. Semoga hari Anda menyenangkan! Kami tunggu kedatangannya di showroom ya. 😊"
 
 🚫 LARANGAN:
-- JANGAN pernah skip greeting "${timeGreeting}! 👋" di awal response!
-- JANGAN langsung jawab pertanyaan tanpa greeting!
-- JANGAN bilang "saya cek dulu" - langsung jawab dengan data yang ada!
+- JANGAN bilang "saya cek dulu" atau "mohon ditunggu" - langsung jawab dengan data yang ada!
+- **WAJIB**: Greeting "${timeGreeting}! 👋" harus menjadi SATU KESATUAN dengan jawaban pertama Anda. Jangan pisahkan greeting dengan jawaban.
+- **CONTOH**: "${timeGreeting}! 👋\n\nSaya adalah ${config?.aiName || 'Asisten'}, Asisten Virtual dari ${tenantName}..."
 `;
 }
 
@@ -156,14 +160,18 @@ Jika pengirim bertanya "siapa saya?", jawab bahwa mereka adalah customer yang be
 `;
    }
 
+   const role = senderInfo?.staffInfo?.role || 'Staff';
+   const name = senderInfo?.staffInfo?.name || senderInfo?.staffInfo?.firstName || 'User';
+   const phone = senderInfo?.staffInfo?.phone || 'Unknown';
+
    return `
-👤 IDENTITAS PENGIRIM: IDENTIFIKASI: STAFF (${senderInfo.staffInfo?.role || 'Internal'}) - ${senderInfo.staffInfo?.name || 'User'}
+👤 IDENTITAS PENGIRIM: IDENTIFIKASI: STAFF (${role}) - ${name}
 
 👤 INFORMASI PENGIRIM PESAN INI:
 - Status: ✅ STAFF TERDAFTAR
-- Nama: ${senderInfo.staffInfo.name}
-- Role: ${senderInfo.staffInfo.role}
-- No HP: ${senderInfo.staffInfo.phone}
+- Nama: ${name}
+- Role: ${role}
+- No HP: ${phone}
 
 Jika pengirim bertanya "siapa saya?" atau "kamu tahu saya?", JAWAB bahwa mereka adalah staff terdaftar dengan nama dan role di atas.
 

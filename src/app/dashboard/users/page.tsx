@@ -547,7 +547,7 @@ export default function UsersPage() {
                             )}
                             {/* WhatsApp Status Indicator on Profile Picture */}
                             {user.phone && whatsAppProfiles[user.phone] && !whatsAppProfiles[user.phone].loading && (
-                              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_2px_rgba(239,68,68,0.5)]'}`}></div>
                             )}
                           </div>
                           <div className="ml-3">

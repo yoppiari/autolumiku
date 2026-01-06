@@ -754,12 +754,17 @@ export class MessageOrchestratorService {
         const isActuallyStaff = conversation.isStaff || classification.isStaff;
 
         // Check AI health - if AI is disabled, send fallback message for non-staff
-        if (!aiHealth.canProcess && !isActuallyStaff) {
+        // EXCEPT: Allow greetings to bypass for self-healing (if AI succeeds, health monitor restores it)
+        const isGreeting = classification.intent === "customer_greeting";
+        if (!aiHealth.canProcess && !isActuallyStaff && !isGreeting) {
           console.log(`[Orchestrator] AI disabled (${aiHealth.status}), sending fallback message`);
           responseMessage = this.getAIDisabledFallbackMessage(aiHealth.status, aiHealth.reason);
           escalated = true; // Mark as escalated so staff knows to check manually
         } else {
-          // AI is healthy or user is staff - proceed with AI processing
+          // AI is healthy, user is staff, OR it's a greeting (self-healing attempt)
+          if (!aiHealth.canProcess && isGreeting) {
+            console.log(`[Orchestrator] AI health is ${aiHealth.status}, but attempting self-healing with greeting message`);
+          }
           const staffInfo = isActuallyStaff ? (user || await this.getStaffInfo(incoming.from, incoming.tenantId)) : null;
 
           try {
@@ -1865,7 +1870,7 @@ export class MessageOrchestratorService {
       console.error("[Message Orchestrator] AI response error:", error);
       return {
         message:
-          "Mohon maaf, saat ini terjadi kendala teknis.\n\nTim kami akan segera menghubungi Anda. Terima kasih atas kesabaran Bapak/Ibu.",
+          "Selamat sore! 👋\n\nMohon maaf, saat ini sistem kami sedang dalam pemeliharaan singkat. Silakan coba tanyakan kembali dalam beberapa saat, atau tim sales kami akan segera membantu Anda secara manual. Terima kasih atas pengertiannya! 😊",
         escalated: true,
       };
     }
@@ -2398,19 +2403,17 @@ export class MessageOrchestratorService {
   private static getAIDisabledFallbackMessage(status: string, reason?: string): string {
     if (status === "disabled") {
       return (
-        `Halo! 👋\n\n` +
-        `Mohon maaf, saat ini AI kami sedang dalam pemeliharaan.\n\n` +
-        `Tim kami akan segera membalas pesan Anda.\n` +
-        `Terima kasih atas kesabaran Bapak/Ibu. 🙏`
+        `Selamat siang! 👋\n\n` +
+        `Mohon maaf, saat ini asisten virtual kami sedang beristirahat sejenak untuk pemeliharaan sistem agar pelayanan kami tetap maksimal.\n\n` +
+        `Tim admin kami akan segera membantu Anda secara manual dalam beberapa menit ke depan. Terima kasih atas kesabaran Anda! 😊`
       );
     }
 
     // For error/degraded status
     return (
-      `Halo! 👋\n\n` +
-      `Mohon maaf, saat ini kami sedang mengalami kendala teknis.\n\n` +
-      `Tim kami akan segera menghubungi Anda.\n` +
-      `Terima kasih atas kesabaran Bapak/Ibu. 🙏`
+      `Selamat siang! 👋\n\n` +
+      `Mohon maaf atas ketidaknyamanannya, asisten virtual kami sedang dalam proses sinkronisasi database dan tim kami sedang melakukan optimalisasi sistem.\n\n` +
+      `Jangan khawatir, tim sales kami sudah mendapatkan notifikasi dan akan segera melayani Anda secara langsung. Mohon ditunggu sebentar ya! 🙏`
     );
   }
 

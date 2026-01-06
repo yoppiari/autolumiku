@@ -30,9 +30,11 @@ function normalizePhone(phone: string): string {
   // Remove all non-digits
   let digits = phone.replace(/\D/g, '');
 
-  // Convert 0xxx to 62xxx (Indonesian format)
+  // Convert 0xxx or 8xxx (Indonesian) to 62xxx
   if (digits.startsWith('0')) {
     digits = '62' + digits.substring(1);
+  } else if (digits.startsWith('8') && (digits.length >= 9 && digits.length <= 13)) {
+    digits = '62' + digits;
   }
 
   return digits;

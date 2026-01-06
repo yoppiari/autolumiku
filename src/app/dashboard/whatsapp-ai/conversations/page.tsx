@@ -273,17 +273,18 @@ export default function ConversationsPage() {
               const data = await response.json();
 
               if (data.success) {
+                // Key by CLEAN phone number
                 setWhatsAppStatus(prev => ({
                   ...prev,
-                  [phone]: data.isRegistered || false
+                  [cleanPhone]: data.isRegistered || false
                 }));
                 console.log(`[WhatsApp Status] ${cleanPhone}: ${data.isRegistered ? 'REGISTERED ✅' : 'NOT REGISTERED ❌'}`);
               } else {
-                setWhatsAppStatus(prev => ({ ...prev, [phone]: false }));
+                setWhatsAppStatus(prev => ({ ...prev, [cleanPhone]: false }));
               }
             } catch (error) {
               console.error(`[WhatsApp Status] Error checking ${phone}:`, error);
-              setWhatsAppStatus(prev => ({ ...prev, [phone]: false }));
+              setWhatsAppStatus(prev => ({ ...prev, [cleanPhone]: false }));
             }
           })
         );
@@ -363,8 +364,8 @@ export default function ConversationsPage() {
   }, []);
 
   // Load messages for selected conversation
-  const loadMessages = async (conversationId: string, allIds?: string[]) => {
-    setIsLoadingMessages(true);
+  const loadMessages = async (conversationId: string, allIds?: string[], silent = false) => {
+    if (!silent) setIsLoadingMessages(true);
 
     try {
       const idsQuery = allIds && allIds.length > 0 ? `?allIds=${allIds.join(',')}` : '';
@@ -386,8 +387,8 @@ export default function ConversationsPage() {
     if (!selectedConversation) return;
 
     const interval = setInterval(() => {
-      loadMessages(selectedConversation.id, selectedConversation.allConversationIds);
-    }, 10000); // Refresh every 10 seconds
+      loadMessages(selectedConversation.id, selectedConversation.allConversationIds, true);
+    }, 10000); // Refresh every 10 seconds silent
 
     return () => clearInterval(interval);
   }, [selectedConversation]);
@@ -657,8 +658,8 @@ END:VCARD`;
       const data = await response.json();
       if (data.success) {
         setMessageInput('');
-        // Reload messages with full history
-        loadMessages(selectedConversation.id, selectedConversation.allConversationIds);
+        // Reload messages with full history - silent to avoid scroll jump
+        loadMessages(selectedConversation.id, selectedConversation.allConversationIds, true);
       } else {
         alert('Gagal mengirim pesan: ' + (data.error || 'Unknown error'));
       }
@@ -820,7 +821,7 @@ END:VCARD`;
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-        loadMessages(selectedConversation.id);
+        loadMessages(selectedConversation.id, undefined, true);
       } else {
         alert('Gagal mengirim foto: ' + (data.error || 'Unknown error'));
       }
@@ -1222,11 +1223,11 @@ END:VCARD`;
                               {avatar.initials}
                             </div>
                             <div
-                              className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${whatsAppStatus[conv.customerPhone]
+                              className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${whatsAppStatus[conv.customerPhone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '')]
                                 ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]'
                                 : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
                                 } animate-pulse`}
-                              title={whatsAppStatus[conv.customerPhone] ? 'WhatsApp Terdaftar (Active)' : 'WhatsApp Tidak Terdaftar'}
+                              title={whatsAppStatus[conv.customerPhone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '')] ? 'WhatsApp Terdaftar (Active)' : 'WhatsApp Tidak Terdaftar'}
                             >
                               {conv.isStaff && (
                                 <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -1337,7 +1338,7 @@ END:VCARD`;
                             {avatar.initials}
                           </div>
                           <div
-                            className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${selectedConversation.status === 'active' ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
+                            className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${whatsAppStatus[selectedConversation.customerPhone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '')] ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
                               } animate-pulse`}
                           >
                             {selectedConversation.isStaff && (

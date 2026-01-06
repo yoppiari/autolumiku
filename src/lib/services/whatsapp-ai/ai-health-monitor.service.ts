@@ -28,13 +28,13 @@ interface AIConfigWithHealth {
 // ==================== CONSTANTS ====================
 
 // Threshold for consecutive errors before marking AI as "degraded"
-const ERROR_THRESHOLD_DEGRADED = 3;
+const ERROR_THRESHOLD_DEGRADED = 5;
 
 // Threshold for consecutive errors before auto-disabling AI
-const ERROR_THRESHOLD_DISABLED = 5;
+const ERROR_THRESHOLD_DISABLED = 10;
 
 // Threshold for consecutive successes to restore AI from error state
-const SUCCESS_THRESHOLD_RESTORE = 3;
+const SUCCESS_THRESHOLD_RESTORE = 2;
 
 // Cooldown between notifications (5 minutes) to avoid spam
 const NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000;
