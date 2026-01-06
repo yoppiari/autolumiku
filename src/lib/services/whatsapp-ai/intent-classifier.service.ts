@@ -225,14 +225,25 @@ const CUSTOMER_PATTERNS = {
   ],
   // New: AI Capability patterns (AI 5.0)
   ai_capability: [
-    /^(kamu|anda)\s+(pakai|menggunakan)\s+(teknologi|ai|sistem|bot|robot)/i,
-    /^(seberapa|berapa)\s+(pintar|cerdas|canggih)/i,
-    /^(bagaimana|gimana)\s+(cara|kamu)\s+(kerja|transaksi|tau|tahu|dapat|mengerti)/i,
-    /^(apa|siapa)\s+(kamu|anda)\s+(sebenarnya|itu|sih)/i,
+    // Direct AI questions
+    /^(kamu|anda|u)\s+(pakai|menggunakan|pake)\s+(teknologi|ai|sistem|bot|robot|otak)/i,
+    /^(spill|info)\s+(teknologi|tech|stack)/i,
+    /^(seberapa|berapa)\s+(pintar|cerdas|canggih|jago)/i,
+    /^(bagaimana|gimana|gmn)\s+(cara|kamu|u)\s+(kerja|transaksi|tau|tahu|dapat|mengerti)/i,
+    /^(apa|siapa)\s+(kamu|anda|u)\s+(sebenarnya|itu|sih|ni|ini)/i,
+
+    // Skill/Capability
     /\b(skill|kemampuan|kelebihan|keunggulan|bisa apa)\b/i,
-    /\b(chatbot|chat bot|ai|robot|bot)\b/i,
+
+    // Identity/Platform
+    /\b(autolumiku|auto\s*lumiku|prima\s*mobil)\b.*\b(siapa|apa|itu)\b/i,
+    /^(siapa|apa)\s+(itu\s+)?(autolumiku|auto\s*lumiku|prima\s*mobil)/i,
+    /\b(buatan|bikin|development|developer|dev)\s+(siapa|mana)/i,
+
+    // AI specific keywords
+    /\b(chatbot|chat bot|ai|robot|bot)\b.*\b(apa|siapa|ni|ini)\b/i,
     /^(teknologi|sistem)\s+(apa|yang)/i,
-    /^(kamu|anda)\s+(robot|manusia|orang|mesin)/i,
+    /^(kamu|anda|u)\s+(robot|manusia|orang|mesin)/i,
     /^(halusinasi|fake|palsu|bohong)/i, // Anti-hallucination questions
   ],
 };
