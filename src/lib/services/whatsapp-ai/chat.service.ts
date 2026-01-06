@@ -2666,11 +2666,12 @@ export class WhatsAppAIChatService {
           console.log(`[WhatsApp AI Chat] ⚠️ Invalid URL format, using as-is: ${imageUrl}`);
         }
 
-        // Caption: only show full details on first photo, simpler for rest
+        // Caption: Place ID at the START for immediate visibility on mobile
         const id = v.displayId || v.id.substring(0, 8).toUpperCase();
+        // Format: [PM-PST-001] Toyota Fortuner ...
         const caption = photoIndex === 0
-          ? `${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} | ${id} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
-          : `${v.make} ${v.model} ${v.year} | ${id} (${photoIndex + 1}/${v.photos.length})`;
+          ? `[${id}] ${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
+          : `[${id}] ${v.make} ${v.model} (${photoIndex + 1}/${v.photos.length})`;
 
         images.push({ imageUrl, caption });
       }

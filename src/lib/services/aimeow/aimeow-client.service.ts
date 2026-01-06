@@ -372,11 +372,18 @@ export class AimeowClientService {
    */
   private static getMimeTypeFromUrl(url: string): string {
     if (!url) return 'image/jpeg'; // Default
-    const lowerUrl = url.toLowerCase();
-    if (lowerUrl.endsWith('.png')) return 'image/png';
-    if (lowerUrl.endsWith('.webp')) return 'image/webp';
-    if (lowerUrl.endsWith('.gif')) return 'image/gif';
-    return 'image/jpeg'; // Default for jpg, jpeg, and unknown
+
+    // Remove query parameters if any (e.g. ?token=...)
+    const cleanUrl = url.split('?')[0].toLowerCase();
+
+    if (cleanUrl.endsWith('.png')) return 'image/png';
+    if (cleanUrl.endsWith('.webp')) return 'image/webp';
+    if (cleanUrl.endsWith('.gif')) return 'image/gif';
+    if (cleanUrl.endsWith('.bmp')) return 'image/bmp';
+
+    // Default to jpeg for everything else (jpg, jpeg, or no extension)
+    // This forces WhatsApp to try rendering it as an image
+    return 'image/jpeg';
   }
 
   /**
@@ -446,8 +453,10 @@ export class AimeowClientService {
         isViewOnce: false,    // Alternative field name
         mimetype: mimeType,   // Dynamic MIME type
         mimeType: mimeType,   // Alternative field name
-        type: 'image',           // Explicitly set type as image, not document
-        mediaType: 'image',      // Alternative field name
+        type: 'image',        // Explicitly set type as image, not document
+        mediaType: 'image',   // Alternative field name
+        compress: false,      // Don't let Aimeow compress, send original
+        quality: 100,         // Max quality
       };
 
       if (caption) {
