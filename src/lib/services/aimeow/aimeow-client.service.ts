@@ -787,7 +787,6 @@ export class AimeowClientService {
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       console.log(`[Aimeow Send Images] Sending ${images.length} images to ${to}`);
-      console.log(`[Aimeow Send Images] Original clientId: ${clientId}`);
 
       // Resolve clientId to UUID
       const apiClientId = await this.resolveClientId(clientId);
