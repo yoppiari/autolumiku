@@ -28,6 +28,7 @@ export type MessageIntent =
   | "customer_follow_up"           // New: follow-up/continuation
   | "customer_negative"            // New: rejection/negative response
   | "customer_closing"             // New: closing/thanks
+  | "customer_contact_inquiry"     // New: asking for sales/admin/phone
   | "staff_greeting"
   | "staff_upload_vehicle"
   | "staff_update_status"
@@ -213,6 +214,13 @@ const CUSTOMER_PATTERNS = {
     /^(cukup|sudah|udah|selesai|done|ok\s+cukup|sip\s+cukup)$/i,
     /^(tidak\s+ada|ga\s+ada|gak\s+ada|cuma\s+itu)$/i,
     /^(sampai\s+jumpa|bye|dadah|see\s+you)$/i,
+  ],
+  contact_inquiry: [
+    /\b(nomer|nomor|no|wa|whatsapp|kontak|contact|telp|telepon|phone)\b.*\b(sales|admin|marketing|staff|hubungi|hubungin|calling|call)\b/i,
+    /\b(nomer|nomor|no|wa|whatsapp|kontak|telp|telepon|phone)\b\s*(sales|admin|marketing|staff|nya)?$/i,
+    /\b(sales|admin|marketing|staff)\b.*\b(siapa|mana|nomer|nomor|no|wa|kontak|hubungin|ada)\b/i,
+    /^(minta|kirim|boleh)\s+(nomer|nomor|no|wa|kontak|sales|admin)/i,
+    /\b(hubungi|hubungin|kontak)\s+(siapa|mana)\b/i,
   ],
 };
 
@@ -731,12 +739,12 @@ export class IntentClassifierService {
       }
     }
 
-    // 9. Check test drive
-    if (CUSTOMER_PATTERNS.test_drive.some((p) => p.test(message))) {
-      maxConfidence = Math.max(maxConfidence, 0.85);
-      if (maxConfidence === 0.85) {
-        detectedIntent = "customer_test_drive";
-        reason = "Detected test drive intent";
+    // 10. Check contact inquiry
+    if (CUSTOMER_PATTERNS.contact_inquiry.some((p) => p.test(message))) {
+      maxConfidence = Math.max(maxConfidence, 0.95);
+      if (maxConfidence === 0.95) {
+        detectedIntent = "customer_contact_inquiry";
+        reason = "Detected contact inquiry (asking for sales/phone)";
       }
     }
 

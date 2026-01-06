@@ -666,6 +666,15 @@ export class WhatsAppAIChatService {
 
     // Get available vehicles for context
     let vehicles: any[] = [];
+
+    // Standard Time-based Greeting
+    const now = new Date();
+    const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
+    let timeGreeting = "Selamat malam";
+    if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+    else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+    else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
     try {
       vehicles = await prisma.vehicle.findMany({
         where: { tenantId, status: "AVAILABLE" },
@@ -1122,14 +1131,14 @@ export class WhatsAppAIChatService {
       // Be honest about inventory status
       if (vehicles.length === 0) {
         return {
-          message: `Selamat siang! 👋\n\n` +
+          message: `${timeGreeting}! 👋\n\n` +
             `Terima kasih telah menghubungi ${tenantName}. Mohon maaf kak, saat ini seluruh unit favorit di showroom kami sedang terjual habis karena antusiasme yang tinggi. 🙏\n\n` +
             `Tim kami sedang dalam proses pengadaan unit-unit pilihan terbaru yang berkualitas. Ingin kami kabari segera setelah ada unit baru yang ready? 😊`,
           shouldEscalate: false,
         };
       }
       return {
-        message: `Halo! Terima kasih sudah menghubungi ${tenantName}.\n\n` +
+        message: `${timeGreeting}! 👋 Terima kasih sudah menghubungi ${tenantName}.\n\n` +
           `Saat ini ada ${vehicles.length} unit mobil ready stock. Lagi cari mobil apa nih? Bisa sebutkan merk, budget, atau kebutuhannya ya!`,
         shouldEscalate: false,
       };
@@ -1138,7 +1147,7 @@ export class WhatsAppAIChatService {
     // Check if complaint/frustration
     if (/kaku|nyebelin|ga (jelas|responsif|bisa)|muter|bingung|kesal|males/i.test(msg)) {
       return {
-        message: `Mohon maaf atas ketidaknyamanannya kak. 🙏 Kami berkomitmen untuk memberikan pengalaman terbaik dalam pencarian unit Anda.\n\n` +
+        message: `${timeGreeting}! 👋 Mohon maaf atas ketidaknyamanannya kak. 🙏 Kami berkomitmen untuk memberikan pengalaman terbaik dalam pencarian unit Anda.\n\n` +
           `Agar lebih akurat, bisa langsung infokan kriteria mobil impian Anda? Contohnya:\n` +
           `• "Cari Avanza budget 150 juta"\n` +
           `• "Ada Innova matic?"\n` +
@@ -1244,6 +1253,25 @@ export class WhatsAppAIChatService {
         return {
           message: `${timeGreeting}! 👋\n\nUntuk simulasi kredit, kami bekerja sama dengan berbagai partner seperti BCA Finance, Adira, dan Mandiri dengan bunga yang kompetitif mulai dari 4.5% flat p.a. 📊\n\n` +
             `Boleh tau unit mobil apa yang bapak/ibu incar? Agar saya bisa buatkan simulasi angsurannya yang lebih tepat. 😊`,
+          shouldEscalate: false,
+        };
+      }
+    }
+
+    // ==================== STAFF CONTACT HANDLER ====================
+    // Detect requests for sales, admin, phone numbers, or how to contact
+    if (/(?:sales|admin|marketing|staff|nomer|nomor|no|wa|whatsapp|kontak|siapa|hubungin|calling|call)/i.test(msg) &&
+      (/(?:sales|admin|marketing|staff|nomer|nomor|no|wa|whatsapp|kontak|telepon|phone|admin)/i.test(msg) ||
+        /(?:minta|kirim|mana|boleh|hubungi)/i.test(msg))) {
+
+      console.log(`[SmartFallback] 📞 Staff contact inquiry detected: "${msg}"`);
+      const staffMembers = await WhatsAppAIChatService.getRegisteredStaffContacts(tenantId);
+
+      if (staffMembers.length > 0) {
+        let staffList = staffMembers.map(s => `• ${s.name} (${s.role}) - ${s.phone}`).join("\n");
+
+        return {
+          message: `${timeGreeting}! 👋\n\nTentu kak! Silakan hubungi tim sales kami untuk informasi lebih lanjut mengenai unit atau proses pembelian:\n\n${staffList}\n\nSemoga membantu! Ada hal lain yang bisa kami bantu? 😊`,
           shouldEscalate: false,
         };
       }
