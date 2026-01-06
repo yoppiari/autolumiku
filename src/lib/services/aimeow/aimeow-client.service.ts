@@ -322,7 +322,7 @@ export class AimeowClientService {
       if (mediaUrl) {
         endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`;
         payload.images = [{
-          url: mediaUrl,
+          imageUrl: mediaUrl,
           caption: message
         }]; // Array of image objects
         payload.viewOnce = false;     // Display inline, not as download link
@@ -450,7 +450,7 @@ export class AimeowClientService {
       const payload: Record<string, any> = {
         phone: to,
         images: [{
-          url: imageUrl,
+          imageUrl: imageUrl,
           caption: caption
         }],
         viewOnce: false,      // Display inline, not as download link
@@ -483,7 +483,7 @@ export class AimeowClientService {
         const imagesPayload = {
           phone: to,
           images: [{
-            url: imageUrl,
+            imageUrl: imageUrl,
             caption: caption
           }],
           viewOnce: false,      // Display inline, not as download link
@@ -511,7 +511,12 @@ export class AimeowClientService {
       }
 
       const data = await response.json();
-      console.log(`[Aimeow Send Image] ✅ Success:`, data);
+      console.log(`[Aimeow Send Image] ✅ API Response Check:`, data);
+
+      if (data.success === false) {
+        console.error(`[Aimeow Send Image] ❌ API returned success=false: ${data.error}`);
+        throw new Error(data.error || "Failed to send image (internal API error)");
+      }
 
       return {
         success: true,
@@ -796,7 +801,7 @@ export class AimeowClientService {
       const payload = {
         phone: to,
         images: images.map(img => ({
-          url: img.imageUrl,
+          imageUrl: img.imageUrl,
           caption: img.caption
         })),
         viewOnce: false,      // Display inline, not as download link
@@ -822,7 +827,12 @@ export class AimeowClientService {
       }
 
       const data = await response.json();
-      console.log(`[Aimeow Send Images] Success:`, data);
+      console.log(`[Aimeow Send Images] ✅ API Response Check:`, data);
+
+      if (data.success === false) {
+        console.error(`[Aimeow Send Images] ❌ API returned success=false: ${data.error}`);
+        throw new Error(data.error || "Failed to send images (internal API error)");
+      }
 
       return {
         success: true,
