@@ -2043,16 +2043,38 @@ export class WhatsAppAIChatService {
             };
           }
           console.log(`[PhotoConfirm DEBUG] ❌ No vehicles found at all`);
+          // Return helpful message instead of falling through to null
+          return {
+            message: `Maaf kak, saya belum tahu mobil mana yang ingin Anda lihat fotonya. 🤔\n\n` +
+              `Bisa sebutkan jenis atau ID mobilnya? Contoh:\n` +
+              `• "Foto Avanza"\n` +
+              `• "Foto PM-PST-002"\n` +
+              `• "Lihat foto Fortuner"\n\n` +
+              `Atau ketik "mobil" untuk lihat daftar unit ready stock! 😊`,
+            shouldEscalate: false,
+            confidence: 0.9,
+          };
         } catch (e: any) {
           console.error(`[PhotoConfirm DEBUG] ❌ ERROR in fallback:`, e.message);
           console.error(`[PhotoConfirm DEBUG] Error stack:`, e.stack);
+          // Return error guidance instead of null
+          return {
+            message: `Maaf kak, ada kendala teknis. 😅 Bisa coba dengan "Foto [nama mobil]" atau ketik "mobil" untuk lihat daftar! 😊`,
+            shouldEscalate: false,
+            confidence: 0.8,
+          };
         }
       } else {
         console.log(`[PhotoConfirm DEBUG] ❌ userExplicitlyAsksPhoto is false, not entering fallback`);
+        // User confirmed but didn't explicitly say "foto" - provide guidance
+        return {
+          message: `Baik kak! 👍 Bisa sebutkan mobil mana yang ingin dilihat fotonya? Contoh: "Avanza" atau "PM-PST-002" 😊`,
+          shouldEscalate: false,
+          confidence: 0.85,
+        };
       }
 
-      console.log(`[PhotoConfirm DEBUG] ❌ Returning NULL from handlePhotoConfirmationDirectly`);
-      return null;
+      // Note: Code should never reach here now - all paths above return helpful messages
     }
 
     console.log(`[PhotoConfirm DEBUG] ✅ Vehicle name extracted: "${vehicleName} "`);
@@ -2616,10 +2638,10 @@ export class WhatsAppAIChatService {
           originalUrl: photo.originalUrl?.substring(0, 100),
         });
 
-        // Prioritize Optimized WebP (large/medium) for better performance and guaranteed inline display
-        // Original JPGs can be too large (>5MB) causing WhatsApp to treat them as documents/downloads
-        // WhatsApp fully supports WebP now.
-        let imageUrl = photo.largeUrl || photo.mediumUrl || photo.originalUrl;
+        // CRITICAL FIX for Mobile WhatsApp: Prioritize JPG (originalUrl) over WebP
+        // ISSUE: WebP works on WhatsApp Web but FAILS on many smartphone WhatsApp apps
+        // SOLUTION: Use original JPG format which is universally supported
+        let imageUrl = photo.originalUrl || photo.largeUrl || photo.mediumUrl;
 
         if (!imageUrl) {
           console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for photo ${photoIndex + 1}`);

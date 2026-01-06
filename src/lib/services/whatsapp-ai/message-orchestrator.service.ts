@@ -165,7 +165,7 @@ export class MessageOrchestratorService {
           success: true,
           conversationId: conversation.id,
           intent: "system_command",
-          responseMessage: "Baik, saya berhenti ya. 👌",
+          responseMessage: undefined, // Message already sent
           escalated: false,
         };
       } catch (e) {
@@ -267,7 +267,7 @@ export class MessageOrchestratorService {
           success: commandCheck.result.success,
           conversationId: conversation.id,
           intent: "system_command" as MessageIntent,
-          responseMessage: commandCheck.result.message,
+          responseMessage: undefined, // Message already sent
           escalated: false,
         };
       }
@@ -391,7 +391,7 @@ export class MessageOrchestratorService {
             success: false,
             conversationId: conversation.id,
             intent: "staff_upload_vehicle" as MessageIntent,
-            responseMessage: errorMsg,
+            responseMessage: undefined, // Message already sent
             escalated: false,
           };
         }
@@ -429,7 +429,7 @@ export class MessageOrchestratorService {
               success: true,
               conversationId: conversation.id,
               intent: "staff_upload_vehicle" as MessageIntent,
-              responseMessage: successMsg,
+              responseMessage: undefined, // Message already sent
               escalated: false,
             };
           } else {
@@ -447,7 +447,7 @@ export class MessageOrchestratorService {
               success: false,
               conversationId: conversation.id,
               intent: "staff_upload_vehicle" as MessageIntent,
-              responseMessage: errorMsg,
+              responseMessage: undefined, // Message already sent
               escalated: false,
             };
           }
@@ -467,7 +467,7 @@ export class MessageOrchestratorService {
             success: false,
             conversationId: conversation.id,
             intent: "staff_upload_vehicle" as MessageIntent,
-            responseMessage: errorMsg,
+            responseMessage: undefined, // Message already sent
             escalated: false,
           };
         }
@@ -490,7 +490,7 @@ export class MessageOrchestratorService {
           success: true,
           conversationId: conversation.id,
           intent: "staff_upload_vehicle" as MessageIntent,
-          responseMessage: retryMsg,
+          responseMessage: undefined, // Message already sent
           escalated: false,
         };
       } else if (conversation.conversationState === "add_photo_to_vehicle" && !hasMedia) {
@@ -535,7 +535,7 @@ export class MessageOrchestratorService {
             success: true,
             conversationId: conversation.id,
             intent: "staff_upload_vehicle" as MessageIntent,
-            responseMessage: doneMsg,
+            responseMessage: undefined, // Message already sent
             escalated: false,
           };
         }
@@ -557,7 +557,7 @@ export class MessageOrchestratorService {
           success: true,
           conversationId: conversation.id,
           intent: "staff_upload_vehicle" as MessageIntent,
-          responseMessage: promptMsg,
+          responseMessage: undefined, // Message already sent
           escalated: false,
         };
       } else {
@@ -1014,7 +1014,7 @@ export class MessageOrchestratorService {
         success: true,
         conversationId: conversation.id,
         intent: classification.intent,
-        responseMessage,
+        responseMessage: undefined, // Message already sent
         escalated,
       };
     } catch (error: any) {
