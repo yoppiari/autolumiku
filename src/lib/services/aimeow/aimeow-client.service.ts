@@ -401,6 +401,7 @@ export class AimeowClientService {
       console.log(`[Aimeow Send Image] Image URL: ${imageUrl}`);
       console.log(`[Aimeow Send Image] Caption: ${caption || 'none'}`);
       console.log(`[Aimeow Send Image] Original clientId: ${clientId}`);
+      console.log(`[Aimeow Send Image] AIMEOW_BASE_URL: ${AIMEOW_BASE_URL}`);
 
       // Validate image URL
       if (!imageUrl || imageUrl.trim() === '') {

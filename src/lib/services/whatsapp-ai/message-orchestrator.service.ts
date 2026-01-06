@@ -2046,8 +2046,14 @@ export class MessageOrchestratorService {
       // Send images if provided
       let imagesSent = false;
       if (images && images.length > 0) {
-        console.log(`[Orchestrator sendResponse] 📸 Sending ${images.length} images...`);
-        console.log(`[Orchestrator sendResponse] Image URLs:`, images.map(i => i.imageUrl));
+        console.log("=".repeat(50));
+        console.log(`[Orchestrator sendResponse] 📸 PHOTO DELIVERY DIAGNOSTIC:`);
+        console.log(`[Orchestrator sendResponse] To: ${to}`);
+        console.log(`[Orchestrator sendResponse] Images count: ${images.length}`);
+        images.forEach((img, idx) => {
+          console.log(`[Orchestrator sendResponse]   Image ${idx + 1}: URL="${img.imageUrl}", Caption="${img.caption?.substring(0, 30)}..."`);
+        });
+        console.log("=".repeat(50));
 
         if (images.length === 1) {
           // Send single image
