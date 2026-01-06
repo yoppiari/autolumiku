@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { ClientProviders } from '@/components/providers/ClientProviders';
 
-const inter = Inter({ subsets: ['latin'] });
+// Use a robust system font stack that prioritizes Inter if available on the system
+// but falls back gracefully to high-quality system fonts.
+// This prevents build failures in environments with restricted internet (like Docker).
+const interFontStack = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"';
 
 export const metadata: Metadata = {
   title: 'Prima Mobil Platform',
@@ -26,7 +28,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" href="/favicon-48.png" sizes="48x48" />
         <link rel="apple-touch-icon" href="/favicon-48.png" />
       </head>
-      <body className={inter.className}>
+      <body style={{ fontFamily: interFontStack }}>
         <ClientProviders>
           {children}
         </ClientProviders>
