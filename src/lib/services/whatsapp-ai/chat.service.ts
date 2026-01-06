@@ -1718,70 +1718,42 @@ export class WhatsAppAIChatService {
       console.log(`[PhotoConfirm DEBUG] 🎯 Found EXPLICIT Vehicle ID: "${vehicleName}"`);
     }
 
-    // Priority 2: Try to extract vehicle name from history/AI message
+    // Priority 2: Try to extract vehicle from recent history (last 3 messages)
     if (!vehicleName) {
-      // Try to extract from AI message first (if exists)
-      if (lastAiMsg) {
+      // Look back up to 3 messages (AI or User) to find what we're talking about
+      const recentContextMessages = messageHistory.slice(-3).reverse(); // Newest first
+
+      for (const msg of recentContextMessages) {
+        if (!msg.content) continue;
+
+        // Check for ID in history
+        const histIdMatch = msg.content.match(/pm-[a-zA-Z0-9]+-\d+/i);
+        if (histIdMatch) {
+          vehicleName = histIdMatch[0].toUpperCase();
+          console.log(`[PhotoConfirm DEBUG] 🎯 Found Vehicle ID in history (${msg.role}): "${vehicleName}"`);
+          break;
+        }
+
+        // Check for vehicle names in history
         for (const pattern of vehiclePatterns) {
-          const match = lastAiMsg.content.match(pattern);
+          const match = msg.content.match(pattern);
           if (match && match[0]) {
-            vehicleName = match[0].trim();
-            vehicleName = vehicleName.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|at|mt).*$/i, "").trim();
+            // Clean up the match
+            let candidate = match[0].trim();
+            // Remove common specs that might get matched
+            candidate = candidate.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|at|mt).*$/i, "").trim();
+
+            // Ignore "Toyota" standalone, too generic unless it's the only thing
+            if (candidate.split(' ').length < 2 && !['innova', 'fortuner', 'pajero', 'jazz', 'brio', 'avanza', 'xenia'].includes(candidate.toLowerCase())) {
+              continue;
+            }
+
+            vehicleName = candidate;
+            console.log(`[PhotoConfirm DEBUG] 🚙 Found vehicle name in history (${msg.role}): "${vehicleName}"`);
             break;
           }
         }
-      }
-
-      // Fallback: Try to extract from user's earlier messages in history
-      if (!vehicleName) {
-        console.log(`[WhatsApp AI Chat] Trying to extract vehicle from conversation history...`);
-        for (const msg of [...messageHistory].reverse()) {
-          for (const pattern of vehiclePatterns) {
-            const match = msg.content.match(pattern);
-            if (match && match[0]) {
-              vehicleName = match[0].trim();
-              vehicleName = vehicleName.replace(/\s+(dengan|harga|transmisi|kilometer|warna|unit|sangat|siap|diesel|bensin|matic|manual|at|mt).*$/i, "").trim();
-              console.log(`[WhatsApp AI Chat] Found vehicle in history: "${vehicleName}"`);
-              break;
-            }
-          }
-          if (vehicleName) break;
-        }
-      }
-
-      // Last resort: Try to extract vehicle from user's CURRENT message
-      if (!vehicleName) {
-        console.log(`[WhatsApp AI Chat] Trying to extract vehicle from current user message...`);
-        const currentMsg = userMessage.toLowerCase();
-        const vehicleModels = ['innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'accord', 'crv', 'hrv', 'brv', 'yaris', 'camry', 'calya', 'sigra', 'ayla', 'agya', 'xpander', 'livina', 'city', 'mobilio', 'freed', 'vios', 'corolla'];
-        for (const model of vehicleModels) {
-          if (currentMsg.includes(model)) {
-            vehicleName = model.charAt(0).toUpperCase() + model.slice(1);
-            console.log(`[WhatsApp AI Chat] Found vehicle in current message: "${vehicleName}"`);
-            break;
-          }
-        }
-      }
-
-      // If still no vehicle found, try to extract from previous USER message explicitly
-      if (!vehicleName && messageHistory.length >= 2) {
-        // Look at the message BEFORE the current one (which is likely just "ok kirim")
-        const prevUserMsg = messageHistory[messageHistory.length - 2]?.content; // Last was AI, so user was before that? specific logic needed
-        // Actually messageHistory has ALL messages. We want the last USER message before the current one.
-        const userMessages = messageHistory.filter(m => m.role === 'user');
-        if (userMessages.length >= 2) {
-          const previousUserMsg = userMessages[userMessages.length - 2]; // The one before current
-          console.log(`[WhatsApp AI Chat] Checking previous user message for vehicle: "${previousUserMsg.content}"`);
-          // Check vehicle models in previous message
-          const vehicleModels = ['innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'accord', 'crv', 'hrv', 'brv', 'yaris', 'camry', 'calya', 'sigra', 'ayla', 'agya', 'xpander', 'livina', 'city', 'mobilio', 'freed', 'vios', 'corolla'];
-          for (const model of vehicleModels) {
-            if (previousUserMsg.content.toLowerCase().includes(model)) {
-              vehicleName = model.charAt(0).toUpperCase() + model.slice(1);
-              console.log(`[WhatsApp AI Chat] Found vehicle in PREVIOUS user message: "${vehicleName}"`);
-              break;
-            }
-          }
-        }
+        if (vehicleName) break;
       }
     }
     if (!vehicleName) {
