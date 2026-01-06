@@ -1149,8 +1149,15 @@ export class WhatsAppAIChatService {
     // ==================== END PHOTO CONFIRMATION HANDLER ====================
 
     // Pattern matching for user intent
-    const vehicleBrands = ['toyota', 'honda', 'suzuki', 'daihatsu', 'mitsubishi', 'nissan', 'mazda', 'bmw', 'mercedes', 'hyundai', 'kia', 'wuling'];
-    const vehicleModels = ['innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'crv', 'hrv', 'yaris', 'camry', 'calya', 'sigra', 'xpander'];
+    const vehicleBrands = ['toyota', 'honda', 'suzuki', 'daihatsu', 'mitsubishi', 'nissan', 'mazda', 'bmw', 'mercedes', 'hyundai', 'kia', 'wuling', 'ford', 'chery', 'lexus'];
+    const vehicleModels = [
+      'innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'crv', 'hrv', 'yaris', 'camry', 'calya', 'sigra', 'xpander',
+      'palisade', 'creta', 'stargazer', 'ioniq', 'santa fe', 'kona', 'staria', // Hyundai
+      'rocky', 'raize', 'agya', 'ayla', 'veloz', 'zernix', // Toyota/Daihatsu
+      'cx-5', 'cx-3', 'mazda 2', 'mazda 3', // Mazda
+      'almaz', 'confero', 'cortez', 'air ev', 'binguo', // Wuling
+      'xsr', 'march', 'livina', 'serena', 'terra' // Nissan
+    ];
 
     // Check if asking about specific vehicle
     const mentionedBrand = vehicleBrands.find(b => msg.includes(b));
@@ -1418,11 +1425,17 @@ export class WhatsAppAIChatService {
       // Extract budget from current message
       const budget = WhatsAppAIChatService.extractBudget(msg);
 
-      // If no budget in current message, check recent conversation history (last 3 messages)
+      // If no budget in current message, check recent conversation history (last 3 USER messages)
       let budgetFromHistory: number | null = null;
       if (!budget) {
-        const recentHistory = messageHistory.slice(-3).map(m => m.content).join(' ');
-        budgetFromHistory = WhatsAppAIChatService.extractBudget(recentHistory);
+        // Only look at USER messages to avoid reading AI's own pricing mentions/tips
+        const recentUserMessages = messageHistory
+          .filter(m => m.role === 'user')
+          .slice(-3)
+          .map(m => m.content)
+          .join(' ');
+
+        budgetFromHistory = WhatsAppAIChatService.extractBudget(recentUserMessages);
       }
 
       const finalBudget = budget || budgetFromHistory;
