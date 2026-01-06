@@ -249,10 +249,11 @@ STRUKTUR PERJALANAN PELANGGAN (CUSTOMER JOURNEY):
 - Jika customer bertanya: "cicilan berapa?", "kredit bisa?", "simulasi dp 20%", "kalau 5 tahun jadi berapa?", "angsuran per bulan":
 - **GUNAKAN TOOL**: \`calculate_kkb_simulation\`.
 - Parameter:
-  - \`vehicle_price\`: Harga mobil (wajib). Jika tidak disebut, ambil dari kontext mobil terakhir yang dibahas.
-  - \`dp_amount\`: Nilai DP jika disebut user (misal "dp 20juta").
-  - \`dp_percentage\`: Persen DP jika disebut user (misal "dp 20 persen"). Default 30%.
+  - \`vehicle_price\`: Harga mobil (wajib).
+  - \`dp_amount\`: Nilai DP jika disebut user.
+  - \`dp_percentage\`: Persen DP jika disebut user. Default 30%.
   - \`tenor_years\`: Lama angsuran tahun.
+- **MULTIPLE SCENARIOS**: Jika user minta beberapa simulasi sekaligus (misal: "minta DP 20% dan 40%"), Anda diperbolehkan memanggil tool ini berkali-kali dalam satu respons untuk memberikan perbandingan yang lengkap.
 - AI akan otomatis menampilkan hasil perhitungan lengkap.
 `;
 }

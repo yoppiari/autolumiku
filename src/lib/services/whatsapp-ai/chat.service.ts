@@ -1177,16 +1177,11 @@ export class WhatsAppAIChatService {
       }
 
       if (targetVehicle) {
-        // Extract DP percentage if mentioned
-        const dpPercentMatch = msg.match(/(\d+)\s*%/);
-        const dpPercent = dpPercentMatch ? parseInt(dpPercentMatch[1]) : 30;
-
-        // Perform simulation
-        const simulation = WhatsAppAIChatService.calculateKKBSimulation(
-          Number(targetVehicle.price),
-          null,
-          dpPercent
-        );
+        // Detect ALL DP percentages in the message
+        const dpPercentMatches = Array.from(msg.matchAll(/(\d+)\s*%/g));
+        const dpPercentages = dpPercentMatches.length > 0
+          ? dpPercentMatches.map(m => parseInt(m[1]))
+          : [30]; // Default 30%
 
         // Get time greeting for consistency
         const now = new Date();
@@ -1196,9 +1191,45 @@ export class WhatsAppAIChatService {
         else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
         else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
 
+        let fullSimulationText = "";
+
+        if (dpPercentages.length > 1) {
+          // Comparative Mode
+          fullSimulationText = `${timeGreeting}! 👋\n\nTentu kak! Ini perbandingan simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}*:\n\n`;
+          fullSimulationText += `💰 Harga Mobil: Rp ${Math.round(Number(targetVehicle.price)).toLocaleString('id-ID')}\n\n`;
+
+          dpPercentages.forEach((dp, index) => {
+            const simulation = WhatsAppAIChatService.calculateKKBSimulation(
+              Number(targetVehicle.price),
+              null,
+              dp,
+              null,
+              {
+                hideSyarat: true,
+                hideTitle: true,
+                hideHeader: true
+              }
+            );
+            fullSimulationText += `--------------------------\n`;
+            fullSimulationText += `📊 *OPSI ${index + 1}: DP ${dp}%*\n`;
+            fullSimulationText += simulation + `\n\n`;
+          });
+
+          fullSimulationText += `--------------------------\n`;
+          fullSimulationText += `📝 *Syarat Kredit Umum:*\n- KTP Suami/Istri, KK, NPWP\n- PBB Rumah & Slip Gaji/SKU\n- Tabungan 3 bln terakhir\n\n`;
+        } else {
+          // Single Step Mode (Standard)
+          const simulation = WhatsAppAIChatService.calculateKKBSimulation(
+            Number(targetVehicle.price),
+            null,
+            dpPercentages[0]
+          );
+          fullSimulationText = `${timeGreeting}! 👋\n\nTentu kak! Ini estimasi simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}*:\n\n` +
+            simulation + `\n\n`;
+        }
+
         return {
-          message: `${timeGreeting}! 👋\n\nTentu kak! Ini estimasi simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}*:\n\n` +
-            simulation + `\n\n_Bapak/Ibu ingin kami bantu hubungkan dengan tim Sales kami untuk hitungan pastinya?_ 😊`,
+          message: fullSimulationText + `_Bapak/Ibu ingin kami bantu hubungkan dengan tim Sales kami untuk hitungan pastinya?_ 😊`,
           shouldEscalate: false,
         };
       } else {
@@ -2601,7 +2632,8 @@ export class WhatsAppAIChatService {
     vehiclePrice: number,
     inputDpAmount?: number | null,
     inputDpPercentage?: number | null,
-    inputTenor?: number | null
+    inputTenor?: number | null,
+    options?: { hideSyarat?: boolean; hideTitle?: boolean; hideHeader?: boolean }
   ): string {
     // 1. Determine DP
     let dpAmount = 0;
@@ -2637,10 +2669,14 @@ export class WhatsAppAIChatService {
     // 4. Build Result String
     const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString('id-ID');
 
-    let result = `📊 *SIMULASI KREDIT (KKB)*\n`;
-    result += `Harga Mobil: ${formatRp(vehiclePrice)}\n`;
+    let result = options?.hideTitle ? "" : `📊 *SIMULASI KREDIT (KKB)*\n`;
+    if (!options?.hideHeader) {
+      result += `Harga Mobil: ${formatRp(vehiclePrice)}\n`;
+    }
     result += `DP (${dpPercentage}%): ${formatRp(dpAmount)}\n`;
-    result += `Pokok Hutang: ${formatRp(principal)}\n\n`;
+    if (!options?.hideHeader) {
+      result += `Pokok Hutang: ${formatRp(principal)}\n\n`;
+    }
 
     result += `*Est. Angsuran per Bulan:*\n`;
 
@@ -2672,13 +2708,15 @@ export class WhatsAppAIChatService {
       result += `• Partner Utama: ${bestLeasing}, Adira, Mandiri, dll.\n`;
     });
 
-    result += `\n📝 *Syarat Kredit Umum:*\n`;
-    result += `- KTP Suami & Istri\n`;
-    result += `- Kartu Keluarga (KK)\n`;
-    result += `- NPWP\n`;
-    result += `- PBB/AJB Rumah (Bukti Kepemilikan)\n`;
-    result += `- Rek. Tabungan 3 Bulan Terakhir\n`;
-    result += `- Slip Gaji (Karyawan) / SKU (Wiraswasta)`;
+    if (!options?.hideSyarat) {
+      result += `\n📝 *Syarat Kredit Umum:*\n`;
+      result += `- KTP Suami & Istri\n`;
+      result += `- Kartu Keluarga (KK)\n`;
+      result += `- NPWP\n`;
+      result += `- PBB/AJB Rumah (Bukti Kepemilikan)\n`;
+      result += `- Rek. Tabungan 3 Bulan Terakhir\n`;
+      result += `- Slip Gaji (Karyawan) / SKU (Wiraswasta)`;
+    }
 
     return result;
   }
