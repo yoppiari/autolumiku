@@ -463,6 +463,24 @@ export class WhatsAppAIChatService {
                 oldValue: args.old_value,
                 newValue: args.new_value,
               };
+            } else if (toolCall.function.name === 'calculate_kkb_simulation') {
+              const args = JSON.parse(toolCall.function.arguments);
+              console.log('[WhatsApp AI Chat] 🧮 AI calculating KKB simulation:', args);
+
+              const simulationResult = WhatsAppAIChatService.calculateKKBSimulation(
+                args.vehicle_price,
+                args.dp_amount,
+                args.dp_percentage,
+                args.tenor_years
+              );
+
+              // Append simulation result to response with DISCLAIMER
+              responseMessage += "\n\n" + simulationResult;
+              responseMessage += "\n\n_Catatan: Suku bunga bersifat estimasi & dapat berubah sesuai kebijakan leasing terkini._";
+
+              if (!responseMessage.toLowerCase().includes('bantu')) {
+                responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
+              }
             }
           }
         }
@@ -2494,6 +2512,95 @@ export class WhatsAppAIChatService {
     }
 
     return null;
+  }
+
+  /**
+   * Calculate KKB Simulation
+   * Provides installment estimates for various leasing partners
+   */
+  private static calculateKKBSimulation(
+    vehiclePrice: number,
+    inputDpAmount?: number | null,
+    inputDpPercentage?: number | null,
+    inputTenor?: number | null
+  ): string {
+    // 1. Determine DP
+    let dpAmount = 0;
+    let dpPercentage = 30; // Default 30%
+
+    if (inputDpAmount) {
+      dpAmount = inputDpAmount;
+      dpPercentage = Math.round((dpAmount / vehiclePrice) * 100);
+    } else if (inputDpPercentage) {
+      dpPercentage = inputDpPercentage;
+      dpAmount = vehiclePrice * (dpPercentage / 100);
+    } else {
+      // Default
+      dpAmount = vehiclePrice * 0.3;
+    }
+
+    const principal = vehiclePrice - dpAmount;
+
+    // 2. Define Leasing Rates (Estimasi Flat Rate per Tahun untuk Mobil Bekas)
+    // Rate biasanya naik seiring panjang tenor
+    const baseRates: Record<string, number[]> = {
+      // Tenor: 1, 2, 3, 4, 5 tahun (array index 0-4)
+      "BCA Finance": [4.5, 5.0, 5.5, 6.25, 7.0],
+      "Adira Finance": [8.0, 8.5, 9.0, 10.0, 11.0],
+      "WOM Finance": [8.5, 9.0, 9.5, 10.5, 11.5],
+      "Indomobil Finance": [7.5, 8.0, 8.5, 9.5, 10.5],
+      "Seva.id (Priority)": [6.0, 6.5, 7.0, 8.0, 9.0]
+    };
+
+    // 3. Determine Tenors to calculate
+    const tenors = inputTenor ? [inputTenor] : [3, 4, 5]; // Default calculate for 3, 4, 5 years if not specified
+
+    // 4. Build Result String
+    const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString('id-ID');
+
+    let result = `📊 *SIMULASI KREDIT (KKB)*\n`;
+    result += `Harga Mobil: ${formatRp(vehiclePrice)}\n`;
+    result += `DP (${dpPercentage}%): ${formatRp(dpAmount)}\n`;
+    result += `Pokok Hutang: ${formatRp(principal)}\n\n`;
+
+    result += `*Est. Angsuran per Bulan:*\n`;
+
+    tenors.forEach(tenor => {
+      // Detail per leasing range
+      let minInstallment = Infinity;
+      let maxInstallment = 0;
+      let bestLeasing = "";
+
+      Object.entries(baseRates).forEach(([leasing, rates]) => {
+        // Safe access to rate (handle missing tenor index by taking last available)
+        const rateIndex = Math.min(tenor - 1, rates.length - 1);
+        const rate = rates[Math.max(0, rateIndex)];
+
+        const totalInterest = principal * (rate / 100) * tenor;
+        const totalPayment = principal + totalInterest;
+        const monthly = totalPayment / (tenor * 12);
+
+        if (monthly < minInstallment) {
+          minInstallment = monthly;
+          bestLeasing = leasing.split(' ')[0]; // Take first word name
+        }
+        if (monthly > maxInstallment) maxInstallment = monthly;
+      });
+
+      result += `\n🕒 *Tenor ${tenor} Tahun*\n`;
+      result += `• Range: ${formatRp(minInstallment)} - ${formatRp(maxInstallment)}\n`;
+      result += `• Best Rate: ${bestLeasing}\n`;
+    });
+
+    result += `\n📝 *Syarat Kredit Umum:*\n`;
+    result += `- KTP Suami & Istri\n`;
+    result += `- Kartu Keluarga (KK)\n`;
+    result += `- NPWP\n`;
+    result += `- PBB/AJB Rumah (Bukti Kepemilikan)\n`;
+    result += `- Rek. Tabungan 3 Bulan Terakhir\n`;
+    result += `- Slip Gaji (Karyawan) / SKU (Wiraswasta)`;
+
+    return result;
   }
 }
 

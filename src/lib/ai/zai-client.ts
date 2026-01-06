@@ -215,6 +215,35 @@ export class ZAIClient {
                 required: ["field", "new_value"]
               }
             }
+          },
+          {
+            type: "function",
+            function: {
+              name: "calculate_kkb_simulation",
+              description: "Menghitung simulasi kredit mobil (KKB) dengan estimasi angsuran. Panggil saat user tanya 'cicilan', 'kredit', 'angsuran', 'dp', atau simulasi.",
+              parameters: {
+                type: "object",
+                properties: {
+                  vehicle_price: {
+                    type: "number",
+                    description: "Harga kendaraan (Rupiah). Contoh: 150000000"
+                  },
+                  dp_amount: {
+                    type: "number",
+                    description: "Jumlah DP (Rupiah). Opsional."
+                  },
+                  dp_percentage: {
+                    type: "number",
+                    description: "Persen DP (e.g. 20 atau 30). Default 30. Opsional."
+                  },
+                  tenor_years: {
+                    type: "integer",
+                    description: "Tenor dalam tahun (1-5). Opsional."
+                  }
+                },
+                required: ["vehicle_price"]
+              }
+            }
           }
         ];
         requestParams.tool_choice = "auto";

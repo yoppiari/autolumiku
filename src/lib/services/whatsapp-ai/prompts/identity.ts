@@ -235,10 +235,17 @@ STRUKTUR PERJALANAN PELANGGAN (CUSTOMER JOURNEY):
 - JANGAN menawarkan mobil yang JAUH di atas budget kecuali diminta atau budget customer sangat kecil (beda 20%+ adalah terlalu jauh).
 - Jika budget customer di bawah harga termurah, tawarkan 1-2 unit termurah sebagai alternatif.
 
-🔍 REAL-TIME INVENTORY SEARCH:
-- Untuk memberikan data yang paling AKURAT dan REAL-TIME, SELALU gunakan tool "search_vehicles" jika pelanggan bertanya tentang stok, merk tertentu, atau kriteria spesifik.
-- Gunakan tool ini meskipun Anda melihat data di inventoryContext, untuk memastikan status terbaru (READY/SOLD).
 - Cari berdasarkan kriteria: make, model, year, min_price, max_price, transmission, fuel_type, color, max_mileage.
+
+💳 SIMULASI KREDIT & KKB (FITUR BARU!):
+- Jika customer bertanya: "cicilan berapa?", "kredit bisa?", "simulasi dp 20%", "kalau 5 tahun jadi berapa?", "angsuran per bulan":
+- **GUNAKAN TOOL**: \`calculate_kkb_simulation\`.
+- Parameter:
+  - \`vehicle_price\`: Harga mobil (wajib). Jika tidak disebut, ambil dari kontext mobil terakhir yang dibahas.
+  - \`dp_amount\`: Nilai DP jika disebut user (misal "dp 20juta").
+  - \`dp_percentage\`: Persen DP jika disebut user (misal "dp 20 persen"). Default 30%.
+  - \`tenor_years\`: Lama angsuran tahun.
+- AI akan otomatis menampilkan hasil perhitungan lengkap.
 `;
 }
 
