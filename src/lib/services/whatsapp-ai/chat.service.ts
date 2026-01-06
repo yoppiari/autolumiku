@@ -250,13 +250,10 @@ export class WhatsAppAIChatService {
 
         try {
           // Add a race condition with manual timeout
-          const apiCallPromise = zaiClient.generateChatResponse({
+          const apiCallPromise = zaiClient.generateText({
             systemPrompt,
-            conversationContext,
-            userMessage,
-            model: process.env.ZAI_TEXT_MODEL || "glm-4.6",
+            userPrompt: `${conversationContext}\n\nUser Message: ${userMessage}`,
             temperature: config.temperature || 0.7,
-            tenantId: context.tenantId,
           });
 
           const timeoutPromise = new Promise<never>((_, reject) => {
@@ -269,9 +266,12 @@ export class WhatsAppAIChatService {
             aiResponse.content = aiResponse.content.trim();
           }
 
-          // If content is empty or tool calls present, handle accordingly
-          if (!aiResponse.content || aiResponse.content.length === 0) {
-            console.log(`[WhatsApp AI Chat] ⚠️ Content empty, using smart fallback...`);
+          // If both message and content are empty, or tool calls exist, handle accordingly
+          const hasContent = aiResponse.content && aiResponse.content.trim().length > 0;
+          const hasToolCalls = aiResponse.toolCalls && aiResponse.toolCalls.length > 0;
+
+          if (!hasContent && !hasToolCalls) {
+            console.log(`[WhatsApp AI Chat] ⚠️ Content and ToolCalls empty, using smart fallback...`);
             const fallbackResult = await this.generateSmartFallback(userMessage, context.messageHistory, context.tenantId, context);
             aiResponse = { ...aiResponse, content: fallbackResult.message };
           }
@@ -675,6 +675,7 @@ export class WhatsAppAIChatService {
     context?: ChatContext // Add context for staff info
   ): Promise<{ message: string; shouldEscalate: boolean; images?: Array<{ imageUrl: string; caption?: string }> }> {
     const msg = userMessage.toLowerCase().trim();
+    console.log(`[SmartFallback DEBUG] Processed message: "${msg}"`);
 
     // Get tenant info
     let tenantName = "kami";
@@ -705,6 +706,40 @@ export class WhatsAppAIChatService {
       });
     } catch (e) { /* ignore */ }
 
+    // ==================== AI CAPABILITY & IDENTITY HANDLER (AI 5.0) ====================
+    // Detect if user is asking about AI technology, identity, or Autolumiku
+    const aiCapabilityPatterns = [
+      /\b(kamu|anda|u)\s+(pakai|menggunakan|pake|ini|siapa|apa|sistem|bot|robot|ai|program|mesin)\b/i,
+      /\b(teknologi|tech|stack|ai|robot|bot|system|sistem|autolumiku|ai\s*5\.0)\b/i,
+      /\b(siapa|apa|darimana|dari\s*mana|buatan|dibuat|bikin)\s*(kamu|anda|u|ini|sistem|platform|ai|bot)?/i,
+      /\b(siapa|apa)\b\s*(kamu|anda|u)\b/i, // Explicitly handle "siapa kamu", "apa kamu"
+      /\b(ai\s*5\.0|kecerdasan\s*buatan|backend|platform)\b/i
+    ];
+
+    // Check if it's an AI capability query but NOT explicitly asking for sales/phone
+    const looksLikeAICapability = aiCapabilityPatterns.some(p => p.test(msg));
+    const isExplicitContactRequest = /\b(nomer|nomor|wa|whatsapp|kontak|contact|telp|telepon|phone)\b/i.test(msg); // Strictly NO "no" here
+
+    console.log(`[SmartFallback DEBUG] Identity Check for "${msg}":`);
+    aiCapabilityPatterns.forEach((p, i) => console.log(`  Pattern ${i} (${p.source}): ${p.test(msg)}`));
+    console.log(`  looksLikeAICapability: ${looksLikeAICapability}`);
+    console.log(`  isExplicitContactRequest: ${isExplicitContactRequest}`);
+
+    if (looksLikeAICapability && !isExplicitContactRequest) {
+      console.log(`[SmartFallback] 🤖 AI Capability/Identity detected in fallback: "${msg}"`);
+
+      const identityResponse =
+        `${timeGreeting}! 👋\n\n` +
+        `Saya adalah AI Assistant **Prima Mobil** yang ditenagai oleh teknologi **Autolumiku (AI 5.0)**. 🤖⚡\n\n` +
+        `Saya menggunakan teknologi *Natural Language Processing* tingkat lanjut untuk memberikan informasi stok kendaraan secara real-time, simulasi kredit, hingga pengolahan data visual unit kami.\n\n` +
+        `Ada yang bisa saya bantu terkait unit mobil di showroom kami hari ini? 😊`;
+
+      return {
+        message: identityResponse,
+        shouldEscalate: false,
+      };
+    }
+
     // ==================== GREETING HANDLER (OPENING GREETING) ====================
     // Detect greeting patterns for new conversations
     const greetingPatterns = [
@@ -717,6 +752,7 @@ export class WhatsAppAIChatService {
     ];
     const isGreeting = greetingPatterns.some(p => p.test(msg));
     const isNewConversation = messageHistory.length <= 2;
+    console.log(`[SmartFallback DEBUG] Greeting Check: isGreeting=${isGreeting}, isNewConversation=${isNewConversation}`);
 
     // Check if it looks like a greeting (short message, starts with greeting word)
     const looksLikeGreeting = msg.length < 20 && /^(halo|hai|hi|pagi|siang|sore|malam|selamat|assalam)/i.test(msg);
@@ -891,7 +927,7 @@ export class WhatsAppAIChatService {
     // Determine vehicle name from query or history first
     const vehiclePatterns = [
       /pm-[a-zA-Z0-9]+-\d+/i, // Unit IDs like PM-PST-001
-      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\-]+(?:\s+[\w\-]+)?\s*(?:20\d{2}|19\d{2})?/gi,
+      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\s]+(?:\d{4})?/gi,
       /\b(Innova\s*Reborn?|Fortuner|Pajero\s*Sport|Xpander|Rush|Terios|Ertiga|Avanza|Xenia|Brio|Jazz|Calya|Sigra|Ayla|Agya|HRV|CRV|BRV|Yaris|Camry|Alphard|City|Civic)\s*(?:20\d{2}|19\d{2})?\b/gi,
     ];
 
@@ -1386,9 +1422,19 @@ export class WhatsAppAIChatService {
 
     // ==================== STAFF CONTACT HANDLER ====================
     // Detect requests for sales, admin, phone numbers, or how to contact
-    if (/(?:sales|admin|marketing|staff|nomer|nomor|no|wa|whatsapp|kontak|siapa|hubungin|calling|call)/i.test(msg) &&
-      (/(?:sales|admin|marketing|staff|nomer|nomor|no|wa|whatsapp|kontak|telepon|phone|admin)/i.test(msg) ||
-        /(?:minta|kirim|mana|boleh|hubungi)/i.test(msg))) {
+    // ENHANCED: Must contain BOTH contact keywords AND request/handover keywords
+    // To prevent false positives with AI capability questions
+    const contactKeywords = /\b(nomer|nomor|wa|whatsapp|kontak|contact|telp|telepon|phone)\b/i; // REMOVED "no" - critically fix for "teknologi"
+    const requestKeywords = /\b(minta|kirim|mana|boleh|hubungi|hubungin|calling|call|admin|office|staff|sales|marketing|manajer|manager)\b/i;
+    const isContactHandoverRequest = contactKeywords.test(msg) && requestKeywords.test(msg);
+
+    console.log(`[SmartFallback DEBUG] Contact Handover Check:`);
+    console.log(`  contactKeywords match: ${contactKeywords.test(msg)}`);
+    console.log(`  requestKeywords match: ${requestKeywords.test(msg)}`);
+    console.log(`  isContactHandoverRequest: ${isContactHandoverRequest}`);
+
+    if (isContactHandoverRequest) {
+      console.log(`[SmartFallback] 📞 Staff contact inquiry detected with Handover Intent: "${msg}"`);
 
       console.log(`[SmartFallback] 📞 Staff contact inquiry detected: "${msg}"`);
       const staffMembers = await WhatsAppAIChatService.getRegisteredStaffContacts(tenantId);
@@ -1507,7 +1553,7 @@ export class WhatsAppAIChatService {
       }
 
       // No budget mentioned - show premium/popular vehicles (original behavior)
-      console.log(`[SmartFallback] ℹ️ No budget mentioned, showing premium vehicles`);
+      console.log(`[SmartFallback] ℹ️ Final fallthrough: showing premium vehicles for "${msg}"`);
 
       // 1. Try to find "High Class" units first (SUV, MPV Premium, etc)
       const highClassKeywords = ['fortuner', 'pajero', 'palisade', 'terra', 'alphard', 'vellfire', 'crv', 'cx-5', 'santa fe', 'innova zenix', 'innova reborn'];

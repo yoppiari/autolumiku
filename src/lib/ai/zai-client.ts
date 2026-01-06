@@ -35,6 +35,20 @@ export class ZAIClient {
   }
 
   /**
+   * Alias for generateText for backward compatibility
+   */
+  async generateChatResponse(params: any) {
+    // Map parameters from the old generateChatResponse format to the new generateText format
+    return this.generateText({
+      systemPrompt: params.systemPrompt,
+      userPrompt: params.userPrompt || `${params.conversationContext}\n\nUser Message: ${params.userMessage}`,
+      temperature: params.temperature,
+      maxTokens: params.maxTokens,
+      includeTools: params.includeTools
+    });
+  }
+
+  /**
    * Generate text completion using GLM-4.6 with reasoning disabled
    * @param includeTools - Whether to include function calling tools (default: true for chat, false for JSON generation)
    */

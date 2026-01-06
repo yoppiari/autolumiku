@@ -226,31 +226,36 @@ const CUSTOMER_PATTERNS = {
   ],
   // New: AI Capability patterns (AI 5.0)
   ai_capability: [
-    // Direct AI questions
-    /^(kamu|anda|u)\s+(pakai|menggunakan|pake)\s+(teknologi|ai|sistem|bot|robot|otak)/i,
-    /^(spill|info)\s+(teknologi|tech|stack)/i,
-    /^(seberapa|berapa)\s+(pintar|cerdas|canggih|jago)/i,
-    /^(bagaimana|gimana|gmn)\s+(cara|kamu|u)\s+(kerja|transaksi|tau|tahu|dapat|mengerti)/i,
-    /^(apa|siapa)\s+(kamu|anda|u)\s+(sebenarnya|itu|sih|ni|ini)/i,
+    // Standalone identity words (High Priority)
+    /\bau\s*to\s*lu\s*mi\s*ku\b/i,
+    /\bai\s*5\.0\b/i,
+
+    // Direct AI questions (Unanchored)
+    /\b(kamu|anda|u)\s+(pakai|menggunakan|pake|ini|siapa|apa|sistem|bot|robot|ai)\b/i,
+    /\b(kamu|anda|u)\s+(pake|pakai|menggunakan)\s+(tech|teknologi|ai|sistem|platform)\b/i,
+    /\b(spill|info|tanya)\s+(teknologi|tech|stack|ai|robot|bot|system|platform)\b/i,
+    /\b(seberapa|berapa)\s+(pintar|cerdas|canggih|jago|jenius|hebat)\b/i,
+    /\b(bagaimana|gimana|gmn)\s+(cara|kamu|u)\s+(kerja|transaksi|tau|tahu|dapat|mengerti|jawab|proses)\b/i,
 
     // New Broad Patterns (Fixes "Kamu ini apa?", "Kamu siapa?", "Kamu pakai teknologi apa?")
-    /^(kamu|anda|u)\s+(ini|itu)?\s*(siapa|apa|bot|robot|ai|manusia|orang|sistem)\?*$/i,
-    /^(kamu|anda|u)\s+(pakai|menggunakan|pake).*(teknologi|ai|sistem|bot|robot|otak)/i, // Relaxed technology check
-    /^(kamu|anda|u)\s+(bisa|ngapain|buat|bikin)\s+(apa|aja)/i,
-
-    // Skill/Capability
-    /\b(skill|kemampuan|kelebihan|keunggulan|bisa apa)\b/i,
+    /\b(kamu|anda|u)(\s+(ini|itu|sih|ni))?\s*(siapa|apa|bot|robot|ai|manusia|orang|sistem|program|aplikasi)\b/i,
+    /\b(kamu|anda|u)\s+(pakai|menggunakan|pake|dibuat|dibangun).*(teknologi|ai|sistem|bot|robot|otak|model|platform|database|backend)\b/i,
+    /\b(kamu|anda|u)\s+(bisa|ngapain|buat|bikin|kerja)\s+(apa|aja)/i,
 
     // Identity/Platform
-    /\b(autolumiku|auto\s*lumiku|prima\s*mobil)\b.*\b(siapa|apa|itu)\b/i,
-    /^(siapa|apa)\s+(itu\s+)?(autolumiku|auto\s*lumiku|prima\s*mobil)/i,
-    /\b(buatan|bikin|development|developer|dev)\s+(siapa|mana)/i,
+    /\b(siapa|apa)\b\s*(kamu|anda|u)\b/i, // Explicitly handle "siapa kamu", "apa kamu"
+    /\bapa\s+(itu\s+)?(autolumiku|auto\s*lumiku|prima\s*mobil)\b/i,
+    /\bsiapa\s+(itu\s+)?(autolumiku|auto\s*lumiku|prima\s*mobil)\b/i,
+    /\b(buatan|bikin|development|developer|dev)\s+(siapa|mana|apa)\b/i,
 
-    // AI specific keywords
-    /\b(chatbot|chat bot|ai|robot|bot)\b.*\b(apa|siapa|ni|ini)\b/i,
-    /^(teknologi|sistem)\s+(apa|yang)/i,
-    /^(kamu|anda|u)\s+(robot|manusia|orang|mesin)/i,
-    /^(halusinasi|fake|palsu|bohong)/i, // Anti-hallucination questions
+    // Capability
+    /\b(skill|kemampuan|keunggulan|bisa apa|kelebihan|kekurangan|limitasi)\b/i,
+
+    // Platform questions
+    /\b(chatbot|chat bot|ai|robot|bot)\b.*\b(apa|siapa|ni|ini|itu|sih)\b/i,
+    /\b(teknologi|sistem|platform|ai)\s+(apa|siapa|yang|mana)\b/i,
+    /\b(kamu|anda|u)\s+(robot|manusia|orang|mesin|program|asisten)\b/i,
+    /\b(halusinasi|fake|palsu|bohong|nyata|asli)\b/i,
   ],
 };
 
