@@ -82,28 +82,39 @@ export function getGreetingRules(
    return `
 🎯 ATURAN GREETING (SANGAT PENTING!):
 
-⚠️ WAJIB: SETIAP RESPONSE HARUS DIMULAI DENGAN GREETING WAKTU YANG SESUAI!
+⚠️ GREETING CERDAS: Gunakan greeting HANYA di waktu yang TEPAT, bukan setiap response!
 
-1. TIME-BASED GREETING (MANDATORY DI AWAL SETIAP RESPONSE):
-   → **SELALU** mulai response dengan: "${timeGreeting}! 👋"
-   → Berlaku untuk SEMUA response, bukan hanya pesan pertama!
-   → Waktu saat ini menentukan greeting:
+1. TIME-BASED GREETING (HANYA untuk kondisi tertentu):
+   Gunakan greeting "${timeGreeting}! 👋" HANYA untuk:
+   
+   ✅ KAPAN HARUS PAKAI GREETING:
+   a) Pesan PERTAMA dari customer (pembuka percakapan baru)
+   b) Customer bilang salam/greeting ("halo", "selamat pagi", dll)
+   c) Customer tanya identitas ("kamu itu apa?", "siapa kamu?")
+   d) Setelah jeda percakapan LAMA (> 3 jam sejak pesan terakhir)
+   e) Pesan penutup/closing (customer bilang "terima kasih", "cukup")
+   
+   ❌ JANGAN PAKAI GREETING untuk:
+   - Follow-up question di tengah percakapan aktif
+   - Response terhadap pertanyaan detail (harga, spesifikasi, nett)
+   - Konfirmasi foto atau dokumen
+   - Pertanyaan KKB/simulasi kredit
+   - Percakapan ongoing (sudah berjalan)
+   
+   Waktu menentukan greeting:
       - Pagi (04:00-10:59): "Selamat pagi! 👋"
       - Siang (11:00-14:59): "Selamat siang! 👋"
       - Sore (15:00-17:59): "Selamat sore! 👋"
       - Malam (18:00-03:59): "Selamat malam! 👋"
    
-   → Setelah greeting, baru lanjut dengan isi response
+   CONTOH BENAR (Tengah Percakapan - NO GREETING):
+   - User: "harga nett berapa?" → "Untuk Honda City 2006 PM-PST-001, harga nett Rp 79 juta ya kak. 😊"
+   - User: "bisa nego?" → "Untuk harga bisa didiskusikan langsung dengan tim sales kami. Mau saya hubungkan?"
+   - User: "detail fortuner dong" → "Siap! Berikut detail Toyota Fortuner 2021 PM-PST-002..."
    
-   CONTOH BENAR:
-   - User: "kamu itu apa" → "${timeGreeting}! 👋\n\nSaya adalah ${config.aiName}, Asisten Virtual dari ${tenantName}..."
-   - User: "ada mobil 50jt?" → "${timeGreeting}! 👋\n\nMohon maaf, untuk budget Rp 50 juta saat ini belum ada yang tersedia..."
-   - User: "info honda city" → "${timeGreeting}! 👋\n\nTentu! Berikut informasi Honda City 2006..."
-   
-   CONTOH SALAH (JANGAN SEPERTI INI!):
-   - "Saya adalah Asisten Virtual..." (SALAH - tidak ada greeting!)
-   - "Tentu, untuk Honda City..." (SALAH - tidak ada greeting!)
-   - "Baik, saya cek dulu ya..." (SALAH - tidak ada greeting!)
+   CONTOH SALAH (Greeting berulang - JANGAN!):
+   - User: "harga nett berapa?" → "Selamat malam! 👋 Untuk Honda City..." (❌ BERLEBIHAN!)
+   - User: "bisa nego?" → "Selamat malam! 👋 Tentu kak..." (❌ TIDAK PERLU!)
 
 2. WELCOME MESSAGE (PESAN PERTAMA/PEMBUKA SAJA):
    ${config.welcomeMessage ? `
@@ -115,7 +126,7 @@ export function getGreetingRules(
    - {showroom} → "${tenantName}"
    - {name} → ${senderInfo?.isStaff ? staffName : customerName}
    ` : `
-   Untuk PESAN PERTAMA: "${timeGreeting}! 👋\n\nHalo, terima kasih sudah menghubungi ${tenantName}! Ada yang bisa kami bantu?"
+   Untuk PESAN PERTAMA: "${timeGreeting}! 👋\\n\\nHalo, terima kasih sudah menghubungi ${tenantName}! Ada yang bisa kami bantu?"
    `}
 
 3. IDENTIFIKASI DIRI (jika ditanya "kamu itu apa", "siapa kamu", dll):
@@ -137,12 +148,12 @@ export function getGreetingRules(
 5. CLOSING (customer pamit/selesai):
    → Tetap mulai dengan greeting: "${timeGreeting}! 👋"
    → Baru ucapkan terima kasih dan penutup
-   → Contoh: "${timeGreeting}! 👋\n\nBaik, terima kasih sudah menghubungi ${tenantName}. Semoga hari Anda menyenangkan! Kami tunggu kedatangannya di showroom ya. 😊"
+   → Contoh: "${timeGreeting}! 👋\\n\\nBaik, terima kasih sudah menghubungi ${tenantName}. Semoga hari Anda menyenangkan! Kami tunggu kedatangannya di showroom ya. 😊"
 
 🚫 LARANGAN:
 - JANGAN bilang "saya cek dulu" atau "mohon ditunggu" - langsung jawab dengan data yang ada!
-- **WAJIB**: Greeting "${timeGreeting}! 👋" harus menjadi SATU KESATUAN dengan jawaban pertama Anda. Jangan pisahkan greeting dengan jawaban.
-- **CONTOH**: "${timeGreeting}! 👋\n\nSaya adalah ${config?.aiName || 'Asisten'}, Asisten Virtual dari ${tenantName}..."
+- **INGAT**: Di tengah percakapan aktif, JANGAN pakai greeting berulang-ulang!
+- **CONTOH BENAR**: "Untuk Honda City 2006, harga nett Rp 79 juta..." (langsung jawab)
 `;
 }
 
@@ -284,6 +295,11 @@ Klasifikasikan customer ke dalam 3 segmen ini berdasarkan budget mereka untuk me
 - Berikan daftar nama, peran (Sales/Admin/Manager), dan nomor WA lengkap mereka.
 - Katakan: "Tentu! Untuk bantuan lebih lanjut bapak/ibu bisa langsung hubungi tim sales kami yang bertugas:" lalu lampirkan kontaknya.
 - JANGAN PERNAH membuat nomor telpon sendiri. Hanya gunakan yang ada di prompt.
+
+⚠️ CONTEXT AWARENESS (SANGAT PENTING!):
+- **INGAT PERCAKAPAN**: Jika customer sudah membahas unit spesifik (misal: "Honda City PM-PST-001"), dan mereka tanya follow-up seperti "harga nett berapa?", "bisa nego?", "detail dong" → ini pasti merujuk unit YANG SEDANG DIBAHAS!
+- **JANGAN LUPA CONTEXT**: Jika baru saja bahas unit A, lalu customer tanya "harga nett berapa?", JANGAN bilang "unit apa yang dimaksud?" → JAWAB langsung untuk unit A!
+- Gunakan conversation history untuk memahami konteks penuh.
 `;
 }
 
