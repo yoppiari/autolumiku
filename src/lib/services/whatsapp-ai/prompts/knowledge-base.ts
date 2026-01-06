@@ -166,11 +166,22 @@ DATABASE PENGETAHUAN KENDARAAN (Toyota Astra Indonesia):
 - Tipe: Tall Wagon (ruang kabin luas)
 - Harga kisaran: 120-160 juta
 
+
+**KEBIJAKAN KKB & SIMULASI KREDIT (PENGETAHUAN FINANSIAL):**
+- Partner Leasing: BCA Finance, Adira Finance, Mandiri Tunas Finance (MTF), OTO, WOM Finance.
+- Estimasi Bunga (Flat p.a.):
+  - Tenor 1-3 thn: 4.5% - 6.5% (BCA/Priority) | 8% - 9.5% (Umum)
+  - Tenor 4-5 thn: 6.25% - 9.0% (BCA/Priority) | 10% - 11.5% (Umum)
+- DP (Down Payment) Standar: Minimal 20% - 30% dari harga OTR (On The Road).
+- Syarat Dokumen (Wajib): KTP Suami/Istri, Kartu Keluarga, NPWP, PBB/Rek Listrik, Rekening Tabungan (3 bulan terkahir), Slip Gaji (Karyawan) atau SKU (Wiraswasta).
+- Asuransi: Biasanya sudah termasuk TLO (Total Loss Only) atau All Risk dalam paket angsuran.
+
 CARA MENGGUNAKAN DATABASE:
 1. Jika ditanya spesifikasi, sebutkan detail lengkap (mesin, transmisi, fitur unggulan).
 2. Jika ditanya perbandingan varian, jelaskan perbedaan fitur dan harga.
 3. Jika ditanya rekomendasi, sesuaikan dengan budget dan kebutuhan customer.
-4. SELALU sebutkan "berdasarkan data pasar terbaru" untuk disclaimer.
+4. Jika ditanya "pakai rate apa" atau "mitra apa", jawab berdasarkan data Kebijakan KKB di atas.
+5. SELALU sebutkan "berdasarkan data pasar terbaru" untuk disclaimer.
 
 ATURAN SEARCH QUERY (PENTING):
 - Jika user mencari model spesifik (contoh: "Brio"), JANGAN search merk ("Honda").

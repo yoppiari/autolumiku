@@ -293,34 +293,7 @@ export class WhatsAppAIChatService {
         responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
       }
 
-      // 2. Initial Greeting & Identity Check
-      const isGreetingIntent = /^(halo|hai|hello|hi|pagi|siang|sore|malam|selamat)/i.test(userMessage.toLowerCase());
-      const isIdentityInquiry = /siapa|apa|identitas|kamu/i.test(userMessage.toLowerCase());
-      const showroomName = account?.tenant?.name || "Showroom Kami";
-
-      // We prepend time greeting if it's a short context OR if user is explicitly greeting/inquiring
-      // But actually, the user wants it MORE consistent. Let's make it more persistent.
-      if (responseMessage.length > 0) {
-        // Get time-based greeting for Indonesian context
-        const now = new Date();
-        const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-        const hour = wibTime.getHours();
-        let timeGreeting = "Selamat malam";
-        if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
-        else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
-        else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
-
-        // Prepend time greeting if not already there (case insensitive check)
-        const lowerResponse = responseMessage.toLowerCase();
-        if (!lowerResponse.includes("selamat pagi") &&
-          !lowerResponse.includes("selamat siang") &&
-          !lowerResponse.includes("selamat sore") &&
-          !lowerResponse.includes("selamat malam") &&
-          !lowerResponse.includes("selamat datang")) {
-          // Only prepend if message doesn't start with a greeting already
-          responseMessage = `${timeGreeting}! 👋\n\n${responseMessage}`;
-        }
-      }
+      // (Pre-processing of AI response text moved to bottom to ensure it covers tool results)
 
       // 2b. LAZINESS FILTER - Catch and replace "cek dulu" or "mohon ditunggu"
       if (responseMessage.toLowerCase().includes("cek dulu") || responseMessage.toLowerCase().includes("mohon ditunggu")) {
@@ -485,17 +458,63 @@ export class WhatsAppAIChatService {
         }
       }
 
-      // Build final response message
-      // (responseMessage already has the content from AI or post-processing)
+      // ==================== FINAL POST-PROCESSING ====================
+      // This section ensures that EVERYTHING (AI text + tool results) follows brand rules
 
-      // FALLBACK: If AI responded with edit intent text but didn't call the tool, parse it manually
-      if (!editRequest && context.isStaff && responseMessage) {
-        const editFallback = this.detectEditIntentFromText(responseMessage, userMessage);
-        if (editFallback) {
-          console.log('[WhatsApp AI Chat] ⚠️ FALLBACK: AI responded with text but no tool call, parsing manually:', editFallback);
-          editRequest = editFallback;
-          responseMessage = ''; // Clear the text response, let orchestrator handle the edit
+      // 1. Critical Showroom Name Check
+      const showroomName = account?.tenant?.name || "Showroom Kami";
+
+      // 2. SELF-HEALING GREETINGS (The "Always Greeting" Rule)
+      if (responseMessage.length > 0) {
+        const now = new Date();
+        const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+        const hour = wibTime.getHours();
+
+        let timeGreeting = "Selamat malam";
+        if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+        else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+        else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
+        const lowerResponse = responseMessage.toLowerCase().trim();
+        const startsWithGreeting =
+          lowerResponse.startsWith("selamat pagi") ||
+          lowerResponse.startsWith("selamat siang") ||
+          lowerResponse.startsWith("selamat sore") ||
+          lowerResponse.startsWith("selamat malam") ||
+          lowerResponse.startsWith("halo") ||
+          lowerResponse.startsWith("hai");
+
+        if (!startsWithGreeting) {
+          responseMessage = `${timeGreeting}! 👋\n\n${responseMessage.trim()}`;
         }
+      }
+
+      // 3. LAZINESS FILTER - Catch and replace "cek dulu" or "mohon ditunggu"
+      if (responseMessage.toLowerCase().includes("cek dulu") || responseMessage.toLowerCase().includes("mohon ditunggu")) {
+        console.log(`[WhatsApp AI Chat] ⚠️ Laziness detected in response: "${responseMessage}"`);
+        const vehicles = await this.getAvailableVehiclesDetailed(context.tenantId);
+        if (vehicles.length > 0) {
+          const vehicleList = this.formatVehicleListDetailed(vehicles.slice(0, 3));
+          responseMessage = `Mohon maaf kak, untuk ketersediaan unit saat ini bisa langsung cek daftar ready stock kami berikut ini ya:\n\n${vehicleList}\n\n` +
+            `Mau lihat fotonya? 📸 (Atau ada kriteria unit lain yang dicari?)`;
+
+          // Re-apply greeting if we replaced the whole message
+          const now = new Date();
+          const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
+          let timeGreeting = "Selamat malam";
+          if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+          else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+          else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
+          if (!responseMessage.toLowerCase().includes("selamat")) {
+            responseMessage = `${timeGreeting}! 👋\n\n${responseMessage}`;
+          }
+        }
+      }
+
+      // 4. Ensure Mandatory Follow-up Question
+      if (!responseMessage.toLowerCase().includes("bantu") && !responseMessage.toLowerCase().includes("terima kasih") && responseMessage.length > 0) {
+        responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
       }
 
       // If AI sent images but no text, add default message
@@ -674,14 +693,14 @@ export class WhatsAppAIChatService {
     if (isGreeting || (isNewConversation && looksLikeGreeting)) {
       console.log(`[SmartFallback] 👋 Greeting detected: "${msg}" - sending warm welcome`);
 
-      // Get time-based greeting
+      // Get time-based greeting (WIB)
       const now = new Date();
       const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
       const hour = wibTime.getHours();
-      let timeGreeting = "Selamat pagi";
-      if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+      let timeGreeting = "Selamat malam";
+      if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+      else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
       else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
-      else if (hour >= 18 || hour < 4) timeGreeting = "Selamat malam";
 
       // Build vehicle preview
       let vehiclePreview = "";
@@ -1129,6 +1148,76 @@ export class WhatsAppAIChatService {
       };
     }
 
+    // ==================== KKB / CREDIT SIMULATION HANDLER ====================
+    // Detect finance, credit, simulation, dp, or installment queries
+    const creditPatterns = [
+      /\b(kredit|cicilan|angsuran|kkb|finance|leasing|rate|bunga)\b/i,
+      /\b(dp|down\s*payment|uang\s*muka)\b/i,
+      /\b(simulasi|hitung|berapa)\b.*\b(bulan|tahun|cicil)\b/i,
+    ];
+    const isCreditQuery = creditPatterns.some(p => p.test(msg));
+
+    if (isCreditQuery) {
+      console.log(`[SmartFallback] 💳 Credit query detected: "${msg}"`);
+
+      // Try to find a vehicle mentioned in current message or history
+      // (vehicleName is already extracted at the top of the function)
+      let targetVehicle: any = null;
+      if (vehicleName) {
+        targetVehicle = vehicles.find(v =>
+          v.make.toLowerCase().includes(vehicleName.toLowerCase().split(' ')[0]) ||
+          v.model.toLowerCase().includes(vehicleName.toLowerCase().split(' ')[0]) ||
+          (v.displayId && vehicleName.toUpperCase().includes(v.displayId.toUpperCase()))
+        );
+      }
+
+      // If no specific vehicle found, use the first available one as an example
+      if (!targetVehicle && vehicles.length > 0) {
+        targetVehicle = vehicles[0];
+      }
+
+      if (targetVehicle) {
+        // Extract DP percentage if mentioned
+        const dpPercentMatch = msg.match(/(\d+)\s*%/);
+        const dpPercent = dpPercentMatch ? parseInt(dpPercentMatch[1]) : 30;
+
+        // Perform simulation
+        const simulation = WhatsAppAIChatService.calculateKKBSimulation(
+          Number(targetVehicle.price),
+          null,
+          dpPercent
+        );
+
+        // Get time greeting for consistency
+        const now = new Date();
+        const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
+        let timeGreeting = "Selamat malam";
+        if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+        else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+        else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
+        return {
+          message: `${timeGreeting}! 👋\n\nTentu kak! Ini estimasi simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}*:\n\n` +
+            simulation + `\n\n_Bapak/Ibu ingin kami bantu hubungkan dengan tim Sales kami untuk hitungan pastinya?_ 😊`,
+          shouldEscalate: false,
+        };
+      } else {
+        // Get time greeting for consistency
+        const now = new Date();
+        const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
+        let timeGreeting = "Selamat malam";
+        if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+        else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+        else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
+        return {
+          message: `${timeGreeting}! 👋\n\nUntuk simulasi kredit, kami bekerja sama dengan berbagai partner seperti BCA Finance, Adira, dan Mandiri dengan bunga yang kompetitif mulai dari 4.5% flat p.a. 📊\n\n` +
+            `Boleh tau unit mobil apa yang bapak/ibu incar? Agar saya bisa buatkan simulasi angsurannya yang lebih tepat. 😊`,
+          shouldEscalate: false,
+        };
+      }
+    }
+
     // Check if wants to leave/cancel
     if (/ga jadi|cancel|batal|pergi|showroom lain|bye|dadah/i.test(msg)) {
       return {
@@ -1140,6 +1229,14 @@ export class WhatsAppAIChatService {
 
     // Default: Try to be helpful based on available inventory
     if (vehicles.length > 0) {
+      // Get time greeting for consistency
+      const now = new Date();
+      const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
+      let timeGreeting = "Selamat malam";
+      if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+      else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+      else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
       const randomVehicles = vehicles.sort(() => Math.random() - 0.5).slice(0, 3);
       const list = randomVehicles.map(v => {
         const price = Math.round(Number(v.price) / 1000000);
@@ -1147,7 +1244,7 @@ export class WhatsAppAIChatService {
       }).join('\n');
 
       return {
-        message: `Hmm, bisa diperjelas kebutuhannya? 🤔\n\n` +
+        message: `${timeGreeting}! 👋\n\nHmm, bisa diperjelas kebutuhannya? 🤔\n\n` +
           `Ini beberapa unit ready di ${tenantName}:\n${list}\n\n` +
           `Atau sebutkan merk/budget yang dicari ya! 😊🚗`,
         shouldEscalate: false,
@@ -2570,8 +2667,9 @@ export class WhatsAppAIChatService {
       });
 
       result += `\n🕒 *Tenor ${tenor} Tahun*\n`;
-      result += `• Range: ${formatRp(minInstallment)} - ${formatRp(maxInstallment)}\n`;
-      result += `• Best Rate: ${bestLeasing}\n`;
+      result += `• Est. Angsuran: ${formatRp(minInstallment)} - ${formatRp(maxInstallment)}\n`;
+      result += `• Estimasi Bunga: 4.5% - 11.5% flat p.a.\n`;
+      result += `• Partner Utama: ${bestLeasing}, Adira, Mandiri, dll.\n`;
     });
 
     result += `\n📝 *Syarat Kredit Umum:*\n`;
