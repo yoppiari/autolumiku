@@ -1292,16 +1292,28 @@ export class WhatsAppAIChatService {
       else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
       else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
 
-      const randomVehicles = vehicles.sort(() => Math.random() - 0.5).slice(0, 3);
-      const list = randomVehicles.map(v => {
-        const price = Math.round(Number(v.price) / 1000000);
-        return `• ${v.make || ''} ${v.model || ''} ${v.year || ''} - Rp ${price} jt`;
-      }).join('\n');
+      // 1. Try to find "High Class" units first (SUV, MPV Premium, etc)
+      const highClassKeywords = ['fortuner', 'pajero', 'palisade', 'terra', 'alphard', 'vellfire', 'crv', 'cx-5', 'santa fe', 'innova zenix', 'innova reborn'];
+      let premiumVehicles = vehicles.filter(v => {
+        const fullName = `${v.make} ${v.model}`.toLowerCase();
+        return highClassKeywords.some(keyword => fullName.includes(keyword));
+      });
+
+      // 2. If no specific high class found, sort by price (Higher = usually more premium)
+      if (premiumVehicles.length === 0) {
+        premiumVehicles = [...vehicles].sort((a, b) => Number(b.price) - Number(a.price));
+      }
+
+      // Take top 3 recommendations
+      const recommendations = premiumVehicles.slice(0, 3);
+
+      // Use the DETAILED formatter
+      const list = WhatsAppAIChatService.formatVehicleListDetailed(recommendations);
 
       return {
-        message: `${timeGreeting}! 👋\n\nHmm, bisa diperjelas kebutuhannya? 🤔\n\n` +
-          `Ini beberapa unit ready di ${tenantName}:\n${list}\n\n` +
-          `Atau sebutkan merk/budget yang dicari ya! 😊🚗`,
+        message: `${timeGreeting}! 👋\n\nMohon maaf, sepertinya unit spesifik yang Bapak/Ibu cari belum tersedia saat ini. 🙏\n\n` +
+          `Namun jangan khawatir! Kami memiliki beberapa rekomendasi unit premium/terbaik yang *READY STOCK* dan mungkin cocok untuk Anda:\n\n${list}\n\n` +
+          `Apakah ada dari unit di atas yang menarik perhatian Bapak/Ibu? Atau ingin dibantu carikan jenis lain? 😊`,
         shouldEscalate: false,
       };
     }
