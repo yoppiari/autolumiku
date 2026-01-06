@@ -74,6 +74,7 @@ const STAFF_COMMAND_PATTERNS = {
     /^\/verify\s+/i,                 // /verify 081234567890
     /^verify\s+/i,                   // verify 081234567890
     /^verifikasi\s+/i,               // verifikasi 081234567890
+    /^\/?verify$/i,                  // standalone verify (check self or formatting help)
   ],
   update_status: [
     /^\/status\s+/i,                 // /status PM-PST-001 SOLD
@@ -688,6 +689,20 @@ export class IntentClassifierService {
       };
     }
 
+    // 1b. Check AI Capability inquiry (AI 5.0) - High Priority
+    // MUST be checked before general greetings/questions to catch identity questions
+    if (CUSTOMER_PATTERNS.ai_capability.some((p) => p.test(message))) {
+      console.log('[Intent Classifier] 🤖 AI Capability/Identity detected:', message);
+      // Return immediately to prevent override
+      return {
+        intent: "customer_ai_capability",
+        confidence: 0.99,
+        isStaff: false,
+        isCustomer: true,
+        reason: "Detected AI capability/identity question (High Priority)",
+      };
+    }
+
     // 2. Check closing/thanks patterns (customer ending conversation)
     if (CUSTOMER_PATTERNS.closing.some((p) => p.test(trimmedMessage))) {
       console.log('[Intent Classifier] 👋 Closing/thanks detected:', message);
@@ -764,20 +779,12 @@ export class IntentClassifierService {
     }
 
     // 10. Check contact inquiry
+    // 10. Check contact inquiry
     if (CUSTOMER_PATTERNS.contact_inquiry.some((p) => p.test(message))) {
       maxConfidence = Math.max(maxConfidence, 0.95);
       if (maxConfidence === 0.95) {
         detectedIntent = "customer_contact_inquiry";
         reason = "Detected contact inquiry (asking for sales/phone)";
-      }
-    }
-
-    // 11. Check AI Capability inquiry (AI 5.0)
-    if (CUSTOMER_PATTERNS.ai_capability.some((p) => p.test(message))) {
-      maxConfidence = Math.max(maxConfidence, 0.98); // Very high confidence for specific AI questions
-      if (maxConfidence === 0.98) {
-        detectedIntent = "customer_ai_capability";
-        reason = "Detected AI capability/identity question";
       }
     }
 
@@ -788,7 +795,6 @@ export class IntentClassifierService {
       isCustomer: true,
       reason,
     };
-  }
 
   /**
    * Extract entities dari message (helper untuk future enhancements)
