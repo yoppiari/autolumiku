@@ -1146,6 +1146,7 @@ export class WhatsAppAIChatService {
         const response = `Ada nih ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year} | ${id} 🚗✨\n\n` +
           `💰 Harga: Rp ${priceJuta} juta\n` +
           `⚙️ Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
+          `⛽ Bahan Bakar: ${matchingVehicle.fuelType || 'Bensin'}\n` +
           `${matchingVehicle.mileage ? `📊 Kilometer: ${matchingVehicle.mileage.toLocaleString('id-ID')} km\n` : ''}` +
           `🎨 Warna: ${matchingVehicle.color || '-'}\n\n` +
           `Mau lihat fotonya? 📸`;
