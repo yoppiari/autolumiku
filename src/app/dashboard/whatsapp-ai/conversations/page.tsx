@@ -1645,10 +1645,13 @@ END:VCARD`;
                                     </span>
                                     <span className="text-[11px] md:text-[10px] font-bold text-gray-800">
                                       {msg.senderType === 'ai' || msg.aiResponse
-                                        ? (aiConfig?.aiName || 'Asisten Virtual')
+                                        ? (aiConfig?.aiName || 'AI Assistant')
                                         : (() => {
-                                          const role = (selectedConversation?.isStaff ? 'Tim' : 'Admin');
-                                          return role;
+                                          const intent = msg.intent || '';
+                                          if (intent.includes('owner')) return 'Owner';
+                                          if (intent.includes('admin')) return 'Admin';
+                                          if (intent.includes('staff') || msg.senderType === 'staff') return 'Staff';
+                                          return 'Staff';
                                         })()
                                       }
                                     </span>
@@ -1657,7 +1660,7 @@ END:VCARD`;
                                 <p className="text-[13px] md:text-xs whitespace-pre-wrap break-words leading-relaxed pr-5">{msg.content}</p>
                                 <div className="flex items-center justify-end mt-1 md:mt-0.5 space-x-1">
                                   <span className="text-[10px] md:text-[9px] text-gray-500">
-                                    {new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(msg.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                   </span>
                                   {msg.direction === 'outbound' && (
                                     <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
