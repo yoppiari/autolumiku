@@ -1624,23 +1624,29 @@ END:VCARD`;
                                     </span>
                                     <span className="text-[11px] md:text-[10px] font-bold text-gray-800">
                                       {(() => {
+                                        // Priority: Check team member list first for accuracy
+                                        if (selectedConversation?.isStaff || msg.intent?.includes('staff') || msg.intent?.includes('owner') || msg.intent?.includes('admin')) {
+                                          const phone = selectedConversation?.customerPhone;
+                                          if (phone) {
+                                            const member = teamMembers.find(m =>
+                                              (m.phone && m.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')) ||
+                                              phone.includes(m.phone?.replace(/\D/g, '') || 'XYZ')
+                                            );
+                                            if (member) {
+                                              if (member.role === 'OWNER') return 'Owner';
+                                              if (member.role === 'ADMIN') return 'Admin';
+                                              return 'Staff';
+                                            }
+                                          }
+                                        }
+
+                                        // Fallback to intent (less reliable)
                                         const intent = msg.intent || '';
                                         if (intent.includes('owner')) return 'Owner';
                                         if (intent.includes('admin')) return 'Admin';
                                         if (intent.includes('staff') || msg.senderType === 'staff') return 'Staff';
-                                        return selectedConversation?.isStaff ? (() => {
-                                          const phone = selectedConversation.customerPhone;
-                                          const member = teamMembers.find(m =>
-                                            (m.phone && m.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')) ||
-                                            phone.includes(m.phone?.replace(/\D/g, '') || 'XYZ')
-                                          );
-                                          if (member) {
-                                            if (member.role === 'OWNER') return 'Owner';
-                                            if (member.role === 'ADMIN') return 'Admin';
-                                            return 'Staff';
-                                          }
-                                          return 'Staff';
-                                        })() : 'Customer';
+
+                                        return 'Customer';
                                       })()}
                                     </span>
                                     {msg.intent && (
