@@ -2278,8 +2278,10 @@ export class WhatsAppAIChatService {
       const specificVehicle = await prisma.vehicle.findFirst({
         where: {
           tenantId,
-          displayId: explicitId, // Exact match on displayId
-          // removed status constraint to allow finding BOOKED/SOLD items if requested explicitly
+          displayId: {
+            equals: explicitId,
+            mode: 'insensitive', // Case-insensitive match for PM-PST-001 vs pm-pst-001
+          },
         },
         include: {
           photos: {
@@ -2288,18 +2290,21 @@ export class WhatsAppAIChatService {
         },
       });
 
+      console.log(`[WhatsApp AI Chat] Query result for ${explicitId}:`, specificVehicle ? `FOUND (${specificVehicle.make} ${specificVehicle.model})` : 'NOT FOUND');
+
       if (specificVehicle) {
         if (specificVehicle.photos && specificVehicle.photos.length > 0) {
-          console.log(`[WhatsApp AI Chat] ✅ Found specific vehicle ${explicitId} with ${specificVehicle.photos.length} photos`);
+          console.log(`[WhatsApp AI Chat] ✅ Found vehicle ${explicitId} with ${specificVehicle.photos.length} photos`);
+          console.log(`[WhatsApp AI Chat] First photo preview:`, specificVehicle.photos[0].originalUrl?.substring(0, 80) || 'NO URL');
           return this.buildImageArray([specificVehicle]);
         } else {
           console.log(`[WhatsApp AI Chat] ⚠️ Found specific vehicle ${explicitId} but NO photos`);
           return null;
         }
       } else {
-        console.log(`[WhatsApp AI Chat] ❌ Specific vehicle ${explicitId} not found in database`);
-        // Fallthrough to normal search in case it wasn't a displayId but looking like one?
-        // But usually PM-PST-XXX is strictly an ID.
+        console.log(`[WhatsApp AI Chat] ❌ Vehicle ${explicitId} not found in DB (tenantId: ${tenantId})`);
+        // Don't fallthrough - user specified exact ID
+        return null;
       }
     }
 
