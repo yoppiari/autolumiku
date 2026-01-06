@@ -510,7 +510,7 @@ export class WhatsAppAIChatService {
       if (aiResponse.toolCalls?.some(tc =>
         tc.type === 'function' && 'function' in tc && tc.function.name === 'send_vehicle_images'
       ) && (!images || images.length === 0)) {
-        responseMessage = responseMessage || 'Wah, maaf ya foto mobilnya belum tersedia saat ini 🙏 Ada yang lain yang bisa dibantu? 😊';
+        responseMessage = responseMessage || 'Maaf kak, saat ini galeri foto unit sedang kami perbarui untuk kualitas terbaik. 👋 Adakah hal lain yang bisa kami bantu? 😊';
       }
 
       return {
@@ -1063,12 +1063,8 @@ export class WhatsAppAIChatService {
         return { message: response, shouldEscalate: false };
       } else {
         return {
-          message: `Wah, maaf ya ${searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1)} belum tersedia saat ini 🙏\n\n` +
-            `Tapi ada pilihan lain nih 🚗✨\n${vehicles.slice(0, 3).map(v => {
-              const id = v.displayId || v.id.substring(0, 6).toUpperCase();
-              return `• ${v.make} ${v.model} ${v.year} | ${id}`;
-            }).join('\n')}\n\n` +
-            `Tapi ada pilihan lain nih 🚗✨\n${vehicles.slice(0, 3).map(v => {
+          message: `Mohon maaf kak, unit ${searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1)} yang Anda cari saat ini belum tersedia di showroom kami. 👋\n\n` +
+            `Namun, kami memiliki beberapa koleksi unit favorit lainnya yang mungkin sesuai dengan selera Anda:\n\n${vehicles.slice(0, 3).map(v => {
               const id = v.displayId || v.id.substring(0, 6).toUpperCase();
               return `• ${v.make} ${v.model} ${v.year} | ${id}`;
             }).join('\n')}\n\n` +
@@ -1109,9 +1105,9 @@ export class WhatsAppAIChatService {
       // Be honest about inventory status
       if (vehicles.length === 0) {
         return {
-          message: `Halo! Terima kasih sudah menghubungi ${tenantName}.\n\n` +
-            `Mohon maaf, saat ini stok kami sedang kosong. 🙏\n\n` +
-            `Bisa leave kontak kamu? Nanti kami kabari kalau sudah ada unit baru yang ready. 😊`,
+          message: `Selamat siang! 👋\n\n` +
+            `Terima kasih telah menghubungi ${tenantName}. Mohon maaf kak, saat ini seluruh unit favorit di showroom kami sedang terjual habis karena antusiasme yang tinggi. 🙏\n\n` +
+            `Tim kami sedang dalam proses pengadaan unit-unit pilihan terbaru yang berkualitas. Ingin kami kabari segera setelah ada unit baru yang ready? 😊`,
           shouldEscalate: false,
         };
       }
@@ -1125,12 +1121,12 @@ export class WhatsAppAIChatService {
     // Check if complaint/frustration
     if (/kaku|nyebelin|ga (jelas|responsif|bisa)|muter|bingung|kesal|males/i.test(msg)) {
       return {
-        message: `Waduh, maaf banget ya atas ketidaknyamanannya 🙏😔\n\n` +
-          `Coba langsung aja sebutin kebutuhannya, misal:\n` +
+        message: `Mohon maaf atas ketidaknyamanannya kak. 🙏 Kami berkomitmen untuk memberikan pengalaman terbaik dalam pencarian unit Anda.\n\n` +
+          `Agar lebih akurat, bisa langsung infokan kriteria mobil impian Anda? Contohnya:\n` +
           `• "Cari Avanza budget 150 juta"\n` +
           `• "Ada Innova matic?"\n` +
           `• "Mobil keluarga 7 seater"\n\n` +
-          `Pasti kami bantu carikan! 💪😊`,
+          `Saya akan segera carikan unit terbaik yang ready stock! 🚗✨`,
         shouldEscalate: false,
       };
     }
@@ -1657,9 +1653,8 @@ export class WhatsAppAIChatService {
               const id = v.displayId || v.id.substring(0, 8).toUpperCase();
               return `• ${v.make} ${v.model} ${v.year} | ${id}`;
             }).join('\n');
-            console.log(`[PhotoConfirm DEBUG] ⚠️ Vehicles found but no photos, returning list`);
             return {
-              message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))`,
+              message: `Maaf kak, saat ini galeri foto unit sedang kami perbarui untuk kualitas terbaik. 👋\n\nTapi kami punya unit ready menarik lainnya:\n${vehicleList}\n\nIngin saya kirimkan fotonya segera setelah siap? 😊`,
               shouldEscalate: false,
               confidence: 0.8,
             };
@@ -1728,7 +1723,7 @@ export class WhatsAppAIChatService {
       } else {
         console.log(`[PhotoConfirm DEBUG] ⚠️ No images found for "${vehicleName}", returning text response`);
         return {
-          message: `Wah, maaf ya foto ${vehicleName} belum tersedia saat ini 🙏\n\nAda yang lain yang bisa kami bantu? 😊`,
+          message: `Maaf kak, koleksi foto untuk ${vehicleName} sedang dalam proses kurasi oleh tim kami untuk kualitas terbaik. 👋\n\nAdakah unit lain yang ingin Anda lihat atau ada hal lain yang bisa kami bantu? 😊`,
           shouldEscalate: false,
           confidence: 0.9,
         };
