@@ -233,6 +233,11 @@ const CUSTOMER_PATTERNS = {
     /^(bagaimana|gimana|gmn)\s+(cara|kamu|u)\s+(kerja|transaksi|tau|tahu|dapat|mengerti)/i,
     /^(apa|siapa)\s+(kamu|anda|u)\s+(sebenarnya|itu|sih|ni|ini)/i,
 
+    // New Broad Patterns (Fixes "Kamu ini apa?", "Kamu siapa?", "Kamu pakai teknologi apa?")
+    /^(kamu|anda|u)\s+(ini|itu)?\s*(siapa|apa|bot|robot|ai|manusia|orang|sistem)\?*$/i,
+    /^(kamu|anda|u)\s+(pakai|menggunakan|pake).*(teknologi|ai|sistem|bot|robot|otak)/i, // Relaxed technology check
+    /^(kamu|anda|u)\s+(bisa|ngapain|buat|bikin)\s+(apa|aja)/i,
+
     // Skill/Capability
     /\b(skill|kemampuan|kelebihan|keunggulan|bisa apa)\b/i,
 
