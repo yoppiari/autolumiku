@@ -7,6 +7,7 @@
 import { prisma } from "@/lib/prisma";
 import fs from "fs/promises";
 import path from "path";
+import sharp from "sharp";
 
 // Aimeow API Base URL (tanpa credential, langsung bisa dipakai)
 const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
@@ -579,7 +580,7 @@ export class AimeowClientService {
           try {
             const buffer = await fs.readFile(filePath);
             console.log(`[Aimeow Base64] ✅ Read file from filesystem: ${filePath}`);
-            return buffer.toString('base64');
+            return this.processBuffer(buffer, imageUrl);
           } catch (fsError) {
             // Continue to next dir
           }
@@ -611,10 +612,35 @@ export class AimeowClientService {
       }
 
       const buffer = await response.arrayBuffer();
-      return Buffer.from(buffer).toString('base64');
+      return this.processBuffer(Buffer.from(buffer), imageUrl);
     } catch (error: any) {
       console.error(`[Aimeow Base64] ❌ Conversion error for ${imageUrl}:`, error.message);
       return null;
+    }
+  }
+
+  /**
+   * Process buffer: Convert WebP to JPEG if needed
+   */
+  private static async processBuffer(buffer: Buffer, originalUrl: string): Promise<string> {
+    try {
+      // If the file extension suggests WebP, convert to JPEG
+      // WhatsApp Mobile often struggles with WebP messages
+      if (originalUrl.endsWith('.webp') || originalUrl.includes('.webp')) {
+        console.log(`[Aimeow Base64] 🔄 Converting WebP to JPEG via Sharp: ${originalUrl.substring(0, 50)}...`);
+        const jpegBuffer = await sharp(buffer)
+          .jpeg({ quality: 80, mozjpeg: true })
+          .toBuffer();
+
+        console.log(`[Aimeow Base64] ✅ Converted! Size: ${Math.round(buffer.length / 1024)}KB -> ${Math.round(jpegBuffer.length / 1024)}KB`);
+        return jpegBuffer.toString('base64');
+      }
+
+      // If already JPEG or other format, return as is
+      return buffer.toString('base64');
+    } catch (e: any) {
+      console.warn(`[Aimeow Base64] ⚠️ Sharp conversion failed, returning original:`, e.message);
+      return buffer.toString('base64');
     }
   }
 

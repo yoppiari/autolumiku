@@ -2800,10 +2800,9 @@ export class WhatsAppAIChatService {
           originalUrl: photo.originalUrl?.substring(0, 100),
         });
 
-        // PRIORITY CHANGE: Use originalUrl (JPEG) first!
-        // WhatsApp Mobile often fails to render WebP (mediumUrl) as standard images.
-        // JPEG is universally supported.
-        let imageUrl = photo.originalUrl || photo.mediumUrl || photo.largeUrl;
+        // Reverting to mediumUrl for performance/stability. 
+        // Original JPEGs might be too large (5MB+) for Base64 payloads, causing timeouts/errors.
+        let imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
 
         if (!imageUrl) {
           console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for photo ${photoIndex + 1}`);
