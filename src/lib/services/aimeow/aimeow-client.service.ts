@@ -461,20 +461,31 @@ export class AimeowClientService {
 
       if (base64Image) {
         try {
-          const payload = {
-            clientId: apiClientId,
-            phone: to,
-            image: `data:${isRetry ? 'image/webp' : 'image/jpeg'};base64,${base64Image}`,
-            caption: caption || ""
-          };
-
+          // USE PLURAL ENDPOINT: The singular endpoint is broken/deprecated on this gateway version.
+          // We must wrap the single image in an array and use /send-images
           const logUrl = base64Image.length > 200
             ? `BASE64 (${Math.round(base64Image.length / 1024)} KB)`
             : sanitizedUrl;
 
-          console.log(`[Aimeow Client] 📤 Sending image to ${to} | Content: ${logUrl}`);
+          console.log(`[Aimeow Client] 📤 Sending image via /send-images (Plural Endpoint workaround) to ${to} | Content: ${logUrl}`);
 
-          const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-image`, {
+          const endpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`;
+          const payload = {
+            phone: to,
+            images: [{
+              imageUrl: `data:${isRetry ? 'image/webp' : 'image/jpeg'};base64,${base64Image}`,
+              caption: caption || ""
+            }],
+            // Essential fields for inline display (copied from working test)
+            viewOnce: false,
+            isViewOnce: false,
+            mimetype: isRetry ? 'image/webp' : 'image/jpeg',
+            mimeType: isRetry ? 'image/webp' : 'image/jpeg',
+            type: 'image',
+            mediaType: 'image'
+          };
+
+          const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -486,13 +497,15 @@ export class AimeowClientService {
           }
 
           const result = await response.json();
-          console.log(`[Aimeow Client] ✅ Success: ${result.message?.id?.id || result.id}`);
-          return { success: true, messageId: result.message?.id?.id || result.id };
+          // Adjust for different response structures (single vs array)
+          const msgId = result.messageId || result.id || (result.messages && result.messages[0]?.id?.id);
+          console.log(`[Aimeow Client] ✅ Success: ${msgId}`);
+          return { success: true, messageId: msgId };
 
         } catch (sendError: any) {
           // RETRY LOGIC (GATEWAY FAILURE): If sending failed (likely too large), and we were trying 'original', retry with 'medium'
           if (sanitizedUrl.includes('original') && !isRetry) {
-            console.warn(`[Aimeow Client] ⚠️ First attempt failed (${sendError.message}). Retrying with MEDIUM quality...`);
+            console.warn(`[Aimeow Client] ⚠️ First attempt failed (${sendError.message}). Retrying with MEDIUM quality via /send-images...`);
 
             const mediumUrl = sanitizedUrl.replace('original', 'medium').replace('.jpg', '.webp').replace('.jpeg', '.webp');
             const mediumBase64 = await this.getImageAsBase64(mediumUrl);
@@ -500,22 +513,33 @@ export class AimeowClientService {
             if (mediumBase64) {
               console.log(`[Aimeow Client] 🔄 Retry Payload Size: ${Math.round(mediumBase64.length / 1024)} KB`);
 
-              // Retry request (force WebP mime type for medium)
-              const retryResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-image`, {
+              // Retry request with plural endpoint
+              const retryEndpoint = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`;
+              const retryPayload = {
+                phone: to,
+                images: [{
+                  imageUrl: `data:image/webp;base64,${mediumBase64}`,
+                  caption: caption || ""
+                }],
+                viewOnce: false,
+                isViewOnce: false,
+                mimetype: 'image/webp',
+                mimeType: 'image/webp',
+                type: 'image',
+                mediaType: 'image'
+              };
+
+              const retryResponse = await fetch(retryEndpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  clientId: apiClientId,
-                  phone: to,
-                  image: `data:image/webp;base64,${mediumBase64}`,
-                  caption: caption || ""
-                })
+                body: JSON.stringify(retryPayload)
               });
 
               if (retryResponse.ok) {
                 const retryResult = await retryResponse.json();
-                console.log(`[Aimeow Client] ✅ Retry SUCCESS!`);
-                return { success: true, messageId: retryResult.message?.id?.id || retryResult.id };
+                const retryMsgId = retryResult.messageId || retryResult.id || (retryResult.messages && retryResult.messages[0]?.id?.id);
+                console.log(`[Aimeow Client] ✅ Retry SUCCESS: ${retryMsgId}`);
+                return { success: true, messageId: retryMsgId };
               }
             }
           }
