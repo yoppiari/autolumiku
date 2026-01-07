@@ -24,6 +24,7 @@ import {
 } from "./prompts";
 import { prisma } from "@/lib/prisma";
 import { MessageIntent } from "./intent-classifier.service";
+import { LeadService } from "@/lib/services/lead-service";
 
 // ==================== TYPES ====================
 
@@ -48,6 +49,14 @@ export interface ChatContext {
     userId?: string;
   };
   isEscalated?: boolean; // Escalated conversations get faster, more direct responses
+  leadInfo?: {
+    id: string;
+    name: string;
+    status: string;
+    interestedIn?: string;
+    lastInteraction?: Date;
+    location?: string; // Notes/tags might store this
+  } | null;
 }
 
 // Vehicle details with images for detailed response
@@ -365,102 +374,171 @@ export class WhatsAppAIChatService {
       // Handle tool calls (function calling)
       let uploadRequest: any = null;
       let editRequest: any = null;
+      let messages: any[] = []; // Added for tool output feedback
 
-      if (aiResponse.toolCalls && aiResponse.toolCalls.length > 0) {
-        console.log('[WhatsApp AI Chat] 🔧 Processing tool calls:', aiResponse.toolCalls.length);
+      // Handle tool calls
+      if (aiResponse.toolCalls) {
+        console.log(`[WhatsAppAI] 🛠️ Tool calls detected: ${aiResponse.toolCalls.length}`);
 
         for (const toolCall of aiResponse.toolCalls) {
-          // Type guard: check if this is a function tool call (not custom)
-          if (toolCall.type === 'function' && 'function' in toolCall) {
-            console.log('[WhatsApp AI Chat] Tool call:', toolCall.function.name);
+          const toolName = toolCall.function.name;
+          const toolArgs = JSON.parse(toolCall.function.arguments);
 
-            if (toolCall.function.name === 'send_vehicle_images') {
-              const args = JSON.parse(toolCall.function.arguments);
-              const searchQuery = args.search_query;
+          console.log(`[WhatsAppAI] 🔧 Tool: ${toolName}`, toolArgs);
 
-              console.log('[WhatsApp AI Chat] 📸 AI requested vehicle images for:', searchQuery);
+          if (toolName === 'create_lead') {
+            try {
+              console.log('[WhatsAppAI] 📝 Creating lead...');
 
-              resultImages = await this.fetchVehicleImagesByQuery(searchQuery, context.tenantId);
+              // Normalize phone number
+              let phone = toolArgs.phone || context.customerPhone;
 
-              if (resultImages && resultImages.length > 0) {
-                console.log(`[WhatsApp AI Chat] ✅ Found ${resultImages.length} images to send`);
+              // If phone is missing/invalid, try to use context phone
+              if (!phone || phone.length < 5) {
+                phone = context.customerPhone;
+              }
+
+              // Check if lead already exists to decide between create or update
+              // But for now, we'll try findExisting logic inside createLead equivalent using LeadService
+              // Since LeadService.createLead creates a NEW record, we might want to check existence first
+              // However, let's keep it simple: createLead is fine, but we should check if we can update if exists
+
+              const existingLead = await LeadService.getLeadByPhone(context.tenantId, phone);
+
+              let resultLead;
+              if (existingLead) {
+                // Update existing
+                resultLead = await LeadService.updateLead(existingLead.id, context.tenantId, {
+                  name: toolArgs.name || existingLead.name, // Keep existing name if not provided
+                  interestedIn: toolArgs.interest || toolArgs.vehicle_id || existingLead.interestedIn,
+                  budgetRange: toolArgs.budget || existingLead.budgetRange,
+                  notes: toolArgs.location ? `Location: ${toolArgs.location}\n${existingLead.notes || ''}` : existingLead.notes,
+                  status: 'CONTACTED' // Update status to reflect active engagement
+                });
+                console.log('[WhatsAppAI] ✅ Lead updated:', resultLead.id);
               } else {
-                console.log('[WhatsApp AI Chat] ⚠️ No images found for query:', searchQuery);
+                // Create new
+                resultLead = await LeadService.createLead({
+                  tenantId: context.tenantId,
+                  name: toolArgs.name || context.customerName || "Customer",
+                  phone: phone,
+                  interestedIn: toolArgs.interest || toolArgs.vehicle_id,
+                  budgetRange: toolArgs.budget,
+                  source: 'whatsapp',
+                  message: context.messageHistory.map(m => `${m.role}: ${m.content}`).slice(-3).join('\n'), // Store recent chat as initial message
+                  status: 'NEW',
+                  priority: 'MEDIUM',
+                  notes: toolArgs.location ? `Location: ${toolArgs.location}` : undefined
+                });
+                console.log('[WhatsAppAI] ✅ Lead created:', resultLead.id);
               }
-            } else if (toolCall.function.name === 'search_vehicles') {
-              const args = JSON.parse(toolCall.function.arguments);
-              console.log('[WhatsApp AI Chat] 🔍 AI searching vehicles with criteria:', args);
 
-              const searchResults = await this.searchVehiclesByCriteria(context.tenantId, args);
-              console.log(`[WhatsApp AI Chat] Found ${searchResults.length} vehicles matching criteria`);
+              // Add result to messages for AI to know process succeeded
+              messages.push({
+                role: "function",
+                name: toolName,
+                content: JSON.stringify({ success: true, lead_id: resultLead.id, message: "Lead saved successfully." })
+              } as any);
 
-              // Store search results in context for follow-up (like sending photos)
-              if (searchResults.length > 0) {
-                // Build vehicle names for potential photo sending
-                const vehicleNames = searchResults.map(v => `${v.make} ${v.model}`).join(' ');
-                console.log('[WhatsApp AI Chat] Vehicles found:', vehicleNames);
-
-                // Add search results to the response message with FULL DETAILS
-                // Format must match system prompt: pipe separator with all vehicle details
-                if (!responseMessage.includes(searchResults[0].make)) {
-                  const vehicleList = this.formatVehicleListDetailed(searchResults.slice(0, 5));
-                  let searchResultText = `\n\nDitemukan ${searchResults.length} mobil yang cocok:\n\n${vehicleList}\n\n`;
-
-                  searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
-
-                  searchResultText += `Mau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))\n\n`;
-                  searchResultText += `Apakah ada hal lain yang bisa kami bantu? 😊`;
-
-                  responseMessage += searchResultText;
-                }
-              }
-            } else if (toolCall.function.name === 'upload_vehicle') {
-              const args = JSON.parse(toolCall.function.arguments);
-
-              console.log('[WhatsApp AI Chat] 🚗 AI detected vehicle upload request:', args);
-
-              uploadRequest = {
-                make: args.make,
-                model: args.model,
-                year: args.year,
-                price: args.price,
-                mileage: args.mileage || undefined, // Keep undefined if not provided
-                color: args.color || 'Unknown',
-                transmission: args.transmission || 'Manual',
-              };
-            } else if (toolCall.function.name === 'edit_vehicle') {
-              const args = JSON.parse(toolCall.function.arguments);
-
-              console.log('[WhatsApp AI Chat] ✏️ AI detected vehicle edit request:', args);
-
-              editRequest = {
-                vehicleId: args.vehicle_id,
-                field: args.field,
-                oldValue: args.old_value,
-                newValue: args.new_value,
-              };
-            } else if (toolCall.function.name === 'calculate_kkb_simulation') {
-              const args = JSON.parse(toolCall.function.arguments);
-              console.log('[WhatsApp AI Chat] 🧮 AI calculating KKB simulation:', args);
-
-              const simulationResult = WhatsAppAIChatService.calculateKKBSimulation(
-                args.vehicle_price,
-                args.dp_amount,
-                args.dp_percentage,
-                args.tenor_years
-              );
-
-              // Append simulation result to response with DISCLAIMER
-              responseMessage += "\n\n" + simulationResult;
-              responseMessage += "\n\n_Catatan: Suku bunga bersifat estimasi & dapat berubah sesuai kebijakan leasing terkini._";
-
-              if (!responseMessage.toLowerCase().includes('bantu')) {
-                responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
-              }
+            } catch (error) {
+              console.error('[WhatsAppAI] ❌ Failed to create/update lead:', error);
+              // Fallback error message if needed, or just log
             }
+
+            // Append confirmation to responseMessage so the user knows it worked
+            if (!responseMessage) {
+              responseMessage = "Baik, data Anda sudah kami simpan. Terima kasih! 🙏\n\nAda lagi yang bisa kami bantu?";
+            } else {
+              // If AI already generated text, maybe just append a checkmark or nothing
+              // responseMessage += " ✅";
+            }
+
+          }
+        } else if (toolName === 'send_vehicle_images') {
+          const searchQuery = toolArgs.search_query;
+
+          console.log('[WhatsApp AI Chat] 📸 AI requested vehicle images for:', searchQuery);
+
+          resultImages = await this.fetchVehicleImagesByQuery(searchQuery, context.tenantId);
+
+          if (resultImages && resultImages.length > 0) {
+            console.log(`[WhatsApp AI Chat] ✅ Found ${resultImages.length} images to send`);
+          } else {
+            console.log('[WhatsApp AI Chat] ⚠️ No images found for query:', searchQuery);
+          }
+        } else if (toolCall.function.name === 'search_vehicles') {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('[WhatsApp AI Chat] 🔍 AI searching vehicles with criteria:', args);
+
+          const searchResults = await this.searchVehiclesByCriteria(context.tenantId, args);
+          console.log(`[WhatsApp AI Chat] Found ${searchResults.length} vehicles matching criteria`);
+
+          // Store search results in context for follow-up (like sending photos)
+          if (searchResults.length > 0) {
+            // Build vehicle names for potential photo sending
+            const vehicleNames = searchResults.map(v => `${v.make} ${v.model}`).join(' ');
+            console.log('[WhatsApp AI Chat] Vehicles found:', vehicleNames);
+
+            // Add search results to the response message with FULL DETAILS
+            // Format must match system prompt: pipe separator with all vehicle details
+            if (!responseMessage.includes(searchResults[0].make)) {
+              const vehicleList = this.formatVehicleListDetailed(searchResults.slice(0, 5));
+              let searchResultText = `\n\nDitemukan ${searchResults.length} mobil yang cocok:\n\n${vehicleList}\n\n`;
+
+              searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
+
+              searchResultText += `Mau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))\n\n`;
+              searchResultText += `Apakah ada hal lain yang bisa kami bantu? 😊`;
+
+              responseMessage += searchResultText;
+            }
+          }
+        } else if (toolCall.function.name === 'upload_vehicle') {
+          const args = JSON.parse(toolCall.function.arguments);
+
+          console.log('[WhatsApp AI Chat] 🚗 AI detected vehicle upload request:', args);
+
+          uploadRequest = {
+            make: args.make,
+            model: args.model,
+            year: args.year,
+            price: args.price,
+            mileage: args.mileage || undefined, // Keep undefined if not provided
+            color: args.color || 'Unknown',
+            transmission: args.transmission || 'Manual',
+          };
+        } else if (toolCall.function.name === 'edit_vehicle') {
+          const args = JSON.parse(toolCall.function.arguments);
+
+          console.log('[WhatsApp AI Chat] ✏️ AI detected vehicle edit request:', args);
+
+          editRequest = {
+            vehicleId: args.vehicle_id,
+            field: args.field,
+            oldValue: args.old_value,
+            newValue: args.new_value,
+          };
+        } else if (toolCall.function.name === 'calculate_kkb_simulation') {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('[WhatsApp AI Chat] 🧮 AI calculating KKB simulation:', args);
+
+          const simulationResult = WhatsAppAIChatService.calculateKKBSimulation(
+            args.vehicle_price,
+            args.dp_amount,
+            args.dp_percentage,
+            args.tenor_years
+          );
+
+          // Append simulation result to response with DISCLAIMER
+          responseMessage += "\n\n" + simulationResult;
+          responseMessage += "\n\n_Catatan: Suku bunga bersifat estimasi & dapat berubah sesuai kebijakan leasing terkini._";
+
+          if (!responseMessage.toLowerCase().includes('bantu')) {
+            responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
           }
         }
       }
+
 
       // ==================== FINAL POST-PROCESSING ====================
       // This section ensures that EVERYTHING (AI text + tool results) follows brand rules

@@ -15,6 +15,7 @@ import { WhatsAppAIChatService } from "./chat.service";
 import { StaffCommandService } from "./staff-command.service";
 import { AIHealthMonitorService } from "./ai-health-monitor.service";
 import { processCommand } from "./command-handler.service";
+import { LeadService } from "@/lib/services/lead-service";
 
 // ==================== TYPES ====================
 
@@ -1806,6 +1807,8 @@ export class MessageOrchestratorService {
     }
   }
 
+
+
   /**
    * Handle customer inquiry dengan AI
    */
@@ -1824,27 +1827,40 @@ export class MessageOrchestratorService {
   }> {
     // Lookup user by phone number for personalized responses
     let user = null;
+    let lead = null;
+
     if (conversation.customerPhone) {
       try {
-        user = await prisma.user.findFirst({
-          where: {
-            tenantId: conversation.tenantId,
-            phone: conversation.customerPhone,
-          },
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            roleLevel: true,
-            phone: true,
-          },
-        });
+        // Parallel lookup for User (Staff) and Lead (Customer)
+        const [foundUser, foundLead] = await Promise.all([
+          prisma.user.findFirst({
+            where: {
+              tenantId: conversation.tenantId,
+              phone: conversation.customerPhone,
+            },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              roleLevel: true,
+              phone: true,
+            },
+          }),
+          LeadService.getLeadByPhone(conversation.tenantId, conversation.customerPhone)
+        ]);
+
+        user = foundUser;
+        lead = foundLead;
+
         if (user) {
           console.log(`[handleCustomerInquiry] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role})`);
         }
+        if (lead) {
+          console.log(`[handleCustomerInquiry] 📋 Lead identified: ${lead.name} (${lead.status})`);
+        }
       } catch (e) {
-        console.error('[handleCustomerInquiry] Error looking up user:', e);
+        console.error('[handleCustomerInquiry] Error looking up user/lead:', e);
       }
     }
 
@@ -1878,17 +1894,32 @@ export class MessageOrchestratorService {
         console.log(`[Orchestrator] 📤 Passing user info to AI: ${fullName} (${user.role})`);
       }
 
+      // Prepare lead info
+      let leadInfo = null;
+      if (lead) {
+        leadInfo = {
+          id: lead.id,
+          name: lead.name,
+          status: lead.status,
+          interestedIn: lead.interestedIn || undefined,
+          lastInteraction: lead.updatedAt,
+          location: lead.notes?.includes('Location:') ? lead.notes.split('Location:')[1].split('\n')[0].trim() : undefined
+        };
+        console.log(`[Orchestrator] 📤 Passing lead info to AI: ${lead.name}`);
+      }
+
       const aiResponse = await WhatsAppAIChatService.generateResponse(
         {
           tenantId: conversation.tenantId,
           conversationId: conversation.id,
           customerPhone: conversation.customerPhone,
-          customerName: conversation.customerName,
+          customerName: conversation.customerName || lead?.name, // Use lead name if available
           intent,
           messageHistory,
           isStaff,
           staffInfo: enhancedStaffInfo,
           isEscalated, // Escalated conversations get faster, more direct responses
+          leadInfo,
         },
         message
       );

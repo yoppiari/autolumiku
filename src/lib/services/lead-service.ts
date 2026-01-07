@@ -120,6 +120,47 @@ export class LeadService {
   }
 
   /**
+   * Get lead by phone (check for existing lead)
+   */
+  static async getLeadByPhone(tenantId: string, phone: string) {
+    try {
+      // Normalize phone: remove non-digits
+      const cleanPhone = phone.replace(/\D/g, '');
+
+      // Possible formats: 628..., 08..., 8...
+      // We'll try to match broad patterns
+      const searchPhones = [
+        cleanPhone,
+        cleanPhone.startsWith('62') ? '0' + cleanPhone.slice(2) : '62' + cleanPhone.slice(1),
+        cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : '0' + cleanPhone
+      ];
+
+      // Remove duplicates
+      const uniquePhones = [...new Set(searchPhones)];
+
+      const lead = await prisma.lead.findFirst({
+        where: {
+          tenantId,
+          OR: uniquePhones.map(p => ({ phone: p }))
+        },
+        orderBy: { createdAt: 'desc' }, // Get latest
+        include: {
+          whatsappConversations: {
+            orderBy: { lastMessageAt: 'desc' },
+            take: 1
+          }
+        }
+      });
+
+      return lead;
+    } catch (error) {
+      console.error('Failed to get lead by phone:', error);
+      // Don't throw, just return null if fail
+      return null;
+    }
+  }
+
+  /**
    * List leads with filters and pagination
    */
   static async listLeads(

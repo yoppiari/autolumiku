@@ -258,6 +258,43 @@ export class ZAIClient {
                 required: ["vehicle_price"]
               }
             }
+          },
+          {
+            type: "function",
+            function: {
+              name: "create_lead",
+              description: "Simpan data prospek/lead baru. Panggil saat customer memberikan nama, lokasi, atau menunjukkan minat serius (tanya harga nett, minta diskon, minta foto detail).",
+              parameters: {
+                type: "object",
+                properties: {
+                  name: {
+                    type: "string",
+                    description: "Nama customer"
+                  },
+                  phone: {
+                    type: "string",
+                    description: "Nomor HP/WA customer"
+                  },
+                  interest: {
+                    type: "string",
+                    description: "Unit yang diminati (e.g. 'Honda City 2006')"
+                  },
+                  location: {
+                    type: "string",
+                    description: "Lokasi customer (e.g. 'Jakarta Timur')"
+                  },
+                  budget: {
+                    type: "string",
+                    description: "Range budget (e.g. '100-150 juta')"
+                  },
+                  vehicle_id: {
+                    type: "string",
+                    description: "ID kendaraan jika spesifik (PM-PST-XXX)"
+                  }
+                },
+                required: ["name", "phone"]
+              }
+            }
           }
         ];
         requestParams.tool_choice = "auto";
