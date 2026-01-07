@@ -159,14 +159,24 @@ export default function LeadsDashboard() {
     };
 
     loadLeadsData();
-  }, []);
+
+    // Real-time: Poll every 15 seconds
+    const intervalId = setInterval(() => {
+      // Only refresh if not searching (avoid disruption)
+      if (searchTerm === '' && statusFilter === 'all' && sourceFilter === 'all') {
+        loadLeadsData();
+      }
+    }, 15000);
+
+    return () => clearInterval(intervalId);
+  }, [searchTerm, statusFilter, sourceFilter]);
 
   // Filter leads
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.phone.includes(searchTerm) ||
-                         lead.vehicleInterest?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.tenantName.toLowerCase().includes(searchTerm.toLowerCase());
+      lead.phone.includes(searchTerm) ||
+      lead.vehicleInterest?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.tenantName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     const matchesSource = sourceFilter === 'all' || lead.source === sourceFilter;
@@ -254,12 +264,30 @@ export default function LeadsDashboard() {
           <p className="text-xs text-gray-600">Kelola leads dari WhatsApp dan website</p>
         </div>
 
-        <Link
-          href="/dashboard/leads/whatsapp-settings"
-          className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          ⚙️ WhatsApp Settings
-        </Link>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-full border border-green-200">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span className="text-[10px] font-medium">Live Updates</span>
+          </div>
+
+          <button
+            onClick={() => window.location.reload()} // Simple reload for now, or could extract loadLeadsData
+            className="p-1.5 text-gray-500 hover:text-blue-600 transition-colors"
+            title="Refresh Data"
+          >
+            🔄
+          </button>
+
+          <Link
+            href="/dashboard/leads/whatsapp-settings"
+            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            ⚙️ WhatsApp Settings
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}
