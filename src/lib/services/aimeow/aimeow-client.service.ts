@@ -448,14 +448,23 @@ export class AimeowClientService {
       // 2. Base64 Conversion & Send (Nuclear Fix)
       // Always try to convert to Base64 to bypass Gateway URL fetching issues
       // Priority: Original JPEG (for Mobile compatibility)
-      const base64Image = await this.getImageAsBase64(sanitizedUrl);
+      let base64Image = await this.getImageAsBase64(sanitizedUrl);
+      let isRetry = false;
+
+      // FALLBACK 1: If Original file not found, try Medium immediately
+      if (!base64Image && sanitizedUrl.includes('original')) {
+        console.warn(`[Aimeow Send Image] ⚠️ Original file not found (Base64 null). Trying Medium...`);
+        const mediumUrl = sanitizedUrl.replace('original', 'medium').replace('.jpg', '.webp').replace('.jpeg', '.webp');
+        base64Image = await this.getImageAsBase64(mediumUrl);
+        isRetry = true;
+      }
 
       if (base64Image) {
         try {
           const payload = {
             clientId: apiClientId,
             phone: to,
-            image: `data:image/jpeg;base64,${base64Image}`, // Default to JPEG
+            image: `data:${isRetry ? 'image/webp' : 'image/jpeg'};base64,${base64Image}`,
             caption: caption || ""
           };
 
@@ -481,8 +490,8 @@ export class AimeowClientService {
           return { success: true, messageId: result.message?.id?.id || result.id };
 
         } catch (sendError: any) {
-          // RETRY LOGIC: If sending failed (likely too large), and we were trying 'original', retry with 'medium'
-          if (sanitizedUrl.includes('original')) {
+          // RETRY LOGIC (GATEWAY FAILURE): If sending failed (likely too large), and we were trying 'original', retry with 'medium'
+          if (sanitizedUrl.includes('original') && !isRetry) {
             console.warn(`[Aimeow Client] ⚠️ First attempt failed (${sendError.message}). Retrying with MEDIUM quality...`);
 
             const mediumUrl = sanitizedUrl.replace('original', 'medium').replace('.jpg', '.webp').replace('.jpeg', '.webp');
@@ -516,9 +525,15 @@ export class AimeowClientService {
       }
 
       // If Base64 generation returned null, return failure
+      const errorMsg = isRetry
+        ? "Failed to generate Base64 for both Original and Medium fallback"
+        : "Failed to generate Base64 for image (File not found)";
+
+      console.error(`[Aimeow Send Image] ❌ ${errorMsg}`);
+
       return {
         success: false,
-        error: "Failed to generate Base64 for image",
+        error: errorMsg,
       };
 
     } catch (error: any) {
@@ -892,7 +907,9 @@ export class AimeowClientService {
       console.log(`[Aimeow Send Images] ✅ Sequence complete. Success: ${successCount}/${images.length}`);
 
       if (successCount === 0 && images.length > 0) {
-        throw new Error("Failed to send any images in the batch.");
+        // Collect unique error messages
+        const uniqueErrors = [...new Set(results.filter(r => r.error).map(r => r.error))];
+        throw new Error(`Failed to send any images. Errors: ${uniqueErrors.join(', ')}`);
       }
 
       return {
