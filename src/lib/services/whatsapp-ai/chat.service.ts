@@ -2122,6 +2122,17 @@ export class WhatsAppAIChatService {
 
     console.log(`[PhotoConfirm DEBUG] ✅ Vehicle name extracted: "${vehicleName} "`);
 
+    // CRITICAL FIX: Check for KKB/Credit context FIRST
+    // If user message contains "KKB", "kredit", "angsuran", or "X%", DO NOT treat as photo request
+    // Pass strictly to intent handler / fallback to process as Credit Simulation
+    const creditKeywords = /\b(kkb|kredit|cicilan|angsuran|dp|bunga|tenor|tanda\s*jadi|leasing)\b/i;
+    const hasPercentage = /\d+\s*%/.test(userMessage); // e.g. "30%", "40%"
+
+    if (creditKeywords.test(userMessage) || hasPercentage) {
+      console.log(`[PhotoConfirm DEBUG] 💳 Credit/KKB context detected in "${userMessage}". Aborting photo/detail flow.`);
+      return null; // Return null to let generateSmartFallback handle the KKB intent
+    }
+
     // Check if user is asking for DETAILED photos (interior, exterior, semua, lengkap, dll) OR just "info"
     const detailPatterns = [
       /\b(detail|lengkap|semua|all)\b/i,
