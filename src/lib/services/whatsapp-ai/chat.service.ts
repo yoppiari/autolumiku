@@ -2867,6 +2867,9 @@ export class WhatsAppAIChatService {
           ? `[${id}] ${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
           : `[${id}] ${v.make} ${v.model} (${photoIndex + 1}/${v.photos.length})`;
 
+        // CRITICAL DEBUG: Log final URL that will be sent to Aimeow
+        console.log(`[WhatsApp AI Chat] 🚀 FINAL URL to Aimeow (photo ${photoIndex + 1}): ${imageUrl}`);
+
         images.push({ imageUrl, caption });
       }
       console.log(`[WhatsApp AI Chat] ✅ Added ${v.photos.length} photos for ${v.make} ${v.model}`);
