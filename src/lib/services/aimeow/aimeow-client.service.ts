@@ -440,12 +440,31 @@ export class AimeowClientService {
       // Determine MIME type dynamically
       const mimeType = this.getMimeTypeFromUrl(imageUrl);
 
+      // CRITICAL FIX: Ensure URL is public and accessible from external services
+      // Replace any localhost/0.0.0.0 URLs with public domain
+      let sanitizedUrl = imageUrl;
+      if (imageUrl.includes('localhost') || imageUrl.includes('0.0.0.0') || imageUrl.includes('127.0.0.1')) {
+        const publicDomain = 'https://primamobil.id';
+        console.log(`[Aimeow Send Image] ⚠️ Detected local URL: ${imageUrl.substring(0, 60)}...`);
+
+        // Extract path and rebuild with public domain
+        try {
+          const urlObj = new URL(imageUrl);
+          sanitizedUrl = `${publicDomain}${urlObj.pathname}`;
+        } catch (e) {
+          // Fallback: regex replacement
+          sanitizedUrl = imageUrl.replace(/https?:\/\/(localhost|0\.0\.0\.0|127\.0\.0\.1)(:\d+)?/, publicDomain);
+        }
+
+        console.log(`[Aimeow Send Image] ✅ Sanitized to: ${sanitizedUrl.substring(0, 60)}...`);
+      }
+
       // Build payload for /send-images endpoint (PLURAL)
       // This endpoint is more robust and correctly handles image previews
       const payload: Record<string, any> = {
         phone: to,
         images: [{
-          imageUrl: imageUrl,
+          imageUrl: sanitizedUrl,  // Use sanitized URL
           caption: caption
         }],
         viewOnce: false,      // Display inline, not as download link
@@ -480,7 +499,7 @@ export class AimeowClientService {
         const imagesPayload = {
           phone: to,
           images: [{
-            imageUrl: imageUrl,
+            imageUrl: sanitizedUrl,  // Use sanitized URL
             caption: caption
           }],
           viewOnce: false,
@@ -505,8 +524,8 @@ export class AimeowClientService {
       if (!response.ok) {
         console.log(`[Aimeow Send Image] ⚠️ Standard URL send failed. Attempting Base64 fallback...`);
         try {
-          // 1. Download image
-          const imgRes = await fetch(imageUrl);
+          // 1. Download image (use sanitized URL)
+          const imgRes = await fetch(sanitizedUrl);
           if (imgRes.ok) {
             const arrayBuffer = await imgRes.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
