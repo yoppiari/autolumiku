@@ -2434,7 +2434,9 @@ export class WhatsAppAIChatService {
         if (specificVehicle.photos && specificVehicle.photos.length > 0) {
           console.log(`[WhatsApp AI Chat] ✅ Found vehicle ${explicitId} with ${specificVehicle.photos.length} photos`);
           console.log(`[WhatsApp AI Chat] First photo preview:`, specificVehicle.photos[0].originalUrl?.substring(0, 80) || 'NO URL');
-          return this.buildImageArray([specificVehicle]);
+          console.log(`[WhatsApp AI Chat] ✅ Found vehicle ${explicitId} with ${specificVehicle.photos.length} photos`);
+          console.log(`[WhatsApp AI Chat] First photo preview:`, specificVehicle.photos[0].originalUrl?.substring(0, 80) || 'NO URL');
+          return await this.buildImageArray([specificVehicle]);
         } else {
           console.log(`[WhatsApp AI Chat] ⚠️ Found specific vehicle ${explicitId} but NO photos`);
           return null;
@@ -2753,8 +2755,9 @@ export class WhatsAppAIChatService {
 
   /**
    * Build image array from vehicles with proper URL handling
+   * UPDATED: Now Async to support Smart Validation (HTTP HEAD check)
    */
-  private static buildImageArray(vehicles: any[]): Array<{ imageUrl: string; caption?: string }> | null {
+  private static async buildImageArray(vehicles: any[]): Promise<Array<{ imageUrl: string; caption?: string }> | null> {
     // Build image array with fallback URLs
     // Convert relative URLs to full URLs for Aimeow
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
@@ -2802,9 +2805,24 @@ export class WhatsAppAIChatService {
         try {
           const url = new URL(imageUrl);
           imageUrl = url.toString();
+
+          // 🛡️ SMART VALIDATION: Check if image is actually accessible
+          // This prevents "Phantom Photos" where we send a 404 URL
+          const isAccessible = await fetch(imageUrl, { method: 'HEAD' })
+            .then(res => res.ok)
+            .catch(() => false);
+
+          if (!isAccessible) {
+            console.log(`[WhatsApp AI Chat] ❌ Image validation failed (404/Error): ${imageUrl}`);
+            continue; // Skip this photo
+          } else {
+            console.log(`[WhatsApp AI Chat] ✅ Image validated: ${imageUrl}`);
+          }
+
         } catch (e) {
           console.log(`[WhatsApp AI Chat] ⚠️ Invalid URL format, using as-is: ${imageUrl}`);
         }
+
 
         // Caption: Place ID at the START for immediate visibility on mobile
         const id = v.displayId || v.id.substring(0, 8).toUpperCase();
@@ -2819,7 +2837,7 @@ export class WhatsAppAIChatService {
     }
 
     console.log(`[WhatsApp AI Chat] ✅ Prepared ${images.length} vehicle images to send`);
-    console.log(`[WhatsApp AI Chat] Image URLs:`, images.map(i => i.imageUrl));
+    console.log(`[WhatsApp AI Chat] Image URLs: `, images.map(i => i.imageUrl));
 
     if (images.length === 0) {
       console.log('[WhatsApp AI Chat] ⚠️ Vehicles found but no photos available');
@@ -3030,14 +3048,14 @@ export class WhatsAppAIChatService {
 
       // 3. Fuel type: "ganti diesel", "rubah ke hybrid"
       {
-        pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:bahan\\s*bakar|fuel)?\\s*(?:ke|jadi|menjadi)?\\s*(${fuelTypesRegex})`, 'i'),
+        pattern: new RegExp(`(?: rubah | ganti | ubah | update)(?: \\s +.*?) \\s * (?: bahan\\s * bakar | fuel)?\\s * (?: ke | jadi | menjadi) ?\\s * (${fuelTypesRegex})`, 'i'),
         field: 'fuelType',
         valueExtractor: m => m[1]
       },
 
       // 4. Transmission: "ganti jadi manual", "ubah transmisi matic"
       {
-        pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:transmisi)?\\s*(?:ke|jadi|menjadi)?\\s*(${transmissionRegex})`, 'i'),
+        pattern: new RegExp(`(?: rubah | ganti | ubah | update)(?: \\s +.*?) \\s * (?: transmisi) ?\\s * (?: ke | jadi | menjadi) ?\\s * (${transmissionRegex})`, 'i'),
         field: 'transmissionType',
         valueExtractor: m => {
           const val = m[1].toLowerCase();
@@ -3052,7 +3070,7 @@ export class WhatsAppAIChatService {
 
       // 6. Color: "ganti jadi merah", "rubah warna biru"
       {
-        pattern: new RegExp(`(?:rubah|ganti|ubah|update)(?:\\s+.*?)\\s*(?:warna)?\\s*(?:ke|jadi|menjadi)?\\s*(${colorsRegex})`, 'i'),
+        pattern: new RegExp(`(?: rubah | ganti | ubah | update)(?: \\s +.*?) \\s * (?: warna) ?\\s * (?: ke | jadi | menjadi) ?\\s * (${colorsRegex})`, 'i'),
         field: 'color',
         valueExtractor: m => m[1]
       },
@@ -3069,7 +3087,7 @@ export class WhatsAppAIChatService {
       const match = msgForFields.match(pattern);
       if (match) {
         const newValue = valueExtractor(match);
-        console.log(`[WhatsApp AI Chat] Fallback detected edit: field=${field}, newValue=${newValue}, vehicleId=${vehicleId || 'from context'}`);
+        console.log(`[WhatsApp AI Chat] Fallback detected edit: field = ${field}, newValue = ${newValue}, vehicleId = ${vehicleId || 'from context'} `);
         return { vehicleId, field, newValue };
       }
     }
@@ -3122,16 +3140,16 @@ export class WhatsAppAIChatService {
     // 4. Build Result String
     const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString('id-ID');
 
-    let result = options?.hideTitle ? "" : `📊 *SIMULASI KREDIT (KKB)*\n`;
+    let result = options?.hideTitle ? "" : `📊 * SIMULASI KREDIT(KKB) *\n`;
     if (!options?.hideHeader) {
-      result += `Harga Mobil: ${formatRp(vehiclePrice)}\n`;
+      result += `Harga Mobil: ${formatRp(vehiclePrice)} \n`;
     }
-    result += `DP (${dpPercentage}%): ${formatRp(dpAmount)}\n`;
+    result += `DP(${dpPercentage} %): ${formatRp(dpAmount)} \n`;
     if (!options?.hideHeader) {
-      result += `Pokok Hutang: ${formatRp(principal)}\n\n`;
+      result += `Pokok Hutang: ${formatRp(principal)} \n\n`;
     }
 
-    result += `*Est. Angsuran per Bulan:*\n`;
+    result += `* Est.Angsuran per Bulan:*\n`;
 
     tenors.forEach(tenor => {
       // Detail per leasing range
@@ -3155,20 +3173,20 @@ export class WhatsAppAIChatService {
         if (monthly > maxInstallment) maxInstallment = monthly;
       });
 
-      result += `\n🕒 *Tenor ${tenor} Tahun*\n`;
-      result += `• Est. Angsuran: ${formatRp(minInstallment)} - ${formatRp(maxInstallment)}\n`;
-      result += `• Estimasi Bunga: 4.5% - 11.5% flat p.a.\n`;
+      result += `\n🕒 * Tenor ${tenor} Tahun *\n`;
+      result += `• Est.Angsuran: ${formatRp(minInstallment)} - ${formatRp(maxInstallment)} \n`;
+      result += `• Estimasi Bunga: 4.5 % - 11.5 % flat p.a.\n`;
       result += `• Partner Utama: ${bestLeasing}, Adira, Mandiri, dll.\n`;
     });
 
     if (!options?.hideSyarat) {
-      result += `\n📝 *Syarat Kredit Umum:*\n`;
+      result += `\n📝 * Syarat Kredit Umum:*\n`;
       result += `- KTP Suami & Istri\n`;
-      result += `- Kartu Keluarga (KK)\n`;
+      result += `- Kartu Keluarga(KK) \n`;
       result += `- NPWP\n`;
-      result += `- PBB/AJB Rumah (Bukti Kepemilikan)\n`;
-      result += `- Rek. Tabungan 3 Bulan Terakhir\n`;
-      result += `- Slip Gaji (Karyawan) / SKU (Wiraswasta)`;
+      result += `- PBB / AJB Rumah(Bukti Kepemilikan) \n`;
+      result += `- Rek.Tabungan 3 Bulan Terakhir\n`;
+      result += `- Slip Gaji(Karyawan) / SKU(Wiraswasta)`;
     }
 
     return result;
