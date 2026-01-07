@@ -375,6 +375,9 @@ export class VehicleEditService {
             oldValue: this.formatValue(c.field, c.oldValue),
             newValue: this.formatValue(c.field, c.newValue),
           })),
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
         },
         authResult.staffName
       ).catch(err => console.error('[Vehicle Edit] Notification error:', err.message));

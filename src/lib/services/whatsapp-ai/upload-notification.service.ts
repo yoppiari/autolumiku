@@ -250,6 +250,10 @@ export class UploadNotificationService {
       displayId?: string;
       vehicleName: string;
       changes: Array<{ fieldLabel: string; oldValue: string; newValue: string }>;
+      // Add vehicle details for URL generation
+      make?: string;
+      model?: string;
+      year?: number;
     },
     editorName?: string
   ): Promise<void> {
@@ -283,7 +287,6 @@ export class UploadNotificationService {
       }
 
       // 3. Build notification message
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
       const now = new Date();
       const timeStr = now.toLocaleString("id-ID", {
         day: "numeric",
@@ -300,6 +303,32 @@ export class UploadNotificationService {
       // Format editor phone for display
       const displayPhone = editorPhone.replace(/^62/, '0').replace(/@.*$/, '');
 
+      // Generate SEO-friendly URLs
+      let vehicleUrl: string;
+      let dashboardUrl: string;
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+
+      if (editData.make && editData.model && editData.year) {
+        // Use generator if details available
+        vehicleUrl = generateVehicleUrl({
+          make: editData.make,
+          model: editData.model,
+          year: editData.year,
+          displayId: editData.displayId || editData.vehicleId.substring(0, 8),
+        });
+
+        dashboardUrl = generateVehicleDashboardUrl({
+          make: editData.make,
+          model: editData.model,
+          year: editData.year,
+          displayId: editData.displayId || editData.vehicleId.substring(0, 8),
+        });
+      } else {
+        // Fallback to ID-based URL if details missing
+        vehicleUrl = `${baseUrl}/vehicles/${editData.vehicleId}`;
+        dashboardUrl = `${baseUrl}/dashboard/vehicles/${editData.vehicleId}/edit`;
+      }
+
       const message =
         `🔔 NOTIFIKASI REVISI DATA\n` +
         `━━━━━━━━━━━━━\n\n` +
@@ -311,8 +340,8 @@ export class UploadNotificationService {
         `👤 Diubah oleh:\n` +
         `${editorName || 'Staff'} (${displayPhone})\n\n` +
         `🕐 Waktu: ${timeStr}\n\n` +
-        `🌐 Website:\n${baseUrl}/vehicles/${editData.vehicleId}\n\n` +
-        `📊 Dashboard:\n${baseUrl}/dashboard/vehicles/${editData.vehicleId}`;
+        `🌐 Website:\n${vehicleUrl}\n\n` +
+        `📊 Dashboard:\n${dashboardUrl}`;
 
       // 4. Send to all staff (except the editor)
       const normalizedEditorPhone = this.normalizePhone(editorPhone);

@@ -70,8 +70,8 @@ export function generateVehicleDashboardUrl(vehicle: {
   displayId: string;
 } | string, baseUrl: string = 'https://primamobil.id'): string {
   if (typeof vehicle === 'string') {
-    return `${baseUrl}/dashboard/vehicles/${vehicle}`;
+    return `${baseUrl}/dashboard/vehicles/${vehicle}/edit`;
   }
   const slug = generateVehicleSlug(vehicle);
-  return `${baseUrl}/dashboard/vehicles/${slug}`;
+  return `${baseUrl}/dashboard/vehicles/${slug}/edit`;
 }

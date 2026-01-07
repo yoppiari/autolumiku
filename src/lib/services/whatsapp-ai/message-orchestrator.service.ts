@@ -2065,30 +2065,33 @@ export class MessageOrchestratorService {
             if (!result.messageId) result.messageId = imageResult.messageId;
           }
         } else {
-          // Send multiple images one by one with retry logic
-          console.log(`[Orchestrator sendResponse] Sending ${images.length} images one by one...`);
-          let successCount = 0;
+          // Send multiple images as a batch (Album) - Better for UX and Auto-Download
+          console.log(`[Orchestrator sendResponse] Sending ${images.length} images as batch...`);
 
-          for (let i = 0; i < images.length; i++) {
-            // Check for stop signal before sending each image
-            const stopKey = `${accountId}:${to}`;
-            if (stopSignals.get(stopKey)) {
-              console.log(`[Orchestrator sendResponse] 🛑 Stop signal detected for ${to}. Aborting image sequence at ${i}/${images.length}.`);
-              stopSignals.delete(stopKey); // Clear signal
-              // Send a small acknowledgment that we stopped?
-              // Maybe not needed since we sent "Baik, saya berhenti" in the command handler
-              break;
-            }
+          const batchResult = await AimeowClientService.sendImages(
+            account.clientId,
+            to,
+            images
+          );
 
-            const img = images[i];
-            console.log(`[Orchestrator sendResponse] Sending image ${i + 1}/${images.length}: ${img.imageUrl}`);
+          if (batchResult.success) {
+            console.log(`[Orchestrator sendResponse] ✅ Batch image send SUCCESS!`);
+            imagesSent = true;
+            if (!result.messageId) result.messageId = batchResult.messageId;
+          } else {
+            console.error(`[Orchestrator sendResponse] ❌ Batch image send FAILED: ${batchResult.error}`);
+            console.log(`[Orchestrator sendResponse] 🔄 Fallback: Sending images one-by-one...`);
 
-            // Retry logic with exponential backoff
-            let retries = 0;
-            const maxRetries = 2;
-            let imageSuccess = false;
+            // Fallback loop
+            for (let i = 0; i < images.length; i++) {
+              const stopKey = `${accountId}:${to}`;
+              if (stopSignals.get(stopKey)) {
+                console.log(`[Orchestrator sendResponse] 🛑 Stop signal detected. Aborting fallback loop.`);
+                stopSignals.delete(stopKey);
+                break;
+              }
 
-            while (retries <= maxRetries && !imageSuccess) {
+              const img = images[i];
               const imageResult = await AimeowClientService.sendImage(
                 account.clientId,
                 to,
@@ -2096,40 +2099,15 @@ export class MessageOrchestratorService {
                 img.caption
               );
 
-              if (!imageResult.success) {
-                console.error(`[Orchestrator sendResponse] ❌ Image ${i + 1} attempt ${retries + 1} FAILED: ${imageResult.error}`);
-                retries++;
-                if (retries <= maxRetries) {
-                  // Exponential backoff: 1s, 2s
-                  const delay = 1000 * retries;
-                  console.log(`[Orchestrator sendResponse] Retrying in ${delay}ms...`);
-                  await new Promise(resolve => setTimeout(resolve, delay));
-                }
-              } else {
-                console.log(`[Orchestrator sendResponse] ✅ Image ${i + 1} sent SUCCESS!`);
+              if (imageResult.success) {
                 imagesSent = true;
-                imageSuccess = true;
-                successCount++;
-                if (!result.messageId) result.messageId = imageResult.messageId;
+              } else {
+                console.error(`[Orchestrator sendResponse] ❌ Fallback image ${i + 1} failed: ${imageResult.error}`);
               }
             }
-
-            // Check stop signal AGAIN after sending, to skip delay if stopped
-            if (stopSignals.get(stopKey)) {
-              console.log(`[Orchestrator sendResponse] 🛑 Stop signal detected after image ${i + 1}. Stopping.`);
-              stopSignals.delete(stopKey);
-              break;
-            }
-
-            // Delay between images to avoid rate limiting (800ms)
-            if (i < images.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 800));
-            }
           }
-
-          // Log summary
-          console.log(`[Orchestrator sendResponse] Image send summary: ${successCount}/${images.length} successful`);
         }
+
 
         if (imagesSent) {
           console.log(`[Orchestrator sendResponse] ✅ All images sent successfully!`);
