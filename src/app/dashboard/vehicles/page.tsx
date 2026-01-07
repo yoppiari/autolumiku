@@ -154,8 +154,8 @@ export default function VehiclesPage() {
       // Step 2: Detect slug from domain
       const slug = detectSlugFromDomain();
 
-      // Step 3: Build URL
-      let url = '/api/v1/vehicles';
+      // Step 3: Build URL with cache-busting
+      let url = `/api/v1/vehicles?_t=${Date.now()}`;
       if (slug) {
         console.log(`[Vehicles] Fetching by slug: ${slug}`);
         url = `/api/v1/vehicles?slug=${slug}`;
