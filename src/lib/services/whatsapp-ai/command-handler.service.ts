@@ -463,12 +463,7 @@ export async function handleReportCommand(
     'avg price': generateAveragePriceText,
     'rata-rata harga': generateAveragePriceText,
 
-    // Revenue
-    'total penjualan showroom': generateSalesMetricsText,
-    'total penjualan': generateSalesMetricsText,
-    'total sales': generateSalesMetricsText,
-    'sales total': generateSalesMetricsText,
-    'total revenue': generateSalesMetricsText,
+    // Revenue - keeping only unique reports
     'sales summary': generateSalesReportText,
     'penjualan': generateSalesReportText,
     'laporan penjualan': generateSalesReportText,
