@@ -1152,6 +1152,10 @@ export class MessageOrchestratorService {
       message.includes('total inventory') ||
       message.includes('average price') ||
       message.includes('sales summary') ||
+      // Diagnostic
+      message.includes('test-image') ||
+      message.includes('test image') ||
+      message.includes('debug image') ||
       // More specific "penjualan"/"sales" patterns (not just any mention):
       /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics|trends?|totals?)\b/i.test(message) ||
       /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(message) ||

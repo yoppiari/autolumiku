@@ -149,6 +149,9 @@ function isReportCommand(cmd: string): boolean {
   // This prevents "inventory" from matching "total inventory"
   const reportPhrases = [
     'sales report',
+    'test-image',
+    'test image',
+    'debug image',
     'whatsapp ai analytics',
     'whatsapp ai',
     'metrix penjualan',
@@ -469,6 +472,9 @@ export async function handleReportCommand(
     'sales summary': generateSalesReportText,
     'penjualan': generateSalesReportText,
     'laporan penjualan': generateSalesReportText,
+    'test-image': handleTestImageCommand,
+    'test image': handleTestImageCommand,
+    'debug image': handleTestImageCommand,
   };
 
   // Find matching generator
@@ -640,8 +646,32 @@ _Data berdasarkan unit dengan status SOLD._`;
 }
 
 // Reuse existing data fetchers or logic for smaller metrics
+// NEW: Distinct generator for "Total Penjualan" to avoid duplication
 async function generateSalesMetricsText(ctx: CommandContext): Promise<CommandResult> {
-  return generateSalesReportText(ctx); // Reuse summary
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
+
+  // Reuse gathered data but format differently
+  const data = await ReportDataService.gather('sales-metrics', ctx.tenantId, startDate, now);
+
+  const formattedRevenue = formatCurrency(data.totalRevenue || 0);
+
+  // Simplified Metrics Response (No Deep Insights)
+  const message = `📈 *TOTAL PENJUALAN SHOWROOM*
+_Data Real-time: ${formatDate(now)}_
+
+💰 *Total Revenue*: ${formattedRevenue}
+📦 *Unit Terjual*: ${data.totalSales || 0} unit
+🎯 *Total Leads*: ${data.totalLeads || 0} prospek
+
+*Konversi:*
+${data.totalLeads ? Math.round(((data.totalSales || 0) / data.totalLeads) * 100) : 0}% dari total leads berhasil closing.
+
+🔗 *Lihat Detail:*
+https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+
+  return { success: true, message, followUp: true };
 }
 
 async function generateCustomerMetricsText(ctx: CommandContext): Promise<CommandResult> {
@@ -716,6 +746,115 @@ Total Stok: ${count} unit
 🔗 *Lihat Inventory:*
 https://primamobil.id/dashboard/vehicles`;
   return { success: true, message, followUp: true };
+}
+
+// ============================================================================
+// DIAGNOSTIC TOOLS
+// ============================================================================
+
+async function handleTestImageCommand(ctx: CommandContext): Promise<CommandResult> {
+  const { tenantId, phoneNumber } = ctx;
+  console.log(`[Diagnostic] 🧪 Starting Image Variant Test for ${phoneNumber}`);
+
+  // 1. Find a vehicle with photo
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { tenantId, status: { not: 'DELETED' }, photos: { some: {} } },
+    include: { photos: { take: 1 } }
+  });
+
+  if (!vehicle || !vehicle.photos[0]) {
+    return { success: false, message: "❌ Gagal: Tidak ada kendaraan dengan foto untuk testing." };
+  }
+
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!tenant?.aimeowApiClientId) return { success: false, message: "❌ Gagal: Client ID tidak ditemukan." };
+
+  // 2. Read file
+  // Try to find file path
+  const storageKey = vehicle.photos[0].originalUrl.split('/uploads/')[1];
+  const possibleDirs = [process.env.UPLOAD_DIR, '/app/uploads', path.join(process.cwd(), 'uploads')].filter(Boolean) as string[];
+
+  let buffer: Buffer | undefined;
+  for (const dir of possibleDirs) {
+    try {
+      const fullPath = path.join(dir, storageKey);
+      if (fs.existsSync(fullPath)) {
+        buffer = fs.readFileSync(fullPath);
+        break;
+      }
+    } catch (e) { }
+  }
+
+  if (!buffer) {
+    return { success: false, message: "❌ Gagal: File foto tidak ditemukan di lokal server." };
+  }
+
+  let sharp: any;
+  try {
+    sharp = require('sharp');
+  } catch (e) {
+    return { success: false, message: "❌ Gagal: Library 'sharp' tidak terinstall." };
+  }
+
+  const endpoint = `${process.env.AIMEOW_BASE_URL || 'https://meow.lumiku.com'}/api/v1/clients/${tenant.aimeowApiClientId}/send-images`;
+
+  const send = async (name: string, payload: any) => {
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return res.ok ? `✅ ${name}: Terkirim (200 OK)` : `❌ ${name}: Gagal (${res.status})`;
+    } catch (e: any) {
+      return `❌ ${name}: Error (${e.message})`;
+    }
+  };
+
+  const results: string[] = [];
+
+  // VARIANT A: CURRENT LOGIC (1024px, JPEG 80%, Data URI, MimeType)
+  const jpegBuffer = await sharp(buffer)
+    .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+  const base64A = jpegBuffer.toString('base64');
+
+  results.push(await send('Variant A (Standard)', {
+    phone: phoneNumber,
+    images: [{ imageUrl: `data:image/jpeg;base64,${base64A}`, caption: "Test A: Standard (1024px, MimeType)" }],
+    viewOnce: false, isViewOnce: false, mimetype: 'image/jpeg', mimeType: 'image/jpeg', type: 'image', mediaType: 'image'
+  }));
+
+  // VARIANT B: NO TOP MIME
+  results.push(await send('Variant B (No Top Mime)', {
+    phone: phoneNumber,
+    images: [{ imageUrl: `data:image/jpeg;base64,${base64A}`, caption: "Test B: No Top-Level Mime" }],
+    viewOnce: false, isViewOnce: false
+  }));
+
+  // VARIANT C: RAW BASE64
+  results.push(await send('Variant C (Raw Base64)', {
+    phone: phoneNumber,
+    images: [{ imageUrl: base64A, caption: "Test C: Raw Base64 (No Prefix)" }],
+    viewOnce: false, isViewOnce: false, mimetype: 'image/jpeg', mimeType: 'image/jpeg'
+  }));
+
+  // VARIANT D: SMALL (512px)
+  const smallBuffer = await sharp(buffer).resize(512, 512, { fit: 'inside' }).jpeg({ quality: 70 }).toBuffer();
+  const base64D = smallBuffer.toString('base64');
+
+  results.push(await send('Variant D (Small 512px)', {
+    phone: phoneNumber,
+    images: [{ imageUrl: `data:image/jpeg;base64,${base64D}`, caption: "Test D: Small 512px" }],
+    viewOnce: false, isViewOnce: false, mimetype: 'image/jpeg', mimeType: 'image/jpeg'
+  }));
+
+  return {
+    success: true,
+    message: `🧪 *HASIL DIAGNOSTIC IMAGE*\n\n${results.join('\n')}\n\nSilakan cek HP Anda, variant mana yang gambarnya MUNCUL?\n(Reply dengan A, B, C, atau D)`,
+    followUp: true
+  };
 }
 
 

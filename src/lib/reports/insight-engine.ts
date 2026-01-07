@@ -11,9 +11,9 @@ export class InsightEngine {
                 insights.push(`Stok Lama: Ada ${lowStock.length} unit yang sudah mengendap lebih dari 3 bulan. Pertimbangkan program diskon atau cuci gudang.`);
             }
 
-            const highValue = [...data.inventoryDetail].sort((a, b) => b.price - a.price).slice(0, 3);
+            const highValue = [...data.inventoryDetail].sort((a, b) => b.price - a.price).slice(0, 5);
             if (highValue.length > 0) {
-                insights.push(`Aset Utama: 3 unit termahal Anda bernilai total ${this.formatRupiah(highValue.reduce((sum, v) => sum + v.price, 0))}. Pastikan unit ini mendapat prioritas marketing.`);
+                insights.push(`Aset Utama: ${highValue.length} unit termahal Anda bernilai total ${this.formatRupiah(highValue.reduce((sum, v) => sum + v.price, 0))}. Pastikan unit ini mendapat prioritas marketing.`);
             }
         }
 
