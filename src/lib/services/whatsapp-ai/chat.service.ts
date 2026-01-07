@@ -2849,10 +2849,10 @@ export class WhatsAppAIChatService {
             .catch(() => false);
 
           if (!isAccessible) {
-            console.log(`[WhatsApp AI Chat] ❌ Image validation failed (404/Error): ${imageUrl}`);
+            console.log(`[WhatsApp AI Chat] ❌ Image validation failed: ${imageUrl.substring(0, 100)}...`);
             continue; // Skip this photo
           } else {
-            console.log(`[WhatsApp AI Chat] ✅ Image validated: ${imageUrl}`);
+            console.log(`[WhatsApp AI Chat] ✅ Image validated: ${imageUrl.substring(0, 100)}...`);
           }
 
         } catch (e) {

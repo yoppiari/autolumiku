@@ -445,7 +445,7 @@ export class AimeowClientService {
       let sanitizedUrl = imageUrl;
       if (imageUrl.includes('localhost') || imageUrl.includes('0.0.0.0') || imageUrl.includes('127.0.0.1')) {
         const publicDomain = 'https://primamobil.id';
-        console.log(`[Aimeow Send Image] ⚠️ Detected local URL: ${imageUrl.substring(0, 60)}...`);
+        console.log(`[Aimeow Send Image] ⚠️ Detected local URL, sanitizing...`);
 
         // Extract path and rebuild with public domain
         try {
@@ -455,63 +455,22 @@ export class AimeowClientService {
           // Fallback: regex replacement
           sanitizedUrl = imageUrl.replace(/https?:\/\/(localhost|0\.0\.0\.0|127\.0\.0\.1)(:\d+)?/, publicDomain);
         }
-
-        console.log(`[Aimeow Send Image] ✅ Sanitized to: ${sanitizedUrl.substring(0, 60)}...`);
       }
 
-      // ULTIMATE FIX: Convert to Base64 FIRST (URLs not publicly accessible from Aimeow Gateway)
-      // This bypasses URL accessibility issues completely
-      console.log(`[Aimeow Send Image] 🔄 Converting image to Base64 for reliable delivery...`);
+      // Reverting Base64 attempt as Aimeow handles it as a URL and fails to download Data URIs.
+      // We will stick to the sanitized public URL.
+      const payload: Record<string, any> = {
+        phone: to,
+        images: [{
+          imageUrl: sanitizedUrl,
+          caption: caption
+        }],
+        viewOnce: false,
+        mimetype: mimeType,
+        type: 'image'
+      };
 
-      let payload: Record<string, any>;
-
-      try {
-        // Download image and convert to Base64
-        const imgRes = await fetch(sanitizedUrl);
-        if (!imgRes.ok) {
-          throw new Error(`Failed to fetch image: ${imgRes.status} ${imgRes.statusText}`);
-        }
-
-        const arrayBuffer = await imgRes.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const b64 = buffer.toString('base64');
-        const dataUri = `data:${mimeType};base64,${b64}`;
-
-        console.log(`[Aimeow Send Image] ✅ Converted to Base64 (${Math.round(b64.length / 1024)}KB)`);
-
-        // Build payload with Base64 data URI
-        payload = {
-          phone: to,
-          images: [{
-            imageUrl: dataUri,  // Send as data URI
-            caption: caption
-          }],
-          viewOnce: false,
-          mimetype: mimeType,
-          type: 'image'
-        };
-      } catch (conversionError) {
-        // Fallback to URL if Base64 conversion fails
-        console.error(`[Aimeow Send Image] ❌ Base64 conversion failed:`, conversionError);
-        console.log(`[Aimeow Send Image] 🔄 Falling back to URL method...`);
-
-        payload = {
-          phone: to,
-          images: [{
-            imageUrl: sanitizedUrl,
-            caption: caption
-          }],
-          viewOnce: false,
-          isViewOnce: false,
-          mimetype: mimeType,
-          mimeType: mimeType,
-          type: 'image',
-          mediaType: 'image',
-        };
-      }
-
-      console.log(`[Aimeow Send Image] Using clientId: ${apiClientId}`);
-      console.log(`[Aimeow Send Image] 🔍 EXACT URL in payload:`, payload.images[0].imageUrl.substring(0, 100));
+      console.log(`[Aimeow Send Image] 🔍 Sending to ${to} | URL: ${sanitizedUrl.substring(0, 100)}...`);
 
 
       // Use /send-images endpoint
