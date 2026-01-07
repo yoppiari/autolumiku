@@ -2791,8 +2791,11 @@ export class WhatsAppAIChatService {
         }
 
         // Convert relative URL to full URL
-        if (imageUrl.startsWith('/')) {
-          imageUrl = `${baseUrl}${imageUrl}`;
+        // Fix: Handle partial URLs or URLs without leading slash if stored that way
+        if (!imageUrl.startsWith('http')) {
+          // Remove leading slash if present to avoid double slashes when joining
+          const cleanPath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
+          imageUrl = `${baseUrl}/${cleanPath}`;
         }
 
         // Ensure URL is properly encoded (handle spaces, special chars)

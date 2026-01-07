@@ -2114,6 +2114,7 @@ export class MessageOrchestratorService {
             console.log(`[Orchestrator sendResponse] 🔄 Fallback: Sending images one-by-one...`);
 
             // Fallback loop
+            let fallbackSuccessCount = 0;
             for (let i = 0; i < images.length; i++) {
               const stopKey = `${accountId}:${to}`;
               if (stopSignals.get(stopKey)) {
@@ -2123,6 +2124,8 @@ export class MessageOrchestratorService {
               }
 
               const img = images[i];
+              console.log(`[Orchestrator sendResponse] Sending fallback image ${i + 1}/${images.length}: ${img.imageUrl}`);
+
               const imageResult = await AimeowClientService.sendImage(
                 account.clientId,
                 to,
@@ -2132,8 +2135,23 @@ export class MessageOrchestratorService {
 
               if (imageResult.success) {
                 imagesSent = true;
+                fallbackSuccessCount++;
               } else {
-                console.error(`[Orchestrator sendResponse] ❌ Fallback image ${i + 1} failed: ${imageResult.error}`);
+                console.error(`[Orchestrator sendResponse] ❌ Fallback image ${i + 1} failed: ${imageResult.error} (URL: ${img.imageUrl})`);
+              }
+            }
+
+            // If ALL fallbacks failed, notify the user
+            if (fallbackSuccessCount === 0) {
+              console.log(`[Orchestrator sendResponse] ⚠️ All image fallback attempts failed.`);
+              // If we already sent a text message, send a follow-up warning
+              if (message) {
+                const warningMsg = `\n\n⚠️ Mohon maaf, ada kendala teknis saat mengirim foto. Silakan coba minta foto lagi ya! 🙏`;
+                await AimeowClientService.sendMessage({
+                  clientId: account.clientId,
+                  to,
+                  message: warningMsg
+                });
               }
             }
           }
