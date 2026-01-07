@@ -1993,6 +1993,13 @@ export class WhatsAppAIChatService {
       // Info/Detail requests (NEW)
       /\b(info|detail|spesifikasi|spek)\b/i,
       /\b(minta|bagi)\b.*\b(info|detail|data)\b/i,
+      // Complaint patterns - User saying they didn't receive photos
+      /\b(belum|tidak|gak|ga|nggak)\s+(terima|sampai|masuk|dapat|dapet)\b/i,
+      /\b(belum|tidak|gak|ga|nggak)\s+.*\b(foto|gambar)\b/i,
+      /\b(mana|kok)\s+(foto|gambar)\b/i,
+      /\bfoto.*\b(belum|tidak|gak|ga)\b/i,
+      // Re-request patterns
+      /\b(kirim\s+ulang|ulang|coba\s+lagi|lagi)\b/i,
       // Other confirmations
       /silahkan|silakan/i,
       /ditunggu/i,
