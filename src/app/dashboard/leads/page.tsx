@@ -366,9 +366,6 @@ export default function LeadsDashboard() {
         <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-xs font-semibold text-gray-700">WhatsApp</h2>
-            <Link href="/dashboard/leads/whatsapp-settings" className="text-[10px] text-blue-600 hover:text-blue-800">
-              Settings →
-            </Link>
           </div>
           {whatsappSettings.map((setting) => (
             <div key={setting.id} className="text-[11px] text-gray-600">
