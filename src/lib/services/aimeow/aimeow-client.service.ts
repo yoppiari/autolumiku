@@ -791,6 +791,12 @@ export class AimeowClientService {
       // Resolve clientId to UUID
       const apiClientId = await this.resolveClientId(clientId);
 
+      // Determine MIME type dynamically from the first image
+      // Assuming all images in a batch are likely the same type, or at least compatiable
+      // If mixed, Aimeow/WhatsApp usually handles it best if we declare the primary one or jpeg
+      const firstImageUrl = images.length > 0 ? images[0].imageUrl : '';
+      const mimeType = this.getMimeTypeFromUrl(firstImageUrl);
+
       const payload = {
         phone: to,
         images: images.map(img => ({
@@ -799,25 +805,11 @@ export class AimeowClientService {
         })),
         viewOnce: false,      // Display inline, not as download link
         isViewOnce: false,    // Alternative field name
-        // Determine MIME type dynamically from the first image
-        // Assuming all images in a batch are likely the same type, or at least compatiable
-        // If mixed, Aimeow/WhatsApp usually handles it best if we declare the primary one or jpeg
-        const firstImageUrl = images.length > 0 ? images[0].imageUrl : '';
-        const mimeType = this.getMimeTypeFromUrl(firstImageUrl);
-
-        const payload = {
-          phone: to,
-          images: images.map(img => ({
-            imageUrl: img.imageUrl,
-            caption: img.caption
-          })),
-          viewOnce: false,      // Display inline, not as download link
-          isViewOnce: false,    // Alternative field name
-          mimetype: mimeType,   // Dynamic MIME type
-          mimeType: mimeType,   // Alternative field name
-          type: 'image',           // Explicitly set type as image
-          mediaType: 'image',      // Alternative field name
-        };
+        mimetype: mimeType,   // Dynamic MIME type
+        mimeType: mimeType,   // Alternative field name
+        type: 'image',           // Explicitly set type as image
+        mediaType: 'image',      // Alternative field name
+      };
 
         const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
           method: "POST",
