@@ -211,6 +211,12 @@ export class WhatsAppVehicleUploadService {
       // 3. Get user ID from phone number (using normalized comparison)
       const staff = await this.findStaffByPhone(tenantId, staffPhone);
 
+      // 4. Fetch tenant details early for name and plate cover branding
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { name: true, logoUrl: true },
+      });
+
       if (!staff) {
         return {
           success: false,
@@ -219,15 +225,9 @@ export class WhatsAppVehicleUploadService {
         };
       }
 
-      // 4. Generate display ID (tenant-specific format like PM-PST-001)
+      // 4.1. Generate display ID (tenant-specific format like PM-PST-001)
       const displayId = await this.generateDisplayId(tenantId);
       console.log('[WhatsApp Vehicle Upload] Generated displayId:', displayId);
-
-      // 4.1 Fetch tenant details for plate cover branding
-      const tenant = await prisma.tenant.findUnique({
-        where: { id: tenantId },
-        select: { name: true, logoUrl: true },
-      });
       console.log('[WhatsApp Vehicle Upload] Tenant for branding:', tenant?.name);
 
       // 5. Create vehicle with AI-generated data
@@ -506,7 +506,8 @@ export class WhatsAppVehicleUploadService {
         errorMessage += `Ukuran foto terlalu besar. Mohon resize terlebih dahulu (maksimal 5MB).\n`;
       } else if (error.message.includes('Staff') || error.message.includes('staff')) {
         errorMessage += `Nomor WhatsApp belum terdaftar.\n`;
-        errorMessage += `Silakan hubungi admin melalui Dashboard ${tenant?.name || 'Showroom'}\n`;
+        // Use a generic placeholder if tenant fetch failed or is not available here
+        errorMessage += `Silakan hubungi admin untuk pendaftaran.\n`;
       } else {
         errorMessage += `Silakan coba kirim ulang.\n`;
         errorMessage += `Format: "Brio 2020 120jt hitam matic km 30rb"\n`;
