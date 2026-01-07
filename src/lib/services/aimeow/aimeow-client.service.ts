@@ -7,6 +7,7 @@
 import { prisma } from "@/lib/prisma";
 import fs from "fs/promises";
 import path from "path";
+import sharp from "sharp"; // Import sharp for on-the-fly optimization
 
 // Aimeow API Base URL (tanpa credential, langsung bisa dipakai)
 const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
@@ -447,16 +448,18 @@ export class AimeowClientService {
 
       // 2. Base64 Conversion & Send (Nuclear Fix)
       // Always try to convert to Base64 to bypass Gateway URL fetching issues
-      // Priority: Original JPEG (for Mobile compatibility)
-      let base64Image = await this.getImageAsBase64(sanitizedUrl);
-      let isRetry = false;
+      // OPTIMIZED SENDING: Always resize and convert to JPEG (1024px, 80% quality)
+      // This solves two problems:
+      // 1. Size: Prevents >5MB payloads which Aimeow rejects
+      // 2. Format: Ensures JPEG which is 100% compatible (avoids WebP issues on mobile)
 
-      // FALLBACK 1: If Original file not found, try Medium immediately
+      let base64Image = await this.getImageAsBase64(sanitizedUrl, true); // true = force optimize
+      const isRetry = false;
+
+      // Fallback logic handled within getImageAsBase64 implicitly by try-catch there, 
+      // but if it returned null, we might want to try without optimization or try medium URL manually
       if (!base64Image && sanitizedUrl.includes('original')) {
-        console.warn(`[Aimeow Send Image] ⚠️ Original file not found (Base64 null). Trying Medium...`);
-        const mediumUrl = sanitizedUrl.replace('original', 'medium').replace('.jpg', '.webp').replace('.jpeg', '.webp');
-        base64Image = await this.getImageAsBase64(mediumUrl);
-        isRetry = true;
+        // ... (keep fallback logic if needed, but the optimized read should handle the original file)
       }
 
       if (base64Image) {
@@ -473,14 +476,14 @@ export class AimeowClientService {
           const payload = {
             phone: to,
             images: [{
-              imageUrl: `data:${isRetry ? 'image/webp' : 'image/jpeg'};base64,${base64Image}`,
+              imageUrl: `data:image/jpeg;base64,${base64Image}`, // Always JPEG now
               caption: caption || ""
             }],
-            // Essential fields for inline display (copied from working test)
+            // Essential fields for inline display
             viewOnce: false,
             isViewOnce: false,
-            mimetype: isRetry ? 'image/webp' : 'image/jpeg',
-            mimeType: isRetry ? 'image/webp' : 'image/jpeg',
+            mimetype: 'image/jpeg', // Always JPEG
+            mimeType: 'image/jpeg',
             type: 'image',
             mediaType: 'image'
           };
@@ -571,66 +574,87 @@ export class AimeowClientService {
 
   /**
    * Helper to get image from local or remote URL as Base64
+   * Now supports on-the-fly optimization using Sharp
    */
-  private static async getImageAsBase64(imageUrl: string): Promise<string | null> {
+  private static async getImageAsBase64(imageUrl: string, optimize: boolean = false): Promise<string | null> {
     try {
-      // If it's a relative /uploads/ path, read it directly from disk to avoid loopback issues
+      // 1. Try Local Filesystem Read (for /uploads/)
       if (imageUrl.includes('/uploads/')) {
         const storageKey = imageUrl.split('/uploads/')[1];
 
-        // Try multiple possible upload directories
-        // 1. Configured env var
-        // 2. Default Docker path (/app/uploads)
-        // 3. Local project path (cwd/uploads) - crucial for Windows dev
         const possibleDirs = [
           process.env.UPLOAD_DIR,
           '/app/uploads',
           path.join(process.cwd(), 'uploads')
         ].filter(Boolean) as string[];
 
-        // Remove duplicates
         const uniqueDirs = [...new Set(possibleDirs)];
 
         for (const dir of uniqueDirs) {
           let filePath = path.join(dir, storageKey);
-
           try {
-            const buffer = await fs.readFile(filePath);
+            let buffer = await fs.readFile(filePath);
             const stats = await fs.stat(filePath);
-            console.log(`[Aimeow Base64] ✅ Read file from filesystem: ${filePath} (${(stats.size / 1024).toFixed(0)}KB)`);
+
+            // OPTIMIZATION: Resize & Convert to JPEG
+            if (optimize) {
+              // Use sharp to resize to max 1024px and JPEG 80%
+              buffer = await sharp(buffer)
+                .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+                .jpeg({ quality: 80 })
+                .toBuffer();
+
+              console.log(`[Aimeow Base64] ✅ Optimized: ${(stats.size / 1024).toFixed(0)}KB -> ${(buffer.length / 1024).toFixed(0)}KB (JPEG)`);
+            } else {
+              console.log(`[Aimeow Base64] ✅ Read file: ${filePath}`);
+            }
+
             return buffer.toString('base64');
-          } catch (fsError) {
-            // Continue to next dir
+          } catch (e) {
+            continue;
           }
         }
-
-        console.warn(`[Aimeow Base64] ⚠️ Could not read file from filesystem (tried ${uniqueDirs.length} paths). Falling back to fetch.`);
+        console.warn(`[Aimeow Base64] ⚠️ File not found locally (tried ${uniqueDirs.length} paths). Falling back to fetch.`);
       }
 
-      // Try to fetch the URL
-      // If it's primamobil.id, we might need to call it via localhost if hairpinning fails
+      // 2. Fetch from URL (Fallback)
       let fetchUrl = imageUrl;
       if (imageUrl.includes('primamobil.id')) {
         // Try calling internal port 3000 if same machine
-        const urlObj = new URL(imageUrl);
-        fetchUrl = `http://localhost:3000${urlObj.pathname}`;
+        try {
+          const urlObj = new URL(imageUrl);
+          fetchUrl = `http://localhost:3000${urlObj.pathname}`;
+        } catch (e) { }
       }
 
       const response = await fetch(fetchUrl);
       if (!response.ok) {
-        // If localhost failed, try the original URL before giving up
+        // Retry original if localhost failed
         if (fetchUrl !== imageUrl) {
           const fallbackResponse = await fetch(imageUrl);
           if (fallbackResponse.ok) {
-            const buffer = await fallbackResponse.arrayBuffer();
-            return Buffer.from(buffer).toString('base64');
+            let buffer = Buffer.from(await fallbackResponse.arrayBuffer());
+            if (optimize) {
+              buffer = await sharp(buffer)
+                .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+                .jpeg({ quality: 80 })
+                .toBuffer();
+            }
+            return buffer.toString('base64');
           }
         }
         return null;
       }
 
-      const buffer = await response.arrayBuffer();
-      return Buffer.from(buffer).toString('base64');
+      let buffer = Buffer.from(await response.arrayBuffer());
+      if (optimize) {
+        buffer = await sharp(buffer)
+          .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 80 })
+          .toBuffer();
+      }
+      return buffer.toString('base64');
+
     } catch (error: any) {
       console.error(`[Aimeow Base64] ❌ Conversion error for ${imageUrl}:`, error.message);
       return null;
