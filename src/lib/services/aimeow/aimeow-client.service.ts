@@ -474,7 +474,7 @@ export class AimeowClientService {
 
           console.log(`[Aimeow Client] 📤 Sending image to ${to} | Content: ${logUrl}`);
 
-          const response = await fetch(`${AIMEOW_BASE_URL}/chat/send-image`, {
+          const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-image`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -501,7 +501,7 @@ export class AimeowClientService {
               console.log(`[Aimeow Client] 🔄 Retry Payload Size: ${Math.round(mediumBase64.length / 1024)} KB`);
 
               // Retry request (force WebP mime type for medium)
-              const retryResponse = await fetch(`${AIMEOW_BASE_URL}/chat/send-image`, {
+              const retryResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-image`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
