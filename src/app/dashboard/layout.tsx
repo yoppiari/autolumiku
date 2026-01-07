@@ -21,10 +21,10 @@ function AuthorizedNavLink({ href, isAuthorized, isActive, children }: Authorize
       <Link
         href={href}
         className={`
-          flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+          flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-300
           ${isActive
-            ? 'bg-blue-100 text-blue-700'
-            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            ? 'bg-blue-100 text-blue-700 border-2 border-green-500 animate-pulse shadow-lg shadow-green-500/50'
+            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-2 border-transparent'
           }
         `}
       >
@@ -182,21 +182,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // NOTE: Analytics moved to WhatsApp AI page (/dashboard/whatsapp-ai/analytics)
   // NOTE: Invoice feature is HIDDEN for all roles
   const allNavigation: NavItem[] = [
-    { name: 'Dashboard', href: '/dashboard', icon: '🏠', minRole: ROLE_LEVELS.SALES },
+    { name: 'Dashboard', href: '/dashboard', icon: '☑️', minRole: ROLE_LEVELS.SALES },
     // Vehicles - Visible to all
-    { name: 'Vehicles', href: '/dashboard/vehicles', icon: '🚗', minRole: ROLE_LEVELS.SALES },
+    { name: 'Vehicles', href: '/dashboard/vehicles', icon: '☑️', minRole: ROLE_LEVELS.SALES },
     // Team - Visible to all
-    { name: 'Team', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.SALES },
+    { name: 'Team', href: '/dashboard/users', icon: '☑️', minRole: ROLE_LEVELS.SALES },
     // WhatsApp AI - Visible to all
-    { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬', minRole: ROLE_LEVELS.SALES },
+    { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '☑️', minRole: ROLE_LEVELS.SALES },
     // Leads - Visible to all
-    { name: 'Leads', href: '/dashboard/leads', icon: '📋', minRole: ROLE_LEVELS.SALES },
+    { name: 'Leads', href: '/dashboard/leads', icon: '☑️', minRole: ROLE_LEVELS.SALES },
     // Reports - Visible to Admin+ (HIDDEN from sidebar as per user request)
     // { name: 'Reports', href: '/dashboard/reports', icon: '📊', minRole: ROLE_LEVELS.ADMIN },
     // Blog - visible to ALL roles
-    { name: 'Blog', href: '/dashboard/blog', icon: '📝', minRole: ROLE_LEVELS.SALES },
+    { name: 'Blog', href: '/dashboard/blog', icon: '☑️', minRole: ROLE_LEVELS.SALES },
     // Settings - Visible to all
-    { name: 'Settings', href: '/dashboard/settings', icon: '⚙️', minRole: ROLE_LEVELS.SALES },
+    { name: 'Settings', href: '/dashboard/settings', icon: '☑️', minRole: ROLE_LEVELS.SALES },
   ];
 
   // Get user's role level
