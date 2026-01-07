@@ -1035,12 +1035,9 @@ export class StaffCommandService {
 
       photos.push(mediaUrl);
 
-      // Determine if we should send notification
-      // Only notify at milestones: first photo (1), complete (>=6), or every 3 photos
-      const shouldNotify =
-        photos.length === 1 || // First photo
-        photos.length >= MIN_PHOTOS || // Photos complete
-        photos.length - lastNotifiedPhotoCount >= 3; // Every 3 photos
+      // SIMPLIFIED: Only notify when ALL 6 photos are complete
+      // All other photos (1-5) are saved silently with no notification
+      const shouldNotify = photos.length >= MIN_PHOTOS;
 
       if (!shouldNotify) {
         // Silently save photo without notification
