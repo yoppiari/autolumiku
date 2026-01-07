@@ -11,6 +11,7 @@ import { VehicleStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';
+import { VehicleService } from '@/lib/services/vehicle.service';
 
 // Reserved route names that should not be treated as vehicle IDs
 const RESERVED_ROUTES = ['update-ids', 'ai-identify', 'search', 'bulk'];
@@ -277,6 +278,24 @@ export async function PUT(
       },
     });
 
+    // AUTO-RESEQUENCE: Trigger resequencing if status changed to DELETED
+    if (dataToUpdate.status === VehicleStatus.DELETED) {
+      try {
+        const tenant = await prisma.tenant.findUnique({
+          where: { id: existingVehicle.tenantId },
+          select: { id: true, slug: true }
+        });
+
+        if (tenant) {
+          // Run synchronously to ensure consistency
+          await VehicleService.resequenceVehicleIds(tenant.id, tenant.slug);
+          console.log(`[Update Vehicle] ✅ Resequencing triggered due to DELETED status update for ${tenant.slug}`);
+        }
+      } catch (reseqError) {
+        console.error('[Update Vehicle] ⚠️ Failed to resequence IDs:', reseqError);
+      }
+    }
+
     // Convert BigInt to number for JSON serialization
     const vehicleResponse = {
       ...vehicle,
@@ -392,6 +411,24 @@ export async function DELETE(
         updatedBy: auth.user.id,
       },
     });
+
+    // AUTO-RESEQUENCE: Trigger resequencing to fill gaps (e.g. 005 -> 004) because strictly sequential IDs are required
+    try {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: existingVehicle.tenantId },
+        select: { id: true, slug: true }
+      });
+
+      if (tenant) {
+        // Run synchronously to ensure consistency before returning
+        // This ensures the user sees updated IDs if they reload the page immediately
+        await VehicleService.resequenceVehicleIds(tenant.id, tenant.slug);
+        console.log(`[Delete Vehicle] ✅ Resequencing triggered for ${tenant.slug}`);
+      }
+    } catch (reseqError) {
+      console.error('[Delete Vehicle] ⚠️ Failed to resequence IDs:', reseqError);
+      // Non-blocking error
+    }
 
     return NextResponse.json({
       success: true,
