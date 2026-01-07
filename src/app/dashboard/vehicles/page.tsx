@@ -277,9 +277,9 @@ export default function VehiclesPage() {
       });
 
       if (response.ok) {
-        // Remove from local state
-        setVehicles(prev => prev.filter(v => v.id !== vehicle.id));
-        alert(`✅ ${vehicle.make} ${vehicle.model} berhasil dihapus`);
+        // Refresh entire list to reflect resequenced IDs (Server-Side)
+        alert(`✅ ${vehicle.make} ${vehicle.model} berhasil dihapus. ID kendaraan lain telah diurutkan ulang.`);
+        fetchVehicles();
       } else {
         const data = await response.json().catch(() => ({}));
         alert(`Gagal menghapus: ${data.error || data.message || 'Unknown error'}`);
