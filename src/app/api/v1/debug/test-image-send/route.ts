@@ -6,7 +6,7 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-    const TARGET_PHONE = '6285385419766'; // User's phone
+    const TARGET_PHONE = '6281310703754'; // User's actual WhatsApp number
 
     try {
         console.log('[Test Image Send] Starting API-based test...');
