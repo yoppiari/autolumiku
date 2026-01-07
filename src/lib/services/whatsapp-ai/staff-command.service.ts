@@ -981,7 +981,7 @@ export class StaffCommandService {
 
         return {
           success: true,
-          message: `Oke foto ${photos.length}/6 masuk! 📸\n\n${askMessage}`,
+          message: `Oke foto ${photos.length}/6 masuk! 📸\n\nMasih perlu data: ${missingFields.join(", ")}\nLanjut upload atau lengkapi data ya! 👍`,
         };
       }
       // === END FIX ===
@@ -1163,7 +1163,7 @@ export class StaffCommandService {
 
         return {
           success: true,
-          message: receivedInfo + "\n" + askMessage,
+          message: receivedInfo + `\n\nMasih perlu data: ${missingFields.join(", ")}\nLanjut upload atau lengkapi data ya! 👍`,
         };
       }
 
