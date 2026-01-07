@@ -259,11 +259,12 @@ export class ZAIClient {
               }
             }
           },
+
           {
             type: "function",
             function: {
               name: "create_lead",
-              description: "Simpan data prospek/lead baru. Panggil saat customer memberikan nama, lokasi, atau menunjukkan minat serius (tanya harga nett, minta diskon, minta foto detail).",
+              description: "Simpan data prospek/lead baru. Panggil saat customer memberikan nama, menunjukkan minat serius, atau meminta info lebih lanjut.",
               parameters: {
                 type: "object",
                 properties: {
@@ -290,6 +291,16 @@ export class ZAIClient {
                   vehicle_id: {
                     type: "string",
                     description: "ID kendaraan jika spesifik (PM-PST-XXX)"
+                  },
+                  urgency: {
+                    type: "string",
+                    enum: ["LOW", "MEDIUM", "HIGH", "URGENT"],
+                    description: "Tingkat urgensi/prioritas (LOW=santai, MEDIUM=standar, HIGH=serius/butuh cepat, URGENT=sangat mendesak)"
+                  },
+                  source: {
+                    type: "string",
+                    enum: ["whatsapp", "website", "phone"],
+                    description: "Sumber lead (default: whatsapp)"
                   }
                 },
                 required: ["name", "phone"]
