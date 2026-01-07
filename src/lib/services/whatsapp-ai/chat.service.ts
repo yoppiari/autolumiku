@@ -491,6 +491,13 @@ export class WhatsAppAIChatService {
 
                 responseMessage += searchResultText;
               }
+            } else {
+              // No vehicles found
+              const notFoundMsg = `\n\nMohon maaf, saat ini kami belum memiliki stok unit yang sesuai dengan kriteria kakak. 🙏\nBoleh kami bantu carikan unit alternatif lain?`;
+              if (!responseMessage.includes("belum memiliki stok")) {
+                responseMessage += notFoundMsg;
+              }
+              console.log('[WhatsApp AI Chat] ⚠️ No vehicles found for criteria');
             }
           } else if (toolCall.function.name === 'upload_vehicle') {
             const args = JSON.parse(toolCall.function.arguments);
