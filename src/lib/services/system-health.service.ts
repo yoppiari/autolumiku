@@ -1,237 +1,166 @@
-/**
- * AI 5.0 System Health Service
- * "Central Nervous System" for AutoLumiku Platform
- * Monitors, Analyzes, and Self-Heals system components
- */
+import { PrismaClient, VehicleStatus, LeadStatus } from '@prisma/client';
 
-import { prisma } from '@/lib/prisma';
-import { AIHealthMonitorService } from './whatsapp-ai/ai-health-monitor.service';
-import { LeadStatus } from '@prisma/client';
-
-export type ModuleStatus = 'healthy' | 'degraded' | 'error' | 'maintenance';
+const prisma = new PrismaClient();
 
 export interface SystemHealthReport {
-    overallStatus: ModuleStatus;
-    checkedAt: Date;
-    modules: {
-        dashboard: ModuleHealth;
-        vehicles: ModuleHealth;
-        leads: ModuleHealth;
-        whatsapp_ai: ModuleHealth;
-        team: ModuleHealth;
-        settings: ModuleHealth;
+    database: {
+        status: 'healthy' | 'degraded' | 'error';
+        latencyMs: number;
+        message?: string;
     };
-    actionsTaken: string[]; // Self-healing actions performed
-}
-
-export interface ModuleHealth {
-    status: ModuleStatus;
-    message: string;
-    details?: any;
-    lastHealedAt?: Date;
+    vehicles: {
+        status: 'healthy' | 'warning' | 'error';
+        total: number;
+        drafts: number;
+        missingPrice: number; // Critical
+        missingPhotos: number;
+        integrityScore: number; // 0-100
+    };
+    leads: {
+        status: 'healthy' | 'warning' | 'error';
+        total: number;
+        newLeads: number;
+        stuckLeads: number; // Leads in 'NEW' for > 7 days
+    };
+    whatsapp: {
+        status: 'healthy' | 'disconnected' | 'error';
+        connectedAccounts: number;
+        totalAccounts: number;
+        details: any[];
+    };
+    settings: {
+        status: 'healthy' | 'warning' | 'error';
+        count: number;
+    };
+    system: {
+        timestamp: Date;
+        environment: string;
+    };
 }
 
 export class SystemHealthService {
     /**
-     * Run full system diagnostic and attempt self-healing
+     * Perform a full system integrity check
      */
-    static async runDiagnostic(tenantId: string): Promise<SystemHealthReport> {
-        const actionsTaken: string[] = [];
+    static async checkIntegrity(): Promise<SystemHealthReport> {
+        const start = Date.now();
 
-        // Parallel Execution of Diagnostics
-        const [
-            dashboardHealth,
-            vehiclesHealth,
-            leadsHealth,
-            aiHealthResult,
-            settingsHealth
-        ] = await Promise.all([
-            this.checkDashboardHealth(),
-            this.checkVehiclesHealth(tenantId, actionsTaken),
-            this.checkLeadsHealth(tenantId, actionsTaken),
-            AIHealthMonitorService.getHealthState(tenantId),
-            this.checkSettingsHealth(tenantId, actionsTaken)
-        ]);
+        // 1. Database Check
+        let dbStatus: 'healthy' | 'degraded' | 'error' = 'healthy';
+        let dbMessage = 'Connected';
+        try {
+            await prisma.$queryRaw`SELECT 1`;
+        } catch (error) {
+            dbStatus = 'error';
+            dbMessage = error instanceof Error ? error.message : 'Unknown DB Error';
+        }
+        const dbLatency = Date.now() - start;
 
-        // Map AI Health to ModuleHealth format
-        const aiHealth: ModuleHealth = {
-            status: aiHealthResult ? (aiHealthResult.status === 'active' ? 'healthy' : (aiHealthResult.status === 'disabled' ? 'error' : 'degraded')) : 'error',
-            message: aiHealthResult ? `AI Status: ${aiHealthResult.status}` : 'AI Config Not Found',
-            details: aiHealthResult
-        };
+        // 2. Vehicle Integrity
+        const vehiclesTotal = await prisma.vehicle.count();
+        const vehiclesDraft = await prisma.vehicle.count({ where: { status: 'DRAFT' } });
 
-        // Determine Overall Status
-        const allStatuses = [dashboardHealth.status, vehiclesHealth.status, leadsHealth.status, aiHealth.status, settingsHealth.status];
-        let overallStatus: ModuleStatus = 'healthy';
-        if (allStatuses.includes('error')) overallStatus = 'error';
-        else if (allStatuses.includes('degraded')) overallStatus = 'degraded';
+        // Critical: Published vehicles with 0 price (BigInt handling needed)
+        // Prisma BigInt needs special handling usually, but for count we can query logic
+        // We'll fetch a sample or just count those seemingly invalid
+        // Note: Can't easily count BigInt comparisons in standard prisma count without raw, 
+        // but we can check logic. For now, let's assume price > 0 is mandatory for AVAILABLE
+
+        // We'll define "missing price" as price = 0
+        // Querying BigInt(0)
+        const vehiclesMissingPrice = await prisma.vehicle.count({
+            where: {
+                price: 0,
+                status: { not: 'DRAFT' } // Only care if not draft
+            }
+        });
+
+        const vehiclesMissingPhotos = await prisma.vehicle.count({
+            where: {
+                photos: { none: {} },
+                status: { not: 'DRAFT' }
+            }
+        });
+
+        let vehicleStatus: 'healthy' | 'warning' | 'error' = 'healthy';
+        if (vehiclesMissingPrice > 0 || vehiclesMissingPhotos > 0) vehicleStatus = 'warning';
+
+        // 3. Leads Health
+        const leadsTotal = await prisma.lead.count();
+        const leadsNew = await prisma.lead.count({ where: { status: 'NEW' } });
+
+        // "Stuck" leads: NEW status for more than 7 days
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const leadsStuck = await prisma.lead.count({
+            where: {
+                status: 'NEW',
+                createdAt: { lt: sevenDaysAgo }
+            }
+        });
+
+        let leadStatus: 'healthy' | 'warning' | 'error' = 'healthy';
+        if (leadsStuck > 50) leadStatus = 'warning'; // Arbitrary threshold
+
+        // 4. WhatsApp AI Health
+        const accounts = await prisma.aimeowAccount.findMany({
+            select: {
+                id: true,
+                phoneNumber: true,
+                connectionStatus: true,
+                isActive: true,
+                tenantId: true
+            }
+        });
+
+        const connectedCount = accounts.filter(a => a.connectionStatus === 'connected').length;
+        let whatsappStatus: 'healthy' | 'disconnected' | 'error' = 'healthy';
+
+        if (accounts.length > 0 && connectedCount === 0) {
+            whatsappStatus = 'disconnected';
+        }
+
+
+        // 5. Settings Health
+        const settingsCount = await prisma.globalSetting.count();
+        // We expect at least some settings to exist in a production system
+        const settingsStatus: 'healthy' | 'warning' = settingsCount > 0 ? 'healthy' : 'warning';
 
         return {
-            overallStatus,
-            checkedAt: new Date(),
-            modules: {
-                dashboard: dashboardHealth,
-                vehicles: vehiclesHealth,
-                leads: leadsHealth,
-                whatsapp_ai: aiHealth,
-                team: { status: 'healthy', message: 'Team Module Active' }, // Placeholder for now
-                settings: settingsHealth
+            database: {
+                status: dbStatus,
+                latencyMs: dbLatency,
+                message: dbMessage
             },
-            actionsTaken
+            vehicles: {
+                status: vehicleStatus,
+                total: vehiclesTotal,
+                drafts: vehiclesDraft,
+                missingPrice: vehiclesMissingPrice,
+                missingPhotos: vehiclesMissingPhotos,
+                integrityScore: Math.max(0, 100 - (vehiclesMissingPrice * 5) - (vehiclesMissingPhotos * 2))
+            },
+            leads: {
+                status: leadStatus,
+                total: leadsTotal,
+                newLeads: leadsNew,
+                stuckLeads: leadsStuck
+            },
+            whatsapp: {
+                status: whatsappStatus,
+                connectedAccounts: connectedCount,
+                totalAccounts: accounts.length,
+                details: accounts.map(a => ({ phone: a.phoneNumber, status: a.connectionStatus }))
+            },
+            settings: {
+                status: settingsStatus,
+                count: settingsCount
+            },
+            system: {
+                timestamp: new Date(),
+                environment: process.env.NODE_ENV || 'development'
+            }
         };
-    }
-
-    /**
-     * 1. Dashboard / Database Health
-     * Checks basic database connectivity
-     */
-    private static async checkDashboardHealth(): Promise<ModuleHealth> {
-        try {
-            const start = Date.now();
-            await prisma.$queryRaw`SELECT 1`; // Simple ping
-            const latency = Date.now() - start;
-
-            return {
-                status: latency < 1000 ? 'healthy' : 'degraded',
-                message: `Database connected (Latency: ${latency}ms)`,
-                details: { latency }
-            };
-        } catch (error: any) {
-            return {
-                status: 'error',
-                message: 'Database Connection Failed',
-                details: { error: error.message }
-            };
-        }
-    }
-
-    /**
-     * 2. Vehicle Integrity Check
-     * Checks for data anomalies (e.g. missing price, invalid status)
-     */
-    private static async checkVehiclesHealth(tenantId: string, actions: string[]): Promise<ModuleHealth> {
-        try {
-            const invalidVehicles = await prisma.vehicle.count({
-                where: {
-                    tenantId,
-                    status: 'AVAILABLE',
-                    OR: [
-                        { price: { equals: 0 } }, // Price missing
-                        { price: { equals: null as any } } // Handling improper nulls if any
-                    ]
-                }
-            });
-
-            if (invalidVehicles > 0) {
-                // [SELF-HEALING] Flag them as DRAFT to prevent frontend issues
-                // We log this mainly; usually we don't auto-publish. Here we auto-unpublish bad data.
-                await prisma.vehicle.updateMany({
-                    where: {
-                        tenantId,
-                        status: 'AVAILABLE',
-                        price: { equals: 0 }
-                    },
-                    data: { status: 'DRAFT' }
-                });
-
-                const actionMsg = `Auto-corrected ${invalidVehicles} vehicles with 0 price to DRAFT status.`;
-                actions.push(actionMsg);
-
-                return {
-                    status: 'degraded', // Was degraded, now fixed but worth reporting
-                    message: actionMsg,
-                    details: { invalidCount: invalidVehicles }
-                };
-            }
-
-            return { status: 'healthy', message: 'Vehicle Inventory Integrity Verified' };
-        } catch (error: any) {
-            console.error("[SystemHealth] Vehicle check failed:", error);
-            return { status: 'degraded', message: 'Vehicle Integrity Check Failed' };
-        }
-    }
-
-    /**
-     * 3. Leads Standardization Check
-     * Ensures no leads have invalid/legacy statuses
-     */
-    private static async checkLeadsHealth(tenantId: string, actions: string[]): Promise<ModuleHealth> {
-        try {
-            // Prisma enforces Enum at typo level, but let's check for 'logical' issues
-            // e.g. Stalled leads (New for > 7 days)
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-            const stalledLeadsCount = await prisma.lead.count({
-                where: {
-                    tenantId,
-                    status: 'NEW',
-                    createdAt: { lt: sevenDaysAgo }
-                }
-            });
-
-            if (stalledLeadsCount > 0) {
-                return {
-                    status: 'degraded',
-                    message: `${stalledLeadsCount} Leads stuck in NEW status for > 7 days`,
-                    details: { stalledCount: stalledLeadsCount }
-                };
-            }
-
-            return { status: 'healthy', message: 'Lead Pipeline Flowing Normal' };
-        } catch (error) {
-            return { status: 'error', message: 'Lead Check Failed' };
-        }
-    }
-
-    /**
-     * 5. Settings / Config Health [SELF-HEALING]
-     * Ensures critical keys exist
-     */
-    private static async checkSettingsHealth(tenantId: string, actions: string[]): Promise<ModuleHealth> {
-        try {
-            const requiredKeys = ['site_title', 'currency', 'language_default'];
-            const missingKeys: string[] = [];
-
-            // Check each
-            for (const key of requiredKeys) {
-                const exists = await prisma.globalSetting.findFirst({
-                    where: { key, tenantId }
-                });
-                if (!exists) missingKeys.push(key);
-            }
-
-            if (missingKeys.length > 0) {
-                // [SELF-HEALING] Create default for missing settings
-                for (const key of missingKeys) {
-                    let defaultVal: any = "AutoLumiku";
-                    if (key === 'currency') defaultVal = "IDR";
-                    if (key === 'language_default') defaultVal = "id";
-
-                    await prisma.globalSetting.create({
-                        data: {
-                            key,
-                            value: defaultVal,
-                            category: 'platform',
-                            dataType: 'string',
-                            tenantId: tenantId
-                        }
-                    });
-                }
-                const msg = `Restored missing settings: ${missingKeys.join(', ')}`;
-                actions.push(msg);
-
-                return {
-                    status: 'healthy', // Considered healthy after healing
-                    message: msg,
-                    lastHealedAt: new Date()
-                };
-            }
-
-            return { status: 'healthy', message: 'Configuration Valid' };
-
-        } catch (error) {
-            return { status: 'error', message: 'Settings Integrity Check Failed' };
-        }
     }
 }
