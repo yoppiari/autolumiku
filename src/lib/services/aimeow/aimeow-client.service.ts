@@ -457,6 +457,8 @@ export class AimeowClientService {
       };
 
       console.log(`[Aimeow Send Image] Using clientId: ${apiClientId}`);
+      console.log(`[Aimeow Send Image] 🔍 EXACT URL in payload:`, payload.images[0].imageUrl);
+
 
       // Use /send-images endpoint
       let response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
