@@ -41,32 +41,17 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'No vehicle found with photos for Prima Mobil' }, { status: 404 });
         }
 
-        // 2. Read file
-        const storageKey = vehicle.photos[0].originalUrl.split('/uploads/')[1];
-        const possibleDirs = [process.env.UPLOAD_DIR, '/app/uploads', path.join(process.cwd(), 'uploads')].filter(Boolean) as string[];
+        // CRITICAL: Aimeow API CANNOT download from data: URLs!
+        // It needs public HTTP URLs that it can fetch
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://auto.lumiku.com';
+        const photoUrl = vehicle.photos[0].originalUrl; // e.g. /uploads/vehicles/xxx.jpg
 
-        let buffer: Buffer | undefined;
-        for (const dir of possibleDirs) {
-            try {
-                const fullPath = path.join(dir, storageKey);
-                if (fs.existsSync(fullPath)) {
-                    buffer = fs.readFileSync(fullPath);
-                    break;
-                }
-            } catch (e) { }
-        }
+        // Build full public URL
+        const publicImageUrl = photoUrl.startsWith('http')
+            ? photoUrl
+            : `${baseUrl}${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
 
-        if (!buffer) {
-            return NextResponse.json({ error: 'File not found' }, { status: 404 });
-        }
-
-        // 3. Process with sharp
-        let sharp;
-        try {
-            sharp = require('sharp');
-        } catch (e) {
-            return NextResponse.json({ error: 'Sharp not installed' }, { status: 500 });
-        }
+        console.log('[Test Image Send] Using photo URL:', publicImageUrl);
 
         const endpoint = `${process.env.AIMEOW_BASE_URL || 'https://meow.lumiku.com'}/api/v1/clients/${clientId}/send-images`;
 
@@ -79,7 +64,7 @@ export async function GET(request: NextRequest) {
                 });
                 const status = res.status;
                 const text = await res.text();
-                return { name, status, ok: res.ok, response: text.substring(0, 100) };
+                return { name, status, ok: res.ok, response: text.substring(0, 200) };
             } catch (e: any) {
                 return { name, status: 0, ok: false, error: e.message };
             }
@@ -87,16 +72,10 @@ export async function GET(request: NextRequest) {
 
         const results: any[] = [];
 
-        // VARIANT A: CURRENT LOGIC
-        const jpegBuffer = await sharp(buffer)
-            .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 80 })
-            .toBuffer();
-        const base64A = jpegBuffer.toString('base64');
-
-        results.push(await send('Variant A (Standard)', {
+        // TEST: Just send the original public URL (this is what production code should use!)
+        results.push(await send('Production Method (Public URL)', {
             phone: TARGET_PHONE,
-            images: [{ imageUrl: `data:image/jpeg;base64,${base64A}`, caption: "Test A: Standard (1024px, MimeType)" }],
+            images: [{ imageUrl: publicImageUrl, caption: "✅ PRODUCTION: Public URL" }],
             viewOnce: false,
             isViewOnce: false,
             mimetype: 'image/jpeg',
@@ -105,42 +84,14 @@ export async function GET(request: NextRequest) {
             mediaType: 'image'
         }));
 
-        // VARIANT B: NO TOP MIME
-        results.push(await send('Variant B (No Top Mime)', {
-            phone: TARGET_PHONE,
-            images: [{ imageUrl: `data:image/jpeg;base64,${base64A}`, caption: "Test B: No Top-Level Mime" }],
-            viewOnce: false,
-            isViewOnce: false
-        }));
-
-        // VARIANT C: RAW BASE64
-        results.push(await send('Variant C (Raw Base64)', {
-            phone: TARGET_PHONE,
-            images: [{ imageUrl: base64A, caption: "Test C: Raw Base64 (No Prefix)" }],
-            viewOnce: false,
-            isViewOnce: false,
-            mimetype: 'image/jpeg',
-            mimeType: 'image/jpeg'
-        }));
-
-        // VARIANT D: SMALL (512px)
-        const smallBuffer = await sharp(buffer).resize(512, 512, { fit: 'inside' }).jpeg({ quality: 70 }).toBuffer();
-        const base64D = smallBuffer.toString('base64');
-
-        results.push(await send('Variant D (Small 512px)', {
-            phone: TARGET_PHONE,
-            images: [{ imageUrl: `data:image/jpeg;base64,${base64D}`, caption: "Test D: Small 512px" }],
-            viewOnce: false,
-            isViewOnce: false,
-            mimetype: 'image/jpeg',
-            mimeType: 'image/jpeg'
-        }));
-
         return NextResponse.json({
             success: true,
-            message: 'Test images sent! Check WhatsApp to see which variant displays correctly.',
+            message: 'Test image sent using PUBLIC URL (the correct method)!',
+            photoUrl: publicImageUrl,
+            vehicleInfo: `${vehicle.make || ''} ${vehicle.model || ''} ${vehicle.year || ''}`.trim(),
             results,
-            instructions: 'Check your phone (085385419766) and tell us which variant (A, B, C, or D) shows the image.'
+            fix: '✅ Root cause found: Aimeow needs public URLs, NOT base64 data. Production code must use photo URLs directly.',
+            instructions: 'Check your WhatsApp (+6281310703754) for the image. If it appears, the fix is confirmed!'
         });
 
     } catch (error: any) {

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
                     },
                     select: {
                         id: true,
-                        brand: true,
+                        make: true,
                         model: true,
                         year: true,
                         _count: { select: { photos: true } }
