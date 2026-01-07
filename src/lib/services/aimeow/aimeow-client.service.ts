@@ -819,62 +819,51 @@ export class AimeowClientService {
   /**
    * Send multiple images via WhatsApp
    */
+  /**
+   * Send multiple images via WhatsApp
+   * UPDATED: Uses sequential `sendImage` to ensure Base64 fallback works for each image.
+   * This is slower but much more reliable than the batch endpoint which lacks fallback logic.
+   */
   static async sendImages(
     clientId: string,
     to: string,
     images: Array<{ imageUrl: string; caption?: string }>
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      console.log(`[Aimeow Send Images] Sending ${images.length} images to ${to}`);
+      console.log(`[Aimeow Send Images] 🔄 Sending ${images.length} images SEQUENTIALLY to leverage Base64 fallback...`);
 
-      // Resolve clientId to UUID
-      const apiClientId = await this.resolveClientId(clientId);
+      const results = [];
+      let successCount = 0;
 
-      // Determine MIME type dynamically from the first image
-      // Assuming all images in a batch are likely the same type, or at least compatiable
-      // If mixed, Aimeow/WhatsApp usually handles it best if we declare the primary one or jpeg
-      const firstImageUrl = images.length > 0 ? images[0].imageUrl : '';
-      const mimeType = this.getMimeTypeFromUrl(firstImageUrl);
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        console.log(`[Aimeow Send Images] 📤 Sending image ${i + 1}/${images.length}...`);
 
-      const payload = {
-        phone: to,
-        images: images.map(img => ({
-          imageUrl: img.imageUrl,
-          caption: img.caption
-        })),
-        viewOnce: false,      // Display inline, not as download link
-        isViewOnce: false,    // Alternative field name
-        mimetype: mimeType,   // Dynamic MIME type
-        mimeType: mimeType,   // Alternative field name
-        type: 'image',           // Explicitly set type as image
-        mediaType: 'image',      // Alternative field name
-      };
+        try {
+          // Use sendImage (singular) which has the Base64 fallback logic
+          const result = await this.sendImage(clientId, to, img.imageUrl, img.caption);
+          results.push(result);
+          if (result.success) successCount++;
 
-      const response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Aimeow Send Images] Error: ${errorText}`);
-        throw new Error(`Failed to send images: ${response.statusText}`);
+          // Small delay to prevent rate limiting or overwhelming the phone
+          if (i < images.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+        } catch (err: any) {
+          console.error(`[Aimeow Send Images] ❌ Failed to send image ${i + 1}:`, err.message);
+          results.push({ success: false, error: err.message });
+        }
       }
 
-      const data = await response.json();
-      console.log(`[Aimeow Send Images] ✅ API Response Check:`, data);
+      console.log(`[Aimeow Send Images] ✅ Sequence complete. Success: ${successCount}/${images.length}`);
 
-      if (data.success === false) {
-        console.error(`[Aimeow Send Images] ❌ API returned success=false: ${data.error}`);
-        throw new Error(data.error || "Failed to send images (internal API error)");
+      if (successCount === 0 && images.length > 0) {
+        throw new Error("Failed to send any images in the batch.");
       }
 
       return {
         success: true,
-        messageId: data.messageId || `imgs_${Date.now()}`,
+        messageId: `batch_${Date.now()}_${successCount}`,
       };
     } catch (error: any) {
       console.error(`[Aimeow Send Images] Error:`, error);

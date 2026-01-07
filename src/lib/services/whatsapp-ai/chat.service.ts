@@ -25,6 +25,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { MessageIntent } from "./intent-classifier.service";
 import { LeadService } from "@/lib/services/lead-service";
+import { LeadPriority } from "@prisma/client";
 
 // ==================== TYPES ====================
 
@@ -424,10 +425,10 @@ export class WhatsAppAIChatService {
                   phone: phone,
                   interestedIn: toolArgs.interest || toolArgs.vehicle_id,
                   budgetRange: toolArgs.budget,
-                  source: 'whatsapp',
+                  source: toolArgs.source || 'whatsapp',
                   message: context.messageHistory.map(m => `${m.role}: ${m.content}`).slice(-3).join('\n'), // Store recent chat as initial message
                   status: 'NEW',
-                  priority: 'MEDIUM',
+                  priority: (toolArgs.urgency as LeadPriority) || 'MEDIUM',
                   notes: toolArgs.location ? `Location: ${toolArgs.location}` : undefined
                 });
                 console.log('[WhatsAppAI] ✅ Lead created:', resultLead.id);
@@ -2760,8 +2761,16 @@ export class WhatsAppAIChatService {
   private static async buildImageArray(vehicles: any[]): Promise<Array<{ imageUrl: string; caption?: string }> | null> {
     // Build image array with fallback URLs
     // Convert relative URLs to full URLs for Aimeow
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
-    console.log(`[WhatsApp AI Chat] Base URL for images: ${baseUrl}`);
+    let baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+
+    // CRITICAL FIX: Ensure we never send localhost/0.0.0.0 URLs to external WhatsApp API 
+    // because the external Aimeow Gateway cannot reach our local server.
+    if (baseUrl.includes('localhost') || baseUrl.includes('0.0.0.0') || baseUrl.includes('127.0.0.1')) {
+      console.log(`[WhatsApp AI Chat] ⚠️ Local URL detected (${baseUrl}), enforcing public domain for external API`);
+      baseUrl = 'https://primamobil.id';
+    }
+
+    console.log(`[WhatsApp AI Chat] Final Base URL for images: ${baseUrl}`);
 
     const images: Array<{ imageUrl: string; caption?: string }> = [];
 
