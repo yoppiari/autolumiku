@@ -1,105 +1,75 @@
-/**
- * System Health & Self-Healing Verification Suite
- * Tests if the "AI 5.0" Central Nervous System works as expected.
- *
- * Run with: npx tsx src/lib/services/__tests__/system-health.test.ts
- */
-
 import { SystemHealthService } from '../system-health.service';
 import { prisma } from '@/lib/prisma';
 
-async function runTests() {
-    console.log('🚀 INITIALIZING AI 5.0 HEALTH DIAGNOSTIC TEST...\n');
-
-    // Setup: Get Valid Tenant
-    const tenant = await prisma.tenant.findFirst();
-    if (!tenant) {
-        console.error('❌ No tenant found. Cannot run tests.');
-        return;
+// Mock Prisma
+jest.mock('@/lib/prisma', () => ({
+    prisma: {
+        $queryRaw: jest.fn(),
+        vehicle: { count: jest.fn() },
+        lead: { count: jest.fn() },
+        aimeowAccount: { findMany: jest.fn() },
+        globalSetting: { count: jest.fn() }
     }
-    const tenantId = tenant.id;
-    console.log(`ℹ️ Testing with Tenant ID: ${tenantId}\n`);
+}));
 
-    // ==================== TEST 1: DASHBOARD / DB HEALTH ====================
-    console.log('🔹 TEST 1: Database Connectivity');
-    try {
-        const report = await SystemHealthService.runDiagnostic(tenantId);
-        if (report.modules.dashboard.status === 'healthy') {
-            console.log('✅ PASS: Database is reachable.');
-        } else {
-            console.error('❌ FAIL: Database reported unhealthy.', report.modules.dashboard);
-        }
-    } catch (e) { console.error('❌ FAIL: Check crashed', e); }
+describe('SystemHealthService', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
+    test('checkIntegrity returns detailed health report', async () => {
+        // Setup healthy state mocks
+        (prisma.$queryRaw as jest.Mock).mockResolvedValue([1]);
+        (prisma.vehicle.count as jest.Mock).mockResolvedValue(0);
+        (prisma.lead.count as jest.Mock).mockResolvedValue(0);
+        (prisma.globalSetting.count as jest.Mock).mockResolvedValue(5); // Healthy settings
+        (prisma.aimeowAccount.findMany as jest.Mock).mockResolvedValue([
+            { id: '1', phoneNumber: '628123', connectionStatus: 'connected', isActive: true, tenantId: 't1' }
+        ]);
 
-    // ==================== TEST 2: VEHICLE SELF-HEALING ====================
-    console.log('\n🔹 TEST 2: Vehicle Auto-Correction (Self-Healing)');
-    try {
-        // 1. Create "Broken" Vehicle
-        const brokenVehicle = await prisma.vehicle.create({
-            data: {
-                tenantId,
-                make: 'TestBroken',
-                model: 'Car',
-                year: 2024,
-                price: 0, // INVALID PRICE for AVAILABLE status
-                status: 'AVAILABLE',
-                displayId: `TEST-${Date.now()}`
-            }
-        });
-        console.log(`   Created broken vehicle: ${brokenVehicle.id} (Price: 0, Status: AVAILABLE)`);
+        const report = await SystemHealthService.checkIntegrity();
 
-        // 2. Run Diagnostic (Should Heal)
-        const report = await SystemHealthService.runDiagnostic(tenantId);
+        expect(report).toBeDefined();
+        expect(report.database.status).toBe('healthy');
+        expect(report.vehicles.status).toBe('healthy');
+        expect(report.leads.status).toBe('healthy');
+        expect(report.whatsapp.status).toBe('healthy');
+        expect(report.settings.status).toBe('healthy');
+        expect(report.whatsapp.connectedAccounts).toBe(1);
+    });
 
-        // 3. Verify Healing
-        const healedVehicle = await prisma.vehicle.findUnique({ where: { id: brokenVehicle.id } });
+    test('checkIntegrity detects database failure', async () => {
+        (prisma.$queryRaw as jest.Mock).mockRejectedValue(new Error('DB Connection Failed'));
 
-        if (healedVehicle?.status === 'DRAFT') {
-            console.log('✅ PASS: Vehicle auto-corrected to DRAFT status.');
-        } else {
-            console.error(`❌ FAIL: Vehicle status is still ${healedVehicle?.status}`);
-        }
+        // other mocks need to be set to avoid crashes if they run
+        (prisma.vehicle.count as jest.Mock).mockResolvedValue(0);
+        (prisma.lead.count as jest.Mock).mockResolvedValue(0);
+        (prisma.globalSetting.count as jest.Mock).mockResolvedValue(0);
+        (prisma.aimeowAccount.findMany as jest.Mock).mockResolvedValue([]);
 
-        if (report.actionsTaken.some(a => a.includes('Auto-corrected'))) {
-            console.log('✅ PASS: Action log recorded the heal event.');
-        }
+        const report = await SystemHealthService.checkIntegrity();
 
-        // Cleanup
-        await prisma.vehicle.delete({ where: { id: brokenVehicle.id } });
+        expect(report.database.status).toBe('error');
+        expect(report.database.message).toContain('DB Connection Failed');
+    });
 
-    } catch (e) { console.error('❌ FAIL: Vehicle test crashed', e); }
+    test('checkIntegrity detects vehicle integrity issues', async () => {
+        (prisma.$queryRaw as jest.Mock).mockResolvedValue([1]);
 
+        // Mock count calls sequentially: 
+        // 1. Total, 2. Drafts, 3. Missing Price, 4. Missing Photos
+        (prisma.vehicle.count as jest.Mock)
+            .mockResolvedValueOnce(10) // Total
+            .mockResolvedValueOnce(0)  // Drafts
+            .mockResolvedValueOnce(2)  // Missing Price (Warning)
+            .mockResolvedValueOnce(0); // Missing Photos
 
-    // ==================== TEST 3: SETTINGS SELF-HEALING ====================
-    console.log('\n🔹 TEST 3: Settings Auto-Restoration (Self-Healing)');
-    try {
-        // 1. Ensure a required key is missing
-        const testKey = 'currency';
-        await prisma.globalSetting.deleteMany({ where: { key: testKey, tenantId } });
-        console.log(`   Deleted setting: ${testKey}`);
+        (prisma.lead.count as jest.Mock).mockResolvedValue(0);
+        (prisma.globalSetting.count as jest.Mock).mockResolvedValue(1);
+        (prisma.aimeowAccount.findMany as jest.Mock).mockResolvedValue([]);
 
-        // 2. Run Diagnostic
-        const report = await SystemHealthService.runDiagnostic(tenantId);
-
-        // 3. Verify Restoration
-        const restoredSetting = await prisma.globalSetting.findFirst({ where: { key: testKey, tenantId } });
-
-        if (restoredSetting) {
-            console.log(`✅ PASS: Setting '${testKey}' was auto-restored.`);
-        } else {
-            console.error(`❌ FAIL: Setting '${testKey}' is still missing.`);
-        }
-
-        if (report.modules.settings.status === 'healthy') {
-            console.log('✅ PASS: Settings module reports healthy after healing.');
-        }
-
-    } catch (e) { console.error('❌ FAIL: Settings test crashed', e); }
-
-
-    // ==================== SUMMARY ====================
-    console.log('\n\n✅ ALL TESTS COMPLETED.');
-}
-
-runTests();
+        const report = await SystemHealthService.checkIntegrity();
+        expect(report.vehicles.status).toBe('warning');
+        expect(report.vehicles.missingPrice).toBe(2);
+    });
+});
