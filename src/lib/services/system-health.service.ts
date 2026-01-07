@@ -1,6 +1,6 @@
 import { PrismaClient, VehicleStatus, LeadStatus } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
 
 export interface SystemHealthReport {
     database: {
