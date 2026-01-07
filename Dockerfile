@@ -103,8 +103,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy node_modules (including Prisma Client and puppeteer from builder which has all deps)
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+# Copy node_modules is redundant with Next.js standalone output and causes OOM crashes
+# COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Copy entrypoint script
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./

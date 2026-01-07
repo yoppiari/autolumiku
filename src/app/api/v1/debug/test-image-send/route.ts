@@ -7,13 +7,24 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
     const TARGET_PHONE = '6281310703754'; // User's actual WhatsApp number
+    const PRIMA_MOBIL_TENANT_ID = 'e592973f-9eff-4f40-adf6-ca6b2ad9721f';
 
     try {
         console.log('[Test Image Send] Starting API-based test...');
 
-        // 1. Find a vehicle with photo
+        // 1. Get Prima Mobil tenant
+        const tenant = await prisma.tenant.findUnique({
+            where: { id: PRIMA_MOBIL_TENANT_ID }
+        });
+
+        if (!tenant?.aimeowApiClientId) {
+            return NextResponse.json({ error: 'Prima Mobil tenant has no WhatsApp client ID configured' }, { status: 404 });
+        }
+
+        // 2. Find a vehicle with photo from Prima Mobil
         const vehicle = await prisma.vehicle.findFirst({
             where: {
+                tenantId: tenant.id,
                 status: { not: 'DELETED' },
                 photos: { some: {} }
             },
@@ -21,12 +32,7 @@ export async function GET(request: NextRequest) {
         });
 
         if (!vehicle || !vehicle.photos[0]) {
-            return NextResponse.json({ error: 'No vehicle found with photos' }, { status: 404 });
-        }
-
-        const tenant = await prisma.tenant.findUnique({ where: { id: vehicle.tenantId } });
-        if (!tenant?.aimeowApiClientId) {
-            return NextResponse.json({ error: 'No client ID found' }, { status: 404 });
+            return NextResponse.json({ error: 'No vehicle found with photos for Prima Mobil' }, { status: 404 });
         }
 
         // 2. Read file
