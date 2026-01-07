@@ -30,10 +30,8 @@ export class StorageService {
     console.log(`💾 Writing file: ${filePath} (${buffer.length} bytes)`);
     await fs.writeFile(filePath, buffer);
 
-    // Return ABSOLUTE URL for external API compatibility (WhatsApp, etc)
-    // Use public domain to ensure accessibility from external services
-    const publicDomain = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
-    const url = `${publicDomain}/uploads/${storageKey}`;
+    // Return relative URL (nginx serves /uploads from volume)
+    const url = `/uploads/${storageKey}`;
     console.log(`✅ File saved, URL: ${url}`);
     return url;
   }

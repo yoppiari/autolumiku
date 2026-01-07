@@ -1197,7 +1197,7 @@ export class WhatsAppAIChatService {
           console.log(`[SmartFallback] Vehicles with photos: ${vehiclesWithPhotos.length}`);
 
           if (vehiclesWithPhotos.length > 0) {
-            const images = this.buildImageArray(vehiclesWithPhotos);
+            const images = await this.buildImageArray(vehiclesWithPhotos);
             if (images && images.length > 0) {
               const label = vehicleName ? `${vehicleName}` : "unit terbaru kami";
               return {
@@ -2153,7 +2153,7 @@ export class WhatsAppAIChatService {
 
           if (anyVehicles.length > 0 && anyVehicles.some(v => v.photos?.length > 0)) {
             console.log(`[PhotoConfirm DEBUG] ✅ Vehicles with photos found, building image array...`);
-            const images = this.buildImageArray(anyVehicles);
+            const images = await this.buildImageArray(anyVehicles);
             console.log(`[PhotoConfirm DEBUG] buildImageArray returned: ${images?.length || 0} images`);
             if (images && images.length > 0) {
               console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${images.length} images`);
@@ -2584,10 +2584,10 @@ export class WhatsAppAIChatService {
       }
 
       console.log(`[WhatsApp AI Chat] Found ${anyVehicles.length} vehicles in broader search`);
-      return this.buildImageArray(anyVehicles);
+      return await this.buildImageArray(anyVehicles);
     }
 
-    return this.buildImageArray(vehicles);
+    return await this.buildImageArray(vehicles);
   }
 
   /**
@@ -2655,7 +2655,7 @@ export class WhatsAppAIChatService {
     console.log(`[WhatsApp AI Chat] ✅ Found vehicle: ${vehicle.make} ${vehicle.model} with ${vehicle.photos.length} photos`);
 
     // Build image array for this vehicle
-    const images = this.buildImageArray([vehicle]);
+    const images = await this.buildImageArray([vehicle]);
     if (!images || images.length === 0) {
       return null;
     }
@@ -2800,77 +2800,42 @@ export class WhatsAppAIChatService {
           originalUrl: photo.originalUrl?.substring(0, 100),
         });
 
-        // Use mediumUrl for better performance on mobile (faster load, auto-download)
-        // Fallback to large/original if medium not available
-        let imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+        // PRIORITY CHANGE: Use originalUrl (JPEG) first!
+        // WhatsApp Mobile often fails to render WebP (mediumUrl) as standard images.
+        // JPEG is universally supported.
+        let imageUrl = photo.originalUrl || photo.mediumUrl || photo.largeUrl;
 
         if (!imageUrl) {
           console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for photo ${photoIndex + 1}`);
           continue;
         }
 
-        // Convert relative URL to full URL
-        // Fix: Handle partial URLs or URLs without leading slash if stored that way
-        if (!imageUrl.startsWith('http')) {
-          // Remove leading slash if present to avoid double slashes when joining
+        // URL Construction: Ensure we use the public domain for Aimeow
+        const publicDomain = 'https://primamobil.id';
+        let finalUrl = imageUrl;
+
+        // Extract the trailing path if it's already an absolute URL or use as is if relative
+        if (imageUrl.includes('/uploads/')) {
+          const pathParts = imageUrl.split('/uploads/');
+          finalUrl = `${publicDomain}/uploads/${pathParts[1]}`;
+        } else if (!imageUrl.startsWith('http')) {
           const cleanPath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
-          imageUrl = `${baseUrl}/${cleanPath}`;
+          finalUrl = `${publicDomain}/${cleanPath}`;
         }
 
-        // CRITICAL FIX: Replace localhost/0.0.0.0 URLs that are already in database
-        // This happens when photos were uploaded while NEXT_PUBLIC_BASE_URL was set to localhost
-        if (imageUrl.includes('localhost') || imageUrl.includes('0.0.0.0') || imageUrl.includes('127.0.0.1')) {
-          const publicDomain = 'https://primamobil.id';
-          console.log(`[WhatsApp AI Chat] ⚠️ Replacing local URL in database: ${imageUrl.substring(0, 60)}...`);
-
-          // Extract the path after the domain
-          try {
-            const urlObj = new URL(imageUrl);
-            const path = urlObj.pathname; // e.g., /uploads/vehicles/...
-            imageUrl = `${publicDomain}${path}`;
-            console.log(`[WhatsApp AI Chat] ✅ Replaced with public: ${imageUrl.substring(0, 60)}...`);
-          } catch (e) {
-            // Fallback: simple string replacement
-            imageUrl = imageUrl
-              .replace(/https?:\/\/(localhost|0\.0\.0\.0|127\.0\.0\.1)(:\d+)?/, publicDomain);
-            console.log(`[WhatsApp AI Chat] ✅ Fallback replaced with: ${imageUrl.substring(0, 60)}...`);
-          }
-        }
-
-        // Ensure URL is properly encoded (handle spaces, special chars)
-        try {
-          const url = new URL(imageUrl);
-          imageUrl = url.toString();
-
-          // 🛡️ SMART VALIDATION: Check if image is actually accessible
-          // This prevents "Phantom Photos" where we send a 404 URL
-          const isAccessible = await fetch(imageUrl, { method: 'HEAD' })
-            .then(res => res.ok)
-            .catch(() => false);
-
-          if (!isAccessible) {
-            console.log(`[WhatsApp AI Chat] ❌ Image validation failed: ${imageUrl.substring(0, 100)}...`);
-            continue; // Skip this photo
-          } else {
-            console.log(`[WhatsApp AI Chat] ✅ Image validated: ${imageUrl.substring(0, 100)}...`);
-          }
-
-        } catch (e) {
-          console.log(`[WhatsApp AI Chat] ⚠️ Invalid URL format, using as-is: ${imageUrl}`);
-        }
-
+        console.log(`[WhatsApp AI Chat] 📸 Final Photo URL: ${finalUrl.substring(0, 100)}...`);
 
         // Caption: Place ID at the START for immediate visibility on mobile
         const id = v.displayId || v.id.substring(0, 8).toUpperCase();
         // Format: [PM-PST-001] Toyota Fortuner ...
-        const caption = photoIndex === 0
+        const finalCaption = photoIndex === 0
           ? `[${id}] ${v.make} ${v.model}${v.variant ? ` ${v.variant}` : ''} ${v.year} - Rp ${this.formatPrice(Number(v.price))}\n${v.mileage ? `${v.mileage.toLocaleString('id-ID')} km • ` : ''}${v.transmissionType || 'Manual'} • ${v.color || '-'}`
           : `[${id}] ${v.make} ${v.model} (${photoIndex + 1}/${v.photos.length})`;
 
         // CRITICAL DEBUG: Log final URL that will be sent to Aimeow
-        console.log(`[WhatsApp AI Chat] 🚀 FINAL URL to Aimeow (photo ${photoIndex + 1}): ${imageUrl}`);
+        console.log(`[WhatsApp AI Chat] 🚀 FINAL URL to Aimeow (photo ${photoIndex + 1}): ${finalUrl.substring(0, 100)}...`);
 
-        images.push({ imageUrl, caption });
+        images.push({ imageUrl: finalUrl, caption: finalCaption });
       }
       console.log(`[WhatsApp AI Chat] ✅ Added ${v.photos.length} photos for ${v.make} ${v.model}`);
     }
