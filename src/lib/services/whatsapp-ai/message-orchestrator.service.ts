@@ -2146,7 +2146,7 @@ export class MessageOrchestratorService {
               console.log(`[Orchestrator sendResponse] ⚠️ All image fallback attempts failed.`);
               // If we already sent a text message, send a follow-up warning
               if (message) {
-                const warningMsg = `\n\n⚠️ Mohon maaf, ada kendala teknis saat mengirim foto. Silakan coba minta foto lagi ya! 🙏`;
+                const warningMsg = `\n\n⚠️ Mohon maaf, ada kendala teknis saat mengirim foto. Silakan coba minta foto lagi ya! 🙏\n\n(Error Detail: ${batchResult.error || 'Unknown Error'})`;
                 await AimeowClientService.sendMessage({
                   clientId: account.clientId,
                   to,

@@ -2800,9 +2800,9 @@ export class WhatsAppAIChatService {
           originalUrl: photo.originalUrl?.substring(0, 100),
         });
 
-        // Reverting to mediumUrl for performance/stability. 
-        // Original JPEGs might be too large (5MB+) for Base64 payloads, causing timeouts/errors.
-        let imageUrl = photo.mediumUrl || photo.largeUrl || photo.originalUrl;
+        // PRIORITY: Use originalUrl (JPEG) first for Mobile Compatibility.
+        // AimeowClientService handles size safety (falls back to medium if > 6MB).
+        let imageUrl = photo.originalUrl || photo.mediumUrl || photo.largeUrl;
 
         if (!imageUrl) {
           console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for photo ${photoIndex + 1}`);

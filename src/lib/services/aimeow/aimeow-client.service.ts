@@ -7,7 +7,6 @@
 import { prisma } from "@/lib/prisma";
 import fs from "fs/promises";
 import path from "path";
-import sharp from "sharp";
 
 // Aimeow API Base URL (tanpa credential, langsung bisa dipakai)
 const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
@@ -440,110 +439,88 @@ export class AimeowClientService {
         }
       }
 
-      // Determine MIME type dynamically
-      const mimeType = this.getMimeTypeFromUrl(imageUrl);
-
-      // CRITICAL FIX: Ensure URL is public and accessible from external services
-      const publicDomain = 'https://primamobil.id';
+      // 1. Sanitize URL (Local -> Public)
       let sanitizedUrl = imageUrl;
-
       if (imageUrl.includes('localhost') || imageUrl.includes('0.0.0.0') || imageUrl.includes('127.0.0.1')) {
-        try {
-          const urlObj = new URL(imageUrl);
-          sanitizedUrl = `${publicDomain}${urlObj.pathname}`;
-        } catch (e) {
-          sanitizedUrl = imageUrl.replace(/https?:\/\/(localhost|0\.0\.0\.0|127\.0\.0\.1)(:\d+)?/, publicDomain);
-        }
-      } else if (imageUrl.startsWith('/uploads/')) {
-        sanitizedUrl = `${publicDomain}${imageUrl}`;
+        sanitizedUrl = imageUrl.replace(/http:\/\/.*?:3000/, 'https://primamobil.id').replace(/http:\/\/.*?:8080/, 'https://primamobil.id');
       }
 
-      // NUCLEAR FIX: If the domain is primamobil.id, Aimeow might be transforming it to 0.0.0.0
-      // To bypass this, we will convert the image to BASE64 and send it directly.
-      // This is much more robust than relying on Aimeow's URL fetching logic.
-      let finalImageUrl = sanitizedUrl;
-      let isBase64 = false;
+      // 2. Base64 Conversion & Send (Nuclear Fix)
+      // Always try to convert to Base64 to bypass Gateway URL fetching issues
+      // Priority: Original JPEG (for Mobile compatibility)
+      const base64Image = await this.getImageAsBase64(sanitizedUrl);
 
-      if (sanitizedUrl.includes('primamobil.id') || sanitizedUrl.includes('0.0.0.0')) {
+      if (base64Image) {
         try {
-          console.log(`[Aimeow Send Image] 🔄 Converting local URL to Base64 to bypass transformation: ${sanitizedUrl.substring(0, 50)}...`);
-          const base64Data = await this.getImageAsBase64(sanitizedUrl);
-          if (base64Data) {
-            finalImageUrl = `data:${mimeType};base64,${base64Data}`;
-            isBase64 = true;
-            console.log(`[Aimeow Send Image] ✅ Converted to Base64 (${Math.round(finalImageUrl.length / 1024)} KB)`);
+          const payload = {
+            clientId: apiClientId,
+            phone: to,
+            image: `data:image/jpeg;base64,${base64Image}`, // Default to JPEG
+            caption: caption || ""
+          };
+
+          const logUrl = base64Image.length > 200
+            ? `BASE64 (${Math.round(base64Image.length / 1024)} KB)`
+            : sanitizedUrl;
+
+          console.log(`[Aimeow Client] 📤 Sending image to ${to} | Content: ${logUrl}`);
+
+          const response = await fetch(`${AIMEOW_BASE_URL}/chat/send-image`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Gateway Error ${response.status}: ${errorText}`);
           }
-        } catch (base64Error: any) {
-          console.warn(`[Aimeow Send Image] ⚠️ Base64 conversion failed, falling back to URL:`, base64Error.message);
+
+          const result = await response.json();
+          console.log(`[Aimeow Client] ✅ Success: ${result.message?.id?.id || result.id}`);
+          return { success: true, messageId: result.message?.id?.id || result.id };
+
+        } catch (sendError: any) {
+          // RETRY LOGIC: If sending failed (likely too large), and we were trying 'original', retry with 'medium'
+          if (sanitizedUrl.includes('original')) {
+            console.warn(`[Aimeow Client] ⚠️ First attempt failed (${sendError.message}). Retrying with MEDIUM quality...`);
+
+            const mediumUrl = sanitizedUrl.replace('original', 'medium').replace('.jpg', '.webp').replace('.jpeg', '.webp');
+            const mediumBase64 = await this.getImageAsBase64(mediumUrl);
+
+            if (mediumBase64) {
+              console.log(`[Aimeow Client] 🔄 Retry Payload Size: ${Math.round(mediumBase64.length / 1024)} KB`);
+
+              // Retry request (force WebP mime type for medium)
+              const retryResponse = await fetch(`${AIMEOW_BASE_URL}/chat/send-image`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  clientId: apiClientId,
+                  phone: to,
+                  image: `data:image/webp;base64,${mediumBase64}`,
+                  caption: caption || ""
+                })
+              });
+
+              if (retryResponse.ok) {
+                const retryResult = await retryResponse.json();
+                console.log(`[Aimeow Client] ✅ Retry SUCCESS!`);
+                return { success: true, messageId: retryResult.message?.id?.id || retryResult.id };
+              }
+            }
+          }
+
+          throw sendError; // Re-throw if retry failed
         }
       }
 
-      // Payload for /send-image (SINGULAR) - The most basic format
-      const singlePayload: Record<string, any> = {
-        phone: to,
-        url: finalImageUrl,
-        imageUrl: finalImageUrl,
-        image: finalImageUrl,
-        caption: caption,
-        viewOnce: false,
-        isViewOnce: false,
-        mimetype: mimeType,
-        mimeType: mimeType,
-        type: 'image',
-        mediaType: 'image'
-      };
-
-      const logUrl = isBase64 ? `BASE64 (${Math.round(finalImageUrl.length / 1024)} KB)` : finalImageUrl.substring(0, 100);
-      console.log(`[Aimeow Send Image] 🔍 Sending to ${to} | URL: ${logUrl}...`);
-
-      // Try singular /send-image first (usually more stable)
-      let response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-image`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(singlePayload),
-      });
-
-      // If singular fails, try plural /send-images
-      if (!response.ok) {
-        console.log(`[Aimeow Send Image] singular failed, trying plural...`);
-        const pluralPayload = {
-          phone: to,
-          images: [{
-            imageUrl: finalImageUrl,
-            url: finalImageUrl,
-            image: finalImageUrl,
-            caption: caption
-          }],
-          viewOnce: false,
-          mimetype: mimeType,
-          type: 'image'
-        };
-
-        response = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/send-images`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(pluralPayload),
-        });
-      }
-
-      const responseText = await response.text();
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        throw new Error(`Invalid Aimeow response: ${responseText.substring(0, 200)}`);
-      }
-
-      if (!response.ok || data.success === false) {
-        throw new Error(data.error || `Aimeow error ${response.status}`);
-      }
-
-      console.log(`[Aimeow Send Image] ✅ Success: ${data.messageId || data.id}`);
-
+      // If Base64 generation returned null, return failure
       return {
-        success: true,
-        messageId: data.messageId || data.id || `img_${Date.now()}`,
+        success: false,
+        error: "Failed to generate Base64 for image",
       };
+
     } catch (error: any) {
       console.error(`[Aimeow Send Image] ❌ Error:`, error.message);
       return {
@@ -576,11 +553,13 @@ export class AimeowClientService {
         const uniqueDirs = [...new Set(possibleDirs)];
 
         for (const dir of uniqueDirs) {
-          const filePath = path.join(dir, storageKey);
+          let filePath = path.join(dir, storageKey);
+
           try {
             const buffer = await fs.readFile(filePath);
-            console.log(`[Aimeow Base64] ✅ Read file from filesystem: ${filePath}`);
-            return this.processBuffer(buffer, imageUrl);
+            const stats = await fs.stat(filePath);
+            console.log(`[Aimeow Base64] ✅ Read file from filesystem: ${filePath} (${(stats.size / 1024).toFixed(0)}KB)`);
+            return buffer.toString('base64');
           } catch (fsError) {
             // Continue to next dir
           }
@@ -612,35 +591,10 @@ export class AimeowClientService {
       }
 
       const buffer = await response.arrayBuffer();
-      return this.processBuffer(Buffer.from(buffer), imageUrl);
+      return Buffer.from(buffer).toString('base64');
     } catch (error: any) {
       console.error(`[Aimeow Base64] ❌ Conversion error for ${imageUrl}:`, error.message);
       return null;
-    }
-  }
-
-  /**
-   * Process buffer: Convert WebP to JPEG if needed
-   */
-  private static async processBuffer(buffer: Buffer, originalUrl: string): Promise<string> {
-    try {
-      // If the file extension suggests WebP, convert to JPEG
-      // WhatsApp Mobile often struggles with WebP messages
-      if (originalUrl.endsWith('.webp') || originalUrl.includes('.webp')) {
-        console.log(`[Aimeow Base64] 🔄 Converting WebP to JPEG via Sharp: ${originalUrl.substring(0, 50)}...`);
-        const jpegBuffer = await sharp(buffer)
-          .jpeg({ quality: 80, mozjpeg: true })
-          .toBuffer();
-
-        console.log(`[Aimeow Base64] ✅ Converted! Size: ${Math.round(buffer.length / 1024)}KB -> ${Math.round(jpegBuffer.length / 1024)}KB`);
-        return jpegBuffer.toString('base64');
-      }
-
-      // If already JPEG or other format, return as is
-      return buffer.toString('base64');
-    } catch (e: any) {
-      console.warn(`[Aimeow Base64] ⚠️ Sharp conversion failed, returning original:`, e.message);
-      return buffer.toString('base64');
     }
   }
 
