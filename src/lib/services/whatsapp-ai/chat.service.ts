@@ -2817,6 +2817,26 @@ export class WhatsAppAIChatService {
           imageUrl = `${baseUrl}/${cleanPath}`;
         }
 
+        // CRITICAL FIX: Replace localhost/0.0.0.0 URLs that are already in database
+        // This happens when photos were uploaded while NEXT_PUBLIC_BASE_URL was set to localhost
+        if (imageUrl.includes('localhost') || imageUrl.includes('0.0.0.0') || imageUrl.includes('127.0.0.1')) {
+          const publicDomain = 'https://primamobil.id';
+          console.log(`[WhatsApp AI Chat] ⚠️ Replacing local URL in database: ${imageUrl.substring(0, 60)}...`);
+
+          // Extract the path after the domain
+          try {
+            const urlObj = new URL(imageUrl);
+            const path = urlObj.pathname; // e.g., /uploads/vehicles/...
+            imageUrl = `${publicDomain}${path}`;
+            console.log(`[WhatsApp AI Chat] ✅ Replaced with public: ${imageUrl.substring(0, 60)}...`);
+          } catch (e) {
+            // Fallback: simple string replacement
+            imageUrl = imageUrl
+              .replace(/https?:\/\/(localhost|0\.0\.0\.0|127\.0\.0\.1)(:\d+)?/, publicDomain);
+            console.log(`[WhatsApp AI Chat] ✅ Fallback replaced with: ${imageUrl.substring(0, 60)}...`);
+          }
+        }
+
         // Ensure URL is properly encoded (handle spaces, special chars)
         try {
           const url = new URL(imageUrl);
