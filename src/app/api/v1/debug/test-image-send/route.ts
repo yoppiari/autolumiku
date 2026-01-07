@@ -12,14 +12,20 @@ export async function GET(request: NextRequest) {
     try {
         console.log('[Test Image Send] Starting API-based test...');
 
-        // 1. Get Prima Mobil tenant
+        // 1. Get Prima Mobil tenant with Aimeow account
         const tenant = await prisma.tenant.findUnique({
-            where: { id: PRIMA_MOBIL_TENANT_ID }
+            where: { id: PRIMA_MOBIL_TENANT_ID },
+            include: { aimeowAccount: true }
         });
 
-        if (!tenant?.aimeowApiClientId) {
-            return NextResponse.json({ error: 'Prima Mobil tenant has no WhatsApp client ID configured' }, { status: 404 });
+        if (!tenant?.aimeowAccount?.clientId) {
+            return NextResponse.json({
+                error: 'Prima Mobil has no Aimeow account configured',
+                hint: 'Go to https://auto.lumiku.com/dashboard/whatsapp-ai/setup to configure'
+            }, { status: 404 });
         }
+
+        const clientId = tenant.aimeowAccount.clientId;
 
         // 2. Find a vehicle with photo from Prima Mobil
         const vehicle = await prisma.vehicle.findFirst({
@@ -62,7 +68,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Sharp not installed' }, { status: 500 });
         }
 
-        const endpoint = `${process.env.AIMEOW_BASE_URL || 'https://meow.lumiku.com'}/api/v1/clients/${tenant.aimeowApiClientId}/send-images`;
+        const endpoint = `${process.env.AIMEOW_BASE_URL || 'https://meow.lumiku.com'}/api/v1/clients/${clientId}/send-images`;
 
         const send = async (name: string, payload: any) => {
             try {

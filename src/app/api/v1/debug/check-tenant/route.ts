@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force_dynamic';
 
 export async function GET(request: NextRequest) {
     const PRIMA_MOBIL_TENANT_ID = 'e592973f-9eff-4f40-adf6-ca6b2ad9721f';
@@ -13,9 +13,15 @@ export async function GET(request: NextRequest) {
                 id: true,
                 slug: true,
                 name: true,
-                aimeowApiClientId: true,
-                whatsappConnected: true,
-                whatsappPhoneNumber: true,
+                whatsappNumber: true,
+                aimeowAccount: {
+                    select: {
+                        clientId: true,
+                        phoneNumber: true,
+                        isActive: true,
+                        connectionStatus: true
+                    }
+                },
                 vehicles: {
                     where: {
                         status: { not: 'DELETED' },
@@ -42,15 +48,14 @@ export async function GET(request: NextRequest) {
                 id: tenant.id,
                 name: tenant.name,
                 slug: tenant.slug,
-                aimeowApiClientId: tenant.aimeowApiClientId || 'NOT SET',
-                whatsappConnected: tenant.whatsappConnected,
-                whatsappPhoneNumber: tenant.whatsappPhoneNumber || 'NOT SET',
+                whatsappNumber: tenant.whatsappNumber || 'NOT SET',
             },
+            aimeowAccount: tenant.aimeowAccount || { error: 'No Aimeow account configured' },
             vehiclesWithPhotos: tenant.vehicles.length,
             sampleVehicles: tenant.vehicles,
-            solution: tenant.aimeowApiClientId
-                ? 'Client ID found! Ready to test.'
-                : 'Need to set aimeowApiClientId in database. Check WhatsApp AI settings page.'
+            solution: tenant.aimeowAccount?.clientId
+                ? '✅ Client ID found! Ready to test.'
+                : '❌ Need to configure Aimeow account. Go to WhatsApp AI settings.'
         });
 
     } catch (error: any) {
