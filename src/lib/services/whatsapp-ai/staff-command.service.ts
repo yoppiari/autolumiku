@@ -1640,18 +1640,8 @@ export class StaffCommandService {
     // Get time-based greeting (Selamat pagi/siang/sore/malam)
     const timeGreeting = getTimeBasedGreeting();
 
-    if (aimeowAccount?.aiConfig?.welcomeMessage) {
-      // Use welcome message from config, replace placeholders
-      // Supported placeholders: {greeting}, {name}, {tenant}, {showroom}
-      greeting = aimeowAccount.aiConfig.welcomeMessage
-        .replace(/\{greeting\}/gi, timeGreeting)
-        .replace(/\{name\}/gi, staffName)
-        .replace(/\{tenant\}/gi, tenantName)
-        .replace(/\{showroom\}/gi, tenantName);
-    } else {
-
-      greeting = `${timeGreeting}, ${staffName}! Selamat datang di ${tenantName}!`;
-    }
+    // Standard professional greeting for staff
+    greeting = `${timeGreeting}, ${staffName}!`;
 
     // Build simplified, clear staff menu with better formatting
     let message =

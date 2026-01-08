@@ -1785,6 +1785,16 @@ export class WhatsAppAIChatService {
     systemPrompt += '\n' + AUTOMOTIVE_KNOWLEDGE_BASE;
     systemPrompt += '\n' + COMPANY_KNOWLEDGE_BASE;
 
+    // 11. DYNAMIC LOCATION & MAP (NEW)
+    if (tenant.googleMapsUrl) {
+      systemPrompt += `\n📍 PETA LOKASI (MAPS): ${tenant.googleMapsUrl}`;
+      systemPrompt += `\n(Gunakan link ini jika customer minta share lokasi/map)`;
+    } else if (tenant.latitude && tenant.longitude) {
+      const mapsUrl = `https://www.google.com/maps?q=${tenant.latitude},${tenant.longitude}`;
+      systemPrompt += `\n📍 PETA LOKASI (MAPS): ${mapsUrl}`;
+      systemPrompt += `\n(Gunakan link ini jika customer minta share lokasi/map)`;
+    }
+
     return systemPrompt;
   }
 
