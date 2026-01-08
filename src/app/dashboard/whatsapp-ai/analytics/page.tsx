@@ -550,7 +550,7 @@ function AnalyticsPageInternal() {
                       <span className="text-lg">📂</span>
                       <h3 className="text-sm font-bold text-gray-900">Laporan Tersedia</h3>
                     </div>
-                    <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">4 REPORTS</span>
+                    <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">3 REPORTS</span>
                   </div>
 
                   <div className="p-3 md:p-5 space-y-5">
@@ -565,7 +565,6 @@ function AnalyticsPageInternal() {
                           { id: 'whatsapp-ai', name: 'Analisis WhatsApp AI', desc: 'Akurasi bot & tingkat penanganan otomatis', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics/reports/whatsapp-ai' },
                           { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis perilaku pelanggan & penyelesaian', icon: '👥', href: '/dashboard/whatsapp-ai/analytics/reports/customer-metrics' },
                           { id: 'operational-metrics', name: 'Metrik Operasional', desc: 'Efisiensi chat bot vs manual', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics/reports/operational-metrics' },
-                          { id: 'whatsapp-chat', name: 'WhatsApp AI', desc: 'Monitor percakapan AI secara real-time', icon: '💬', href: '/dashboard/whatsapp-ai' },
                         ].map(report => <ReportCard key={report.id} report={report} />)}
                       </div>
                     </section>
