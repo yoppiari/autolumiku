@@ -659,6 +659,7 @@ export class IntentClassifierService {
       /^(menu|fitur|perintah|command)$/i,
       /^(cara\s+pakai|cara\s+kerja)$/i,
       /^(apa\s+saja\s+fitur|apa\s+bisa\s+bantu)$/i,
+      /(?:info|tanya|apa\s*saja)\s+(?:tool|menu|fitur|command)/i, // Broader match for "info tool", "tanya tool"
     ];
 
     if (helpPatterns.some((p) => p.test(message))) {

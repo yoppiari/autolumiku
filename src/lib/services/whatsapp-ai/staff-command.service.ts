@@ -1649,14 +1649,13 @@ export class StaffCommandService {
         .replace(/\{tenant\}/gi, tenantName)
         .replace(/\{showroom\}/gi, tenantName);
     } else {
-      // Default professional greeting with time-based salam
+
       greeting = `${timeGreeting}, ${staffName}! Selamat datang di ${tenantName}!`;
     }
 
     // Build simplified, clear staff menu with better formatting
-    const message =
-      `${timeGreeting}, ${staffName}! 👋\n\n` +
-      `Selamat datang di *${tenantName}*\n` +
+    let message =
+      `${greeting}\n\n` +
       `Stok saat ini: *${availableCount} unit* tersedia\n\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `📋 *MENU STAFF*\n` +
@@ -1682,10 +1681,41 @@ export class StaffCommandService {
       `_Contoh:_ "edit PM-PST-001 harga 175jt"\n\n` +
 
       `🔍 *CARI MOBIL*\n` +
-      `_Contoh:_ "cari fortuner diesel", "ada brio?"\n\n` +
+      `_Contoh:_ "cari fortuner diesel", "ada brio?"`;
 
-      `👮‍♂️ *MENU ADMIN*\n` +
-      `_Ketik:_ "sales report", "staff performance"`;
+    // Determine user role for customized menu
+    let userRole = "STAFF";
+    const user = await prisma.user.findFirst({
+      where: {
+        tenantId,
+        phone: { contains: this.normalizePhone(staffPhone).replace(/^62/, '') } // Flexible match
+      },
+      select: { role: true }
+    });
+
+    if (user) {
+      userRole = user.role;
+    }
+
+    // Add Admin/Owner specific tools
+    if (["ADMIN", "OWNER", "SUPER_ADMIN"].includes(userRole)) {
+      message += `\n\n` +
+        `👮‍♂️ *MENU ADMIN*\n` +
+        `_Ketik salah satu laporan berikut:_\n` +
+        `• Laporan Penjualan\n` +
+        `• Total Pendapatan\n` +
+        `• Tren Penjualan\n` +
+        `• Metrik Penjualan\n` +
+        `• Ringkasan Penjualan\n` +
+        `• Total Inventori\n` +
+        `• Daftar Kendaraan\n` +
+        `• Peringatan Stok\n` +
+        `• Rata-rata Harga\n` +
+        `• Performa Staff\n` +
+        `• Analisis WhatsApp AI\n` +
+        `• Metrik Pelanggan\n` +
+        `• Metrik Operasional`;
+    }
 
     return {
       success: true,

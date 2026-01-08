@@ -2160,72 +2160,70 @@ export class MessageOrchestratorService {
             if (!result.messageId) result.messageId = imageResult.messageId;
           }
         } else {
-          // Send multiple images as a batch (Album) - Better for UX and Auto-Download
-          console.log(`[Orchestrator sendResponse] Sending ${images.length} images as batch...`);
+          // Send multiple images sequentially with CONTROLLED loop to respect STOP
+          console.log(`[Orchestrator sendResponse] Sending ${images.length} images sequentially (CONTROLLED LOOP)...`);
 
-          const batchResult = await AimeowClientService.sendImages(
-            account.clientId,
-            to,
-            images
-          );
+          // Sequential loop with STOP check
+          let batchSuccessCount = 0;
+          for (let i = 0; i < images.length; i++) {
+            const stopKey = `${accountId}:${to}`;
+            if (stopSignals.get(stopKey)) {
+              console.log(`[Orchestrator sendResponse] 🛑 STOP SIGNAL DETECTED! Aborting image stream at ${i}/${images.length}`);
+              stopSignals.delete(stopKey);
 
-          if (batchResult.success) {
-            console.log(`[Orchestrator sendResponse] ✅ Batch image send SUCCESS!`);
-            imagesSent = true;
-            if (!result.messageId) result.messageId = batchResult.messageId;
-          } else {
-            console.error(`[Orchestrator sendResponse] ❌ Batch image send FAILED: ${batchResult.error}`);
-            console.log(`[Orchestrator sendResponse] 🔄 Fallback: Sending images one-by-one...`);
-
-            // Fallback loop
-            let fallbackSuccessCount = 0;
-            for (let i = 0; i < images.length; i++) {
-              const stopKey = `${accountId}:${to}`;
-              if (stopSignals.get(stopKey)) {
-                console.log(`[Orchestrator sendResponse] 🛑 Stop signal detected. Aborting fallback loop.`);
-                stopSignals.delete(stopKey);
-                break;
-              }
-
-              const img = images[i];
-              console.log(`[Orchestrator sendResponse] Sending fallback image ${i + 1}/${images.length}: ${img.imageUrl}`);
-
-              const imageResult = await AimeowClientService.sendImage(
-                account.clientId,
+              // Send immediate confirmation of stop
+              await AimeowClientService.sendMessage({
+                clientId: account.clientId,
                 to,
-                img.imageUrl,
-                img.caption
-              );
-
-              if (imageResult.success) {
-                imagesSent = true;
-                fallbackSuccessCount++;
-              } else {
-                console.error(`[Orchestrator sendResponse] ❌ Fallback image ${i + 1} failed: ${imageResult.error} (URL: ${img.imageUrl})`);
-              }
+                message: "✅ Oke, pengiriman foto dibatalkan."
+              });
+              break;
             }
 
-            // If ALL fallbacks failed, notify the user
-            if (fallbackSuccessCount === 0) {
-              console.log(`[Orchestrator sendResponse] ⚠️ All image fallback attempts failed.`);
-              // If we already sent a text message, send a follow-up warning
-              if (message) {
-                const warningMsg = `\n\n⚠️ Mohon maaf, ada kendala teknis saat mengirim foto. Silakan coba minta foto lagi ya! 🙏\n\n(Error Detail: ${batchResult.error || 'Unknown Error'})`;
-                await AimeowClientService.sendMessage({
-                  clientId: account.clientId,
-                  to,
-                  message: warningMsg
-                });
-              }
+            const img = images[i];
+            console.log(`[Orchestrator sendResponse] Sending image ${i + 1}/${images.length}: ${img.imageUrl}`);
+
+            const imageResult = await AimeowClientService.sendImage(
+              account.clientId,
+              to,
+              img.imageUrl,
+              img.caption
+            );
+
+            if (imageResult.success) {
+              imagesSent = true;
+              batchSuccessCount++;
+              if (!result.messageId) result.messageId = imageResult.messageId;
+            } else {
+              console.error(`[Orchestrator sendResponse] ❌ Image ${i + 1} failed: ${imageResult.error} (URL: ${img.imageUrl})`);
+            }
+
+            // Add slight delay between images to prevent overwhelming the user and allow stop command to come in
+            if (i < images.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 800));
             }
           }
-        }
 
+          if (batchSuccessCount > 0) {
+            console.log(`[Orchestrator sendResponse] ✅ Sent ${batchSuccessCount}/${images.length} images successfully`);
+          } else {
+            console.error(`[Orchestrator sendResponse] ❌ All images failed to send`);
+            // If we already sent a text message, send a follow-up warning
+            if (message) {
+              const warningMsg = `\n\n⚠️ Mohon maaf, ada kendala teknis saat mengirim foto. Silakan coba minta foto lagi ya! 🙏`;
+              await AimeowClientService.sendMessage({
+                clientId: account.clientId,
+                to,
+                message: warningMsg
+              });
+            }
+          }
 
-        if (imagesSent) {
-          console.log(`[Orchestrator sendResponse] ✅ All images sent successfully!`);
+          if (imagesSent) {
+            console.log(`[Orchestrator sendResponse] ✅ All images sent successfully!`);
+          }
         }
-      }
+      } // This brace closes the 'if (images && images.length > 0)' block
 
       // Save outbound message
       const conversation = await prisma.whatsAppConversation.findUnique({
@@ -2283,13 +2281,10 @@ export class MessageOrchestratorService {
               aimeowStatus: "failed",
             },
           });
-          console.log(`[Orchestrator sendResponse] Saved FAILED message to database for tracking`);
         }
       } catch (dbError) {
         console.error(`[Orchestrator sendResponse] Failed to save error to DB:`, dbError);
       }
-
-      // Don't throw - message saved but not sent, can retry later
     }
   }
 
