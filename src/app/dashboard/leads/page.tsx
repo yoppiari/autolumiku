@@ -265,14 +265,23 @@ export default function LeadsDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-full border border-green-200">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            <span className="text-[10px] font-medium">Live Updates</span>
-          </div>
-
+          {/* Live Updates Indicator - Conditional */}
+          {whatsappSettings.length > 0 && whatsappSettings[0].isActive ? (
+            <div title="WhatsApp Bot Aktif - Data Realtime" className="flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-full border border-green-200">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <span className="text-[10px] font-medium">Live Updates</span>
+            </div>
+          ) : (
+            <div title="WhatsApp Bot Tidak Aktif - Klik WhatsApp Settings untuk mengaktifkan" className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-700 rounded-full border border-red-200">
+              <span className="relative flex h-2 w-2">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+              <span className="text-[10px] font-medium">Not Live</span>
+            </div>
+          )}
           <button
             onClick={() => window.location.reload()} // Simple reload for now, or could extract loadLeadsData
             className="p-1.5 text-gray-500 hover:text-blue-600 transition-colors"

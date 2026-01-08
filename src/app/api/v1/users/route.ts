@@ -91,8 +91,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Check permission - only admin and super_admin can view users
-  if (!['admin', 'super_admin', 'manager'].includes(auth.user.role.toLowerCase())) {
+  // Check permission - only admin, owner, manager and super_admin can view users
+  if (!['admin', 'super_admin', 'manager', 'owner'].includes(auth.user.role.toLowerCase())) {
     return NextResponse.json(
       { error: 'Forbidden - Admin access required' },
       { status: 403 }

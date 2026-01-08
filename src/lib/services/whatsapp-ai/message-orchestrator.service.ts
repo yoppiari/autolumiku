@@ -1896,6 +1896,66 @@ export class MessageOrchestratorService {
           userId: user.id,
         };
         console.log(`[Orchestrator] 📤 Passing user info to AI: ${fullName} (${user.role})`);
+      } else if (!isStaff) {
+        // ==================== LEAD SYNCHRONIZATION ====================
+        // If not staff, this is a customer. Sync with Lead system.
+        try {
+          // Map AI Intent to Lead Status
+          let newStatus = "NEW";
+          if (intent === "customer_interested" || intent === "customer_negotiation") {
+            newStatus = "INTERESTED";
+          } else if (intent === "customer_specific_vehicle") {
+            newStatus = "CONTACTED";
+          } else if (intent === "customer_asking_price") {
+            newStatus = "CONTACTED";
+          }
+
+          if (!lead) {
+            // Create New Lead
+            console.log(`[Orchestrator] ✨ Creating NEW Lead for ${conversation.customerPhone}`);
+            const customerName = conversation.customerName || conversation.customerPhone || "Unknown";
+
+            lead = await LeadService.createLead({
+              tenantId: conversation.tenantId,
+              name: customerName,
+              phone: conversation.customerPhone,
+              whatsappNumber: conversation.customerPhone,
+              message: message, // Initial message
+              status: newStatus as any,
+              source: "whatsapp",
+            });
+            console.log(`[Orchestrator] ✅ Created Lead ID: ${lead.id}`);
+          } else {
+            // Update Existing Lead
+            // Only update status if it progresses (e.g. don't downgrade INTERESTED to CONTACTED)
+            // But for now, we'll just track last activity. 
+            // We can optionally append the message to notes to keep a log, 
+            // but message history is already in WhatsAppConversation for detail.
+
+            // Logic to upgrade status if intent is stronger
+            let updateData: any = {
+              // Always update last interaction time? 
+              // Implicitly handled by 'updatedAt' but we might want explicit field if schema has it.
+            };
+
+            const currentStatus = lead.status;
+            const statusPriority = { "NEW": 1, "CONTACTED": 2, "INTERESTED": 3, "CONVERTED": 4, "NOT_INTERESTED": 0 };
+
+            // Upgrade status if intent implies higher interest
+            // @ts-ignore
+            if (statusPriority[newStatus] > (statusPriority[currentStatus] || 0)) {
+              console.log(`[Orchestrator] 📈 Upgrading Lead Status: ${currentStatus} -> ${newStatus}`);
+              updateData.status = newStatus;
+            }
+
+            if (Object.keys(updateData).length > 0) {
+              await LeadService.updateLead(lead.id, conversation.tenantId, updateData);
+            }
+          }
+        } catch (leadError: any) {
+          console.error(`[Orchestrator] ❌ Failed to sync lead:`, leadError.message);
+          // Don't block AI response if lead sync fails
+        }
       }
 
       // Prepare lead info
