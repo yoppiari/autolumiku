@@ -68,7 +68,7 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
           roundedClass="rounded-t-lg"
           showIndicators={false}
           showCounter={true}
-          interval={10000}
+          interval={7000}
           badges={
             <>
               {/* Status badge - Top Left */}

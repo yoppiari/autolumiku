@@ -28,7 +28,7 @@ export default function VehicleImageCarousel({
   alt,
   className = '',
   imageClassName = '',
-  interval = 8000, // 8 seconds default
+  interval = 7000, // 7 seconds default
   showIndicators = true,
   showCounter = true,
   grayscale = false,
@@ -134,8 +134,8 @@ export default function VehicleImageCarousel({
                     goToPhoto(idx);
                   }}
                   className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentIndex
-                      ? 'bg-white w-3'
-                      : 'bg-white/60 hover:bg-white/80'
+                    ? 'bg-white w-3'
+                    : 'bg-white/60 hover:bg-white/80'
                     }`}
                   aria-label={`Go to photo ${idx + 1}`}
                 />
