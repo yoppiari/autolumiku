@@ -402,7 +402,7 @@ function AnalyticsPageInternal() {
                   <span className="text-lg">📂</span>
                   <h3 className="text-sm font-bold text-gray-900">Laporan Tersedia</h3>
                 </div>
-                <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">9 REPORTS</span>
+                <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">10 REPORTS</span>
               </div>
 
               <div className="p-3 md:p-5 space-y-5">
