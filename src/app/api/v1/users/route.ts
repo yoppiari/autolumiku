@@ -198,8 +198,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Check permission - only admin and super_admin can create users
-  if (!['admin', 'super_admin'].includes(auth.user.role.toLowerCase())) {
+  // Check permission - only admin, owner, and super_admin can create users
+  const userRole = auth.user.role.toLowerCase();
+  if (!['admin', 'super_admin', 'owner'].includes(userRole)) {
     return NextResponse.json(
       { error: 'Forbidden - Admin access required to create users' },
       { status: 403 }
@@ -217,7 +218,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Tenant validation: non-super_admin can only create users in their own tenant
-    if (auth.user.role.toLowerCase() !== 'super_admin') {
+    if (userRole !== 'super_admin') {
       if (tenantId && tenantId !== auth.user.tenantId) {
         return NextResponse.json(
           { error: 'Forbidden - Cannot create users in other tenant' },
@@ -245,9 +246,23 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists in this showroom' },
+        { error: 'User dengan email ini sudah terdaftar di showroom ini' },
         { status: 409 }
       );
+    }
+
+    // Check if phone number is already used in StaffWhatsAppAuth
+    if (normalizedPhone) {
+      const existingAuth = await prisma.staffWhatsAppAuth.findUnique({
+        where: { phoneNumber: normalizedPhone },
+      });
+
+      if (existingAuth) {
+        return NextResponse.json(
+          { error: `Nomor WhatsApp ${phone} sudah digunakan oleh staff lain.` },
+          { status: 409 }
+        );
+      }
     }
 
     // Create user with a temporary password

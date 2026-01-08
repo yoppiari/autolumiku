@@ -790,7 +790,7 @@ export default function UsersPage() {
                       setFormData({ ...formData, phone: e.target.value })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="6281234567890"
+                    placeholder="Contoh: 6281234567890"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Format: kode negara + nomor (tanpa + atau spasi). Contoh: 6281234567890
@@ -809,13 +809,11 @@ export default function UsersPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="SALES">Staff/Sales</option>
-                    <option value="FINANCE">Finance</option>
-                    <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Admin</option>
                     <option value="OWNER">Owner</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Staff & Manager dapat mengelola Kendaraan. Admin & Owner mengelola Tim & Pengaturan.
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Admin & Owner dapat mengelola Tim & Pengaturan.
                   </p>
                 </div>
 
@@ -976,13 +974,11 @@ export default function UsersPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="SALES">Staff/Sales</option>
-                    <option value="FINANCE">Finance</option>
-                    <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Admin</option>
                     <option value="OWNER">Owner</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Staff & Manager dapat mengelola Kendaraan. Admin & Owner mengelola Tim & Pengaturan.
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Admin & Owner dapat mengelola Tim & Pengaturan.
                   </p>
                 </div>
 

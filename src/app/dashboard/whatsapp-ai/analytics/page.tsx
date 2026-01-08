@@ -223,7 +223,7 @@ function AnalyticsPageInternal() {
                           </>
                         ) : (
                           <>
-                            <span className="font-bold text-emerald-600">Performa Stabil:</span> Volume penjualan menunjukkan tren positif. Pastikan ketersediaan stok untuk model-model terlaris terjaga.
+                            <span className="font-bold text-emerald-600">Performa Stable:</span> Volume penjualan menunjukkan tren positif. Pastikan ketersediaan stok untuk model-model terlaris terjaga.
                           </>
                         )}
                         {" "}Brand terpopuler saat ini adalah <span className="font-bold text-indigo-900">{salesStats?.topBrands?.[0]?.brand || 'belum teridentifikasi'}</span>.
@@ -241,7 +241,7 @@ function AnalyticsPageInternal() {
                       <p className="text-[11px] text-red-800 leading-relaxed">
                         <span className="font-bold">Indikator Lemah:</span>
                         <ul className="list-disc ml-4 mt-1 space-y-1">
-                          {(kpiData?.inventoryTurnover || 0) < 10 && (
+                          {(kpiData?.inventoryTurnover || 0) < 20 && (
                             <li>Turnover stok ({kpiData?.inventoryTurnover || 0}%) jauh di bawah target optimal 20%.</li>
                           )}
                           {(kpiData?.leadConversion || 0) < 15 && (
@@ -402,7 +402,7 @@ function AnalyticsPageInternal() {
                   <span className="text-lg">📂</span>
                   <h3 className="text-sm font-bold text-gray-900">Laporan Tersedia</h3>
                 </div>
-                <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">13 REPORTS</span>
+                <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">9 REPORTS</span>
               </div>
 
               <div className="p-3 md:p-5 space-y-5">
@@ -448,21 +448,6 @@ function AnalyticsPageInternal() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
                       { id: 'staff-performance', name: 'Performa Staff', desc: 'Ranking performa individual sales', icon: '🏆', href: '/dashboard/whatsapp-ai/analytics/reports/staff-performance' },
-                    ].map(report => <ReportCard key={report.id} report={report} />)}
-                  </div>
-                </section>
-
-                {/* WhatsApp AI & Engagement */}
-                <section>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">🤖</span>
-                    <h3 className="text-xs font-bold text-gray-800 uppercase">WhatsApp AI</h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {[
-                      { id: 'whatsapp-ai', name: 'Analisis WhatsApp AI', desc: 'Akurasi bot & tingkat penanganan otomatis', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics/reports/whatsapp-ai' },
-                      { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis perilaku pelanggan & penyelesaian', icon: '👥', href: '/dashboard/whatsapp-ai/analytics/reports/customer-metrics' },
-                      { id: 'operational-metrics', name: 'Metrik Operasional', desc: 'Efisiensi chat bot vs manual', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics/reports/operational-metrics' },
                     ].map(report => <ReportCard key={report.id} report={report} />)}
                   </div>
                 </section>
@@ -556,6 +541,37 @@ function AnalyticsPageInternal() {
                   </div>
                 </div>
               </div>
+
+              {/* WhatsApp AI Reports Grid */}
+              <section className="pt-1">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="p-2 md:p-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">📂</span>
+                      <h3 className="text-sm font-bold text-gray-900">Laporan Tersedia</h3>
+                    </div>
+                    <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">4 REPORTS</span>
+                  </div>
+
+                  <div className="p-3 md:p-5 space-y-5">
+                    {/* WhatsApp AI & Engagement */}
+                    <section>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">🤖</span>
+                        <h3 className="text-xs font-bold text-gray-800 uppercase">WhatsApp AI</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {[
+                          { id: 'whatsapp-ai', name: 'Analisis WhatsApp AI', desc: 'Akurasi bot & tingkat penanganan otomatis', icon: '🤖', href: '/dashboard/whatsapp-ai/analytics/reports/whatsapp-ai' },
+                          { id: 'customer-metrics', name: 'Metrik Pelanggan', desc: 'Analisis perilaku pelanggan & penyelesaian', icon: '👥', href: '/dashboard/whatsapp-ai/analytics/reports/customer-metrics' },
+                          { id: 'operational-metrics', name: 'Metrik Operasional', desc: 'Efisiensi chat bot vs manual', icon: '⚙️', href: '/dashboard/whatsapp-ai/analytics/reports/operational-metrics' },
+                          { id: 'whatsapp-chat', name: 'WhatsApp AI', desc: 'Monitor percakapan AI secara real-time', icon: '💬', href: '/dashboard/whatsapp-ai' },
+                        ].map(report => <ReportCard key={report.id} report={report} />)}
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              </section>
             </>
           )}
         </div>

@@ -35,7 +35,7 @@ export interface NavItem {
   href: string;
   icon?: string; // Icon name or component
   minRole: number;
-  excludeRoles?: number[]; // Specific roles to exclude (e.g., FINANCE from Kendaraan)
+  excludeRoles?: number[]; // Specific roles to exclude
 }
 
 // Page access requirements - ALL roles can see all pages in navigation
@@ -62,7 +62,7 @@ export const PAGE_ACCESS: Record<string, { minRole: number; excludeRoles?: numbe
   '/dashboard/blog/create': { minRole: ROLE_LEVELS.SALES },
   '/dashboard/blog/edit': { minRole: ROLE_LEVELS.SALES },
   // Invoices - HIDDEN
-  '/dashboard/invoices': { minRole: ROLE_LEVELS.SUPER_ADMIN, excludeRoles: [30, 70, 90, 100] },
+  '/dashboard/invoices': { minRole: ROLE_LEVELS.SUPER_ADMIN, excludeRoles: [30, 90, 100] },
   // Reports - Admin+
   '/dashboard/reports': { minRole: ROLE_LEVELS.ADMIN },
 };

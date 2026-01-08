@@ -183,7 +183,8 @@ export async function withAdminAuth(
   }
 
   // Check if user has admin role
-  if (!auth.user || !['admin', 'super_admin'].includes(auth.user.role)) {
+  const role = auth.user?.role?.toLowerCase();
+  if (!auth.user || !['admin', 'super_admin', 'owner'].includes(role || '')) {
     return NextResponse.json(
       { error: 'Forbidden - Admin access required' },
       { status: 403 }
@@ -211,7 +212,7 @@ export async function withSuperAdminAuth(
   }
 
   // Check if user has super_admin role
-  if (!auth.user || auth.user.role !== 'super_admin') {
+  if (!auth.user || auth.user.role.toLowerCase() !== 'super_admin') {
     return NextResponse.json(
       { error: 'Forbidden - Super admin access required' },
       { status: 403 }
@@ -243,11 +244,9 @@ export async function withPlatformAuth(
     return NextResponse.json({ error: 'User not found' }, { status: 401 });
   }
 
-  // PLATFORM ACCESS RULES:
-  // 1. Super Admin (Level 110) - always allowed
-  // 2. Admin (Level 90) but ONLY if they have NO tenantId (Platform-wide Admin)
-  const isSuperAdmin = user.role === 'super_admin';
-  const isPlatformAdmin = user.role === 'admin' && !user.tenantId;
+  const role = user.role.toLowerCase();
+  const isSuperAdmin = role === 'super_admin';
+  const isPlatformAdmin = role === 'admin' && !user.tenantId;
 
   if (!isSuperAdmin && !isPlatformAdmin) {
     return NextResponse.json(

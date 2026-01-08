@@ -80,10 +80,10 @@ function handleSessionExpiry() {
   if (storedUser) {
     try {
       const user = JSON.parse(storedUser);
-      if (!user.tenantId || user.role === 'super_admin') {
+      if (!user.tenantId || user.role.toLowerCase() === 'super_admin') {
         redirectPath = '/admin/login';
       }
-    } catch {}
+    } catch { }
   }
 
   localStorage.removeItem('authToken');

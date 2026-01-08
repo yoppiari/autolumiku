@@ -131,7 +131,8 @@ export async function GET(
     }
 
     // Tenant validation: non-super_admin can only view users from their own tenant
-    if (auth.user.role.toLowerCase() !== 'super_admin' && user.tenantId !== auth.user.tenantId) {
+    const userRole = auth.user.role.toLowerCase();
+    if (userRole !== 'super_admin' && user.tenantId !== auth.user.tenantId) {
       return NextResponse.json(
         { error: 'Forbidden - Cannot access users from other tenant' },
         { status: 403 }
@@ -164,8 +165,9 @@ export async function PUT(
     );
   }
 
-  // Check permission - only admin and super_admin can update users
-  if (!['admin', 'super_admin'].includes(auth.user.role.toLowerCase())) {
+  // Check permission - only admin, owner, and super_admin can update users
+  const userRole = auth.user.role.toLowerCase();
+  if (!['admin', 'super_admin', 'owner'].includes(userRole)) {
     return NextResponse.json(
       { error: 'Forbidden - Admin access required to update users' },
       { status: 403 }
@@ -204,11 +206,28 @@ export async function PUT(
     }
 
     // Tenant validation: non-super_admin can only update users from their own tenant
-    if (auth.user.role.toLowerCase() !== 'super_admin' && currentUser.tenantId !== auth.user.tenantId) {
+    if (userRole !== 'super_admin' && currentUser.tenantId !== auth.user.tenantId) {
       return NextResponse.json(
         { error: 'Forbidden - Cannot update users from other tenant' },
         { status: 403 }
       );
+    }
+
+    // Check for duplicate phone in StaffWhatsAppAuth if phone is being updated
+    if (normalizedPhone && normalizedPhone !== currentUser.phone) {
+      const existingStaffAuthWithPhone = await prisma.staffWhatsAppAuth.findFirst({
+        where: {
+          phoneNumber: normalizedPhone,
+          NOT: { userId: id }, // Exclude the current user's own staff auth entry
+        },
+      });
+
+      if (existingStaffAuthWithPhone) {
+        return NextResponse.json(
+          { error: 'Phone number already assigned to another staff member' },
+          { status: 400 }
+        );
+      }
     }
 
     // Update user
@@ -323,8 +342,9 @@ export async function DELETE(
     );
   }
 
-  // Check permission - only admin and super_admin can delete users
-  if (!['admin', 'super_admin'].includes(auth.user.role.toLowerCase())) {
+  // Check permission - only admin, owner, and super_admin can delete users
+  const userRole = auth.user.role.toLowerCase();
+  if (!['admin', 'super_admin', 'owner'].includes(userRole)) {
     return NextResponse.json(
       { error: 'Forbidden - Admin access required to delete users' },
       { status: 403 }
