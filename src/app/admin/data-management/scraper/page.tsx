@@ -48,8 +48,8 @@ export default function ScraperDashboard() {
         api.get('/api/admin/scraper/jobs?pageSize=10'),
       ]);
 
-      setStats(statsData.data?.stats || null);
-      setJobs(jobsData.data?.jobs || []);
+      setStats((statsData as any).stats || statsData.data?.stats || null);
+      setJobs((jobsData as any).jobs || jobsData.data?.jobs || []);
       setError(null);
     } catch (error: any) {
       console.error('Failed to load data:', error);
