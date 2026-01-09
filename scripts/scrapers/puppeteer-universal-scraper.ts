@@ -125,14 +125,64 @@ export class UniversalScraper {
                 height: 768 + Math.floor(Math.random() * 100)
             });
 
-            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+            // STEALTH: Advanced Fingerprint Evasion
+            await page.evaluateOnNewDocument(() => {
+                // Pass WebDriver check
+                Object.defineProperty(navigator, 'webdriver', { get: () => false });
+
+                // Mock Plugins to look like real Chrome
+                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+                Object.defineProperty(navigator, 'languages', { get: () => ['id-ID', 'id', 'en-US', 'en'] });
+
+                // Mock Permissions
+                const originalQuery = window.navigator.permissions.query;
+                window.navigator.permissions.query = (parameters: any) => (
+                    parameters.name === 'notifications' ?
+                        Promise.resolve({ state: Notification.permission } as PermissionStatus) :
+                        originalQuery(parameters)
+                );
+
+                // Mock WebGL Vendor
+                try {
+                    const getParameter = WebGLRenderingContext.prototype.getParameter;
+                    WebGLRenderingContext.prototype.getParameter = function (parameter) {
+                        // 37445: UNMASKED_VENDOR_WEBGL
+                        // 37446: UNMASKED_RENDERER_WEBGL
+                        if (parameter === 37445) return 'Intel Inc.';
+                        if (parameter === 37446) return 'Intel(R) Iris(R) Xe Graphics';
+                        return getParameter.apply(this, [parameter]);
+                    };
+                } catch (e) { }
+            });
+
+            // STEALTH: Rotate User Agents
+            const UAs = [
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ];
+            const randomUA = UAs[Math.floor(Math.random() * UAs.length)];
+            await page.setUserAgent(randomUA);
+
+            // STEALTH: Header Manipulation
+            await page.setExtraHTTPHeaders({
+                'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Referer': 'https://www.google.com/'
+            });
 
             // 1. Visit List Page
             console.log(`Navigating to list: ${config.url}`);
             await page.goto(config.url, { waitUntil: 'networkidle2', timeout: 60000 });
 
-            // STEALTH: Human Delay
+            // STEALTH: Human Delay and Mouse Movement
             await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 2000) + 1000));
+            try {
+                // Move mouse randomly
+                await page.mouse.move(100, 100);
+                await page.mouse.move(200, 200, { steps: 10 });
+                await page.mouse.move(Math.random() * 1000, Math.random() * 500, { steps: 20 });
+            } catch (e) { }
 
             // SCROLL TO LOAD CONTENT (Critical for SPAs)
             console.log('Scrolling to populate items...');
