@@ -79,7 +79,7 @@ export const SOURCES: Record<string, SourceConfig> = {
 export class UniversalScraper {
     private browser?: Browser;
 
-    async scrape(sourceKey: string, limit: number = 20): Promise<ScrapedVehicle[]> {
+    async scrape(sourceKey: string, limit: number = 20, onProgress?: (vehicle: ScrapedVehicle) => Promise<void>): Promise<ScrapedVehicle[]> {
         const config = SOURCES[sourceKey];
         if (!config) throw new Error(`Unknown source: ${sourceKey}`);
 
@@ -147,7 +147,7 @@ export class UniversalScraper {
 
                     if (aiResult.success && aiResult.data) {
                         console.log(`✅ Identified: ${aiResult.data.make} ${aiResult.data.model} - ${aiResult.data.price}`);
-                        results.push({
+                        const vehicle: ScrapedVehicle = {
                             source: config.name,
                             url: link,
                             make: aiResult.data.make,
@@ -160,7 +160,10 @@ export class UniversalScraper {
                             fuelType: aiResult.data.fuelType,
                             description: aiResult.reasoning || `Extracted from ${config.name}`,
                             scrapedAt: new Date().toISOString()
-                        });
+                        };
+
+                        results.push(vehicle);
+                        if (onProgress) await onProgress(vehicle);
                     }
                 } catch (err) {
                     console.error(`Skipping ${link}:`, err);
