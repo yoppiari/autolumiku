@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { api } from '@/lib/api-client';
 
 interface Result {
   id: string;
@@ -46,14 +47,13 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
 
   const loadResults = async () => {
     try {
-      const res = await fetch(`/api/admin/scraper/results/${resolvedParams.jobId}`);
+      const res = await api.get(`/api/admin/scraper/results/${resolvedParams.jobId}`);
 
-      if (!res.ok) {
-        throw new Error('Job not found or failed to load results');
+      if (!res.success) {
+        throw new Error(res.error || 'Job not found or failed to load results');
       }
 
-      const data = await res.json();
-      setResults(data.results || []);
+      setResults(res.data?.results || []);
       setError(null);
     } catch (error) {
       console.error('Failed to load results:', error);
@@ -85,7 +85,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
 
   const approveResult = async (resultId: string) => {
     try {
-      await fetch(`/api/admin/scraper/approve/${resultId}`, { method: 'POST' });
+      await api.post(`/api/admin/scraper/approve/${resultId}`, {});
       loadResults();
     } catch (error) {
       alert('Failed to approve');
@@ -122,7 +122,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
     setBulkActionLoading(true);
     try {
       const promises = Array.from(selectedIds).map(id =>
-        fetch(`/api/admin/scraper/approve/${id}`, { method: 'POST' })
+        api.post(`/api/admin/scraper/approve/${id}`, {})
       );
 
       await Promise.all(promises);
@@ -140,13 +140,9 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
     if (!confirm('Import all approved results to production?')) return;
 
     try {
-      const res = await fetch(`/api/admin/scraper/import/${resolvedParams.jobId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
+      const res = await api.post(`/api/admin/scraper/import/${resolvedParams.jobId}`, {});
 
-      const data = await res.json();
+      const data = res.data;
       alert(`Imported: ${data.imported}, Updated: ${data.updated}, Skipped: ${data.skipped}`);
       router.push('/admin/data-management/scraper');
     } catch (error) {
@@ -368,8 +364,8 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 text-xs rounded-full ${result.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        result.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
-                          'bg-yellow-100 text-yellow-800'
+                      result.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
+                        'bg-yellow-100 text-yellow-800'
                       }`}>
                       {result.status}
                     </span>
@@ -435,8 +431,8 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
               {/* Status Badge */}
               <div className="mb-6">
                 <span className={`px-3 py-1 text-sm rounded-full ${selectedResult.status === 'approved' ? 'bg-green-100 text-green-800' :
-                    selectedResult.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
-                      'bg-yellow-100 text-yellow-800'
+                  selectedResult.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
+                    'bg-yellow-100 text-yellow-800'
                   }`}>
                   {selectedResult.status.toUpperCase()}
                 </span>
