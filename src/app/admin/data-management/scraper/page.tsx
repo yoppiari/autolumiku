@@ -51,11 +51,12 @@ export default function ScraperDashboard() {
       setStats(statsData.data?.stats || null);
       setJobs(jobsData.data?.jobs || []);
       setError(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load data');
-      setStats(null);
-      setJobs([]);
+      // Don't show full error UI on polling failure to prevent flickering
+      if (loading) {
+        setError(error.message || 'Failed to load data');
+      }
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,8 @@ export default function ScraperDashboard() {
 
   const runScraper = async () => {
     const sourceLabel = selectedSource === 'ALL' ? 'All Sources' : selectedSource;
-    const estimatedTime = selectedSource === 'ALL' ? '4-5' : '2-3';
+    // Sequential execution takes longer
+    const estimatedTime = selectedSource === 'ALL' ? '5-10' : '2-3';
 
     if (!confirm(`Run ${sourceLabel} scraper? This will take ${estimatedTime} minutes.`)) return;
 
@@ -75,7 +77,6 @@ export default function ScraperDashboard() {
       });
 
       if (data.success) {
-        // Fix: Use correct ID path from API wrapper
         const jobId = data.data?.job?.id || 'unknown';
         alert(`Scraper started! Job ID: ${jobId}\nSource: ${sourceLabel}`);
         loadData();
@@ -93,13 +94,10 @@ export default function ScraperDashboard() {
     return (
       <div className="p-8 max-w-7xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-red-800 mb-2">Database Setup Required</h2>
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Dashboard</h2>
           <p className="text-red-700 mb-4">{error}</p>
           <div className="bg-white rounded p-4 border border-red-200">
-            <p className="font-medium text-gray-900 mb-2">Please run the following command:</p>
-            <code className="block bg-gray-100 p-3 rounded text-sm">
-              npx prisma migrate dev --name add_scraper_tables
-            </code>
+            <p className="text-sm text-gray-500">Check server logs or connection.</p>
           </div>
         </div>
       </div>
@@ -122,6 +120,7 @@ export default function ScraperDashboard() {
             >
               <option value="ALL">🌐 All Sources</option>
               <option disabled>──────────</option>
+              {/* Added AI Powered Labels */}
               <option value="OLX_AUTOS">🟠 OLX Autos (AI Powered)</option>
               <option value="MOBIL123">🔴 Mobil123 (AI Powered)</option>
               <option value="CARSOME">🔵 Carsome (AI Powered)</option>
