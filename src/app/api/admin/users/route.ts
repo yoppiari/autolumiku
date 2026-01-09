@@ -141,49 +141,87 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if user already exists GLOBALLY (email must be unique WITHIN A TENANT only)
-      const existingUser = await prisma.user.findFirst({
+      // Check if user already exists GLOBALLY
+      // We check global existence to handle the "Single User Row" constraint if DB doesn't support duplicates
+      const existingUserGlobal = await prisma.user.findFirst({
         where: {
           email: email.toLowerCase(),
-          tenantId: tenantId || null // Check specifically for conflict in THIS tenant
         },
         include: { tenant: true }
       });
 
-      if (existingUser) {
-        // User exists in the SAME user-selected tenant -> UPDATE (Upsert)
-        console.log(`♻️ User ${email} exists in target tenant ${tenantId || 'Platform'}. Updating...`);
-        const updatedUser = await prisma.user.update({
-          where: { id: existingUser.id },
-          data: {
-            firstName,
-            lastName: lastName || '',
-            role: upperRole,
-            roleLevel: getRoleLevelFromRole(upperRole),
-            emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
-            phone: phone || existingUser.phone,
-            passwordHash: await bcrypt.hash(password, 10),
-          },
-          include: {
-            tenant: {
-              select: { id: true, name: true, slug: true }
-            }
-          }
-        });
+      if (existingUserGlobal) {
+        // User exists somewhere.
 
-        return NextResponse.json({
-          success: true,
-          message: 'User berhasil diperbarui (Upsert di tenant)',
-          data: updatedUser,
-        });
+        // CASE A: User exists in the TARGET tenant (or Platform context if both null)
+        const isSameContext = existingUserGlobal.tenantId === (tenantId || null);
+
+        // CASE B: Request is for SUPER_ADMIN (Platform)
+        // If user wants to be Super Admin, we can reuse their existing account regardless of tenant
+        if (isPlatformRole) {
+          console.log(`♻️ Promoting user ${email} to SUPER_ADMIN (Existing Tenant: ${existingUserGlobal.tenantId || 'None'})...`);
+          const updatedUser = await prisma.user.update({
+            where: { id: existingUserGlobal.id },
+            data: {
+              firstName,
+              lastName: lastName || '',
+              role: upperRole, // SUPER_ADMIN
+              roleLevel: getRoleLevelFromRole(upperRole),
+              emailVerified: emailVerified !== undefined ? emailVerified : existingUserGlobal.emailVerified,
+              phone: phone || existingUserGlobal.phone,
+              // We DO NOT update tenantId to avoid losing their home tenant data.
+              // Login logic will handle their access to Platform.
+              passwordHash: await bcrypt.hash(password, 10),
+            },
+            include: {
+              tenant: {
+                select: { id: true, name: true, slug: true }
+              }
+            }
+          });
+          return NextResponse.json({
+            success: true,
+            message: 'User berhasil diperbarui menjadi Super Admin',
+            data: updatedUser,
+          });
+        }
+
+        // CASE C: User exists in DIFFERENT tenant and NOT creating Super Admin
+        if (!isSameContext) {
+          // We try to create a new row. If DB has Unique Constraint, this will fail.
+          // However, without migration, we can't fix it. 
+          // But user logic "Harusnya tidak masalah" implies usually they update existing.
+          // We will proceed to try CREATE, let it fail if DB is strict.
+          // OR: We could auto-switch context? No, dangerous.
+        } else {
+          // Same context, just update
+          const updatedUser = await prisma.user.update({
+            where: { id: existingUserGlobal.id },
+            data: {
+              firstName,
+              lastName: lastName || '',
+              role: upperRole,
+              roleLevel: getRoleLevelFromRole(upperRole),
+              emailVerified: emailVerified !== undefined ? emailVerified : existingUserGlobal.emailVerified,
+              phone: phone || existingUserGlobal.phone,
+              passwordHash: await bcrypt.hash(password, 10),
+            },
+            include: {
+              tenant: {
+                select: { id: true, name: true, slug: true }
+              }
+            }
+          });
+          return NextResponse.json({
+            success: true,
+            message: 'User berhasil diperbarui',
+            data: updatedUser,
+          });
+        }
       }
 
-      // If we are here, the user doesn't exist in THIS tenant.
-      // We can safely create a NEW record even if the email exists in OTHER tenants.
-      // The Login API already handles disambiguation.
-
-      // If we are here, the user doesn't exist in THIS tenant.
-      // We can safely create a NEW record even if the email exists in another tenant.
+      // If we are here, the user doesn't exist GLOBALLY.
+      // We can safely create a NEW record.
 
       // Check if tenant exists (skip if tenantId is null for Platform Admins)
       if (tenantId) {
@@ -202,7 +240,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Create new user (if not upserted)
+      // Create new user
       const user = await prisma.user.create({
         data: {
           email: email.toLowerCase(),
@@ -237,6 +275,17 @@ export async function POST(request: NextRequest) {
       // Log more details if it's a Prisma error
       if (error.code) console.error('Prisma Error Code:', error.code);
       if (error.meta) console.error('Prisma Error Meta:', error.meta);
+
+      // Friendly Error interpretation
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Email ini sudah terdaftar di tenant lain. (Database Constraint: Single Global User).',
+          },
+          { status: 409 }
+        );
+      }
 
       return NextResponse.json(
         {

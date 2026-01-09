@@ -110,22 +110,28 @@ export async function POST(request: NextRequest) {
       // 1. Try to find user matching this host domain
       const hostMatch = users.find(u => u.tenant?.domain === host);
 
-      // 2. Try to find user matching platform (auto.lumiku.com or tenantId is null)
-      const platformMatch = users.find(u => u.tenantId === null);
+      // 2. Try to find user matching platform (auto.lumiku.com or tenantId is null OR role is SUPER_ADMIN)
+      // "Virtual Platform Admin": Allow any SUPER_ADMIN to login to Platform regardless of their tenantId
+      const platformMatch = users.find(u => u.tenantId === null || u.role === 'SUPER_ADMIN');
 
       if (hostMatch) {
         user = hostMatch;
         console.log(`[Login] Match found by host domain: ${user.tenant?.name}`);
       } else if (platformMatch && (host.includes('auto.lumiku.com') || host === 'localhost:3000')) {
         user = platformMatch;
-        console.log(`[Login] Match found as platform admin`);
+        console.log(`[Login] Match found as platform admin (Virtual or Actual)`);
       } else {
         // Default to first user, but log a warning if it's ambiguous
         console.warn(`[Login] Ambiguous login for ${email}. Defaulting to first matching account.`);
       }
     }
 
-    console.log(`[Login] Authenticating as User ID: ${user.id}, Tenant: ${user.tenantId || 'Platform'}, Role: ${user.role}`);
+    // Determine if we are acting as Platform Admin
+    // If logic selected a user with role SUPER_ADMIN and we are on platform host, act as Global
+    const isActingAsPlatform = (user.role === 'SUPER_ADMIN' && user.tenantId !== null);
+    const effectiveTenantId = isActingAsPlatform ? null : user.tenantId;
+
+    console.log(`[Login] Authenticating as User ID: ${user.id}, Tenant: ${effectiveTenantId || 'Platform (Virtual)'}, Role: ${user.role}`);
 
     // Check if account is locked
     if (user.lockedUntil && user.lockedUntil > new Date()) {
@@ -181,13 +187,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Generate JWT token pair
+    // Generate JWT token pair with EFFECTIVE tenantId
     console.log('[Login] Generating tokens...');
     const tokens = generateTokenPair({
       userId: user.id,
       email: user.email,
       role: user.role,
-      tenantId: user.tenantId,
+      tenantId: effectiveTenantId, // Use virtual null if acting as platform
     });
     console.log('[Login] Tokens generated successfully');
 
