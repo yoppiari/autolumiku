@@ -37,7 +37,7 @@ export default function WhatsAppSettingsPage() {
   useEffect(() => {
     const loadSettings = async () => {
       setIsLoading(true);
-      
+
       // Mock WhatsApp settings data
       const mockSettings: WhatsAppSettings[] = [
         {
@@ -135,7 +135,7 @@ export default function WhatsAppSettingsPage() {
 
   const handleSave = async (updatedSetting: WhatsAppSettings) => {
     // Mock API call
-    setSettings(prev => prev.map(setting => 
+    setSettings(prev => prev.map(setting =>
       setting.id === updatedSetting.id ? updatedSetting : setting
     ));
     setEditingSetting(null);
@@ -194,24 +194,24 @@ export default function WhatsAppSettingsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">WhatsApp Settings</h1>
-          <p className="text-gray-600 mt-1">Kelola nomor WhatsApp dan pengaturan otomatis</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">WhatsApp Settings</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Kelola nomor WhatsApp dan pengaturan otomatis</p>
         </div>
 
-        <div className="flex space-x-4">
+        <div className="flex space-x-3 w-full sm:w-auto overflow-x-auto">
           <Link
             href="/admin/leads"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex-1 sm:flex-none text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm whitespace-nowrap"
           >
             ← Kembali ke Leads
           </Link>
           <button
             onClick={handleAddNew}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex-1 sm:flex-none text-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm whitespace-nowrap"
           >
             + Tambah WhatsApp
           </button>
@@ -223,37 +223,36 @@ export default function WhatsAppSettingsPage() {
         {settings.map((setting) => (
           <div key={setting.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 text-xl">📱</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 border-b border-gray-200 gap-4">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-green-600 text-lg sm:text-xl">📱</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{setting.tenantName}</h3>
-                  <p className="text-sm text-gray-600">{formatPhoneNumber(setting.phoneNumber)}</p>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">{setting.tenantName}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">{formatPhoneNumber(setting.phoneNumber)}</p>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => handleToggleActive(setting.id)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                    setting.isActive 
-                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                  }`}
+                  className={`flex-1 sm:flex-none px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors text-center ${setting.isActive
+                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    }`}
                 >
                   {setting.isActive ? 'Aktif' : 'Tidak Aktif'}
                 </button>
                 <button
                   onClick={() => handleEdit(setting)}
-                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors"
+                  className="flex-1 sm:flex-none px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-xs sm:text-sm font-medium hover:bg-blue-200 transition-colors text-center"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(setting.id)}
-                  className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium hover:bg-red-200 transition-colors"
+                  className="flex-1 sm:flex-none px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-xs sm:text-sm font-medium hover:bg-red-200 transition-colors text-center"
                 >
                   Hapus
                 </button>
@@ -273,11 +272,10 @@ export default function WhatsAppSettingsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Auto Reply</label>
                   <div className="flex items-center space-x-2">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      setting.autoReply
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${setting.autoReply
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-gray-100 text-gray-800'
+                      }`}>
                       {setting.autoReply ? 'Aktif' : 'Tidak Aktif'}
                     </span>
                   </div>
@@ -288,11 +286,10 @@ export default function WhatsAppSettingsPage() {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handleToggleAIAutoAnswer(setting.id)}
-                      className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                        setting.aiAutoAnswer
-                          ? 'bg-purple-100 text-purple-800 hover:bg-purple-200'
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                      }`}
+                      className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full transition-colors ${setting.aiAutoAnswer
+                        ? 'bg-purple-100 text-purple-800 hover:bg-purple-200'
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        }`}
                     >
                       {setting.aiAutoAnswer ? '✓ AI Aktif' : '✗ AI Mati'}
                     </button>
@@ -314,11 +311,10 @@ export default function WhatsAppSettingsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <div className="flex items-center space-x-2">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      setting.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${setting.isActive
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-gray-100 text-gray-800'
+                      }`}>
                       {setting.isActive ? 'Online' : 'Offline'}
                     </span>
                     <a
@@ -390,7 +386,7 @@ export default function WhatsAppSettingsPage() {
                 <input
                   type="text"
                   value={editingSetting.tenantName}
-                  onChange={(e) => setEditingSetting({...editingSetting, tenantName: e.target.value})}
+                  onChange={(e) => setEditingSetting({ ...editingSetting, tenantName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nama tenant"
                 />
@@ -401,7 +397,7 @@ export default function WhatsAppSettingsPage() {
                 <input
                   type="text"
                   value={editingSetting.phoneNumber}
-                  onChange={(e) => setEditingSetting({...editingSetting, phoneNumber: e.target.value})}
+                  onChange={(e) => setEditingSetting({ ...editingSetting, phoneNumber: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="+62-8xx-xxxx-xxxx"
                 />
@@ -411,7 +407,7 @@ export default function WhatsAppSettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Default Message</label>
                 <textarea
                   value={editingSetting.defaultMessage}
-                  onChange={(e) => setEditingSetting({...editingSetting, defaultMessage: e.target.value})}
+                  onChange={(e) => setEditingSetting({ ...editingSetting, defaultMessage: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Pesan default untuk auto reply"
@@ -425,8 +421,8 @@ export default function WhatsAppSettingsPage() {
                     type="time"
                     value={editingSetting.workingHours.start}
                     onChange={(e) => setEditingSetting({
-                      ...editingSetting, 
-                      workingHours: {...editingSetting.workingHours, start: e.target.value}
+                      ...editingSetting,
+                      workingHours: { ...editingSetting.workingHours, start: e.target.value }
                     })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -438,8 +434,8 @@ export default function WhatsAppSettingsPage() {
                     type="time"
                     value={editingSetting.workingHours.end}
                     onChange={(e) => setEditingSetting({
-                      ...editingSetting, 
-                      workingHours: {...editingSetting.workingHours, end: e.target.value}
+                      ...editingSetting,
+                      workingHours: { ...editingSetting.workingHours, end: e.target.value }
                     })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -452,7 +448,7 @@ export default function WhatsAppSettingsPage() {
                     type="checkbox"
                     id="autoReply"
                     checked={editingSetting.autoReply}
-                    onChange={(e) => setEditingSetting({...editingSetting, autoReply: e.target.checked})}
+                    onChange={(e) => setEditingSetting({ ...editingSetting, autoReply: e.target.checked })}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="autoReply" className="ml-2 text-sm text-gray-700">
@@ -465,7 +461,7 @@ export default function WhatsAppSettingsPage() {
                     type="checkbox"
                     id="aiAutoAnswer"
                     checked={editingSetting.aiAutoAnswer}
-                    onChange={(e) => setEditingSetting({...editingSetting, aiAutoAnswer: e.target.checked})}
+                    onChange={(e) => setEditingSetting({ ...editingSetting, aiAutoAnswer: e.target.checked })}
                     className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                   />
                   <label htmlFor="aiAutoAnswer" className="ml-2 text-sm text-gray-700">
@@ -478,7 +474,7 @@ export default function WhatsAppSettingsPage() {
                     type="checkbox"
                     id="isActive"
                     checked={editingSetting.isActive}
-                    onChange={(e) => setEditingSetting({...editingSetting, isActive: e.target.checked})}
+                    onChange={(e) => setEditingSetting({ ...editingSetting, isActive: e.target.checked })}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">

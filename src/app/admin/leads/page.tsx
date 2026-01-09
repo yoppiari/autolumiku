@@ -196,18 +196,18 @@ export default function LeadsDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Manajemen Leads</h1>
-          <p className="text-gray-600 mt-1">Kelola leads dari WhatsApp dan website</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Manajemen Leads</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Kelola leads dari WhatsApp dan website</p>
         </div>
 
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 w-full sm:w-auto">
           <Link
             href="/admin/leads/whatsapp-settings"
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex-1 sm:flex-none text-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
           >
             ⚙️ WhatsApp Settings
           </Link>
@@ -215,31 +215,31 @@ export default function LeadsDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Leads</h3>
-          <div className="text-3xl font-bold text-blue-600">{stats.total}</div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-xs sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Total Leads</h3>
+          <div className="text-xl sm:text-3xl font-bold text-blue-600">{stats.total}</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Lead Baru</h3>
-          <div className="text-3xl font-bold text-blue-600">{stats.new}</div>
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-xs sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Lead Baru</h3>
+          <div className="text-xl sm:text-3xl font-bold text-blue-600">{stats.new}</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Tertarik</h3>
-          <div className="text-3xl font-bold text-purple-600">{stats.interested}</div>
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-xs sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Tertarik</h3>
+          <div className="text-xl sm:text-3xl font-bold text-purple-600">{stats.interested}</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Konversi</h3>
-          <div className="text-3xl font-bold text-green-600">{stats.converted}</div>
-          <div className="text-sm text-gray-600 mt-1">{stats.conversionRate}% rate</div>
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-xs sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Konversi</h3>
+          <div className="text-xl sm:text-3xl font-bold text-green-600">{stats.converted}</div>
+          <div className="hidden sm:block text-sm text-gray-600 mt-1">{stats.conversionRate}% rate</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">Cari Leads</label>
@@ -247,46 +247,48 @@ export default function LeadsDashboard() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Cari berdasarkan nama, telepon, atau kendaraan..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Cari nama/HP..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Semua Status</option>
-              <option value="new">Baru</option>
-              <option value="contacted">Dihubungi</option>
-              <option value="interested">Tertarik</option>
-              <option value="not_interested">Tidak Tertarik</option>
-              <option value="converted">Konversi</option>
-            </select>
-          </div>
+          <div className="grid grid-cols-2 sm:flex gap-4">
+            <div className="sm:w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              >
+                <option value="all">Semua</option>
+                <option value="new">Baru</option>
+                <option value="contacted">Dihubungi</option>
+                <option value="interested">Tertarik</option>
+                <option value="not_interested">Tidak</option>
+                <option value="converted">Konversi</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sumber</label>
-            <select
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Semua Sumber</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="website">Website</option>
-              <option value="phone">Telepon</option>
-            </select>
+            <div className="sm:w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sumber</label>
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              >
+                <option value="all">Semua</option>
+                <option value="whatsapp">WA</option>
+                <option value="website">Web</option>
+                <option value="phone">Telp</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* WhatsApp Settings Summary */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
+      {/* WhatsApp Settings Summary - Mobile Optimized */}
+      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <h2 className="text-lg font-semibold text-gray-900">WhatsApp Settings</h2>
           <Link
             href="/admin/leads/whatsapp-settings"
@@ -297,27 +299,84 @@ export default function LeadsDashboard() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {whatsappSettings.map((setting) => (
-            <div key={setting.id} className="border border-gray-200 rounded-lg p-4">
+            <div key={setting.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-gray-900">{setting.tenantName}</h3>
+                <h3 className="font-medium text-gray-900 text-sm sm:text-base">{setting.tenantName}</h3>
                 <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${setting.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                   }`}>
-                  {setting.isActive ? 'Aktif' : 'Tidak Aktif'}
+                  {setting.isActive ? 'Aktif' : 'Non-Aktif'}
                 </span>
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-xs sm:text-sm text-gray-600 space-y-1">
                 <p><strong>Nomor:</strong> {setting.phoneNumber}</p>
-                <p><strong>Auto Reply:</strong> {setting.autoReply ? 'Aktif' : 'Tidak Aktif'}</p>
-                <p><strong>Jam Kerja:</strong> {setting.workingHours.start} - {setting.workingHours.end}</p>
+                <p><strong>Auto Reply:</strong> {setting.autoReply ? 'Ya' : 'Tidak'}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Leads Table */}
+      {/* Leads List - Mobile: Cards, Desktop: Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+
+        {/* Mobile View */}
+        <div className="block sm:hidden divide-y divide-gray-200">
+          {filteredLeads.map((lead) => (
+            <div key={lead.id} className="p-4 space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-medium text-gray-900">{lead.customerName}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{getSourceIcon(lead.source)} {lead.phone}</div>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(lead.urgency)}`}>
+                    {lead.urgency.toUpperCase()}
+                  </span>
+                  <div className="text-xs text-gray-400">{formatDate(lead.createdAt).split(',')[0]}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                <div>Interested: <span className="font-medium text-gray-800">{lead.vehicleInterest || '-'}</span></div>
+                <div>Budget: <span className="font-medium text-gray-800">{lead.budget || '-'}</span></div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <select
+                  value={lead.status}
+                  onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                  className={`text-xs font-medium rounded-full border-0 py-1 pl-2 pr-6 ${getStatusBadgeColor(lead.status)}`}
+                >
+                  <option value="new">BARU</option>
+                  <option value="contacted">DIHUBUNGI</option>
+                  <option value="interested">TERTARIK</option>
+                  <option value="not_interested">TIDAK</option>
+                  <option value="converted">KONVERSI</option>
+                </select>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => window.open(`https://wa.me/${lead.whatsappNumber.replace(/[^\d]/g, '')}`, '_blank')}
+                    className="text-green-600 bg-green-50 p-2 rounded-full hover:bg-green-100"
+                    title="Kirim WhatsApp"
+                  >
+                    📱
+                  </button>
+                  <button
+                    onClick={() => console.log('View details:', lead.id)}
+                    className="text-blue-600 bg-blue-50 p-2 rounded-full hover:bg-blue-100"
+                    title="Lihat Detail"
+                  >
+                    👁️
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop View */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
