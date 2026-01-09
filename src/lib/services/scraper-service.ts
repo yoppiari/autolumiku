@@ -26,8 +26,13 @@ async function loadMobil123Scraper() {
   return new PuppeteerMobil123Scraper();
 }
 
+async function loadUniversalScraper() {
+  const { UniversalScraper } = await import('../../../scripts/scrapers/puppeteer-universal-scraper');
+  return new UniversalScraper();
+}
+
 export interface ScraperJobOptions {
-  source: 'OLX' | 'CARSOME' | 'MOBIL123' | 'ALL';
+  source: 'OLX' | 'CARSOME' | 'MOBIL123' | 'SEVA' | 'CARMUDI' | 'OTO' | 'CAROLINE' | 'AUTO2000' | 'MOBIL88' | 'CARRO' | 'OLX_AUTOS' | 'ALL';
   targetCount?: number;
   executedBy: string;
 }
@@ -103,9 +108,13 @@ export class ScraperService {
         vehicles = await scraper.scrape(options.targetCount || 50);
 
       } else if (options.source === 'MOBIL123') {
-        // Run Mobil123 scraper (AI Powered)
         const scraper = await loadMobil123Scraper();
         vehicles = await scraper.scrape(options.targetCount || 50);
+
+      } else if (['SEVA', 'CARMUDI', 'OTO', 'CAROLINE', 'AUTO2000', 'MOBIL88', 'CARRO', 'OLX_AUTOS'].includes(options.source)) {
+        // Run Universal Scraper
+        const scraper = await loadUniversalScraper();
+        vehicles = await scraper.scrape(options.source, options.targetCount || 50);
 
       } else {
         throw new Error(`Source ${options.source} not supported`);

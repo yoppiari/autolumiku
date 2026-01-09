@@ -28,7 +28,7 @@ export default function ScraperDashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedSource, setSelectedSource] = useState<'OLX' | 'CARSOME' | 'MOBIL123' | 'ALL'>('ALL');
+  const [selectedSource, setSelectedSource] = useState<'OLX' | 'CARSOME' | 'MOBIL123' | 'SEVA' | 'CARMUDI' | 'OTO' | 'CAROLINE' | 'AUTO2000' | 'MOBIL88' | 'CARRO' | 'OLX_AUTOS' | 'ALL'>('ALL');
 
   useEffect(() => {
     loadData();
@@ -68,7 +68,9 @@ export default function ScraperDashboard() {
       });
 
       if (data.success) {
-        alert(`Scraper started! Job ID: ${data.data?.job?.id || 'unknown'}\nSource: ${sourceLabel}`);
+        // Fix: Use correct ID path from API wrapper
+        const jobId = data.data?.job?.id || 'unknown';
+        alert(`Scraper started! Job ID: ${jobId}\nSource: ${sourceLabel}`);
         loadData();
       }
     } catch (error) {
@@ -107,14 +109,22 @@ export default function ScraperDashboard() {
             <label className="text-sm font-medium text-gray-700">Source:</label>
             <select
               value={selectedSource}
-              onChange={(e) => setSelectedSource(e.target.value as 'OLX' | 'CARSOME' | 'MOBIL123' | 'ALL')}
+              onChange={(e) => setSelectedSource(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isRunning}
             >
               <option value="ALL">🌐 All Sources</option>
-              <option value="OLX">🟠 OLX (AI Powered)</option>
+              <option disabled>──────────</option>
+              <option value="OLX_AUTOS">🟠 OLX Autos (AI Powered)</option>
               <option value="MOBIL123">🔴 Mobil123 (AI Powered)</option>
-              <option value="CARSOME">🔵 CARSOME</option>
+              <option value="CARSOME">🔵 Carsome</option>
+              <option value="SEVA">🟢 Seva.id</option>
+              <option value="CARMUDI">🟤 Carmudi</option>
+              <option value="OTO">⚪ Oto.com</option>
+              <option value="CAROLINE">🟡 Caroline.id</option>
+              <option value="AUTO2000">🟦 Auto2000</option>
+              <option value="MOBIL88">🟥 Mobil88</option>
+              <option value="CARRO">🟧 Carro</option>
             </select>
           </div>
           <button
@@ -173,9 +183,9 @@ export default function ScraperDashboard() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs rounded-full ${job.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        job.status === 'running' ? 'bg-blue-100 text-blue-800' :
-                          job.status === 'failed' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
+                      job.status === 'running' ? 'bg-blue-100 text-blue-800' :
+                        job.status === 'failed' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
                       }`}>
                       {job.status}
                     </span>
