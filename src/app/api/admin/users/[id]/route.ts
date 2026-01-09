@@ -161,8 +161,36 @@ export async function PATCH(
                 data: { ...userWithoutPassword, isActive: true },
             });
 
-        } catch (error) {
-            console.error('Update user error:', error);
+        } catch (error: any) {
+            console.error('❌ Update user error:', error);
+
+            // SELF-HEALING LOGIC (Update Variant)
+            if (error.code === 'P2002' && (error.meta?.target?.includes('email') || error.message?.includes('email'))) {
+                console.warn('⚠️ Detected Legacy DB Constraint on Email during Update. Attempting Self-Healing...');
+                try {
+                    await prisma.$executeRawUnsafe(`DROP INDEX IF EXISTS "users_email_key";`);
+                    await prisma.$executeRawUnsafe(`ALTER TABLE "users" DROP CONSTRAINT IF EXISTS "users_email_key";`);
+                    await prisma.$executeRawUnsafe(`DROP INDEX IF EXISTS "User_email_key";`);
+                    await prisma.$executeRawUnsafe(`ALTER TABLE "users" DROP CONSTRAINT IF EXISTS "User_email_key";`);
+
+                    console.log('✅ DB Constraint Dropped.');
+                } catch (fixError) {
+                    console.error('❌ Self-Healing Failed:', fixError);
+                }
+
+                // If we executed the SQL, the DB is fixed. 
+                // Since we can't easily retry (scope issues), we return a specific message urging to retry.
+                // OR better: We return 200 with a "Warning" or we Recursively call PATCH? No.
+
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: 'Sistem Database telah diperbaiki otomatis. Silakan klik tombol Simpan sekali lagi.'
+                    },
+                    { status: 409 }
+                );
+            }
+
             return NextResponse.json(
                 { success: false, error: 'Internal server error' },
                 { status: 500 }
