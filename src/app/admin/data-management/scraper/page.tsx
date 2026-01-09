@@ -32,6 +32,13 @@ export default function ScraperDashboard() {
 
   useEffect(() => {
     loadData();
+
+    // Auto-refresh every 5 seconds to show live progress of running jobs
+    const interval = setInterval(() => {
+      loadData();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
