@@ -327,9 +327,16 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    // 7. Time Series Activity (Real - Last 7 Days)
+    // 7. Time Series Activity (Real - Dynamic based on timeRange)
+    let daysToLookBack = 7;
+    if (timeRange === '30d') daysToLookBack = 30;
+    if (timeRange === '90d') daysToLookBack = 90;
+
+    // For 24h we might want to show hourly, but for now let's keep it as last 1 day or default to 7 if not supported by UI
+    if (timeRange === '24h') daysToLookBack = 1;
+
     const timeSeriesData = [];
-    for (let i = 6; i >= 0; i--) {
+    for (let i = daysToLookBack - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       d.setHours(0, 0, 0, 0);

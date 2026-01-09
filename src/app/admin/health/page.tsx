@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   BarChart,
   Bar,
@@ -58,16 +59,41 @@ interface TimeSeriesData {
   inquiries: number;
   sales: number;
   newVehicles: number;
+  timestamp?: number; // Internal for forcing updates
 }
 
 const AnalyticsDashboard: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // Initialize from URL param or default to '7d'
+  const initialTimeRange = searchParams.get('timeRange') || '7d';
+
   const [analytics, setAnalytics] = useState<TenantAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
+  const [selectedTimeRange, setSelectedTimeRange] = useState(initialTimeRange);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [selectedTenantIds, setSelectedTenantIds] = useState<string[]>([]);
   const [activeChartTab, setActiveChartTab] = useState<'mostStocked' | 'mostViewed' | 'mostAsked' | 'mostSold'>('mostStocked');
+
+  // Sync state with URL if it changes externally (e.g. back button)
+  useEffect(() => {
+    const param = searchParams.get('timeRange');
+    if (param && param !== selectedTimeRange) {
+      setSelectedTimeRange(param);
+    }
+  }, [searchParams]);
+
+  // Handle Time Range Change with URL update
+  const handleTimeRangeChange = (newValue: string) => {
+    setSelectedTimeRange(newValue);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('timeRange', newValue);
+    // Replace URL without refreshing
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   // Initialize selected tenants when data loads
   useEffect(() => {
@@ -82,8 +108,8 @@ const AnalyticsDashboard: React.FC = () => {
     const loadAnalyticsData = async () => {
       setIsLoading(true);
       try {
-        // Fetch analytics data from API with auth
-        const response = await api.get<TenantAnalytics>(`/api/admin/analytics?timeRange=${selectedTimeRange}`);
+        // Fetch analytics data from API with auth and cache-busting
+        const response = await api.get<TenantAnalytics>(`/api/admin/analytics?timeRange=${selectedTimeRange}&_t=${Date.now()}`);
 
         if (!response.success && response.error) {
           throw new Error(response.error);
@@ -195,7 +221,7 @@ const AnalyticsDashboard: React.FC = () => {
           {/* Time Range Selector */}
           <select
             value={selectedTimeRange}
-            onChange={(e) => setSelectedTimeRange(e.target.value)}
+            onChange={(e) => handleTimeRangeChange(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="24h">Last 24 Hours</option>
