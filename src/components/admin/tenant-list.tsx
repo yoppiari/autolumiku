@@ -221,7 +221,7 @@ export default function TenantList({
                           </span>
                         </div>
                       </div>
-                      <div className="text-[10px] text-gray-400">
+                      <div className="text-xs text-gray-400">
                         ID: {tenant.id.slice(0, 8)}...
                       </div>
                     </div>
@@ -248,25 +248,25 @@ export default function TenantList({
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900 font-mono">{tenant.subdomain}</span>
+                    <span className="text-sm text-gray-900 font-medium">{tenant.subdomain}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {tenant.waNumber ? (
                       <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12.031 6.172c-2.32 0-4.591 1.342-5.728 3.456-1.076 1.997-1.139 4.411-.165 6.467l-1.133 4.14 4.232-1.111c1.88.98 4.04 1.13 6.104.538 2.063-.592 3.86-1.928 5.01-3.722 1.15-1.794 1.484-3.951.93-6.04-.555-2.09-1.956-3.867-3.9-4.947-1.758-.973-3.774-1.282-5.35-1.282zm6.367 11.233c-.092.153-.418.337-.58.358-.16.021-.36.038-.592-.014-.234-.052-.51-.15-.812-.282-1.28-.557-2.146-1.854-2.21-1.94-.064-.085-.568-.755-.568-1.432 0-.677.354-1.008.48-1.144.126-.135.275-.17.367-.17.092 0 .184.001.265.005.085.004.2.015.313.284.116.275.4.966.435 1.033.033.07.056.15.01.242-.046.09-.098.156-.201.272-.104.117-.213.264-.304.354-.105.101-.215.21-.092.42.124.21.547.902 1.17 1.458.802.716 1.474.938 1.684 1.044.21.104.332.088.455-.05.123-.138.53-.618.67-.828.14-.21.282-.178.477-.107.194.072 1.234.582 1.446.688.213.107.354.16.406.25.052.09.052.522-.162.723zM12 2C6.477 2 2 6.477 2 12c0 1.91.536 3.692 1.465 5.213l-1.4 5.115 5.253-1.378C8.75 21.84 10.334 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" />
                         </svg>
-                        <span className="text-sm font-bold text-green-600 font-mono">{tenant.waNumber}</span>
+                        <span className="text-sm font-bold text-green-600 font-medium">{tenant.waNumber}</span>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-gray-400 italic">Not Connected</span>
+                      <span className="text-xs text-gray-400 italic">Not Connected</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 font-medium">
                       {format(new Date(tenant.createdAt), 'dd MMM yyyy', { locale: id })}
                     </div>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-tighter">
+                    <div className="text-xs text-gray-400 uppercase tracking-tighter">
                       Created Date
                     </div>
                   </td>
@@ -277,7 +277,7 @@ export default function TenantList({
                           href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard/users` : `https://${tenant.subdomain}.autolumiku.com/dashboard/users`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-200 hover:bg-blue-100 transition-colors"
+                          className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-200 hover:bg-blue-100 transition-colors"
                         >
                           Lihat Users
                         </a>
@@ -285,7 +285,7 @@ export default function TenantList({
                           href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard/vehicles` : `https://${tenant.subdomain}.autolumiku.com/dashboard/vehicles`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[10px] px-2 py-0.5 bg-green-50 text-green-600 rounded border border-green-200 hover:bg-green-100 transition-colors"
+                          className="text-xs px-2 py-0.5 bg-green-50 text-green-600 rounded border border-green-200 hover:bg-green-100 transition-colors"
                         >
                           Lihat Kendaraan
                         </a>
@@ -295,7 +295,7 @@ export default function TenantList({
                           href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard/whatsapp-ai` : `https://${tenant.subdomain}.autolumiku.com/dashboard/whatsapp-ai`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded border border-purple-200 hover:bg-purple-100 transition-colors"
+                          className="text-xs px-2 py-0.5 bg-purple-50 text-purple-600 rounded border border-purple-200 hover:bg-purple-100 transition-colors"
                         >
                           WhatsApp AI
                         </a>
@@ -303,7 +303,7 @@ export default function TenantList({
                           href={tenant.customDomain ? `https://${tenant.customDomain}/dashboard/whatsapp-ai/analytics` : `https://${tenant.subdomain}.autolumiku.com/dashboard/whatsapp-ai/analytics`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                          className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-200 hover:bg-indigo-100 transition-colors"
                         >
                           Analytics
                         </a>

@@ -293,7 +293,7 @@ const AnalyticsDashboard: React.FC = () => {
 
       {/* Time Series Chart - Moved Up for Better Visibility */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Trends (Last 7 Days)</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Activity Trends (Real-time)</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={analytics.timeSeriesData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -304,7 +304,7 @@ const AnalyticsDashboard: React.FC = () => {
             <Bar dataKey="views" fill="#3b82f6" name="Views" />
             <Bar dataKey="inquiries" fill="#f59e0b" name="Inquiries" />
             <Bar dataKey="sales" fill="#ef4444" name="Sales" />
-            <Bar dataKey="newVehicles" fill="#10b981" name="New Vehicles" />
+            <Bar dataKey="newVehicles" fill="#10b981" name="Vehicle Uploads" />
           </BarChart>
         </ResponsiveContainer>
       </div>
