@@ -97,12 +97,40 @@ JANGAN return error jika bisa ditebak/inferensi. Prioritaskan kelengkapan data.`
 
 // ==================== SERVICE ====================
 
+
+const VEHICLE_SCRAPER_SYSTEM_PROMPT = `Kamu adalah Data Extractor robot yang kaku dan presisi.
+Tugasmu adalah mengekstrak data kendaraan dari teks HTML/iklan mentah.
+
+ATURAN KRUSIAL (ANTI-HALUSINASI & ANTI-SAMPAH):
+1. HANYA ekstrak data yang TERTULIS EKSPLISIT di teks.
+2. JANGAN MENEBAK, JANGAN MENGARANG, JANGAN ASUMSI.
+3. FAIL FAST (Return error) jika ini BUKAN iklan mobil utuh (misal: "Jual Velg", "Over Kredit Rumah", "Sewa Mobil", "Jasa Inspeksi").
+4. Validasi Harga: Jika harga < 20.000.000 atau format aneh (12345), tandai sebagai mencurigakan atau return 0.
+5. Jika data "Transmission" tak tertulis -> return null.
+
+OUTPUT JSON FORMAT:
+{
+  "make": "string",
+  "model": "string",
+  "year": number,
+  "price": number,
+  "mileage": number | null,
+  "color": "string" | null,
+  "transmission": "string" | null,
+  "fuelType": "string" | null,
+  "engineCapacity": "string" | null,
+  "variant": "string" | null,
+  "error": "string" // Optional: Isi alasan jika ini DATA SAMPAH / BUKAN MOBIL
+}
+`;
+
 export class VehicleDataExtractorService {
   /**
    * Extract vehicle data dari natural language text
    */
   static async extractFromNaturalLanguage(
-    text: string
+    text: string,
+    systemPromptOverride?: string
   ): Promise<VehicleDataExtractionResult> {
     console.log(`[Vehicle Data Extractor] Extracting from text: "${text}"`);
 
@@ -125,7 +153,7 @@ export class VehicleDataExtractorService {
       console.log('[Vehicle Data Extractor] User prompt length:', text.length, 'chars');
 
       const aiResponse = await zaiClient.generateText({
-        systemPrompt: VEHICLE_EXTRACTION_SYSTEM_PROMPT,
+        systemPrompt: systemPromptOverride || VEHICLE_EXTRACTION_SYSTEM_PROMPT,
         userPrompt: text,  // Send text directly - system prompt already has instructions
         temperature: 0.1, // Low temperature untuk consistency
         maxTokens: 2000,  // High limit to ensure complete responses
@@ -744,9 +772,10 @@ export class VehicleDataExtractorService {
   /**
    * Extract data from HTML content (Scraper support)
    * Cleans HTML tags to save tokens and uses AI to extract vehicle specs
+   * USES STRICT PROMPT to avoid hallucination.
    */
   static async extractFromHTML(html: string): Promise<VehicleDataExtractionResult> {
-    console.log('[Vehicle Data Extractor] Extracting from HTML content...');
+    console.log('[Vehicle Data Extractor] Extracting from HTML content (Strict Mode)...');
 
     // 1. Clean HTML to reduce tokens (remove scripts, styles, comments)
     // Keep only text content structure
@@ -761,10 +790,10 @@ export class VehicleDataExtractorService {
 
     console.log('[Vehicle Data Extractor] Cleaned text length:', cleanText.length);
 
-    // 2. Use the natural language extractor with the cleaned text
-    // The AI is smart enough to find "Harga: ...", "Tahun: ...", etc in the jumbled text
+    // 2. Use the natural language extractor with the cleaned text AND STRICT prompt
     try {
-      return await this.extractFromNaturalLanguage(cleanText);
+      // We pass the STRICT prompt to override the default "Chatbot" prompt
+      return await this.extractFromNaturalLanguage(cleanText, VEHICLE_SCRAPER_SYSTEM_PROMPT);
     } catch (error) {
       console.error('[Vehicle Data Extractor] HTML extraction failed:', error);
       return {
