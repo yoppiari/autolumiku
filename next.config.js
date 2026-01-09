@@ -19,9 +19,9 @@ const nextConfig = {
   },
 
   // Fixed BUILD_ID to prevent chunk hash inconsistencies
-  generateBuildId: async () => {
-    return 'autolumiku-v1-stable'
-  },
+  // generateBuildId: async () => {
+  //   return 'autolumiku-v1-stable'
+  // },
 
   // Webpack configuration to include PDFKit font files in standalone build
   webpack: (config, { isServer }) => {
