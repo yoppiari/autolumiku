@@ -124,14 +124,14 @@ export default function ScraperDashboard() {
               <option disabled>──────────</option>
               <option value="OLX_AUTOS">🟠 OLX Autos (AI Powered)</option>
               <option value="MOBIL123">🔴 Mobil123 (AI Powered)</option>
-              <option value="CARSOME">🔵 Carsome</option>
-              <option value="SEVA">🟢 Seva.id</option>
-              <option value="CARMUDI">🟤 Carmudi</option>
-              <option value="OTO">⚪ Oto.com</option>
-              <option value="CAROLINE">🟡 Caroline.id</option>
-              <option value="AUTO2000">🟦 Auto2000</option>
-              <option value="MOBIL88">🟥 Mobil88</option>
-              <option value="CARRO">🟧 Carro</option>
+              <option value="CARSOME">🔵 Carsome (AI Powered)</option>
+              <option value="SEVA">🟢 Seva.id (AI Powered)</option>
+              <option value="CARMUDI">🟤 Carmudi (AI Powered)</option>
+              <option value="OTO">⚪ Oto.com (AI Powered)</option>
+              <option value="CAROLINE">🟡 Caroline.id (AI Powered)</option>
+              <option value="AUTO2000">🟦 Auto2000 (AI Powered)</option>
+              <option value="MOBIL88">🟥 Mobil88 (AI Powered)</option>
+              <option value="CARRO">🟧 Carro (AI Powered)</option>
             </select>
           </div>
           <button
