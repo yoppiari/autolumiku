@@ -89,15 +89,35 @@ export class UniversalScraper {
         try {
             this.browser = await puppeteer.launch({
                 headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-blink-features=AutomationControlled',
+                    '--window-size=1920,1080'
+                ]
             });
 
             const page = await this.browser.newPage();
+
+            // STEALTH: Override navigator properties
+            await page.evaluateOnNewDocument(() => {
+                Object.defineProperty(navigator, 'webdriver', { get: () => false });
+            });
+
+            // STEALTH: Random Viewport
+            await page.setViewport({
+                width: 1366 + Math.floor(Math.random() * 100),
+                height: 768 + Math.floor(Math.random() * 100)
+            });
+
             await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
             // 1. Visit List Page
             console.log(`Navigating to list: ${config.url}`);
             await page.goto(config.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+            // STEALTH: Human Delay
+            await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 2000) + 1000));
 
             // 2. Discover Links (Smart Discovery)
             const links = await page.evaluate((patternStr) => {
