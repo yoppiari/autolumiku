@@ -93,45 +93,33 @@ export async function PATCH(
                 );
             }
 
-            // Check if email is already taken by another user
+            // Check if email is already taken by another user IN THE SAME TENANT
             if (email) {
-                const emailTaken = await prisma.user.findUnique({
-                    where: { email },
+                // Determine target tenant ID (either from body or keep existing)
+                const targetTenantId = tenantId !== undefined ? tenantId : existingUser.tenantId;
+
+                const emailTaken = await prisma.user.findFirst({
+                    where: {
+                        email: email.toLowerCase(),
+                        tenantId: targetTenantId
+                    },
                     include: { tenant: true },
                 });
 
                 if (emailTaken && emailTaken.id !== id) {
-                    // SMART RECLAIM: If the owner of this email is in a "DUMMY" or PLATFORM tenant, 
-                    // auto-delete them so this user can take the email.
-                    const isDummyUser = emailTaken?.tenant?.name && [
-                        "Tenant 1 Demo",
-                        "Showroom Jakarta Premium",
-                        "Showroom Jakarta",
-                        "Dealer Mobil",
-                        "AutoMobil",
-                        "AutoLumiku Platform"
-                    ].includes(emailTaken.tenant.name);
-
-                    // CRITICAL PROTECTION: Never reclaim from Super Admin or Platform Admin (tenantId is null)
-                    const isSuperAdmin = !emailTaken?.tenantId || (emailTaken?.roleLevel && emailTaken.roleLevel >= 90);
-
-                    // Scenario A: Collision with a Dummy account (Delete & Proceed) - BUT ONLY IF NOT SUPER ADMIN
-                    if (isDummyUser && !isSuperAdmin) {
-                        console.log(`[SmartReclaim] Deleting dummy/platform user ${emailTaken.id} to reclaim email ${email}`);
-                        await prisma.user.delete({ where: { id: emailTaken.id } });
-                    }
-                    // Scenario B: Collision with a Real account OR Super Admin (Block)
-                    else {
-                        const tenantName = emailTaken.tenant?.name || 'Platform Admin';
-                        return NextResponse.json(
-                            {
-                                success: false,
-                                error: `Email already in use by ${tenantName}. ${isSuperAdmin ? 'Platform accounts cannot be reclaimed.' : ''}`
-                            },
-                            { status: 400 }
-                        );
-                    }
+                    // If taken in the SAME tenant, we definitely block it.
+                    const tenantName = emailTaken.tenant?.name || 'Platform Admin';
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            error: `Email already in use in ${tenantName}.`
+                        },
+                        { status: 400 }
+                    );
                 }
+
+                // Note: We purposely REMOVE the "Smart Reclaim" logic because keeping duplicate emails 
+                // across different tenants is now a feature, not a bug to be fixed by deletion.
             }
 
             // Prepare update data
