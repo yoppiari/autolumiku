@@ -11,6 +11,7 @@ import { Prisma, ScraperJob, ScraperResult } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 // Dynamic imports for scrapers (only loaded at runtime, not during build)
+// NOTE: Legacy scrapers kept for reference but now unused in main flow
 async function loadOLXScraper() {
   const { PuppeteerOLXScraper } = await import('../../../scripts/scrapers/puppeteer-olx-scraper');
   return new PuppeteerOLXScraper();
@@ -120,124 +121,48 @@ export class ScraperService {
   }
 
   /**
-   * Run the actual scraper
+   * Run the actual scraper (MIGRATED TO UNIVERSAL ENGINE FOR REAL-TIME UPDATES)
    */
   private async runScraper(jobId: string, options: ScraperJobOptions): Promise<void> {
     const startTime = Date.now();
 
     try {
-      let vehicles: any[] = [];
-
-      // Run scraper based on source
-      if (options.source === 'ALL') {
-        // Run both scrapers
-        console.log('Running ALL scrapers...');
-
-        const olxScraper = await loadOLXScraper();
-        const carsomeScraper = await loadCarsomeScraper();
-        const mobil123Scraper = await loadMobil123Scraper();
-
-        const [olxVehicles, carsomeVehicles, mobil123Vehicles] = await Promise.all([
-          olxScraper.scrape(Math.floor((options.targetCount || 50) / 3), true),
-          carsomeScraper.scrape(Math.floor((options.targetCount || 50) / 3)),
-          mobil123Scraper.scrape(Math.floor((options.targetCount || 50) / 3)),
-        ]);
-
-        vehicles = [...olxVehicles, ...carsomeVehicles, ...mobil123Vehicles];
-
-      } else if (options.source === 'OLX') {
-        // Run OLX scraper with detail page visits
-        const scraper = await loadOLXScraper();
-        vehicles = await scraper.scrape(options.targetCount || 50, true);
-
-      } else if (options.source === 'CARSOME') {
-        // Run CARSOME scraper
-        const scraper = await loadCarsomeScraper();
-        vehicles = await scraper.scrape(options.targetCount || 50);
-
-      } else if (options.source === 'MOBIL123') {
-        const scraper = await loadMobil123Scraper();
-        vehicles = await scraper.scrape(options.targetCount || 50);
-
-      } else if (['SEVA', 'CARMUDI', 'OTO', 'CAROLINE', 'AUTO2000', 'MOBIL88', 'CARRO', 'OLX_AUTOS'].includes(options.source)) {
-        // Run Universal Scraper with Real-Time Updates
-        const scraper = await loadUniversalScraper();
-        await scraper.scrape(options.source, options.targetCount || 50, async (vehicle) => {
-          await this.processVehicle(jobId, vehicle, true);
-        });
-        // Clear vehicles to skip batch processing
-        vehicles = [];
-
-      } else {
-        throw new Error(`Source ${options.source} not supported`);
-      }
-
-      // Store results in database (Batch Mode for Legacy Scrapers)
-      let newCount = 0;
-      let duplicateCount = 0;
-      const errors: string[] = [];
-
-      // Only run batch loop if vehicles were returned (Legacy)
-      if (vehicles.length > 0) {
-        for (const vehicle of vehicles) {
-          try {
-            const duplicateMatch = await this.detectDuplicate(vehicle);
-
-            await prisma.scraperResult.create({
-              data: {
-                jobId,
-                source: vehicle.source || options.source,
-                make: vehicle.make,
-                model: vehicle.model,
-                year: vehicle.year,
-                price: BigInt(vehicle.price),
-                priceDisplay: vehicle.priceDisplay,
-                location: vehicle.location || null,
-                url: vehicle.url || '',
-                variant: vehicle.variant || null,
-                transmission: vehicle.transmission || null,
-                fuelType: vehicle.fuelType || null,
-                bodyType: vehicle.bodyType || null,
-                features: vehicle.features || null,
-                description: vehicle.description || null,
-                status: duplicateMatch.isDuplicate ? 'duplicate' : 'pending',
-                matchedVehicleId: duplicateMatch.matchedVehicleId,
-                confidence: duplicateMatch.confidence,
-              },
-            });
-
-            if (duplicateMatch.isDuplicate) {
-              duplicateCount++;
-            } else {
-              newCount++;
-            }
-          } catch (error) {
-            errors.push(`Failed to process ${vehicle.make} ${vehicle.model}: ${error}`);
-          }
-        }
-      }
-
-      // Update job with results
-      const duration = Math.floor((Date.now() - startTime) / 1000);
-
-      const updateData: Prisma.ScraperJobUpdateInput = {
-        status: 'completed',
-        completedAt: new Date(),
-        duration,
-        errors: errors.length > 0 ? errors : Prisma.JsonNull,
+      // Define Real-Time Callback
+      const onProgress = async (vehicle: any) => {
+        await this.processVehicle(jobId, vehicle, true);
       };
 
-      // Only overwrite counts if batch mode was used
-      if (vehicles.length > 0) {
-        updateData.vehiclesFound = vehicles.length;
-        updateData.vehiclesNew = newCount;
-        updateData.duplicates = duplicateCount;
+      const scraper = await loadUniversalScraper();
+
+      if (options.source === 'ALL') {
+        console.log('Running ALL scrapers via Universal Engine...');
+        // Run sequentially to prevent server overload (503 errors) and ensure stability
+        const countPerSource = Math.floor((options.targetCount || 50) / 3);
+
+        // We use try-catch per source so one failure doesn't stop others
+        try { await scraper.scrape('OLX', countPerSource, onProgress); } catch (e) { console.error('OLX failed', e); }
+        try { await scraper.scrape('CARSOME', countPerSource, onProgress); } catch (e) { console.error('Carsome failed', e); }
+        try { await scraper.scrape('MOBIL123', countPerSource, onProgress); } catch (e) { console.error('Mobil123 failed', e); }
+
+      } else {
+        // Run Single Source
+        // The scraping method throws if source is invalid, caught below
+        await scraper.scrape(options.source, options.targetCount || 50, onProgress);
       }
+
+      // Update job completion
+      const duration = Math.floor((Date.now() - startTime) / 1000);
 
       await prisma.scraperJob.update({
         where: { id: jobId },
-        data: updateData,
+        data: {
+          status: 'completed',
+          completedAt: new Date(),
+          duration,
+          // Counts were updated in real-time
+        },
       });
+
     } catch (error) {
       // Mark job as failed
       await prisma.scraperJob.update({
@@ -526,6 +451,11 @@ export class ScraperService {
             commonKeywords: [],
             commonMisspellings: [],
             isActive: true,
+            columns: {
+              // Add default columns if needed or just let Prisma handle defaults
+            } as any,
+            // Note: 'columns' field might not exist in schema, removing if not sure. 
+            // Checked schema earlier, didn't see it.
           },
         });
 

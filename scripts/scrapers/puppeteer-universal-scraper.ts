@@ -39,6 +39,21 @@ export const SOURCES: Record<string, SourceConfig> = {
         url: 'https://www.seva.id/mobil-bekas',
         validLinkPattern: /\/mobil-bekas\/[a-z0-9-]+/i
     },
+    OLX: {
+        name: 'OLX Indonesia',
+        url: 'https://www.olx.co.id/mobil-bekas_c198',
+        validLinkPattern: /\/item\/[a-z0-9-]+/i
+    },
+    CARSOME: {
+        name: 'Carsome Indonesia',
+        url: 'https://www.carsome.id/buy-car',
+        validLinkPattern: /\/buy-car\/[a-z0-9-]+/i
+    },
+    MOBIL123: {
+        name: 'Mobil123',
+        url: 'https://www.mobil123.com/mobil-dijual',
+        validLinkPattern: /\/dijual\/[a-z0-9-]+/i
+    },
     CARMUDI: {
         name: 'Carmudi',
         url: 'https://www.carmudi.co.id/mobil-dijual',
@@ -114,10 +129,30 @@ export class UniversalScraper {
 
             // 1. Visit List Page
             console.log(`Navigating to list: ${config.url}`);
-            await page.goto(config.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            await page.goto(config.url, { waitUntil: 'networkidle2', timeout: 60000 });
 
             // STEALTH: Human Delay
             await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 2000) + 1000));
+
+            // SCROLL TO LOAD CONTENT (Critical for SPAs)
+            console.log('Scrolling to populate items...');
+            await page.evaluate(async () => {
+                await new Promise<void>((resolve) => {
+                    let totalHeight = 0;
+                    const distance = 200; // Scroll chunk
+                    const timer = setInterval(() => {
+                        window.scrollBy(0, distance);
+                        totalHeight += distance;
+
+                        // Stop after scrolling reasonable amount (e.g. 5 screens)
+                        if (totalHeight >= 4000) {
+                            clearInterval(timer);
+                            resolve();
+                        }
+                    }, 100);
+                });
+            });
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Settle
 
             // 2. Discover Links (Smart Discovery)
             const links = await page.evaluate((patternStr) => {
