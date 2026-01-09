@@ -141,19 +141,18 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if user already exists in THIS SPECIFIC tenant
-      const targetTenantId = tenantId || null;
+      // Check if user already exists GLOBALLY (email must be unique WITHIN A TENANT only)
       const existingUser = await prisma.user.findFirst({
         where: {
           email: email.toLowerCase(),
-          tenantId: targetTenantId
+          tenantId: tenantId || null // Check specifically for conflict in THIS tenant
         },
         include: { tenant: true }
       });
 
       if (existingUser) {
-        // SCENARIO 1: User exists in the SAME user-selected tenant -> UPDATE (Upsert)
-        console.log(`♻️ User ${email} exists in target tenant ${targetTenantId || 'Platform'}. Updating...`);
+        // User exists in the SAME user-selected tenant -> UPDATE (Upsert)
+        console.log(`♻️ User ${email} exists in target tenant ${tenantId || 'Platform'}. Updating...`);
         const updatedUser = await prisma.user.update({
           where: { id: existingUser.id },
           data: {
@@ -178,6 +177,10 @@ export async function POST(request: NextRequest) {
           data: updatedUser,
         });
       }
+
+      // If we are here, the user doesn't exist in THIS tenant.
+      // We can safely create a NEW record even if the email exists in OTHER tenants.
+      // The Login API already handles disambiguation.
 
       // If we are here, the user doesn't exist in THIS tenant.
       // We can safely create a NEW record even if the email exists in another tenant.

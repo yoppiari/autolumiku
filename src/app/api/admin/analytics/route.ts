@@ -291,7 +291,7 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    // 6. Get Most Collected (Inventory Count by Model)
+    // 6. Get Most Stocked (Inventory Count by Model)
     const availableByModel = await prisma.vehicle.groupBy({
       by: ['make', 'model', 'year', 'tenantId'],
       where: {
@@ -309,7 +309,7 @@ export async function GET(request: NextRequest) {
       take: 5,
     });
 
-    const mostCollected = await Promise.all(
+    const mostStocked = await Promise.all(
       availableByModel.map(async (item) => {
         const tenant = await prisma.tenant.findUnique({
           where: { id: item.tenantId },
@@ -362,7 +362,7 @@ export async function GET(request: NextRequest) {
     }
 
     const analyticsData = {
-      mostCollected,
+      mostStocked,
       mostViewed,
       mostAsked,
       mostSold,

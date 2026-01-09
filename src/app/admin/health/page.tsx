@@ -23,7 +23,7 @@ import { api } from '@/lib/api-client';
 
 // Analytics types
 interface TenantAnalytics {
-  mostCollected: VehicleStat[];
+  mostStocked: VehicleStat[];
   mostViewed: VehicleStat[];
   mostAsked: VehicleStat[];
   mostSold: VehicleStat[];
@@ -67,7 +67,7 @@ const AnalyticsDashboard: React.FC = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [selectedTenantIds, setSelectedTenantIds] = useState<string[]>([]);
-  const [activeChartTab, setActiveChartTab] = useState<'mostCollected' | 'mostViewed' | 'mostAsked' | 'mostSold'>('mostCollected');
+  const [activeChartTab, setActiveChartTab] = useState<'mostStocked' | 'mostViewed' | 'mostAsked' | 'mostSold'>('mostStocked');
 
   // Initialize selected tenants when data loads
   useEffect(() => {
@@ -95,7 +95,7 @@ const AnalyticsDashboard: React.FC = () => {
 
         // Transform API data to match our interface
         const transformedAnalytics: TenantAnalytics = {
-          mostCollected: (analyticsData as any).mostCollected || [],
+          mostStocked: (analyticsData as any).mostStocked || [],
           mostViewed: (analyticsData as any).mostViewed || [],
           mostAsked: (analyticsData as any).mostAsked || [],
           mostSold: (analyticsData as any).mostSold || [],
@@ -141,7 +141,7 @@ const AnalyticsDashboard: React.FC = () => {
 
     // Second pass: ensure any other referenced tenants get a color
     const allStats = [
-      ...analytics.mostCollected,
+      ...analytics.mostStocked,
       ...analytics.mostViewed,
       ...analytics.mostAsked,
       ...analytics.mostSold
@@ -318,7 +318,7 @@ const AnalyticsDashboard: React.FC = () => {
               { id: 'mostViewed', label: 'Most Viewed', color: 'bg-green-100 text-green-700' },
               { id: 'mostAsked', label: 'Most Asked', color: 'bg-yellow-100 text-yellow-700' },
               { id: 'mostSold', label: 'Most Sold', color: 'bg-purple-100 text-purple-700' },
-              { id: 'mostCollected', label: 'Most Collected', color: 'bg-blue-100 text-blue-700' }
+              { id: 'mostStocked', label: 'Most Stocked', color: 'bg-blue-100 text-blue-700' }
             ].map(tab => (
               <button
                 key={tab.id}
