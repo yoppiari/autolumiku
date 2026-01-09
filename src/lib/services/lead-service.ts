@@ -333,6 +333,161 @@ export class LeadService {
   }
 
   /**
+   * Create or update lead from WhatsApp interaction
+   * This is the core method for "Smart Leads" auto-capture
+   */
+  static async createOrUpdateFromWhatsApp({
+    tenantId,
+    customerPhone,
+    customerName,
+    message,
+    vehicleId,
+    intent,
+    isStaff = false
+  }: {
+    tenantId: string;
+    customerPhone: string;
+    customerName?: string;
+    message: string;
+    vehicleId?: string;
+    intent?: string;
+    isStaff?: boolean;
+  }) {
+    try {
+      if (isStaff) return null; // Don't track staff as leads
+
+      // 1. Normalize phone for lookup
+      const cleanPhone = customerPhone.replace(/\D/g, '');
+
+      // 2. Try to find existing lead
+      let lead = await this.getLeadByPhone(tenantId, cleanPhone);
+      
+      // Calculate basic score impact based on intent
+      let scoreIncrement = 0;
+      let statusUpdate = undefined;
+      let interestUpdate = undefined;
+      
+      if (intent) {
+        // Simple heuristic rules for immediate updates
+        if (intent.includes('price') || intent.includes('harga')) {
+          scoreIncrement = 10;
+          statusUpdate = 'INTERESTED';
+        }
+        if (intent.includes('location') || intent.includes('lokasi')) {
+          scoreIncrement = 15;
+          statusUpdate = 'INTERESTED';
+        }
+        if (intent.includes('consultation') || intent.includes('credit')) {
+          scoreIncrement = 20;
+          statusUpdate = 'INTERESTED';
+        }
+      }
+
+      if (lead) {
+        // --- UDPATE EXISTING LEAD ---
+        const updateData: any = {
+          lastContactAt: new Date(), // Always update last contact
+          // If we have a name now and didn't before, update it
+          ...(customerName && (!lead.name || lead.name === cleanPhone || lead.name === 'Unknown') ? { name: customerName } : {}),
+          // If customer asks about a specific vehicle, update interest
+          ...(vehicleId ? { vehicleId, interestedIn: vehicleId } : {}),
+        };
+        
+        // Only update status if it's an "upgrade" (e.g. dont set CONTACTED back to NEW)
+        if (statusUpdate && lead.status === 'NEW' && statusUpdate === 'INTERESTED') {
+           updateData.status = 'INTERESTED';
+        }
+
+        lead = await prisma.lead.update({
+          where: { id: lead.id },
+          data: updateData
+        });
+        
+        // Update score if needed
+        if (scoreIncrement > 0) {
+          // We'll implement specific score tracking later, for now just log/metadata could be used
+          // or we can add a 'score' column to Lead table if it exists, or stored in metadata
+        }
+
+      } else {
+        // --- CREATE NEW LEAD ---
+        // Auto-determine source based on context
+        const source = 'whatsapp_auto'; 
+        
+        lead = await prisma.lead.create({
+          data: {
+            tenantId,
+            phone: cleanPhone,
+            whatsappNumber: customerPhone,
+            name: customerName || cleanPhone, // Fallback to phone if name unknown
+            message: message, // First message
+            source,
+            status: 'NEW',
+            priority: 'MEDIUM',
+            vehicleId,
+            interestedIn: vehicleId,
+            lastContactAt: new Date(),
+          }
+        });
+        
+        console.log(`[Smart Leads] New lead captured from WhatsApp: ${cleanPhone}`);
+      }
+
+      // Create activity log (if Activity table exists/is linked, otherwise just log to console)
+      // For now we assume we just updated the Lead record itself.
+
+      return lead;
+
+    } catch (error) {
+      console.error('[Smart Leads] Failed to process WhatsApp lead:', error);
+      // Fail silently to not disrupt the chat flow
+      return null;
+    }
+  }
+
+  /**
+   * Update Lead Score and Status based on Analysis
+   * To be called by LeadAnalyzer service
+   */
+  static async updateLeadAnalysis(leadId: string, analysis: {
+    score: number;
+    sentiment: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
+    buyingStage: string;
+    urgency: 'HIGH' | 'MEDIUM' | 'LOW';
+    summary?: string;
+  }) {
+    try {
+      // Map buying stage/score to LeadStatus
+      let newStatus: any = undefined;
+      
+      if (analysis.sentiment === 'NEGATIVE') {
+         newStatus = 'NOT_INTERESTED';
+      } else if (analysis.score >= 80 || analysis.buyingStage === 'ACTION') {
+         newStatus = 'CONVERTED'; // Or 'HOT' if available
+      } else if (analysis.score >= 50 || analysis.buyingStage === 'DESIRE') {
+         newStatus = 'INTERESTED';
+      } else if (analysis.buyingStage === 'INTEREST') {
+         newStatus = 'CONTACTED';
+      }
+
+      await prisma.lead.update({
+        where: { id: leadId },
+        data: {
+          urgency: analysis.urgency, // Assuming urgency field exists
+          // We might store the score/summary in a notes field or separate score field
+          notes: analysis.summary ? `[AI Analysis] ${analysis.summary}` : undefined,
+          ...(newStatus ? { status: newStatus } : {})
+        }
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to update lead analysis:', error);
+      return false;
+    }
+  }
+
+  /**
    * Track WhatsApp click
    */
   static async trackWhatsAppClick(data: {

@@ -609,6 +609,36 @@ export class MessageOrchestratorService {
       });
       console.log(`[Orchestrator] Message updated with intent: ${classification.intent}`);
 
+      // === SMART LEADS AUTO-CAPTURE ===
+      // FEATURE TOGGLE: Controlled via Dashboard -> Leads -> WhatsApp Settings
+      // We check prisma.whatsAppSettings (same model used by settings page)
+      if (normalizedPhone && classification.intent !== "staff_greeting") {
+        try {
+          // Use 'any' cast to avoid TS errors if model is missing in generated client
+          // This matches the model used in /api/v1/whatsapp-settings/route.ts
+          const settings = await (prisma as any).whatsAppSettings.findUnique({
+            where: { tenantId: incoming.tenantId }
+          });
+
+          // Only proceed if ACTIVE and AUTO_REPLY are enabled
+          if (settings?.isActive && settings?.autoReply) {
+            LeadService.createOrUpdateFromWhatsApp({
+              tenantId: incoming.tenantId,
+              customerPhone: normalizedPhone,
+              customerName: incoming.customerName,
+              message: incoming.message,
+              intent: classification.intent,
+              isStaff: classification.isStaff
+            }).catch(err => console.error('[Smart Leads] Background capture failed:', err));
+          } else {
+            console.log(`[Smart Leads] Skipped - Toggle OFF (Active: ${settings?.isActive}, AutoReply: ${settings?.autoReply})`);
+          }
+        } catch (err) {
+          console.error('[Smart Leads] Error checking settings:', err);
+        }
+      }
+      // ================================
+
       // Update conversation type and store verified staff phone for LID mapping
       if (classification.isStaff) {
         // Get current contextData to preserve existing data
