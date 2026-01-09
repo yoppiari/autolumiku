@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   BarChart,
@@ -62,7 +62,7 @@ interface TimeSeriesData {
   timestamp?: number; // Internal for forcing updates
 }
 
-const AnalyticsDashboard: React.FC = () => {
+const AnalyticsContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -488,6 +488,18 @@ const AnalyticsDashboard: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const AnalyticsDashboard: React.FC = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <AnalyticsContent />
+    </Suspense>
   );
 };
 
