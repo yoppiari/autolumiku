@@ -29,6 +29,7 @@ export default function ScraperDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSource, setSelectedSource] = useState<'OLX' | 'CARSOME' | 'MOBIL123' | 'SEVA' | 'CARMUDI' | 'OTO' | 'CAROLINE' | 'AUTO2000' | 'MOBIL88' | 'CARRO' | 'OLX_AUTOS' | 'ALL'>('ALL');
+  const [filterSource, setFilterSource] = useState('ALL');
 
   useEffect(() => {
     loadData();
@@ -39,15 +40,17 @@ export default function ScraperDashboard() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [filterSource]);
 
   const loadData = async () => {
     try {
+      const filterQuery = filterSource !== 'ALL' ? `&source=${filterSource}` : '';
       const [statsData, jobsData] = await Promise.all([
         api.get('/api/admin/scraper/stats'),
-        api.get('/api/admin/scraper/jobs?pageSize=10'),
+        api.get(`/api/admin/scraper/jobs?pageSize=10${filterQuery}`),
       ]);
 
+      // Check both structures (direct or wrapped in data)
       setStats((statsData as any).stats || statsData.data?.stats || null);
       setJobs((jobsData as any).jobs || jobsData.data?.jobs || []);
       setError(null);

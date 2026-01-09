@@ -53,7 +53,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
         throw new Error(res.error || 'Job not found or failed to load results');
       }
 
-      setResults(res.data?.results || []);
+      setResults((res as any).results || res.data?.results || []);
       setError(null);
     } catch (error) {
       console.error('Failed to load results:', error);

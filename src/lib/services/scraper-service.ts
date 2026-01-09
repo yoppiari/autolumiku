@@ -303,19 +303,21 @@ export class ScraperService {
   /**
    * Get all jobs (with pagination)
    */
-  async getJobs(page: number = 1, pageSize: number = 20): Promise<{
+  async getJobs(page: number = 1, pageSize: number = 20, source?: string): Promise<{
     jobs: ScraperJob[];
     total: number;
   }> {
     const skip = (page - 1) * pageSize;
+    const where = source && source !== 'ALL' ? { source } : {};
 
     const [jobs, total] = await Promise.all([
       prisma.scraperJob.findMany({
         skip,
         take: pageSize,
+        where,
         orderBy: { startedAt: 'desc' },
       }),
-      prisma.scraperJob.count(),
+      prisma.scraperJob.count({ where }),
     ]);
 
     return { jobs, total };
