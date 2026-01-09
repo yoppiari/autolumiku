@@ -5,9 +5,14 @@
  * Usage: npx tsx scripts/scrapers/puppeteer-olx-scraper.ts
  */
 
+import { loadEnvConfig } from '@next/env';
 import puppeteer, { Browser, Page } from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { VehicleDataExtractorService } from '../../src/lib/ai/vehicle-data-extractor.service';
+
+// Load environment variables for AI service
+loadEnvConfig(process.cwd());
 
 interface ScrapedVehicle {
   source: string;
@@ -109,12 +114,12 @@ class PuppeteerOLXScraper {
     const lower = text.toLowerCase();
     // Check for AT/Automatic - must have space or dash around it
     if (lower.match(/[\s-]at[\s-]/) || lower.includes('-at-') || lower.includes(' at ') ||
-        lower.includes('automatic') || lower.includes('matic')) {
+      lower.includes('automatic') || lower.includes('matic')) {
       return 'Automatic';
     }
     // Check for MT/Manual
     if (lower.match(/[\s-]mt[\s-]/) || lower.includes('-mt-') || lower.includes(' mt ') ||
-        lower.includes('manual')) {
+      lower.includes('manual')) {
       return 'Manual';
     }
     if (lower.includes('cvt')) {
@@ -392,10 +397,58 @@ class PuppeteerOLXScraper {
   /**
    * Extract detail specs from detail page
    */
+  /**
+   * Extract detail specs using AI Skill 5.0
+   * This provides "Self-Healing" capabilities as it reads natural language/HTML
+   * instead of relying on fixed CSS selectors.
+   */
   private async extractDetailSpecs(page: Page): Promise<Partial<ScrapedVehicle>> {
+    console.log('🤖 Invoking AI 5.0 for detailed analysis...');
+    try {
+      // 1. Get raw content (Text/HTML)
+      // Capturing the full body ensures we don't miss specifications even if layout shifts
+      const htmlContent = await page.content();
+
+      // 2. Call AI Extractor
+      const aiResult = await VehicleDataExtractorService.extractFromHTML(htmlContent);
+
+      if (aiResult.success && aiResult.data) {
+        console.log(`✅ AI Analysis Complete: ${aiResult.data.make} ${aiResult.data.model} (${(aiResult.confidence * 100).toFixed(0)}% confidence)`);
+
+        // Return structured data from AI
+        return {
+          // AI inferred data (superior to regex)
+          make: aiResult.data.make,
+          model: aiResult.data.model,
+          year: aiResult.data.year,
+          price: aiResult.data.price,
+
+          transmission: aiResult.data.transmission,
+          fuelType: aiResult.data.fuelType,
+          variant: aiResult.data.variant || undefined,
+          // Note: engineCapacity is available in aiResult but not strictly in ScrapedVehicle interface?
+          // We can map it to features string or description if needed.
+
+          // Let's create a rich description if AI didn't provide one, using reasoning
+          description: aiResult.reasoning || `Extracted by AI: ${aiResult.data.make} ${aiResult.data.model} ${aiResult.data.variant || ''}`
+        };
+      } else {
+        console.warn(`⚠️  AI Extraction low confidence: ${aiResult.error}. Fallback to legacy selectors.`);
+        return this.extractDetailSpecsLegacy(page);
+      }
+    } catch (error) {
+      console.log('⚠️  AI Process Error:', error);
+      return this.extractDetailSpecsLegacy(page);
+    }
+  }
+
+  /**
+   * Legacy selector-based extraction (Fallback)
+   */
+  private async extractDetailSpecsLegacy(page: Page): Promise<Partial<ScrapedVehicle>> {
     try {
       // Wait for specs section to load
-      await page.waitForSelector('[data-aut-id="itemParams"]', { timeout: 5000 }).catch(() => {});
+      await page.waitForSelector('[data-aut-id="itemParams"]', { timeout: 5000 }).catch(() => { });
 
       const specs = await page.evaluate(() => {
         const result: any = {};
@@ -434,39 +487,12 @@ class PuppeteerOLXScraper {
           }
         }
 
-        // Fallback to meta description
-        if (!result.description) {
-          const metaDesc = document.querySelector('meta[name="description"]');
-          if (metaDesc) {
-            const content = metaDesc.getAttribute('content');
-            if (content && content.length > 10) {
-              result.description = content;
-            }
-          }
-        }
-
-        // Try alternative selector for specs (OLX sometimes changes structure)
-        if (Object.keys(result).length === 0) {
-          const specsList = document.querySelectorAll('[class*="spec"]');
-          specsList.forEach((spec) => {
-            const text = spec.textContent?.toLowerCase() || '';
-
-            if ((text.includes('manual') || text.includes('automatic') || text.includes('matic')) && !result.transmission) {
-              if (text.includes('automatic') || text.includes('matic')) {
-                result.transmission = 'Automatic';
-              } else if (text.includes('manual')) {
-                result.transmission = 'Manual';
-              }
-            }
-          });
-        }
-
         return result;
       });
 
       return specs;
     } catch (error) {
-      console.log('⚠️  Could not extract detail specs:', error);
+      console.log('⚠️  Legacy extraction failed:', error);
       return {};
     }
   }
@@ -558,7 +584,7 @@ class PuppeteerOLXScraper {
               const text = span.textContent?.trim() || '';
               // Location patterns: contains city names or "Kab.", "Kota"
               if (text && (text.includes('Kab.') || text.includes('Kota') || text.includes(',') ||
-                  /Jakarta|Surabaya|Bandung|Medan|Semarang|Bekasi|Tangerang|Depok|Bogor|Yogyakarta/i.test(text))) {
+                /Jakarta|Surabaya|Bandung|Medan|Semarang|Bekasi|Tangerang|Depok|Bogor|Yogyakarta/i.test(text))) {
                 location = text;
                 break;
               }

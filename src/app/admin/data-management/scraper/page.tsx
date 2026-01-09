@@ -28,7 +28,7 @@ export default function ScraperDashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedSource, setSelectedSource] = useState<'OLX' | 'CARSOME' | 'ALL'>('ALL');
+  const [selectedSource, setSelectedSource] = useState<'OLX' | 'CARSOME' | 'MOBIL123' | 'ALL'>('ALL');
 
   useEffect(() => {
     loadData();
@@ -55,7 +55,7 @@ export default function ScraperDashboard() {
   };
 
   const runScraper = async () => {
-    const sourceLabel = selectedSource === 'ALL' ? 'OLX + CARSOME' : selectedSource;
+    const sourceLabel = selectedSource === 'ALL' ? 'All Sources' : selectedSource;
     const estimatedTime = selectedSource === 'ALL' ? '4-5' : '2-3';
 
     if (!confirm(`Run ${sourceLabel} scraper? This will take ${estimatedTime} minutes.`)) return;
@@ -107,13 +107,14 @@ export default function ScraperDashboard() {
             <label className="text-sm font-medium text-gray-700">Source:</label>
             <select
               value={selectedSource}
-              onChange={(e) => setSelectedSource(e.target.value as 'OLX' | 'CARSOME' | 'ALL')}
+              onChange={(e) => setSelectedSource(e.target.value as 'OLX' | 'CARSOME' | 'MOBIL123' | 'ALL')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isRunning}
             >
-              <option value="ALL">🌐 All Sources (OLX + CARSOME)</option>
-              <option value="OLX">🟠 OLX Only</option>
-              <option value="CARSOME">🔵 CARSOME Only</option>
+              <option value="ALL">🌐 All Sources</option>
+              <option value="OLX">🟠 OLX (AI Powered)</option>
+              <option value="MOBIL123">🔴 Mobil123 (AI Powered)</option>
+              <option value="CARSOME">🔵 CARSOME</option>
             </select>
           </div>
           <button
@@ -171,12 +172,11 @@ export default function ScraperDashboard() {
                     {new Date(job.startedAt).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      job.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      job.status === 'running' ? 'bg-blue-100 text-blue-800' :
-                      job.status === 'failed' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`px-2 py-1 text-xs rounded-full ${job.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        job.status === 'running' ? 'bg-blue-100 text-blue-800' :
+                          job.status === 'failed' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                      }`}>
                       {job.status}
                     </span>
                   </td>

@@ -741,6 +741,39 @@ export class VehicleDataExtractorService {
       error: 'Tidak dapat mengenali data. Coba ketik dengan format: "hitam matic km 30rb"',
     };
   }
+  /**
+   * Extract data from HTML content (Scraper support)
+   * Cleans HTML tags to save tokens and uses AI to extract vehicle specs
+   */
+  static async extractFromHTML(html: string): Promise<VehicleDataExtractionResult> {
+    console.log('[Vehicle Data Extractor] Extracting from HTML content...');
+
+    // 1. Clean HTML to reduce tokens (remove scripts, styles, comments)
+    // Keep only text content structure
+    const cleanText = html
+      .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
+      .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gim, "")
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/<[^>]+>/g, " ") // Replace tags with space
+      .replace(/\s+/g, " ")     // Collapse whitespace
+      .trim()
+      .substring(0, 15000);     // Limit length to ~3-4k tokens
+
+    console.log('[Vehicle Data Extractor] Cleaned text length:', cleanText.length);
+
+    // 2. Use the natural language extractor with the cleaned text
+    // The AI is smart enough to find "Harga: ...", "Tahun: ...", etc in the jumbled text
+    try {
+      return await this.extractFromNaturalLanguage(cleanText);
+    } catch (error) {
+      console.error('[Vehicle Data Extractor] HTML extraction failed:', error);
+      return {
+        success: false,
+        confidence: 0,
+        error: 'HTML extraction failed'
+      };
+    }
+  }
 }
 
 export default VehicleDataExtractorService;

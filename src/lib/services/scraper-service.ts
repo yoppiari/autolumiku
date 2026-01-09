@@ -21,8 +21,13 @@ async function loadCarsomeScraper() {
   return new PuppeteerCarsomeScraper();
 }
 
+async function loadMobil123Scraper() {
+  const { PuppeteerMobil123Scraper } = await import('../../../scripts/scrapers/puppeteer-mobil123-scraper');
+  return new PuppeteerMobil123Scraper();
+}
+
 export interface ScraperJobOptions {
-  source: 'OLX' | 'CARSOME' | 'ALL';
+  source: 'OLX' | 'CARSOME' | 'MOBIL123' | 'ALL';
   targetCount?: number;
   executedBy: string;
 }
@@ -77,13 +82,15 @@ export class ScraperService {
 
         const olxScraper = await loadOLXScraper();
         const carsomeScraper = await loadCarsomeScraper();
+        const mobil123Scraper = await loadMobil123Scraper();
 
-        const [olxVehicles, carsomeVehicles] = await Promise.all([
-          olxScraper.scrape(Math.floor((options.targetCount || 50) / 2), true),
-          carsomeScraper.scrape(Math.floor((options.targetCount || 50) / 2)),
+        const [olxVehicles, carsomeVehicles, mobil123Vehicles] = await Promise.all([
+          olxScraper.scrape(Math.floor((options.targetCount || 50) / 3), true),
+          carsomeScraper.scrape(Math.floor((options.targetCount || 50) / 3)),
+          mobil123Scraper.scrape(Math.floor((options.targetCount || 50) / 3)),
         ]);
 
-        vehicles = [...olxVehicles, ...carsomeVehicles];
+        vehicles = [...olxVehicles, ...carsomeVehicles, ...mobil123Vehicles];
 
       } else if (options.source === 'OLX') {
         // Run OLX scraper with detail page visits
@@ -93,6 +100,11 @@ export class ScraperService {
       } else if (options.source === 'CARSOME') {
         // Run CARSOME scraper
         const scraper = await loadCarsomeScraper();
+        vehicles = await scraper.scrape(options.targetCount || 50);
+
+      } else if (options.source === 'MOBIL123') {
+        // Run Mobil123 scraper (AI Powered)
+        const scraper = await loadMobil123Scraper();
         vehicles = await scraper.scrape(options.targetCount || 50);
 
       } else {
@@ -394,7 +406,7 @@ export class ScraperService {
 
           // Update if price changed significantly (>5%)
           if (!currentPrice ||
-              Math.abs(Number(result.price) - currentPrice.min) > currentPrice.min * 0.05) {
+            Math.abs(Number(result.price) - currentPrice.min) > currentPrice.min * 0.05) {
             prices[yearKey] = {
               min: Number(result.price),
               max: Number(result.price),
