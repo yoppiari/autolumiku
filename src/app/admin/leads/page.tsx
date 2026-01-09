@@ -197,17 +197,12 @@ export default function LeadsDashboard() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Manajemen Leads</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">Kelola leads dari WhatsApp dan website</p>
-        </div>
-
-        <div className="flex space-x-4 w-full sm:w-auto">
+      {/* Actions Bar (Title handled by Admin Layout) */}
+      <div className="flex flex-col sm:flex-row items-end sm:items-center justify-end gap-4">
+        <div className="flex space-x-2 w-full sm:w-auto">
           <Link
             href="/admin/leads/whatsapp-settings"
-            className="flex-1 sm:flex-none text-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+            className="w-full sm:w-auto text-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium shadow-sm"
           >
             ⚙️ WhatsApp Settings
           </Link>

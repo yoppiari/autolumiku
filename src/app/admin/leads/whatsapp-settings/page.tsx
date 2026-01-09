@@ -195,23 +195,18 @@ export default function WhatsAppSettingsPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">WhatsApp Settings</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">Kelola nomor WhatsApp dan pengaturan otomatis</p>
-        </div>
-
-        <div className="flex space-x-3 w-full sm:w-auto overflow-x-auto">
+      {/* Actions Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Link
             href="/admin/leads"
-            className="flex-1 sm:flex-none text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm whitespace-nowrap"
+            className="w-full sm:w-auto text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
           >
             ← Kembali ke Leads
           </Link>
           <button
             onClick={handleAddNew}
-            className="flex-1 sm:flex-none text-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm whitespace-nowrap"
+            className="w-full sm:w-auto text-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium shadow-sm"
           >
             + Tambah WhatsApp
           </button>
