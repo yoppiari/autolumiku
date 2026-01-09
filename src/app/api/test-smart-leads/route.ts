@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { LeadService } from '@/lib/services/lead-service';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     console.log('--- STARTING SMART LEADS API TEST ---');
 
