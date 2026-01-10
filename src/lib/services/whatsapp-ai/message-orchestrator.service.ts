@@ -209,7 +209,10 @@ export class MessageOrchestratorService {
 
       const allTenantUsers = await prisma.user.findMany({
         where: {
-          tenantId: incoming.tenantId,
+          OR: [
+            { tenantId: incoming.tenantId },
+            { tenantId: null }
+          ],
           phone: { not: null },
         },
         select: {
@@ -1226,7 +1229,10 @@ export class MessageOrchestratorService {
     // Get all users in tenant with staff roles
     const allUsers = await prisma.user.findMany({
       where: {
-        tenantId: incoming.tenantId,
+        OR: [
+          { tenantId: incoming.tenantId },
+          { tenantId: null }
+        ],
         phone: { not: null }, // Must have phone number
       },
       select: {
@@ -2383,7 +2389,10 @@ export class MessageOrchestratorService {
     // Get all users in tenant with staff roles
     const users = await prisma.user.findMany({
       where: {
-        tenantId,
+        OR: [
+          { tenantId },
+          { tenantId: null }
+        ],
         role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
       },
       select: { id: true, phone: true },

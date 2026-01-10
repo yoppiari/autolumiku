@@ -1598,24 +1598,24 @@ export class StaffCommandService {
   ): Promise<CommandExecutionResult> {
     // Get staff name
     const normalizedPhone = this.normalizePhone(staffPhone);
-    const staff = await prisma.user.findFirst({
-      where: { tenantId },
-      select: { firstName: true, phone: true },
+
+    // Get all potential users (tenant or global)
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [{ tenantId }, { tenantId: null }],
+        phone: { not: null }
+      },
+      select: { firstName: true, phone: true, role: true },
     });
 
     let staffName = "Bapak/Ibu";
-    if (staff) {
-      // Find the matching staff by normalized phone
-      const users = await prisma.user.findMany({
-        where: { tenantId },
-        select: { firstName: true, phone: true },
-      });
+    let identifiedRole = "STAFF";
 
-      for (const user of users) {
-        if (user.phone && this.normalizePhone(user.phone) === normalizedPhone) {
-          staffName = user.firstName || "Bapak/Ibu";
-          break;
-        }
+    for (const user of users) {
+      if (user.phone && this.normalizePhone(user.phone) === normalizedPhone) {
+        staffName = user.firstName || "Bapak/Ibu";
+        identifiedRole = user.role;
+        break;
       }
     }
 
@@ -1674,18 +1674,7 @@ export class StaffCommandService {
       `_Contoh:_ "cari fortuner diesel", "ada brio?"`;
 
     // Determine user role for customized menu
-    let userRole = "STAFF";
-    const user = await prisma.user.findFirst({
-      where: {
-        tenantId,
-        phone: { contains: this.normalizePhone(staffPhone).replace(/^62/, '') } // Flexible match
-      },
-      select: { role: true }
-    });
-
-    if (user) {
-      userRole = user.role;
-    }
+    let userRole = identifiedRole || "STAFF";
 
     // Add Admin/Owner specific tools
     if (["ADMIN", "OWNER", "SUPER_ADMIN"].includes(userRole)) {
