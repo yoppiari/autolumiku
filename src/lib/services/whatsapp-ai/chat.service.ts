@@ -1254,7 +1254,7 @@ export class WhatsAppAIChatService {
 
         // Regular fallback for low intent users
         return {
-          message: `Maaf kak, saat ini sistem kami sedang melakukan sinkronisasi foto unit. 👋\n\nUnit yang tersedia saat ini:\n${vehicleList}\n\nIngin saya kirimkan fotonya segera setelah siap? 😊`,
+          message: `Mohon maaf kak, saya belum menemukan foto untuk unit tersebut saat ini. 🙏\n\nUnit yang tersedia:\n${vehicleList}\n\nIngin info detail untuk unit yang ready? 😊`,
           shouldEscalate: false,
         };
       }

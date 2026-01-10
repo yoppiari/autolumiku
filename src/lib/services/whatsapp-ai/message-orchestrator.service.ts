@@ -154,6 +154,18 @@ export class MessageOrchestratorService {
           incoming.customerName
         );
 
+        // PERSIST STOP SIGNAL TO DB (Robustness for multi-process/serverless)
+        await prisma.whatsAppConversation.update({
+          where: { id: conversation.id },
+          data: {
+            contextData: {
+              ...((conversation.contextData as Record<string, any>) || {}),
+              stopSignal: true,
+              stopSignalAt: Date.now()
+            }
+          }
+        });
+
         await this.sendResponse(
           incoming.accountId,
           incoming.from,
@@ -2197,7 +2209,39 @@ export class MessageOrchestratorService {
           let batchSuccessCount = 0;
           for (let i = 0; i < images.length; i++) {
             const stopKey = `${accountId}:${to}`;
-            if (stopSignals.get(stopKey)) {
+            const stopKey = `${accountId}:${to}`;
+
+            // Check memory signal (fastest)
+            let shouldStop = stopSignals.get(stopKey);
+
+            // Check DB signal (robustness) every 2 images or if memory is false
+            if (!shouldStop) {
+              try {
+                const convo = await prisma.whatsAppConversation.findUnique({
+                  where: { id: conversationId },
+                  select: { contextData: true }
+                });
+                const ctx = convo?.contextData as Record<string, any>;
+                if (ctx?.stopSignal) {
+                  shouldStop = true;
+                  // Sync to memory
+                  stopSignals.set(stopKey, true);
+
+                  // Clear signal from DB so we don't stop future valid requests
+                  await prisma.whatsAppConversation.update({
+                    where: { id: conversationId },
+                    data: {
+                      contextData: {
+                        ...ctx,
+                        stopSignal: false
+                      }
+                    }
+                  });
+                }
+              } catch (e) { /* ignore DB error, rely on memory */ }
+            }
+
+            if (shouldStop) {
               console.log(`[Orchestrator sendResponse] 🛑 STOP SIGNAL DETECTED! Aborting image stream at ${i}/${images.length}`);
               stopSignals.delete(stopKey);
 
