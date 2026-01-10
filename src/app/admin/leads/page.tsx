@@ -196,13 +196,7 @@ export default function LeadsDashboard() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 mt-10">
-      {/* DEBUG BANNER - TEMPORARY */}
-      <div className="bg-red-600 text-white p-3 rounded-lg text-center font-bold shadow-lg animate-pulse mb-6">
-        🔴 VERSI PERBAIKAN TAMPILAN TERDETEKSI (V3.0) 🔴
-        <br />
-        <span className="text-sm font-normal">Jika melihat ini, Layout sudah diperbaiki. Admin Layout Title diabaikan.</span>
-      </div>
+    <div className="p-4 sm:p-6 space-y-6">
 
       {/* Actions Bar (Title handled by Admin Layout) */}
       <div className="flex flex-col sm:flex-row items-end sm:items-center justify-end gap-4">
