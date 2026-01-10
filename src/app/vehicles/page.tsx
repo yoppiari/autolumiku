@@ -68,7 +68,7 @@ export default async function VehiclesPage() {
           largeUrl: true,
           originalUrl: true,
         },
-        take: 20,
+        // take: 20, // Removed limit to fetch ALL photos as requested
       },
     },
     orderBy: { createdAt: 'desc' },
