@@ -175,19 +175,95 @@ export class PuppeteerSevaScraper {
 
             console.log(`✅ Found ${vehicles.length} vehicles from SEVA\n`);
 
-            // Process and format results
-            for (const raw of vehicles) {
+            console.log(`✅ Found ${vehicles.length} vehicles from SEVA listing. Now fetching details...\n`);
+
+            // Process and fetch details for results
+            for (let i = 0; i < vehicles.length; i++) {
+                const raw = vehicles[i];
+                console.log(`🔍 [${i + 1}/${vehicles.length}] Fetching details for ${raw.model}...`);
+
+                let detailData: any = {};
+                try {
+                    // Construct Detail URL: insert '/eksterior/spesifikasi' before location segment
+                    // URL: https://www.seva.id/mobil-baru/brand/model/jakarta-pusat
+                    // Target: https://www.seva.id/mobil-baru/brand/model/eksterior/spesifikasi/jakarta-pusat
+                    const urlParts = raw.url.split('/');
+                    const location = urlParts.pop() || ''; // jakarta-pusat
+                    // Re-assemble
+                    const detailUrl = [...urlParts, 'eksterior', 'spesifikasi', location].join('/');
+
+                    await page.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+                    // Extract Specs
+                    detailData = await page.evaluate(() => {
+                        const specs: any = {};
+
+                        // Inline logic to find value by label text
+                        const allElements = Array.from(document.querySelectorAll('div, span, p, label'));
+
+                        // 1. Fuel Type
+                        const fuelLabel = allElements.find(el => {
+                            const txt = el.textContent?.trim() || '';
+                            return txt === 'Jenis Bahan Bakar' || txt === 'Bahan Bakar';
+                        });
+                        if (fuelLabel) {
+                            const sibling = fuelLabel.nextElementSibling;
+                            if (sibling && sibling.textContent) specs.fuelType = sibling.textContent.trim();
+                            else {
+                                const parentSibling = fuelLabel.parentElement?.nextElementSibling;
+                                if (parentSibling && parentSibling.textContent) specs.fuelType = parentSibling.textContent.trim();
+                            }
+                        }
+
+                        // 2. Engine
+                        const engineLabel = allElements.find(el => {
+                            const txt = el.textContent?.trim() || '';
+                            return txt === 'Isi Silinder' || txt === 'Kapasitas Mesin';
+                        });
+                        if (engineLabel) {
+                            const sibling = engineLabel.nextElementSibling;
+                            if (sibling && sibling.textContent) specs.engine = sibling.textContent.trim();
+                            else {
+                                const parentSibling = engineLabel.parentElement?.nextElementSibling;
+                                if (parentSibling && parentSibling.textContent) specs.engine = parentSibling.textContent.trim();
+                            }
+                        }
+
+                        // 3. Transmission
+                        // Often masked in "Mesin & Transmisi" section or model name
+                        // Look for keywords in whole page if specific label not found
+                        const pageText = document.body.innerText.toLowerCase();
+                        if (pageText.includes('manual') && !pageText.includes('otomatis')) specs.transmission = 'Manual';
+                        else if (pageText.includes('otomatis') || pageText.includes('cvt') || pageText.includes('a/t')) specs.transmission = 'Automatic';
+                        else specs.transmission = 'Manual'; // Default fallback
+
+                        return specs;
+                    });
+
+                } catch (err) {
+                    console.warn(`⚠️ Failed to fetch details for ${raw.model}:`, err);
+                    // Fallback values
+                    detailData = { fuelType: 'Bensin', transmission: 'Manual', engine: '' };
+                }
+
                 this.results.push({
                     source: 'SEVA',
                     make: raw.brand.charAt(0).toUpperCase() + raw.brand.slice(1),
                     model: raw.model,
-                    year: new Date().getFullYear(), // SEVA sells new cars
+                    year: new Date().getFullYear(),
                     price: this.parsePrice(raw.priceDisplay),
                     priceDisplay: raw.priceDisplay,
                     url: raw.url,
                     location: 'Indonesia',
+                    // Detailed fields
+                    fuelType: detailData.fuelType || 'Bensin',
+                    transmission: detailData.transmission || 'Manual',
+                    features: detailData.engine ? `Engine: ${detailData.engine}` : undefined,
                     scrapedAt: new Date().toISOString(),
                 });
+
+                // Small delay to be polite
+                await new Promise(r => setTimeout(r, 1000));
             }
 
             console.log(`✅ Parsed ${this.results.length} vehicles successfully\n`);

@@ -125,7 +125,6 @@ export default function ScraperDashboard() {
               <option disabled>──────────</option>
               {/* Added AI Powered Labels */}
               <option value="OLX_AUTOS">🟠 OLX Autos (AI Powered)</option>
-              <option value="MOBIL123">🔴 Mobil123 (AI Powered)</option>
               <option value="CARSOME">🔵 Carsome (AI Powered)</option>
               <option value="SEVA">🟢 Seva.id (AI Powered)</option>
               <option value="CARMUDI">🟤 Carmudi (AI Powered)</option>
