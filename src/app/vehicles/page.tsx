@@ -68,7 +68,7 @@ export default async function VehiclesPage() {
           largeUrl: true,
           originalUrl: true,
         },
-        take: 1,
+        take: 20,
       },
     },
     orderBy: { createdAt: 'desc' },
