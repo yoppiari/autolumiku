@@ -104,8 +104,6 @@ export default function SearchFilters({
 
   return (
     <div
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
       className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all duration-300"
     >
       {/* Header / Toggle */}
