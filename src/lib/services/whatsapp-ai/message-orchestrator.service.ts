@@ -1889,7 +1889,10 @@ export class MessageOrchestratorService {
         const [foundUser, foundLead] = await Promise.all([
           prisma.user.findFirst({
             where: {
-              tenantId: conversation.tenantId,
+              OR: [
+                { tenantId: conversation.tenantId },
+                { tenantId: null }
+              ],
               phone: conversation.customerPhone,
             },
             select: {
