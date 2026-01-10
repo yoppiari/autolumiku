@@ -28,8 +28,8 @@ async function loadMobil123Scraper() {
 }
 
 async function loadUniversalScraper() {
-  const { UniversalScraper } = await import('../../../scripts/scrapers/puppeteer-universal-scraper');
-  return new UniversalScraper();
+  const { UniversalScraperEngine } = await import('../../../scripts/scrapers/universal-scraper-engine');
+  return new UniversalScraperEngine();
 }
 
 export interface ScraperJobOptions {
