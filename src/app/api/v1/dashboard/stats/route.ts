@@ -29,12 +29,25 @@ export async function GET(request: NextRequest) {
     const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-    // Parallel queries for better performance
+    // Helper to check for invalid/LID numbers (same as in conversations API)
+    const isLIDNumber = (num: string): boolean => {
+      if (!num) return false;
+      const digits = num.replace(/\D/g, "");
+      // LID patterns: very long numbers, or numbers starting with 100/101/102
+      if (digits.length >= 16) return true;
+      if (digits.length >= 14 && (digits.startsWith("100") || digits.startsWith("101") || digits.startsWith("102"))) return true;
+      // Numbers that are too long for valid country codes
+      if (digits.startsWith("62") && digits.length > 14) return true;
+      if (digits.startsWith("1") && digits.length > 11 && !digits.startsWith("1800")) return true;
+      return false;
+    };
+
+    // Parallel queries with filtering for consistency with UI
     const [
       totalVehicles,
       vehiclesThisMonth,
-      activeLeads,
-      leadsToday,
+      activeConversationsCount,
+      conversationsTodayCount,
       teamMembers,
       salesThisMonth,
       salesLastMonth,
@@ -59,24 +72,26 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Active conversations (Replaces Active Leads for "Analytics" card)
-      prisma.whatsAppConversation.count({
+      // Active conversations - FETCH & FILTER (Consistency Fix)
+      prisma.whatsAppConversation.findMany({
         where: {
           tenantId,
           status: 'active',
         },
-      }),
+        select: { customerPhone: true }
+      }).then(list => list.filter(c => !isLIDNumber(c.customerPhone)).length),
 
-      // Chats/Conversations started today (Replaces Leads created today)
-      prisma.whatsAppConversation.count({
+      // Chats/Conversations started today - FETCH & FILTER (Consistency Fix)
+      prisma.whatsAppConversation.findMany({
         where: {
           tenantId,
           startedAt: {
             gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
           },
-          status: { not: 'deleted' }, // EXPLICITLY EXCLUDE DELETED CHATS
+          status: { not: 'deleted' },
         },
-      }),
+        select: { customerPhone: true }
+      }).then(list => list.filter(c => !isLIDNumber(c.customerPhone)).length),
 
       // Team members (all users)
       prisma.user.count({
@@ -123,8 +138,8 @@ export async function GET(request: NextRequest) {
           thisMonth: vehiclesThisMonth,
         },
         leads: {
-          active: activeLeads,
-          today: leadsToday,
+          active: activeConversationsCount,
+          today: conversationsTodayCount,
         },
         team: {
           total: teamMembers,
