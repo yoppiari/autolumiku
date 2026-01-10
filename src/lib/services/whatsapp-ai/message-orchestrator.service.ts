@@ -207,14 +207,10 @@ export class MessageOrchestratorService {
 
       console.log(`[Orchestrator] 🔍 Trying phone formats: 0-prefix="${phoneWith0}", 62-prefix="${phoneWith62}", exact="${incoming.from}"`);
 
-      const user = await prisma.user.findFirst({
+      const allTenantUsers = await prisma.user.findMany({
         where: {
           tenantId: incoming.tenantId,
-          OR: [
-            { phone: phoneWith0 },
-            { phone: phoneWith62 },
-            { phone: incoming.from }, // Try exact match as well
-          ],
+          phone: { not: null },
         },
         select: {
           id: true,
@@ -226,6 +222,11 @@ export class MessageOrchestratorService {
           email: true,
         },
       });
+
+      // Robust match using normalization (handles spaces, dashes, +62 vs 0 formats)
+      const user = allTenantUsers.find(u =>
+        normalizePhoneNumber(u.phone || '') === normalizePhoneNumber(incoming.from)
+      );
 
       // Log user identification
       if (user) {
@@ -1239,9 +1240,10 @@ export class MessageOrchestratorService {
     });
 
     // Find matching user by trying all phone formats
+    // ENHANCED: Normalize using shared helper to handle all formats (08.., 628.., +62 8..)
     const user = allUsers.find(u => {
       if (!u.phone) return false;
-      return u.phone === phoneWith0 || u.phone === phoneWith62 || u.phone === phoneForLookup;
+      return normalizePhoneNumber(u.phone) === normalizePhoneNumber(phoneForLookup);
     });
 
     if (!user) {

@@ -50,7 +50,7 @@ export function getIdentityPrompt(config: any, tenant: any): string {
    const aiName = config?.aiName || "Asisten Virtual";
 
    return `
-Kamu adalah ${aiName}, asisten virtual dari ${name} (showroom mobil bekas di ${city}).
+Kamu adalah ${aiName}, asisten virtual dari ${name} (showroom mobil second di ${city}).
 
 IDENTITAS & KEPRIBADIAN:
 - Nama AI: ${aiName}
@@ -136,7 +136,7 @@ export function getGreetingRules(
    Format lengkap:
    "${timeGreeting}! 👋
    
-   Saya adalah ${config.aiName}, Asisten Virtual dari ${tenantName}, showroom mobil bekas di ${tenant?.city || "Indonesia"}.
+   Saya adalah ${config.aiName}, Asisten Virtual dari ${tenantName}, showroom mobil second di ${tenant?.city || "Indonesia"}.
    Saya ditenagai oleh teknologi **Autolumiku (AI 5.0)** yang dirancang untuk membantu Anda mendapatkan informasi unit secara real-time dan transparan. 😊
    
    Ada yang bisa saya bantu untuk mencari mobil sesuai kebutuhan Anda?"

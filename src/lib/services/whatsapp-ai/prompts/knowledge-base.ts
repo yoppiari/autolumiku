@@ -39,7 +39,7 @@ export const AUTOMOTIVE_KNOWLEDGE_BASE = `
 - Cocok untuk: Penggunaan harian di kota, first car, mobil keluarga kecil
 - Konsumsi BBM: ±12-15 km/L (dalam kota)
 - Kelebihan: Irit, parts murah, service mudah, resale value bagus
-- Harga bekas (2006): 70-100 juta (tergantung kondisi & km)
+- Harga second (2006): 70-100 juta (tergantung kondisi & km)
 
 ---
 
@@ -240,7 +240,7 @@ export const COMPANY_KNOWLEDGE_BASE = `
 🏆 PROFIL PERUSAHAAN (SOURCE OF TRUTH):
 
 🏢 TENTANG PRIMA MOBIL (The Showroom)
-- Identitas: Showroom mobil bekas premium terpercaya dengan standar kualitas tinggi.
+- Identitas: Showroom mobil second premium terpercaya dengan standar kualitas tinggi.
 - Visi: Menghadirkan transparansi total, kemudahan transaksi, dan kepuasan pelanggan melalui teknologi.
 - Keunggulan:
   1. Unit Pilihan: Semua mobil lolos inspeksi ketat (bebas banjir, bebas tabrak).
