@@ -58,6 +58,12 @@ export async function DELETE(request: NextRequest) {
       .filter(c => normalizePhone(c.customerPhone) === targetPhone)
       .map(c => c.id);
 
+    // FIX: Ensure the requested conversation ID is ALWAYS deleted, 
+    // even if normalization grouping logic fails for some reason.
+    if (!idsToDelete.includes(conversationId)) {
+      idsToDelete.push(conversationId);
+    }
+
     console.log(`[Delete Conversation] Group delete: Deleting ${idsToDelete.length} conversations for phone ${targetPhone}`);
 
     if (idsToDelete.length > 0) {
