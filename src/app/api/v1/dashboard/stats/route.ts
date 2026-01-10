@@ -59,21 +59,22 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Active leads (NEW, CONTACTED, QUALIFIED)
-      prisma.lead.count({
+      // Active conversations (Replaces Active Leads for "Analytics" card)
+      prisma.whatsAppConversation.count({
         where: {
           tenantId,
-          status: { in: ['NEW', 'CONTACTED', 'QUALIFIED'] },
+          status: 'active',
         },
       }),
 
-      // Leads created today
-      prisma.lead.count({
+      // Chats/Conversations started today (Replaces Leads created today)
+      prisma.whatsAppConversation.count({
         where: {
           tenantId,
-          createdAt: {
+          startedAt: {
             gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
           },
+          status: { not: 'deleted' }, // EXPLICITLY EXCLUDE DELETED CHATS
         },
       }),
 
