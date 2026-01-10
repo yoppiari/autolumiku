@@ -23,6 +23,24 @@ interface Result {
   url: string;
 }
 
+// Helper function to extract source name from URL
+const getSourceFromUrl = (url: string): string => {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname.includes('olx')) return 'OLX';
+    if (hostname.includes('carro')) return 'Carro';
+    if (hostname.includes('mobil88')) return 'Mobil88';
+    if (hostname.includes('auto2000')) return 'Auto2000';
+    if (hostname.includes('carmudi')) return 'Carmudi';
+    if (hostname.includes('seva')) return 'SEVA';
+    if (hostname.includes('oto')) return 'OTO';
+    if (hostname.includes('carsome')) return 'Carsome';
+    return 'Source'; // Fallback
+  } catch {
+    return 'Source';
+  }
+};
+
 export default function ResultsPage({ params }: { params: Promise<{ jobId: string }> | { jobId: string } }) {
   const router = useRouter();
   const resolvedParams = params instanceof Promise ? use(params) : params;
@@ -392,7 +410,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800"
                       >
-                        🔗 OLX
+                        🔗 {getSourceFromUrl(result.url)}
                       </a>
                     </div>
                   </td>
@@ -569,7 +587,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                   rel="noopener noreferrer"
                   className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-center"
                 >
-                  View on OLX →
+                  View on {getSourceFromUrl(selectedResult.url)} →
                 </a>
               </div>
             </div>
