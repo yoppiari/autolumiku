@@ -58,6 +58,19 @@ export class UniversalScraperEngine {
                 // No op
             }
 
+            // Validate Data Quality
+            const validation = this.validateResults(results);
+            console.log(`📊 [ENGINE] Data Quality Check:
+        - Total Extracted: ${results.length}
+        - Valid Prices: ${validation.validPriceCount} (${validation.priceSuccessRate}%)
+        - Valid Names: ${validation.validNameCount} (${validation.nameSuccessRate}%)
+      `);
+
+            if (validation.priceSuccessRate < 50 || validation.nameSuccessRate < 50) {
+                console.warn(`⚠️ [ENGINE] WARNING: Data quality is low! Source UI might have changed.`);
+                // potentially throw error or alert admin
+            }
+
             // Process results via callback
             if (results.length === 0) {
                 console.warn(`⚠️ [ENGINE] Scraper returned 0 results`);
@@ -86,5 +99,27 @@ export class UniversalScraperEngine {
             console.error(`❌ [ENGINE] Scraper error for ${sourceUpper}:`, error);
             throw error;
         }
+    }
+
+    private validateResults(results: any[]): { validPriceCount: number, priceSuccessRate: number, validNameCount: number, nameSuccessRate: number } {
+        if (!results.length) return { validPriceCount: 0, priceSuccessRate: 0, validNameCount: 0, nameSuccessRate: 0 };
+
+        let validPrice = 0;
+        let validName = 0;
+
+        for (const item of results) {
+            // Check Price > 0
+            if (item.price && typeof item.price === 'number' && item.price > 1000000) validPrice++; // > 1 juta
+
+            // Check Name (Make/Model) present
+            if (item.make && item.model && item.make.length > 1 && item.model.length > 1) validName++;
+        }
+
+        return {
+            validPriceCount: validPrice,
+            priceSuccessRate: Math.round((validPrice / results.length) * 100),
+            validNameCount: validName,
+            nameSuccessRate: Math.round((validName / results.length) * 100)
+        };
     }
 }
