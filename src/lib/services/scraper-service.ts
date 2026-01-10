@@ -22,10 +22,8 @@ async function loadCarsomeScraper() {
   return new PuppeteerCarsomeScraper();
 }
 
-async function loadMobil123Scraper() {
-  const { PuppeteerMobil123Scraper } = await import('../../../scripts/scrapers/puppeteer-mobil123-scraper');
-  return new PuppeteerMobil123Scraper();
-}
+// function loadMobil123Scraper removed
+
 
 async function loadUniversalScraper() {
   const { UniversalScraperEngine } = await import('../../../scripts/scrapers/universal-scraper-engine');

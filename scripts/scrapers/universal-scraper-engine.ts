@@ -1,15 +1,15 @@
-import { PuppeteerOLXScraper } from './puppeteer-olx-scraper';
-import { PuppeteerCarsomeScraper } from './puppeteer-carsome-scraper';
-import { PuppeteerMobil123Scraper } from './puppeteer-mobil123-scraper';
-
 /**
  * Universal Scraper Engine
- * Wrapper for existing proven scrapers
+ * 
+ * Orchestrates scraping from multiple sources (OLX, Carsome, SEVA)
+ * Usage: imported by scraper-service.ts
  */
+
+import { PuppeteerOLXScraper } from './puppeteer-olx-scraper';
+import { PuppeteerCarsomeScraper } from './puppeteer-carsome-scraper';
+import { PuppeteerSevaScraper } from './puppeteer-seva-scraper';
+
 export class UniversalScraperEngine {
-    /**
-     * Scrape a source
-     */
     async scrape(
         source: string,
         targetCount: number = 50,
@@ -44,25 +44,18 @@ export class UniversalScraperEngine {
                 results = await scraper.scrape(targetCount);
                 console.log(`✅ [ENGINE] Carsome scraper returned ${results.length} results`);
             }
-            // Mobil123
-            else if (sourceUpper.includes('MOBIL123')) {
-                console.log(`🚗 [ENGINE] Initializing Mobil123 scraper...`);
-                const scraper = new PuppeteerMobil123Scraper();
-                console.log(`📡 [ENGINE] Calling Mobil123 scraper.scrape()...`);
+            // SEVA
+            else if (sourceUpper.includes('SEVA')) {
+                console.log(`🚗 [ENGINE] Initializing SEVA scraper...`);
+                const scraper = new PuppeteerSevaScraper();
+                console.log(`📡 [ENGINE] Calling SEVA scraper.scrape()...`);
                 results = await scraper.scrape(targetCount);
-                console.log(`✅ [ENGINE] Mobil123 scraper returned ${results.length} results`);
+                console.log(`✅ [ENGINE] SEVA scraper returned ${results.length} results`);
             }
-            // ALL - run OLX only for now (most reliable)
-            else if (sourceUpper === 'ALL') {
-                console.log(`🚗 [ENGINE] ALL mode - running OLX (most reliable source)...`);
-                const scraper = new PuppeteerOLXScraper();
-                results = await scraper.scrape(targetCount, false);
-                console.log(`✅ [ENGINE] OLX scraper returned ${results.length} results`);
-            }
-            // Unsupported
-            else {
-                console.warn(`⚠️ [ENGINE] Source ${sourceUpper} not yet implemented`);
-                return;
+            // Mobil123 (Deleted/Disabled)
+            else if (sourceUpper.includes('MOBIL123')) {
+                console.warn(`⚠️ [ENGINE] Mobil123 scraper is currently disabled.`);
+                // No op
             }
 
             // Process results via callback
@@ -79,7 +72,7 @@ export class UniversalScraperEngine {
                 const vehicle = results[i];
                 try {
                     console.log(`  → [${i + 1}/${results.length}] ${vehicle.make} ${vehicle.model} ${vehicle.year} - ${vehicle.priceDisplay}`);
-                    await onProgress(vehicle);
+                    await onProgress(vehicle); // Callback to save data
                     successCount++;
                 } catch (err) {
                     errorCount++;
