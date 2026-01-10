@@ -20,7 +20,7 @@ export class UniversalScraperEngine {
 
         try {
             // For now, use OLX scraper as it's proven to work
-            if (sourceUpper === 'OLX' || sourceUpper === 'ALL') {
+            if (sourceUpper.includes('OLX') || sourceUpper === 'ALL') {
                 console.log(`🚗 [ENGINE] Initializing OLX scraper...`);
                 const scraper = new PuppeteerOLXScraper();
 
