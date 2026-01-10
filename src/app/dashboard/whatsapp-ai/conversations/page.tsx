@@ -613,6 +613,7 @@ END:VCARD`;
 
   // Delete conversation handler
   const handleDeleteConversation = async (conversationId: string, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default behavior
     e.stopPropagation(); // Prevent selecting the conversation
 
     if (isDeletingConversation) return;
@@ -637,6 +638,8 @@ END:VCARD`;
           setMessages([]);
           setShowChatOnMobile(false);
         }
+        // Show success message
+        alert('Percakapan berhasil dihapus');
       } else {
         alert('Gagal menghapus percakapan: ' + (data.error || 'Unknown error'));
       }
@@ -1309,7 +1312,7 @@ END:VCARD`;
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-3 md:ml-2">
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-3 md:ml-2" onClick={(e) => e.stopPropagation()}>
                       {/* Delete conversation button */}
                       <button
                         onClick={(e) => handleDeleteConversation(conv.id, e)}
