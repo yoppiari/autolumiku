@@ -256,7 +256,7 @@ export default function LeadsDashboard() {
   }
 
   return (
-    <div className="p-3 space-y-2 h-[calc(100vh-80px)] flex flex-col">
+    <div className="p-3 space-y-4 h-auto md:h-[calc(100vh-80px)] flex flex-col overflow-y-auto md:overflow-hidden">
       {/* Header */}
       {/* Header - Responsive */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 flex-shrink-0">
@@ -300,29 +300,28 @@ export default function LeadsDashboard() {
         </div>
       </div>
 
-      {/* Stats Cards */}
       {/* Stats Cards - Responsive Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 flex-shrink-0">
-        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-xs font-semibold text-gray-600">Total Leads</h3>
-          <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.total}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-shrink-0">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-24">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Leads</h3>
+          <div className="text-3xl font-bold text-blue-600 mt-1">{stats.total}</div>
         </div>
 
-        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-xs font-semibold text-gray-600">Baru</h3>
-          <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.new}</div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-24">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Baru</h3>
+          <div className="text-3xl font-bold text-blue-500 mt-1">{stats.new}</div>
         </div>
 
-        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-xs font-semibold text-gray-600">Tertarik</h3>
-          <div className="text-xl md:text-2xl font-bold text-purple-600">{stats.interested}</div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-24">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Tertarik</h3>
+          <div className="text-3xl font-bold text-purple-600 mt-1">{stats.interested}</div>
         </div>
 
-        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-xs font-semibold text-gray-600">Konversi</h3>
-          <div className="flex items-end gap-1">
-            <div className="text-xl md:text-2xl font-bold text-green-600">{stats.converted}</div>
-            <div className="text-[10px] text-gray-500 mb-1">{stats.conversionRate}%</div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-24">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Konversi</h3>
+          <div className="flex items-baseline gap-2 mt-1">
+            <div className="text-3xl font-bold text-green-600">{stats.converted}</div>
+            <div className="text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">{stats.conversionRate}%</div>
           </div>
         </div>
       </div>
