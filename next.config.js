@@ -15,7 +15,12 @@ const nextConfig = {
 
   // External packages for server components (Next.js 14)
   experimental: {
-    serverComponentsExternalPackages: ['pg'],
+    serverComponentsExternalPackages: [
+      'pg',
+      'puppeteer-extra',
+      'puppeteer-extra-plugin-stealth',
+      'puppeteer'
+    ],
   },
 
   // Fixed BUILD_ID to prevent chunk hash inconsistencies
