@@ -331,8 +331,15 @@ class PuppeteerCarsomeScraper {
               }
             }
 
-            // Find price - look for "Rp" followed by numbers with dots
-            const priceMatch = cardText.match(/Rp\s*([\d.]+)/);
+            // Find price - look for "Harga Kredit:" or "Harga Cash:" followed by price
+            // Format examples:
+            // "Harga Kredit: Rp 222.000.000"
+            // "Harga Cash: Rp 235.000.000"
+            const priceKreditMatch = cardText.match(/Harga\s+Kredit:\s*Rp\s*([\d.]+)/i);
+            const priceCashMatch = cardText.match(/Harga\s+Cash:\s*Rp\s*([\d.]+)/i);
+
+            // Prefer credit price, fallback to cash price
+            const priceMatch = priceKreditMatch || priceCashMatch;
             if (!priceMatch) continue; // Skip if no price
 
             const priceDisplay = priceMatch[0].replace(/\s+/g, ' ').trim();
