@@ -258,13 +258,14 @@ export default function LeadsDashboard() {
   return (
     <div className="p-3 space-y-2 h-[calc(100vh-80px)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between flex-shrink-0">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 flex-shrink-0">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Manajemen Leads</h1>
           <p className="text-xs text-gray-600">Kelola leads dari WhatsApp dan website</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Live Updates Indicator - Conditional */}
           {whatsappSettings.length > 0 && whatsappSettings[0].isActive ? (
             <div title="WhatsApp Bot Aktif - Data Realtime" className="flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-full border border-green-200">
@@ -272,19 +273,19 @@ export default function LeadsDashboard() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
-              <span className="text-[10px] font-medium">Live Updates</span>
+              <span className="text-[10px] font-medium">Live</span>
             </div>
           ) : (
             <div title="WhatsApp Bot Tidak Aktif - Klik WhatsApp Settings untuk mengaktifkan" className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-700 rounded-full border border-red-200">
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
-              <span className="text-[10px] font-medium">Not Live</span>
+              <span className="text-[10px] font-medium">Off</span>
             </div>
           )}
           <button
-            onClick={() => window.location.reload()} // Simple reload for now, or could extract loadLeadsData
-            className="p-1.5 text-gray-500 hover:text-blue-600 transition-colors"
+            onClick={() => window.location.reload()}
+            className="p-1.5 text-gray-500 hover:text-blue-600 transition-colors bg-white border border-gray-200 rounded-lg shadow-sm"
             title="Refresh Data"
           >
             🔄
@@ -292,39 +293,42 @@ export default function LeadsDashboard() {
 
           <Link
             href="/dashboard/leads/whatsapp-settings"
-            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap"
           >
-            ⚙️ WhatsApp Settings
+            ⚙️ Settings
           </Link>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-2 flex-shrink-0">
+      {/* Stats Cards - Responsive Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 flex-shrink-0">
         <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-xs font-semibold text-gray-600">Total Leads</h3>
-          <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+          <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.total}</div>
         </div>
 
         <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-xs font-semibold text-gray-600">Lead Baru</h3>
-          <div className="text-2xl font-bold text-blue-600">{stats.new}</div>
+          <h3 className="text-xs font-semibold text-gray-600">Baru</h3>
+          <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.new}</div>
         </div>
 
         <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-xs font-semibold text-gray-600">Tertarik</h3>
-          <div className="text-2xl font-bold text-purple-600">{stats.interested}</div>
+          <div className="text-xl md:text-2xl font-bold text-purple-600">{stats.interested}</div>
         </div>
 
         <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-xs font-semibold text-gray-600">Konversi</h3>
-          <div className="text-2xl font-bold text-green-600">{stats.converted}</div>
-          <div className="text-[10px] text-gray-500">{stats.conversionRate}% rate</div>
+          <div className="flex items-end gap-1">
+            <div className="text-xl md:text-2xl font-bold text-green-600">{stats.converted}</div>
+            <div className="text-[10px] text-gray-500 mb-1">{stats.conversionRate}%</div>
+          </div>
         </div>
       </div>
 
       {/* Filters & WhatsApp Settings - Combined Row */}
-      <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 flex-shrink-0">
         {/* Filters */}
         <div className="col-span-2 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
           <div className="flex gap-2 items-end">
@@ -393,7 +397,8 @@ export default function LeadsDashboard() {
       {/* Leads Table - Scrollable */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 min-h-0 flex flex-col">
         <div className="overflow-auto flex-1">
-          <table className="min-w-full divide-y divide-gray-200">
+          {/* Desktop Table */}
+          <table className="hidden md:table min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0">
               <tr>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
@@ -474,19 +479,65 @@ export default function LeadsDashboard() {
                       >
                         📱
                       </button>
-                      <button
-                        onClick={() => console.log('View details:', lead.id)}
-                        className="text-blue-600 hover:text-blue-900 text-sm"
-                        title="Lihat Detail"
-                      >
-                        👁️
-                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-2 p-2">
+            {filteredLeads.map((lead) => (
+              <div key={lead.id} className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">{lead.customerName}</h3>
+                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                      {getSourceIcon(lead.source)} {lead.phone}
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${getUrgencyColor(lead.urgency)}`}>
+                    {lead.urgency}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                  <div className="bg-gray-50 p-1.5 rounded">
+                    <span className="block text-[10px] text-gray-500">Minat</span>
+                    <span className="font-medium">{lead.vehicleInterest || '-'}</span>
+                  </div>
+                  <div className="bg-gray-50 p-1.5 rounded">
+                    <span className="block text-[10px] text-gray-500">Budget</span>
+                    <span className="font-medium">{lead.budget || '-'}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center border-t border-gray-100 pt-2">
+                  <select
+                    value={lead.status}
+                    onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                    className={`text-xs font-medium rounded border-0 bg-transparent px-1 py-0.5 ${getStatusBadgeColor(lead.status)}`}
+                  >
+                    <option value="new">BARU</option>
+                    <option value="contacted">DIHUBUNGI</option>
+                    <option value="interested">TERTARIK</option>
+                    <option value="not_interested">TIDAK TERTARIK</option>
+                    <option value="converted">KONVERSI</option>
+                  </select>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => window.open(`https://wa.me/${lead.whatsappNumber.replace(/[^\d]/g, '')}`, '_blank')}
+                      className="p-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium flex items-center gap-1"
+                    >
+                      📱 Chat
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         {filteredLeads.length === 0 && (
           <div className="text-center py-6">
