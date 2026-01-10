@@ -47,17 +47,26 @@ export class UniversalScraperEngine {
             throw new Error(`Failed to scrape ${source}: ${result.error}`);
         }
 
-        // Extract vehicles using AI
-        console.log(`🤖 Extracting vehicles from ${source} HTML...`);
-        const vehicles = await VehicleDataExtractorService.extractFromHTML(result.html, url);
+        // Extract vehicle using AI (returns single vehicle, not array)
+        console.log(`🤖 Extracting vehicle from ${source} HTML...`);
+        const extractionResult = await VehicleDataExtractorService.extractFromHTML(result.html);
 
-        console.log(`✅ Extracted ${vehicles.length} vehicles from ${source}`);
+        if (!extractionResult.success || !extractionResult.data) {
+            console.warn(`⚠️ No vehicle extracted from ${source}: ${extractionResult.error || 'No data'}`);
+            return;
+        }
 
-        // Call progress callback for each vehicle
+        console.log(`✅ Extracted vehicle from ${source}`);
+
+        // Call progress callback 
         if (onProgress) {
-            for (const vehicle of vehicles.slice(0, targetCount)) {
-                await onProgress(vehicle);
-            }
+            // Add source and url to extracted vehicle
+            await onProgress({
+                ...extractionResult.data,
+                source: source.toUpperCase(),
+                url: result.url,
+                priceDisplay: `Rp ${extractionResult.data.price.toLocaleString('id-ID')}`
+            });
         }
     }
 }
