@@ -2082,7 +2082,10 @@ export class MessageOrchestratorService {
       // Check if this phone belongs to a staff member
       const staffUsers = await prisma.user.findMany({
         where: {
-          tenantId,
+          OR: [
+            { tenantId },
+            { tenantId: null }
+          ],
           role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
         },
         select: { id: true, phone: true, firstName: true, role: true },
