@@ -61,7 +61,7 @@ export default async function VehiclesPage() {
     },
     include: {
       photos: {
-        where: { displayOrder: 0 },
+        orderBy: { displayOrder: 'asc' },
         select: {
           thumbnailUrl: true,
           mediumUrl: true,
