@@ -95,24 +95,34 @@ export class PuppeteerMobil123Scraper {
             // Gather links generically
             const vehicleLinks = await page.evaluate((limitNum) => {
                 const links = Array.from(document.querySelectorAll('a'));
-                // Filter for detail pages (usually contains /mobil-dijual/ or specific car models)
-                // Mobil123 formats:
-                // - /mobil-dijual/toyota-avanza-1-3-g-mpv/jawa-barat/123456
-                // - Or similar patterns with brand/model
-                return links
+                console.log(`[DEBUG] Total links found: ${links.length}`);
+
+                // Sample first 5 links for debugging
+                const sampleLinks = links.slice(0, 5).map(a => a.href);
+                console.log('[DEBUG] Sample links:', sampleLinks);
+
+                // Filter for detail pages
+                const filtered = links
                     .map(a => a.href)
                     .filter(href => {
                         // Must include mobil-dijual
                         if (!href.includes('/mobil-dijual/')) return false;
                         // Exclude list/search pages
                         if (href.includes('/indonesia?') || href.includes('?page=') || href.endsWith('/indonesia')) return false;
-                        // Must have at least 4 path segments (domain/mobil-dijual/model/location or domain/mobil-dijual/model/id)
+                        // Must have at least 4 path segments
                         const parts = href.split('/').filter(p => p);
                         if (parts.length < 4) return false;
-                        // Should end with a number (ID) OR location/ID
-                        return /\d{4,}/.test(href); // Contains at least 4-digit number
+                        // Should contain at least 4-digit number
+                        return /\d{4,}/.test(href);
                     })
                     .slice(0, limitNum);
+
+                console.log(`[DEBUG] Filtered links: ${filtered.length}`);
+                if (filtered.length > 0) {
+                    console.log('[DEBUG] First filtered link:', filtered[0]);
+                }
+
+                return filtered;
             }, limit);
 
             const uniqueLinks = Array.from(new Set(vehicleLinks));
