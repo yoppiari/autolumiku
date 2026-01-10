@@ -2209,7 +2209,7 @@ export class MessageOrchestratorService {
           let batchSuccessCount = 0;
           for (let i = 0; i < images.length; i++) {
             const stopKey = `${accountId}:${to}`;
-            const stopKey = `${accountId}:${to}`;
+
 
             // Check memory signal (fastest)
             let shouldStop = stopSignals.get(stopKey);
