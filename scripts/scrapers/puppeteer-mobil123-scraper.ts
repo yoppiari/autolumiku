@@ -95,11 +95,23 @@ export class PuppeteerMobil123Scraper {
             // Gather links generically
             const vehicleLinks = await page.evaluate((limitNum) => {
                 const links = Array.from(document.querySelectorAll('a'));
-                // Filter for detail pages (usually contains /dijual/ and NOT list pages)
-                // Mobil123 Links: /mobil-dijual/toyota-avanza-1-3-g-mpv/jawa-barat/123456
+                // Filter for detail pages (usually contains /mobil-dijual/ or specific car models)
+                // Mobil123 formats:
+                // - /mobil-dijual/toyota-avanza-1-3-g-mpv/jawa-barat/123456
+                // - Or similar patterns with brand/model
                 return links
                     .map(a => a.href)
-                    .filter(href => href.includes('/mobil-dijual/') && !href.includes('/indonesia?') && href.match(/\/\d{6,}$/)) // Ends with ID number
+                    .filter(href => {
+                        // Must include mobil-dijual
+                        if (!href.includes('/mobil-dijual/')) return false;
+                        // Exclude list/search pages
+                        if (href.includes('/indonesia?') || href.includes('?page=') || href.endsWith('/indonesia')) return false;
+                        // Must have at least 4 path segments (domain/mobil-dijual/model/location or domain/mobil-dijual/model/id)
+                        const parts = href.split('/').filter(p => p);
+                        if (parts.length < 4) return false;
+                        // Should end with a number (ID) OR location/ID
+                        return /\d{4,}/.test(href); // Contains at least 4-digit number
+                    })
                     .slice(0, limitNum);
             }, limit);
 
