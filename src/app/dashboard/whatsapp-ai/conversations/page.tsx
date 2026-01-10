@@ -1314,7 +1314,7 @@ END:VCARD`;
                       <button
                         onClick={(e) => handleDeleteConversation(conv.id, e)}
                         disabled={isDeletingConversation === conv.id}
-                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
+                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100 disabled:opacity-50"
                         title="Hapus chat"
                       >
                         {isDeletingConversation === conv.id ? (
