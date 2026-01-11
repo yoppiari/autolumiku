@@ -1178,97 +1178,85 @@ END:VCARD`;
 
       {/* Main Content - Mobile: stack, Desktop: side-by-side */}
       <div className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 overflow-hidden min-h-0">
-        {/* Conversations List - Hidden on mobile when chat is open */}
-        <div className={`${showChatOnMobile ? 'hidden' : 'flex'} md:flex md:col-span-4 bg-white rounded-lg shadow-sm border border-gray-200 flex-col overflow-hidden flex-1 md:flex-none`}>
-          {/* Filters - Responsive */}
-          <div className="p-3 md:p-3 border-b border-gray-200">
+
+        {/* Conversation List - Hidden on mobile when chat is shown */}
+        <div className={`${showChatOnMobile ? 'hidden' : 'flex'} md:flex md:col-span-4 bg-[#2a2a2a] rounded-lg shadow-sm border border-[#3a3a3a] flex-col overflow-hidden h-[calc(100vh-140px)] md:h-[calc(100vh-110px)] flex-1 md:flex-none`}>
+          {/* Search Bar */}
+          <div className="p-3 border-b border-[#3a3a3a]">
             <input
               type="text"
+              placeholder="Cari nomor atau nama..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Cari nomor atau nama..."
-              className="w-full px-3 py-2 md:py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2"
+              className="w-full px-4 py-2 border border-[#444] rounded-lg text-sm bg-[#333] text-white focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 placeholder-gray-500"
             />
-            <div className="flex flex-wrap gap-1.5 md:gap-1">
-              <button
-                onClick={() => setFilterType('all')}
-                className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${filterType === 'all'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                Semua ({conversations.filter(c => !(c.isEscalated && c.status === 'closed')).length})
-              </button>
-              <button
-                onClick={() => setFilterType('customer')}
-                className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${filterType === 'customer'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                Customer
-              </button>
-              <button
-                onClick={() => setFilterType('staff')}
-                className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${filterType === 'staff'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                Tim
-              </button>
-              <button
-                onClick={() => setFilterType('escalated')}
-                className={`px-3 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${filterType === 'escalated'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                Escalated ({conversations.filter(c => c.isEscalated && c.status !== 'closed').length})
-              </button>
-            </div>
           </div>
 
-          {/* Conversation List - Better spacing for mobile */}
+          {/* Filter Tabs - Scrollable on mobile */}
+          <div className="flex border-b border-[#3a3a3a] overflow-x-auto scrollbar-hide">
+            {[
+              { id: 'all', label: 'Semua', count: conversations.length },
+              { id: 'customer', label: 'Customer', count: conversations.filter(c => !c.isStaff).length },
+              { id: 'staff', label: 'Tim', count: conversations.filter(c => c.isStaff).length },
+              { id: 'escalated', label: 'Escalated', count: conversations.filter(c => c.isEscalated).length }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterType(tab.id as any)}
+                className={`flex-1 min-w-max px-4 py-3 text-sm font-medium transition-colors border-b-2 ${filterType === tab.id
+                  ? 'border-green-500 text-green-500 bg-[#333]'
+                  : 'border-transparent text-gray-400 hover:text-gray-300 hover:bg-[#333]'
+                  }`}
+              >
+                {tab.label} <span className="text-xs ml-1 opacity-70">({tab.count})</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Conversation List Items */}
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length === 0 ? (
-              <div className="p-6 text-center text-gray-500 text-sm">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              </div>
+            ) : conversations.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
                 <p>Tidak ada percakapan</p>
               </div>
             ) : (
-              filteredConversations.map((conv) => (
+              conversations.map((conv) => (
                 <div
                   key={conv.id}
-                  onClick={() => handleSelectConversationMobile(conv)}
-                  className={`px-4 py-3 md:px-3 md:py-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 active:bg-gray-100 group ${selectedConversation?.id === conv.id ? 'bg-green-50' : ''
+                  onClick={() => handleSelectConversation(conv)}
+                  className={`p-3 md:p-3 hover:bg-[#333] cursor-pointer transition-colors border-b border-[#3a3a3a] ${selectedConversation?.id === conv.id ? 'bg-[#333]' : ''
                     }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center min-w-0 flex-1">
-                      {(() => {
-                        const avatar = getAvatarProps(conv.customerPhone, conv.customerName, conv.isStaff);
-                        const profilePic = profilePictures[conv.customerPhone];
-                        return (
-                          <div className="relative w-10 h-10 md:w-8 md:h-8 mr-3 md:mr-2 flex-shrink-0">
+                  <div className="flex items-start gap-3">
+                    {/* Avatar */}
+                    {(() => {
+                      const avatar = getAvatarProps(conv.customerPhone, conv.customerName, conv.isStaff);
+                      const profilePic = profilePictures[conv.customerPhone];
+                      return (
+                        <div className="relative flex-shrink-0">
+                          <div className="w-10 h-10 md:w-10 md:h-10">
                             {profilePic ? (
                               <img
                                 src={profilePic}
                                 alt=""
                                 className="w-full h-full rounded-full object-cover shadow-sm"
                                 onError={(e) => {
-                                  // Fallback to initials on image load error
                                   (e.target as HTMLImageElement).style.display = 'none';
                                   (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                                 }}
                               />
                             ) : null}
                             <div
-                              className={`${profilePic ? 'hidden' : ''} w-full h-full rounded-full flex items-center justify-center ${avatar.color} text-white font-semibold text-sm md:text-xs shadow-sm`}
+                              className={`${profilePic ? 'hidden' : ''} w-full h-full rounded-full flex items-center justify-center ${avatar.color} text-white font-semibold text-sm shadow-sm`}
                             >
                               {avatar.initials}
                             </div>
                             <div
-                              className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${whatsAppStatus[conv.customerPhone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '')]
+                              className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-[#2a2a2a] shadow-sm flex items-center justify-center ${whatsAppStatus[conv.customerPhone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '')]
                                 ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]'
                                 : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
                                 } animate-pulse`}
@@ -1281,75 +1269,76 @@ END:VCARD`;
                               )}
                             </div>
                           </div>
-                        );
-                      })()}
-                      <div className="min-w-0 flex-1 overflow-visible">
-                        <div className="flex items-center gap-1">
-                          <h3 className="font-medium text-gray-900 text-xs md:text-sm whitespace-nowrap">
-                            {formatPhoneNumber(conv.customerPhone)}
-                          </h3>
-                          {conv.hasRealPhone && (
-                            <span title="Verified WhatsApp">
-                              <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                              </svg>
-                            </span>
-                          )}
                         </div>
-                        <div className="flex items-center gap-1.5 md:gap-1 mt-1 md:mt-0.5 flex-wrap">
-                          <span
-                            className={`inline-block px-2 py-0.5 md:px-1.5 md:py-0 rounded text-[11px] md:text-[10px] font-medium ${getIntentBadgeColor(
-                              conv.lastIntent
-                            )}`}
-                          >
-                            {conv.lastIntent?.replace('customer_', '').replace('staff_', '') || '?'}
+                      );
+                    })()}
+                    <div className="min-w-0 flex-1 overflow-visible">
+                      <div className="flex items-center gap-1">
+                        <h3 className="font-medium text-white text-sm md:text-sm whitespace-nowrap">
+                          {formatPhoneNumber(conv.customerPhone)}
+                        </h3>
+                        {conv.hasRealPhone && (
+                          <span title="Verified WhatsApp">
+                            <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                            </svg>
                           </span>
-                          {conv.isEscalated && (
-                            <span className="inline-block px-2 py-0.5 md:px-1.5 md:py-0 bg-red-100 text-red-800 rounded text-[11px] md:text-[10px] font-medium">
-                              Esc
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-3 md:ml-2" onClick={(e) => e.stopPropagation()}>
-                      {/* Delete conversation button */}
-                      <button
-                        onClick={(e) => handleDeleteConversation(conv.id, e)}
-                        disabled={isDeletingConversation === conv.id}
-                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100 disabled:opacity-50"
-                        title="Hapus chat"
-                      >
-                        {isDeletingConversation === conv.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-500 border-t-transparent"></div>
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
                         )}
-                      </button>
-                      <div className="text-right">
-                        <p className="text-[11px] md:text-[10px] text-gray-500">{formatTime(conv.lastMessageAt)}</p>
-                        {conv.unreadCount > 0 && (
-                          <span className="inline-block mt-1 md:mt-0.5 px-2 py-0.5 md:px-1.5 md:py-0 bg-green-600 text-white text-[11px] md:text-[10px] rounded-full">
-                            {conv.unreadCount}
+                      </div>
+                      <div className="flex items-center gap-1.5 md:gap-1 mt-1 md:mt-0.5 flex-wrap">
+                        <span
+                          className={`inline-block px-2 py-0.5 md:px-1.5 md:py-0 rounded text-[11px] md:text-[10px] font-medium ${getIntentBadgeColor(
+                            conv.lastIntent
+                          )}`}
+                        >
+                          {conv.lastIntent?.replace('customer_', '').replace('staff_', '') || '?'}
+                        </span>
+                        {conv.isEscalated && (
+                          <span className="inline-block px-2 py-0.5 md:px-1.5 md:py-0 bg-red-900/40 text-red-300 rounded text-[11px] md:text-[10px] font-medium border border-red-800/50">
+                            Esc
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-3 md:ml-2" onClick={(e) => e.stopPropagation()}>
+                    {/* Delete conversation button */}
+                    <button
+                      onClick={(e) => handleDeleteConversation(conv.id, e)}
+                      disabled={isDeletingConversation === conv.id}
+                      className="p-1.5 text-red-500 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100 disabled:opacity-50"
+                      title="Hapus chat"
+                    >
+                      {isDeletingConversation === conv.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-500 border-t-transparent"></div>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
+                    <div className="text-right">
+                      <p className="text-[11px] md:text-[10px] text-gray-500">{formatTime(conv.lastMessageAt)}</p>
+                      {conv.unreadCount > 0 && (
+                        <span className="inline-block mt-1 md:mt-0.5 px-2 py-0.5 md:px-1.5 md:py-0 bg-green-600 text-white text-[11px] md:text-[10px] rounded-full">
+                          {conv.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ))
-            )}
+              ))}
           </div>
         </div>
 
+
+
         {/* Message Thread - Hidden on mobile when chat list is shown */}
-        <div className={`${showChatOnMobile ? 'flex' : 'hidden'} md:flex md:col-span-8 bg-white rounded-lg shadow-sm border border-gray-200 flex-col overflow-hidden flex-1 md:flex-none`}>
+        <div className={`${showChatOnMobile ? 'flex' : 'hidden'} md:flex md:col-span-8 bg-[#2a2a2a] rounded-lg shadow-sm border border-[#3a3a3a] flex-col overflow-hidden flex-1 md:flex-none`}>
           {selectedConversation ? (
             <>
               {/* Conversation Header - Responsive with back button for mobile */}
-              <div className="px-3 md:px-3 py-3 md:py-2 border-b border-gray-200 bg-[#f0f2f5]">
+              <div className="px-3 md:px-3 py-3 md:py-2 border-b border-[#3a3a3a] bg-[#333]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     {/* Back button - only visible on mobile */}
@@ -1361,6 +1350,7 @@ END:VCARD`;
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
+
                     {(() => {
                       const avatar = getAvatarProps(selectedConversation.customerPhone, selectedConversation.customerName, selectedConversation.isStaff);
                       const profilePic = profilePictures[selectedConversation.customerPhone];
@@ -1383,7 +1373,7 @@ END:VCARD`;
                             {avatar.initials}
                           </div>
                           <div
-                            className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${whatsAppStatus[selectedConversation.customerPhone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '')] ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
+                            className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-3 md:h-3 rounded-full border-2 border-[#333] shadow-sm flex items-center justify-center ${whatsAppStatus[selectedConversation.customerPhone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '')] ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
                               } animate-pulse`}
                           >
                             {selectedConversation.isStaff && (
@@ -1396,10 +1386,10 @@ END:VCARD`;
                       );
                     })()}
                     <div>
-                      <h2 className="text-sm font-semibold text-gray-900">
+                      <h2 className="text-sm font-semibold text-white">
                         {formatPhoneNumber(selectedConversation.customerPhone)}
                       </h2>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-400">
                         {selectedConversation.isStaff ? (() => {
                           const member = teamMembers.find(m =>
                             m.phone?.replace(/\D/g, '') === selectedConversation.customerPhone.replace(/\D/g, '') ||
@@ -1434,13 +1424,13 @@ END:VCARD`;
                       </button>
 
                       {activeMessageMenu === 'header-options' && (
-                        <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[60]">
+                        <div className="absolute right-0 mt-2 w-52 bg-[#2a2a2a] rounded-lg shadow-xl border border-[#3a3a3a] py-2 z-[60]">
                           <button
                             onClick={() => {
                               setShowInfoModal(true);
                               setActiveMessageMenu(null);
                             }}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-700"
+                            className="w-full px-4 py-2 text-left hover:bg-[#333] flex items-center gap-3 text-sm text-gray-200"
                           >
                             <span className="w-5 flex justify-center text-blue-500">ℹ️</span> Info {selectedConversation.isStaff ? 'Tim' : 'Customer'}
                           </button>
@@ -1449,7 +1439,7 @@ END:VCARD`;
                               setIsSelectionMode(true);
                               setActiveMessageMenu(null);
                             }}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-700"
+                            className="w-full px-4 py-2 text-left hover:bg-[#333] flex items-center gap-3 text-sm text-gray-200"
                           >
                             <span className="w-5 flex justify-center text-green-500">✅</span> Pilih pesan
                           </button>
@@ -1459,7 +1449,7 @@ END:VCARD`;
                               setIsFavorited(prev => ({ ...prev, [phone]: !prev[phone] }));
                               setActiveMessageMenu(null);
                             }}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-700"
+                            className="w-full px-4 py-2 text-left hover:bg-[#333] flex items-center gap-3 text-sm text-gray-200"
                           >
                             <span className={`w-5 flex justify-center text-red-500 transition-transform ${isFavorited[selectedConversation.customerPhone] ? 'scale-125' : ''}`}>
                               {isFavorited[selectedConversation.customerPhone] ? '❤️' : '🤍'}
@@ -1474,7 +1464,7 @@ END:VCARD`;
                               }
                               setActiveMessageMenu(null);
                             }}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-700 border-b border-gray-100"
+                            className="w-full px-4 py-2 text-left hover:bg-[#333] flex items-center gap-3 text-sm text-gray-200 border-b border-[#3a3a3a]"
                           >
                             <span className="w-5 flex justify-center text-gray-500">❌</span> Tutup chat
                           </button>
@@ -1483,13 +1473,13 @@ END:VCARD`;
                               handleDeleteConversation(selectedConversation.id, e as any);
                               setActiveMessageMenu(null);
                             }}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-red-600 font-medium"
+                            className="w-full px-4 py-2 text-left hover:bg-[#333] flex items-center gap-3 text-sm text-red-500 font-medium"
                           >
                             <span className="w-5 flex justify-center">🗑️</span> Hapus semua chat
                           </button>
                           <button
                             onClick={handleClearChatHistory}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 text-sm text-gray-600"
+                            className="w-full px-4 py-2 text-left hover:bg-[#333] flex items-center gap-3 text-sm text-gray-200"
                           >
                             <span className="w-5 flex justify-center">🧹</span> Bersihkan riwayat chat
                           </button>
@@ -1755,12 +1745,12 @@ END:VCARD`;
                               {activeMessageMenu === msg.id && (
                                 <div
                                   ref={messageMenuRef}
-                                  className="absolute top-8 right-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[120px] z-50"
+                                  className="absolute top-8 right-1 bg-[#2a2a2a] rounded-lg shadow-xl border border-[#3a3a3a] py-1 min-w-[120px] z-50"
                                 >
                                   <button
                                     onClick={() => handleDeleteMessage(msg.id)}
                                     disabled={isDeletingMessage}
-                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-red-600 disabled:opacity-50"
+                                    className="w-full px-3 py-2 text-left hover:bg-[#333] flex items-center space-x-2 text-red-500 disabled:opacity-50"
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -2309,8 +2299,8 @@ END:VCARD`;
 
       {/* Info Modal */}
       {showInfoModal && selectedConversation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4 text-gray-900">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100] p-4 text-gray-200">
+          <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 bg-gradient-to-r from-green-600 to-green-700 text-white relative">
               <button
                 onClick={() => setShowInfoModal(false)}
