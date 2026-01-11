@@ -1099,8 +1099,8 @@ export default function EditVehiclePage() {
         </div>
 
         {/* Pricing */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Harga</h2>
+        <div className="bg-[#2a2a2a] rounded-lg shadow p-6 border border-[#3a3a3a]">
+          <h2 className="text-lg font-semibold text-white mb-4">Harga</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -1127,8 +1127,8 @@ export default function EditVehiclePage() {
         </div>
 
         {/* Vehicle Details */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Detail Kendaraan</h2>
+        <div className="bg-[#2a2a2a] rounded-lg shadow p-6 border border-[#3a3a3a]">
+          <h2 className="text-lg font-semibold text-white mb-4">Detail Kendaraan</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -1230,14 +1230,14 @@ export default function EditVehiclePage() {
         </div>
 
         {/* Admin Only - License Plate */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg shadow p-6">
+        <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg shadow p-6">
           <div className="flex items-start gap-3 mb-4">
             <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-gray-900">Informasi Admin (Tidak Publik)</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="text-lg font-semibold text-white">Informasi Admin (Tidak Publik)</h2>
+              <p className="text-sm text-gray-400 mt-1">
                 Informasi ini hanya terlihat di dashboard admin, tidak ditampilkan di katalog publik
               </p>
             </div>
@@ -1262,8 +1262,8 @@ export default function EditVehiclePage() {
         </div>
 
         {/* Description */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Deskripsi</h2>
+        <div className="bg-[#2a2a2a] rounded-lg shadow p-6 border border-[#3a3a3a]">
+          <h2 className="text-lg font-semibold text-white mb-4">Deskripsi</h2>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
