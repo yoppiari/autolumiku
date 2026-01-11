@@ -464,7 +464,6 @@ export default function VehiclesPage() {
 
                         {/* Row 4: Notes */}
                         <div className="text-xs text-gray-400 leading-snug">
-                          <span className="text-gray-600 font-bold uppercase mr-1.5">CATATAN:</span>
                           {vehicle.description || "Tidak ada catatan."}
                         </div>
                       </div>
