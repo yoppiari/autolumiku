@@ -35,8 +35,10 @@ export async function generateMetadata(): Promise<Metadata> {
     }
 
     if (tenant?.faviconUrl) {
-      favicon = tenant.faviconUrl;
-      appleIcon = tenant.faviconUrl;
+      // Add version tag to force cache refresh and ensure latest branding is loaded
+      const v = new Date().getTime().toString().substring(0, 5);
+      favicon = `${tenant.faviconUrl}?v=${v}`;
+      appleIcon = `${tenant.faviconUrl}?v=${v}`;
     }
   } catch (error) {
     console.error('Error fetching tenant metadata:', error);
