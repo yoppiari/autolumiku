@@ -870,10 +870,10 @@ export default function EditVehiclePage() {
           )}
 
           {/* Upload New Photos with extra spacing for easier scrolling */}
-          <div className="mt-10 pt-6 border-t border-gray-100">
-            <h3 className="text-sm font-medium text-gray-700 mb-4">Upload Foto Baru</h3>
+          <div className="mt-10 pt-6 border-t border-[#444]">
+            <h3 className="text-sm font-medium text-gray-300 mb-4">Upload Foto Baru</h3>
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-gray-400 mb-2">
                 Upload Foto Baru {totalPhotos > 0 && `(${photos.length} foto baru, total: ${totalPhotos}/${MAX_PHOTOS})`}
               </p>
 
@@ -883,8 +883,8 @@ export default function EditVehiclePage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragging
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-blue-500 bg-blue-900/20'
+                  : 'border-[#444] hover:border-[#555] bg-[#333]'
                   }`}
               >
                 <svg
@@ -900,7 +900,7 @@ export default function EditVehiclePage() {
                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                   />
                 </svg>
-                <p className="text-gray-600 mb-2">
+                <p className="text-gray-400 mb-2">
                   Drag & drop foto di sini, atau{' '}
                   <label className="text-blue-600 hover:underline cursor-pointer">
                     pilih file
@@ -922,8 +922,8 @@ export default function EditVehiclePage() {
               {photos.length > 0 && (
                 <div className="mt-4">
                   {/* Instructions */}
-                  <div className="mb-3 p-2 bg-blue-50 rounded-md">
-                    <p className="text-xs text-blue-800">
+                  <div className="mb-3 p-2 bg-blue-900/20 rounded-md border border-blue-800/50">
+                    <p className="text-xs text-blue-300">
                       💡 <strong>Drag foto</strong> untuk mengatur urutan. Foto pertama akan jadi foto utama.
                     </p>
                   </div>
@@ -1022,8 +1022,8 @@ export default function EditVehiclePage() {
             </div>
 
             {photos.length > 0 && (
-              <div className="mt-4 bg-yellow-50 border border-yellow-100 rounded-lg p-3">
-                <p className="text-xs text-yellow-800">
+              <div className="mt-4 bg-yellow-900/20 border border-yellow-800/50 rounded-lg p-3">
+                <p className="text-xs text-yellow-300">
                   ⚠️ <strong>Note:</strong> Foto baru ini belum disimpan. Pastikan Anda mengklik tombol <strong>"Simpan Perubahan"</strong> di bawah untuk mengupload.
                 </p>
               </div>
@@ -1032,12 +1032,12 @@ export default function EditVehiclePage() {
         </div>
 
         {/* Basic Information */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Dasar</h2>
+        <div className="bg-[#2a2a2a] rounded-lg shadow p-6 border border-[#3a3a3a]">
+          <h2 className="text-lg font-semibold text-white mb-4">Informasi Dasar</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Make <span className="text-red-500">*</span>
               </label>
               <input
@@ -1046,7 +1046,7 @@ export default function EditVehiclePage() {
                 value={formData.make}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Honda"
               />
             </div>
