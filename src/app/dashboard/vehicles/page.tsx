@@ -555,71 +555,51 @@ export default function VehiclesPage() {
                         {formatPrice(vehicle.price)}
                       </p>
 
-                      {/* List View Only: Aging Badge & ID */}
+                      {/* List View: Ultra Compact Integrated Layout */}
                       {viewMode === 'list' && (
-                        <div className="flex items-center gap-2 mt-3 flex-wrap">
-                          <span className="text-xs font-semibold text-gray-400 bg-[#333] px-2 py-1 rounded border border-[#444]">
-                            #{vehicle.displayId || vehicle.id.slice(0, 8)}
-                          </span>
+                        <div className="mt-2 flex flex-col gap-1.5">
+                          {/* Row 1: Badges & ID */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono text-gray-500">#{vehicle.displayId || vehicle.id.slice(0, 8)}</span>
+                            {(() => {
+                              const diff = new Date().getTime() - new Date(vehicle.createdAt).getTime();
+                              const days = Math.ceil(Math.abs(diff) / (1000 * 3600 * 24));
+                              return (
+                                <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${days > 60 ? 'bg-red-900/20 text-red-500' : 'bg-green-900/20 text-green-500'}`}>
+                                  {days > 60 ? 'OLD' : 'NEW'} ({days}d)
+                                </span>
+                              );
+                            })()}
+                          </div>
 
-                          {/* Stock Health / Aging Badge */}
-                          {(() => {
-                            const created = new Date(vehicle.createdAt);
-                            const now = new Date();
-                            const diffTime = Math.abs(now.getTime() - created.getTime());
-                            const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                            let colorClass = 'bg-green-900/40 text-green-400 border-green-800';
-                            let label = 'New Arrival';
-
-                            if (days > 60) {
-                              colorClass = 'bg-red-900/40 text-red-400 border-red-800';
-                              label = 'Over Age';
-                            } else if (days > 30) {
-                              colorClass = 'bg-yellow-900/40 text-yellow-400 border-yellow-800';
-                              label = 'Standard Stock';
-                            }
-
-                            return (
-                              <span className={`px-2 py-1 text-xs font-medium rounded border ${colorClass} flex items-center gap-1.5`}>
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                {label} ({days} Hari)
-                              </span>
-                            );
-                          })()}
-                        </div>
-                      )}
-
-                      {/* List View: Smart Insights / Description */}
-                      {viewMode === 'list' && (
-                        <div className="mt-4">
-                          <div className="bg-[#1f1f1f] rounded-r-md border-l-2 border-l-blue-500 border-y border-r border-[#333] p-2.5">
-                            <div className="flex items-center gap-1.5 mb-1.5 border-b border-[#333] pb-1.5">
-                              <svg className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Catatan Unit</span>
-                            </div>
-
-                            <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed min-h-[1.5rem]">
-                              {vehicle.description || "Tidak ada catatan khusus untuk unit ini."}
+                          {/* Row 2: Notes (Tight & Proper) */}
+                          <div className="bg-[#1a1a1a] rounded border border-[#333] px-2 py-1.5 flex items-start gap-2 max-w-xl">
+                            <span className="text-[9px] font-bold text-gray-600 mt-0.5 uppercase shrink-0 tracking-wider">NOTE</span>
+                            <p className="text-[11px] text-gray-300 leading-tight line-clamp-2">
+                              {vehicle.description || "-"}
                             </p>
+                          </div>
 
-                            <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-500 font-medium">
-                              <div className="flex items-center gap-1">
-                                <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                {vehicle.updatedBy || 'System'}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                {new Date(vehicle.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                              </div>
+                          {/* Row 3: Specs (Horizontal text only, minimal overhead) */}
+                          <div className="flex items-center gap-3 text-[10px] text-gray-400 border-t border-[#2a2a2a] pt-1.5 mt-0.5 w-fit">
+                            <div className="flex items-center gap-1">
+                              <span className="uppercase text-[9px] text-gray-600 font-bold">TR:</span>
+                              <span className="text-gray-200 font-medium">{vehicle.transmissionType?.substring(0, 3) || '-'}</span>
+                            </div>
+                            <span className="text-[#333]">|</span>
+                            <div className="flex items-center gap-1">
+                              <span className="uppercase text-[9px] text-gray-600 font-bold">BBM:</span>
+                              <span className="text-gray-200 font-medium">{vehicle.fuelType || '-'}</span>
+                            </div>
+                            <span className="text-[#333]">|</span>
+                            <div className="flex items-center gap-1">
+                              <span className="uppercase text-[9px] text-gray-600 font-bold">KM:</span>
+                              <span className="text-gray-200 font-medium">{vehicle.mileage ? (vehicle.mileage).toLocaleString() : '-'}</span>
+                            </div>
+                            <span className="text-[#333]">|</span>
+                            <div className="flex items-center gap-1">
+                              <span className="uppercase text-[9px] text-gray-600 font-bold">PLAT:</span>
+                              <span className="text-gray-200 font-medium">{vehicle.licensePlate || '-'}</span>
                             </div>
                           </div>
                         </div>
@@ -639,62 +619,30 @@ export default function VehiclesPage() {
                     </div>
                   </div>
 
-                  {/* RIGHT COLUMN: SPECS (List View Only) */}
+                  {/* RIGHT ACTION COLUMN (List View) */}
                   {viewMode === 'list' && (
-                    <div className="w-full md:w-64 flex flex-col gap-3 border-l border-[#3a3a3a] pl-0 md:pl-4 pt-4 md:pt-0">
-                      {/* Specs Grid */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-[#333]/50 p-2 rounded flex flex-col">
-                          <span className="text-[10px] text-gray-500 uppercase">Transmisi</span>
-                          <span className="text-xs font-medium text-gray-200 flex items-center gap-1.5">
-                            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-                            {vehicle.transmissionType || '-'}
-                          </span>
-                        </div>
-                        <div className="bg-[#333]/50 p-2 rounded flex flex-col">
-                          <span className="text-[10px] text-gray-500 uppercase">Bahan Bakar</span>
-                          <span className="text-xs font-medium text-gray-200 flex items-center gap-1.5">
-                            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                            {vehicle.fuelType || '-'}
-                          </span>
-                        </div>
-                        <div className="bg-[#333]/50 p-2 rounded flex flex-col">
-                          <span className="text-[10px] text-gray-500 uppercase">Kilometer</span>
-                          <span className="text-xs font-medium text-gray-200 flex items-center gap-1.5">
-                            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6" /></svg>
-                            {vehicle.mileage?.toLocaleString() || '-'}
-                          </span>
-                        </div>
-                        <div className="bg-[#333]/50 p-2 rounded flex flex-col">
-                          <span className="text-[10px] text-gray-500 uppercase">Plat Nomor</span>
-                          <span className="text-xs font-medium text-gray-200 flex items-center gap-1.5">
-                            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
-                            {vehicle.licensePlate || '-'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Status & Actions - Bottom Right */}
-                      <div className="mt-auto flex items-center justify-between gap-3 pt-2">
-                        <span className={`px-2 py-1 text-[10px] font-bold rounded-full border shadow-sm ${getStatusColor(vehicle.status)}`}>
+                    <div className="w-full md:w-32 flex flex-col justify-between border-l border-[#3a3a3a] pl-0 md:pl-4 pt-4 md:pt-0 gap-3">
+                      <div className="flex flex-col gap-2">
+                        <span className={`px-2 py-1.5 text-[10px] font-bold rounded text-center border shadow-sm ${getStatusColor(vehicle.status)}`}>
                           {getStatusLabel(vehicle.status)}
                         </span>
 
-                        <div className="flex gap-2">
-                          <Link
-                            href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
-                            className="px-3 py-1.5 text-xs text-center bg-blue-600/80 text-white rounded hover:bg-blue-700 font-medium transition-colors flex items-center gap-1"
-                          >
-                            Edit
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(vehicle)}
-                            disabled={deleting === vehicle.id}
-                            className="px-3 py-1.5 text-xs bg-red-900/40 border border-red-800 text-red-200 rounded hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            {deleting === vehicle.id ? '...' : 'Hapus'}
-                          </button>
-                        </div>
+                        <hr className="border-[#333] my-1" />
+
+                        <Link
+                          href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-medium transition-colors text-center flex items-center justify-center gap-1.5"
+                        >
+                          Edit
+                        </Link>
+
+                        <button
+                          onClick={() => handleDelete(vehicle)}
+                          disabled={deleting === vehicle.id}
+                          className="bg-[#2a2a2a] hover:bg-red-900/20 text-red-500 hover:text-red-400 border border-[#444] hover:border-red-800 px-3 py-2 rounded text-xs font-medium transition-colors text-center flex items-center justify-center gap-1.5"
+                        >
+                          {deleting === vehicle.id ? '...' : 'Hapus'}
+                        </button>
                       </div>
                     </div>
                   )}
