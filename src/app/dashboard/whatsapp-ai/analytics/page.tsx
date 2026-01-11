@@ -140,8 +140,8 @@ function AnalyticsPageInternal() {
           <button
             onClick={() => setActiveDepartment('sales')}
             className={`py-2 px-3 border-b-2 font-medium text-xs flex items-center gap-2 whitespace-nowrap ${activeDepartment === 'sales'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-blue-500 text-blue-400'
+              : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
               }`}
           >
             <span className="text-base">📊</span>
@@ -150,8 +150,8 @@ function AnalyticsPageInternal() {
           <button
             onClick={() => setActiveDepartment('whatsapp')}
             className={`py-2 px-3 border-b-2 font-medium text-xs flex items-center gap-2 whitespace-nowrap ${activeDepartment === 'whatsapp'
-              ? 'border-green-500 text-green-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-green-500 text-green-400'
+              : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
               }`}
           >
             <span className="text-base">💬</span>
@@ -172,30 +172,30 @@ function AnalyticsPageInternal() {
           <div className="space-y-3">
             {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
-                <p className="text-[10px] md:text-xs text-gray-500">Total Penjualan</p>
-                <p className="text-lg md:text-xl font-bold text-gray-900 leading-tight">{salesStats?.totalSales || 0}</p>
-                <p className="text-[9px] text-green-600 mt-0.5">Unit terjual (Bulan ini)</p>
+              <div className="bg-[#2a2a2a] rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-[#3a3a3a]">
+                <p className="text-[10px] md:text-xs text-gray-400">Total Penjualan</p>
+                <p className="text-lg md:text-xl font-bold text-white leading-tight">{salesStats?.totalSales || 0}</p>
+                <p className="text-[9px] text-green-400 mt-0.5">Unit terjual (Bulan ini)</p>
               </div>
-              <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
-                <p className="text-[10px] md:text-xs text-gray-500">Total Revenue</p>
-                <p className="text-lg md:text-xl font-bold text-blue-600 leading-tight">{formatRupiah(salesStats?.totalRevenue || 0)}</p>
+              <div className="bg-[#2a2a2a] rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-[#3a3a3a]">
+                <p className="text-[10px] md:text-xs text-gray-400">Total Revenue</p>
+                <p className="text-lg md:text-xl font-bold text-blue-400 leading-tight">{formatRupiah(salesStats?.totalRevenue || 0)}</p>
                 <p className="text-[9px] text-gray-500 mt-0.5">Omzet</p>
               </div>
-              <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
-                <p className="text-[10px] md:text-xs text-gray-500">Total Inventory</p>
-                <p className="text-lg md:text-xl font-bold text-gray-900 leading-tight">{kpiData?.raw?.totalInventory || 0}</p>
+              <div className="bg-[#2a2a2a] rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-[#3a3a3a]">
+                <p className="text-[10px] md:text-xs text-gray-400">Total Inventory</p>
+                <p className="text-lg md:text-xl font-bold text-white leading-tight">{kpiData?.raw?.totalInventory || 0}</p>
                 <p className="text-[9px] text-gray-500 mt-0.5">Stok tersedia</p>
               </div>
-              <div className="bg-white rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-gray-100">
-                <p className="text-[10px] md:text-xs text-gray-500">Top Brand</p>
-                <p className="text-lg md:text-xl font-bold text-purple-600 truncate leading-tight">{salesStats?.topBrands?.[0]?.brand || '-'}</p>
+              <div className="bg-[#2a2a2a] rounded-lg shadow-sm p-2 md:p-3 hover:shadow-md transition-shadow border border-[#3a3a3a]">
+                <p className="text-[10px] md:text-xs text-gray-400">Top Brand</p>
+                <p className="text-lg md:text-xl font-bold text-purple-400 truncate leading-tight">{salesStats?.topBrands?.[0]?.brand || '-'}</p>
                 <p className="text-[9px] text-gray-500 mt-0.5">{salesStats?.topBrands?.[0]?.count || 0} unit</p>
               </div>
             </div>
 
             {/* Analysis Summary */}
-            <div className="bg-white rounded-2xl shadow-lg border border-indigo-100 overflow-hidden mb-6">
+            <div className="bg-[#2a2a2a] rounded-2xl shadow-lg border border-[#3a3a3a] overflow-hidden mb-6">
               <div className="bg-gradient-to-r from-indigo-700 to-blue-600 px-4 py-3 flex items-center gap-3">
                 <span className="text-xl bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">📋</span>
                 <div>
@@ -207,38 +207,38 @@ function AnalyticsPageInternal() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Analysis Menyeluruh */}
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-indigo-900">
+                    <div className="flex items-center gap-2 text-indigo-300">
                       <span className="text-lg">🔍</span>
                       <h5 className="text-xs font-bold uppercase">Analysis Menyeluruh</h5>
                     </div>
-                    <div className="bg-indigo-50/50 rounded-xl p-3 border border-indigo-50">
-                      <p className="text-[11px] text-indigo-800 leading-relaxed">
+                    <div className="bg-indigo-900/20 rounded-xl p-3 border border-indigo-800/50">
+                      <p className="text-[11px] text-indigo-200 leading-relaxed">
                         {(salesStats?.totalSales || 0) === 0 ? (
                           <>
-                            <span className="font-bold text-red-600">Performa Kritis:</span> Belum ada unit terjual dalam periode ini. Strategi penjualan perlu ditinjau ulang segera untuk menggerakkan stok yang ada.
+                            <span className="font-bold text-red-400">Performa Kritis:</span> Belum ada unit terjual dalam periode ini. Strategi penjualan perlu ditinjau ulang segera untuk menggerakkan stok yang ada.
                           </>
                         ) : (salesStats?.totalSales || 0) < 5 ? (
                           <>
-                            <span className="font-bold text-amber-600">Perlu Perhatian:</span> Penjualan mulai berjalan namun masih di bawah target bulanan. Fokus pada peningkatan volume penjualan unit entry-level.
+                            <span className="font-bold text-amber-400">Perlu Perhatian:</span> Penjualan mulai berjalan namun masih di bawah target bulanan. Fokus pada peningkatan volume penjualan unit entry-level.
                           </>
                         ) : (
                           <>
-                            <span className="font-bold text-emerald-600">Performa Stable:</span> Volume penjualan menunjukkan tren positif. Pastikan ketersediaan stok untuk model-model terlaris terjaga.
+                            <span className="font-bold text-emerald-400">Performa Stable:</span> Volume penjualan menunjukkan tren positif. Pastikan ketersediaan stok untuk model-model terlaris terjaga.
                           </>
                         )}
-                        {" "}Brand terpopuler saat ini adalah <span className="font-bold text-indigo-900">{salesStats?.topBrands?.[0]?.brand || 'belum teridentifikasi'}</span>.
+                        {" "}Brand terpopuler saat ini adalah <span className="font-bold text-indigo-300">{salesStats?.topBrands?.[0]?.brand || 'belum teridentifikasi'}</span>.
                       </p>
                     </div>
                   </div>
 
                   {/* Review Kekurangan */}
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-red-900">
+                    <div className="flex items-center gap-2 text-red-300">
                       <span className="text-lg">📉</span>
                       <h5 className="text-xs font-bold uppercase">Review Kekurangan</h5>
                     </div>
-                    <div className="bg-red-50/50 rounded-xl p-3 border border-red-50">
-                      <p className="text-[11px] text-red-800 leading-relaxed">
+                    <div className="bg-red-900/20 rounded-xl p-3 border border-red-800/50">
+                      <p className="text-[11px] text-red-200 leading-relaxed">
                         <span className="font-bold">Indikator Lemah:</span>
                         <ul className="list-disc ml-4 mt-1 space-y-1">
                           {(kpiData?.inventoryTurnover || 0) < 20 && (
@@ -257,12 +257,12 @@ function AnalyticsPageInternal() {
 
                   {/* Saran & Strategi */}
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-emerald-900">
+                    <div className="flex items-center gap-2 text-emerald-300">
                       <span className="text-lg">🚀</span>
                       <h5 className="text-xs font-bold uppercase">Saran & Strategi</h5>
                     </div>
-                    <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-50">
-                      <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    <div className="bg-emerald-900/20 rounded-xl p-3 border border-emerald-800/50">
+                      <p className="text-[11px] text-emerald-200 leading-relaxed">
                         <span className="font-bold">Rekomendasi Owner:</span>
                         <ul className="list-disc ml-4 mt-1 space-y-1">
                           <li>Prioritaskan "Clearance Sale" untuk stok lama guna mencapai target <span className="font-bold">Turnover 20%</span>.</li>
@@ -279,115 +279,115 @@ function AnalyticsPageInternal() {
             {/* KPI Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               {/* KPI Penjualan */}
-              <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-200 flex flex-col items-center">
-                <h4 className="text-xs font-bold text-gray-800 mb-2 self-start w-full">📊 Metrix Penjualan</h4>
+              <div className="bg-[#2a2a2a] rounded-lg shadow-sm p-3 border border-[#3a3a3a] flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-200 mb-2 self-start w-full">📊 Metrix Penjualan</h4>
                 <div className="relative w-24 h-24 mb-2">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3a3a3a" strokeWidth="3.5" />
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3b82f6" strokeWidth="3.5" strokeDasharray={`${kpiData?.penjualanShowroom || 0} ${100 - (kpiData?.penjualanShowroom || 0)}`} strokeLinecap="round" transform="rotate(-90 18 18)" />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
-                    <span className="text-[8px] text-gray-600 font-medium">Target Bulanan</span>
+                    <span className="text-xl font-bold text-blue-400">{kpiData?.penjualanShowroom || 0}%</span>
+                    <span className="text-[8px] text-gray-400 font-medium">Target Bulanan</span>
                   </div>
                 </div>
-                <div className="w-full space-y-1 pt-2 border-t border-gray-100">
+                <div className="w-full space-y-1 pt-2 border-t border-[#3a3a3a]">
                   <div className="flex justify-between text-[10px] items-center">
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                      <span className="text-gray-600">ATV</span>
+                      <span className="text-gray-400">ATV</span>
                     </div>
-                    <span className="font-bold text-gray-900">{kpiData?.atv || 0}%</span>
+                    <span className="font-bold text-gray-200">{kpiData?.atv || 0}%</span>
                   </div>
                   <div className="flex justify-between text-[10px] items-center">
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                      <span className="text-gray-600">Turnover</span>
+                      <span className="text-gray-400">Turnover</span>
                     </div>
-                    <span className="font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
+                    <span className="font-bold text-gray-200">{kpiData?.inventoryTurnover || 0}%</span>
                   </div>
                   <div className="flex justify-between text-[10px] items-center">
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                      <span className="text-gray-600">Showroom</span>
+                      <span className="text-gray-400">Showroom</span>
                     </div>
-                    <span className="font-bold text-gray-900">{kpiData?.penjualanShowroom || 0}%</span>
+                    <span className="font-bold text-gray-200">{kpiData?.penjualanShowroom || 0}%</span>
                   </div>
                 </div>
               </div>
 
               {/* KPI Pelanggan */}
-              <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-200 flex flex-col items-center">
-                <h4 className="text-xs font-bold text-gray-800 mb-2 self-start w-full">👥 Metrix Pelanggan</h4>
+              <div className="bg-[#2a2a2a] rounded-lg shadow-sm p-3 border border-[#3a3a3a] flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-200 mb-2 self-start w-full">👥 Metrix Pelanggan</h4>
                 <div className="relative w-24 h-24 mb-2">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3a3a3a" strokeWidth="3.5" />
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f59e0b" strokeWidth="3.5" strokeDasharray={`${kpiData?.nps || 0} ${100 - (kpiData?.nps || 0)}`} strokeLinecap="round" transform="rotate(-90 18 18)" />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
-                    <span className="text-[8px] text-gray-600 font-medium">NPS Score</span>
+                    <span className="text-xl font-bold text-amber-400">{kpiData?.nps || 0}%</span>
+                    <span className="text-[8px] text-gray-400 font-medium">NPS Score</span>
                   </div>
                 </div>
-                <div className="w-full space-y-1 pt-2 border-t border-gray-100">
+                <div className="w-full space-y-1 pt-2 border-t border-[#3a3a3a]">
                   <div className="flex justify-between text-[10px] items-center">
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
-                      <span className="text-gray-600">Retention</span>
+                      <span className="text-gray-400">Retention</span>
                     </div>
-                    <span className="font-bold text-gray-900">{kpiData?.customerRetention || 0}%</span>
+                    <span className="font-bold text-gray-200">{kpiData?.customerRetention || 0}%</span>
                   </div>
                   <div className="flex justify-between text-[10px] items-center">
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                      <span className="text-gray-600">NPS Score</span>
+                      <span className="text-gray-400">NPS Score</span>
                     </div>
-                    <span className="font-bold text-gray-900">{kpiData?.nps || 0}%</span>
+                    <span className="font-bold text-gray-200">{kpiData?.nps || 0}%</span>
                   </div>
                   <div className="flex justify-between text-[10px] items-center">
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
-                      <span className="text-gray-600">Conversion</span>
+                      <span className="text-gray-400">Conversion</span>
                     </div>
-                    <span className="font-bold text-gray-900">{kpiData?.leadConversion || 0}%</span>
+                    <span className="font-bold text-gray-200">{kpiData?.leadConversion || 0}%</span>
                   </div>
                 </div>
               </div>
 
               {/* KPI Operasional */}
-              <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-200 flex flex-col items-center">
-                <h4 className="text-xs font-bold text-gray-800 mb-2 self-start w-full">⚙️ Metrix Operasional</h4>
+              <div className="bg-[#2a2a2a] rounded-lg shadow-sm p-3 border border-[#3a3a3a] flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-200 mb-2 self-start w-full">⚙️ Metrix Operasional</h4>
                 <div className="relative w-24 h-24 mb-2">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3a3a3a" strokeWidth="3.5" />
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#8b5cf6" strokeWidth="3.5" strokeDasharray={`${kpiData?.efficiency || 0} ${100 - (kpiData?.efficiency || 0)}`} strokeLinecap="round" transform="rotate(-90 18 18)" />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
-                    <span className="text-[8px] text-gray-600 font-medium">Efficiency</span>
+                    <span className="text-xl font-bold text-violet-400">{kpiData?.efficiency || 0}%</span>
+                    <span className="text-[8px] text-gray-400 font-medium">Efficiency</span>
                   </div>
                 </div>
-                <div className="w-full space-y-1 pt-2 border-t border-gray-100">
+                <div className="w-full space-y-1 pt-2 border-t border-[#3a3a3a]">
                   <div className="flex justify-between text-[10px] items-center">
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                      <span className="text-gray-600">Sales/Emp</span>
+                      <span className="text-gray-400">Sales/Emp</span>
                     </div>
-                    <span className="font-bold text-gray-900">{kpiData?.salesPerEmployee || 0}%</span>
+                    <span className="font-bold text-gray-200">{kpiData?.salesPerEmployee || 0}%</span>
                   </div>
                   <div className="flex justify-between text-[10px] items-center">
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
-                      <span className="text-gray-600">Efficiency</span>
+                      <span className="text-gray-400">Efficiency</span>
                     </div>
-                    <span className="font-bold text-gray-900">{kpiData?.efficiency || 0}%</span>
+                    <span className="font-bold text-gray-200">{kpiData?.efficiency || 0}%</span>
                   </div>
                   <div className="flex justify-between text-[10px] items-center">
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                      <span className="text-gray-600">Velocity</span>
+                      <span className="text-gray-400">Velocity</span>
                     </div>
-                    <span className="font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
+                    <span className="font-bold text-gray-200">{kpiData?.inventoryTurnover || 0}%</span>
                   </div>
                 </div>
               </div>
@@ -396,13 +396,13 @@ function AnalyticsPageInternal() {
 
           {/* Report Categories Grid */}
           <section className="pt-1">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-2 md:p-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+            <div className="bg-[#2a2a2a] rounded-2xl shadow-sm border border-[#3a3a3a] overflow-hidden">
+              <div className="p-2 md:p-3 bg-[#333] border-b border-[#3a3a3a] flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">📂</span>
-                  <h3 className="text-sm font-bold text-gray-900">Laporan Tersedia</h3>
+                  <h3 className="text-sm font-bold text-gray-200">Laporan Tersedia</h3>
                 </div>
-                <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">10 REPORTS</span>
+                <span className="px-2 py-0.5 bg-[#444] border border-[#555] rounded-full text-[10px] font-bold text-gray-300">10 REPORTS</span>
               </div>
 
               <div className="p-3 md:p-5 space-y-5">
@@ -410,7 +410,7 @@ function AnalyticsPageInternal() {
                 <section>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">💰</span>
-                    <h3 className="text-xs font-bold text-gray-800 uppercase">Penjualan & Pendapatan</h3>
+                    <h3 className="text-xs font-bold text-gray-300 uppercase">Penjualan & Pendapatan</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
@@ -427,7 +427,7 @@ function AnalyticsPageInternal() {
                 <section>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">📦</span>
-                    <h3 className="text-xs font-bold text-gray-800 uppercase">Inventori & Stok</h3>
+                    <h3 className="text-xs font-bold text-gray-300 uppercase">Inventori & Stok</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
@@ -443,7 +443,7 @@ function AnalyticsPageInternal() {
                 <section>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">🏆</span>
-                    <h3 className="text-xs font-bold text-gray-800 uppercase">Tim & Performa</h3>
+                    <h3 className="text-xs font-bold text-gray-300 uppercase">Tim & Performa</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
@@ -472,36 +472,36 @@ function AnalyticsPageInternal() {
             <>
               {/* Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0.5">Total Conversations</p>
-                  <p className="text-xl font-bold text-gray-900 leading-tight">{whatsappAnalytics.overview.totalConversations}</p>
+                <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-3">
+                  <p className="text-[10px] text-gray-400 mb-0.5">Total Conversations</p>
+                  <p className="text-xl font-bold text-white leading-tight">{whatsappAnalytics.overview.totalConversations}</p>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0.5">Messages Handled</p>
-                  <p className="text-xl font-bold text-blue-600 leading-tight">{whatsappAnalytics.overview.totalMessages}</p>
+                <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-3">
+                  <p className="text-[10px] text-gray-400 mb-0.5">Messages Handled</p>
+                  <p className="text-xl font-bold text-blue-400 leading-tight">{whatsappAnalytics.overview.totalMessages}</p>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0.5">AI Response Rate</p>
-                  <p className="text-xl font-bold text-green-600 leading-tight">{whatsappAnalytics.overview.aiResponseRate}%</p>
+                <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-3">
+                  <p className="text-[10px] text-gray-400 mb-0.5">AI Response Rate</p>
+                  <p className="text-xl font-bold text-green-400 leading-tight">{whatsappAnalytics.overview.aiResponseRate}%</p>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0.5">Escalation Rate</p>
-                  <p className="text-xl font-bold text-red-600 leading-tight">{whatsappAnalytics.overview.escalationRate}%</p>
+                <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-3">
+                  <p className="text-[10px] text-gray-400 mb-0.5">Escalation Rate</p>
+                  <p className="text-xl font-bold text-red-400 leading-tight">{whatsappAnalytics.overview.escalationRate}%</p>
                 </div>
               </div>
 
               {/* Performance Analysis Card */}
-              <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+              <div className="bg-[#2a2a2a] rounded-xl border border-[#3a3a3a] p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-xl">🤖</span>
-                  <h4 className="text-base font-bold text-gray-900">AI Performance Analysis</h4>
+                  <h4 className="text-base font-bold text-white">AI Performance Analysis</h4>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="flex flex-col items-center">
-                    <p className="text-sm text-gray-600 mb-4 font-medium">Intent Distribution</p>
+                    <p className="text-sm text-gray-400 mb-4 font-medium">Intent Distribution</p>
                     <div className="relative w-48 h-48">
                       <svg className="w-full h-full" viewBox="0 0 36 36">
-                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="4" />
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3a3a3a" strokeWidth="4" />
                         {whatsappAnalytics.intentBreakdown?.map((item, idx) => {
                           let offset = 0;
                           for (let i = 0; i < idx; i++) offset += whatsappAnalytics.intentBreakdown[i].percentage;
@@ -520,23 +520,23 @@ function AnalyticsPageInternal() {
                         })}
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center flex-col">
-                        <span className="text-3xl font-bold text-gray-800">{whatsappAnalytics.performance.aiAccuracy}%</span>
+                        <span className="text-3xl font-bold text-gray-200">{whatsappAnalytics.performance.aiAccuracy}%</span>
                         <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Accuracy</span>
                       </div>
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                      <p className="text-xs text-gray-500 font-bold mb-1 uppercase">Top Business Intent</p>
-                      <p className="text-xl font-bold text-gray-900">{whatsappAnalytics.intentBreakdown?.[0]?.intent || 'N/A'}</p>
+                    <div className="bg-[#333] rounded-lg p-4 border border-[#444]">
+                      <p className="text-xs text-gray-400 font-bold mb-1 uppercase">Top Business Intent</p>
+                      <p className="text-xl font-bold text-white">{whatsappAnalytics.intentBreakdown?.[0]?.intent || 'N/A'}</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                      <p className="text-xs text-gray-500 font-bold mb-1 uppercase">Avg Response Time</p>
-                      <p className="text-xl font-bold text-gray-900">{whatsappAnalytics.overview.avgResponseTime}s</p>
+                    <div className="bg-[#333] rounded-lg p-4 border border-[#444]">
+                      <p className="text-xs text-gray-400 font-bold mb-1 uppercase">Avg Response Time</p>
+                      <p className="text-xl font-bold text-white">{whatsappAnalytics.overview.avgResponseTime}s</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                      <p className="text-xs text-gray-500 font-bold mb-1 uppercase">Success Resolution</p>
-                      <p className="text-xl font-bold text-gray-900">{whatsappAnalytics.performance.resolutionRate}%</p>
+                    <div className="bg-[#333] rounded-lg p-4 border border-[#444]">
+                      <p className="text-xs text-gray-400 font-bold mb-1 uppercase">Success Resolution</p>
+                      <p className="text-xl font-bold text-white">{whatsappAnalytics.performance.resolutionRate}%</p>
                     </div>
                   </div>
                 </div>
@@ -544,13 +544,13 @@ function AnalyticsPageInternal() {
 
               {/* WhatsApp AI Reports Grid */}
               <section className="pt-1">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="p-2 md:p-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                <div className="bg-[#2a2a2a] rounded-2xl shadow-sm border border-[#3a3a3a] overflow-hidden">
+                  <div className="p-2 md:p-3 bg-[#333] border-b border-[#3a3a3a] flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">📂</span>
-                      <h3 className="text-sm font-bold text-gray-900">Laporan Tersedia</h3>
+                      <h3 className="text-sm font-bold text-gray-200">Laporan Tersedia</h3>
                     </div>
-                    <span className="px-2 py-0.5 bg-white border rounded-full text-[10px] font-bold text-gray-500">3 REPORTS</span>
+                    <span className="px-2 py-0.5 bg-[#444] border border-[#555] rounded-full text-[10px] font-bold text-gray-300">3 REPORTS</span>
                   </div>
 
                   <div className="p-3 md:p-5 space-y-5">
@@ -558,7 +558,7 @@ function AnalyticsPageInternal() {
                     <section>
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-lg">🤖</span>
-                        <h3 className="text-xs font-bold text-gray-800 uppercase">WhatsApp AI</h3>
+                        <h3 className="text-xs font-bold text-gray-300 uppercase">WhatsApp AI</h3>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {[
@@ -581,13 +581,13 @@ function AnalyticsPageInternal() {
 
 function ReportCard({ report }: { report: { id: string; name: string; desc: string; icon: string; href?: string } }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:p-4 hover:shadow-md transition-shadow group flex flex-col justify-between h-full">
+    <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-3 md:p-4 hover:shadow-md transition-shadow group flex flex-col justify-between h-full hover:border-blue-500/50">
       <div className="mb-2">
-        <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-50 rounded-lg flex items-center justify-center text-lg mb-2 group-hover:bg-blue-50 transition-colors">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-[#333] rounded-lg flex items-center justify-center text-lg mb-2 group-hover:bg-[#444] transition-colors">
           {report.icon}
         </div>
-        <h4 className="text-xs md:text-sm font-bold text-gray-900 mb-1">{report.name}</h4>
-        <p className="text-[10px] text-gray-500 leading-tight line-clamp-2">{report.desc}</p>
+        <h4 className="text-xs md:text-sm font-bold text-white mb-1">{report.name}</h4>
+        <p className="text-[10px] text-gray-400 leading-tight line-clamp-2">{report.desc}</p>
       </div>
 
       {report.href ? (
@@ -601,7 +601,7 @@ function ReportCard({ report }: { report: { id: string; name: string; desc: stri
           </svg>
         </Link>
       ) : (
-        <button disabled className="w-full py-1.5 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-400 cursor-not-allowed">
+        <button disabled className="w-full py-1.5 rounded-lg text-[10px] font-bold bg-[#333] text-gray-500 cursor-not-allowed border border-[#444]">
           Coming Soon
         </button>
       )}

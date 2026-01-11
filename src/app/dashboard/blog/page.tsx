@@ -311,16 +311,16 @@ export default function BlogListPage() {
       <div className="flex-1 overflow-auto">
         {/* Loading State */}
         {isLoading && (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-gray-200">
+          <div className="bg-[#2a2a2a] rounded-lg shadow-sm p-8 text-center border border-[#3a3a3a]">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
-            <p className="text-gray-600 text-sm">Memuat blog posts...</p>
+            <p className="text-gray-400 text-sm">Memuat blog posts...</p>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="bg-red-900/30 border border-red-800 rounded-lg p-3 mb-3">
+            <p className="text-red-300 text-sm">{error}</p>
           </div>
         )}
 
@@ -470,7 +470,7 @@ export default function BlogListPage() {
         {!isLoading && filteredPosts.length > 0 && viewMode === 'grid' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredPosts.map((post) => (
-              <div key={post.id} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+              <div key={post.id} className="bg-[#2a2a2a] rounded-lg shadow-sm overflow-hidden border border-[#3a3a3a]">
                 {/* Featured Image Placeholder */}
                 <div className="h-32 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                   <div className="text-white text-4xl">
@@ -503,11 +503,11 @@ export default function BlogListPage() {
                     {post.title}
                   </h3>
 
-                  <p className="text-xs text-gray-600 mb-2 line-clamp-1">
+                  <p className="text-xs text-gray-400 mb-2 line-clamp-1">
                     {post.excerpt}
                   </p>
 
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                  <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
                     <span className={`font-semibold ${getSEOScoreColor(post.seoScore)}`}>
                       SEO: {post.seoScore}/100
                     </span>

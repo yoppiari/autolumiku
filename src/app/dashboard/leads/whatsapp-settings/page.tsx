@@ -266,8 +266,8 @@ export default function WhatsAppSettingsPage() {
       {/* Header - Responsive */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">WhatsApp Settings</h1>
-          <p className="text-sm md:text-base text-gray-600 mt-1">Kelola nomor WhatsApp dan pengaturan otomatis</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">WhatsApp Settings</h1>
+          <p className="text-sm md:text-base text-gray-400 mt-1">Kelola nomor WhatsApp dan pengaturan otomatis</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -289,17 +289,17 @@ export default function WhatsAppSettingsPage() {
       {/* Settings List */}
       <div className="space-y-4">
         {settings.map((setting) => (
-          <div key={setting.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div key={setting.id} className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] overflow-hidden">
             {/* Header */}
             {/* Header - Responsive */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6 border-b border-gray-200 gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6 border-b border-[#3a3a3a] gap-4">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-green-600 text-xl">📱</span>
+                <div className="w-12 h-12 bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-green-500 text-xl">📱</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{setting.tenantName}</h3>
-                  <p className="text-sm text-gray-600">{formatPhoneNumber(setting.phoneNumber)}</p>
+                  <h3 className="text-lg font-semibold text-white">{setting.tenantName}</h3>
+                  <p className="text-sm text-gray-400">{formatPhoneNumber(setting.phoneNumber)}</p>
                 </div>
               </div>
 
@@ -307,21 +307,21 @@ export default function WhatsAppSettingsPage() {
                 <button
                   onClick={() => handleToggleActive(setting.id)}
                   className={`px-4 py-2 rounded-lg md:rounded-full text-sm font-medium transition-colors text-center w-full md:w-auto ${setting.isActive
-                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    ? 'bg-green-900/30 text-green-300 hover:bg-green-900/50'
+                    : 'bg-[#333] text-gray-300 hover:bg-[#444]'
                     }`}
                 >
                   {setting.isActive ? 'Aktif' : 'Tidak Aktif'}
                 </button>
                 <button
                   onClick={() => handleEdit(setting)}
-                  className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg md:rounded-full text-sm font-medium hover:bg-blue-200 transition-colors text-center w-full md:w-auto"
+                  className="px-4 py-2 bg-blue-900/30 text-blue-300 rounded-lg md:rounded-full text-sm font-medium hover:bg-blue-900/50 transition-colors text-center w-full md:w-auto"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(setting.id)}
-                  className="px-4 py-2 bg-red-100 text-red-800 rounded-lg md:rounded-full text-sm font-medium hover:bg-red-200 transition-colors text-center w-full md:w-auto"
+                  className="px-4 py-2 bg-red-900/30 text-red-300 rounded-lg md:rounded-full text-sm font-medium hover:bg-red-900/50 transition-colors text-center w-full md:w-auto"
                 >
                   Hapus
                 </button>
@@ -332,18 +332,18 @@ export default function WhatsAppSettingsPage() {
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Default Message</label>
-                  <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-900">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Default Message</label>
+                  <div className="p-3 bg-[#333] rounded-lg text-sm text-gray-200">
                     {setting.defaultMessage}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Auto Reply</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Auto Reply</label>
                   <div className="flex items-center space-x-2">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${setting.autoReply
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-green-900/30 text-green-300'
+                      : 'bg-[#333] text-gray-300'
                       }`}>
                       {setting.autoReply ? 'Aktif' : 'Tidak Aktif'}
                     </span>
@@ -351,18 +351,18 @@ export default function WhatsAppSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Jam Kerja</label>
-                  <div className="text-sm text-gray-900">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Jam Kerja</label>
+                  <div className="text-sm text-gray-200">
                     {setting.workingHours.start} - {setting.workingHours.end} ({setting.workingHours.timezone})
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Status</label>
                   <div className="flex items-center space-x-2">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${setting.isActive
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-green-900/30 text-green-300'
+                      : 'bg-[#333] text-gray-300'
                       }`}>
                       {setting.isActive ? 'Online' : 'Offline'}
                     </span>
@@ -370,7 +370,7 @@ export default function WhatsAppSettingsPage() {
                       href={getWhatsAppLink(setting.phoneNumber)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-green-600 hover:text-green-800 text-sm font-medium"
+                      className="text-green-500 hover:text-green-400 text-sm font-medium"
                     >
                       Test WhatsApp →
                     </a>
@@ -380,8 +380,8 @@ export default function WhatsAppSettingsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Dibuat</label>
-                  <div className="text-sm text-gray-900">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Dibuat</label>
+                  <div className="text-sm text-gray-200">
                     {new Date(setting.createdAt).toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'long',
@@ -391,8 +391,8 @@ export default function WhatsAppSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Terakhir Diupdate</label>
-                  <div className="text-sm text-gray-900">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Terakhir Diupdate</label>
+                  <div className="text-sm text-gray-200">
                     {new Date(setting.updatedAt).toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'long',
@@ -415,15 +415,15 @@ export default function WhatsAppSettingsPage() {
 
       {/* Edit Modal */}
       {editingSetting && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-[#2a2a2a] rounded-xl shadow-xl p-6 w-full max-w-2xl mx-4 border border-[#3a3a3a]">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-white">
                 {editingSetting.id.includes('new') ? 'Tambah WhatsApp' : 'Edit WhatsApp'}
               </h2>
               <button
                 onClick={handleCancel}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-white"
               >
                 ✕
               </button>
@@ -431,41 +431,41 @@ export default function WhatsAppSettingsPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nama Tenant</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Nama Tenant</label>
                 <input
                   type="text"
                   value={editingSetting.tenantName}
                   onChange={(e) => setEditingSetting({ ...editingSetting, tenantName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-[#333] border border-[#444] text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nama tenant"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nomor WhatsApp</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Nomor WhatsApp</label>
                 <input
                   type="text"
                   value={editingSetting.phoneNumber}
                   onChange={(e) => setEditingSetting({ ...editingSetting, phoneNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-[#333] border border-[#444] text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="+62-8xx-xxxx-xxxx"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Default Message</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Default Message</label>
                 <textarea
                   value={editingSetting.defaultMessage}
                   onChange={(e) => setEditingSetting({ ...editingSetting, defaultMessage: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-[#333] border border-[#444] text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Pesan default untuk auto reply"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Jam Mulai</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Jam Mulai</label>
                   <input
                     type="time"
                     value={editingSetting.workingHours.start}
@@ -473,12 +473,12 @@ export default function WhatsAppSettingsPage() {
                       ...editingSetting,
                       workingHours: { ...editingSetting.workingHours, start: e.target.value }
                     })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 bg-[#333] border border-[#444] text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Jam Selesai</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Jam Selesai</label>
                   <input
                     type="time"
                     value={editingSetting.workingHours.end}
@@ -486,7 +486,7 @@ export default function WhatsAppSettingsPage() {
                       ...editingSetting,
                       workingHours: { ...editingSetting.workingHours, end: e.target.value }
                     })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 bg-[#333] border border-[#444] text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -498,9 +498,9 @@ export default function WhatsAppSettingsPage() {
                     id="autoReply"
                     checked={editingSetting.autoReply}
                     onChange={(e) => setEditingSetting({ ...editingSetting, autoReply: e.target.checked })}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-500 rounded bg-[#333]"
                   />
-                  <label htmlFor="autoReply" className="ml-2 text-sm text-gray-700">
+                  <label htmlFor="autoReply" className="ml-2 text-sm text-gray-300">
                     Aktifkan Auto Reply
                   </label>
                 </div>
@@ -511,9 +511,9 @@ export default function WhatsAppSettingsPage() {
                     id="isActive"
                     checked={editingSetting.isActive}
                     onChange={(e) => setEditingSetting({ ...editingSetting, isActive: e.target.checked })}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-500 rounded bg-[#333]"
                   />
-                  <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
+                  <label htmlFor="isActive" className="ml-2 text-sm text-gray-300">
                     Aktif
                   </label>
                 </div>
@@ -523,7 +523,7 @@ export default function WhatsAppSettingsPage() {
             <div className="flex justify-end space-x-4 mt-6">
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-gray-300 bg-[#333] rounded-lg hover:bg-[#444] transition-colors"
               >
                 Batal
               </button>
