@@ -167,8 +167,8 @@ export default function UsersPage() {
       try {
         // Fetch both registration status and profile picture
         const [regRes, picRes] = await Promise.all([
-          fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${phone}`),
-          fetch(`/api/v1/whatsapp-ai/profile-picture?phone=${phone}`)
+          fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${phone}&tenantId=${tid}`),
+          fetch(`/api/v1/whatsapp-ai/profile-picture?phone=${phone}&tenantId=${tid}`)
         ]);
 
         const regData = await regRes.json();
@@ -209,8 +209,8 @@ export default function UsersPage() {
       try {
         // Fetch both registration status and profile picture with cache busting
         const [regRes, picRes] = await Promise.all([
-          fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${phone}&_t=${Date.now()}`),
-          fetch(`/api/v1/whatsapp-ai/profile-picture?phone=${phone}&_t=${Date.now()}`)
+          fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${phone}&tenantId=${tenantId}&_t=${Date.now()}`),
+          fetch(`/api/v1/whatsapp-ai/profile-picture?phone=${phone}&tenantId=${tenantId}&_t=${Date.now()}`)
         ]);
 
         const regData = await regRes.json();
