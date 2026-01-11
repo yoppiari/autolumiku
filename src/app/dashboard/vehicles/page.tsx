@@ -400,7 +400,8 @@ export default function VehiclesPage() {
                       </h3>
 
                       {/* Status Badge */}
-                      <div className={`text-[10px] px-2 py-1 rounded w-fit font-bold border ${getStatusColor(vehicle.status)}`}>
+                      <div className={`text-[10px] px-2 py-1 rounded w-fit font-bold border flex items-center gap-1 ${getStatusColor(vehicle.status)}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                         {getStatusLabel(vehicle.status)}
                       </div>
 
