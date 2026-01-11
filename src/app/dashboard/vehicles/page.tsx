@@ -41,6 +41,7 @@ export default function VehiclesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [error, setError] = useState<string | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [userMap, setUserMap] = useState<Record<string, string>>({});
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | 'ALL'>('ALL');
@@ -60,6 +61,7 @@ export default function VehiclesPage() {
   useEffect(() => {
     if (!accessDenied) {
       fetchVehicles();
+      fetchUsers();
     }
   }, [accessDenied]);
 
@@ -124,6 +126,26 @@ export default function VehiclesPage() {
   };
 
   const [resequenceStatus, setResequenceStatus] = useState<string | null>(null);
+
+  const fetchUsers = async () => {
+    try {
+      const result = await api.get('/api/v1/users');
+      if (result.success && result.data) {
+        const mapping: Record<string, string> = {};
+        result.data.forEach((user: any) => {
+          mapping[user.id] = user.name || user.email?.split('@')[0] || 'Unknown';
+        });
+        setUserMap(mapping);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
+
+  const getUserName = (userId?: string): string => {
+    if (!userId) return 'System';
+    return userMap[userId] || userId.slice(0, 8) + '...';
+  };
 
   const fetchVehicles = async () => {
     try {
@@ -474,7 +496,7 @@ export default function VehiclesPage() {
                             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                             </svg>
-                            Updated by <span className="font-semibold text-gray-300">{vehicle.updatedBy || 'System'}</span>
+                            Updated by <span className="font-semibold text-gray-300">{getUserName(vehicle.updatedBy)}</span>
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
