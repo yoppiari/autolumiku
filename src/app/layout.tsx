@@ -7,14 +7,41 @@ import { ClientProviders } from '@/components/providers/ClientProviders';
 // This prevents build failures in environments with restricted internet (like Docker).
 const interFontStack = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"';
 
-export const metadata: Metadata = {
-  title: 'Prima Mobil Platform',
-  description: 'Platform administrasi showroom otomotif',
-  icons: {
-    icon: '/favicon.png',
-    apple: '/favicon-48.png',
-  },
-};
+import { prisma } from '@/lib/prisma';
+
+export async function generateMetadata(): Promise<Metadata> {
+  let favicon = '/favicon.png';
+  let appleIcon = '/favicon-48.png';
+
+  try {
+    // Fetch Prima Mobil tenant branding
+    const tenant = await prisma.tenant.findFirst({
+      where: {
+        OR: [
+          { name: { contains: 'Prima Mobil', mode: 'insensitive' } },
+          { slug: 'prima-mobil' }
+        ]
+      },
+      select: { faviconUrl: true }
+    });
+
+    if (tenant?.faviconUrl) {
+      favicon = tenant.faviconUrl;
+      appleIcon = tenant.faviconUrl; // Use same for apple if branded, or keep default
+    }
+  } catch (error) {
+    console.error('Error fetching tenant metadata:', error);
+  }
+
+  return {
+    title: 'Prima Mobil Platform',
+    description: 'Platform administrasi showroom otomotif',
+    icons: {
+      icon: favicon,
+      apple: appleIcon,
+    },
+  };
+}
 
 export default function RootLayout({
   children,
@@ -23,11 +50,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
-      <head>
-        <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
-        <link rel="icon" type="image/png" href="/favicon-48.png" sizes="48x48" />
-        <link rel="apple-touch-icon" href="/favicon-48.png" />
-      </head>
+      <head />
       <body style={{ fontFamily: interFontStack }}>
         <ClientProviders>
           {children}
