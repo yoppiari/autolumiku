@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaSearch, FaPlus, FaEdit, FaTrash, FaUserCircle, FaWhatsapp } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaEdit, FaTrash, FaUserCircle, FaWhatsapp, FaSync } from 'react-icons/fa';
 import { api } from '@/lib/api-client';
 import { ROLE_LEVELS } from '@/lib/rbac';
 
@@ -46,6 +46,8 @@ export default function UsersPage() {
   const [whatsAppProfiles, setWhatsAppProfiles] = useState<Record<string, WhatsAppProfile>>({});
   const [userRoleLevel, setUserRoleLevel] = useState<number>(ROLE_LEVELS.SALES);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [refreshingProfiles, setRefreshingProfiles] = useState(false);
+  const [lastProfileUpdate, setLastProfileUpdate] = useState<Date | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -94,6 +96,19 @@ export default function UsersPage() {
   useEffect(() => {
     applyFilters();
   }, [users, searchQuery, roleFilter]);
+
+  // Auto-refresh WhatsApp profiles every 30 seconds
+  useEffect(() => {
+    if (!tenantId || users.length === 0) return;
+
+    // Set up auto-refresh interval
+    const interval = setInterval(() => {
+      refreshWhatsAppProfiles();
+    }, 30000); // 30 seconds
+
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, [tenantId, users]);
 
   const loadUsers = async (tid: string) => {
     setLoading(true);
@@ -157,7 +172,52 @@ export default function UsersPage() {
       }
     });
 
+    // Set last update time
+    setLastProfileUpdate(new Date());
   }, []);
+
+  const refreshWhatsAppProfiles = useCallback(async () => {
+    if (!tenantId || users.length === 0) return;
+
+    setRefreshingProfiles(true);
+
+    const usersWithPhone = users.filter(u => u.phone);
+    if (usersWithPhone.length === 0) {
+      setRefreshingProfiles(false);
+      return;
+    }
+
+    // Refresh all WhatsApp profiles
+    for (const user of usersWithPhone) {
+      const phone = user.phone!;
+
+      try {
+        // Fetch both registration status and profile picture with cache busting
+        const [regRes, picRes] = await Promise.all([
+          fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${phone}&_t=${Date.now()}`),
+          fetch(`/api/v1/whatsapp-ai/profile-picture?phone=${phone}&_t=${Date.now()}`)
+        ]);
+
+        const regData = await regRes.json();
+        const picData = await picRes.json();
+
+        setWhatsAppProfiles(prev => ({
+          ...prev,
+          [phone]: {
+            pictureUrl: picData.success ? picData.pictureUrl : null,
+            hasPicture: picData.success ? picData.hasPicture : false,
+            isRegistered: regData.success ? regData.isRegistered : false,
+            loading: false
+          }
+        }));
+      } catch (error) {
+        console.error(`Failed to refresh WhatsApp data for ${phone}:`, error);
+      }
+    }
+
+    setLastProfileUpdate(new Date());
+    setRefreshingProfiles(false);
+  }, [tenantId, users]);
 
   const applyFilters = () => {
     let filtered = [...users];
@@ -316,6 +376,22 @@ export default function UsersPage() {
     return phone;
   };
 
+  const formatLastUpdate = (date: Date | null) => {
+    if (!date) return 'Belum update';
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+
+    if (diffSecs < 60) {
+      return `Baru saja (${diffSecs}d)`;
+    } else if (diffMins < 60) {
+      return `${diffMins} menit lalu`;
+    } else {
+      return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role.toUpperCase()) {
       case 'OWNER':
@@ -359,25 +435,48 @@ export default function UsersPage() {
   return (
     <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
       {/* Header - with left margin on mobile for hamburger menu */}
-      <div className="flex justify-between items-center mb-3 flex-shrink-0 ml-10 md:ml-0">
-        <div className="min-w-0">
+      <div className="flex justify-between items-start mb-2 flex-shrink-0 ml-10 md:ml-0 gap-2">
+        <div className="min-w-0 flex-1">
           <h1 className="text-lg md:text-2xl font-bold text-white">Manajemen Tim</h1>
-          <p className="text-gray-400 text-[10px] md:text-sm">Kelola staff dan anggota tim showroom</p>
+          <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 mt-0.5">
+            <p className="text-gray-400 text-[10px] md:text-sm">Kelola staff dan anggota tim showroom</p>
+            {lastProfileUpdate && (
+              <div className="flex items-center gap-1 md:gap-2">
+                <span className="text-gray-500 text-[9px] md:text-xs">•</span>
+                <span className="text-green-400 text-[9px] md:text-xs font-medium">
+                  Profile WhatsApp: {formatLastUpdate(lastProfileUpdate)}
+                </span>
+                <span className="text-gray-500 text-[9px] md:text-xs">•</span>
+                <span className="text-gray-500 text-[9px] md:text-xs">Auto-refresh 30d</span>
+              </div>
+            )}
+          </div>
         </div>
-        <button
-          onClick={() => {
-            if (userRoleLevel < ROLE_LEVELS.ADMIN) {
-              alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
-              return;
-            }
-            setShowCreateModal(true);
-          }}
-          className={`flex items-center px-2 md:px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-xs md:text-sm whitespace-nowrap ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-70 grayscale cursor-not-allowed' : ''}`}
-        >
-          <FaPlus className="mr-1 md:mr-2" />
-          <span className="hidden md:inline">Tambah Staff</span>
-          <span className="md:hidden">Tambah</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={refreshWhatsAppProfiles}
+            disabled={refreshingProfiles}
+            className={`flex items-center px-2 md:px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-xs md:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed`}
+            title="Refresh profile WhatsApp"
+          >
+            <FaSync className={`mr-1 md:mr-2 ${refreshingProfiles ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">Refresh WA</span>
+          </button>
+          <button
+            onClick={() => {
+              if (userRoleLevel < ROLE_LEVELS.ADMIN) {
+                alert('Akses Ditolak: Fitur ini hanya untuk Owner, Admin, dan Super Admin.');
+                return;
+              }
+              setShowCreateModal(true);
+            }}
+            className={`flex items-center px-2 md:px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-xs md:text-sm whitespace-nowrap ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-70 grayscale cursor-not-allowed' : ''}`}
+          >
+            <FaPlus className="mr-1 md:mr-2" />
+            <span className="hidden md:inline">Tambah Staff</span>
+            <span className="md:hidden">Tambah</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards - 3 cols on mobile, 4 cols on desktop */}
