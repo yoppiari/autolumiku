@@ -1219,15 +1219,15 @@ END:VCARD`;
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
               </div>
-            ) : conversations.length === 0 ? (
+            ) : filteredConversations.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
                 <p>Tidak ada percakapan</p>
               </div>
             ) : (
-              conversations.map((conv) => (
+              filteredConversations.map((conv) => (
                 <div
                   key={conv.id}
-                  onClick={() => handleSelectConversation(conv)}
+                  onClick={() => handleSelectConversationMobile(conv)}
                   className={`p-3 md:p-3 hover:bg-[#333] cursor-pointer transition-colors border-b border-[#3a3a3a] ${selectedConversation?.id === conv.id ? 'bg-[#333]' : ''
                     }`}
                 >
