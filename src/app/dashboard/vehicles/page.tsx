@@ -323,7 +323,7 @@ export default function VehiclesPage() {
         {/* Terjual Badge - Pink/Red with pulse animation */}
         <button
           onClick={() => setStatusFilter('SOLD')}
-          className="px-3 py-1.5 bg-rose-600 text-white rounded-full text-xs font-bold border border-rose-500 hover:bg-rose-500 transition-all whitespace-nowrap animate-pulse"
+          className="px-2 md:px-3 py-1.5 bg-rose-600 text-white rounded-full text-[11px] md:text-xs font-bold border border-rose-500 hover:bg-rose-500 transition-all whitespace-nowrap animate-pulse"
         >
           {stats.sold} Terjual
         </button>
