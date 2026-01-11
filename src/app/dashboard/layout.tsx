@@ -72,6 +72,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [tenant, setTenant] = useState<any>(null);
+  const [isTenantLoading, setIsTenantLoading] = useState(true);
 
   // Read user from localStorage - redirect to login if not authenticated
   React.useEffect(() => {
@@ -110,6 +111,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Fetch directly by tenantId from user data for reliability
   React.useEffect(() => {
     if (user?.tenantId) {
+      setIsTenantLoading(true);
       fetch(`/api/v1/tenants/${user.tenantId}`)
         .then(res => res.json())
         .then(data => {
@@ -121,7 +123,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         })
         .catch(err => {
           console.error('Error fetching tenant data:', err);
+        })
+        .finally(() => {
+          setIsTenantLoading(false);
         });
+    } else if (user) {
+      // User loaded but no tenant ID (shouldn't happen due to check above, but safe fallback)
+      setIsTenantLoading(false);
     }
   }, [user]);
 
@@ -144,7 +152,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           const data = await response.json();
           const freshUser = data.data || data.user;
 
-          // Check if roleLevel has changed from what's in localStorage
+          // Check if freshUser has roleLevel and if it has changed from what's in localStorage
           if (freshUser && freshUser.roleLevel !== user.roleLevel) {
             console.log(`[Dashboard] Role synced: ${user.roleLevel} → ${freshUser.roleLevel}`);
 
@@ -239,7 +247,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href="/dashboard"
                 className="flex items-center h-16 px-6 border-b border-gray-200 hover:bg-gray-50 transition-colors group"
               >
-                {!tenant && !user ? (
+                {isTenantLoading ? (
                   /* Skeleton Loading for Logo */
                   <div className="flex items-center animate-pulse w-full">
                     <div className="w-8 h-8 bg-gray-200 rounded-lg"></div>
@@ -265,7 +273,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     )}
                     <div className="ml-3">
                       <div className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate max-w-[140px]">
-                        {tenant?.name || 'autolumiku'}
+                        {tenant?.name || ''}
                       </div>
                       <div className="text-xs text-gray-500">Showroom Dashboard</div>
                     </div>

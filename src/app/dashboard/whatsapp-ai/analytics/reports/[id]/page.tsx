@@ -84,7 +84,7 @@ export default function ReportDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#1a1a1a] p-4 md:p-8">
+        <div className="min-h-screen !bg-[#1a1a1a] p-4 md:p-8" style={{ backgroundColor: '#1a1a1a', minHeight: '100vh', colorScheme: 'dark' }}>
             <div className="max-w-6xl mx-auto">
                 {/* Breadcrumbs */}
                 <nav className="flex mb-6 text-sm text-gray-400 gap-2">

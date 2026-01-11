@@ -129,7 +129,7 @@ function LoginForm() {
               className="text-4xl font-bold"
               style={{ color: branding?.primaryColor || '#2563eb' }}
             >
-              {branding?.name || 'AutoLumiKu'}
+              {branding?.name || ''}
             </div>
           )}
         </div>
