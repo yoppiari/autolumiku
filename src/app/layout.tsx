@@ -39,6 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
       const v = new Date().getTime().toString();
       favicon = `${tenant.faviconUrl}?v=${v}`;
       appleIcon = `${tenant.faviconUrl}?v=${v}`;
+      // Deployment trigger check: 2026-01-11
     }
   } catch (error) {
     console.error('Error fetching tenant metadata:', error);
