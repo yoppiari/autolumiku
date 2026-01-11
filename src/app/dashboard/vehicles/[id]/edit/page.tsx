@@ -1052,7 +1052,7 @@ export default function EditVehiclePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Model <span className="text-red-500">*</span>
               </label>
               <input
@@ -1061,13 +1061,13 @@ export default function EditVehiclePage() {
                 value={formData.model}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="BR-V"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Tahun <span className="text-red-500">*</span>
               </label>
               <input
@@ -1078,12 +1078,12 @@ export default function EditVehiclePage() {
                 required
                 min="1900"
                 max={new Date().getFullYear() + 1}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Variant
               </label>
               <input
@@ -1091,7 +1091,7 @@ export default function EditVehiclePage() {
                 name="variant"
                 value={formData.variant}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Prestige"
               />
             </div>
@@ -1104,7 +1104,7 @@ export default function EditVehiclePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Harga (dalam juta rupiah) <span className="text-red-500">*</span>
               </label>
               <input
@@ -1115,10 +1115,10 @@ export default function EditVehiclePage() {
                 required
                 min="0"
                 step="0.1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="225"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-400 mt-1">
                 Contoh: 225 = Rp 225 juta
               </p>
             </div>
@@ -1132,7 +1132,7 @@ export default function EditVehiclePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Kilometer
               </label>
               <input
@@ -1141,20 +1141,20 @@ export default function EditVehiclePage() {
                 value={formData.mileage}
                 onChange={handleChange}
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="15000"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Transmisi
               </label>
               <select
                 name="transmissionType"
                 value={formData.transmissionType}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Pilih Transmisi</option>
                 <option value="manual">Manual</option>
@@ -1164,14 +1164,14 @@ export default function EditVehiclePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Bahan Bakar
               </label>
               <select
                 name="fuelType"
                 value={formData.fuelType}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Pilih Bahan Bakar</option>
                 <option value="bensin">Bensin</option>
@@ -1182,7 +1182,7 @@ export default function EditVehiclePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Warna
               </label>
               <input
@@ -1190,13 +1190,13 @@ export default function EditVehiclePage() {
                 name="color"
                 value={formData.color}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Hitam"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Kapasitas Mesin
               </label>
               <input
@@ -1204,20 +1204,20 @@ export default function EditVehiclePage() {
                 name="engineCapacity"
                 value={formData.engineCapacity}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="1500cc"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Kondisi
               </label>
               <select
                 name="condition"
                 value={formData.condition}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Pilih Kondisi</option>
                 <option value="excellent">Excellent</option>
@@ -1244,7 +1244,7 @@ export default function EditVehiclePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Nomor Plat Kendaraan
             </label>
             <input
@@ -1252,10 +1252,10 @@ export default function EditVehiclePage() {
               name="licensePlate"
               value={formData.licensePlate}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="B 1234 XYZ"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-400 mt-1">
               🔒 Informasi ini hanya untuk keperluan internal admin
             </p>
           </div>
@@ -1266,7 +1266,7 @@ export default function EditVehiclePage() {
           <h2 className="text-lg font-semibold text-white mb-4">Deskripsi</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Deskripsi (Bahasa Indonesia)
             </label>
             <textarea
@@ -1274,7 +1274,7 @@ export default function EditVehiclePage() {
               value={formData.descriptionId}
               onChange={handleChange}
               rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[#444] rounded-md bg-[#333] text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Deskripsi detail kendaraan..."
             />
           </div>
@@ -1302,7 +1302,7 @@ export default function EditVehiclePage() {
 
           <Link
             href="/dashboard/vehicles"
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+            className="px-6 py-3 bg-[#333] text-gray-300 border border-[#444] rounded-md hover:bg-[#444]"
           >
             Batal
           </Link>
