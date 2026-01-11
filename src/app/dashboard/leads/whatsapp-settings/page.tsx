@@ -254,14 +254,14 @@ export default function WhatsAppSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center min-h-screen bg-[#1a1a1a]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 min-h-screen bg-[#1a1a1a]">
       {/* Header */}
       {/* Header - Responsive */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0">

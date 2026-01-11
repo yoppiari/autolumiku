@@ -210,7 +210,7 @@ export default function BlogListPage() {
   };
 
   return (
-    <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
+    <div className="p-3 h-[calc(100vh-64px)] flex flex-col overflow-hidden bg-[#1a1a1a]">
       {/* Header */}
       <div className="mb-3 flex justify-between items-center flex-shrink-0">
         <div>

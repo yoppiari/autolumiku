@@ -249,14 +249,14 @@ export default function LeadsDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center min-h-screen bg-[#1a1a1a]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-3 space-y-4 h-auto md:h-[calc(100vh-80px)] flex flex-col overflow-y-auto md:overflow-hidden">
+    <div className="p-3 space-y-4 h-auto md:h-[calc(100vh-80px)] flex flex-col overflow-y-auto md:overflow-hidden bg-[#1a1a1a]">
       {/* Header - Responsive */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 flex-shrink-0">
         <div>
