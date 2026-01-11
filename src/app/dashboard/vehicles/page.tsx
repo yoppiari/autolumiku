@@ -242,29 +242,6 @@ export default function VehiclesPage() {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...vehicles];
-    if (statusFilter !== 'DELETED') {
-      filtered = filtered.filter(v => v.status !== 'DELETED');
-    }
-    if (statusFilter !== 'ALL' && statusFilter !== 'DELETED') {
-      filtered = filtered.filter(v => v.status === statusFilter);
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(v =>
-        v.make.toLowerCase().includes(query) ||
-        v.model.toLowerCase().includes(query) ||
-        v.year.toString().includes(query) ||
-        (v.variant && v.variant.toLowerCase().includes(query))
-      );
-    }
-    filtered.sort((a, b) => {
-      if (sortBy === 'date') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      return b.price - a.price;
-    });
-    setFilteredVehicles(filtered);
-  };
 
   const formatPrice = (cents: number) => {
     const rupiah = cents / 1000000;
