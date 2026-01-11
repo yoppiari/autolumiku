@@ -86,7 +86,7 @@ export function LoginForm({ initialBranding }: LoginFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-md bg-[#2a2a2a] border-[#333] text-white">
+    <Card className="w-full max-w-md bg-black border-black text-white">
       <CardHeader className="space-y-1">
         <div className="flex justify-center mb-4 h-14 items-center">
           {branding?.logoUrl ? (
@@ -108,7 +108,7 @@ export function LoginForm({ initialBranding }: LoginFormProps) {
           )}
         </div>
         <CardTitle className="text-2xl text-center text-white">Welcome back</CardTitle>
-        <CardDescription className="text-center text-gray-400">
+        <CardDescription className="text-center text-white">
           Enter your credentials to access your account
         </CardDescription>
       </CardHeader>
@@ -126,7 +126,7 @@ export function LoginForm({ initialBranding }: LoginFormProps) {
           )}
 
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium text-gray-300">
+            <label htmlFor="email" className="text-sm font-medium text-white">
               Email
             </label>
             <input
@@ -135,14 +135,14 @@ export function LoginForm({ initialBranding }: LoginFormProps) {
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-[#444] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[#333] text-white placeholder-gray-500"
+              className="w-full px-3 py-2 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-black text-white placeholder-gray-600"
               placeholder="you@example.com"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-medium text-gray-300">
+              <label htmlFor="password" className="text-sm font-medium text-white">
                 Password
               </label>
               <Link
@@ -159,13 +159,13 @@ export function LoginForm({ initialBranding }: LoginFormProps) {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-3 py-2 pr-10 border border-[#444] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[#333] text-white placeholder-gray-500"
+                className="w-full px-3 py-2 pr-10 border border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-black text-white placeholder-gray-600"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 focus:outline-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (

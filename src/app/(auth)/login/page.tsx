@@ -120,7 +120,7 @@ export default async function LoginPage() {
 
       <div className="relative z-10 w-full max-w-md">
         <Suspense fallback={
-          <div className="w-full max-w-md bg-[#2a2a2a] border-[#333] rounded-lg p-6">
+          <div className="w-full max-w-md bg-black border-black rounded-lg p-6">
             <div className="flex justify-center mb-4">
               <div className="text-4xl font-bold text-white">Loading...</div>
             </div>
