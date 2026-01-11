@@ -260,6 +260,41 @@ export default function VehiclesPage() {
         </Link>
       </div>
 
+      {/* Stats Badges */}
+      <div className="flex items-center gap-2 mb-3 shrink-0 overflow-x-auto">
+        {/* Total Badge */}
+        <button
+          onClick={() => setStatusFilter('ALL')}
+          className="px-3 py-1.5 bg-gray-700 text-white rounded-full text-xs font-bold border border-gray-600 hover:bg-gray-600 transition-all whitespace-nowrap"
+        >
+          Total
+        </button>
+
+        {/* Tersedia Badge - Green with pulse animation */}
+        <button
+          onClick={() => setStatusFilter('AVAILABLE')}
+          className="px-3 py-1.5 bg-green-600 text-white rounded-full text-xs font-bold border border-green-500 hover:bg-green-500 transition-all whitespace-nowrap animate-pulse"
+        >
+          {stats.available} Tersedia
+        </button>
+
+        {/* Booking Badge - Orange/Yellow with pulse animation */}
+        <button
+          onClick={() => setStatusFilter('BOOKED')}
+          className="px-3 py-1.5 bg-amber-600 text-white rounded-full text-xs font-bold border border-amber-500 hover:bg-amber-500 transition-all whitespace-nowrap animate-pulse"
+        >
+          {stats.booked} Booking
+        </button>
+
+        {/* Terjual Badge - Pink/Red with pulse animation */}
+        <button
+          onClick={() => setStatusFilter('SOLD')}
+          className="px-3 py-1.5 bg-rose-600 text-white rounded-full text-xs font-bold border border-rose-500 hover:bg-rose-500 transition-all whitespace-nowrap animate-pulse"
+        >
+          {stats.sold} Terjual
+        </button>
+      </div>
+
       {/* Filters (simplified for stability) */}
       <div className="flex flex-wrap items-center gap-3 mb-4 bg-[#2a2a2a] p-2 rounded-lg border border-[#3a3a3a] shrink-0">
         <input
