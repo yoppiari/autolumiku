@@ -669,9 +669,9 @@ export default function EditVehiclePage() {
           {existingPhotosCount > 0 && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-gray-700">
+                <p className="text-sm font-medium text-gray-300">
                   Foto Saat Ini ({existingPhotosCount})
-                  <span className="ml-2 text-xs text-gray-500">
+                  <span className="ml-2 text-xs text-gray-400">
                     • <span className="hidden md:inline">Drag foto untuk mengubah urutan</span>
                     <span className="md:hidden">Gunakan tombol panah untuk mengatur urutan</span>
                   </span>
@@ -686,7 +686,7 @@ export default function EditVehiclePage() {
                   </span>
                 )}
               </div>
-              <div className="max-h-[400px] md:max-h-[500px] overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50 custom-scrollbar focus-within:ring-2 focus-within:ring-blue-100">
+              <div className="max-h-[400px] md:max-h-[500px] overflow-y-auto border border-[#444] rounded-lg p-3 bg-[#333] custom-scrollbar focus-within:ring-2 focus-within:ring-blue-100">
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   {vehicle?.photos.map((photo: any, index: number) => (
                     <div
@@ -711,7 +711,7 @@ export default function EditVehiclePage() {
                       <img
                         src={photo.thumbnailUrl || photo.originalUrl}
                         alt={`Photo ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 group-hover:border-blue-400"
+                        className="w-full h-32 object-cover rounded-lg border-2 border-[#444] group-hover:border-blue-400"
                       />
 
                       {/* Main Photo Badge - First photo is always main */}
@@ -913,7 +913,7 @@ export default function EditVehiclePage() {
                     />
                   </label>
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-400">
                   Max {MAX_PHOTOS} foto • Max 10MB per foto
                 </p>
               </div>
