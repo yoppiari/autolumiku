@@ -536,7 +536,7 @@ export default function VehiclesPage() {
                                 {vehicle.variant}
                               </span>
                             )}
-                            <span className={`px-2 py-0.5 text-[10px] md:text-xs font-bold rounded border uppercase ${getStatusColor(vehicle.status)}`}>
+                            <span className={`px-2 py-0.5 text-[10px] md:text-xs font-bold rounded border uppercase md:hidden ${getStatusColor(vehicle.status)}`}>
                               {getStatusLabel(vehicle.status)}
                             </span>
                           </div>
