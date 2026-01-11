@@ -29,7 +29,7 @@ export async function GET(
           _count: {
             select: {
               users: true,
-              vehicles: true,
+              // We'll fetch vehicles count manually to filter out DELETED items
             },
           },
         },
@@ -45,9 +45,28 @@ export async function GET(
         );
       }
 
+      // Calculate real vehicle count excluding DELETED status and potential junk data
+      const vehicleCount = await prisma.vehicle.count({
+        where: {
+          tenantId: id,
+          status: {
+            notIn: ['DELETED'] // Exclude explicitly deleted items
+          }
+        }
+      });
+
+      // Merge the correct count
+      const tenantWithCorrectCount = {
+        ...tenant,
+        _count: {
+          ...tenant._count,
+          vehicles: vehicleCount
+        }
+      };
+
       return NextResponse.json({
         success: true,
-        data: tenant,
+        data: tenantWithCorrectCount,
       });
     } catch (error) {
       console.error('Error fetching tenant:', error);
