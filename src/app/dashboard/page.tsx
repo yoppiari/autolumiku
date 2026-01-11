@@ -323,13 +323,13 @@ export default function ShowroomDashboardPage() {
       value: stats?.vehicles.total || 0,
       subValue: stats?.vehicles.thisMonth || 0,
       subLabel: 'bulan ini',
-      subColor: 'text-emerald-600',
+      subColor: 'text-emerald-400',
       emoji: '🚗',
       gradient: 'from-blue-500 to-blue-600',
-      bgLight: 'bg-blue-50',
+      bgLight: 'bg-blue-900/20',
       href: '/dashboard/vehicles',
-      colorClass: 'hover:border-blue-400 hover:bg-blue-50/50',
-      iconBg: 'bg-blue-100 group-hover:bg-blue-500 border-2 border-blue-200 group-hover:border-blue-500',
+      colorClass: 'hover:border-blue-500 hover:bg-blue-900/30',
+      iconBg: 'bg-blue-900/40 group-hover:bg-blue-600 border-2 border-blue-800 group-hover:border-blue-500',
       isAuthorized: canSeeKendaraan,
     },
     {
@@ -338,13 +338,13 @@ export default function ShowroomDashboardPage() {
       value: stats?.leads.active || 0,
       subValue: stats?.leads.today || 0,
       subLabel: 'chat hari ini',
-      subColor: 'text-emerald-600',
+      subColor: 'text-emerald-400',
       emoji: '📊',
       gradient: 'from-emerald-500 to-emerald-600',
-      bgLight: 'bg-emerald-50',
+      bgLight: 'bg-emerald-900/20',
       href: '/dashboard/whatsapp-ai/analytics',
-      colorClass: 'hover:border-emerald-400 hover:bg-emerald-50/50',
-      iconBg: 'bg-emerald-100 group-hover:bg-emerald-500 border-2 border-emerald-200 group-hover:border-emerald-500',
+      colorClass: 'hover:border-emerald-500 hover:bg-emerald-900/30',
+      iconBg: 'bg-emerald-900/40 group-hover:bg-emerald-600 border-2 border-emerald-800 group-hover:border-emerald-500',
       isAuthorized: canSeeAnalytics,
     },
     {
@@ -353,13 +353,13 @@ export default function ShowroomDashboardPage() {
       value: stats?.team.total || 0,
       subValue: stats?.team.active || 0,
       subLabel: 'aktif',
-      subColor: 'text-emerald-600',
+      subColor: 'text-emerald-400',
       emoji: '👥',
       gradient: 'from-violet-500 to-violet-600',
-      bgLight: 'bg-violet-50',
+      bgLight: 'bg-violet-900/20',
       href: '/dashboard/users',
-      colorClass: 'hover:border-violet-400 hover:bg-violet-50/50',
-      iconBg: 'bg-violet-100 group-hover:bg-violet-500 border-2 border-violet-200 group-hover:border-violet-500',
+      colorClass: 'hover:border-violet-500 hover:bg-violet-900/30',
+      iconBg: 'bg-violet-900/40 group-hover:bg-violet-600 border-2 border-violet-800 group-hover:border-violet-500',
       isAuthorized: canSeeTim,
     },
     {
@@ -368,19 +368,19 @@ export default function ShowroomDashboardPage() {
       value: 0, // TODO: Add blog stats
       subValue: 0,
       subLabel: 'artikel',
-      subColor: 'text-emerald-600',
+      subColor: 'text-emerald-400',
       emoji: '📝',
       gradient: 'from-rose-500 to-rose-600',
-      bgLight: 'bg-rose-50',
+      bgLight: 'bg-rose-900/20',
       href: '/dashboard/blog',
-      colorClass: 'hover:border-rose-400 hover:bg-rose-50/50',
-      iconBg: 'bg-rose-100 group-hover:bg-rose-500 border-2 border-rose-200 group-hover:border-rose-500',
+      colorClass: 'hover:border-rose-500 hover:bg-rose-900/30',
+      iconBg: 'bg-rose-900/40 group-hover:bg-rose-600 border-2 border-rose-800 group-hover:border-rose-500',
       isAuthorized: canSeeBlog,
     },
   ];
 
   return (
-    <div className="flex flex-col gap-3 min-h-[calc(100vh-90px)] -mt-2">
+    <div className="flex flex-col gap-3 min-h-[calc(100vh-90px)] -mt-2 !bg-[#1a1a1a] text-white" style={{ backgroundColor: '#1a1a1a', minHeight: '100vh', color: 'white' }}>
       {/* Welcome Header - Elegant Rich Modern */}
       <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-lg flex-shrink-0 ml-8 md:ml-0">
         <div className="min-w-0 flex-1">
@@ -402,7 +402,7 @@ export default function ShowroomDashboardPage() {
             key={stat.key}
             href={stat.href}
             isAuthorized={stat.isAuthorized}
-            className={`group bg-white rounded-xl border border-gray-200 ${stat.isAuthorized ? 'hover:shadow-lg' : ''} transition-all p-2 md:p-3 ${stat.isAuthorized ? stat.colorClass : ''}`}
+            className={`group bg-[#2a2a2a] rounded-xl border border-[#3a3a3a] ${stat.isAuthorized ? 'hover:shadow-lg hover:shadow-black/40' : ''} transition-all p-2 md:p-3 ${stat.isAuthorized ? stat.colorClass : ''}`}
           >
             {/* Mobile: Vertical layout, Desktop: Horizontal */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -412,18 +412,18 @@ export default function ShowroomDashboardPage() {
               </div>
               {/* Text - Below icon on mobile, Left on desktop */}
               <div className="flex-1 min-w-0 text-center md:text-left md:order-1">
-                <p className="text-[9px] md:text-[10px] font-medium text-gray-500 uppercase tracking-wide truncate">
+                <p className="text-[9px] md:text-[10px] font-medium text-gray-400 uppercase tracking-wide truncate">
                   {stat.title}
                 </p>
                 {loadingStats ? (
-                  <div className="h-5 md:h-6 w-8 md:w-10 bg-gray-100 animate-pulse rounded mt-1 mx-auto md:mx-0"></div>
+                  <div className="h-5 md:h-6 w-8 md:w-10 bg-[#3a3a3a] animate-pulse rounded mt-1 mx-auto md:mx-0"></div>
                 ) : (
-                  <p className="text-xl md:text-2xl font-bold text-gray-900">
+                  <p className="text-xl md:text-2xl font-bold text-white">
                     {stat.value}
                   </p>
                 )}
                 {!loadingStats && (
-                  <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 truncate">
+                  <p className="text-[9px] md:text-[10px] text-gray-500 mt-0.5 truncate">
                     <span className={stat.subColor}>
                       +{stat.subValue}
                     </span>
@@ -441,10 +441,10 @@ export default function ShowroomDashboardPage() {
         {/* Left: Analytics (MANAGER+ only) - now links to WhatsApp AI analytics */}
         {canSeeAnalytics && (
           <div className="md:col-span-2 order-2 md:order-1">
-            <div className="bg-white rounded-lg border border-gray-200 flex flex-col">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-                <h3 className="text-base md:text-lg font-bold text-gray-800">Analytics WhatsApp AI</h3>
-                <Link href="/dashboard/whatsapp-ai/analytics" className="text-xs md:text-sm text-blue-600 hover:text-blue-800 font-medium">
+            <div className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] flex flex-col">
+              <div className="px-4 py-3 border-b border-[#3a3a3a] flex items-center justify-between flex-shrink-0">
+                <h3 className="text-base md:text-lg font-bold text-white">Analytics WhatsApp AI</h3>
+                <Link href="/dashboard/whatsapp-ai/analytics" className="text-xs md:text-sm text-blue-400 hover:text-blue-300 font-medium">
                   Lihat Detail →
                 </Link>
               </div>
@@ -453,35 +453,35 @@ export default function ShowroomDashboardPage() {
                 {loadingKpi ? (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
                     {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="bg-white rounded-lg shadow p-3 md:p-4 animate-pulse">
-                        <div className="h-3 bg-gray-200 rounded w-20 mb-2"></div>
-                        <div className="h-6 bg-gray-200 rounded w-16 mb-1"></div>
-                        <div className="h-3 bg-gray-200 rounded w-24"></div>
+                      <div key={i} className="bg-[#333] rounded-lg shadow p-3 md:p-4 animate-pulse">
+                        <div className="h-3 bg-[#444] rounded w-20 mb-2"></div>
+                        <div className="h-6 bg-[#444] rounded w-16 mb-1"></div>
+                        <div className="h-3 bg-[#444] rounded w-24"></div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
-                    <div className="bg-white rounded-lg shadow p-3 md:p-4">
-                      <p className="text-xs md:text-sm text-gray-500">Total Penjualan</p>
-                      <p className="text-xl md:text-2xl font-bold text-gray-900">{kpiData?.raw.totalSold || 0}</p>
-                      <p className="text-[10px] md:text-xs text-green-600 mt-1">Unit terjual (Bulan ini)</p>
+                    <div className="bg-[#333] rounded-lg shadow p-3 md:p-4">
+                      <p className="text-xs md:text-sm text-gray-400">Total Penjualan</p>
+                      <p className="text-xl md:text-2xl font-bold text-white">{kpiData?.raw.totalSold || 0}</p>
+                      <p className="text-[10px] md:text-xs text-green-400 mt-1">Unit terjual (Bulan ini)</p>
                     </div>
-                    <div className="bg-white rounded-lg shadow p-3 md:p-4">
-                      <p className="text-xs md:text-sm text-gray-500">AI Response Rate</p>
-                      <p className="text-xl md:text-2xl font-bold text-blue-600">
+                    <div className="bg-[#333] rounded-lg shadow p-3 md:p-4">
+                      <p className="text-xs md:text-sm text-gray-400">AI Response Rate</p>
+                      <p className="text-xl md:text-2xl font-bold text-blue-400">
                         {analytics?.overview.aiResponseRate || 0}%
                       </p>
                       <p className="text-[10px] md:text-xs text-gray-500 mt-1">Chat hari ini</p>
                     </div>
-                    <div className="bg-white rounded-lg shadow p-3 md:p-4">
-                      <p className="text-xs md:text-sm text-gray-500">Today's Messages</p>
-                      <p className="text-xl md:text-2xl font-bold text-gray-900">{analytics?.overview.totalMessages || 0}</p>
+                    <div className="bg-[#333] rounded-lg shadow p-3 md:p-4">
+                      <p className="text-xs md:text-sm text-gray-400">Today's Messages</p>
+                      <p className="text-xl md:text-2xl font-bold text-white">{analytics?.overview.totalMessages || 0}</p>
                       <p className="text-[10px] md:text-xs text-gray-500 mt-1">Pesan terproses</p>
                     </div>
-                    <div className="bg-white rounded-lg shadow p-3 md:p-4">
-                      <p className="text-xs md:text-sm text-gray-500">Escalation Rate</p>
-                      <p className="text-xl md:text-2xl font-bold text-purple-600">
+                    <div className="bg-[#333] rounded-lg shadow p-3 md:p-4">
+                      <p className="text-xs md:text-sm text-gray-400">Escalation Rate</p>
+                      <p className="text-xl md:text-2xl font-bold text-purple-400">
                         {analytics?.overview.escalationRate || 0}%
                       </p>
                       <p className="text-[10px] md:text-xs text-gray-500 mt-1">Dialihkan ke tim</p>
@@ -492,16 +492,16 @@ export default function ShowroomDashboardPage() {
                 {loadingAnalytics ? (
                   <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="bg-white rounded-lg shadow border border-gray-200 animate-pulse min-w-[220px] md:min-w-0 p-3 md:p-4">
-                        <div className="h-4 bg-gray-200 rounded w-24 mb-4"></div>
+                      <div key={i} className="bg-[#2a2a2a] rounded-lg shadow border border-[#3a3a3a] animate-pulse min-w-[220px] md:min-w-0 p-3 md:p-4">
+                        <div className="h-4 bg-[#3a3a3a] rounded w-24 mb-4"></div>
                         <div className="flex justify-center py-4">
-                          <div className="w-28 h-28 md:w-32 md:h-32 bg-gray-200 rounded-full"></div>
+                          <div className="w-28 h-28 md:w-32 md:h-32 bg-[#3a3a3a] rounded-full"></div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 mt-4">
                           {[1, 2, 3, 4, 5, 6].map((j) => (
                             <div key={j} className="flex items-center gap-2">
-                              <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
-                              <div className="h-3 bg-gray-200 rounded w-16"></div>
+                              <div className="w-3 h-3 bg-[#3a3a3a] rounded-full"></div>
+                              <div className="h-3 bg-[#3a3a3a] rounded w-16"></div>
                             </div>
                           ))}
                         </div>
@@ -513,9 +513,9 @@ export default function ShowroomDashboardPage() {
                     {/* Metrix Penjualan */}
                     <Link
                       href="/dashboard/whatsapp-ai/analytics"
-                      className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col min-w-[220px] md:min-w-0"
+                      className="bg-[#2a2a2a] rounded-lg shadow p-3 md:p-4 hover:bg-[#333] transition-colors border border-[#3a3a3a] hover:border-blue-500 hover:shadow-md flex flex-col min-w-[220px] md:min-w-0"
                     >
-                      <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
                         <span className="text-lg">📊</span> Metrix Penjualan
                       </h4>
 
@@ -523,7 +523,7 @@ export default function ShowroomDashboardPage() {
                       <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
                         <div className="relative w-28 h-28 md:w-32 md:h-32">
                           <svg className="w-full h-full" viewBox="0 0 36 36">
-                            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3a3a3a" strokeWidth="3.5" />
                             <circle
                               cx="18" cy="18" r="15.9155"
                               fill="none"
@@ -535,40 +535,40 @@ export default function ShowroomDashboardPage() {
                             />
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-2xl md:text-3xl font-bold text-blue-600">{kpiData?.penjualanShowroom || 0}%</span>
-                            <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">Target Bulanan</span>
+                            <span className="text-2xl md:text-3xl font-bold text-blue-500">{kpiData?.penjualanShowroom || 0}%</span>
+                            <span className="text-[8px] md:text-[10px] text-gray-400 font-medium">Target Bulanan</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Indicators List */}
-                      <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
+                      <div className="space-y-1.5 md:space-y-2 border-t border-[#3a3a3a] pt-2 md:pt-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-green-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">ATV</span>
+                            <span className="text-[10px] md:text-xs text-gray-300 font-medium">ATV</span>
                           </div>
-                          <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.atv || 0}%</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white">{kpiData?.atv || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-purple-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Turnover</span>
+                            <span className="text-[10px] md:text-xs text-gray-300 font-medium">Turnover</span>
                           </div>
-                          <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white">{kpiData?.inventoryTurnover || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-blue-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Showroom</span>
+                            <span className="text-[10px] md:text-xs text-gray-300 font-medium">Showroom</span>
                           </div>
-                          <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.penjualanShowroom || 0}%</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white">{kpiData?.penjualanShowroom || 0}%</span>
                         </div>
                       </div>
 
                       {/* Footer Note */}
-                      <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
-                        <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#3b82f6' }}>
+                      <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-[#3a3a3a]">
+                        <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#60a5fa' }}>
                           Target: 20% inventory sold per month (2-5 vehicles)
                         </p>
                       </div>
@@ -577,9 +577,9 @@ export default function ShowroomDashboardPage() {
                     {/* Metrix Pelanggan */}
                     <Link
                       href="/dashboard/whatsapp-ai/analytics"
-                      className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col min-w-[220px] md:min-w-0"
+                      className="bg-[#2a2a2a] rounded-lg shadow p-3 md:p-4 hover:bg-[#333] transition-colors border border-[#3a3a3a] hover:border-blue-500 hover:shadow-md flex flex-col min-w-[220px] md:min-w-0"
                     >
-                      <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
                         <span className="text-lg">👥</span> Metrix Pelanggan
                       </h4>
 
@@ -587,7 +587,7 @@ export default function ShowroomDashboardPage() {
                       <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
                         <div className="relative w-28 h-28 md:w-32 md:h-32">
                           <svg className="w-full h-full" viewBox="0 0 36 36">
-                            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3a3a3a" strokeWidth="3.5" />
                             <circle
                               cx="18" cy="18" r="15.9155"
                               fill="none"
@@ -599,40 +599,40 @@ export default function ShowroomDashboardPage() {
                             />
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-2xl md:text-3xl font-bold text-amber-600">{kpiData?.nps || 0}%</span>
-                            <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">NPS Score</span>
+                            <span className="text-2xl md:text-3xl font-bold text-amber-500">{kpiData?.nps || 0}%</span>
+                            <span className="text-[8px] md:text-[10px] text-gray-400 font-medium">NPS Score</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Indicators List */}
-                      <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
+                      <div className="space-y-1.5 md:space-y-2 border-t border-[#3a3a3a] pt-2 md:pt-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-teal-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Retention</span>
+                            <span className="text-[10px] md:text-xs text-gray-300 font-medium">Retention</span>
                           </div>
-                          <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.customerRetention || 0}%</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white">{kpiData?.customerRetention || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-amber-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">NPS Score</span>
+                            <span className="text-[10px] md:text-xs text-gray-300 font-medium">NPS Score</span>
                           </div>
-                          <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.nps || 0}%</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white">{kpiData?.nps || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-cyan-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Conversion</span>
+                            <span className="text-[10px] md:text-xs text-gray-300 font-medium">Conversion</span>
                           </div>
-                          <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.raw?.leadConversion || 0}%</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white">{kpiData?.raw?.leadConversion || 0}%</span>
                         </div>
                       </div>
 
                       {/* Footer Note */}
-                      <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
-                        <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#f59e0b' }}>
+                      <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-[#3a3a3a]">
+                        <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#fcd34d' }}>
                           Target: NPS &gt; 50% (Excellent)
                         </p>
                       </div>
@@ -641,9 +641,9 @@ export default function ShowroomDashboardPage() {
                     {/* Metrix Operasional */}
                     <Link
                       href="/dashboard/whatsapp-ai/analytics"
-                      className="bg-white rounded-lg shadow p-3 md:p-4 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 hover:shadow-md flex flex-col min-w-[220px] md:min-w-0"
+                      className="bg-[#2a2a2a] rounded-lg shadow p-3 md:p-4 hover:bg-[#333] transition-colors border border-[#3a3a3a] hover:border-blue-500 hover:shadow-md flex flex-col min-w-[220px] md:min-w-0"
                     >
-                      <h4 className="text-sm font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
                         <span className="text-lg">⚙️</span> Metrix Operasional
                       </h4>
 
@@ -651,7 +651,7 @@ export default function ShowroomDashboardPage() {
                       <div className="flex items-center justify-center py-2 md:py-3 mb-2 md:mb-3">
                         <div className="relative w-28 h-28 md:w-32 md:h-32">
                           <svg className="w-full h-full" viewBox="0 0 36 36">
-                            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3a3a3a" strokeWidth="3.5" />
                             <circle
                               cx="18" cy="18" r="15.9155"
                               fill="none"
@@ -663,40 +663,40 @@ export default function ShowroomDashboardPage() {
                             />
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-2xl md:text-3xl font-bold text-violet-600">{kpiData?.efficiency || 0}%</span>
+                            <span className="text-2xl md:text-3xl font-bold text-violet-500">{kpiData?.efficiency || 0}%</span>
                             <span className="text-[8px] md:text-[10px] text-gray-600 font-medium">Efficiency</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Indicators List */}
-                      <div className="space-y-1.5 md:space-y-2 border-t border-gray-100 pt-2 md:pt-3">
+                      <div className="space-y-1.5 md:space-y-2 border-t border-[#3a3a3a] pt-2 md:pt-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-indigo-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Sales/Emp</span>
+                            <span className="text-[10px] md:text-xs text-gray-300 font-medium">Sales/Emp</span>
                           </div>
-                          <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.salesPerEmployee || 0}%</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white">{kpiData?.salesPerEmployee || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-violet-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Efficiency</span>
+                            <span className="text-[10px] md:text-xs text-gray-300 font-medium">Efficiency</span>
                           </div>
-                          <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.efficiency || 0}%</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white">{kpiData?.efficiency || 0}%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 md:gap-2">
                             <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-rose-500"></span>
-                            <span className="text-[10px] md:text-xs text-gray-700 font-medium">Velocity</span>
+                            <span className="text-[10px] md:text-xs text-gray-300 font-medium">Velocity</span>
                           </div>
-                          <span className="text-[10px] md:text-xs font-bold text-gray-900">{kpiData?.inventoryTurnover || 0}%</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white">{kpiData?.inventoryTurnover || 0}%</span>
                         </div>
                       </div>
 
                       {/* Footer Note */}
-                      <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-gray-100">
-                        <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#8b5cf6' }}>
+                      <div className="mt-2 md:mt-3 pt-1.5 md:pt-2 border-t border-[#3a3a3a]">
+                        <p className="text-[7px] md:text-[8px] leading-snug" style={{ color: '#a78bfa' }}>
                           Target: 2 vehicles/employee/month
                         </p>
                       </div>
@@ -714,12 +714,12 @@ export default function ShowroomDashboardPage() {
 
           {/* Recent Sales Activity */}
           <div className="mt-3 md:mt-4">
-            <div className="bg-white rounded-lg shadow p-3 md:p-4">
+            <div className="bg-[#2a2a2a] rounded-lg shadow p-3 md:p-4 border border-[#3a3a3a]">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs md:text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                <h4 className="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
                   <span>🚗</span> Recent Sales
                 </h4>
-                <Link href="/dashboard/vehicles?status=SOLD" className="text-[9px] md:text-[10px] text-blue-600 hover:text-blue-800 font-medium">
+                <Link href="/dashboard/vehicles?status=SOLD" className="text-[9px] md:text-[10px] text-blue-400 hover:text-blue-300 font-medium">
                   View All →
                 </Link>
               </div>
@@ -728,10 +728,10 @@ export default function ShowroomDashboardPage() {
                 <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center gap-3 animate-pulse">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                      <div className="w-10 h-10 bg-[#3a3a3a] rounded-full"></div>
                       <div className="flex-1">
-                        <div className="h-3 bg-gray-200 rounded w-24 mb-1"></div>
-                        <div className="h-2 bg-gray-200 rounded w-16"></div>
+                        <div className="h-3 bg-[#3a3a3a] rounded w-24 mb-1"></div>
+                        <div className="h-2 bg-[#3a3a3a] rounded w-16"></div>
                       </div>
                     </div>
                   ))}
@@ -739,19 +739,19 @@ export default function ShowroomDashboardPage() {
               ) : recentSales.length > 0 ? (
                 <div className="space-y-2">
                   {recentSales.slice(0, 5).map((sale) => (
-                    <div key={sale.id} className="flex items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100">
+                    <div key={sale.id} className="flex items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-[#333] transition-colors border border-[#3a3a3a]">
                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs md:text-sm font-bold">🚙</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] md:text-xs font-semibold text-gray-900 truncate">
+                        <p className="text-[10px] md:text-xs font-semibold text-white truncate">
                           {sale.make} {sale.model} ({sale.year})
                         </p>
-                        <p className="text-[8px] md:text-[10px] text-gray-500 truncate">
+                        <p className="text-[8px] md:text-[10px] text-gray-400 truncate">
                           {formatRupiah(sale.price)} • {formatTanggal(sale.soldAt)}
                         </p>
                       </div>
-                      <div className="text-[8px] md:text-[10px] text-gray-400 flex-shrink-0">
+                      <div className="text-[8px] md:text-[10px] text-gray-500 flex-shrink-0">
                         {sale.soldByName || 'Staff'}
                       </div>
                     </div>
@@ -767,12 +767,12 @@ export default function ShowroomDashboardPage() {
 
           {/* Low Stock Alerts */}
           <div className="mt-3 md:mt-4">
-            <div className="bg-white rounded-lg shadow p-3 md:p-4">
+            <div className="bg-[#2a2a2a] rounded-lg shadow p-3 md:p-4 border border-[#3a3a3a]">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs md:text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                <h4 className="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
                   <span>⚠️</span> Low Stock Alerts
                 </h4>
-                <Link href="/dashboard/vehicles?status=AVAILABLE" className="text-[9px] md:text-[10px] text-blue-600 hover:text-blue-800 font-medium">
+                <Link href="/dashboard/vehicles?status=AVAILABLE" className="text-[9px] md:text-[10px] text-blue-400 hover:text-blue-300 font-medium">
                   View All →
                 </Link>
               </div>
@@ -781,10 +781,10 @@ export default function ShowroomDashboardPage() {
                 <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center gap-3 animate-pulse">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                      <div className="w-10 h-10 bg-[#3a3a3a] rounded-full"></div>
                       <div className="flex-1">
-                        <div className="h-3 bg-gray-200 rounded w-24 mb-1"></div>
-                        <div className="h-2 bg-gray-200 rounded w-16"></div>
+                        <div className="h-3 bg-[#3a3a3a] rounded w-24 mb-1"></div>
+                        <div className="h-2 bg-[#3a3a3a] rounded w-16"></div>
                       </div>
                     </div>
                   ))}
@@ -792,30 +792,30 @@ export default function ShowroomDashboardPage() {
               ) : lowStockItems.length > 0 ? (
                 <div className="space-y-2">
                   {lowStockItems.slice(0, 5).map((item) => (
-                    <div key={item.id} className="flex items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-amber-50 transition-colors border border-amber-200">
+                    <div key={item.id} className="flex items-center gap-2 md:gap-3 p-2 rounded-lg hover:bg-amber-900/20 transition-colors border border-amber-900/30">
                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs md:text-sm font-bold">📦</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] md:text-xs font-semibold text-gray-900 truncate">
+                        <p className="text-[10px] md:text-xs font-semibold text-white truncate">
                           {item.make} {item.model} ({item.year})
                         </p>
-                        <p className="text-[8px] md:text-[10px] text-gray-500 truncate">
+                        <p className="text-[8px] md:text-[10px] text-gray-400 truncate">
                           {formatRupiah(item.price)} • {item.displayId}
                         </p>
                       </div>
-                      <div className="px-2 py-0.5 md:px-2.5 md:py-1 bg-amber-100 text-amber-800 text-[8px] md:text-[10px] font-semibold rounded-full flex-shrink-0">
+                      <div className="px-2 py-0.5 md:px-2.5 md:py-1 bg-amber-900/40 text-amber-200 text-[8px] md:text-[10px] font-semibold rounded-full flex-shrink-0">
                         Ready
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 md:py-8 bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className="text-center py-6 md:py-8 bg-[#333]/50 rounded-lg border border-dashed border-[#444]">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-xl md:text-2xl">✅</span>
                   </div>
-                  <p className="text-xs md:text-sm font-bold text-gray-900">Stok aman</p>
+                  <p className="text-xs md:text-sm font-bold text-white">Stok aman</p>
                   <p className="text-[10px] md:text-xs text-gray-500 mt-1">Unit tersedia</p>
                 </div>
               )}

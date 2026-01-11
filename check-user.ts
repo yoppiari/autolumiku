@@ -1,64 +1,29 @@
-/**
- * Debug script to check user registration
- * Run: npx tsx check-user.ts 6281310703754
- */
 
 import { prisma } from './src/lib/prisma';
 
-async function checkUser(phone: string) {
-  console.log('🔍 Checking user with phone:', phone);
+async function checkUser() {
+  const phone = '081310703754';
+  const digits = phone.replace(/\D/g, "");
+  const normalized = digits.startsWith("0") ? "62" + digits.substring(1) : digits;
 
-  // Try different formats
-  const phones = [
-    phone,
-    phone.replace(/^62/, '0'),
-    `62${phone.replace(/^0/, '')}`,
-  ];
+  console.log(`Checking for phone: ${phone} (Normalized: ${normalized})`);
 
-  for (const p of phones) {
-    console.log(`\n📱 Trying phone format: ${p}`);
-
-    const user = await prisma.user.findFirst({
-      where: {
-        phone: p,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        role: true,
-        roleLevel: true,
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    if (user) {
-      console.log('✅ USER FOUND!');
-      console.log('ID:', user.id);
-      console.log('Name:', `${user.firstName} ${user.lastName}`);
-      console.log('Phone:', user.phone);
-      console.log('Role:', user.role);
-      console.log('Role Level:', user.roleLevel);
-      console.log('Tenant:', user.tenant?.name || 'N/A');
-      console.log('\n✅ Can access PDF commands:', user.roleLevel >= 90);
-      return;
+  const users = await prisma.user.findMany({
+    where: {
+      phone: { contains: digits.substring(3) } // Fuzzy search
     }
-  }
+  });
 
-  console.log('\n❌ USER NOT FOUND!');
-  console.log('Please register this user at: https://primamobil.id/dashboard/users');
+  console.log(`Found ${users.length} users with similar phone numbers:`);
+  console.dir(users, { depth: null });
+
+  if (users.length === 0) {
+    console.log("No users found. Creating one for testing if empty?");
+  }
 }
 
-const phone = process.argv[2] || '6281310703754';
-checkUser(phone)
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error('Error:', err);
-    process.exit(1);
+checkUser()
+  .catch(e => console.error(e))
+  .finally(async () => {
+    await prisma.$disconnect();
   });
