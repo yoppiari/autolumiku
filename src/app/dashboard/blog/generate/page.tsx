@@ -251,7 +251,7 @@ export default function BlogGeneratorPage() {
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-[#2a2a2a] rounded-lg shadow-lg p-6 mb-6">
           <div className="flex justify-between items-start mb-6">
             <h1 className="text-2xl font-bold">Preview Article</h1>
             <div className="flex gap-4 text-sm">
@@ -259,25 +259,25 @@ export default function BlogGeneratorPage() {
                 <div className="font-semibold text-lg text-blue-600">
                   {editedBlog.seoScore}/100
                 </div>
-                <div className="text-gray-600">SEO Score</div>
+                <div className="text-gray-400">SEO Score</div>
               </div>
               <div className="text-center">
                 <div className="font-semibold text-lg text-green-600">
                   {editedBlog.wordCount}
                 </div>
-                <div className="text-gray-600">Words</div>
+                <div className="text-gray-400">Words</div>
               </div>
               <div className="text-center">
                 <div className="font-semibold text-lg text-purple-600">
                   {editedBlog.readabilityScore.toFixed(0)}
                 </div>
-                <div className="text-gray-600">Readability</div>
+                <div className="text-gray-400">Readability</div>
               </div>
             </div>
           </div>
 
           {/* Featured Image */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="mb-6 p-4 bg-[#333] rounded-lg border border-[#3a3a3a]">
             <h3 className="text-lg font-semibold mb-3">Featured Image</h3>
             <div className="flex items-center justify-center bg-gray-200 rounded-lg h-48 overflow-hidden">
               {editedBlog.featuredImage ? (
@@ -312,7 +312,7 @@ export default function BlogGeneratorPage() {
 
           {/* Title */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Title <span className="text-gray-500">({editedBlog.title.length}/60 chars)</span>
             </label>
             <input
@@ -321,7 +321,7 @@ export default function BlogGeneratorPage() {
               onChange={(e) =>
                 setEditedBlog({ ...editedBlog, title: e.target.value })
               }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-3 border border-[#444] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             {editedBlog.title.length > 60 && (
               <p className="mt-1 text-xs text-orange-600">
@@ -332,7 +332,7 @@ export default function BlogGeneratorPage() {
 
           {/* Meta Description */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Meta Description{' '}
               <span className="text-gray-500">({editedBlog.metaDescription.length}/160 chars)</span>
             </label>
@@ -342,7 +342,7 @@ export default function BlogGeneratorPage() {
                 setEditedBlog({ ...editedBlog, metaDescription: e.target.value })
               }
               rows={2}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-3 border border-[#444] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             {(editedBlog.metaDescription.length < 140 ||
               editedBlog.metaDescription.length > 160) && (
@@ -354,7 +354,7 @@ export default function BlogGeneratorPage() {
 
           {/* Keywords */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Keywords
             </label>
             <div className="flex flex-wrap gap-2">
@@ -371,7 +371,7 @@ export default function BlogGeneratorPage() {
 
           {/* Local Keywords */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Local Keywords
             </label>
             <div className="flex flex-wrap gap-2">
@@ -388,11 +388,11 @@ export default function BlogGeneratorPage() {
 
           {/* Content Preview */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Content Preview
             </label>
             <div
-              className="prose max-w-none p-4 border border-gray-300 rounded-lg bg-gray-50"
+              className="prose max-w-none p-4 border border-[#444] rounded-lg bg-[#333]"
               dangerouslySetInnerHTML={{ __html: editedBlog.content }}
             />
           </div>
@@ -400,14 +400,14 @@ export default function BlogGeneratorPage() {
           {/* Related Topics */}
           {editedBlog.relatedTopics && editedBlog.relatedTopics.length > 0 && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Related Topics (for internal linking)
               </label>
               <div className="flex flex-wrap gap-2">
                 {editedBlog.relatedTopics.map((topic, idx) => (
                   <span
                     key={idx}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                    className="px-3 py-1 bg-gray-100 text-gray-300 rounded-full text-sm"
                   >
                     🔗 {topic}
                   </span>
@@ -426,7 +426,7 @@ export default function BlogGeneratorPage() {
           <div className="flex justify-between pt-4 border-t">
             <button
               onClick={() => router.push('/dashboard/blog')}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              className="px-6 py-2 border border-[#444] rounded-lg text-gray-300 hover:bg-[#333]"
             >
               Batal
             </button>
@@ -452,9 +452,9 @@ export default function BlogGeneratorPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold mb-2">Generate Blog Post dengan AI</h1>
-        <p className="text-gray-600 mb-8">
+      <div className="bg-[#2a2a2a] rounded-lg shadow-lg p-8">
+        <h1 className="text-3xl font-bold mb-2 text-white">Generate Blog Post dengan AI</h1>
+        <p className="text-gray-400 mb-8">
           Buat artikel SEO-optimized dalam hitungan menit
         </p>
 
@@ -487,12 +487,12 @@ export default function BlogGeneratorPage() {
                 onClick={() => setCategory(cat.id as BlogCategory)}
                 className={`p-4 border-2 rounded-lg text-left transition-all ${category === cat.id
                   ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-300'
+                  : 'border-[#3a3a3a] hover:border-blue-300'
                   }`}
               >
                 <div className="text-3xl mb-2">{cat.icon}</div>
                 <div className="font-semibold text-sm mb-1">{cat.name}</div>
-                <div className="text-xs text-gray-600">{cat.description}</div>
+                <div className="text-xs text-gray-400">{cat.description}</div>
               </button>
             ))}
           </div>
@@ -506,9 +506,9 @@ export default function BlogGeneratorPage() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder='Contoh: "Toyota Avanza 2020" atau "Perbandingan SUV keluarga"'
-            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full p-4 border border-[#444] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-400">
             💡 Tip: Semakin spesifik topik, semakin relevan artikel yang dihasilkan
           </p>
         </div>
@@ -517,7 +517,7 @@ export default function BlogGeneratorPage() {
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4">3. Pilih Tone</h2>
           <div className="space-y-3">
-            <label className="flex items-start gap-3 p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+            <label className="flex items-start gap-3 p-4 border border-[#444] rounded-lg cursor-pointer hover:bg-[#333]">
               <input
                 type="radio"
                 name="tone"
@@ -528,13 +528,13 @@ export default function BlogGeneratorPage() {
               />
               <div>
                 <div className="font-semibold">Formal</div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-400">
                   Profesional, edukatif - untuk artikel teknis dan panduan detail
                 </div>
               </div>
             </label>
 
-            <label className="flex items-start gap-3 p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+            <label className="flex items-start gap-3 p-4 border border-[#444] rounded-lg cursor-pointer hover:bg-[#333]">
               <input
                 type="radio"
                 name="tone"
@@ -547,13 +547,13 @@ export default function BlogGeneratorPage() {
                 <div className="font-semibold">
                   Casual <span className="text-blue-600 text-xs">✓ Recommended</span>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-400">
                   Santai, mudah dipahami - untuk artikel umum dan tips
                 </div>
               </div>
             </label>
 
-            <label className="flex items-start gap-3 p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+            <label className="flex items-start gap-3 p-4 border border-[#444] rounded-lg cursor-pointer hover:bg-[#333]">
               <input
                 type="radio"
                 name="tone"
@@ -564,7 +564,7 @@ export default function BlogGeneratorPage() {
               />
               <div>
                 <div className="font-semibold">Friendly</div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-400">
                   Hangat, personal - untuk artikel yang engaging dan dekat dengan pembaca
                 </div>
               </div>
@@ -580,9 +580,9 @@ export default function BlogGeneratorPage() {
             value={targetLocation}
             onChange={(e) => setTargetLocation(e.target.value)}
             placeholder="Jakarta"
-            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full p-4 border border-[#444] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-400">
             💡 Artikel akan dioptimasi untuk pencarian lokal di area ini
           </p>
         </div>
@@ -590,7 +590,7 @@ export default function BlogGeneratorPage() {
         {/* Step 5: Featured Image */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4">5. Gambar Utama (Opsional)</h2>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+          <div className="border-2 border-dashed border-[#444] rounded-lg p-6">
             {featuredImage ? (
               <div className="relative">
                 <img
@@ -622,7 +622,7 @@ export default function BlogGeneratorPage() {
                   {isUploading ? (
                     <>
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-3"></div>
-                      <span className="text-gray-600">Mengupload...</span>
+                      <span className="text-gray-400">Mengupload...</span>
                     </>
                   ) : (
                     <>
@@ -635,7 +635,7 @@ export default function BlogGeneratorPage() {
               </div>
             )}
           </div>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-400">
             💡 Gambar akan digunakan sebagai cover artikel di halaman blog
           </p>
         </div>
@@ -650,7 +650,7 @@ export default function BlogGeneratorPage() {
         <div className="flex justify-between pt-6 border-t">
           <button
             onClick={() => router.push('/dashboard/blog')}
-            className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="px-6 py-3 border border-[#444] rounded-lg text-gray-300 hover:bg-[#333]"
           >
             Batal
           </button>
