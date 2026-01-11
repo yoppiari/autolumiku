@@ -26,6 +26,8 @@ interface Vehicle {
   transmissionType?: string;
   fuelType?: string;
   photos: { thumbnailUrl: string; originalUrl: string }[];
+  description?: string;
+  updatedBy?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -587,6 +589,19 @@ export default function VehiclesPage() {
                               </span>
                             );
                           })()}
+                        </div>
+                      )}
+
+                      {/* List View: Brief Description / Key Points (Fills Empty Space) */}
+                      {viewMode === 'list' && (
+                        <div className="mt-3 bg-[#333]/30 p-2 rounded border border-[#3a3a3a] min-h-[50px]">
+                          <p className="text-xs text-gray-400 line-clamp-2 italic">
+                            {vehicle.description || "Belum ada catatan kondisi."}
+                          </p>
+                          <div className="mt-1 flex items-center justify-between text-[10px] text-gray-500">
+                            <span>Updated by {vehicle.updatedBy || 'Admin'}</span>
+                            <span>{new Date(vehicle.updatedAt).toLocaleDateString('id-ID')}</span>
+                          </div>
                         </div>
                       )}
 
