@@ -197,9 +197,10 @@ export default function VehiclesPage() {
 
         const mapping: Record<string, string> = {};
         usersList.forEach((user: any) => {
-          // Construct full name
+          // Construct full name + Phone/WA
           const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.name || user.email?.split('@')[0] || 'Unknown';
-          mapping[user.id] = fullName;
+          const phone = user.phone ? ` (${user.phone})` : '';
+          mapping[user.id] = fullName + phone;
         });
         console.log('User mapping loaded:', Object.keys(mapping).length, 'users');
         setUserMap(mapping);
