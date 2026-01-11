@@ -208,8 +208,8 @@ export default function WhatsAppAIConfigPage() {
         <Link href="/dashboard/whatsapp-ai" className="text-blue-600 hover:text-blue-800 mb-1 md:mb-2 inline-block text-xs md:text-sm">
           ← Back to WhatsApp AI Dashboard
         </Link>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">AI Configuration</h1>
-        <p className="text-gray-600 text-[10px] md:text-sm">Customize AI behavior and features</p>
+        <h1 className="text-xl md:text-2xl font-bold text-white leading-tight">AI Configuration</h1>
+        <p className="text-gray-400 text-[10px] md:text-sm">Customize AI behavior and features</p>
       </div>
 
       {/* Connection Status Card */}
@@ -298,27 +298,27 @@ export default function WhatsAppAIConfigPage() {
 
       <div className="space-y-6">
         {/* Basic Settings */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+        <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-4 md:p-5">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Basic Settings</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">AI Name</label>
+              <label className="block text-xs font-medium text-gray-300 mb-1">AI Name</label>
               <input
                 type="text"
                 value={config.aiName}
                 onChange={(e) => setConfig({ ...config, aiName: e.target.value })}
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-1.5 text-sm border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="e.g., Asisten Virtual"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Personality</label>
+              <label className="block text-xs font-medium text-gray-300 mb-1">Personality</label>
               <select
                 value={config.aiPersonality}
                 onChange={(e) => setConfig({ ...config, aiPersonality: e.target.value })}
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-1.5 text-sm border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="friendly">Friendly & Casual</option>
                 <option value="professional">Professional & Formal</option>
@@ -328,12 +328,12 @@ export default function WhatsAppAIConfigPage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Welcome Message</label>
+              <label className="block text-xs font-medium text-gray-300 mb-1">Welcome Message</label>
               <textarea
                 value={config.welcomeMessage}
                 onChange={(e) => setConfig({ ...config, welcomeMessage: e.target.value })}
                 rows={2}
-                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-y min-h-[60px]"
+                className="w-full px-3 py-1.5 border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-y min-h-[60px]"
                 placeholder="{greeting}! 👋 Selamat datang di {showroom}!"
               />
             </div>
@@ -341,7 +341,7 @@ export default function WhatsAppAIConfigPage() {
         </div>
 
         {/* Features */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+        <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-4 md:p-5">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Features</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
@@ -350,9 +350,9 @@ export default function WhatsAppAIConfigPage() {
                 type="checkbox"
                 checked={config.autoReply}
                 onChange={(e) => setConfig({ ...config, autoReply: e.target.checked })}
-                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                className="w-4 h-4 text-green-600 border-[#444] rounded focus:ring-green-500"
               />
-              <span className="ml-2.5 text-xs md:text-sm text-gray-700">Auto Reply (balas otomatis customer)</span>
+              <span className="ml-2.5 text-xs md:text-sm text-gray-300">Auto Reply (balas otomatis customer)</span>
             </label>
 
             <label className="flex items-center">
@@ -360,9 +360,9 @@ export default function WhatsAppAIConfigPage() {
                 type="checkbox"
                 checked={config.customerChatEnabled}
                 onChange={(e) => setConfig({ ...config, customerChatEnabled: e.target.checked })}
-                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                className="w-4 h-4 text-green-600 border-[#444] rounded focus:ring-green-500"
               />
-              <span className="ml-2.5 text-xs md:text-sm text-gray-700">Customer Chat (AI melayani customer)</span>
+              <span className="ml-2.5 text-xs md:text-sm text-gray-300">Customer Chat (AI melayani customer)</span>
             </label>
 
             <label className="flex items-center">
@@ -370,9 +370,9 @@ export default function WhatsAppAIConfigPage() {
                 type="checkbox"
                 checked={config.staffCommandsEnabled}
                 onChange={(e) => setConfig({ ...config, staffCommandsEnabled: e.target.checked })}
-                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                className="w-4 h-4 text-green-600 border-[#444] rounded focus:ring-green-500"
               />
-              <span className="ml-2.5 text-xs md:text-sm text-gray-700">Staff Commands (staff bisa kirim command)</span>
+              <span className="ml-2.5 text-xs md:text-sm text-gray-300">Staff Commands (staff bisa kirim command)</span>
             </label>
 
             <label className="flex items-center">
@@ -380,9 +380,9 @@ export default function WhatsAppAIConfigPage() {
                 type="checkbox"
                 checked={config.enableVehicleInfo}
                 onChange={(e) => setConfig({ ...config, enableVehicleInfo: e.target.checked })}
-                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                className="w-4 h-4 text-green-600 border-[#444] rounded focus:ring-green-500"
               />
-              <span className="ml-2.5 text-xs md:text-sm text-gray-700">Vehicle Info (AI dapat info stok)</span>
+              <span className="ml-2.5 text-xs md:text-sm text-gray-300">Vehicle Info (AI dapat info stok)</span>
             </label>
 
             <label className="flex items-center">
@@ -390,15 +390,15 @@ export default function WhatsAppAIConfigPage() {
                 type="checkbox"
                 checked={config.enableTestDriveBooking}
                 onChange={(e) => setConfig({ ...config, enableTestDriveBooking: e.target.checked })}
-                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                className="w-4 h-4 text-green-600 border-[#444] rounded focus:ring-green-500"
               />
-              <span className="ml-2.5 text-xs md:text-sm text-gray-700">Test Drive Booking (AI bantu jadwal)</span>
+              <span className="ml-2.5 text-xs md:text-sm text-gray-300">Test Drive Booking (AI bantu jadwal)</span>
             </label>
           </div>
         </div>
 
         {/* Business Hours */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
+        <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-4 md:p-5">
           <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3">Business Hours</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
@@ -408,7 +408,7 @@ export default function WhatsAppAIConfigPage() {
 
               return (
                 <div key={day} className="flex items-center gap-3">
-                  <div className="w-16 text-xs font-medium text-gray-700 flex-shrink-0">{DAY_LABELS[day]}</div>
+                  <div className="w-16 text-xs font-medium text-gray-300 flex-shrink-0">{DAY_LABELS[day]}</div>
                   <label className="flex items-center flex-shrink-0">
                     <input
                       type="checkbox"
@@ -420,7 +420,7 @@ export default function WhatsAppAIConfigPage() {
                           : { open: 'closed', close: 'closed' };
                         setConfig({ ...config, businessHours: newHours });
                       }}
-                      className="w-3.5 h-3.5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      className="w-3.5 h-3.5 text-green-600 border-[#444] rounded focus:ring-green-500"
                     />
                     <span className="ml-1 text-[10px] md:text-xs text-gray-600">Open</span>
                   </label>
@@ -434,7 +434,7 @@ export default function WhatsAppAIConfigPage() {
                           newHours[day] = { ...hours, open: e.target.value };
                           setConfig({ ...config, businessHours: newHours });
                         }}
-                        className="px-1.5 py-0.5 border border-gray-300 rounded text-[10px] md:text-xs w-[75px]"
+                        className="px-1.5 py-0.5 border border-[#444] rounded text-[10px] md:text-xs w-[75px]"
                       />
                       <span className="text-gray-500 text-[10px]">-</span>
                       <input
@@ -445,7 +445,7 @@ export default function WhatsAppAIConfigPage() {
                           newHours[day] = { ...hours, close: e.target.value };
                           setConfig({ ...config, businessHours: newHours });
                         }}
-                        className="px-1.5 py-0.5 border border-gray-300 rounded text-[10px] md:text-xs w-[75px]"
+                        className="px-1.5 py-0.5 border border-[#444] rounded text-[10px] md:text-xs w-[75px]"
                       />
                     </div>
                   )}
@@ -455,24 +455,24 @@ export default function WhatsAppAIConfigPage() {
           </div>
 
           <div className="mt-4">
-            <label className="block text-xs font-medium text-gray-700 mb-1">After Hours Message</label>
+            <label className="block text-xs font-medium text-gray-300 mb-1">After Hours Message</label>
             <textarea
               value={config.afterHoursMessage}
               onChange={(e) => setConfig({ ...config, afterHoursMessage: e.target.value })}
               rows={2}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-y min-h-[50px]"
+              className="w-full px-3 py-1.5 border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-y min-h-[50px]"
               placeholder="Pesan yang dikirim di luar jam kerja"
             />
           </div>
         </div>
 
         {/* Actions - Stack on mobile */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 pt-3 md:pt-4 border-t border-gray-200">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 pt-3 md:pt-4 border-t border-[#3a3a3a]">
           {/* Save buttons - shown first on mobile */}
           <div className="flex gap-2 md:gap-4 order-1 md:order-2 w-full md:w-auto">
             <button
               onClick={() => router.push('/dashboard/whatsapp-ai')}
-              className="flex-1 md:flex-none px-4 md:px-6 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-xs md:text-sm"
+              className="flex-1 md:flex-none px-4 md:px-6 py-1.5 border border-[#444] rounded-lg text-gray-300 hover:bg-[#3a3a3a] transition-colors text-xs md:text-sm"
             >
               Cancel
             </button>
