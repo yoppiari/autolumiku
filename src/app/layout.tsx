@@ -15,13 +15,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
   try {
     // Fetch Prima Mobil tenant branding
-    // Prioritize the Known Correct ID from admin dashboard to avoid picking up test/duplicate tenants
+    // STRICT: Use the ID provided by user. Do not guess.
     let tenant = await prisma.tenant.findUnique({
       where: { id: 'e592973f-9eff-4f40-adf6-ca6b2ad9721f' },
       select: { faviconUrl: true }
     });
 
-    // Fallback: search by name/slug if specific ID fails
+    // Fallback only if the specific ID doesn't exist (e.g. different environment)
     if (!tenant) {
       tenant = await prisma.tenant.findFirst({
         where: {
@@ -35,20 +35,10 @@ export async function generateMetadata(): Promise<Metadata> {
     }
 
     if (tenant?.faviconUrl) {
-      // Add version tag to force cache refresh
-      const v = new Date().getTime().toString().substring(0, 5);
-
-      // FORCE OVERRIDE: Try favicon-48.png which might be the correct icon user sees on live site
-      // brand-logo.png was reported to lack details, so we revert to the standard assets
-      if (tenant.id === 'e592973f-9eff-4f40-adf6-ca6b2ad9721f') {
-        const v = new Date().getTime().toString().substring(0, 5);
-        favicon = `/favicon-48.png?v=${v}`;
-        appleIcon = `/favicon-48.png?v=${v}`;
-      } else {
-        const v = new Date().getTime().toString().substring(0, 5);
-        favicon = `${tenant.faviconUrl}?v=${v}`;
-        appleIcon = `${tenant.faviconUrl}?v=${v}`;
-      }
+      // Add version tag to force cache refresh. This is critical as user reported stale icons.
+      const v = new Date().getTime().toString();
+      favicon = `${tenant.faviconUrl}?v=${v}`;
+      appleIcon = `${tenant.faviconUrl}?v=${v}`;
     }
   } catch (error) {
     console.error('Error fetching tenant metadata:', error);
