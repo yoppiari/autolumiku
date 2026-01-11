@@ -25,6 +25,9 @@ export class WhatsAppReportService {
             case 'sales_trends':
             case 'sales-trends':
             case 'tren_penjualan':
+            case 'tren penjualan':
+            case 'trend_penjualan':
+            case 'trend penjualan':
                 return await this.getSalesTrends(tenantId);
             case 'sales_metrics':
             case 'sales-metrics':
