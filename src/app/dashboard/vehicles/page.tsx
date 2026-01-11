@@ -451,6 +451,7 @@ export default function VehiclesPage() {
                           <span className="text-gray-600">•</span>
                           <span className="text-gray-400">{vehicle.licensePlate || 'No Plat'}</span>
                           <span className="text-gray-600">•</span>
+                          <span className="text-gray-500 text-[10px] uppercase font-bold">Umur Stok:</span>
                           {(() => {
                             const diff = new Date().getTime() - new Date(vehicle.createdAt).getTime();
                             const days = Math.ceil(Math.abs(diff) / (1000 * 3600 * 24));
@@ -465,6 +466,23 @@ export default function VehiclesPage() {
                         {/* Row 4: Notes */}
                         <div className="text-xs text-gray-400 leading-snug">
                           {vehicle.description || "Tidak ada catatan."}
+                        </div>
+
+                        {/* Row 5: Audit Trail - Larger text */}
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                            </svg>
+                            Updated by <span className="font-semibold text-gray-300">{vehicle.updatedBy || 'System'}</span>
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                            </svg>
+                            {new Date(vehicle.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
                       </div>
                     </>
