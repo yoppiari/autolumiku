@@ -494,12 +494,12 @@ export default function EditVehiclePage() {
       )}
 
       {/* Quick Status Actions */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Status Kendaraan</h2>
+      <div className="bg-[#2a2a2a] rounded-lg shadow p-6 mb-6 border border-[#3a3a3a]">
+        <h2 className="text-lg font-semibold text-white mb-4">Status Kendaraan</h2>
 
         {/* Current Status Display */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600 mb-1">Status Saat Ini:</p>
+        <div className="mb-4 p-3 bg-[#333] rounded-lg">
+          <p className="text-sm text-gray-400 mb-1">Status Saat Ini:</p>
           <span className={`inline-block px-4 py-2 rounded-full font-bold text-lg shadow-sm border-2 ${formData.status === 'AVAILABLE' ? 'bg-green-500 text-white border-green-600 animate-status-ready' :
             formData.status === 'BOOKED' ? 'bg-amber-500 text-white border-amber-600 animate-status-booking' :
               formData.status === 'SOLD' ? 'bg-rose-600 text-white border-rose-700 font-bold animate-status-sold' :
@@ -544,7 +544,7 @@ export default function EditVehiclePage() {
             disabled={formData.status === 'AVAILABLE'}
             className={`px-6 py-2 rounded-full font-bold text-base flex items-center gap-2 transition-all shadow-sm ${formData.status === 'AVAILABLE'
               ? 'bg-green-500 text-white ring-4 ring-green-100 cursor-default'
-              : 'bg-white text-gray-500 border border-gray-200 hover:bg-green-50 hover:text-green-600 hover:border-green-200'
+              : 'bg-[#333] text-gray-300 border border-[#444] hover:bg-green-900/20 hover:text-green-400 hover:border-green-700'
               }`}
           >
             {formData.status === 'AVAILABLE' ? (
@@ -585,7 +585,7 @@ export default function EditVehiclePage() {
             disabled={formData.status === 'BOOKED'}
             className={`px-6 py-2 rounded-full font-bold text-base flex items-center gap-2 transition-all shadow-sm ${formData.status === 'BOOKED'
               ? 'bg-amber-500 text-white ring-4 ring-amber-100 cursor-default'
-              : 'bg-white text-gray-500 border border-gray-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200'
+              : 'bg-[#333] text-gray-300 border border-[#444] hover:bg-amber-900/20 hover:text-amber-400 hover:border-amber-700'
               }`}
           >
             {formData.status === 'BOOKED' ? (
@@ -640,7 +640,7 @@ export default function EditVehiclePage() {
             disabled={formData.status === 'SOLD'}
             className={`px-6 py-2 rounded-full font-bold text-base flex items-center gap-2 transition-all shadow-sm ${formData.status === 'SOLD'
               ? 'bg-rose-600 text-white ring-4 ring-rose-100 cursor-default'
-              : 'bg-white text-gray-500 border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200'
+              : 'bg-[#333] text-gray-300 border border-[#444] hover:bg-rose-900/20 hover:text-rose-400 hover:border-rose-700'
               }`}
           >
             {formData.status === 'SOLD' ? (
@@ -653,7 +653,7 @@ export default function EditVehiclePage() {
         </div>
 
         {/* Status Info */}
-        <div className="mt-4 text-sm text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100 italic">
+        <div className="mt-4 text-sm text-gray-400 bg-[#333] p-3 rounded-lg border border-[#444] italic">
           <p>• <strong>Ready:</strong> Unit dipublikasikan ke <a href="https://primamobil.id/vehicles" target="_blank" className="text-blue-600 hover:underline">primamobil.id/vehicles</a></p>
           <p>• <strong>Booking:</strong> Unit tetap di katalog namun bertanda &quot;Booking&quot; (dengan efek animasi glow)</p>
           <p>• <strong>Sold:</strong> Unit terjual, akan otomatis bertanda &quot;Terjual&quot; di katalog publik</p>
@@ -662,8 +662,8 @@ export default function EditVehiclePage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Photos Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Foto Kendaraan</h2>
+        <div className="bg-[#2a2a2a] rounded-lg shadow p-6 border border-[#3a3a3a]">
+          <h2 className="text-lg font-semibold text-white mb-4">Foto Kendaraan</h2>
 
           {/* Existing Photos */}
           {existingPhotosCount > 0 && (
