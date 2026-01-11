@@ -489,7 +489,7 @@ export default function BlogListPage() {
                 {/* Content */}
                 <div className="p-3">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
+                    <span className="px-2 py-0.5 text-xs bg-blue-900/40 text-blue-300 border border-blue-800/50 rounded">
                       {CATEGORY_LABELS[post.category]}
                     </span>
                     <span
@@ -499,7 +499,7 @@ export default function BlogListPage() {
                     </span>
                   </div>
 
-                  <h3 className="font-semibold text-sm mb-1 line-clamp-2">
+                  <h3 className="font-semibold text-white text-sm mb-1 line-clamp-2">
                     {post.title}
                   </h3>
 
@@ -519,7 +519,7 @@ export default function BlogListPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-1 pt-2 border-t">
+                  <div className="flex gap-1 pt-2 border-t border-[#3a3a3a]">
                     {post.status === 'DRAFT' && (
                       <button
                         onClick={() => handlePublish(post.id)}
