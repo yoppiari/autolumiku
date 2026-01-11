@@ -145,8 +145,8 @@ export default function VehiclesPage() {
   const getUserName = (userId?: string): string => {
     if (!userId) return 'System';
 
-    // If userMap is still empty (loading), show loading state
-    if (Object.keys(userMap).length === 0) return 'Loading...';
+    // If userMap is still empty, show Admin as fallback instead of loading
+    if (Object.keys(userMap).length === 0) return 'Admin';
 
     // Try to get name from userMap
     const userName = userMap[userId];
