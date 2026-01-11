@@ -37,8 +37,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: 'Prima Mobil Platform',
     description: 'Platform administrasi showroom otomotif',
     icons: {
-      icon: favicon,
-      apple: appleIcon,
+      icon: '/prima-mobil-logo.jpg', // Using solid background logo to ensure lines are visible
+      apple: '/prima-mobil-logo.jpg',
     },
   };
 }
