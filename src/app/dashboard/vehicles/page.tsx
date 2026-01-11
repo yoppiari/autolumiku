@@ -505,15 +505,15 @@ export default function VehiclesPage() {
                 className={`bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg shadow hover:shadow-black/40 hover:border-[#444] transition-all ${viewMode === 'list' ? 'flex gap-3' : ''
                   }`}
               >
-                {/* Image Carousel - Auto-rotate every 10 seconds */}
-                <div className={`relative ${viewMode === 'list' ? 'w-32 flex-shrink-0' : ''}`}>
+                {/* Image Carousel - Larger in List View */}
+                <div className={`relative ${viewMode === 'list' ? 'w-full md:w-56 h-48 md:h-auto flex-shrink-0' : ''}`}>
                   <VehicleImageCarousel
                     photos={vehicle.photos || []}
                     alt={`${vehicle.make} ${vehicle.model}`}
-                    aspectRatio={viewMode === 'grid' ? 'h-32' : 'h-24'}
-                    roundedClass={viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'}
+                    aspectRatio={viewMode === 'grid' ? 'h-32' : 'h-full'}
+                    roundedClass={viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-t-lg md:rounded-l-lg md:rounded-tr-none'}
                     grayscale={vehicle.status === 'SOLD'}
-                    showIndicators={false}
+                    showIndicators={viewMode === 'list'}
                     showCounter={false}
                     interval={7000}
                     overlay={vehicle.status === 'SOLD' ? (
@@ -524,65 +524,169 @@ export default function VehiclesPage() {
                   />
                 </div>
 
-                {/* Content - Compact */}
-                <div className="p-2 flex-1">
-                  <div className="flex justify-between items-start gap-1">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm text-gray-100 truncate">
-                        {vehicle.make} {vehicle.model}
-                      </h3>
-                      <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mt-1 border shadow-sm ${getStatusColor(vehicle.status)}`}>
-                        <span className="flex items-center gap-1">
-                          {(vehicle.status === 'AVAILABLE' || vehicle.status === 'BOOKED' || vehicle.status === 'SOLD') && (
-                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                          )}
-                          {getStatusLabel(vehicle.status)}
-                        </span>
-                      </span>
+                {/* Content Container */}
+                <div className={`flex-1 p-3 ${viewMode === 'list' ? 'flex flex-col md:flex-row gap-4' : ''}`}>
+
+                  {/* CENTRAL INFO (List View) / MAIN INFO (Grid View) */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-between">
+                    <div>
+                      {/* Title & Status */}
+                      <div className="flex justify-between items-start gap-2">
+                        <div>
+                          <h3 className={`font-bold text-gray-100 truncate ${viewMode === 'list' ? 'text-lg' : 'text-sm'}`}>
+                            {vehicle.make} {vehicle.model}
+                          </h3>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            {vehicle.year} • {vehicle.variant || vehicle.transmissionType}
+                          </div>
+                        </div>
+
+                        {viewMode === 'grid' && (
+                          <span className={`flex-shrink-0 px-2 py-0.5 text-[10px] font-bold rounded-full border shadow-sm ${getStatusColor(vehicle.status)}`}>
+                            {getStatusLabel(vehicle.status)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Price */}
+                      <p className={`font-bold text-blue-400 mt-2 ${viewMode === 'list' ? 'text-xl' : 'text-sm'}`}>
+                        {formatPrice(vehicle.price)}
+                      </p>
+
+                      {/* List View Only: Aging Badge & ID */}
+                      {viewMode === 'list' && (
+                        <div className="flex items-center gap-2 mt-3 flex-wrap">
+                          <span className="text-xs font-semibold text-gray-400 bg-[#333] px-2 py-1 rounded border border-[#444]">
+                            #{vehicle.displayId || vehicle.id.slice(0, 8)}
+                          </span>
+
+                          {/* Stock Health / Aging Badge */}
+                          {(() => {
+                            const created = new Date(vehicle.createdAt);
+                            const now = new Date();
+                            const diffTime = Math.abs(now.getTime() - created.getTime());
+                            const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                            let colorClass = 'bg-green-900/40 text-green-400 border-green-800';
+                            let label = 'New Arrival';
+
+                            if (days > 60) {
+                              colorClass = 'bg-red-900/40 text-red-400 border-red-800';
+                              label = 'Over Age';
+                            } else if (days > 30) {
+                              colorClass = 'bg-yellow-900/40 text-yellow-400 border-yellow-800';
+                              label = 'Standard Stock';
+                            }
+
+                            return (
+                              <span className={`px-2 py-1 text-xs font-medium rounded border ${colorClass} flex items-center gap-1.5`}>
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {label} ({days} Hari)
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      {/* Grid View: Compact Info */}
+                      {viewMode === 'grid' && (
+                        <>
+                          <p className="text-xs font-medium text-gray-500 mt-1 bg-[#1a1a1a] px-1.5 py-0.5 rounded inline-block">
+                            {vehicle.displayId || vehicle.id.slice(0, 8)}
+                          </p>
+                          <div className="text-[10px] text-gray-500 mt-1">
+                            {vehicle.mileage?.toLocaleString()} km • {vehicle.color}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
-                  <p className="text-xs font-semibold text-gray-300 bg-[#333] px-1.5 py-0.5 rounded inline-block mt-1 border border-[#444]">
-                    {vehicle.displayId || vehicle.id.slice(0, 8)}
-                  </p>
+                  {/* RIGHT COLUMN: SPECS (List View Only) */}
+                  {viewMode === 'list' && (
+                    <div className="w-full md:w-64 flex flex-col gap-3 border-l border-[#3a3a3a] pl-0 md:pl-4 pt-4 md:pt-0">
+                      {/* Specs Grid */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-[#333]/50 p-2 rounded flex flex-col">
+                          <span className="text-[10px] text-gray-500 uppercase">Transmisi</span>
+                          <span className="text-xs font-medium text-gray-200 flex items-center gap-1.5">
+                            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                            {vehicle.transmissionType || '-'}
+                          </span>
+                        </div>
+                        <div className="bg-[#333]/50 p-2 rounded flex flex-col">
+                          <span className="text-[10px] text-gray-500 uppercase">Bahan Bakar</span>
+                          <span className="text-xs font-medium text-gray-200 flex items-center gap-1.5">
+                            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            {vehicle.fuelType || '-'}
+                          </span>
+                        </div>
+                        <div className="bg-[#333]/50 p-2 rounded flex flex-col">
+                          <span className="text-[10px] text-gray-500 uppercase">Kilometer</span>
+                          <span className="text-xs font-medium text-gray-200 flex items-center gap-1.5">
+                            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6" /></svg>
+                            {vehicle.mileage?.toLocaleString() || '-'}
+                          </span>
+                        </div>
+                        <div className="bg-[#333]/50 p-2 rounded flex flex-col">
+                          <span className="text-[10px] text-gray-500 uppercase">Plat Nomor</span>
+                          <span className="text-xs font-medium text-gray-200 flex items-center gap-1.5">
+                            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                            {vehicle.licensePlate || '-'}
+                          </span>
+                        </div>
+                      </div>
 
-                  <p className="text-xs text-gray-400 mt-1">
-                    {vehicle.year} • {vehicle.variant || vehicle.transmissionType}
-                  </p>
+                      {/* Status & Actions - Bottom Right */}
+                      <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+                        <span className={`px-2 py-1 text-[10px] font-bold rounded-full border shadow-sm ${getStatusColor(vehicle.status)}`}>
+                          {getStatusLabel(vehicle.status)}
+                        </span>
 
-                  <p className="text-sm font-bold text-blue-400 mt-1">
-                    {formatPrice(vehicle.price)}
-                  </p>
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
+                            className="px-3 py-1.5 text-xs text-center bg-blue-600/80 text-white rounded hover:bg-blue-700 font-medium transition-colors flex items-center gap-1"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(vehicle)}
+                            disabled={deleting === vehicle.id}
+                            className="px-3 py-1.5 text-xs bg-red-900/40 border border-red-800 text-red-200 rounded hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {deleting === vehicle.id ? '...' : 'Hapus'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                  <div className="text-[10px] text-gray-500 mt-1">
-                    {vehicle.mileage?.toLocaleString()} km • {vehicle.color}
-                  </div>
-
-                  <div className="flex items-center gap-2 mt-2">
-                    <Link
-                      href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
-                      className="flex-1 px-2 py-1 text-xs text-center bg-blue-600/80 text-white rounded hover:bg-blue-700 font-medium transition-colors"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(vehicle)}
-                      disabled={deleting === vehicle.id}
-                      className="px-2 py-1 text-xs bg-red-900/40 border border-red-800 text-red-200 rounded hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      title="Hapus kendaraan"
-                    >
-                      {deleting === vehicle.id ? (
-                        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      ) : (
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
+                  {/* Grid View Actions (Bottom) */}
+                  {viewMode === 'grid' && (
+                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[#333]">
+                      <Link
+                        href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
+                        className="flex-1 px-2 py-1 text-xs text-center bg-blue-600/20 border border-blue-900 text-blue-300 rounded hover:bg-blue-600 hover:text-white font-medium transition-colors"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(vehicle)}
+                        disabled={deleting === vehicle.id}
+                        className="px-2 py-1 text-xs bg-red-900/10 border border-red-900 text-red-400 rounded hover:bg-red-900 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Hapus kendaraan"
+                      >
+                        {deleting === vehicle.id ? '...' : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

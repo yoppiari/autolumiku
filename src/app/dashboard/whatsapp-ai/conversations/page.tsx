@@ -1665,10 +1665,11 @@ END:VCARD`;
                                     </span>
                                     <span className="text-[11px] md:text-[10px] font-bold text-gray-300">
                                       {(() => {
-                                        // Priority: Check team member list first for accuracy
-                                        if (selectedConversation?.isStaff || msg.intent?.includes('staff') || msg.intent?.includes('owner') || msg.intent?.includes('admin')) {
+                                        // 1. Check if conversation itself is marked as staff
+                                        if (selectedConversation?.isStaff) {
                                           const phone = selectedConversation?.customerPhone;
-                                          if (phone) {
+                                          // Try to find specific role from team members
+                                          if (phone && teamMembers.length > 0) {
                                             const member = teamMembers.find(m =>
                                               (m.phone && m.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')) ||
                                               phone.includes(m.phone?.replace(/\D/g, '') || 'XYZ')
@@ -1676,23 +1677,24 @@ END:VCARD`;
                                             if (member) {
                                               if (member.role === 'OWNER') return 'Owner';
                                               if (member.role === 'ADMIN') return 'Admin';
-                                              return 'Staff';
+                                              if (member.role === 'SALES') return 'Staff (Sales)';
+                                              return `Staff (${member.role})`;
                                             }
                                           }
+                                          return 'Staff';
                                         }
 
-                                        // Fallback to intent (less reliable)
-                                        const intent = msg.intent || '';
-                                        if (intent.includes('owner')) return 'Owner';
-                                        if (intent.includes('admin')) return 'Admin';
-                                        if (intent.includes('staff') || msg.senderType === 'staff') return 'Staff';
+                                        // 2. Check message metadata
+                                        if (msg.senderType === 'staff') return 'Staff';
+                                        if (msg.intent?.includes('owner')) return 'Owner';
 
+                                        // 3. Default to Customer
                                         return 'Customer';
                                       })()}
                                     </span>
-                                    {msg.intent && (
+                                    {msg.intent && !msg.intent.includes('customer') && (
                                       <span className="text-[11px] md:text-[10px] text-gray-400">
-                                        • {msg.intent.replace('customer_', '').replace('staff_', '')}
+                                        • {msg.intent.replace('staff_', '').replace('owner_', '')}
                                       </span>
                                     )}
                                   </div>
@@ -1706,16 +1708,14 @@ END:VCARD`;
                                       {msg.senderType === 'ai' || msg.aiResponse
                                         ? (aiConfig?.aiName || 'AI Assistant')
                                         : (() => {
-                                          const intent = msg.intent || '';
-                                          if (intent.includes('owner')) return 'Owner';
-                                          if (intent.includes('admin')) return 'Admin';
-                                          // Check if it's a staff member responding
-                                          if (msg.senderType === 'staff' || intent.includes('staff')) {
-                                            // Ideally we should know WHICH staff, but for outbound we usually assume it's the system user or linked account
-                                            // If we have metadata about the sender, use it. Otherwise, default to Staff.
-                                            return 'Staff';
-                                          }
-                                          return 'Staff';
+                                          // Staff response logic
+                                          const role = msg.senderType === 'staff' ? 'Staff' : 'Admin';
+                                          // Try to map specific role from intent/metadata if available
+                                          if (msg.intent?.includes('owner')) return 'Owner';
+                                          if (msg.intent?.includes('admin')) return 'Admin';
+                                          if (msg.intent?.includes('sales')) return 'Staff (Sales)';
+
+                                          return role;
                                         })()
                                       }
                                     </span>
