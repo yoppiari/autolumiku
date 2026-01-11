@@ -23,8 +23,8 @@ function AuthorizedNavLink({ href, isAuthorized, isActive, children }: Authorize
         className={`
           flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200
           ${isActive
-            ? 'bg-blue-100 text-blue-700 border-2 border-yellow-500 shadow-md'
-            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-2 border-transparent'
+            ? 'bg-blue-900/30 text-blue-400 border-2 border-yellow-500/50 shadow-md'
+            : 'text-gray-400 hover:bg-[#333] hover:text-white border-2 border-transparent'
           }
         `}
       >
@@ -41,13 +41,13 @@ function AuthorizedNavLink({ href, isAuthorized, isActive, children }: Authorize
       <div
         className={`
           flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-          text-gray-400 opacity-60
+          text-gray-600 opacity-60
         `}
       >
         {children}
       </div>
       {/* Tooltip */}
-      <div className="absolute z-50 hidden group-hover/nav:block left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-lg">
+      <div className="absolute z-50 hidden group-hover/nav:block left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-lg border border-[#444]">
         You are not authorized
         <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
       </div>
@@ -225,35 +225,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         refreshInterval={50 * 60 * 1000}    // Refresh token every 50 minutes
         warningTime={5 * 60 * 1000}         // Show warning 5 minutes before timeout
       >
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-[#1a1a1a]">
           {/* Mobile sidebar overlay */}
           {isSidebarOpen && (
             <div
               className="fixed inset-0 z-40 lg:hidden"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <div className="absolute inset-0 bg-gray-600 opacity-75"></div>
+              <div className="absolute inset-0 bg-gray-900 opacity-75"></div>
             </div>
           )}
 
           {/* Sidebar */}
           <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-64 bg-[#2a2a2a] border-r border-[#3a3a3a] transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
             <div className="flex flex-col h-full">
               {/* Logo - Clickable to Dashboard */}
               <Link
                 href="/dashboard"
-                className="flex items-center h-16 px-6 border-b border-gray-200 hover:bg-gray-50 transition-colors group"
+                className="flex items-center h-16 px-6 border-b border-[#3a3a3a] hover:bg-[#333] transition-colors group"
               >
                 {isTenantLoading ? (
                   /* Skeleton Loading for Logo */
                   <div className="flex items-center animate-pulse w-full">
-                    <div className="w-8 h-8 bg-gray-200 rounded-lg"></div>
+                    <div className="w-8 h-8 bg-[#3a3a3a] rounded-lg"></div>
                     <div className="ml-3 flex-1">
-                      <div className="h-5 bg-gray-200 rounded w-24 mb-1"></div>
-                      <div className="h-3 bg-gray-200 rounded w-16"></div>
+                      <div className="h-5 bg-[#3a3a3a] rounded w-24 mb-1"></div>
+                      <div className="h-3 bg-[#3a3a3a] rounded w-16"></div>
                     </div>
                   </div>
                 ) : (
@@ -272,10 +272,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       </div>
                     )}
                     <div className="ml-3">
-                      <div className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate max-w-[140px]">
+                      <div className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors truncate max-w-[140px]">
                         {tenant?.name || ''}
                       </div>
-                      <div className="text-xs text-gray-500">Showroom Dashboard</div>
+                      <div className="text-xs text-gray-400">Showroom Dashboard</div>
                     </div>
                   </div>
                 )}
@@ -304,7 +304,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </nav>
 
               {/* User menu */}
-              <div className="border-t border-gray-200 p-4">
+              <div className="border-t border-[#3a3a3a] p-4">
                 <div className="flex items-center mb-4">
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">
@@ -312,17 +312,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </span>
                   </div>
                   <div className="ml-3">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-white">
                       {user?.firstName} {user?.lastName}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-400">
                       {getRoleName(userRoleLevel)}
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm font-medium text-gray-200 bg-[#333] border border-[#444] rounded-md hover:bg-[#444] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   Keluar
                 </button>
@@ -335,7 +335,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Mobile menu button - fixed position */}
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden fixed top-4 left-4 z-30 p-2 rounded-md bg-white border border-gray-300 shadow-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="lg:hidden fixed top-4 left-4 z-30 p-2 rounded-md bg-[#2a2a2a] border border-[#3a3a3a] shadow-lg text-gray-200 hover:text-white hover:bg-[#333] focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

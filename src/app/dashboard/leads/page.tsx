@@ -186,21 +186,21 @@ export default function LeadsDashboard() {
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'new': return 'bg-blue-100 text-blue-800';
-      case 'contacted': return 'bg-yellow-100 text-yellow-800';
-      case 'interested': return 'bg-purple-100 text-purple-800';
-      case 'not_interested': return 'bg-gray-100 text-gray-800';
-      case 'converted': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'new': return 'bg-blue-900/40 text-blue-300 border border-blue-800/50';
+      case 'contacted': return 'bg-yellow-900/40 text-yellow-300 border border-yellow-800/50';
+      case 'interested': return 'bg-purple-900/40 text-purple-300 border border-purple-800/50';
+      case 'not_interested': return 'bg-gray-700 text-gray-300 border border-gray-600';
+      case 'converted': return 'bg-green-900/40 text-green-300 border border-green-800/50';
+      default: return 'bg-gray-700 text-gray-300 border border-gray-600';
     }
   };
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-red-900/40 text-red-300 border border-red-800/50';
+      case 'medium': return 'bg-orange-900/40 text-orange-300 border border-orange-800/50';
+      case 'low': return 'bg-green-900/40 text-green-300 border border-green-800/50';
+      default: return 'bg-gray-700 text-gray-300 border border-gray-600';
     }
   };
 
@@ -257,18 +257,17 @@ export default function LeadsDashboard() {
 
   return (
     <div className="p-3 space-y-4 h-auto md:h-[calc(100vh-80px)] flex flex-col overflow-y-auto md:overflow-hidden">
-      {/* Header */}
       {/* Header - Responsive */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 flex-shrink-0">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Manajemen Leads</h1>
-          <p className="text-xs text-gray-600">Kelola leads dari WhatsApp dan website</p>
+          <h1 className="text-xl font-bold text-white">Manajemen Leads</h1>
+          <p className="text-xs text-gray-400">Kelola leads dari WhatsApp dan website</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Live Updates Indicator - Conditional */}
           {whatsappSettings.length > 0 && whatsappSettings[0].isActive ? (
-            <div title="WhatsApp Bot Aktif - Data Realtime" className="flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-full border border-green-200">
+            <div title="WhatsApp Bot Aktif - Data Realtime" className="flex items-center gap-1.5 px-2 py-1 bg-green-900/40 text-green-400 rounded-full border border-green-800">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -276,7 +275,7 @@ export default function LeadsDashboard() {
               <span className="text-[10px] font-medium">Live</span>
             </div>
           ) : (
-            <div title="WhatsApp Bot Tidak Aktif - Klik WhatsApp Settings untuk mengaktifkan" className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-700 rounded-full border border-red-200">
+            <div title="WhatsApp Bot Tidak Aktif - Klik WhatsApp Settings untuk mengaktifkan" className="flex items-center gap-1.5 px-2 py-1 bg-red-900/40 text-red-400 rounded-full border border-red-800">
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
@@ -285,7 +284,7 @@ export default function LeadsDashboard() {
           )}
           <button
             onClick={() => window.location.reload()}
-            className="p-1.5 text-gray-500 hover:text-blue-600 transition-colors bg-white border border-gray-200 rounded-lg shadow-sm"
+            className="p-1.5 text-gray-400 hover:text-blue-400 transition-colors bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg shadow-sm"
             title="Refresh Data"
           >
             🔄
@@ -298,30 +297,28 @@ export default function LeadsDashboard() {
             ⚙️ Settings
           </Link>
         </div>
-      </div>
-
-      {/* Stats Cards - Responsive Grid */}
+      </div>   {/* Stats Cards - Responsive Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-shrink-0">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-24">
-          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Leads</h3>
-          <div className="text-3xl font-bold text-blue-600 mt-1">{stats.total}</div>
+        <div className="bg-[#2a2a2a] p-4 rounded-xl shadow-sm border border-[#3a3a3a] flex flex-col justify-between h-24">
+          <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Leads</h3>
+          <div className="text-3xl font-bold text-blue-500 mt-1">{stats.total}</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-24">
-          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Baru</h3>
-          <div className="text-3xl font-bold text-blue-500 mt-1">{stats.new}</div>
+        <div className="bg-[#2a2a2a] p-4 rounded-xl shadow-sm border border-[#3a3a3a] flex flex-col justify-between h-24">
+          <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider">Baru</h3>
+          <div className="text-3xl font-bold text-blue-400 mt-1">{stats.new}</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-24">
-          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Tertarik</h3>
-          <div className="text-3xl font-bold text-purple-600 mt-1">{stats.interested}</div>
+        <div className="bg-[#2a2a2a] p-4 rounded-xl shadow-sm border border-[#3a3a3a] flex flex-col justify-between h-24">
+          <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider">Tertarik</h3>
+          <div className="text-3xl font-bold text-purple-500 mt-1">{stats.interested}</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-24">
-          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Konversi</h3>
+        <div className="bg-[#2a2a2a] p-4 rounded-xl shadow-sm border border-[#3a3a3a] flex flex-col justify-between h-24">
+          <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider">Konversi</h3>
           <div className="flex items-baseline gap-2 mt-1">
-            <div className="text-3xl font-bold text-green-600">{stats.converted}</div>
-            <div className="text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">{stats.conversionRate}%</div>
+            <div className="text-3xl font-bold text-green-500">{stats.converted}</div>
+            <div className="text-xs font-medium text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded-full">{stats.conversionRate}%</div>
           </div>
         </div>
       </div>
@@ -329,25 +326,25 @@ export default function LeadsDashboard() {
       {/* Filters & WhatsApp Settings - Combined Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 flex-shrink-0">
         {/* Filters */}
-        <div className="col-span-2 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+        <div className="col-span-2 bg-[#2a2a2a] p-3 rounded-lg shadow-sm border border-[#3a3a3a]">
           <div className="flex gap-2 items-end">
             <div className="flex-1">
-              <label className="block text-[10px] font-medium text-gray-600 mb-1">Cari Leads</label>
+              <label className="block text-[10px] font-medium text-gray-400 mb-1">Cari Leads</label>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Nama, telepon, kendaraan..."
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-2 py-1.5 text-sm bg-[#333] border border-[#444] text-white rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent placeholder-gray-500"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-medium text-gray-600 mb-1">Status</label>
+              <label className="block text-[10px] font-medium text-gray-400 mb-1">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="px-2 py-1.5 text-sm bg-[#333] border border-[#444] text-white rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Semua</option>
                 <option value="new">Baru</option>
@@ -359,11 +356,11 @@ export default function LeadsDashboard() {
             </div>
 
             <div>
-              <label className="block text-[10px] font-medium text-gray-600 mb-1">Sumber</label>
+              <label className="block text-[10px] font-medium text-gray-400 mb-1">Sumber</label>
               <select
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value)}
-                className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="px-2 py-1.5 text-sm bg-[#333] border border-[#444] text-white rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Semua</option>
                 <option value="whatsapp">WhatsApp</option>
@@ -375,14 +372,14 @@ export default function LeadsDashboard() {
         </div>
 
         {/* WhatsApp Settings Summary - Compact */}
-        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-[#2a2a2a] p-3 rounded-lg shadow-sm border border-[#3a3a3a]">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-xs font-semibold text-gray-700">WhatsApp</h2>
+            <h2 className="text-xs font-semibold text-gray-300">WhatsApp</h2>
           </div>
           {whatsappSettings.map((setting) => (
-            <div key={setting.id} className="text-[11px] text-gray-600">
+            <div key={setting.id} className="text-[11px] text-gray-400">
               <div className="flex items-center gap-1">
-                <span className={`w-1.5 h-1.5 rounded-full ${setting.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                <span className={`w-1.5 h-1.5 rounded-full ${setting.isActive ? 'bg-green-500' : 'bg-gray-600'}`}></span>
                 <span className="font-medium">{setting.phoneNumber || 'Belum setup'}</span>
               </div>
               <div className="text-[10px] text-gray-500">
@@ -394,44 +391,44 @@ export default function LeadsDashboard() {
       </div>
 
       {/* Leads Table - Scrollable */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 min-h-0 flex flex-col">
+      <div className="bg-[#2a2a2a] rounded-lg shadow-sm border border-[#3a3a3a] overflow-hidden flex-1 min-h-0 flex flex-col">
         <div className="overflow-auto flex-1">
           {/* Desktop Table */}
-          <table className="hidden md:table min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0">
+          <table className="hidden md:table min-w-full divide-y divide-[#3a3a3a]">
+            <thead className="bg-[#333] sticky top-0">
               <tr>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">
                   Customer
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">
                   Kendaraan
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">
                   Budget
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">
                   Urgensi
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">
                   Sumber
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">
                   Status
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">
                   Tanggal
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-400 uppercase">
                   Aksi
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-[#2a2a2a] divide-y divide-[#3a3a3a]">
               {filteredLeads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-gray-50">
+                <tr key={lead.id} className="hover:bg-[#333] transition-colors">
                   <td className="px-3 py-2 whitespace-nowrap">
                     <div>
-                      <div className="text-xs font-medium text-gray-900">
+                      <div className="text-xs font-medium text-gray-200">
                         {lead.customerName}
                       </div>
                       <div className="text-[11px] text-gray-500">
@@ -439,10 +436,10 @@ export default function LeadsDashboard() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-200">
                     {lead.vehicleInterest || '-'}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-200">
                     {lead.budget || '-'}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
@@ -459,11 +456,11 @@ export default function LeadsDashboard() {
                       onChange={(e) => handleStatusChange(lead.id, e.target.value)}
                       className={`text-[10px] font-medium rounded border-0 bg-transparent px-1 py-0.5 ${getStatusBadgeColor(lead.status)}`}
                     >
-                      <option value="new">BARU</option>
-                      <option value="contacted">DIHUBUNGI</option>
-                      <option value="interested">TERTARIK</option>
-                      <option value="not_interested">TIDAK TERTARIK</option>
-                      <option value="converted">KONVERSI</option>
+                      <option value="new" className="text-black">BARU</option>
+                      <option value="contacted" className="text-black">DIHUBUNGI</option>
+                      <option value="interested" className="text-black">TERTARIK</option>
+                      <option value="not_interested" className="text-black">TIDAK TERTARIK</option>
+                      <option value="converted" className="text-black">KONVERSI</option>
                     </select>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-[11px] text-gray-500">
@@ -473,7 +470,7 @@ export default function LeadsDashboard() {
                     <div className="flex space-x-1">
                       <button
                         onClick={() => window.open(`https://wa.me/${lead.whatsappNumber.replace(/[^\d]/g, '')}`, '_blank')}
-                        className="text-green-600 hover:text-green-900 text-sm"
+                        className="text-green-500 hover:text-green-400 text-sm"
                         title="Kirim WhatsApp"
                       >
                         📱
@@ -488,10 +485,10 @@ export default function LeadsDashboard() {
           {/* Mobile Card View */}
           <div className="md:hidden space-y-2 p-2">
             {filteredLeads.map((lead) => (
-              <div key={lead.id} className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+              <div key={lead.id} className="bg-[#2a2a2a] p-3 rounded-lg border border-[#3a3a3a] shadow-sm">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">{lead.customerName}</h3>
+                    <h3 className="text-sm font-semibold text-gray-200">{lead.customerName}</h3>
                     <div className="text-xs text-gray-500 flex items-center gap-1">
                       {getSourceIcon(lead.source)} {lead.phone}
                     </div>
@@ -502,33 +499,33 @@ export default function LeadsDashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                  <div className="bg-gray-50 p-1.5 rounded">
+                  <div className="bg-[#333] p-1.5 rounded">
                     <span className="block text-[10px] text-gray-500">Minat</span>
-                    <span className="font-medium">{lead.vehicleInterest || '-'}</span>
+                    <span className="font-medium text-gray-300">{lead.vehicleInterest || '-'}</span>
                   </div>
-                  <div className="bg-gray-50 p-1.5 rounded">
+                  <div className="bg-[#333] p-1.5 rounded">
                     <span className="block text-[10px] text-gray-500">Budget</span>
-                    <span className="font-medium">{lead.budget || '-'}</span>
+                    <span className="font-medium text-gray-300">{lead.budget || '-'}</span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center border-t border-gray-100 pt-2">
+                <div className="flex justify-between items-center border-t border-[#444] pt-2">
                   <select
                     value={lead.status}
                     onChange={(e) => handleStatusChange(lead.id, e.target.value)}
                     className={`text-xs font-medium rounded border-0 bg-transparent px-1 py-0.5 ${getStatusBadgeColor(lead.status)}`}
                   >
-                    <option value="new">BARU</option>
-                    <option value="contacted">DIHUBUNGI</option>
-                    <option value="interested">TERTARIK</option>
-                    <option value="not_interested">TIDAK TERTARIK</option>
-                    <option value="converted">KONVERSI</option>
+                    <option value="new" className="text-black">BARU</option>
+                    <option value="contacted" className="text-black">DIHUBUNGI</option>
+                    <option value="interested" className="text-black">TERTARIK</option>
+                    <option value="not_interested" className="text-black">TIDAK TERTARIK</option>
+                    <option value="converted" className="text-black">KONVERSI</option>
                   </select>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => window.open(`https://wa.me/${lead.whatsappNumber.replace(/[^\d]/g, '')}`, '_blank')}
-                      className="p-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium flex items-center gap-1"
+                      className="p-1.5 bg-green-900/40 text-green-400 border border-green-800 rounded-lg text-xs font-medium flex items-center gap-1"
                     >
                       📱 Chat
                     </button>

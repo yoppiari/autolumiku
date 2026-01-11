@@ -319,13 +319,13 @@ export default function UsersPage() {
   const getRoleBadgeColor = (role: string) => {
     switch (role.toUpperCase()) {
       case 'OWNER':
-        return 'bg-amber-100 text-amber-800';
+        return 'bg-amber-900/40 text-amber-200 border border-amber-700/50';
       case 'ADMIN':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-900/40 text-purple-200 border border-purple-700/50';
       case 'SALES':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-900/40 text-green-200 border border-green-700/50';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-[#333] text-gray-300 border border-[#444]';
     }
   };
 
@@ -348,8 +348,8 @@ export default function UsersPage() {
       <div className="p-6 flex items-center justify-center h-[calc(100vh-64px)]">
         <div className="text-center">
           <div className="text-4xl mb-4">🔒</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Akses Ditolak</h2>
-          <p className="text-gray-600">Anda tidak memiliki akses ke halaman ini.</p>
+          <h2 className="text-xl font-semibold text-white mb-2">Akses Ditolak</h2>
+          <p className="text-gray-400">Anda tidak memiliki akses ke halaman ini.</p>
           <p className="text-sm text-gray-500 mt-2">Mengalihkan ke Dashboard...</p>
         </div>
       </div>
@@ -361,8 +361,8 @@ export default function UsersPage() {
       {/* Header - with left margin on mobile for hamburger menu */}
       <div className="flex justify-between items-center mb-3 flex-shrink-0 ml-10 md:ml-0">
         <div className="min-w-0">
-          <h1 className="text-lg md:text-2xl font-bold text-gray-900">Manajemen Tim</h1>
-          <p className="text-gray-600 text-[10px] md:text-sm">Kelola staff dan anggota tim showroom</p>
+          <h1 className="text-lg md:text-2xl font-bold text-white">Manajemen Tim</h1>
+          <p className="text-gray-400 text-[10px] md:text-sm">Kelola staff dan anggota tim showroom</p>
         </div>
         <button
           onClick={() => {
@@ -382,43 +382,43 @@ export default function UsersPage() {
 
       {/* Stats Cards - 3 cols on mobile, 4 cols on desktop */}
       <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-3 mb-3 flex-shrink-0">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
-          <p className="text-[10px] md:text-xs font-medium text-gray-600">Total</p>
+        <div className="bg-[#2a2a2a] rounded-lg shadow-sm border border-[#3a3a3a] p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-gray-400">Total</p>
           {loading ? (
-            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-[#333] animate-pulse rounded mt-1"></div>
           ) : (
-            <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{stats?.total || 0}</p>
+            <p className="text-xl md:text-2xl font-bold text-white mt-1">{stats?.total || 0}</p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
-          <p className="text-[10px] md:text-xs font-medium text-amber-600">Owner</p>
+        <div className="bg-[#2a2a2a] rounded-lg shadow-sm border border-[#3a3a3a] p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-amber-500">Owner</p>
           {loading ? (
-            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-[#333] animate-pulse rounded mt-1"></div>
           ) : (
-            <p className="text-xl md:text-2xl font-bold text-amber-600 mt-1">
+            <p className="text-xl md:text-2xl font-bold text-amber-500 mt-1">
               {stats?.byRole?.OWNER || 0}
             </p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
-          <p className="text-[10px] md:text-xs font-medium text-purple-600">Admin</p>
+        <div className="bg-[#2a2a2a] rounded-lg shadow-sm border border-[#3a3a3a] p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-purple-400">Admin</p>
           {loading ? (
-            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-[#333] animate-pulse rounded mt-1"></div>
           ) : (
-            <p className="text-xl md:text-2xl font-bold text-purple-600 mt-1">
+            <p className="text-xl md:text-2xl font-bold text-purple-400 mt-1">
               {stats?.byRole?.ADMIN || 0}
             </p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 md:p-3">
-          <p className="text-[10px] md:text-xs font-medium text-green-600">Staff/Sales</p>
+        <div className="bg-[#2a2a2a] rounded-lg shadow-sm border border-[#3a3a3a] p-2 md:p-3">
+          <p className="text-[10px] md:text-xs font-medium text-green-400">Staff/Sales</p>
           {loading ? (
-            <div className="h-6 md:h-8 w-10 md:w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+            <div className="h-6 md:h-8 w-10 md:w-12 bg-[#333] animate-pulse rounded mt-1"></div>
           ) : (
-            <p className="text-xl md:text-2xl font-bold text-green-600 mt-1">
+            <p className="text-xl md:text-2xl font-bold text-green-400 mt-1">
               {stats?.byRole?.SALES || 0}
             </p>
           )}
@@ -426,17 +426,17 @@ export default function UsersPage() {
       </div>
 
       {/* Filters - Urutan (2) */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-3 flex-shrink-0">
+      <div className="bg-[#2a2a2a] rounded-lg shadow-sm border border-[#3a3a3a] p-3 mb-3 flex-shrink-0">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Search */}
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm" />
             <input
               type="text"
               placeholder="Cari nama atau email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-[#333] border border-[#444] text-white rounded-md focus:ring-blue-500 focus:border-blue-500 placeholder-gray-500"
             />
           </div>
 
@@ -444,7 +444,7 @@ export default function UsersPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-1.5 text-sm bg-[#333] border border-[#444] text-white rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">Semua Role</option>
             <option value="OWNER">Owner</option>
@@ -457,56 +457,56 @@ export default function UsersPage() {
       {/* Main Content - Two Separate Scroll Areas */}
       <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-hidden">
         {/* Users Table - Scrollable Area 1 (Takes 60% of available space) */}
-        <div className="flex-[3] min-h-[200px] bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+        <div className="flex-[3] min-h-[200px] bg-[#2a2a2a] rounded-lg shadow-sm border border-[#3a3a3a] overflow-hidden flex flex-col">
           <div className="flex-1 overflow-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0 z-10 transition-all">
+            <table className="min-w-full divide-y divide-[#3a3a3a]">
+              <thead className="bg-[#333] sticky top-0 z-10 transition-all">
                 <tr>
-                  <th className="px-2 md:px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-auto">
+                  <th className="px-2 md:px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-auto">
                     Nama
                   </th>
-                  <th className="px-2 md:px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell w-[25%]">
+                  <th className="px-2 md:px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider hidden md:table-cell w-[25%]">
                     Email
                   </th>
-                  <th className="px-2 md:px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[15%]">
+                  <th className="px-2 md:px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-[15%]">
                     Role
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-[120px]">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-300 uppercase tracking-wider w-[120px]">
                     Aksi
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-[#2a2a2a] divide-y divide-[#3a3a3a]">
                 {loading ? (
                   // Loading skeleton
                   [...Array(3)].map((_, i) => (
                     <tr key={i}>
                       <td className="px-4 py-2">
-                        <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
+                        <div className="h-4 bg-[#333] rounded animate-pulse w-32"></div>
                       </td>
                       <td className="px-4 py-2">
-                        <div className="h-4 bg-gray-200 rounded animate-pulse w-28"></div>
+                        <div className="h-4 bg-[#333] rounded animate-pulse w-28"></div>
                       </td>
                       <td className="px-4 py-2">
-                        <div className="h-5 bg-gray-200 rounded animate-pulse w-16"></div>
+                        <div className="h-5 bg-[#333] rounded animate-pulse w-16"></div>
                       </td>
                       <td className="px-4 py-2">
-                        <div className="h-5 bg-gray-200 rounded animate-pulse w-16"></div>
+                        <div className="h-5 bg-[#333] rounded animate-pulse w-16"></div>
                       </td>
                       <td className="px-4 py-2">
-                        <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                        <div className="h-4 bg-[#333] rounded animate-pulse w-20"></div>
                       </td>
                       <td className="px-4 py-2">
-                        <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                        <div className="h-4 bg-[#333] rounded animate-pulse w-16"></div>
                       </td>
                     </tr>
                   ))
                 ) : filteredUsers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                      <FaUserCircle className="mx-auto text-4xl text-gray-300 mb-2" />
-                      <p className="text-sm font-medium">Tidak ada staff ditemukan</p>
-                      <p className="text-xs mt-1">
+                      <FaUserCircle className="mx-auto text-4xl text-gray-600 mb-2" />
+                      <p className="text-sm font-medium text-gray-400">Tidak ada staff ditemukan</p>
+                      <p className="text-xs mt-1 text-gray-500">
                         {searchQuery || roleFilter !== 'all'
                           ? 'Coba ubah filter pencarian Anda'
                           : 'Mulai tambahkan staff ke tim Anda'}
@@ -515,7 +515,7 @@ export default function UsersPage() {
                   </tr>
                 ) : (
                   filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
+                    <tr key={user.id} className="hover:bg-[#333] transition-colors">
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8 md:h-10 md:w-10 relative">
@@ -524,22 +524,22 @@ export default function UsersPage() {
                                 <img
                                   src={whatsAppProfiles[user.phone].pictureUrl!}
                                   alt={`${user.firstName} ${user.lastName}`}
-                                  className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover border border-gray-100 shadow-sm"
+                                  className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover border border-[#444] shadow-sm"
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                     (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                                   }}
                                 />
-                                <div className="hidden h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center absolute top-0 left-0">
-                                  <span className="text-blue-600 font-bold text-xs md:text-sm">
+                                <div className="hidden h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-900/30 border border-blue-800 flex items-center justify-center absolute top-0 left-0">
+                                  <span className="text-blue-400 font-bold text-xs md:text-sm">
                                     {user.firstName.charAt(0)}
                                     {user.lastName?.charAt(0) || ''}
                                   </span>
                                 </div>
                               </>
                             ) : (
-                              <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
-                                <span className="text-blue-600 font-bold text-xs md:text-sm">
+                              <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-900/30 border border-blue-800 flex items-center justify-center">
+                                <span className="text-blue-400 font-bold text-xs md:text-sm">
                                   {user.firstName.charAt(0)}
                                   {user.lastName?.charAt(0) || ''}
                                 </span>
@@ -547,21 +547,21 @@ export default function UsersPage() {
                             )}
                             {/* WhatsApp Status Indicator on Profile Picture */}
                             {user.phone && whatsAppProfiles[user.phone] && !whatsAppProfiles[user.phone].loading && (
-                              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_2px_rgba(239,68,68,0.5)]'}`}></div>
+                              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-[#2a2a2a] ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_2px_rgba(239,68,68,0.5)]'}`}></div>
                             )}
                           </div>
                           <div className="ml-3">
-                            <div className="text-xs md:text-sm font-bold text-gray-900 leading-tight">
+                            <div className="text-xs md:text-sm font-bold text-gray-100 leading-tight">
                               {user.firstName} {user.lastName}
                             </div>
                             {user.phone && (
                               <div className="flex items-center mt-1">
                                 <FaWhatsapp className="text-green-500 mr-1 text-[10px] md:text-xs" />
-                                <div className="text-[10px] md:text-xs text-gray-600 font-medium">
+                                <div className="text-[10px] md:text-xs text-gray-400 font-medium">
                                   {formatPhoneNumber(user.phone)}
                                 </div>
                                 {whatsAppProfiles[user.phone] && !whatsAppProfiles[user.phone].loading && (
-                                  <span className={`ml-2 px-1.5 py-0.5 rounded text-[8px] md:text-[10px] font-bold uppercase tracking-tighter ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                                  <span className={`ml-2 px-1.5 py-0.5 rounded text-[8px] md:text-[10px] font-bold uppercase tracking-tighter ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-900/30 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
                                     {whatsAppProfiles[user.phone].isRegistered ? 'Active' : 'No WA'}
                                   </span>
                                 )}
@@ -571,7 +571,7 @@ export default function UsersPage() {
                         </div>
                       </td>
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap hidden md:table-cell">
-                        <div className="text-xs md:text-sm text-gray-600">{user.email}</div>
+                        <div className="text-xs md:text-sm text-gray-400">{user.email}</div>
                       </td>
                       <td className="px-2 md:px-4 py-2 whitespace-nowrap">
                         <span
@@ -592,7 +592,7 @@ export default function UsersPage() {
                             }
                             handleEditUser(user);
                           }}
-                          className={`text-blue-600 hover:text-blue-900 mr-2 md:mr-3 ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                          className={`text-blue-400 hover:text-blue-300 mr-2 md:mr-3 ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                           title={userRoleLevel < ROLE_LEVELS.ADMIN ? 'Akses Ditolak: Hanya untuk Admin/Owner' : 'Edit User'}
                         >
                           <FaEdit className="inline" /> <span className="hidden md:inline">Edit</span>
@@ -606,7 +606,7 @@ export default function UsersPage() {
                             }
                             handleDeleteUser(user.id);
                           }}
-                          className={`text-red-600 hover:text-red-900 ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                          className={`text-red-400 hover:text-red-300 ${userRoleLevel < ROLE_LEVELS.ADMIN ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                           title={userRoleLevel < ROLE_LEVELS.ADMIN ? 'Akses Ditolak: Hanya untuk Admin/Owner' : 'Hapus User'}
                         >
                           <FaTrash className="inline" /> <span className="hidden md:inline">Hapus</span>
@@ -621,61 +621,58 @@ export default function UsersPage() {
         </div>
 
         {/* WhatsApp AI Integration Info - Scrollable Area 2 (Takes 40% of available space) */}
-        <div className="flex-[2] min-h-[150px] overflow-auto bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-3">
+        <div className="flex-[2] min-h-[150px] overflow-auto bg-[#1f2937] rounded-lg border border-green-900/50 p-3 shadow-inner">
           <div className="flex items-start">
             <div className="flex-shrink-0">
-              <div className="flex items-center justify-center h-10 w-10 rounded-md bg-green-500 text-white text-xl">
+              <div className="flex items-center justify-center h-10 w-10 rounded-md bg-green-600 text-white text-xl shadow-lg shadow-green-900/50">
                 💬
               </div>
             </div>
             <div className="ml-3 flex-1">
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">
+              <h3 className="text-sm font-semibold text-white mb-1">
                 WhatsApp AI Commands untuk Staff
               </h3>
-              <p className="text-xs text-gray-700 mb-2">
+              <p className="text-xs text-gray-400 mb-2">
                 Semua staff dengan nomor WhatsApp terdaftar dapat menggunakan AI commands untuk operasional harian.
               </p>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
                 {/* Upload Vehicle */}
-                <div className="bg-white rounded-lg p-2 border border-green-200 overflow-hidden">
+                <div className="bg-[#2a2a2a] rounded-lg p-2 border border-green-800/50 overflow-hidden hover:border-green-600 transition-colors">
                   <div className="flex items-start">
                     <span className="text-lg mr-2 flex-shrink-0">📸</span>
                     <div className="flex-1 min-w-0 overflow-auto max-h-28">
-                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">upload - Upload Mobil (AI-Powered 🤖)</h4>
-                      <p className="text-xs text-gray-600 mb-1">Ketik upload + foto + info mobil</p>
-                      <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto">
-                        upload Avanza 2020 150jt hitam matic km 50rb
-                      </code>
-                      <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto mt-0.5">
-                        upload Brio 2021 140jt silver AT km 30rb
+                      <h4 className="font-bold text-gray-200 text-xs mb-0.5">upload - Upload Mobil</h4>
+                      <p className="text-[10px] text-gray-500 mb-1">Ketik upload + foto + info</p>
+                      <code className="text-[10px] bg-[#1a1a1a] text-gray-300 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto border border-[#333]">
+                        upload Avanza 2020 150jt
                       </code>
                     </div>
                   </div>
                 </div>
 
                 {/* Update Status */}
-                <div className="bg-white rounded-lg p-2 border border-blue-200 overflow-hidden">
+                <div className="bg-[#2a2a2a] rounded-lg p-2 border border-blue-800/50 overflow-hidden hover:border-blue-600 transition-colors">
                   <div className="flex items-start">
                     <span className="text-lg mr-2 flex-shrink-0">🔄</span>
                     <div className="flex-1 min-w-0 overflow-auto max-h-28">
-                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">status - Update Status</h4>
-                      <p className="text-xs text-gray-600 mb-1">Update status: AVAILABLE, BOOKED, SOLD</p>
-                      <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto">
-                        status PM-PST-001 SOLD
+                      <h4 className="font-bold text-gray-200 text-xs mb-0.5">status - Update Status</h4>
+                      <p className="text-[10px] text-gray-500 mb-1">Update: SOLD, BOOKED</p>
+                      <code className="text-[10px] bg-[#1a1a1a] text-gray-300 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto border border-[#333]">
+                        status PM-001 SOLD
                       </code>
                     </div>
                   </div>
                 </div>
 
                 {/* Check Inventory */}
-                <div className="bg-white rounded-lg p-2 border border-purple-200 overflow-hidden">
+                <div className="bg-[#2a2a2a] rounded-lg p-2 border border-purple-800/50 overflow-hidden hover:border-purple-600 transition-colors">
                   <div className="flex items-start">
                     <span className="text-lg mr-2 flex-shrink-0">📊</span>
                     <div className="flex-1 min-w-0 overflow-auto max-h-28">
-                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">inventory - Cek Stok</h4>
-                      <p className="text-xs text-gray-600 mb-1">Lihat daftar mobil, filter by status/brand</p>
-                      <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto">
+                      <h4 className="font-bold text-gray-200 text-xs mb-0.5">inventory - Cek Stok</h4>
+                      <p className="text-[10px] text-gray-500 mb-1">Lihat stok & filter</p>
+                      <code className="text-[10px] bg-[#1a1a1a] text-gray-300 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto border border-[#333]">
                         inventory AVAILABLE
                       </code>
                     </div>
@@ -683,13 +680,13 @@ export default function UsersPage() {
                 </div>
 
                 {/* Get Stats */}
-                <div className="bg-white rounded-lg p-2 border border-orange-200 overflow-hidden">
+                <div className="bg-[#2a2a2a] rounded-lg p-2 border border-orange-800/50 overflow-hidden hover:border-orange-600 transition-colors">
                   <div className="flex items-start">
                     <span className="text-lg mr-2 flex-shrink-0">📈</span>
                     <div className="flex-1 min-w-0 overflow-auto max-h-28">
-                      <h4 className="font-semibold text-gray-900 text-xs mb-0.5">stats - Statistik</h4>
-                      <p className="text-xs text-gray-600 mb-1">Lihat statistik penjualan dan leads</p>
-                      <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto">
+                      <h4 className="font-bold text-gray-200 text-xs mb-0.5">stats - Statistik</h4>
+                      <p className="text-[10px] text-gray-500 mb-1">Data penjualan & leads</p>
+                      <code className="text-[10px] bg-[#1a1a1a] text-gray-300 px-1.5 py-0.5 rounded block whitespace-nowrap overflow-x-auto border border-[#333]">
                         stats today
                       </code>
                     </div>
@@ -697,15 +694,15 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1.5 md:gap-2 pt-2 border-t border-green-200">
-                <div className="flex items-center text-[9px] md:text-xs text-gray-600">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1.5 md:gap-2 pt-2 border-t border-green-800/30">
+                <div className="flex items-center text-[9px] md:text-xs text-gray-400">
                   <span className="inline-block w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full mr-1.5 md:mr-2 flex-shrink-0"></span>
                   <span className="hidden md:inline">Staff harus memiliki <strong>Nomor WhatsApp</strong> terdaftar untuk menggunakan commands</span>
                   <span className="md:hidden">Staff perlu <strong>No. WA</strong> untuk commands</span>
                 </div>
                 <a
                   href="/dashboard/whatsapp-ai"
-                  className="text-[9px] md:text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap ml-3 md:ml-0"
+                  className="text-[9px] md:text-xs font-medium text-blue-400 hover:text-blue-300 hover:underline whitespace-nowrap ml-3 md:ml-0"
                 >
                   WhatsApp AI →
                 </a>
@@ -717,22 +714,22 @@ export default function UsersPage() {
 
       {/* Create User Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full my-auto">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto backdrop-blur-sm">
+          <div className="bg-[#2a2a2a] rounded-lg shadow-xl max-w-md w-full my-auto border border-[#444]">
             <div className="p-6 max-h-[90vh] overflow-y-auto">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              <h3 className="text-xl font-semibold text-white mb-4">
                 Tambah Staff Baru
               </h3>
 
               <form onSubmit={handleCreateUser} className="space-y-4">
                 {formError && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  <div className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-3 rounded">
                     {formError}
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Email *
                   </label>
                   <input
@@ -742,13 +739,13 @@ export default function UsersPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-[#333] border border-[#444] text-white rounded-md focus:ring-blue-500 focus:border-blue-500 placeholder-gray-500"
                     placeholder="email@example.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Nama Depan *
                   </label>
                   <input
@@ -758,13 +755,13 @@ export default function UsersPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, firstName: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-[#333] border border-[#444] text-white rounded-md focus:ring-blue-500 focus:border-blue-500 placeholder-gray-500"
                     placeholder="John"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Nama Belakang
                   </label>
                   <input
@@ -773,13 +770,13 @@ export default function UsersPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, lastName: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-[#333] border border-[#444] text-white rounded-md focus:ring-blue-500 focus:border-blue-500 placeholder-gray-500"
                     placeholder="Doe"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Nomor WhatsApp *
                   </label>
                   <input
@@ -789,7 +786,7 @@ export default function UsersPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-[#333] border border-[#444] text-white rounded-md focus:ring-blue-500 focus:border-blue-500 placeholder-gray-500"
                     placeholder="Contoh: 6281234567890"
                   />
                   <p className="text-xs text-gray-500 mt-1">
