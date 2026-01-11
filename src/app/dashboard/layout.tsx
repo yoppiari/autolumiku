@@ -239,27 +239,38 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href="/dashboard"
                 className="flex items-center h-16 px-6 border-b border-gray-200 hover:bg-gray-50 transition-colors group"
               >
-                <div className="flex items-center">
-                  {tenant?.logoUrl ? (
-                    <img
-                      src={tenant.logoUrl}
-                      alt={tenant.name || 'Tenant Logo'}
-                      className="w-8 h-8 object-contain rounded-lg group-hover:scale-105 transition-transform"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                      <span className="text-white font-bold text-sm">
-                        {tenant?.name?.[0] || 'A'}
-                      </span>
+                {!tenant && !user ? (
+                  /* Skeleton Loading for Logo */
+                  <div className="flex items-center animate-pulse w-full">
+                    <div className="w-8 h-8 bg-gray-200 rounded-lg"></div>
+                    <div className="ml-3 flex-1">
+                      <div className="h-5 bg-gray-200 rounded w-24 mb-1"></div>
+                      <div className="h-3 bg-gray-200 rounded w-16"></div>
                     </div>
-                  )}
-                  <div className="ml-3">
-                    <div className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                      {tenant?.name || 'autolumiku'}
-                    </div>
-                    <div className="text-xs text-gray-500">Showroom Dashboard</div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center">
+                    {tenant?.logoUrl ? (
+                      <img
+                        src={tenant.logoUrl}
+                        alt={tenant.name || 'Tenant Logo'}
+                        className="w-8 h-8 object-contain rounded-lg group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span className="text-white font-bold text-sm">
+                          {tenant?.name?.[0] || 'A'}
+                        </span>
+                      </div>
+                    )}
+                    <div className="ml-3">
+                      <div className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate max-w-[140px]">
+                        {tenant?.name || 'autolumiku'}
+                      </div>
+                      <div className="text-xs text-gray-500">Showroom Dashboard</div>
+                    </div>
+                  </div>
+                )}
               </Link>
 
               {/* Navigation - all items shown, tooltip for unauthorized */}

@@ -27,6 +27,7 @@ function LoginForm() {
   const [sessionExpired, setSessionExpired] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [branding, setBranding] = useState<TenantBranding | null>(null);
+  const [isLoadingBranding, setIsLoadingBranding] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -57,6 +58,8 @@ function LoginForm() {
         }
       } catch (err) {
         console.log('Using default branding');
+      } finally {
+        setIsLoadingBranding(false);
       }
     };
     fetchBranding();
@@ -107,8 +110,12 @@ function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
-        <div className="flex justify-center mb-4">
-          {branding?.logoUrl ? (
+        <div className="flex justify-center mb-4 h-14 items-center">
+          {isLoadingBranding ? (
+            <div className="animate-pulse flex space-x-4">
+              <div className="h-10 w-48 bg-gray-200 rounded"></div>
+            </div>
+          ) : branding?.logoUrl ? (
             <Image
               src={branding.logoUrl}
               alt={branding.name}
