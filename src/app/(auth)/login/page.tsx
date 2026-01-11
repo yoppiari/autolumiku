@@ -108,7 +108,7 @@ function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md bg-[#2a2a2a] border-[#333] text-white">
       <CardHeader className="space-y-1">
         <div className="flex justify-center mb-4 h-14 items-center">
           {isLoadingBranding ? (
@@ -133,8 +133,8 @@ function LoginForm() {
             </div>
           )}
         </div>
-        <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
-        <CardDescription className="text-center">
+        <CardTitle className="text-2xl text-center text-white">Welcome back</CardTitle>
+        <CardDescription className="text-center text-gray-400">
           Enter your credentials to access your account
         </CardDescription>
       </CardHeader>
@@ -152,7 +152,7 @@ function LoginForm() {
           )}
 
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="text-sm font-medium text-gray-300">
               Email
             </label>
             <input
@@ -161,19 +161,19 @@ function LoginForm() {
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[#444] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[#333] text-white placeholder-gray-500"
               placeholder="you@example.com"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="text-sm font-medium text-gray-300">
                 Password
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="text-sm text-blue-400 hover:text-blue-300"
               >
                 Forgot password?
               </Link>
@@ -185,13 +185,13 @@ function LoginForm() {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 pr-10 border border-[#444] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[#333] text-white placeholder-gray-500"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 focus:outline-none"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -232,10 +232,10 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-md">
         <Suspense fallback={
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-md bg-[#2a2a2a] border-[#333]">
             <CardHeader className="space-y-1">
               <div className="flex justify-center mb-4">
-                <div className="text-4xl font-bold text-blue-600">Loading...</div>
+                <div className="text-4xl font-bold text-white">Loading...</div>
               </div>
             </CardHeader>
           </Card>
