@@ -361,6 +361,33 @@ export default function VehiclesPage() {
           <option value="BOOKED">Booking</option>
           <option value="SOLD">Terjual</option>
         </select>
+
+        {/* Filter Tahun */}
+        <select
+          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
+        >
+          <option value="">Semua Tahun</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+          <option value="2022">2022</option>
+          <option value="2021">2021</option>
+          <option value="2020">2020</option>
+          <option value="2019">2019</option>
+          <option value="2018">2018</option>
+        </select>
+
+        {/* Filter Harga */}
+        <select
+          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
+        >
+          <option value="">Semua Harga</option>
+          <option value="0-50">0 - 50 jt</option>
+          <option value="50-100">50 - 100 jt</option>
+          <option value="100-150">100 - 150 jt</option>
+          <option value="150-200">150 - 200 jt</option>
+          <option value="200+">200 jt+</option>
+        </select>
+
         <div className="flex border border-[#444] rounded overflow-hidden ml-auto">
           <button
             onClick={() => setViewMode('grid')}
