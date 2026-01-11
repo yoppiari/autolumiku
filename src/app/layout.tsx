@@ -15,19 +15,28 @@ export async function generateMetadata(): Promise<Metadata> {
 
   try {
     // Fetch Prima Mobil tenant branding
-    const tenant = await prisma.tenant.findFirst({
-      where: {
-        OR: [
-          { name: { contains: 'Prima Mobil', mode: 'insensitive' } },
-          { slug: 'prima-mobil' }
-        ]
-      },
+    // Prioritize the Known Correct ID from admin dashboard to avoid picking up test/duplicate tenants
+    let tenant = await prisma.tenant.findUnique({
+      where: { id: 'e592973f-9eff-4f40-adf6-ca6b2ad9721f' },
       select: { faviconUrl: true }
     });
 
+    // Fallback: search by name/slug if specific ID fails
+    if (!tenant) {
+      tenant = await prisma.tenant.findFirst({
+        where: {
+          OR: [
+            { name: { contains: 'Prima Mobil', mode: 'insensitive' } },
+            { slug: 'prima-mobil' }
+          ]
+        },
+        select: { faviconUrl: true }
+      });
+    }
+
     if (tenant?.faviconUrl) {
       favicon = tenant.faviconUrl;
-      appleIcon = tenant.faviconUrl; // Use same for apple if branded, or keep default
+      appleIcon = tenant.faviconUrl;
     }
   } catch (error) {
     console.error('Error fetching tenant metadata:', error);
@@ -37,8 +46,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: 'Prima Mobil Platform',
     description: 'Platform administrasi showroom otomotif',
     icons: {
-      icon: '/favicon.png', // Force use of local P logo (favicon.png) to ensure correct icon and size
-      apple: '/favicon-48.png',
+      icon: favicon,
+      apple: appleIcon,
     },
   };
 }
