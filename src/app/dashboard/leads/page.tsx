@@ -290,12 +290,7 @@ export default function LeadsDashboard() {
             🔄
           </button>
 
-          <Link
-            href="/dashboard/leads/whatsapp-settings"
-            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap"
-          >
-            ⚙️ Settings
-          </Link>
+
         </div>
       </div>   {/* Stats Cards - Responsive Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-shrink-0">
@@ -375,6 +370,13 @@ export default function LeadsDashboard() {
         <div className="bg-[#2a2a2a] p-3 rounded-lg shadow-sm border border-[#3a3a3a]">
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-xs font-semibold text-gray-300">WhatsApp</h2>
+            <Link
+              href="/dashboard/leads/whatsapp-settings"
+              className="text-gray-400 hover:text-blue-400 transition-colors"
+              title="Settings"
+            >
+              ⚙️
+            </Link>
           </div>
           {whatsappSettings.map((setting) => (
             <div key={setting.id} className="text-[11px] text-gray-400">
@@ -542,6 +544,6 @@ export default function LeadsDashboard() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }
