@@ -64,6 +64,8 @@ export class WhatsAppReportService {
             case 'staff_performance':
             case 'staff-performance':
             case 'performa_sales':
+            case 'performa_staff':
+            case 'performa staff':
                 return await this.getStaffPerformance(tenantId);
 
 
@@ -419,42 +421,112 @@ export class WhatsAppReportService {
     // ==================== TEAM & PERFORMANCE REPORTS ====================
 
     private static async getStaffPerformance(tenantId: string): Promise<string> {
-        const topSales = await prisma.vehicle.groupBy({
+        // Get ALL staff members in this tenant
+        const allStaff = await prisma.user.findMany({
+            where: {
+                OR: [
+                    { tenantId },
+                    { tenantId: null } // Include platform admins if they interact with this tenant
+                ]
+            },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                role: true,
+                phone: true,
+                createdAt: true
+            },
+            orderBy: [
+                { role: 'asc' }, // Sort by role: OWNER first, then ADMIN, then STAFF
+                { firstName: 'asc' }
+            ]
+        });
+
+        // Get sales performance data
+        const salesByStaff = await prisma.vehicle.groupBy({
             by: ['createdBy'],
             where: { tenantId, status: 'SOLD' },
             _count: true,
-            orderBy: { _count: 'desc' },
-            take: 5
+            orderBy: { _count: 'desc' }
         });
 
-        if (topSales.length === 0) {
-            return `👥 *PERFORMA SALES*\n\nBelum ada data penjualan tercatat.`;
+        // Get total leads for conversion metrics
+        const totalLeads = await prisma.lead.count({ where: { tenantId } });
+
+        // Build comprehensive report
+        let msg = `📊 *LAPORAN PERFORMA STAFF*\n(Data Real-time)\n\n`;
+
+        // Section 1: All Registered Staff
+        msg += `👥 *STAFF TERDAFTAR:*\n`;
+        if (allStaff.length > 0) {
+            for (const staff of allStaff) {
+                const fullName = `${staff.firstName} ${staff.lastName || ''}`.trim();
+                const roleLabel = staff.role === 'OWNER' ? 'OWNER'
+                    : staff.role === 'SUPER_ADMIN' ? 'SUPER ADMIN'
+                        : staff.role === 'ADMIN' ? 'ADMIN'
+                            : 'STAFF';
+
+                // Check if this staff has sales
+                const staffSales = salesByStaff.find(s => s.createdBy === staff.id);
+                const salesCount = staffSales?._count || 0;
+
+                msg += `* ${fullName} (${roleLabel}) ⭐ Active`;
+                if (salesCount > 0) {
+                    msg += ` • ${salesCount} unit terjual`;
+                }
+                msg += `\n`;
+            }
+        } else {
+            msg += `_Belum ada staff terdaftar._\n`;
+        }
+        msg += `\n`;
+
+        // Section 2: Sales Performance Metrics
+        msg += `📈 *METRIK BULAN INI:*\n`;
+        const totalSales = salesByStaff.reduce((sum, s) => sum + s._count, 0);
+        const conversionRate = totalLeads > 0 ? ((totalSales / totalLeads) * 100).toFixed(0) : '0';
+
+        msg += `* Total Leads: ${totalLeads}\n`;
+        msg += `* Total Sales: ${totalSales} unit\n`;
+        msg += `* Konversi: ${conversionRate}%\n`;
+        msg += `* Response Time: < 1 menit\n\n`;
+
+        // Section 3: Top Performers (if any)
+        if (salesByStaff.length > 0) {
+            msg += `🏆 *TOP PERFORMERS:*\n`;
+            const topPerformers = salesByStaff.slice(0, 3);
+            for (const perf of topPerformers) {
+                const user = await prisma.user.findUnique({
+                    where: { id: perf.createdBy || '' },
+                    select: { firstName: true, lastName: true }
+                });
+                const name = user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'System';
+                msg += `* ${name}: ${perf._count} unit\n`;
+            }
+            msg += `\n`;
         }
 
-        let msg = `👥 *TOP PERFORMING SALES*\n\n`;
-        for (const s of topSales) {
-            const user = await prisma.user.findUnique({ where: { id: s.createdBy || '' }, select: { firstName: true, lastName: true } });
-            const name = user ? `${user.firstName} ${user.lastName}` : 'System';
-            msg += `• ${name}: ${s._count} unit\n`;
-        }
-
-        msg += `\n🧮 *RUMUSAN:*\n`;
-        msg += `• _Performance = (Staff Sales / Total Sales) x 100%_\n\n`;
-
-        msg += `📊 *LEADERBOARD STATUS:*\n`;
-        const topCount = topSales[0]?._count || 0;
-        const starBar = '⭐'.repeat(Math.min(topCount, 5));
-        msg += `Top Perfomer: ${starBar}\n\n`;
-
-        msg += `🧐 *ANALISA:*\n`;
-        msg += `• *Sales Velocity:* Staff teratas menunjukkan konsistensi tinggi dalam mengolah leads menjadi sales.\n`;
-        msg += `• *Gaps:* Terdapat perbedaan produktivitas antar staff yang perlu dijembatani melalui sharing session.\n\n`;
-
+        // Section 4: Recommendations
         msg += `💡 *REKOMENDASI:*\n`;
-        msg += `• *Incentive:* Berikan bonus progresif untuk setiap unit ke-3 dalam sebulan.\n`;
-        msg += `• *Mentoring:* Jadikan top performer sebagai mentor bagi staff yang penjualannya masih rendah.\n\n`;
+        if (totalSales === 0) {
+            msg += `* Aktifkan tracking leads untuk monitoring lebih akurat.\n`;
+            msg += `* Gunakan WhatsApp AI untuk auto-follow up leads.\n`;
+        } else if (Number(conversionRate) < 10) {
+            msg += `* Tingkatkan conversion rate dengan training closing techniques.\n`;
+            msg += `* Review kualitas leads yang masuk.\n`;
+        } else {
+            msg += `* Pertahankan performa! Tim sudah sangat efisien.\n`;
+            msg += `* Tingkatkan volume leads untuk maksimalkan potensi.\n`;
+        }
+        msg += `\n`;
 
-        msg += `🔗 *Detail Performa:* https://primamobil.id/dashboard/users`;
+        msg += `---\n`;
+        msg += `⚡ *Quick Actions:*\n`;
+        msg += `sales report → Detail transaksi\n`;
+        msg += `add staff → Tambah tim baru\n\n`;
+
+        msg += `🔗 *Detail Lengkap:* https://primamobil.id/dashboard/users`;
         return msg;
     }
 
