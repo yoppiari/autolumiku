@@ -538,9 +538,14 @@ export default function VehiclesPage() {
                       {/* Row 1: Title + Price (stack on mobile, horizontal on desktop) */}
                       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
                         <div className="flex flex-col gap-1">
-                          <h3 className="font-bold text-white leading-tight text-base md:text-lg">
-                            {vehicle.make} {vehicle.model}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-white leading-tight text-base md:text-lg">
+                              {vehicle.make} {vehicle.model}
+                            </h3>
+                            <span className="font-mono text-red-400 font-bold text-sm">
+                              {vehicle.displayId || '#' + vehicle.id.slice(0, 6)}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-2 flex-wrap">
                             {vehicle.variant && (
                               <span className="px-2 py-0.5 bg-blue-900/30 text-blue-300 text-[10px] md:text-xs font-bold rounded border border-blue-800 uppercase">
@@ -557,10 +562,8 @@ export default function VehiclesPage() {
                         </div>
                       </div>
 
-                      {/* Row 2: Metadata - wrap on mobile */}
+                      {/* Row 2: Metadata - wrap on mobile (no display ID) */}
                       <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
-                        <span className="font-mono text-gray-500">#{vehicle.displayId || vehicle.id.slice(0, 6)}</span>
-                        <span className="text-gray-600">•</span>
                         <span>{vehicle.year}</span>
                         <span className="text-gray-600">•</span>
                         <span>{vehicle.mileage ? (vehicle.mileage / 1000).toFixed(0) : '-'} km</span>
