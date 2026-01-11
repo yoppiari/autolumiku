@@ -17,7 +17,7 @@ interface User {
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string | null;
-  profilePictureUrl?: string | null;
+  // profilePictureUrl?: string | null;
 }
 
 interface UserStats {
@@ -118,6 +118,9 @@ export default function UsersPage() {
         const loadedUsers = response.data?.users || [];
         setUsers(loadedUsers);
         setStats(response.data?.stats || { total: 0, byStatus: {}, byRole: {} });
+
+        /*
+        // DISABLED: Migration failed
         // Initialize WhatsApp profiles state with stored URLs to show images immediately
         const initialProfiles: Record<string, WhatsAppProfile> = {};
         loadedUsers.forEach((u: User) => {
@@ -133,6 +136,7 @@ export default function UsersPage() {
 
         // Merge with existing logic but don't overwrite if we're just setting initial
         setWhatsAppProfiles(prev => ({ ...prev, ...initialProfiles }));
+        */
 
         // Load fresh profile pictures for users with phone numbers
         loadWhatsAppProfiles(loadedUsers, tid);

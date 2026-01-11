@@ -116,6 +116,8 @@ export async function GET(request: NextRequest) {
           hasPicture = data.hasPicture || false;
 
           // If we got a valid picture URL, save it to the user database for future fallback
+          /*
+          // PERSISTENCE DISABLED TEMPORARILY: Migration failed
           if (pictureUrl && tenantId) {
             try {
               // Find user by phone to update
@@ -146,6 +148,7 @@ export async function GET(request: NextRequest) {
               console.error("[Profile Picture API] Failed to update DB cache:", dbError);
             }
           }
+          */
         }
       }
     } catch (fetchError) {
@@ -153,6 +156,8 @@ export async function GET(request: NextRequest) {
     }
 
     // If real-time fetch failed or returned no picture, try to use cached one from DB
+    /*
+    // FALLBACK DISABLED: Column missing
     if (!pictureUrl && tenantId) {
       try {
         const user = await prisma.user.findFirst({
@@ -173,6 +178,7 @@ export async function GET(request: NextRequest) {
         console.error("[Profile Picture API] DB fallback failed:", dbErr);
       }
     }
+    */
 
     return NextResponse.json({
       success: true,
