@@ -554,15 +554,23 @@ export default function VehiclesPage() {
                         <span className="text-gray-600">•</span>
                         <span className="truncate max-w-[120px]">{vehicle.licensePlate || 'No Plat'}</span>
                         <span className="text-gray-600">•</span>
-                        {(() => {
-                          const diff = new Date().getTime() - new Date(vehicle.createdAt).getTime();
-                          const days = Math.ceil(Math.abs(diff) / (1000 * 3600 * 24));
-                          return (
-                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${days > 60 ? 'bg-red-900/20 text-red-400 border-red-800' : 'bg-green-900/20 text-green-400 border-green-800'}`}>
-                              {days} Hari
-                            </span>
-                          );
-                        })()}
+                        <div className="flex items-center gap-1">
+                          <span className="hidden sm:inline">Umur Stok:</span>
+                          {(() => {
+                            const diff = new Date().getTime() - new Date(vehicle.createdAt).getTime();
+                            const days = Math.ceil(Math.abs(diff) / (1000 * 3600 * 24));
+                            return (
+                              <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${days > 60 ? 'bg-red-900/20 text-red-400 border-red-800' : 'bg-green-900/20 text-green-400 border-green-800'}`}>
+                                {days} Hari
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      {/* Row 4: Updated By */}
+                      <div className="text-[10px] text-gray-500">
+                        Update by {getUserName(vehicle.updatedBy)} • {new Date(vehicle.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </div>
 
                       {/* Row 3: Notes */}
