@@ -301,7 +301,7 @@ export default function VehiclesPage() {
           onClick={() => setStatusFilter('ALL')}
           className="px-3 py-1.5 bg-gray-700 text-white rounded-full text-xs font-bold border border-gray-600 hover:bg-gray-600 transition-all whitespace-nowrap"
         >
-          {filteredVehicles.length} Total
+          {vehicles.length} Total
         </button>
 
         {/* Tersedia Badge - Green with pulse animation */}
