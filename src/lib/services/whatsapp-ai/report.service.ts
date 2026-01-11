@@ -364,14 +364,22 @@ export class WhatsAppReportService {
 
         const lowStock = stockByMake.filter(s => s._count <= 1);
 
+        // Get total inventory for context
+        const totalInventory = await prisma.vehicle.count({
+            where: { tenantId, status: 'AVAILABLE' }
+        });
+
         if (lowStock.length === 0) {
-            return `✅ *PERINGATAN STOK*\n\nSemua brand masih memiliki stok yang cukup safe.`;
+            return `✅ *PERINGATAN STOK*\n\nSemua brand masih memiliki stok yang cukup safe.\n\nTotal inventory: ${totalInventory} unit`;
         }
 
-        let msg = `⚠️ *PERINGATAN STOK TIPIS*\n\nBeberapa brand tinggal 1 unit:\n`;
+        let msg = `⚠️ *PERINGATAN STOK TIPIS (Per Brand)*\n\nBeberapa brand tinggal 1 unit:\n`;
         lowStock.forEach(s => {
             msg += `• ${s.make}: ${s._count} unit\n`;
         });
+
+        msg += `\n📦 *Total Inventory:* ${totalInventory} unit tersedia\n`;
+        msg += `💡 *Info:* Peringatan ini menunjukkan brand dengan stok ≤1 unit.\n`;
 
         msg += `\n🔗 *Restock Sekarang:* https://primamobil.id/dashboard/vehicles`;
         return msg;
