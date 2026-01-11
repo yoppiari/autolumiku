@@ -301,7 +301,7 @@ export default function VehiclesPage() {
           onClick={() => setStatusFilter('ALL')}
           className="px-3 py-1.5 bg-gray-700 text-white rounded-full text-xs font-bold border border-gray-600 hover:bg-gray-600 transition-all whitespace-nowrap"
         >
-          Total
+          {filteredVehicles.length} Total
         </button>
 
         {/* Tersedia Badge - Green with pulse animation */}
@@ -329,8 +329,8 @@ export default function VehiclesPage() {
         </button>
       </div>
 
-      {/* Filter Toggle Button */}
-      <div className="mb-3 shrink-0">
+      {/* Filter Toggle Button - Only on mobile */}
+      <div className="mb-3 shrink-0 md:hidden">
         <button
           onClick={() => setIsFilterExpanded(!isFilterExpanded)}
           className="flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors"
@@ -342,42 +342,40 @@ export default function VehiclesPage() {
         </button>
       </div>
 
-      {/* Filters - Collapsible */}
-      {isFilterExpanded && (
-        <div className="flex flex-wrap items-center gap-3 mb-4 bg-[#2a2a2a] p-2 rounded-lg border border-[#3a3a3a] shrink-0">
-          <input
-            type="text"
-            placeholder="Cari mobil..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm w-full md:w-64"
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
-            className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
+      {/* Filters - Collapsible on mobile, always visible on desktop */}
+      <div className={`flex flex-wrap items-center gap-3 mb-4 bg-[#2a2a2a] p-2 rounded-lg border border-[#3a3a3a] shrink-0 ${isFilterExpanded ? 'block' : 'hidden md:flex'}`}>
+        <input
+          type="text"
+          placeholder="Cari mobil..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm w-full md:w-64"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
+          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
+        >
+          <option value="ALL">Semua Status</option>
+          <option value="AVAILABLE">Tersedia</option>
+          <option value="BOOKED">Booking</option>
+          <option value="SOLD">Terjual</option>
+        </select>
+        <div className="flex border border-[#444] rounded overflow-hidden ml-auto">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-3 py-1.5 ${viewMode === 'grid' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
           >
-            <option value="ALL">Semua Status</option>
-            <option value="AVAILABLE">Tersedia</option>
-            <option value="BOOKED">Booking</option>
-            <option value="SOLD">Terjual</option>
-          </select>
-          <div className="flex border border-[#444] rounded overflow-hidden ml-auto">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-3 py-1.5 ${viewMode === 'grid' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
-            >
-              Grid
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 ${viewMode === 'list' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
-            >
-              List
-            </button>
-          </div>
+            Grid
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-3 py-1.5 ${viewMode === 'list' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
+          >
+            List
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Warning/Error */}
       {resequenceStatus && (
