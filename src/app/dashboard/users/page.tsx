@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaSearch, FaPlus, FaEdit, FaTrash, FaUserCircle, FaWhatsapp, FaSync } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaEdit, FaTrash, FaUserCircle, FaWhatsapp } from 'react-icons/fa';
 import { api } from '@/lib/api-client';
 import { ROLE_LEVELS } from '@/lib/rbac';
 
@@ -46,7 +46,6 @@ export default function UsersPage() {
   const [whatsAppProfiles, setWhatsAppProfiles] = useState<Record<string, WhatsAppProfile>>({});
   const [userRoleLevel, setUserRoleLevel] = useState<number>(ROLE_LEVELS.SALES);
   const [accessDenied, setAccessDenied] = useState(false);
-  const [refreshingProfiles, setRefreshingProfiles] = useState(false);
   const [lastProfileUpdate, setLastProfileUpdate] = useState<Date | null>(null);
 
   // Form state
@@ -179,13 +178,8 @@ export default function UsersPage() {
   const refreshWhatsAppProfiles = useCallback(async () => {
     if (!tenantId || users.length === 0) return;
 
-    setRefreshingProfiles(true);
-
     const usersWithPhone = users.filter(u => u.phone);
-    if (usersWithPhone.length === 0) {
-      setRefreshingProfiles(false);
-      return;
-    }
+    if (usersWithPhone.length === 0) return;
 
     // Refresh all WhatsApp profiles
     for (const user of usersWithPhone) {
@@ -216,7 +210,6 @@ export default function UsersPage() {
     }
 
     setLastProfileUpdate(new Date());
-    setRefreshingProfiles(false);
   }, [tenantId, users]);
 
   const applyFilters = () => {
@@ -453,15 +446,6 @@ export default function UsersPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={refreshWhatsAppProfiles}
-            disabled={refreshingProfiles}
-            className={`flex items-center px-2 md:px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-xs md:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed`}
-            title="Refresh profile WhatsApp"
-          >
-            <FaSync className={`mr-1 md:mr-2 ${refreshingProfiles ? 'animate-spin' : ''}`} />
-            <span className="hidden md:inline">Refresh WA</span>
-          </button>
           <button
             onClick={() => {
               if (userRoleLevel < ROLE_LEVELS.ADMIN) {
