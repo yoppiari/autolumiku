@@ -396,7 +396,7 @@ export default function VehiclesPage() {
                 className={`bg-[#1e1e1e] border border-[#333] rounded-lg shadow-sm hover:border-[#555] transition-all overflow-hidden min-w-0 ${viewMode === 'list' ? 'flex flex-row' : 'flex flex-col'}`}
               >
                 {/* Image */}
-                <div className={`relative bg-black ${viewMode === 'list' ? 'w-40 h-32 shrink-0' : 'h-28 w-full'}`}>
+                <div className={`relative bg-black ${viewMode === 'list' ? 'w-40 h-32 shrink-0' : 'h-40 w-full'}`}>
                   <VehicleImageCarousel
                     photos={vehicle.photos || []}
                     alt={`${vehicle.make} ${vehicle.model}`}
