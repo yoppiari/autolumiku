@@ -33,6 +33,8 @@ export class WhatsAppReportService {
             case 'sales_summary':
             case 'sales-summary':
             case 'ringkasan_cepat':
+            case 'ringkasan_penjualan':
+            case 'ringkasan penjualan':
                 return await this.getSalesSummary(tenantId);
 
             // ✅ Inventory & Stock
@@ -43,6 +45,8 @@ export class WhatsAppReportService {
             case 'vehicle_listing':
             case 'inventory-listing':
             case 'daftar_kendaraan':
+            case 'daftar kendaraan':
+            case 'list_kendaraan':
                 return await this.getVehicleListing(tenantId);
             case 'low_stock_alert':
             case 'low-stock-alert':
