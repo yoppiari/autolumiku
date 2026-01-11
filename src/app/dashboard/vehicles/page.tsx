@@ -183,12 +183,25 @@ export default function VehiclesPage() {
 
   const fetchUsers = async () => {
     try {
-      const result = await api.get('/api/v1/users');
+      // Get tenantId like in fetchVehicles
+      const userStr = localStorage.getItem('user');
+      const tenantId = userStr ? JSON.parse(userStr).tenantId : null;
+
+      // Call with tenantId if available
+      const url = tenantId ? `/api/v1/users?tenantId=${tenantId}` : '/api/v1/users';
+      const result = await api.get(url);
+
       if (result.success && result.data) {
+        // Result structure is { users: [], stats: {} } based on UsersPage
+        const usersList = result.data.users || (Array.isArray(result.data) ? result.data : []);
+
         const mapping: Record<string, string> = {};
-        result.data.forEach((user: any) => {
-          mapping[user.id] = user.name || user.email?.split('@')[0] || 'Unknown';
+        usersList.forEach((user: any) => {
+          // Use firstName (and lastName if needed)
+          const name = user.firstName || user.name || user.email?.split('@')[0] || 'Unknown';
+          mapping[user.id] = name;
         });
+        console.log('User mapping loaded:', Object.keys(mapping).length, 'users');
         setUserMap(mapping);
       }
     } catch (error) {
