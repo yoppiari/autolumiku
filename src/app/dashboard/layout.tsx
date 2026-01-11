@@ -261,7 +261,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <img
                       src="/prima-mobil-logo.jpg"
                       alt="Prima Mobil"
-                      className="h-8 w-auto object-contain rounded-sm"
+                      className="h-10 md:h-12 w-auto max-w-full object-contain rounded-sm"
                     />
                     {/* Fallback for other tenants or if logo fails load (though we are hardcoding for Prima Mobil request) */}
                     {tenant?.name && tenant.name !== 'Prima Mobil' && (
