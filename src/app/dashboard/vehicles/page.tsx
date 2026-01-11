@@ -426,7 +426,7 @@ export default function VehiclesPage() {
             {filteredVehicles.map((vehicle) => (
               <div
                 key={vehicle.id}
-                className={`bg-[#1e1e1e] border border-[#333] rounded-lg shadow-sm hover:border-[#555] transition-all overflow-hidden min-w-0 max-w-xs mx-auto ${viewMode === 'list' ? 'flex flex-row' : 'flex flex-col'}`}
+                className={`bg-[#1e1e1e] border border-[#333] rounded-lg shadow-sm hover:border-[#555] transition-all overflow-hidden min-w-0 ${viewMode === 'list' ? 'flex flex-row w-full' : 'flex flex-col max-w-xs mx-auto'}`}
               >
                 {/* Image */}
                 <div className={`relative bg-black ${viewMode === 'list' ? 'w-40 h-32 shrink-0' : 'h-40 w-full'}`}>
