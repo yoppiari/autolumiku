@@ -329,40 +329,55 @@ export default function VehiclesPage() {
         </button>
       </div>
 
-      {/* Filters (simplified for stability) */}
-      <div className="flex flex-wrap items-center gap-3 mb-4 bg-[#2a2a2a] p-2 rounded-lg border border-[#3a3a3a] shrink-0">
-        <input
-          type="text"
-          placeholder="Cari mobil..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm w-full md:w-64"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
-          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
+      {/* Filter Toggle Button */}
+      <div className="mb-3 shrink-0">
+        <button
+          onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+          className="flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors"
         >
-          <option value="ALL">Semua Status</option>
-          <option value="AVAILABLE">Tersedia</option>
-          <option value="BOOKED">Booking</option>
-          <option value="SOLD">Terjual</option>
-        </select>
-        <div className="flex border border-[#444] rounded overflow-hidden ml-auto">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`px-3 py-1.5 ${viewMode === 'grid' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
-          >
-            Grid
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`px-3 py-1.5 ${viewMode === 'list' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
-          >
-            List
-          </button>
-        </div>
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <span className="text-[10px] font-medium">Filter</span>
+        </button>
       </div>
+
+      {/* Filters - Collapsible */}
+      {isFilterExpanded && (
+        <div className="flex flex-wrap items-center gap-3 mb-4 bg-[#2a2a2a] p-2 rounded-lg border border-[#3a3a3a] shrink-0">
+          <input
+            type="text"
+            placeholder="Cari mobil..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm w-full md:w-64"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
+            className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
+          >
+            <option value="ALL">Semua Status</option>
+            <option value="AVAILABLE">Tersedia</option>
+            <option value="BOOKED">Booking</option>
+            <option value="SOLD">Terjual</option>
+          </select>
+          <div className="flex border border-[#444] rounded overflow-hidden ml-auto">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1.5 ${viewMode === 'grid' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
+            >
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 ${viewMode === 'list' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
+            >
+              List
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Warning/Error */}
       {resequenceStatus && (
