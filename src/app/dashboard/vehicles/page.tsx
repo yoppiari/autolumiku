@@ -144,7 +144,19 @@ export default function VehiclesPage() {
 
   const getUserName = (userId?: string): string => {
     if (!userId) return 'System';
-    return userMap[userId] || userId.slice(0, 8) + '...';
+
+    // If userMap is still empty (loading), show loading state
+    if (Object.keys(userMap).length === 0) return 'Loading...';
+
+    // Try to get name from userMap
+    const userName = userMap[userId];
+    if (userName) {
+      // Return first name only (before space) for cleaner display
+      return userName.split(' ')[0];
+    }
+
+    // Fallback: show truncated UUID
+    return userId.slice(0, 8) + '...';
   };
 
   const fetchVehicles = async () => {
@@ -486,10 +498,12 @@ export default function VehiclesPage() {
                           })()}
                         </div>
 
-                        {/* Row 4: Notes */}
-                        <div className="text-xs text-gray-400 leading-snug">
-                          {vehicle.description || "Tidak ada catatan."}
-                        </div>
+                        {/* Row 4: Notes - Only show if there's actual content */}
+                        {vehicle.description && (
+                          <div className="text-xs text-gray-400 leading-snug">
+                            {vehicle.description}
+                          </div>
+                        )}
 
                         {/* Row 5: Audit Trail - Larger text */}
                         <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
@@ -497,7 +511,7 @@ export default function VehiclesPage() {
                             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                             </svg>
-                            Updated by <span className="font-semibold text-gray-300">{getUserName(vehicle.updatedBy)}</span>
+                            Update by <span className="font-semibold text-gray-300">{getUserName(vehicle.updatedBy)}</span>
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
