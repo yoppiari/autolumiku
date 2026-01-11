@@ -69,6 +69,11 @@ export default function VehiclesPage() {
 
   // Apply all filters
   const applyFilters = () => {
+    if (!vehicles || vehicles.length === 0) {
+      setFilteredVehicles([]);
+      return;
+    }
+
     let result = [...vehicles];
 
     // Filter by status
