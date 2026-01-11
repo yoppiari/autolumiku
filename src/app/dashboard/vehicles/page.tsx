@@ -218,8 +218,8 @@ export default function VehiclesPage() {
     // Try to get name from userMap
     const userName = userMap[userId];
     if (userName) {
-      // Return first name only (before space) for cleaner display
-      return userName.split(' ')[0];
+      // Return full name from mapping
+      return userName;
     }
 
     // Fallback: show truncated UUID
