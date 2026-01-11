@@ -143,10 +143,10 @@ async function getRawReportData(id: string, tenantId?: string) {
                     'Optimalkan kampanye digital pada minggu ke-3 dan ke-4 untuk mengejar target bulanan.'
                 ],
                 metrics: [
-                    { label: 'Total Revenue', value: `Rp ${formatCurrency(totalRevenue)}`, color: 'text-indigo-600' },
-                    { label: 'Units Sold', value: unitsSold },
-                    { label: 'Avg Sale Price', value: `Rp ${formatCurrency(avgPrice)}` },
-                    { label: 'Top Brand', value: topMake ? topMake[0] : '-' }
+                    { label: 'Total Revenue', value: `Rp ${formatCurrency(totalRevenue)}`, color: 'text-[#A78BFA]' },
+                    { label: 'Units Sold', value: unitsSold, color: 'text-white' },
+                    { label: 'Avg Sale Price', value: `Rp ${formatCurrency(avgPrice)}`, color: 'text-[#A78BFA]' },
+                    { label: 'Top Brand', value: topMake ? topMake[0] : '-', color: 'text-white' }
                 ],
                 chartType: 'donut',
                 chartData: unitsSold > 0 ? Object.entries(makeCounts).map(([label, count]) => ({
@@ -184,10 +184,10 @@ async function getRawReportData(id: string, tenantId?: string) {
                     'Update foto katalog untuk unit yang statusnya baru saja berubah menjadi AVAILABLE.'
                 ],
                 metrics: [
-                    { label: 'Total Stock', value: totalStock, color: 'text-blue-600' },
-                    { label: 'Stock Value', value: `Rp ${formatCurrency(totalValue)}` },
-                    { label: 'Booked Rate', value: `${totalStock > 0 ? Math.round((bookedCount / totalStock) * 100) : 0}%` },
-                    { label: 'Excellent Unit', value: excellentCount, color: 'text-green-600' }
+                    { label: 'Total Stock', value: totalStock, color: 'text-[#7C8AFF]' },
+                    { label: 'Stock Value', value: `Rp ${formatCurrency(totalValue)}`, color: 'text-white' },
+                    { label: 'Booked Rate', value: `${totalStock > 0 ? Math.round((bookedCount / totalStock) * 100) : 0}%`, color: 'text-white' },
+                    { label: 'Excellent Unit', value: excellentCount, color: 'text-[#22C55E]' }
                 ],
                 chartType: 'donut',
                 chartData: [
@@ -226,10 +226,10 @@ async function getRawReportData(id: string, tenantId?: string) {
                     'Sesuaikan budget iklan untuk menyasar calon pembeli di segmentasi harga terlaris.'
                 ],
                 metrics: [
-                    { label: 'Avg Stock', value: `Rp ${formatCurrency(avgAvailable)}`, color: 'text-blue-600' },
-                    { label: 'Avg Sold', value: `Rp ${formatCurrency(avgSold)}`, color: 'text-green-600' },
-                    { label: 'Price Gap', value: `Rp ${formatCurrency(Math.abs(priceDifference))}` },
-                    { label: 'Market Segment', value: avgSold > 500000000 ? 'Premium' : 'Standard' }
+                    { label: 'Avg Stock', value: `Rp ${formatCurrency(avgAvailable)}`, color: 'text-[#7C8AFF]' },
+                    { label: 'Avg Sold', value: `Rp ${formatCurrency(avgSold)}`, color: 'text-[#22C55E]' },
+                    { label: 'Price Gap', value: `Rp ${formatCurrency(Math.abs(priceDifference))}`, color: 'text-white' },
+                    { label: 'Market Segment', value: avgSold > 500000000 ? 'Premium' : 'Standard', color: 'text-white' }
                 ],
                 chartType: 'bar',
                 chartData: [
@@ -324,10 +324,10 @@ async function getRawReportData(id: string, tenantId?: string) {
                     'Update status target di papan informasi tim untuk menjaga motivasi.'
                 ],
                 metrics: [
-                    { label: 'Units Sold', value: totalCount, color: 'text-indigo-600' },
-                    { label: 'Total Revenue', value: `Rp ${formatCurrency(totalRevenue)}` },
-                    { label: 'Target', value: `${target} Units` },
-                    { label: 'Achievement', value: `${achievementRate.toFixed(1)}%` }
+                    { label: 'Units Sold', value: totalCount, color: 'text-[#7C8AFF]' },
+                    { label: 'Total Revenue', value: `Rp ${formatCurrency(totalRevenue)}`, color: 'text-white' },
+                    { label: 'Target', value: `${target} Units`, color: 'text-white' },
+                    { label: 'Achievement', value: `${achievementRate.toFixed(1)}%`, color: 'text-white' }
                 ],
                 chartType: 'donut',
                 chartData: [
@@ -410,10 +410,10 @@ async function getRawReportData(id: string, tenantId?: string) {
                     'Pastikan deskripsi AI untuk unit baru sudah di-review sebelum dipublikasi.'
                 ],
                 metrics: [
-                    { label: 'Recent Units', value: inventory.length, color: 'text-blue-600' },
-                    { label: 'Asset Value', value: `Rp ${formatCurrency(Number(totalValue._sum.price || 0))}` },
-                    { label: 'Quality Ratio', value: `${Math.round((shareExcellent / (inventory.length || 1)) * 100)}%` },
-                    { label: 'Display Status', value: 'ONLINE' }
+                    { label: 'Recent Units', value: inventory.length, color: 'text-[#7C8AFF]' },
+                    { label: 'Asset Value', value: `Rp ${formatCurrency(Number(totalValue._sum.price || 0))}`, color: 'text-white' },
+                    { label: 'Quality Ratio', value: `${Math.round((shareExcellent / (inventory.length || 1)) * 100)}%`, color: 'text-white' },
+                    { label: 'Display Status', value: 'ONLINE', color: 'text-white' }
                 ],
                 chartType: 'bar',
                 chartData: [
@@ -490,10 +490,10 @@ async function getRawReportData(id: string, tenantId?: string) {
                     'Pastikan perputaran kas (cashflow) seimbang antara belanja unit dan hasil penjualan.',
                 ],
                 metrics: [
-                    { label: 'Total Revenue', value: `Rp ${formatCurrency(Number(sold._sum.price || 0))}`, color: 'text-indigo-600' },
-                    { label: 'Total Converted', value: sold._count },
-                    { label: 'Active Stock', value: stock, color: 'text-blue-600' },
-                    { label: 'Health Score', value: 'OPTIMAL' }
+                    { label: 'Total Revenue', value: `Rp ${formatCurrency(Number(sold._sum.price || 0))}`, color: 'text-[#A78BFA]' },
+                    { label: 'Total Converted', value: sold._count, color: 'text-white' },
+                    { label: 'Active Stock', value: stock, color: 'text-[#7C8AFF]' },
+                    { label: 'Health Score', value: 'OPTIMAL', color: 'text-white' }
                 ],
                 chartType: 'donut',
                 chartData: total > 0 ? [
@@ -529,10 +529,10 @@ async function getRawReportData(id: string, tenantId?: string) {
                     'Gunakan ATV sebagai benchmark untuk strategi pricing unit baru.',
                 ],
                 metrics: [
-                    { label: 'Conv. Rate', value: `${conversionRate.toFixed(1)}%`, color: 'text-indigo-600' },
-                    { label: 'ATV', value: `Rp ${formatCurrency(atv)}` },
-                    { label: 'Total Leads', value: totalLeads },
-                    { label: 'Sales Volume', value: soldVehicles.length }
+                    { label: 'Conv. Rate', value: `${conversionRate.toFixed(1)}%`, color: 'text-[#A78BFA]' },
+                    { label: 'ATV', value: `Rp ${formatCurrency(atv)}`, color: 'text-white' },
+                    { label: 'Total Leads', value: totalLeads, color: 'text-white' },
+                    { label: 'Sales Volume', value: soldVehicles.length, color: 'text-white' }
                 ],
                 chartType: 'donut',
                 chartData: [
@@ -566,10 +566,10 @@ async function getRawReportData(id: string, tenantId?: string) {
                     'Simpan laporan ini sebagai basis audit performa operasional.',
                 ],
                 metrics: [
-                    { label: 'Transaction Count', value: transactions.length, color: 'text-indigo-600' },
-                    { label: 'Total Revenue', value: `Rp ${formatCurrency(totalValue)}` },
-                    { label: 'Last Sale', value: transactions[0] ? new Date(transactions[0].updatedAt).toLocaleDateString('id-ID') : '-' },
-                    { label: 'Status', value: 'FINALIZED' }
+                    { label: 'Transaction Count', value: transactions.length, color: 'text-[#A78BFA]' },
+                    { label: 'Total Revenue', value: `Rp ${formatCurrency(totalValue)}`, color: 'text-white' },
+                    { label: 'Last Sale', value: transactions[0] ? new Date(transactions[0].updatedAt).toLocaleDateString('id-ID') : '-', color: 'text-white' },
+                    { label: 'Status', value: 'FINALIZED', color: 'text-white' }
                 ],
                 chartType: 'bar',
                 chartData: totalValue > 0 ? transactions.slice(0, 5).map((t, i) => ({
