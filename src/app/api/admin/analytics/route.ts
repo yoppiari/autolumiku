@@ -129,6 +129,14 @@ export async function GET(request: NextRequest) {
     // 2. Fetch all required counts in parallel for performance
     const tenantSummary = await Promise.all(
       tenants.map(async (tenant) => {
+        // CLEAN DATA POLICY:
+        // Fetch IDs of 'DELETED' (Fake/Test) vehicles to exclude their stats
+        const deletedVehicles = await prisma.vehicle.findMany({
+          where: { tenantId: tenant.id, status: 'DELETED' },
+          select: { id: true }
+        });
+        const deletedIds = deletedVehicles.map(v => v.id);
+
         const [soldVehicles, totalLeads, totalViews, totalVehiclesClean] = await Promise.all([
           prisma.vehicle.count({
             where: {
@@ -136,16 +144,20 @@ export async function GET(request: NextRequest) {
               status: 'SOLD',
             },
           }),
+          // Exclude leads linked to deleted vehicles
           prisma.lead.count({
             where: {
               tenantId: tenant.id,
               createdAt: { gte: startDate },
+              NOT: { vehicleId: { in: deletedIds.length > 0 ? deletedIds : ['dummy-id'] } }
             },
           }),
+          // Exclude views of deleted vehicles
           prisma.pageView.count({
             where: {
               tenantId: tenant.id,
               createdAt: { gte: startDate },
+              NOT: { vehicleId: { in: deletedIds.length > 0 ? deletedIds : ['dummy-id'] } }
             },
           }),
           prisma.vehicle.count({
