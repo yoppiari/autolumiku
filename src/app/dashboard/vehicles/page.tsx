@@ -389,14 +389,14 @@ export default function VehiclesPage() {
         {filteredVehicles.length === 0 ? (
           <div className="text-center text-gray-500 mt-10">Tidak ada kendaraan.</div>
         ) : (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-fr' : 'flex flex-col gap-2'}>
+          <div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-4 gap-2 auto-rows-fr' : 'flex flex-col gap-2'}>
             {filteredVehicles.map((vehicle) => (
               <div
                 key={vehicle.id}
                 className={`bg-[#1e1e1e] border border-[#333] rounded-lg shadow-sm hover:border-[#555] transition-all overflow-hidden min-w-0 ${viewMode === 'list' ? 'flex flex-row' : 'flex flex-col'}`}
               >
                 {/* Image */}
-                <div className={`relative bg-black ${viewMode === 'list' ? 'w-40 h-32 shrink-0' : 'h-32 w-full'}`}>
+                <div className={`relative bg-black ${viewMode === 'list' ? 'w-40 h-32 shrink-0' : 'h-28 w-full'}`}>
                   <VehicleImageCarousel
                     photos={vehicle.photos || []}
                     alt={`${vehicle.make} ${vehicle.model}`}
@@ -414,7 +414,7 @@ export default function VehiclesPage() {
                 </div>
 
                 {/* Info Body */}
-                <div className="flex-1 px-3 py-2 flex flex-col min-w-0">
+                <div className="flex-1 px-2 py-1.5 flex flex-col min-w-0">
 
                   {/* GRID VIEW: Original Design */}
                   {viewMode === 'grid' && (
