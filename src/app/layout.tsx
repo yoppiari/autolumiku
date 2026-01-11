@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
     if (!tenant) {
       tenant = await prisma.tenant.findUnique({
         where: { id: 'e592973f-9eff-4f40-adf6-ca6b2ad9721f' },
-        select: { faviconUrl: true }
+        select: { faviconUrl: true, id: true, slug: true }
       });
     }
 
@@ -45,12 +45,25 @@ export async function generateMetadata(): Promise<Metadata> {
             { slug: 'prima-mobil' }
           ]
         },
-        select: { faviconUrl: true }
+        select: { faviconUrl: true, id: true, slug: true } // Added id and slug for the new logic
       });
     }
 
-    if (tenant?.faviconUrl) {
-      // Add version tag to force cache refresh
+    // STRICT: Force Local Favicon for Prima Mobil (ID: e5929...)
+    // User Instruction: "Faviconnya ada di AutoLumiku... Kamu rubah sizenya... Ngapain ke API"
+    // We strictly use the static, correctly sized asset from public folder
+    const primaMobilId = 'e592973f-9eff-4f40-adf6-ca6b2ad9721f';
+    const isPrimaMobil = tenant?.id === primaMobilId ||
+      tenant?.slug === 'prima-mobil' ||
+      tenantSlug === 'prima-mobil';
+
+    if (isPrimaMobil) {
+      // Force the standard small favicon
+      const v = 'fixed_size';
+      favicon = `/favicon-48.png?v=${v}`;
+      appleIcon = `/favicon-48.png?v=${v}`;
+    } else if (tenant?.faviconUrl) {
+      // Logic for other tenants (Dynamic)
       const v = new Date().getTime().toString();
       favicon = `${tenant.faviconUrl}?v=${v}`;
       appleIcon = `${tenant.faviconUrl}?v=${v}`;
