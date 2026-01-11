@@ -175,7 +175,7 @@ export class WhatsAppReportService {
         const totalRev = stats._sum.price ? Number(stats._sum.price) : 0;
 
         let msg = `💰 *TOTAL PENDAPATAN*\n\n`;
-        msg += `Akumulasi pendapatan: *Rp ${formatCurrency(totalRev)}*\n\n`;
+        msg += `Akumulasi pendapatan: *${formatCurrency(totalRev)}*\n\n`;
 
         msg += `🧮 *RUMUSAN:*\n`;
         msg += `• _Total Revenue = SUM(Final Sale Price)_\n\n`;
