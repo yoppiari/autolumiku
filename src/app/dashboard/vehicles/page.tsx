@@ -389,7 +389,7 @@ export default function VehiclesPage() {
         {filteredVehicles.length === 0 ? (
           <div className="text-center text-gray-500 mt-10">Tidak ada kendaraan.</div>
         ) : (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-4 gap-2 auto-rows-fr max-w-6xl mx-auto' : 'flex flex-col gap-2'}>
+          <div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-4 gap-2 auto-rows-fr max-w-4xl mx-auto' : 'flex flex-col gap-2'}>
             {filteredVehicles.map((vehicle) => (
               <div
                 key={vehicle.id}
