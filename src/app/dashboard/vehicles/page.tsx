@@ -509,7 +509,7 @@ export default function VehiclesPage() {
 
                       {/* Additional Info: km and color */}
                       <div className="text-[10px] text-gray-500">
-                        {vehicle.mileage ? `${(vehicle.mileage / 1000).toFixed(0)} km` : '-'} • {vehicle.color || 'Unknown'}
+                        {vehicle.mileage ? `${vehicle.mileage.toLocaleString('id-ID')} km` : '-'} • {vehicle.color || 'Unknown'}
                       </div>
                     </div>
                   )}
@@ -550,7 +550,7 @@ export default function VehiclesPage() {
                       <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
                         <span>{vehicle.year}</span>
                         <span className="text-gray-600">•</span>
-                        <span>{vehicle.mileage ? (vehicle.mileage / 1000).toFixed(0) : '-'} km</span>
+                        <span>{vehicle.mileage ? vehicle.mileage.toLocaleString('id-ID') : '-'} km</span>
                         <span className="text-gray-600">•</span>
                         <span className="truncate max-w-[120px]">{vehicle.licensePlate || 'No Plat'}</span>
                         <span className="text-gray-600">•</span>
