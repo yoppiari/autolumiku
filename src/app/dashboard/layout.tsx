@@ -257,26 +257,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center">
-                    {tenant?.logoUrl ? (
-                      <img
-                        src={tenant.logoUrl}
-                        alt={tenant.name || 'Tenant Logo'}
-                        className="w-8 h-8 object-contain rounded-lg group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                        <span className="text-white font-bold text-sm">
-                          {tenant?.name?.[0] || 'A'}
-                        </span>
+                  <div className="flex items-center justify-start">
+                    <img
+                      src="/prima-mobil-logo.jpg"
+                      alt="Prima Mobil"
+                      className="h-8 w-auto object-contain rounded-sm"
+                    />
+                    {/* Fallback for other tenants or if logo fails load (though we are hardcoding for Prima Mobil request) */}
+                    {tenant?.name && tenant.name !== 'Prima Mobil' && (
+                      <div className="ml-3">
+                        <div className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors truncate max-w-[140px]">
+                          {tenant.name}
+                        </div>
+                        <div className="text-xs text-gray-400">Showroom Dashboard</div>
                       </div>
                     )}
-                    <div className="ml-3">
-                      <div className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors truncate max-w-[140px]">
-                        {tenant?.name || ''}
-                      </div>
-                      <div className="text-xs text-gray-400">Showroom Dashboard</div>
-                    </div>
                   </div>
                 )}
               </Link>
