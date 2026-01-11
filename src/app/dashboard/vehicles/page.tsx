@@ -48,6 +48,8 @@ export default function VehiclesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'price'>('date');
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [yearFilter, setYearFilter] = useState<string>('');
+  const [priceFilter, setPriceFilter] = useState<string>('');
 
   // Access guard
   useEffect(() => {
@@ -67,7 +69,7 @@ export default function VehiclesPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [vehicles, statusFilter, searchQuery, sortBy]);
+  }, [vehicles, statusFilter, searchQuery, sortBy, yearFilter, priceFilter]);
 
   // Auto-fix vehicle IDs
   useEffect(() => {
@@ -364,6 +366,8 @@ export default function VehiclesPage() {
 
         {/* Filter Tahun */}
         <select
+          value={yearFilter}
+          onChange={(e) => setYearFilter(e.target.value)}
           className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
         >
           <option value="">Semua Tahun</option>
@@ -378,6 +382,8 @@ export default function VehiclesPage() {
 
         {/* Filter Harga */}
         <select
+          value={priceFilter}
+          onChange={(e) => setPriceFilter(e.target.value)}
           className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
         >
           <option value="">Semua Harga</option>
