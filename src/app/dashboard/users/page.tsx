@@ -454,16 +454,7 @@ export default function UsersPage() {
           <h1 className="text-lg md:text-2xl font-bold text-white">Manajemen Tim</h1>
           <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 mt-0.5">
             <p className="text-gray-400 text-[10px] md:text-sm">Kelola staff dan anggota tim showroom</p>
-            {lastProfileUpdate && (
-              <div className="flex items-center gap-1 md:gap-2">
-                <span className="text-gray-500 text-[9px] md:text-xs">•</span>
-                <span className="text-green-400 text-[9px] md:text-xs font-medium">
-                  Profile WhatsApp: {formatLastUpdate(lastProfileUpdate)}
-                </span>
-                <span className="text-gray-500 text-[9px] md:text-xs">•</span>
-                <span className="text-gray-500 text-[9px] md:text-xs">Auto-refresh 30d</span>
-              </div>
-            )}
+            {/* Removed info text as requested */}
           </div>
         </div>
         <div className="flex items-center gap-2">
