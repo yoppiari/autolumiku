@@ -122,8 +122,22 @@ export default function BlogEditPage() {
     const handleSave = async (status?: BlogStatus) => {
         if (!post) return;
 
+        // Validate tenantId
+        if (!user?.tenantId) {
+            console.error('[Blog Edit] Missing tenantId', { user });
+            setError('Error: User tenant ID tidak ditemukan. Silakan login ulang.');
+            return;
+        }
+
         setIsSaving(true);
         setError(null);
+
+        console.log('[Blog Edit] Saving post:', {
+            postId: params.id,
+            tenantId: user.tenantId,
+            status: status || post.status,
+            slug: post.slug,
+        });
 
         try {
             const response = await fetch(`/api/v1/blog/${params.id}`, {
@@ -132,17 +146,23 @@ export default function BlogEditPage() {
                 body: JSON.stringify({
                     ...post,
                     status: status || post.status,
-                    tenantId: user?.tenantId,
+                    tenantId: user.tenantId,
                 }),
             });
 
             if (!response.ok) {
-                throw new Error('Gagal menyimpan perubahan');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('[Blog Edit] API Error:', errorData);
+                throw new Error(errorData.error || errorData.message || 'Gagal menyimpan perubahan');
             }
+
+            const result = await response.json();
+            console.log('[Blog Edit] Save successful:', result);
 
             alert('Perubahan berhasil disimpan!');
             router.push('/dashboard/blog');
         } catch (err) {
+            console.error('[Blog Edit] Save error:', err);
             setError(err instanceof Error ? err.message : 'Gagal menyimpan');
         } finally {
             setIsSaving(false);
