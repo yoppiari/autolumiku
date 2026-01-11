@@ -35,10 +35,19 @@ export async function generateMetadata(): Promise<Metadata> {
     }
 
     if (tenant?.faviconUrl) {
-      // Add version tag to force cache refresh and ensure latest branding is loaded
+      // Add version tag to force cache refresh
       const v = new Date().getTime().toString().substring(0, 5);
-      favicon = `${tenant.faviconUrl}?v=${v}`;
-      appleIcon = `${tenant.faviconUrl}?v=${v}`;
+
+      // FORCE OVERRIDE: Use the local file which is known to be correct (P Logo with lines)
+      // The DB URL might be pointing to a processed/incorrect version
+      if (tenant.id === 'e592973f-9eff-4f40-adf6-ca6b2ad9721f') {
+        const localPath = '/uploads/tenants/primamobil/brand-logo.png';
+        favicon = `${localPath}?v=${v}`;
+        appleIcon = `${localPath}?v=${v}`;
+      } else {
+        favicon = `${tenant.faviconUrl}?v=${v}`;
+        appleIcon = `${tenant.faviconUrl}?v=${v}`;
+      }
     }
   } catch (error) {
     console.error('Error fetching tenant metadata:', error);
