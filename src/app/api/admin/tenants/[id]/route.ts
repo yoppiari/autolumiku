@@ -46,6 +46,8 @@ export async function GET(
       }
 
       // Calculate real vehicle count excluding DELETED status and potential junk data
+      // STRICT POLICY: Do NOT include fake/test/hallucinated data.
+      // Exclude 'DELETED' status explicitly.
       const vehicleCount = await prisma.vehicle.count({
         where: {
           tenantId: id,
