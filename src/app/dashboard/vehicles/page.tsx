@@ -389,11 +389,11 @@ export default function VehiclesPage() {
         {filteredVehicles.length === 0 ? (
           <div className="text-center text-gray-500 mt-10">Tidak ada kendaraan.</div>
         ) : (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-4 gap-2 auto-rows-fr max-w-4xl mx-auto' : 'flex flex-col gap-2'}>
+          <div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-4 gap-2 auto-rows-fr' : 'flex flex-col gap-2'}>
             {filteredVehicles.map((vehicle) => (
               <div
                 key={vehicle.id}
-                className={`bg-[#1e1e1e] border border-[#333] rounded-lg shadow-sm hover:border-[#555] transition-all overflow-hidden min-w-0 ${viewMode === 'list' ? 'flex flex-row' : 'flex flex-col'}`}
+                className={`bg-[#1e1e1e] border border-[#333] rounded-lg shadow-sm hover:border-[#555] transition-all overflow-hidden min-w-0 max-w-xs mx-auto ${viewMode === 'list' ? 'flex flex-row' : 'flex flex-col'}`}
               >
                 {/* Image */}
                 <div className={`relative bg-black ${viewMode === 'list' ? 'w-40 h-32 shrink-0' : 'h-40 w-full'}`}>
