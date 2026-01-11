@@ -520,10 +520,12 @@ export default function VehiclesPage() {
                       {/* Row 1: Title + Price (stack on mobile, horizontal on desktop) */}
                       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
                         <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-white leading-tight text-base md:text-lg">
-                              {vehicle.make} {vehicle.model}
-                            </h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Link href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`} className="hover:text-blue-400 transition-colors">
+                              <h3 className="font-bold text-white leading-tight text-base md:text-lg">
+                                {vehicle.make} {vehicle.model}
+                              </h3>
+                            </Link>
                             <span className="font-mono text-red-400 font-bold text-sm">
                               {vehicle.displayId || '#' + vehicle.id.slice(0, 6)}
                             </span>
