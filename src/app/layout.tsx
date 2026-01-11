@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import './globals.css';
 import { ClientProviders } from '@/components/providers/ClientProviders';
 
@@ -14,14 +15,28 @@ export async function generateMetadata(): Promise<Metadata> {
   let appleIcon = '/favicon-48.png';
 
   try {
-    // Fetch Prima Mobil tenant branding
-    // STRICT: Use the ID provided by user. Do not guess.
-    let tenant = await prisma.tenant.findUnique({
-      where: { id: 'e592973f-9eff-4f40-adf6-ca6b2ad9721f' },
-      select: { faviconUrl: true }
-    });
+    // 1. Try to get tenant from Headers (Standard Showroom Logic)
+    // This allows primamobil.id to work natively like the working Contact Page
+    const headersList = headers();
+    const tenantSlug = headersList.get('x-tenant-slug');
 
-    // Fallback only if the specific ID doesn't exist (e.g. different environment)
+    let tenant = null;
+    if (tenantSlug) {
+      tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { faviconUrl: true }
+      });
+    }
+
+    // 2. Fallback: If no header (Admin Panel), use the Correct ID provided by User
+    if (!tenant) {
+      tenant = await prisma.tenant.findUnique({
+        where: { id: 'e592973f-9eff-4f40-adf6-ca6b2ad9721f' },
+        select: { faviconUrl: true }
+      });
+    }
+
+    // 3. Last Resort: Search by Name (Legacy)
     if (!tenant) {
       tenant = await prisma.tenant.findFirst({
         where: {
@@ -35,11 +50,10 @@ export async function generateMetadata(): Promise<Metadata> {
     }
 
     if (tenant?.faviconUrl) {
-      // Add version tag to force cache refresh. This is critical as user reported stale icons.
+      // Add version tag to force cache refresh
       const v = new Date().getTime().toString();
       favicon = `${tenant.faviconUrl}?v=${v}`;
       appleIcon = `${tenant.faviconUrl}?v=${v}`;
-      // Deployment trigger check: 2026-01-11
     }
   } catch (error) {
     console.error('Error fetching tenant metadata:', error);
