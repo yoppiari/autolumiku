@@ -308,7 +308,7 @@ export default function WhatsAppAIConfigPage() {
                 type="text"
                 value={config.aiName}
                 onChange={(e) => setConfig({ ...config, aiName: e.target.value })}
-                className="w-full px-3 py-1.5 text-sm border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-1.5 text-sm border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-[#333] text-white"
                 placeholder="e.g., Asisten Virtual"
               />
             </div>
@@ -318,7 +318,7 @@ export default function WhatsAppAIConfigPage() {
               <select
                 value={config.aiPersonality}
                 onChange={(e) => setConfig({ ...config, aiPersonality: e.target.value })}
-                className="w-full px-3 py-1.5 text-sm border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-1.5 text-sm border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-[#333] text-white"
               >
                 <option value="friendly">Friendly & Casual</option>
                 <option value="professional">Professional & Formal</option>
@@ -333,7 +333,7 @@ export default function WhatsAppAIConfigPage() {
                 value={config.welcomeMessage}
                 onChange={(e) => setConfig({ ...config, welcomeMessage: e.target.value })}
                 rows={2}
-                className="w-full px-3 py-1.5 border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-y min-h-[60px]"
+                className="w-full px-3 py-1.5 border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-y min-h-[60px] bg-[#333] text-white"
                 placeholder="{greeting}! 👋 Selamat datang di {showroom}!"
               />
             </div>
@@ -460,7 +460,7 @@ export default function WhatsAppAIConfigPage() {
               value={config.afterHoursMessage}
               onChange={(e) => setConfig({ ...config, afterHoursMessage: e.target.value })}
               rows={2}
-              className="w-full px-3 py-1.5 border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-y min-h-[50px]"
+              className="w-full px-3 py-1.5 border border-[#444] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-y min-h-[50px] bg-[#333] text-white"
               placeholder="Pesan yang dikirim di luar jam kerja"
             />
           </div>
