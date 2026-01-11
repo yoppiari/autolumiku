@@ -67,6 +67,53 @@ export default function VehiclesPage() {
     }
   }, [accessDenied]);
 
+  // Apply all filters
+  const applyFilters = () => {
+    let result = [...vehicles];
+
+    // Filter by status
+    if (statusFilter !== 'ALL') {
+      result = result.filter(v => v.status === statusFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(v =>
+        v.make.toLowerCase().includes(query) ||
+        v.model.toLowerCase().includes(query) ||
+        v.displayId?.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by year
+    if (yearFilter) {
+      result = result.filter(v => v.year.toString() === yearFilter);
+    }
+
+    // Filter by price range
+    if (priceFilter) {
+      result = result.filter(v => {
+        const price = Number(v.price) / 1000000; // Convert to millions
+        if (priceFilter === '0-50') return price >= 0 && price < 50;
+        if (priceFilter === '50-100') return price >= 50 && price < 100;
+        if (priceFilter === '100-150') return price >= 100 && price < 150;
+        if (priceFilter === '150-200') return price >= 150 && price < 200;
+        if (priceFilter === '200+') return price >= 200;
+        return true;
+      });
+    }
+
+    // Sort
+    if (sortBy === 'price') {
+      result.sort((a, b) => Number(a.price) - Number(b.price));
+    } else {
+      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    setFilteredVehicles(result);
+  };
+
   useEffect(() => {
     applyFilters();
   }, [vehicles, statusFilter, searchQuery, sortBy, yearFilter, priceFilter]);
