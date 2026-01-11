@@ -49,24 +49,19 @@ export async function generateMetadata(): Promise<Metadata> {
       });
     }
 
-    // STRICT: Force Local Favicon for Prima Mobil (ID: e5929...)
-    // User Instruction: "Faviconnya ada di AutoLumiku... Kamu rubah sizenya... Ngapain ke API"
-    // We strictly use the static, correctly sized asset from public folder
-    const primaMobilId = 'e592973f-9eff-4f40-adf6-ca6b2ad9721f';
-    const isPrimaMobil = tenant?.id === primaMobilId ||
-      tenant?.slug === 'prima-mobil' ||
-      tenantSlug === 'prima-mobil';
-
-    if (isPrimaMobil) {
-      // Force the standard small favicon
-      const v = 'fixed_size';
-      favicon = `/favicon-48.png?v=${v}`;
-      appleIcon = `/favicon-48.png?v=${v}`;
-    } else if (tenant?.faviconUrl) {
-      // Logic for other tenants (Dynamic)
-      const v = new Date().getTime().toString();
-      favicon = `${tenant.faviconUrl}?v=${v}`;
-      appleIcon = `${tenant.faviconUrl}?v=${v}`;
+    if (tenant?.faviconUrl) {
+      // Use the stored icon (could be data URL or remote link)
+      const isDataUrl = tenant.faviconUrl.startsWith('data:');
+      
+      if (isDataUrl) {
+        favicon = tenant.faviconUrl;
+        appleIcon = tenant.faviconUrl;
+      } else {
+        // Only add version tag for remote URLs to force cache refresh
+        const v = new Date().getTime().toString();
+        favicon = `${tenant.faviconUrl}?v=${v}`;
+        appleIcon = `${tenant.faviconUrl}?v=${v}`;
+      }
     }
   } catch (error) {
     console.error('Error fetching tenant metadata:', error);
