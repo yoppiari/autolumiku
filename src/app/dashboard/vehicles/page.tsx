@@ -25,6 +25,7 @@ interface Vehicle {
   status: VehicleStatus;
   transmissionType?: string;
   fuelType?: string;
+  engineCapacity?: number;
   photos: { thumbnailUrl: string; originalUrl: string }[];
   description?: string;
   updatedBy?: string;
@@ -332,18 +333,27 @@ export default function VehiclesPage() {
 
                 {/* Info Body */}
                 <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-                  {/* Top: Title & Price */}
+                  {/* Top: Title, Variant & Price */}
                   <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <h3 className={`font-bold text-white leading-tight ${viewMode === 'list' ? 'text-base' : 'text-sm truncate'}`}>
-                        {vehicle.make} {vehicle.model}
-                      </h3>
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        {vehicle.year} • {vehicle.transmissionType} • {vehicle.fuelType}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className={`font-bold text-white leading-tight ${viewMode === 'list' ? 'text-lg' : 'text-sm truncate'}`}>
+                          {vehicle.make} {vehicle.model}
+                        </h3>
+                        {vehicle.variant && viewMode === 'list' && (
+                          <span className="px-2 py-0.5 bg-blue-900/30 text-blue-300 text-xs font-bold rounded border border-blue-800 uppercase">
+                            {vehicle.variant}
+                          </span>
+                        )}
                       </div>
+                      {viewMode === 'grid' && (
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {vehicle.year} • {vehicle.transmissionType}
+                        </div>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-blue-400 font-bold text-sm">
+                      <div className={`text-blue-400 font-bold ${viewMode === 'list' ? 'text-lg' : 'text-sm'}`}>
                         {formatPrice(vehicle.price)}
                       </div>
                       {viewMode === 'grid' && (
@@ -354,23 +364,45 @@ export default function VehiclesPage() {
                     </div>
                   </div>
 
-                  {/* List View Extras: Notes & Specs Bar */}
+                  {/* List View Extras: Specs, Metadata, Notes & Audit */}
                   {viewMode === 'list' && (
-                    <div className="mt-2 flex flex-col gap-2">
+                    <div className="mt-3 flex flex-col gap-2">
+                      {/* Specs Bar */}
+                      <div className="flex items-center gap-3 text-sm text-gray-300 bg-[#252525] px-3 py-1.5 rounded border border-[#333]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-gray-500 uppercase font-bold">Trans:</span>
+                          <span className="font-medium">{vehicle.transmissionType || '-'}</span>
+                        </div>
+                        <div className="w-px h-4 bg-[#444]"></div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-gray-500 uppercase font-bold">BBM:</span>
+                          <span className="font-medium">{vehicle.fuelType || '-'}</span>
+                        </div>
+                        <div className="w-px h-4 bg-[#444]"></div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-gray-500 uppercase font-bold">CC:</span>
+                          <span className="font-medium">{vehicle.engineCapacity ? `${vehicle.engineCapacity} CC` : '-'}</span>
+                        </div>
+                        <div className="w-px h-4 bg-[#444]"></div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-gray-500 uppercase font-bold">Tahun:</span>
+                          <span className="font-medium">{vehicle.year}</span>
+                        </div>
+                      </div>
+
                       {/* Metadata Bar */}
-                      <div className="flex items-center gap-3 text-xs text-gray-400 bg-[#252525] px-2 py-1 rounded border border-[#333]">
+                      <div className="flex items-center gap-3 text-sm text-gray-400 bg-[#1e1e1e] px-3 py-1.5 rounded border border-[#2a2a2a]">
                         <span className="font-mono text-gray-500">#{vehicle.displayId || vehicle.id.slice(0, 4)}</span>
-                        <div className="w-px h-3 bg-[#444]"></div>
+                        <div className="w-px h-4 bg-[#333]"></div>
                         <span>{vehicle.mileage ? (vehicle.mileage / 1000).toFixed(0) + 'k km' : '- km'}</span>
-                        <div className="w-px h-3 bg-[#444]"></div>
+                        <div className="w-px h-4 bg-[#333]"></div>
                         <span>{vehicle.licensePlate || 'No Plat'}</span>
-                        <div className="w-px h-3 bg-[#444]"></div>
-                        {/* Age Badge */}
+                        <div className="w-px h-4 bg-[#333]"></div>
                         {(() => {
                           const diff = new Date().getTime() - new Date(vehicle.createdAt).getTime();
                           const days = Math.ceil(Math.abs(diff) / (1000 * 3600 * 24));
                           return (
-                            <span className={days > 60 ? 'text-red-400' : 'text-green-400'}>
+                            <span className={`font-semibold ${days > 60 ? 'text-red-400' : 'text-green-400'}`}>
                               {days} Hari
                             </span>
                           );
@@ -378,9 +410,26 @@ export default function VehiclesPage() {
                       </div>
 
                       {/* Note */}
-                      <div className="text-xs text-gray-400 leading-snug line-clamp-2">
-                        <span className="text-gray-600 font-bold uppercase mr-1">Note:</span>
+                      <div className="text-sm text-gray-400 leading-snug bg-[#1a1a1a] px-3 py-2 rounded border border-[#2a2a2a]">
+                        <span className="text-gray-500 font-bold uppercase mr-1.5 text-[10px]">Catatan:</span>
                         {vehicle.description || "Tidak ada catatan."}
+                      </div>
+
+                      {/* Audit Trail */}
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                          Updated by <span className="font-semibold text-gray-400">{vehicle.updatedBy || 'System'}</span>
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                          </svg>
+                          {new Date(vehicle.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
                     </div>
                   )}
