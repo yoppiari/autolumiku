@@ -597,7 +597,7 @@ export default function VehiclesPage() {
                 </div>
 
                 {/* Actions */}
-                <div className={`border-t border-[#333] bg-[#222] flex items-center gap-2 p-2 ${viewMode === 'list' ? 'border-t-0 border-l w-32 flex-col justify-center' : ''}`}>
+                <div className={`border-t border-[#333] bg-[#222] flex items-center gap-2 p-2 ${viewMode === 'list' ? 'border-t-0 border-l w-32 flex-col justify-center hidden md:flex' : ''}`}>
 
                   {viewMode === 'list' && (
                     <span className={`w-full text-center text-[10px] uppercase font-bold py-1 rounded border ${getStatusColor(vehicle.status)}`}>
