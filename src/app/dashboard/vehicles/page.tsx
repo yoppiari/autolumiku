@@ -532,44 +532,46 @@ export default function VehiclesPage() {
                     </div>
                   )}
 
-                  {/* LIST VIEW: Simplified Clean Layout */}
+                  {/* LIST VIEW: Mobile-Responsive Clean Layout */}
                   {viewMode === 'list' && (
-                    <>
-                      {/* Row 1: Title + Variant + Status + Price */}
-                      <div className="flex justify-between items-center gap-3">
-                        <div className="flex items-center gap-2 flex-wrap flex-1">
-                          <h3 className="font-bold text-white leading-tight text-lg">
+                    <div className="flex flex-col gap-2">
+                      {/* Row 1: Title + Price (stack on mobile, horizontal on desktop) */}
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+                        <div className="flex flex-col gap-1">
+                          <h3 className="font-bold text-white leading-tight text-base md:text-lg">
                             {vehicle.make} {vehicle.model}
                           </h3>
-                          {vehicle.variant && (
-                            <span className="px-2 py-0.5 bg-blue-900/30 text-blue-300 text-xs font-bold rounded border border-blue-800 uppercase">
-                              {vehicle.variant}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {vehicle.variant && (
+                              <span className="px-2 py-0.5 bg-blue-900/30 text-blue-300 text-[10px] md:text-xs font-bold rounded border border-blue-800 uppercase">
+                                {vehicle.variant}
+                              </span>
+                            )}
+                            <span className={`px-2 py-0.5 text-[10px] md:text-xs font-bold rounded border uppercase ${getStatusColor(vehicle.status)}`}>
+                              {getStatusLabel(vehicle.status)}
                             </span>
-                          )}
-                          <span className={`px-2 py-0.5 text-xs font-bold rounded border uppercase ${getStatusColor(vehicle.status)}`}>
-                            {getStatusLabel(vehicle.status)}
-                          </span>
+                          </div>
                         </div>
-                        <div className="text-blue-400 font-bold text-lg">
+                        <div className="text-blue-400 font-bold text-base md:text-lg shrink-0">
                           {formatPrice(vehicle.price)}
                         </div>
                       </div>
 
-                      {/* Row 2: ID + km + Plat + Year + Umur Stok */}
-                      <div className="mt-2 flex items-center gap-2 text-sm text-gray-400">
+                      {/* Row 2: Metadata - wrap on mobile */}
+                      <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
                         <span className="font-mono text-gray-500">#{vehicle.displayId || vehicle.id.slice(0, 6)}</span>
                         <span className="text-gray-600">•</span>
                         <span>{vehicle.year}</span>
                         <span className="text-gray-600">•</span>
                         <span>{vehicle.mileage ? (vehicle.mileage / 1000).toFixed(0) : '-'} km</span>
                         <span className="text-gray-600">•</span>
-                        <span>{vehicle.licensePlate || 'No Plat'}</span>
+                        <span className="truncate max-w-[120px]">{vehicle.licensePlate || 'No Plat'}</span>
                         <span className="text-gray-600">•</span>
                         {(() => {
                           const diff = new Date().getTime() - new Date(vehicle.createdAt).getTime();
                           const days = Math.ceil(Math.abs(diff) / (1000 * 3600 * 24));
                           return (
-                            <span className={`px-2 py-0.5 text-xs font-bold rounded border ${days > 60 ? 'bg-red-900/20 text-red-400 border-red-800' : 'bg-green-900/20 text-green-400 border-green-800'}`}>
+                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${days > 60 ? 'bg-red-900/20 text-red-400 border-red-800' : 'bg-green-900/20 text-green-400 border-green-800'}`}>
                               {days} Hari
                             </span>
                           );
@@ -578,11 +580,11 @@ export default function VehiclesPage() {
 
                       {/* Row 3: Notes */}
                       {vehicle.description && (
-                        <div className="mt-2 text-sm text-gray-400 leading-snug">
+                        <div className="text-xs text-gray-400 leading-snug line-clamp-2">
                           {vehicle.description}
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
 
