@@ -151,6 +151,7 @@ export async function GET(request: NextRequest) {
         role: true,
         emailVerified: true,
         lastLoginAt: true,
+        profilePictureUrl: true,
         createdAt: true,
         updatedAt: true,
       },

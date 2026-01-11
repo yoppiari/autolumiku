@@ -17,6 +17,7 @@ interface User {
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string | null;
+  profilePictureUrl?: string | null;
 }
 
 interface UserStats {
@@ -117,7 +118,23 @@ export default function UsersPage() {
         const loadedUsers = response.data?.users || [];
         setUsers(loadedUsers);
         setStats(response.data?.stats || { total: 0, byStatus: {}, byRole: {} });
-        // Load profile pictures for users with phone numbers
+        // Initialize WhatsApp profiles state with stored URLs to show images immediately
+        const initialProfiles: Record<string, WhatsAppProfile> = {};
+        loadedUsers.forEach((u: User) => {
+          if (u.phone && u.profilePictureUrl) {
+            initialProfiles[u.phone] = {
+              pictureUrl: u.profilePictureUrl,
+              hasPicture: true,
+              isRegistered: true, // Optimistically assume registered if we have a pic
+              loading: false // Not loading, we have data
+            };
+          }
+        });
+
+        // Merge with existing logic but don't overwrite if we're just setting initial
+        setWhatsAppProfiles(prev => ({ ...prev, ...initialProfiles }));
+
+        // Load fresh profile pictures for users with phone numbers
         loadWhatsAppProfiles(loadedUsers, tid);
       } else {
         console.error('Failed to load users:', response.error);

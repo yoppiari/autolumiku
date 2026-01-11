@@ -22,7 +22,8 @@
       "Bash(jq -c '{command: \"\"'$cmd'\"\", success, hasPDF, filename}')",
       "Bash(done:*)",
       "Bash(npm run lint:*)",
-      "Bash(env:*)"
+      "Bash(env:*)",
+      "Bash(ls:*)"
     ]
   }
 }
