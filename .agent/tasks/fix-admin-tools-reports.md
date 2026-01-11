@@ -1,19 +1,17 @@
 # Fix Admin/Owner WhatsApp AI Tools
 
-## Status: 🔴 IN PROGRESS
+## Status: 🟡 MOSTLY FIXED - 1 item remaining
 
 ## Issues Identified
 
-### ✅ FIXED (Deployed)
-1. **Dark Theme** - Conversation list sidebar now uses dark colors
+### ✅ FIXED (Deployed - Commit d9eeaad)
+1. **Dark Theme** - Conversation list sidebar now uses dark colors  
 2. **"Rp Rp 0" duplicate** - Removed duplicate "Rp" prefix in Total Pendapatan report
 3. **"Ringkasan Penjualan"** - Added missing alias `ringkasan_penjualan` and `ringkasan penjualan`
 4. **"Daftar Kendaraan"** - Added missing aliases `daftar kendaraan` and `list_kendaraan`
 5. **Blog Title Visibility** - Added `text-white` to grid view titles, updated category badge to dark theme
-
-### ⚠️ TODO
-6. **"Tren Penjualan"** - Returns generic redirect message instead of detailed stats
-7. **"Performa Staff"** - Only shows 2 users (ADMINs), missing OWNER role users
+6. **"Tren Penjualan"** - Added missing aliases `tren penjualan`, `trend_penjualan`, `trend penjualan`
+7. **"Peringatan Stok"** - Enhanced message to show total inventory context and clarify it's per-brand alert
 
 ---
 
