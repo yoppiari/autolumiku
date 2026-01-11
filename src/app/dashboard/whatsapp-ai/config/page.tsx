@@ -299,7 +299,7 @@ export default function WhatsAppAIConfigPage() {
       <div className="space-y-6">
         {/* Basic Settings */}
         <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-4 md:p-5">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Basic Settings</h2>
+          <h2 className="text-lg font-semibold text-white mb-3">Basic Settings</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
@@ -342,7 +342,7 @@ export default function WhatsAppAIConfigPage() {
 
         {/* Features */}
         <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-4 md:p-5">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Features</h2>
+          <h2 className="text-lg font-semibold text-white mb-3">Features</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
             <label className="flex items-center">
@@ -399,7 +399,7 @@ export default function WhatsAppAIConfigPage() {
 
         {/* Business Hours */}
         <div className="bg-[#2a2a2a] rounded-xl shadow-sm border border-[#3a3a3a] p-4 md:p-5">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3">Business Hours</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-white mb-3">Business Hours</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
             {DAYS_OF_WEEK.map((day) => {
@@ -422,7 +422,7 @@ export default function WhatsAppAIConfigPage() {
                       }}
                       className="w-3.5 h-3.5 text-green-600 border-[#444] rounded focus:ring-green-500"
                     />
-                    <span className="ml-1 text-[10px] md:text-xs text-gray-600">Open</span>
+                    <span className="ml-1 text-[10px] md:text-xs text-gray-400">Open</span>
                   </label>
                   {!isClosed && (
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -434,9 +434,9 @@ export default function WhatsAppAIConfigPage() {
                           newHours[day] = { ...hours, open: e.target.value };
                           setConfig({ ...config, businessHours: newHours });
                         }}
-                        className="px-1.5 py-0.5 border border-[#444] rounded text-[10px] md:text-xs w-[75px]"
+                        className="px-1.5 py-0.5 border border-[#444] rounded text-[10px] md:text-xs w-[75px] bg-[#333] text-white"
                       />
-                      <span className="text-gray-500 text-[10px]">-</span>
+                      <span className="text-gray-400 text-[10px]">-</span>
                       <input
                         type="time"
                         value={hours.close}
@@ -445,7 +445,7 @@ export default function WhatsAppAIConfigPage() {
                           newHours[day] = { ...hours, close: e.target.value };
                           setConfig({ ...config, businessHours: newHours });
                         }}
-                        className="px-1.5 py-0.5 border border-[#444] rounded text-[10px] md:text-xs w-[75px]"
+                        className="px-1.5 py-0.5 border border-[#444] rounded text-[10px] md:text-xs w-[75px] bg-[#333] text-white"
                       />
                     </div>
                   )}
