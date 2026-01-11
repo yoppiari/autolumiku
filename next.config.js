@@ -49,3 +49,4 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
+// Force restart: 2026-01-11-fix-prisma
