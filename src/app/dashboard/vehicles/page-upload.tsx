@@ -457,8 +457,8 @@ export default function VehiclesPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-700">AI sedang menganalisis kendaraan...</p>
-          <p className="mt-2 text-sm text-gray-500">Mohon tunggu sekitar 20-30 detik</p>
+          <p className="mt-4 text-lg text-gray-300">AI sedang menganalisis kendaraan...</p>
+          <p className="mt-2 text-sm text-gray-400">Mohon tunggu sekitar 20-30 detik</p>
         </div>
       </div>
     );
@@ -475,7 +475,7 @@ export default function VehiclesPage() {
           <div className="flex items-center gap-4 mb-2">
             <Link
               href="/dashboard/vehicles"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -483,17 +483,17 @@ export default function VehiclesPage() {
               <span className="text-sm font-medium">Kembali</span>
             </Link>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Review Data Kendaraan</h1>
-          <p className="text-gray-600 text-sm">Periksa dan edit hasil AI sebelum menyimpan</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Review Data Kendaraan</h1>
+          <p className="text-gray-400 text-sm">Periksa dan edit hasil AI sebelum menyimpan</p>
         </div>
 
         {/* Price Analysis Alert */}
         <div
           className={`mb-6 p-4 rounded-lg ${priceColor === 'green'
-            ? 'bg-green-50 border border-green-200'
+            ? 'bg-green-900/20 border border-green-800/50'
             : priceColor === 'red'
-              ? 'bg-red-50 border border-red-200'
-              : 'bg-orange-50 border border-orange-200'
+              ? 'bg-red-900/20 border border-red-800/50'
+              : 'bg-orange-900/20 border border-orange-800/50'
             }`}
         >
           <div className="flex items-start">
@@ -503,7 +503,7 @@ export default function VehiclesPage() {
               {priceColor === 'orange' && <span className="text-2xl">💰</span>}
             </div>
             <div className="ml-3 flex-1">
-              <h3 className={`text-sm font-medium ${priceColor === 'green' ? 'text-green-800' : priceColor === 'red' ? 'text-red-800' : 'text-orange-800'}`}>
+              <h3 className={`text-sm font-medium ${priceColor === 'green' ? 'text-green-400' : priceColor === 'red' ? 'text-red-400' : 'text-orange-400'}`}>
                 Analisis Harga
               </h3>
               <div className="mt-2 text-sm">
@@ -526,69 +526,69 @@ export default function VehiclesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Basic Info */}
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="bg-[#2a2a2a] rounded-lg shadow p-4 sm:p-6">
               <h2 className="text-lg font-semibold mb-4">Informasi Dasar</h2>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Merek</label>
+                    <label className="block text-sm font-medium text-gray-300">Merek</label>
                     <input
                       type="text"
                       value={editedData.make || ''}
                       onChange={(e) => setEditedData({ ...editedData, make: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                      className="mt-1 block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Model</label>
+                    <label className="block text-sm font-medium text-gray-300">Model</label>
                     <input
                       type="text"
                       value={editedData.model || ''}
                       onChange={(e) => setEditedData({ ...editedData, model: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                      className="mt-1 block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Tahun</label>
+                    <label className="block text-sm font-medium text-gray-300">Tahun</label>
                     <input
                       type="number"
                       value={editedData.year || ''}
                       onChange={(e) => setEditedData({ ...editedData, year: parseInt(e.target.value, 10) })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                      className="mt-1 block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">KM</label>
+                    <label className="block text-sm font-medium text-gray-300">KM</label>
                     <input
                       type="number"
                       value={editedData.mileage || ''}
                       onChange={(e) => setEditedData({ ...editedData, mileage: parseInt(e.target.value, 10) })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                      className="mt-1 block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Varian</label>
+                  <label className="block text-sm font-medium text-gray-300">Varian</label>
                   <input
                     type="text"
                     value={editedData.variant || ''}
                     onChange={(e) => setEditedData({ ...editedData, variant: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                    className="mt-1 block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Transmisi</label>
+                    <label className="block text-sm font-medium text-gray-300">Transmisi</label>
                     <select
                       value={editedData.transmissionType || ''}
                       onChange={(e) => setEditedData({ ...editedData, transmissionType: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                      className="mt-1 block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
                     >
                       <option value="manual">Manual</option>
                       <option value="automatic">Automatic</option>
@@ -596,24 +596,24 @@ export default function VehiclesPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Warna</label>
+                    <label className="block text-sm font-medium text-gray-300">Warna</label>
                     <input
                       type="text"
                       value={editedData.color || ''}
                       onChange={(e) => setEditedData({ ...editedData, color: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                      className="mt-1 block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Harga (Juta Rupiah)</label>
+                  <label className="block text-sm font-medium text-gray-300">Harga (Juta Rupiah)</label>
                   <input
                     type="number"
                     value={(editedData.price || 0) / 1000000}
                     onChange={(e) => setEditedData({ ...editedData, price: parseFloat(e.target.value) * 1000000 })}
                     placeholder="130"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                    className="mt-1 block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
                   />
                 </div>
               </div>
@@ -622,22 +622,22 @@ export default function VehiclesPage() {
 
           {/* Right Column - Descriptions */}
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="bg-[#2a2a2a] rounded-lg shadow p-4 sm:p-6">
               <h2 className="text-lg font-semibold mb-4">Deskripsi</h2>
               <textarea
                 value={editedData.descriptionId || ''}
                 onChange={(e) => setEditedData({ ...editedData, descriptionId: e.target.value })}
                 rows={8}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                className="mt-1 block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
               />
             </div>
 
             {/* Features */}
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="bg-[#2a2a2a] rounded-lg shadow p-4 sm:p-6">
               <h2 className="text-lg font-semibold mb-4">Fitur</h2>
               <div className="flex flex-wrap gap-2">
                 {(editedData.features || []).map((feature, idx) => (
-                  <span key={idx} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                  <span key={idx} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-900/20 border-blue-800/50 text-blue-300">
                     {feature}
                   </span>
                 ))}
@@ -658,7 +658,7 @@ export default function VehiclesPage() {
           <button
             onClick={() => setStep('input')}
             disabled={isSaving}
-            className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 order-3 sm:order-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 border border-[#444] rounded-md shadow-sm text-sm font-medium text-gray-300 bg-[#2a2a2a] hover:bg-gray-50 order-3 sm:order-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Kembali Edit
           </button>
@@ -666,7 +666,7 @@ export default function VehiclesPage() {
             <button
               onClick={() => handleSave('DRAFT')}
               disabled={isSaving}
-              className="flex-1 sm:flex-none px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 sm:flex-none px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Menyimpan...' : 'Simpan Draft'}
             </button>
@@ -691,7 +691,7 @@ export default function VehiclesPage() {
         <div className="flex items-center gap-4 mb-2">
           <Link
             href="/dashboard/vehicles"
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -699,12 +699,12 @@ export default function VehiclesPage() {
             <span className="text-sm font-medium">Kembali</span>
           </Link>
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Upload Kendaraan</h1>
-        <p className="text-gray-600 text-sm">Upload foto atau masukkan deskripsi, AI akan melengkapi data</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-white">Upload Kendaraan</h1>
+        <p className="text-gray-400 text-sm">Upload foto atau masukkan deskripsi, AI akan melengkapi data</p>
       </div>
 
       {/* Main Upload Card */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+      <div className="bg-[#2a2a2a] rounded-lg shadow p-4 sm:p-6">
         {/* Quick Action Buttons - Large for mobile */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {/* Camera Button */}
@@ -754,10 +754,10 @@ export default function VehiclesPage() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`hidden sm:block border-2 border-dashed rounded-lg p-6 text-center mb-6 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+          className={`hidden sm:block border-2 border-dashed rounded-lg p-6 text-center mb-6 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-[#444] hover:border-gray-400'
             }`}
         >
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-400">
             Atau <span className="font-semibold text-blue-600">drag & drop</span> foto di sini
           </p>
         </div>
@@ -766,7 +766,7 @@ export default function VehiclesPage() {
         {photos.length > 0 && (
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-gray-300">
                 {photos.length} foto dipilih
               </p>
               <button
@@ -777,10 +777,10 @@ export default function VehiclesPage() {
               </button>
             </div>
 
-            <p className="text-xs text-gray-500 mb-2 hidden sm:block">
+            <p className="text-xs text-gray-400 mb-2 hidden sm:block">
               💡 Drag foto untuk mengatur urutan. Foto pertama akan jadi foto utama.
             </p>
-            <p className="text-xs text-gray-500 mb-2 sm:hidden">
+            <p className="text-xs text-gray-400 mb-2 sm:hidden">
               💡 Gunakan tombol ↑↓ untuk mengatur urutan. Foto pertama akan jadi foto utama.
             </p>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
@@ -896,7 +896,7 @@ export default function VehiclesPage() {
 
         {/* Description Input */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Deskripsi Kendaraan
           </label>
           <textarea
@@ -904,19 +904,19 @@ export default function VehiclesPage() {
             onChange={(e) => setUserDescription(e.target.value)}
             placeholder="Contoh: Brio Satya MT 2015 KM 30.000 Rp 120JT Warna Hitam"
             rows={3}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+            className="block w-full rounded-md border-[#444] shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base bg-[#333] text-white"
           />
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="mb-4 p-3 bg-red-900/20 border border-red-800/50 rounded-md">
+            <p className="text-sm text-red-300">{error}</p>
           </div>
         )}
 
         {/* Auto-generate checkbox and Generate button */}
-        <div className="mt-4 p-4 rounded-xl border border-gray-200 bg-gray-50">
-          <p className="text-xs text-gray-500 mb-2">
+        <div className="mt-4 p-4 rounded-xl border border-[#444] bg-[#2a2a2a]">
+          <p className="text-xs text-gray-400 mb-2">
             Tip: Nama file foto akan otomatis digunakan sebagai deskripsi jika kosong
           </p>
 
@@ -927,7 +927,7 @@ export default function VehiclesPage() {
               onChange={(e) => setHasTriggeredGenerate(!e.target.checked)}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            <span className="text-sm text-gray-700">Auto-generate AI setelah upload foto</span>
+            <span className="text-sm text-gray-300">Auto-generate AI setelah upload foto</span>
           </label>
 
           {/* Manual Generate Button */}
@@ -955,13 +955,13 @@ export default function VehiclesPage() {
       </div>
 
       {/* Quick Examples */}
-      <div className="mt-6 bg-gray-50 rounded-lg p-4">
-        <p className="text-sm font-medium text-gray-700 mb-2">Contoh format nama file:</p>
+      <div className="mt-6 bg-[#2a2a2a] rounded-lg p-4">
+        <p className="text-sm font-medium text-gray-300 mb-2">Contoh format nama file:</p>
         <div className="space-y-2 text-xs">
-          <div className="p-2 bg-white rounded border text-gray-600">
+          <div className="p-2 bg-[#333] rounded border border-[#444] text-gray-300">
             Brio Satya MT 2015 KM 30.000 Rp 120JT Warna Hitam.jpg
           </div>
-          <div className="p-2 bg-white rounded border text-gray-600">
+          <div className="p-2 bg-[#333] rounded border border-[#444] text-gray-300">
             Avanza 2020 AT KM 20rb Hitam 130jt.jpg
           </div>
         </div>
