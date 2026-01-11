@@ -333,102 +333,124 @@ export default function VehiclesPage() {
 
                 {/* Info Body */}
                 <div className="flex-1 px-3 py-2 flex flex-col min-w-0">
-                  {/* Row 1: Title + Variant + Status + Price (all in one line) */}
-                  <div className="flex justify-between items-center gap-3">
-                    <div className="flex items-center gap-2 flex-wrap flex-1">
-                      <h3 className={`font-bold text-white leading-tight ${viewMode === 'list' ? 'text-base' : 'text-sm truncate'}`}>
+
+                  {/* GRID VIEW: Original Design */}
+                  {viewMode === 'grid' && (
+                    <div className="flex flex-col gap-1.5">
+                      {/* Title */}
+                      <h3 className="font-bold text-white leading-tight text-sm truncate">
                         {vehicle.make} {vehicle.model}
                       </h3>
-                      {vehicle.variant && viewMode === 'list' && (
-                        <span className="px-2 py-0.5 bg-blue-900/30 text-blue-300 text-[10px] font-bold rounded border border-blue-800 uppercase">
-                          {vehicle.variant}
-                        </span>
-                      )}
-                      {viewMode === 'list' && (
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded border uppercase ${getStatusColor(vehicle.status)}`}>
-                          {getStatusLabel(vehicle.status)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className={`text-blue-400 font-bold ${viewMode === 'list' ? 'text-base' : 'text-sm'}`}>
+
+                      {/* Status Badge */}
+                      <div className={`text-[10px] px-2 py-1 rounded w-fit font-bold border ${getStatusColor(vehicle.status)}`}>
+                        {getStatusLabel(vehicle.status)}
+                      </div>
+
+                      {/* Display ID */}
+                      <div className="text-xs font-medium text-gray-400 mt-0.5">
+                        {vehicle.displayId || vehicle.id.slice(0, 8)}
+                      </div>
+
+                      {/* Year and Variant/Transmission */}
+                      <div className="text-xs text-gray-500">
+                        {vehicle.year} • {vehicle.variant || vehicle.transmissionType}
+                      </div>
+
+                      {/* Price */}
+                      <div className="text-blue-400 font-bold text-sm mt-1">
                         {formatPrice(vehicle.price)}
                       </div>
-                      {viewMode === 'grid' && (
-                        <div className={`text-[10px] px-1.5 py-0.5 rounded mt-1 inline-block border ${getStatusColor(vehicle.status)}`}>
-                          {getStatusLabel(vehicle.status)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Grid View: Simplified info */}
-                  {viewMode === 'grid' && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {vehicle.year} • {vehicle.transmissionType}
+                      {/* Additional Info: km and color */}
+                      <div className="text-[10px] text-gray-500">
+                        {vehicle.mileage ? `${(vehicle.mileage / 1000).toFixed(0)} km` : '-'} • {vehicle.color || 'Unknown'}
+                      </div>
                     </div>
                   )}
 
-                  {/* List View: Horizontal rows */}
+                  {/* LIST VIEW: Optimized Horizontal Layout */}
                   {viewMode === 'list' && (
-                    <div className="mt-2 flex flex-col gap-1.5">
-                      {/* Row 2: Specs - all horizontal */}
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-500 uppercase text-[10px] font-bold">TRANS:</span>
-                        <span className="text-gray-200">{vehicle.transmissionType || '-'}</span>
-                        <span className="text-gray-600">•</span>
-                        <span className="text-gray-500 uppercase text-[10px] font-bold">BBM:</span>
-                        <span className="text-gray-200">{vehicle.fuelType || '-'}</span>
-                        <span className="text-gray-600">•</span>
-                        <span className="text-gray-500 uppercase text-[10px] font-bold">CC:</span>
-                        <span className="text-gray-200">{vehicle.engineCapacity ? `${vehicle.engineCapacity}cc` : '-'}</span>
-                        <span className="text-gray-600">•</span>
-                        <span className="text-gray-500 uppercase text-[10px] font-bold">TAHUN:</span>
-                        <span className="text-gray-200">{vehicle.year}</span>
-                      </div>
-
-                      {/* Row 3: Metadata + Age Badge - all horizontal */}
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="font-mono text-gray-500">#{vehicle.displayId || vehicle.id.slice(0, 6)}</span>
-                        <span className="text-gray-600">•</span>
-                        <span className="text-gray-400">{vehicle.mileage ? (vehicle.mileage / 1000).toFixed(0) : '-'} km</span>
-                        <span className="text-gray-600">•</span>
-                        <span className="text-gray-400">{vehicle.licensePlate || 'No Plat'}</span>
-                        <span className="text-gray-600">•</span>
-                        {(() => {
-                          const diff = new Date().getTime() - new Date(vehicle.createdAt).getTime();
-                          const days = Math.ceil(Math.abs(diff) / (1000 * 3600 * 24));
-                          return (
-                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${days > 60 ? 'bg-red-900/20 text-red-400 border-red-800' : 'bg-green-900/20 text-green-400 border-green-800'}`}>
-                              {days} Hari
+                    <>
+                      {/* Row 1: Title + Variant + Status + Price */}
+                      <div className="flex justify-between items-center gap-3">
+                        <div className="flex items-center gap-2 flex-wrap flex-1">
+                          <h3 className="font-bold text-white leading-tight text-base">
+                            {vehicle.make} {vehicle.model}
+                          </h3>
+                          {vehicle.variant && (
+                            <span className="px-2 py-0.5 bg-blue-900/30 text-blue-300 text-[10px] font-bold rounded border border-blue-800 uppercase">
+                              {vehicle.variant}
                             </span>
-                          );
-                        })()}
+                          )}
+                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded border uppercase ${getStatusColor(vehicle.status)}`}>
+                            {getStatusLabel(vehicle.status)}
+                          </span>
+                        </div>
+                        <div className="text-blue-400 font-bold text-base">
+                          {formatPrice(vehicle.price)}
+                        </div>
                       </div>
 
-                      {/* Row 4: Notes */}
-                      <div className="text-xs text-gray-400 leading-snug">
-                        <span className="text-gray-600 font-bold uppercase mr-1.5">CATATAN:</span>
-                        {vehicle.description || "Tidak ada catatan."}
-                      </div>
+                      <div className="mt-2 flex flex-col gap-1.5">
+                        {/* Row 2: Specs - horizontal */}
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-gray-500 uppercase text-[10px] font-bold">TRANS:</span>
+                          <span className="text-gray-200">{vehicle.transmissionType || '-'}</span>
+                          <span className="text-gray-600">•</span>
+                          <span className="text-gray-500 uppercase text-[10px] font-bold">BBM:</span>
+                          <span className="text-gray-200">{vehicle.fuelType || '-'}</span>
+                          <span className="text-gray-600">•</span>
+                          <span className="text-gray-500 uppercase text-[10px] font-bold">CC:</span>
+                          <span className="text-gray-200">{vehicle.engineCapacity ? `${vehicle.engineCapacity}cc` : '-'}</span>
+                          <span className="text-gray-600">•</span>
+                          <span className="text-gray-500 uppercase text-[10px] font-bold">TAHUN:</span>
+                          <span className="text-gray-200">{vehicle.year}</span>
+                        </div>
 
-                      {/* Row 5: Audit trail */}
-                      <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                          </svg>
-                          Updated by <span className="font-semibold text-gray-400">{vehicle.updatedBy || 'System'}</span>
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                          </svg>
-                          {new Date(vehicle.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        {/* Row 3: Metadata + Age */}
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="font-mono text-gray-500">#{vehicle.displayId || vehicle.id.slice(0, 6)}</span>
+                          <span className="text-gray-600">•</span>
+                          <span className="text-gray-400">{vehicle.mileage ? (vehicle.mileage / 1000).toFixed(0) : '-'} km</span>
+                          <span className="text-gray-600">•</span>
+                          <span className="text-gray-400">{vehicle.licensePlate || 'No Plat'}</span>
+                          <span className="text-gray-600">•</span>
+                          {(() => {
+                            const diff = new Date().getTime() - new Date(vehicle.createdAt).getTime();
+                            const days = Math.ceil(Math.abs(diff) / (1000 * 3600 * 24));
+                            return (
+                              <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${days > 60 ? 'bg-red-900/20 text-red-400 border-red-800' : 'bg-green-900/20 text-green-400 border-green-800'}`}>
+                                {days} Hari
+                              </span>
+                            );
+                          })()}
+                        </div>
+
+                        {/* Row 4: Notes */}
+                        <div className="text-xs text-gray-400 leading-snug">
+                          <span className="text-gray-600 font-bold uppercase mr-1.5">CATATAN:</span>
+                          {vehicle.description || "Tidak ada catatan."}
+                        </div>
+
+                        {/* Row 5: Audit trail */}
+                        <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                            </svg>
+                            Updated by <span className="font-semibold text-gray-400">{vehicle.updatedBy || 'System'}</span>
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                            </svg>
+                            {new Date(vehicle.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
 
