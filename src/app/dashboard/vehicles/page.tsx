@@ -626,37 +626,38 @@ export default function VehiclesPage() {
                 </div>
 
                 {/* Actions */}
-                <div className={`border-t border-[#333] bg-[#222] flex items-center gap-2 p-2 ${viewMode === 'list' ? 'border-t-0 border-l w-32 flex-col justify-center hidden md:flex' : ''}`}>
+                <div className={`border-t border-[#333] bg-[#222] flex items-center gap-2 p-2 ${viewMode === 'list' ? 'border-t-0 border-l w-36 flex-col justify-center hidden md:flex' : ''}`}>
 
+                  {/* Status Badge - Equal width */}
                   {viewMode === 'list' && (
-                    <span className={`w-full text-center text-[10px] uppercase font-bold py-1 rounded border ${getStatusColor(vehicle.status)}`}>
+                    <span className={`w-full text-center text-xs uppercase font-bold py-1.5 rounded border ${getStatusColor(vehicle.status)}`}>
                       {getStatusLabel(vehicle.status)}
                     </span>
                   )}
 
-                  {/* Edit Button - Disabled if no permission */}
+                  {/* Edit Button - Equal width */}
                   {canModifyVehicle(vehicle) ? (
                     <Link
                       href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
-                      className="flex-1 w-full text-center bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-2 py-1.5 rounded text-xs font-medium transition-colors border border-blue-900/50"
+                      className="w-full text-center bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-2 py-1.5 rounded text-xs font-medium transition-colors border border-blue-900/50"
                     >
                       Edit
                     </Link>
                   ) : (
                     <button
                       disabled
-                      className="flex-1 w-full text-center bg-gray-800/20 text-gray-600 px-2 py-1.5 rounded text-xs font-medium cursor-not-allowed border border-gray-800/50"
+                      className="w-full text-center bg-gray-800/20 text-gray-600 px-2 py-1.5 rounded text-xs font-medium cursor-not-allowed border border-gray-800/50"
                       title="Hanya yang upload bisa edit"
                     >
                       Edit
                     </button>
                   )}
 
-                  {/* Delete Button - Disabled if no permission */}
+                  {/* Delete Button - Equal width */}
                   <button
                     onClick={() => handleDelete(vehicle)}
                     disabled={deleting === vehicle.id || !canModifyVehicle(vehicle)}
-                    className={`px-2 py-1.5 rounded text-xs border ${canModifyVehicle(vehicle)
+                    className={`w-full text-center px-2 py-1.5 rounded text-xs font-medium border ${canModifyVehicle(vehicle)
                         ? 'bg-red-900/10 text-red-500 hover:bg-red-900 hover:text-white border-red-900/30'
                         : 'bg-gray-800/20 text-gray-600 cursor-not-allowed border-gray-800/50'
                       }`}
