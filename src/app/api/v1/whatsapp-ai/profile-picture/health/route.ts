@@ -19,188 +19,134 @@ export async function GET(request: NextRequest) {
     const diagnostics: any = {
         timestamp: new Date().toISOString(),
         aimeowBaseUrl: AIMEOW_BASE_URL,
-        steps: []
+        logs: [],
+        errors: []
+    };
+
+    const log = (msg: string, type: 'info' | 'error' | 'success' | 'warn' = 'info') => {
+        diagnostics.logs.push({ msg, type });
+        if (type === 'error') diagnostics.errors.push(msg);
     };
 
     try {
-        // STEP 1: Check Aimeow API connectivity
-        diagnostics.steps.push("1. Checking Aimeow API connectivity...");
+        log("1. Checking Aimeow API connectivity...", 'info');
         let aimeowReachable = false;
         let clients: any[] = [];
 
         try {
-            const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`, {
-                cache: 'no-store',
-            });
-
+            const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`, { cache: 'no-store' });
             aimeowReachable = clientsResponse.ok;
 
             if (aimeowReachable) {
                 clients = await clientsResponse.json();
-                diagnostics.aimeow = {
-                    reachable: true,
-                    status: clientsResponse.status,
-                    totalClients: clients.length,
-                    connectedClients: clients.filter((c: any) => c.isConnected).length
-                };
-                diagnostics.steps.push(`   ✅ Aimeow API reachable - ${clients.length} clients found, ${clients.filter((c: any) => c.isConnected).length} connected`);
+                log(`✅ Aimeow API reachable - ${clients.length} clients total`, 'success');
             } else {
-                diagnostics.aimeow = {
-                    reachable: false,
-                    status: clientsResponse.status,
-                    error: `HTTP ${clientsResponse.status}`
-                };
-                diagnostics.steps.push(`   ❌ Aimeow API returned ${clientsResponse.status}`);
+                log(`❌ Aimeow API returned ${clientsResponse.status}`, 'error');
             }
         } catch (error: any) {
-            diagnostics.aimeow = {
-                reachable: false,
-                error: error.message
-            };
-            diagnostics.steps.push(`   ❌ Cannot reach Aimeow: ${error.message}`);
+            log(`❌ Cannot reach Aimeow: ${error.message}`, 'error');
         }
 
-        // STEP 2: Check database accounts
-        diagnostics.steps.push("2. Checking database WhatsApp accounts...");
+        log("2. Checking database WhatsApp accounts...", 'info');
         const dbAccounts = await prisma.aimeowAccount.findMany({
-            select: {
-                id: true,
-                tenantId: true,
-                clientId: true,
-                phoneNumber: true,
-                isActive: true,
-                connectionStatus: true
-            }
+            include: { tenant: true }
         });
+        log(`Found ${dbAccounts.length} accounts in DB`, 'info');
 
-        diagnostics.database = {
-            totalAccounts: dbAccounts.length,
-            activeAccounts: dbAccounts.filter(a => a.isActive).length,
-            accounts: dbAccounts.map(a => ({
-                tenantId: a.tenantId,
-                clientId: a.clientId,
-                phone: a.phoneNumber,
-                status: a.connectionStatus
-            }))
-        };
-        diagnostics.steps.push(`   ✅ Found ${dbAccounts.length} WhatsApp accounts in database`);
-
-        // STEP 3: Match database accounts with Aimeow clients
-        diagnostics.steps.push("3. Matching database accounts with Aimeow clients...");
+        log("3. Matching accounts...", 'info');
         const matches = [];
-        const mismatches = [];
 
         for (const account of dbAccounts) {
-            const matchingClient = clients.find((c: any) =>
-                c.id === account.clientId || c.phone === account.phoneNumber
-            );
+            const client = clients.find((c: any) => c.id === account.clientId || c.phone === account.phoneNumber);
+            const status = client ? (client.isConnected ? 'CONNECTED' : 'DISCONNECTED') : 'NOT_FOUND_IN_AIMEOW';
 
-            if (matchingClient) {
-                matches.push({
-                    tenantId: account.tenantId,
-                    clientId: matchingClient.id,
-                    phone: matchingClient.phone,
-                    connected: matchingClient.isConnected
-                });
-            } else {
-                mismatches.push({
-                    tenantId: account.tenantId,
-                    dbClientId: account.clientId,
-                    dbPhone: account.phoneNumber
-                });
-            }
+            matches.push({
+                tenant: account.tenant?.name || 'Unknown',
+                phone: account.phoneNumber,
+                clientId: account.clientId,
+                aimeowStatus: status,
+                dbStatus: account.connectionStatus
+            });
         }
 
-        diagnostics.matching = {
-            matched: matches.length,
-            mismatched: mismatches.length,
-            matches: matches,
-            mismatches: mismatches
-        };
+        // HTML Output Construction
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>WA Profile Diagnostics</title>
+            <style>
+                body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #eee; }
+                .card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                h2 { color: #4ade80; border-bottom: 1px solid #444; padding-bottom: 10px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th, td { border: 1px solid #444; padding: 8px; text-align: left; }
+                th { background: #333; }
+                .tag { padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+                .CONNECTED { background: #064e3b; color: #6ee7b7; }
+                .DISCONNECTED { background: #7f1d1d; color: #fca5a5; }
+                .log-info { color: #94a3b8; }
+                .log-success { color: #4ade80; font-weight: bold; }
+                .log-error { color: #f87171; font-weight: bold; }
+                .log-warn { color: #fbbf24; }
+            </style>
+        </head>
+        <body>
+            <h1>🤖 WA Profile Debugger</h1>
+            
+            <div class="card">
+                <h2>📊 Service Status</h2>
+                <div>Aimeow URL: <code>${AIMEOW_BASE_URL}</code></div>
+                <div>API Connectivity: ${aimeowReachable ? '<span class="tag CONNECTED">ONLINE</span>' : '<span class="tag DISCONNECTED">OFFLINE</span>'}</div>
+            </div>
 
-        if (matches.length > 0) {
-            diagnostics.steps.push(`   ✅ ${matches.length} accounts matched with Aimeow clients`);
-        }
-        if (mismatches.length > 0) {
-            diagnostics.steps.push(`   ⚠️  ${mismatches.length} accounts NOT found in Aimeow (might need sync)`);
-        }
+            <div class="card">
+                <h2>🔗 Accounts & Connections</h2>
+                <table>
+                    <tr>
+                        <th>Tenant</th>
+                        <th>Phone (DB)</th>
+                        <th>Client ID</th>
+                        <th>DB Status</th>
+                        <th>Real Status</th>
+                    </tr>
+                    ${matches.map(m => `
+                        <tr>
+                            <td>${m.tenant}</td>
+                            <td>${m.phone}</td>
+                            <td><small>${m.clientId}</small></td>
+                            <td>${m.dbStatus}</td>
+                            <td><span class="tag ${m.aimeowStatus}">${m.aimeowStatus}</span></td>
+                        </tr>
+                    `).join('')}
+                </table>
+            </div>
 
-        // STEP 4: Test profile picture fetch
-        if (matches.length > 0 && matches.some(m => m.connected)) {
-            diagnostics.steps.push("4. Testing profile picture fetch...");
-            const connectedMatch = matches.find(m => m.connected);
+            <div class="card">
+                <h2>📜 Execution Logs</h2>
+                <div style="font-family: monospace; white-space: pre-wrap;">
+${diagnostics.logs.map((l: any) => `<div class="log-${l.type}">[${l.type.toUpperCase()}] ${l.msg}</div>`).join('')}
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🛠️ Manual Test Tools</h2>
+                <p>Use these links to test individual numbers:</p>
+                <ul>
+                    <li><a href="/api/v1/whatsapp-ai/profile-picture?tenantId=${dbAccounts[0]?.tenantId}&phone=YOUR_PHONE_HERE" target="_blank" style="color: #60a5fa">Test Fetch Profile Picture (JSON)</a></li>
+                </ul>
+            </div>
+        </body>
+        </html>
+        `;
 
-            if (connectedMatch) {
-                // Get a user from this tenant to test
-                const testUser = await prisma.user.findFirst({
-                    where: {
-                        tenantId: connectedMatch.tenantId,
-                        phone: { not: null }
-                    },
-                    select: { phone: true, firstName: true, lastName: true }
-                });
-
-                if (testUser && testUser.phone) {
-                    const cleanPhone = testUser.phone.replace(/@.*$/, "").replace(/:/g, "").replace(/[^0-9]/g, "");
-
-                    try {
-                        const pictureUrl = `${AIMEOW_BASE_URL}/api/v1/clients/${connectedMatch.clientId}/profile-picture/${cleanPhone}`;
-                        diagnostics.steps.push(`   Testing: ${pictureUrl}`);
-
-                        const picResponse = await fetch(pictureUrl, {
-                            headers: { Accept: "application/json" },
-                            cache: 'no-store',
-                        });
-
-                        const picData = await picResponse.json();
-
-                        diagnostics.profilePictureTest = {
-                            testUser: `${testUser.firstName} ${testUser.lastName}`,
-                            testPhone: cleanPhone,
-                            clientId: connectedMatch.clientId,
-                            response: picData,
-                            success: picData.success && picData.hasPicture
-                        };
-
-                        if (picData.success && picData.hasPicture) {
-                            diagnostics.steps.push(`   ✅ Profile picture fetch WORKS - Got picture for ${testUser.firstName}`);
-                        } else {
-                            diagnostics.steps.push(`   ⚠️  Profile picture fetch returned no picture (user might not have one set)`);
-                        }
-                    } catch (error: any) {
-                        diagnostics.profilePictureTest = {
-                            error: error.message
-                        };
-                        diagnostics.steps.push(`   ❌ Profile picture fetch FAILED: ${error.message}`);
-                    }
-                } else {
-                    diagnostics.steps.push(`   ⚠️  No users with phone found for testing`);
-                }
-            }
-        } else {
-            diagnostics.steps.push("4. ⚠️  Skipping profile picture test - no connected clients");
-        }
-
-        // Summary
-        const allGood =
-            diagnostics.aimeow?.reachable &&
-            matches.length > 0 &&
-            matches.some((m: any) => m.connected);
-
-        diagnostics.summary = {
-            healthy: allGood,
-            message: allGood
-                ? "✅ All systems operational - Profile pictures should be working"
-                : "❌ Issues detected - Check details above"
-        };
-
-        return NextResponse.json(diagnostics, { status: 200 });
+        return new NextResponse(html, {
+            headers: { 'Content-Type': 'text/html' }
+        });
 
     } catch (error: any) {
-        return NextResponse.json({
-            error: error.message,
-            stack: error.stack,
-            diagnostics
-        }, { status: 500 });
+        return new NextResponse(`❌ Critical Error: ${error.message}<br><pre>${error.stack}</pre>`, {
+            headers: { 'Content-Type': 'text/html' }
+        });
     }
 }
