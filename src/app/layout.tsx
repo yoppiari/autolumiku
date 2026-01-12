@@ -10,6 +10,10 @@ const interFontStack = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
 
 import { prisma } from '@/lib/prisma';
 
+// Force dynamic rendering for the entire app to prevent build-time database access failures.
+// This is necessary because the Docker build environment does not have access to the production database.
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
   let favicon = '/favicon.png';
   let appleIcon = '/favicon-48.png';
@@ -52,7 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
     if (tenant?.faviconUrl) {
       // Use the stored icon (could be data URL or remote link)
       const isDataUrl = tenant.faviconUrl.startsWith('data:');
-      
+
       if (isDataUrl) {
         favicon = tenant.faviconUrl;
         appleIcon = tenant.faviconUrl;
