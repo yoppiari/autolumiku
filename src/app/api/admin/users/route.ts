@@ -53,17 +53,34 @@ export async function GET(request: NextRequest) {
       });
 
       // Fetch WhatsApp connection status for these users
-      const staffAuths = await prisma.staffWhatsAppAuth.findMany({
-        where: {
-          userId: { in: users.map(u => u.id) }
-        },
-        select: {
-          userId: true,
-          isActive: true,
-          phoneNumber: true,
-          profilePicUrl: true
-        }
-      });
+      // NOTE: profilePicUrl might not exist in DB yet, handle gracefully
+      let staffAuths: any[] = [];
+      try {
+        staffAuths = await prisma.staffWhatsAppAuth.findMany({
+          where: {
+            userId: { in: users.map(u => u.id) }
+          },
+          select: {
+            userId: true,
+            isActive: true,
+            phoneNumber: true,
+            profilePicUrl: true
+          }
+        });
+      } catch (error: any) {
+        // Fallback if profilePicUrl field doesn't exist yet in DB
+        console.warn('[Users API] profilePicUrl field not found, falling back to basic query:', error.message);
+        staffAuths = await prisma.staffWhatsAppAuth.findMany({
+          where: {
+            userId: { in: users.map(u => u.id) }
+          },
+          select: {
+            userId: true,
+            isActive: true,
+            phoneNumber: true
+          }
+        });
+      }
 
       // Merge status into user objects
       const usersWithStatus = users.map(user => {
