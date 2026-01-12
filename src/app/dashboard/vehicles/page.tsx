@@ -571,13 +571,7 @@ export default function VehiclesPage() {
                             <span className="font-mono text-red-400 font-bold text-sm">
                               {vehicle.displayId || '#' + vehicle.id.slice(0, 6)}
                             </span>
-                          </div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {vehicle.variant && (
-                              <span className="px-2 py-0.5 bg-blue-900/30 text-blue-300 text-[10px] md:text-xs font-bold rounded border border-blue-800 uppercase">
-                                {vehicle.variant}
-                              </span>
-                            )}
+                            {/* Status badge - mobile only */}
                             <span className={`px-2 py-0.5 text-[10px] md:text-xs font-bold rounded border uppercase md:hidden ${getStatusColor(vehicle.status)}`}>
                               {getStatusLabel(vehicle.status)}
                             </span>
@@ -588,10 +582,40 @@ export default function VehiclesPage() {
                         </div>
                       </div>
 
-                      {/* Row 2: Metadata - wrap on mobile (no display ID) */}
+                      {/* Row 2: Vehicle Specs - Year, Transmission, Fuel, Engine CC */}
                       <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
-                        <span>{vehicle.year}</span>
+                        {/* Variant Badge */}
+                        {vehicle.variant && (
+                          <>
+                            <span className="px-2 py-0.5 bg-blue-900/30 text-blue-300 text-[10px] md:text-xs font-bold rounded border border-blue-800 uppercase">
+                              {vehicle.variant}
+                            </span>
+                            <span className="text-gray-600">•</span>
+                          </>
+                        )}
+
+                        {/* Year */}
+                        <span className="font-medium text-gray-300">{vehicle.year}</span>
                         <span className="text-gray-600">•</span>
+
+                        {/* Transmission */}
+                        <span>{vehicle.transmissionType || 'Unknown'}</span>
+                        <span className="text-gray-600">•</span>
+
+                        {/* Fuel Type */}
+                        <span>{vehicle.fuelType || '-'}</span>
+
+                        {/* Engine CC */}
+                        {vehicle.engineCapacity && (
+                          <>
+                            <span className="text-gray-600">•</span>
+                            <span className="font-medium text-orange-400">{vehicle.engineCapacity}cc</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Row 3: Additional Info - Mileage, License Plate, Stock Age */}
+                      <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
                         <span>{vehicle.mileage ? vehicle.mileage.toLocaleString('id-ID') : '-'} km</span>
                         <span className="text-gray-600">•</span>
                         <span className="truncate max-w-[120px]">{vehicle.licensePlate || 'No Plat'}</span>
@@ -615,7 +639,7 @@ export default function VehiclesPage() {
                         Update by {getUserName(vehicle.updatedBy)} • {new Date(vehicle.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </div>
 
-                      {/* Row 3: Notes */}
+                      {/* Row 5: Notes */}
                       {vehicle.description && (
                         <div className="text-xs text-gray-400 leading-snug line-clamp-2">
                           {vehicle.description}
@@ -658,8 +682,8 @@ export default function VehiclesPage() {
                     onClick={() => handleDelete(vehicle)}
                     disabled={deleting === vehicle.id || !canModifyVehicle(vehicle)}
                     className={`w-full text-center px-2 py-1.5 rounded text-xs font-medium border ${canModifyVehicle(vehicle)
-                        ? 'bg-red-900/10 text-red-500 hover:bg-red-900 hover:text-white border-red-900/30'
-                        : 'bg-gray-800/20 text-gray-600 cursor-not-allowed border-gray-800/50'
+                      ? 'bg-red-900/10 text-red-500 hover:bg-red-900 hover:text-white border-red-900/30'
+                      : 'bg-gray-800/20 text-gray-600 cursor-not-allowed border-gray-800/50'
                       }`}
                     title={!canModifyVehicle(vehicle) ? 'Hanya yang upload bisa hapus' : ''}
                   >
