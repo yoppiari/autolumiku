@@ -44,7 +44,7 @@ export class PuppeteerOtoScraper {
 
                 // Wait for listings to appear
                 try {
-                    await page.waitForSelector('li.item', { timeout: 10000 });
+                    await page.waitForSelector('.used-car-card, .listing-card, li.card', { timeout: 10000 });
                 } catch (e) {
                     console.log("⚠️ No listings found or timeout.");
                 }
@@ -52,12 +52,13 @@ export class PuppeteerOtoScraper {
                 // Extract Listings currently on page
                 const pageListings = await page.evaluate(() => {
                     const items: any[] = [];
-                    const cards = Array.from(document.querySelectorAll('li.item'));
+                    // Verified selectors: .used-car-card or .listing-card
+                    const cards = Array.from(document.querySelectorAll('.used-car-card, .listing-card, li.card'));
 
                     cards.forEach(card => {
                         try {
                             // 1. Title & Year
-                            const nameLink = card.querySelector('a.vh-name');
+                            const nameLink = card.querySelector('.vh-name, .title, a[href*="detail-mobil-bekas"]');
                             const rawTitle = nameLink ? nameLink.textContent?.trim() || '' : '';
 
                             // "2019 Honda Jazz RS CVT"
@@ -71,10 +72,9 @@ export class PuppeteerOtoScraper {
                             let titleClean = rawTitle.replace(/^\d{4}\s+/, '');
 
                             // 2. Price
-                            // Price can be in div.price or text node. 
-                            // OTO format: "Rp 265 Juta"
-                            const priceEl = card.querySelector('.price') || card.querySelector('.vh-price');
-                            const priceText = priceEl ? priceEl.textContent?.trim() || '' : '';
+                            // Price can be in .price, .vh-price, or .card-price
+                            const priceEl = card.querySelector('.price, .vh-price, .card-price, [class*="price"]');
+                            const priceText = priceEl ? priceEl.innerText?.trim() || '' : '';
 
                             // Parse "Rp 265 Juta" -> 265000000
                             let price = 0;
@@ -97,9 +97,8 @@ export class PuppeteerOtoScraper {
                             const imageUrl = imgEl ? (imgEl.dataset.src || imgEl.src) : '';
 
                             // 4. Specs (Location, KM, Transmission)
-                            // They are in ul.used-car-list-card-tags li
-                            // Structure variable. Let's grab text tags.
-                            const tags = Array.from(card.querySelectorAll('.used-car-list-card-tags li')).map(li => li.textContent?.trim() || '');
+                            // Usually in tags (ul li or span)
+                            const tags = Array.from(card.querySelectorAll('ul li, span, .item-list')).map(t => t.textContent?.trim() || '');
 
                             let location = '';
                             let mileageDisplay = '';
@@ -108,14 +107,14 @@ export class PuppeteerOtoScraper {
 
                             // Heuristic to assign tags
                             tags.forEach(tag => {
-                                if (tag.match(/\d+\s*km/i) || tag.match(/\d+\s*kms/i)) {
+                                if (tag.match(/\d+\s*(?:km|rb|ribu)/i)) {
                                     mileageDisplay = tag;
-                                } else if (tag.match(/Manual|Automatic|CVT|Otomatis/i)) {
-                                    transmission = tag;
+                                } else if (tag.match(/Manual|Automatic|CVT|Otomatis|Matic/i)) {
+                                    transmission = tag.replace(/Otomatis/i, 'Automatic');
                                 } else if (tag.match(/cc$/i)) {
                                     engineCapacity = tag;
-                                } else if (!tag.match(/\d/) && location === '') {
-                                    // First non-digit text usually location (e.g. "Jakarta Selatan")
+                                } else if (tag.length > 3 && !tag.match(/\d/) && location === '' && !tag.match(/bensin|diesel/i)) {
+                                    // First non-digit text usually location (e.g. "Jakarta Selatan") -> Exclude fuel
                                     location = tag;
                                 }
                             });
