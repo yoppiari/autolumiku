@@ -1,9 +1,18 @@
+/**
+ * WhatsApp AI Analytics Page
+ * Performance metrics and insights
+ * 
+ * ACCESS: ADMIN+ only (roleLevel >= 90)
+ */
+
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api-client';
 import { useSearchParams } from 'next/navigation';
+import { withRoleProtection } from '@/lib/auth/withRoleProtection';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 interface SalesStats {
   totalSales: number;
@@ -609,7 +618,7 @@ function ReportCard({ report }: { report: { id: string; name: string; desc: stri
   );
 }
 
-export default function AnalyticsPage() {
+function AnalyticsPage() {
   return (
     <Suspense fallback={
       <div className="p-6 flex items-center justify-center h-screen">
@@ -620,3 +629,7 @@ export default function AnalyticsPage() {
     </Suspense>
   );
 }
+
+// Protect this page - ADMIN+ only
+export default withRoleProtection(AnalyticsPage, ROLE_LEVELS.ADMIN);
+

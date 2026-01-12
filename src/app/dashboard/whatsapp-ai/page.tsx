@@ -3,10 +3,19 @@
  * Compact layout fit to screen at 100% zoom
  */
 
+/**
+ * WhatsApp AI Dashboard
+ * Main dashboard untuk WhatsApp AI features
+ * 
+ * ACCESS: ADMIN+ only (roleLevel >= 90)
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { withRoleProtection } from '@/lib/auth/withRoleProtection';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 interface WhatsAppStatus {
   isConnected: boolean;
@@ -49,7 +58,7 @@ interface AIHealthState {
   statusMessage?: string;
 }
 
-export default function WhatsAppAIDashboard() {
+function WhatsAppAIDashboard() {
   const [status, setStatus] = useState<WhatsAppStatus>({
     isConnected: false,
     totalConversations: 0,
@@ -322,14 +331,14 @@ export default function WhatsAppAIDashboard() {
         {/* AI Health Alert - Show when not active */}
         {status.isConnected && aiHealth && aiHealth.status !== 'active' && (
           <div className={`p-4 rounded-xl shadow-sm border-2 mb-3 flex-shrink-0 ${aiHealth.status === 'disabled' ? 'bg-gray-900/40 border-gray-700' :
-              aiHealth.status === 'degraded' ? 'bg-yellow-900/40 border-yellow-800' :
-                'bg-red-900/40 border-red-800'
+            aiHealth.status === 'degraded' ? 'bg-yellow-900/40 border-yellow-800' :
+              'bg-red-900/40 border-red-800'
             }`}>
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${aiHealth.status === 'disabled' ? 'bg-gray-800' :
-                    aiHealth.status === 'degraded' ? 'bg-yellow-900/60' :
-                      'bg-red-900/60'
+                  aiHealth.status === 'degraded' ? 'bg-yellow-900/60' :
+                    'bg-red-900/60'
                   }`}>
                   <span className="text-xl">
                     {aiHealth.status === 'disabled' ? '⏸️' :
@@ -358,8 +367,8 @@ export default function WhatsAppAIDashboard() {
                 onClick={handleToggleAI}
                 disabled={isTogglingAI}
                 className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${aiHealth.enabled
-                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
                   } ${isTogglingAI ? 'opacity-50' : ''}`}
               >
                 {isTogglingAI ? 'Loading...' : (aiHealth.enabled ? 'Nonaktifkan' : 'Aktifkan AI')}
@@ -616,3 +625,7 @@ export default function WhatsAppAIDashboard() {
     </div>
   );
 }
+
+// Protect this page - ADMIN+ only
+export default withRoleProtection(WhatsAppAIDashboard, ROLE_LEVELS.ADMIN);
+
