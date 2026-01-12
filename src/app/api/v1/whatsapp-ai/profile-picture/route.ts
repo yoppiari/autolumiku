@@ -86,7 +86,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Clean phone number - remove suffixes and non-digits
-    const cleanPhone = phone.replace(/@.*$/, "").replace(/:/g, "").replace(/[^0-9]/g, "");
+    let cleanPhone = phone.replace(/@.*$/, "").replace(/:/g, "").replace(/[^0-9]/g, "");
+
+    // Validasi & Normalisasi Indonesia (08 -> 628)
+    if (cleanPhone.startsWith("08")) {
+      cleanPhone = "62" + cleanPhone.substring(1);
+    }
 
     if (!cleanPhone) {
       return NextResponse.json(
@@ -123,41 +128,6 @@ export async function GET(request: NextRequest) {
           pictureUrl = data.pictureUrl || null;
           hasPicture = data.hasPicture || false;
           console.log(`[Profile Picture API] ✅ Got picture - URL: ${pictureUrl}, hasPicture: ${hasPicture}`);
-
-          // If we got a valid picture URL, save it to the user database for future fallback
-          /*
-          // PERSISTENCE DISABLED TEMPORARILY: Migration failed
-          if (pictureUrl && tenantId) {
-            try {
-              // Find user by phone to update
-              // Phone format in DB might vary, but we'll try to match exact or partial
-              // Ideally, we find by tenant match + phone
-
-              const users = await prisma.user.findMany({
-                where: {
-                  tenantId,
-                  phone: {
-                    contains: cleanPhone.slice(-10) // Match last 10 digits as a safe heuristic
-                  }
-                }
-              });
-
-              // Filter for exact match after fetch if needed or update match
-              for (const user of users) {
-                // Update the user's profile picture
-                await prisma.user.update({
-                  where: { id: user.id },
-                  data: {
-                    profilePictureUrl: pictureUrl,
-                    profilePictureFetchedAt: new Date()
-                  }
-                });
-              }
-            } catch (dbError) {
-              console.error("[Profile Picture API] Failed to update DB cache:", dbError);
-            }
-          }
-          */
         } else {
           console.log(`[Profile Picture API] ❌ Response not successful or no data`);
         }
@@ -168,35 +138,16 @@ export async function GET(request: NextRequest) {
       console.error("[Profile Picture API] ❌ Fetch failed:", fetchError.message, fetchError.stack);
     }
 
-    // If real-time fetch failed or returned no picture, try to use cached one from DB
-    /*
-    // FALLBACK DISABLED: Column missing
-    if (!pictureUrl && tenantId) {
-      try {
-        const user = await prisma.user.findFirst({
-          where: {
-            tenantId,
-            phone: {
-              contains: cleanPhone.slice(-10)
-            }
-          }
-        });
-
-        if (user && user.profilePictureUrl) {
-          console.log(`[Profile Picture API] Using cached picture for ${cleanPhone}`);
-          pictureUrl = user.profilePictureUrl;
-          hasPicture = true;
-        }
-      } catch (dbErr) {
-        console.error("[Profile Picture API] DB fallback failed:", dbErr);
-      }
-    }
-    */
-
     return NextResponse.json({
       success: true,
       pictureUrl: pictureUrl,
       hasPicture: hasPicture,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
     });
   } catch (error: any) {
     console.error("[Profile Picture API] Error:", error.message);
