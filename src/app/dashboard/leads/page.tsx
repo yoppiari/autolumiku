@@ -1,12 +1,16 @@
 /**
  * Leads Dashboard - Simple WhatsApp Lead Management
  * Focus on tracking leads from WhatsApp integration
+ * 
+ * ACCESS: ADMIN+ only (roleLevel >= 90)
  */
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { withRoleProtection } from '@/lib/auth/withRoleProtection';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 interface Lead {
   id: string;
@@ -51,7 +55,7 @@ interface WhatsAppSettings {
   };
 }
 
-export default function LeadsDashboard() {
+function LeadsDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<LeadStats>({
     total: 0,
@@ -547,3 +551,6 @@ export default function LeadsDashboard() {
     </div >
   );
 }
+
+// Protect this page - ADMIN+ only
+export default withRoleProtection(LeadsDashboard, ROLE_LEVELS.ADMIN);

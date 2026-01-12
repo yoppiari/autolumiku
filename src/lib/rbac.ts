@@ -49,13 +49,18 @@ export const PAGE_ACCESS: Record<string, { minRole: number; excludeRoles?: numbe
   // Kendaraan/Vehicles - visible to all
   '/dashboard/vehicles': { minRole: ROLE_LEVELS.SALES },
 
-  // WhatsApp AI - visible to all
+  // WhatsApp AI - Dashboard visible to all, Config/Conversations ADMIN only
   '/dashboard/whatsapp-ai': { minRole: ROLE_LEVELS.SALES },
   '/dashboard/whatsapp-ai/analytics': { minRole: ROLE_LEVELS.SALES },
-  '/dashboard/whatsapp-ai/config': { minRole: ROLE_LEVELS.SALES },
+  '/dashboard/whatsapp-ai/config': { minRole: ROLE_LEVELS.ADMIN }, // ADMIN+ only
+  '/dashboard/whatsapp-ai/conversations': { minRole: ROLE_LEVELS.ADMIN }, // ADMIN+ only
 
-  // Settings - visible to all
-  '/dashboard/settings': { minRole: ROLE_LEVELS.SALES },
+  // Leads - ADMIN+ only
+  '/dashboard/leads': { minRole: ROLE_LEVELS.ADMIN },
+
+  // Settings - ADMIN+ only
+  '/dashboard/settings': { minRole: ROLE_LEVELS.ADMIN },
+  '/dashboard/settings/business': { minRole: ROLE_LEVELS.ADMIN },
 
   // Blog - visible to all
   '/dashboard/blog': { minRole: ROLE_LEVELS.SALES },

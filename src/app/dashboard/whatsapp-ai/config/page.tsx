@@ -1,6 +1,8 @@
 /**
  * WhatsApp AI Configuration Page
  * Customize AI personality, welcome message, features, dll
+ * 
+ * ACCESS: ADMIN+ only (roleLevel >= 90)
  */
 
 'use client';
@@ -8,6 +10,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { withRoleProtection } from '@/lib/auth/withRoleProtection';
+import { ROLE_LEVELS } from '@/lib/rbac';
 
 interface AIConfig {
   id: string;
@@ -51,7 +55,7 @@ const DAY_LABELS: Record<string, string> = {
   sunday: 'Minggu',
 };
 
-export default function WhatsAppAIConfigPage() {
+function WhatsAppAIConfigPage() {
   const router = useRouter();
   const [config, setConfig] = useState<AIConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -497,3 +501,7 @@ export default function WhatsAppAIConfigPage() {
     </div>
   );
 }
+
+// Protect this page - ADMIN+ only
+export default withRoleProtection(WhatsAppAIConfigPage, ROLE_LEVELS.ADMIN);
+

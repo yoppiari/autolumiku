@@ -1,3 +1,8 @@
+/**
+ * Settings Page - Showroom Configuration
+ * ACCESS: ADMIN+ only (roleLevel >= 90)
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,21 +10,20 @@ import { useRouter } from 'next/navigation';
 import { FaBuilding, FaCreditCard, FaChevronDown, FaChevronUp, FaCheckCircle, FaExclamationTriangle, FaTimesCircle } from 'react-icons/fa';
 import Link from 'next/link';
 import { ROLE_LEVELS } from '@/lib/rbac';
+import { withRoleProtection } from '@/lib/auth/withRoleProtection';
 
-export default function SettingsPage() {
+function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [accessDenied, setAccessDenied] = useState(false);
 
-  // Access guard: ADMIN+ only (Super Admin, Owner, Admin)
+  // Load user from storage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES;
 
       setUser(parsedUser);
       loadSubscription(parsedUser.tenantId);
@@ -98,12 +102,6 @@ export default function SettingsPage() {
 
   const daysRemaining = getDaysRemaining();
   const monthsRemaining = Math.ceil(daysRemaining / 30);
-
-  // Show nothing while checking access or if access denied
-  // No access restrictions for viewing
-  if (false && (accessDenied || !user)) {
-    return null;
-  }
 
   return (
     <div className="w-full min-h-screen bg-[#1a1a1a]">
@@ -281,3 +279,7 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+// Protect this page - ADMIN+ only
+export default withRoleProtection(SettingsPage, ROLE_LEVELS.ADMIN);
+
