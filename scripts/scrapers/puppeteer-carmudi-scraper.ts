@@ -90,7 +90,7 @@ export class PuppeteerCarmudiScraper {
 
                             const imgEl = node.querySelector('img.listing__img') || node.querySelector('img');
                             // Check data-src first (lazy load), then src
-                            const imageUrl = imgEl ? (imgEl.getAttribute('data-src') || imgEl.src) : '';
+                            const imageUrl = imgEl ? (imgEl.getAttribute('data-src') || (imgEl as HTMLImageElement).src) : '';
 
                             // 4. Specs (Location, Transmission, Mileage) from icons
                             let location = '';
@@ -134,6 +134,10 @@ export class PuppeteerCarmudiScraper {
                             const titleParts = titleClean.split(' ');
                             const make = titleParts[0] || 'Unknown';
                             const model = titleParts.slice(1, 3).join(' '); // Take next 2 words as model
+
+                            // Try to find engine capacity (e.g. 1.5, 2.0, 2400cc)
+                            const engineMatch = fullTitle.match(/(\d\.\d)L?|(\d{4})\s*cc/i);
+                            const engineCapacity = engineMatch ? (engineMatch[1] || engineMatch[2]) : '';
 
                             // Try to detect color from title if common names appear
                             const colors = ['Putih', 'Hitam', 'Silver', 'Abu', 'Merah', 'Biru', 'Kuning', 'Hijau', 'Coklat', 'Orange'];
