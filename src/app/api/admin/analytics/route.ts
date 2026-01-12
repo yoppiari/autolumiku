@@ -347,6 +347,16 @@ export async function GET(request: NextRequest) {
     // For 24h we might want to show hourly, but for now let's keep it as last 1 day or default to 7 if not supported by UI
     if (timeRange === '24h') daysToLookBack = 1;
 
+    // CLEAN DATA POLICY: Get all deleted vehicle IDs to exclude from time series
+    const allDeletedVehicles = await prisma.vehicle.findMany({
+      where: {
+        tenantId: { in: activeTenantIds },
+        status: 'DELETED'
+      },
+      select: { id: true }
+    });
+    const allDeletedIds = allDeletedVehicles.map(v => v.id);
+
     const timeSeriesData = [];
     for (let i = daysToLookBack - 1; i >= 0; i--) {
       const d = new Date();
@@ -357,11 +367,21 @@ export async function GET(request: NextRequest) {
       nextD.setDate(nextD.getDate() + 1);
 
       const [views, inquiries, sales, newVehicles] = await Promise.all([
+        // Exclude views of deleted vehicles
         prisma.pageView.count({
-          where: { createdAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds } }
+          where: {
+            createdAt: { gte: d, lt: nextD },
+            tenantId: { in: activeTenantIds },
+            NOT: { vehicleId: { in: allDeletedIds.length > 0 ? allDeletedIds : ['dummy-id'] } }
+          }
         }),
+        // Exclude inquiries/leads linked to deleted vehicles
         prisma.lead.count({
-          where: { createdAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds } }
+          where: {
+            createdAt: { gte: d, lt: nextD },
+            tenantId: { in: activeTenantIds },
+            NOT: { vehicleId: { in: allDeletedIds.length > 0 ? allDeletedIds : ['dummy-id'] } }
+          }
         }),
         prisma.vehicle.count({
           where: { status: 'SOLD', updatedAt: { gte: d, lt: nextD }, tenantId: { in: activeTenantIds } }
