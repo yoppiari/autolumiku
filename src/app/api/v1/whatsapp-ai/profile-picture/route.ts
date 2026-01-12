@@ -107,7 +107,42 @@ export async function GET(request: NextRequest) {
     console.log(`[Profile Picture API] Attempting fetch for phone: ${cleanPhone}, clientId: ${apiClientId}`);
 
     try {
-      const profilePicUrl = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${cleanPhone}`;
+      // PHASE 1: Resolve JID first
+      // Some versions of WA Web API fail if we ask for profile picture using simple phone number
+      // We must get the real JID (e.g. 6281234@s.whatsapp.net) from check-whatsapp first
+      let targetJid = cleanPhone;
+
+      try {
+        const checkUrl = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/check-whatsapp/${cleanPhone}`;
+        const checkRes = await fetch(checkUrl, {
+          headers: { Accept: "application/json" },
+          cache: 'no-store'
+        });
+
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          if (checkData && checkData.jid) {
+            // Use the authoritative JID from WhatsApp
+            targetJid = checkData.jid;
+            console.log(`[Profile Picture API] Resolved JID: ${cleanPhone} -> ${targetJid}`);
+
+            // Encode JID properly for URL
+            // targetJid usually contains @s.whatsapp.net, which might need encoding if API expects it
+            // but usually standard URL path handles it fine or encoded. 
+            // We'll try to use the user part first if it fails, or full JID.
+            // Aimeow usually expects just the number part OR full JID.
+
+            // Let's try to use the number part from JID which is guaranteed to be correct format
+            targetJid = targetJid.split('@')[0];
+            console.log(`[Profile Picture API] Using standardized number from JID: ${targetJid}`);
+          }
+        }
+      } catch (jidError) {
+        console.warn(`[Profile Picture API] Failed to resolve JID, falling back to cleanPhone:`, jidError);
+      }
+
+      // PHASE 2: Fetch Profile Picture using resolved target
+      const profilePicUrl = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${targetJid}`;
       console.log(`[Profile Picture API] Fetching from: ${profilePicUrl}`);
 
       const response = await fetch(
