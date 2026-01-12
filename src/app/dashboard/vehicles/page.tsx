@@ -28,6 +28,7 @@ interface Vehicle {
   engineCapacity?: number;
   photos: { thumbnailUrl: string; originalUrl: string }[];
   description?: string;
+  createdBy?: string; // User ID who uploaded
   updatedBy?: string;
   createdAt: string;
   updatedAt: string;
@@ -42,6 +43,8 @@ export default function VehiclesPage() {
   const [error, setError] = useState<string | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
   const [userMap, setUserMap] = useState<Record<string, string>>({});
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [currentUserRoleLevel, setCurrentUserRoleLevel] = useState<number>(30);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | 'ALL'>('ALL');
@@ -51,12 +54,14 @@ export default function VehiclesPage() {
   const [yearFilter, setYearFilter] = useState<string>('');
   const [priceFilter, setPriceFilter] = useState<string>('');
 
-  // Access guard
+  // Access guard & Load current user info
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      // const roleLevel = parsedUser.roleLevel || ROLE_LEVELS.SALES; 
+      setCurrentUserId(parsedUser.id || parsedUser.userId || '');
+      setCurrentUserRoleLevel(parsedUser.roleLevel || ROLE_LEVELS.SALES);
+      console.log('[Vehicles] Current user:', parsedUser.id, 'roleLevel:', parsedUser.roleLevel);
     }
   }, [router]);
 
@@ -292,6 +297,29 @@ export default function VehiclesPage() {
   };
 
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  /**
+   * Check if current user can edit/delete a vehicle
+   * - ADMIN/OWNER/SUPER_ADMIN (roleLevel >= 90) can modify ALL vehicles
+   * - SALES/STAFF (roleLevel < 90) can ONLY modify vehicles they uploaded
+   */
+  const canModifyVehicle = (vehicle: Vehicle): boolean => {
+    // Admin+ can modify all vehicles
+    if (currentUserRoleLevel >= ROLE_LEVELS.ADMIN) {
+      console.log('[Permission] Admin user - full access');
+      return true;
+    }
+
+    // Staff can only modify their own uploads
+    const isOwner = vehicle.createdBy === currentUserId;
+    console.log('[Permission] Staff check:', {
+      vehicleId: vehicle.displayId,
+      createdBy: vehicle.createdBy,
+      currentUserId,
+      isOwner,
+    });
+    return isOwner;
+  };
 
   const handleDelete = async (vehicle: Vehicle) => {
     if (!confirm(`Hapus ${vehicle.make} ${vehicle.model}?`)) return;
@@ -606,16 +634,33 @@ export default function VehiclesPage() {
                     </span>
                   )}
 
-                  <Link
-                    href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
-                    className="flex-1 w-full text-center bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-2 py-1.5 rounded text-xs font-medium transition-colors border border-blue-900/50"
-                  >
-                    Edit
-                  </Link>
+                  {/* Edit Button - Disabled if no permission */}
+                  {canModifyVehicle(vehicle) ? (
+                    <Link
+                      href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
+                      className="flex-1 w-full text-center bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-2 py-1.5 rounded text-xs font-medium transition-colors border border-blue-900/50"
+                    >
+                      Edit
+                    </Link>
+                  ) : (
+                    <button
+                      disabled
+                      className="flex-1 w-full text-center bg-gray-800/20 text-gray-600 px-2 py-1.5 rounded text-xs font-medium cursor-not-allowed border border-gray-800/50"
+                      title="Hanya yang upload bisa edit"
+                    >
+                      Edit
+                    </button>
+                  )}
+
+                  {/* Delete Button - Disabled if no permission */}
                   <button
                     onClick={() => handleDelete(vehicle)}
-                    disabled={deleting === vehicle.id}
-                    className="px-2 py-1.5 bg-red-900/10 text-red-500 hover:bg-red-900 hover:text-white rounded text-xs border border-red-900/30"
+                    disabled={deleting === vehicle.id || !canModifyVehicle(vehicle)}
+                    className={`px-2 py-1.5 rounded text-xs border ${canModifyVehicle(vehicle)
+                        ? 'bg-red-900/10 text-red-500 hover:bg-red-900 hover:text-white border-red-900/30'
+                        : 'bg-gray-800/20 text-gray-600 cursor-not-allowed border-gray-800/50'
+                      }`}
+                    title={!canModifyVehicle(vehicle) ? 'Hanya yang upload bisa hapus' : ''}
                   >
                     {deleting === vehicle.id ? '...' : 'Hapus'}
                   </button>
