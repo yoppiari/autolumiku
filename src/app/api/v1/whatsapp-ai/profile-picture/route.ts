@@ -99,21 +99,30 @@ export async function GET(request: NextRequest) {
     let pictureUrl: string | null = null;
     let hasPicture = false;
 
+    console.log(`[Profile Picture API] Attempting fetch for phone: ${cleanPhone}, clientId: ${apiClientId}`);
+
     try {
+      const profilePicUrl = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${cleanPhone}`;
+      console.log(`[Profile Picture API] Fetching from: ${profilePicUrl}`);
+
       const response = await fetch(
-        `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${cleanPhone}`,
+        profilePicUrl,
         {
           headers: { Accept: "application/json" },
           cache: 'no-store',
         }
       );
 
+      console.log(`[Profile Picture API] Response status: ${response.status}`);
+
       if (response.ok) {
         const data = await response.json();
+        console.log(`[Profile Picture API] Response data:`, data);
 
         if (data && data.success) {
           pictureUrl = data.pictureUrl || null;
           hasPicture = data.hasPicture || false;
+          console.log(`[Profile Picture API] ✅ Got picture - URL: ${pictureUrl}, hasPicture: ${hasPicture}`);
 
           // If we got a valid picture URL, save it to the user database for future fallback
           /*
@@ -149,10 +158,14 @@ export async function GET(request: NextRequest) {
             }
           }
           */
+        } else {
+          console.log(`[Profile Picture API] ❌ Response not successful or no data`);
         }
+      } else {
+        console.error(`[Profile Picture API] ❌ HTTP Error: ${response.status} ${response.statusText}`);
       }
-    } catch (fetchError) {
-      console.error("[Profile Picture API] Failed to fetch from WA:", fetchError);
+    } catch (fetchError: any) {
+      console.error("[Profile Picture API] ❌ Fetch failed:", fetchError.message, fetchError.stack);
     }
 
     // If real-time fetch failed or returned no picture, try to use cached one from DB
