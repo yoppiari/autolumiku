@@ -63,45 +63,44 @@ export async function GET(request: NextRequest) {
           phoneNumber: true,
           profilePicUrl: true
         }
-      }
       });
 
-  // Merge status into user objects
-  const usersWithStatus = users.map(user => {
-    // Find auth by userId first
-    let auth = staffAuths.find(a => a.userId === user.id);
+      // Merge status into user objects
+      const usersWithStatus = users.map(user => {
+        // Find auth by userId first
+        let auth = staffAuths.find(a => a.userId === user.id);
 
-    // If not found by userId but user has a phone, find by phoneNumber
-    if (!auth && user.phone) {
-      const cleanedUserPhone = user.phone.replace(/\D/g, '');
-      auth = staffAuths.find(a => a.phoneNumber.replace(/\D/g, '') === cleanedUserPhone);
+        // If not found by userId but user has a phone, find by phoneNumber
+        if (!auth && user.phone) {
+          const cleanedUserPhone = user.phone.replace(/\D/g, '');
+          auth = staffAuths.find(a => a.phoneNumber.replace(/\D/g, '') === cleanedUserPhone);
+        }
+
+        return {
+          ...user,
+          isActive: true, // Defaulting to true since DB field doesn't exist yet but user is active
+          isWhatsAppActive: auth ? auth.isActive : false,
+          phone: user.phone || auth?.phoneNumber || null,
+          profilePicUrl: auth?.profilePicUrl || null
+        };
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: usersWithStatus,
+        total: users.length,
+      });
+
+    } catch (error) {
+      console.error('Users API error:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Internal server error'
+        },
+        { status: 500 }
+      );
     }
-
-    return {
-      ...user,
-      isActive: true, // Defaulting to true since DB field doesn't exist yet but user is active
-      isWhatsAppActive: auth ? auth.isActive : false,
-      phone: user.phone || auth?.phoneNumber || null,
-      profilePicUrl: auth?.profilePicUrl || null
-    };
-  });
-
-  return NextResponse.json({
-    success: true,
-    data: usersWithStatus,
-    total: users.length,
-  });
-
-} catch (error) {
-  console.error('Users API error:', error);
-  return NextResponse.json(
-    {
-      success: false,
-      error: 'Internal server error'
-    },
-    { status: 500 }
-  );
-}
   });
 }
 
