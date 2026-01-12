@@ -2201,6 +2201,7 @@ model StaffWhatsAppAuth {
   phoneNumber String  @unique // Staff WhatsApp number
   isActive    Boolean @default(true)
   role        String  @default("staff") // staff, admin, manager
+  profilePicUrl String? // WhatsApp profile picture URL
 
   // Access Control
   canUploadVehicle Boolean @default(true)
