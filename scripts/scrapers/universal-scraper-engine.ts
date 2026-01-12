@@ -9,6 +9,7 @@ import { PuppeteerOLXScraper } from './puppeteer-olx-scraper';
 import { PuppeteerCarsomeScraper } from './puppeteer-carsome-scraper';
 import { PuppeteerSevaScraper } from './puppeteer-seva-scraper';
 import { PuppeteerCarmudiScraper } from './puppeteer-carmudi-scraper';
+import { PuppeteerCarolineScraper } from './puppeteer-caroline-scraper';
 
 export class UniversalScraperEngine {
     async scrape(
@@ -61,6 +62,15 @@ export class UniversalScraperEngine {
                 console.log(`📡 [ENGINE] Calling Carmudi scraper.scrape()...`);
                 results = await scraper.scrape(targetCount);
                 console.log(`✅ [ENGINE] Carmudi scraper returned ${results.length} results`);
+            }
+            // CAROLINE (New)
+            else if (sourceUpper.includes('CAROLINE')) {
+                console.log(`🚗 [ENGINE] Initializing Caroline scraper...`);
+                // @ts-ignore
+                const scraper = new PuppeteerCarolineScraper();
+                console.log(`📡 [ENGINE] Calling Caroline scraper.scrape()...`);
+                results = await scraper.scrape(targetCount);
+                console.log(`✅ [ENGINE] Caroline scraper returned ${results.length} results`);
             }
             // Mobil123 (Deleted/Disabled)
             else if (sourceUpper.includes('MOBIL123')) {

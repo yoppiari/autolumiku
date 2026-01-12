@@ -72,23 +72,23 @@ export class PuppeteerCarmudiScraper {
                     listingNodes.forEach((node) => {
                         try {
                             // 1. Title (Make Model Year)
-                            const titleEl = node.querySelector('.ellipsize.js-ellipsize-text');
+                            // Try multiple title selectors
+                            const titleEl = node.querySelector('.listing__title a') || node.querySelector('h2 a') || node.querySelector('h3 a');
                             const fullTitle = titleEl ? titleEl.textContent?.trim() || '' : '';
 
                             // 2. Price
-                            const priceEl = node.querySelector('.listing__price');
+                            const priceEl = node.querySelector('.listing__price') || node.querySelector('.price span');
                             const priceText = priceEl ? priceEl.textContent?.trim() || '' : '';
                             // Clean price: "Rp 150.000.000" -> 150000000
-                            // Logic: Match "Rp" followed by digits/dots
                             const priceMatch = priceText.match(/Rp\s*([\d\.]+)/);
                             const priceClean = priceMatch ? priceMatch[1].replace(/\./g, '') : priceText.replace(/[^0-9]/g, '');
                             const price = parseInt(priceClean) || 0;
 
                             // 3. URLs
-                            const linkEl = node.querySelector('a.listing__overlay') as HTMLAnchorElement;
+                            const linkEl = titleEl as HTMLAnchorElement; // Usually title is the link
                             const url = linkEl ? linkEl.href : '';
 
-                            const imgEl = node.querySelector('.listing__overlay img') as HTMLImageElement;
+                            const imgEl = node.querySelector('img.listing__img') || node.querySelector('img');
                             // Check data-src first (lazy load), then src
                             const imageUrl = imgEl ? (imgEl.getAttribute('data-src') || imgEl.src) : '';
 
@@ -98,46 +98,42 @@ export class PuppeteerCarmudiScraper {
                             let mileage = '';
                             let year = 0;
 
-                            // Parse title for Year (usually at end of title or inside it)
-                            // "Toyota Avanza G MPV 2018"
+                            // Parse title for Year
                             const yearMatch = fullTitle.match(/(\d{4})/);
                             if (yearMatch) {
                                 year = parseInt(yearMatch[0], 10);
                             }
 
-                            // Parse specs items
-                            const specItems = node.querySelector('.listing__content-spec')?.querySelectorAll('.item') || [];
-                            specItems.forEach((item: any) => {
-                                const text = item.textContent?.trim() || '';
-                                const icon = item.querySelector('i');
-
-                                if (icon) {
-                                    if (icon.classList.contains('icon--location')) {
-                                        location = text;
-                                    } else if (icon.classList.contains('icon--transmission')) {
-                                        transmission = text;
-                                    } else if (icon.classList.contains('icon--meter')) {
-                                        mileage = text; // e.g., "50.000 - 55.000 KM"
+                            // Specs Container
+                            const specContainer = node.querySelector('.listing__specs');
+                            if (specContainer) {
+                                // Specs often in .listing__specs .item
+                                const items = specContainer.querySelectorAll('.item');
+                                items.forEach((item: any) => {
+                                    const text = item.textContent?.trim() || '';
+                                    const icon = item.querySelector('i');
+                                    if (icon) {
+                                        if (icon.className.includes('icon--location')) location = text;
+                                        if (icon.className.includes('icon--transmission')) transmission = text;
+                                        if (icon.className.includes('icon--meter')) mileage = text;
+                                    } else {
+                                        // Fallback by text content
+                                        if (text.includes('KM') || text.includes('km')) mileage = text;
+                                        else if (text.match(/AT|MT|Manual|Auto/)) transmission = text;
+                                        else if (text.length > 3 && !text.match(/\d/)) location = text;
                                     }
-                                }
-                            });
-
-                            // Extract Make/Model from Title (Improved Logic)
-                            // "2018 Honda HR-V..." -> Make: Honda
-                            // "Toyota Avanza..." -> Make: Toyota
-                            let titleClean = fullTitle;
-                            // Remove leading year if present
-                            if (/^\d{4}\s/.test(titleClean)) {
-                                titleClean = titleClean.substring(5).trim();
+                                });
                             }
+
+                            // Extract Make/Model from Title
+                            // "Toyota Avanza G MPV 2018"
+                            let titleClean = fullTitle.replace(year.toString(), '').trim();
+                            // If title starts with year "2018 Toyota...", remove it
+                            if (/^\d{4}\s/.test(titleClean)) titleClean = titleClean.substring(5).trim();
 
                             const titleParts = titleClean.split(' ');
                             const make = titleParts[0] || 'Unknown';
-                            const model = titleParts.slice(1, 4).join(' '); // Rough approximation
-
-                            // Try to find engine capacity (e.g. 1.5, 2.0, 2400cc)
-                            const engineMatch = fullTitle.match(/(\d\.\d)L?|(\d{4})\s*cc/i);
-                            const engineCapacity = engineMatch ? (engineMatch[1] || engineMatch[2]) : '';
+                            const model = titleParts.slice(1, 3).join(' '); // Take next 2 words as model
 
                             // Try to detect color from title if common names appear
                             const colors = ['Putih', 'Hitam', 'Silver', 'Abu', 'Merah', 'Biru', 'Kuning', 'Hijau', 'Coklat', 'Orange'];
