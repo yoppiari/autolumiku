@@ -74,7 +74,7 @@ export class PuppeteerOtoScraper {
                             // 2. Price
                             // Price can be in .price, .vh-price, or .card-price
                             const priceEl = card.querySelector('.price, .vh-price, .card-price, [class*="price"]');
-                            const priceText = priceEl ? priceEl.innerText?.trim() || '' : '';
+                            const priceText = priceEl ? priceEl.textContent?.trim() || '' : '';
 
                             // Parse "Rp 265 Juta" -> 265000000
                             let price = 0;
