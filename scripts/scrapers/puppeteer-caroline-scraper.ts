@@ -165,19 +165,35 @@ export class PuppeteerCarolineScraper {
 
                 console.log(`✅ [CAROLINE] Found ${pageListings.length} listings on page ${pageNum}`);
 
+                // Add valid listings to results
                 for (const item of pageListings) {
                     if (parsedCount >= targetCount) break;
+
+                    // Visit detail page for rich specifications (Color, Engine, etc.)
+                    if (item.url) {
+                        try {
+                            const details = await this.extractDetailSpecs(item.url, browser);
+                            // Merge details: favor detail page data
+                            if (details.color) item.color = details.color;
+                            if (details.engineCapacity) item.engineCapacity = details.engineCapacity;
+                            if (details.transmission && details.transmission !== 'Unknown') item.transmission = details.transmission;
+                            if (details.fuelType) item.fuelType = details.fuelType;
+                            if (details.mileage > 0) item.mileage = details.mileage;
+                            if (details.mileageDisplay) item.mileageDisplay = details.mileageDisplay;
+                            if (details.details) item.description = JSON.stringify(details.details); // Store extra specs as string if needed
+                        } catch (err) {
+                            console.error(`⚠️ Failed to scrape details for ${item.url}:`, err);
+                        }
+                    }
+
                     results.push(item);
                     parsedCount++;
                 }
 
                 if (parsedCount >= targetCount) break;
 
-                // Pagination: Caroline uses "Load More" or numbered pagination?
-                // Analysis shows it seems to load all via "Lihat Semua" or grid. 
-                // We'll try to find a "Next" button or click a "Load More" button if it exists.
-                // For now, if we scraped one page and it's infinite scroll, the autoScroll above handles view.
-                // If there's pagination buttons:
+                // Pagination logic...
+                // (Existing pagination logic remains here)
                 const nextBtn = await page.$('li.next a, button[aria-label="Next"], button:contains("Selanjutnya")');
                 if (nextBtn) {
                     await Promise.all([
@@ -186,12 +202,10 @@ export class PuppeteerCarolineScraper {
                     ]);
                     pageNum++;
                 } else {
-                    // Assume single page or infinite scroll handled
                     console.log("🛑 [CAROLINE] No next page button found.");
                     break;
                 }
             }
-
         } catch (error) {
             console.error(`❌ [CAROLINE] Scraper Error:`, error);
         } finally {
@@ -200,6 +214,104 @@ export class PuppeteerCarolineScraper {
 
         console.log(`📦 [CAROLINE] Finished. Total scraped: ${results.length}`);
         return results;
+    }
+
+    /**
+     * Extracts detailed specifications from a specific car detail page.
+     */
+    async extractDetailSpecs(url: string, browser: any): Promise<any> {
+        let page;
+        try {
+            page = await browser.newPage();
+            // Stealth / Viewport settings
+            await page.setViewport({ width: 1920, height: 1080 });
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+            console.log(`🕵️ [CAROLINE-DETAIL] Inspecting: ${url}`);
+            await page.goto(url, { waitUntil: 'networkidle2', timeout: 45000 });
+
+            // SCROLL DOWN to trigger lazy loading of specs section
+            await this.autoScroll(page);
+
+            // Extract data using the selectors found during manual inspection
+            const details = await page.evaluate(() => {
+                const data: any = {};
+
+                // Helper to find spec value by label text
+                // Structure: div.flex.justify-between -> span (Label) + span (Value)
+                const getSpecValue = (labelPart: string) => {
+                    // Try to find the label span
+                    const spans = Array.from(document.querySelectorAll('span'));
+                    const labelSpan = spans.find(s => s.textContent?.trim().toLowerCase().includes(labelPart.toLowerCase()));
+
+                    if (labelSpan) {
+                        // The value is usually the next sibling or inside the next element
+                        const nextSpan = labelSpan.nextElementSibling;
+                        if (nextSpan) return nextSpan.textContent?.trim();
+
+                        // Sometimes it might be in a parent row structure
+                        const row = labelSpan.closest('.flex.justify-between');
+                        if (row) {
+                            const valueSpan = row.lastElementChild;
+                            if (valueSpan && valueSpan !== labelSpan) return valueSpan.textContent?.trim();
+                        }
+                    }
+                    return null;
+                };
+
+                // 1. Color
+                const color = getSpecValue('Warna');
+                if (color) data.color = color;
+
+                // 2. Transmission
+                const trans = getSpecValue('Transmisi');
+                if (trans) data.transmission = trans;
+
+                // 3. Fuel Type
+                const fuel = getSpecValue('Bahan Bakar');
+                if (fuel) data.fuelType = fuel;
+
+                // 4. Mileage (Kilometer)
+                const km = getSpecValue('Kilometer');
+                if (km) {
+                    data.mileageDisplay = km;
+                    data.mileage = parseInt(km.replace(/[^0-9]/g, '')) || 0;
+                }
+
+                // 5. Engine Capacity
+                // Usually not in table, check Title or other location
+                // "Toyota Yaris S TRD 1.5" -> 1.5
+                const title = document.querySelector('h1')?.textContent || '';
+                const engineMatch = title.match(/(\d\.\d)/);
+                if (engineMatch) {
+                    // Convert 1.5 -> 1500cc approx logic if needed, or keep as string
+                    data.engineCapacity = engineMatch[1] + 'L';
+                }
+
+                // 6. Plate & Tax
+                const plate = getSpecValue('No Polisi');
+                const tax = getSpecValue('Masa Berlaku STNK');
+
+                data.details = {
+                    plate: plate || 'Unknown',
+                    tax: tax || 'Unknown'
+                };
+
+                return data;
+            });
+
+            if (details) {
+                console.log(`   ✅ Details found: Color=${details.color}, Trans=${details.transmission}`);
+            }
+
+            return details;
+
+        } catch (err) {
+            console.error(`   ⚠️ Failed to extract details: ${err}`);
+            return {};
+        } finally {
+            if (page) await page.close();
+        }
     }
 
     private async autoScroll(page: any) {
