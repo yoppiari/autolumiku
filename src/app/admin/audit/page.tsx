@@ -183,7 +183,7 @@ export default function AuditLogsPage() {
     return (
       <div className="flex flex-col items-center justify-center h-64">
         <div className="text-red-500 mb-2">Failed to load audit logs</div>
-        <div className="text-sm text-gray-500">{error}</div>
+        <div className="text-sm text-gray-400">{error}</div>
         <button
           onClick={fetchAuditLogs}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -205,8 +205,8 @@ export default function AuditLogsPage() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-            <p className="text-gray-600 mt-1">Comprehensive audit trail for compliance and security</p>
+            <h1 className="text-2xl font-bold text-white">Audit Logs</h1>
+            <p className="text-gray-300 mt-1">Comprehensive audit trail for compliance and security</p>
           </div>
           <button
             onClick={exportLogs}
@@ -219,24 +219,24 @@ export default function AuditLogsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-500">Total Events</div>
-          <div className="text-2xl font-bold text-gray-900">{logs.length}</div>
+        <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4">
+          <div className="text-sm text-gray-400">Total Events</div>
+          <div className="text-2xl font-bold text-white">{logs.length}</div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-500">Success Rate</div>
+        <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4">
+          <div className="text-sm text-gray-400">Success Rate</div>
           <div className="text-2xl font-bold text-green-600">
             {logs.length > 0 ? Math.round((logs.filter(l => l.status === 'success').length / logs.length) * 100) : 0}%
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-500">Failed Attempts</div>
+        <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4">
+          <div className="text-sm text-gray-400">Failed Attempts</div>
           <div className="text-2xl font-bold text-red-600">
             {logs.filter(l => l.status === 'failed').length}
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-500">Security Events</div>
+        <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4">
+          <div className="text-sm text-gray-400">Security Events</div>
           <div className="text-2xl font-bold text-purple-600">
             {logs.filter(l => l.actionType === 'security').length}
           </div>
@@ -244,11 +244,11 @@ export default function AuditLogsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-        <h3 className="text-sm font-medium text-gray-900 mb-4">Filters</h3>
+      <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4 mb-6">
+        <h3 className="text-sm font-medium text-white mb-4">Filters</h3>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Search</label>
+            <label className="block text-xs text-gray-300 mb-1">Search</label>
             <input
               type="text"
               placeholder="User, action..."
@@ -259,7 +259,7 @@ export default function AuditLogsPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Tenant</label>
+            <label className="block text-xs text-gray-300 mb-1">Tenant</label>
             <select
               value={filters.tenantId}
               onChange={(e) => {
@@ -279,7 +279,7 @@ export default function AuditLogsPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Action Type</label>
+            <label className="block text-xs text-gray-300 mb-1">Action Type</label>
             <select
               value={filters.actionType}
               onChange={(e) => setFilters({ ...filters, actionType: e.target.value })}
@@ -295,7 +295,7 @@ export default function AuditLogsPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Status</label>
+            <label className="block text-xs text-gray-300 mb-1">Status</label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -308,7 +308,7 @@ export default function AuditLogsPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Date From</label>
+            <label className="block text-xs text-gray-300 mb-1">Date From</label>
             <input
               type="date"
               value={filters.dateFrom}
@@ -319,7 +319,7 @@ export default function AuditLogsPage() {
         </div>
 
         <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-400">
             Auto-refresh active (10s) • Showing {filteredLogs.length} events
           </div>
           <button
@@ -342,45 +342,45 @@ export default function AuditLogsPage() {
       </div>
 
       {/* Audit Logs Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#0a3d47]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Timestamp
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Tenant
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Action
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   IP Address
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white/5 backdrop-blur-sm divide-y divide-gray-200">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
                     No audit logs found
                   </td>
                 </tr>
               ) : (
                 filteredLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                       {log.timestamp.toLocaleString('id-ID', {
                         day: '2-digit',
                         month: '2-digit',
@@ -390,15 +390,15 @@ export default function AuditLogsPage() {
                       })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{log.userName}</div>
-                      <div className="text-xs text-gray-500">{log.userEmail}</div>
+                      <div className="text-sm font-medium text-white">{log.userName}</div>
+                      <div className="text-xs text-gray-400">{log.userEmail}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                       {log.tenantName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{log.action}</div>
-                      <div className="text-xs text-gray-500">{log.resource}</div>
+                      <div className="text-sm font-medium text-white">{log.action}</div>
+                      <div className="text-xs text-gray-400">{log.resource}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${actionTypeColors[log.actionType]}`}>
@@ -410,7 +410,7 @@ export default function AuditLogsPage() {
                         {log.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                       {log.ipAddress}
                     </td>
                   </tr>
@@ -421,7 +421,7 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Pagination */}
-        <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
+        <div className="bg-[#0a3d47] px-6 py-3 border-t border-white/10">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700">
               Page 1 of 1
@@ -429,13 +429,13 @@ export default function AuditLogsPage() {
             <div className="flex space-x-2">
               <button
                 disabled
-                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md text-gray-400 cursor-not-allowed"
+                className="px-3 py-1 text-sm bg-white/5 backdrop-blur-sm border border-gray-300 rounded-md text-gray-400 cursor-not-allowed"
               >
                 Previous
               </button>
               <button
                 disabled
-                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md text-gray-400 cursor-not-allowed"
+                className="px-3 py-1 text-sm bg-white/5 backdrop-blur-sm border border-gray-300 rounded-md text-gray-400 cursor-not-allowed"
               >
                 Next
               </button>

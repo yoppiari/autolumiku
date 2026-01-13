@@ -115,8 +115,8 @@ export default function GlobalSettingsPage() {
     <div className="max-w-7xl">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Global Platform Settings</h1>
-        <p className="text-gray-600 mt-1">Manage platform-wide configurations and preferences</p>
+        <h1 className="text-2xl font-bold text-white">Global Platform Settings</h1>
+        <p className="text-gray-300 mt-1">Manage platform-wide configurations and preferences</p>
       </div>
 
       {/* Save Message */}
@@ -129,7 +129,7 @@ export default function GlobalSettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-white/10 mb-6">
         <nav className="-mb-px flex space-x-8">
           {tabs.map((tab) => (
             <button
@@ -149,11 +149,11 @@ export default function GlobalSettingsPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-6">
         {/* Platform Tab */}
         {activeTab === 'platform' && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">Platform Configuration</h2>
+            <h2 className="text-lg font-semibold text-white">Platform Configuration</h2>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -185,11 +185,11 @@ export default function GlobalSettingsPage() {
               />
             </div>
 
-            <div className="border-t border-gray-200 pt-6">
+            <div className="border-t border-white/10 pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Maintenance Mode</h3>
-                  <p className="text-sm text-gray-500">Enable maintenance mode for all tenants</p>
+                  <h3 className="text-sm font-medium text-white">Maintenance Mode</h3>
+                  <p className="text-sm text-gray-400">Enable maintenance mode for all tenants</p>
                 </div>
                 <button
                   onClick={() => setSettings({
@@ -231,7 +231,7 @@ export default function GlobalSettingsPage() {
         {/* Indonesian Market Tab */}
         {activeTab === 'indonesian' && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">Indonesian Market Configuration</h2>
+            <h2 className="text-lg font-semibold text-white">Indonesian Market Configuration</h2>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -259,9 +259,9 @@ export default function GlobalSettingsPage() {
                 type="text"
                 value={settings.indonesian.currency}
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-400"
               />
-              <p className="text-xs text-gray-500 mt-1">Indonesian Rupiah (IDR) only</p>
+              <p className="text-xs text-gray-400 mt-1">Indonesian Rupiah (IDR) only</p>
             </div>
 
             <div>
@@ -299,11 +299,11 @@ export default function GlobalSettingsPage() {
               </select>
             </div>
 
-            <div className="border-t border-gray-200 pt-6">
+            <div className="border-t border-white/10 pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Indonesian Compliance Mode</h3>
-                  <p className="text-sm text-gray-500">Enable Indonesian regulatory compliance features</p>
+                  <h3 className="text-sm font-medium text-white">Indonesian Compliance Mode</h3>
+                  <p className="text-sm text-gray-400">Enable Indonesian regulatory compliance features</p>
                 </div>
                 <button
                   onClick={() => setSettings({
@@ -328,7 +328,7 @@ export default function GlobalSettingsPage() {
         {/* System Tab */}
         {activeTab === 'system' && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">System Configuration</h2>
+            <h2 className="text-lg font-semibold text-white">System Configuration</h2>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -395,7 +395,7 @@ export default function GlobalSettingsPage() {
         {/* Security Tab */}
         {activeTab === 'security' && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">Security Configuration</h2>
+            <h2 className="text-lg font-semibold text-white">Security Configuration</h2>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -416,8 +416,8 @@ export default function GlobalSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-900">Require Special Characters</h3>
-                <p className="text-sm text-gray-500">Password must contain special characters</p>
+                <h3 className="text-sm font-medium text-white">Require Special Characters</h3>
+                <p className="text-sm text-gray-400">Password must contain special characters</p>
               </div>
               <button
                 onClick={() => setSettings({
@@ -438,8 +438,8 @@ export default function GlobalSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-900">Require Multi-Factor Authentication (MFA)</h3>
-                <p className="text-sm text-gray-500">All users must enable MFA</p>
+                <h3 className="text-sm font-medium text-white">Require Multi-Factor Authentication (MFA)</h3>
+                <p className="text-sm text-gray-400">All users must enable MFA</p>
               </div>
               <button
                 onClick={() => setSettings({
@@ -478,12 +478,12 @@ export default function GlobalSettingsPage() {
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">Notification Configuration</h2>
+            <h2 className="text-lg font-semibold text-white">Notification Configuration</h2>
 
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-900">Email Notifications</h3>
-                <p className="text-sm text-gray-500">Enable email notification system</p>
+                <h3 className="text-sm font-medium text-white">Email Notifications</h3>
+                <p className="text-sm text-gray-400">Enable email notification system</p>
               </div>
               <button
                 onClick={() => setSettings({
@@ -504,8 +504,8 @@ export default function GlobalSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-900">SMS Notifications</h3>
-                <p className="text-sm text-gray-500">Enable SMS notification system</p>
+                <h3 className="text-sm font-medium text-white">SMS Notifications</h3>
+                <p className="text-sm text-gray-400">Enable SMS notification system</p>
               </div>
               <button
                 onClick={() => setSettings({
@@ -526,8 +526,8 @@ export default function GlobalSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-900">WhatsApp Notifications</h3>
-                <p className="text-sm text-gray-500">Enable WhatsApp notification system</p>
+                <h3 className="text-sm font-medium text-white">WhatsApp Notifications</h3>
+                <p className="text-sm text-gray-400">Enable WhatsApp notification system</p>
               </div>
               <button
                 onClick={() => setSettings({
@@ -564,7 +564,7 @@ export default function GlobalSettingsPage() {
         )}
 
         {/* Save Button */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="mt-8 pt-6 border-t border-white/10">
           <button
             onClick={handleSave}
             disabled={isSaving}

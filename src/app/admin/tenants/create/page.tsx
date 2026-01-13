@@ -138,7 +138,7 @@ export default function CreateTenantPage() {
     <div className="space-y-8">
       {/* Creation Form */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Create New Tenant</h1>
+        <h1 className="text-2xl font-bold text-white mb-6">Create New Tenant</h1>
         <TenantCreationForm
           onSubmit={handleSubmit}
           onCancel={handleCancel}
@@ -146,14 +146,14 @@ export default function CreateTenantPage() {
         />
       </div>
 
-      <hr className="border-gray-200" />
+      <hr className="border-white/10" />
 
       {/* Existing Tenants List (Reference) */}
       <div className="pt-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-800">
             Existing Tenants Reference
-            <span className="ml-2 text-sm font-normal text-gray-500">
+            <span className="ml-2 text-sm font-normal text-gray-400">
               (Live Data)
             </span>
           </h2>
@@ -166,9 +166,9 @@ export default function CreateTenantPage() {
         </div>
 
         {isListLoading ? (
-          <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+          <div className="text-center py-8 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-sm text-gray-500">Loading tenants...</p>
+            <p className="mt-2 text-sm text-gray-400">Loading tenants...</p>
           </div>
         ) : (
           <TenantList

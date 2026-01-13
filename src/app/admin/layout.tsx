@@ -219,7 +219,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
             <button
               onClick={handleLogout}
-              className="w-full px-3 py-2 text-sm font-medium text-white bg-white/10 border border-transparent rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm font-medium text-white bg-white/5 backdrop-blur-sm/10 border border-transparent rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               Keluar
             </button>

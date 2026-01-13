@@ -139,12 +139,12 @@ export default function CreateUserPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Buat User Baru</h1>
-        <p className="text-gray-600 mt-1">Tambahkan user baru ke platform AutoLumiku</p>
+        <h1 className="text-3xl font-bold text-white">Buat User Baru</h1>
+        <p className="text-gray-300 mt-1">Tambahkan user baru ke platform AutoLumiku</p>
       </div>
 
       {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white/5 backdrop-blur-sm rounded-xl shadow-sm border border-white/10">
         <form onSubmit={handleSubmit} className="space-y-6 p-6">
           {/* User Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
             <div className="text-4xl font-bold text-cyan-500 drop-shadow-sm">AutoLumiKu</div>
           </div>
           <h3 className="font-semibold tracking-tight text-2xl text-center text-gray-800">Super Admin Login</h3>
-          <p className="text-sm text-gray-500 text-center">Platform administration access</p>
+          <p className="text-sm text-gray-400 text-center">Platform administration access</p>
         </div>
 
         <div className="p-6 pt-0">
@@ -131,7 +131,7 @@ export default function AdminLoginPage() {
           <div className="mt-6 text-center">
             <a
               href="/login"
-              className="text-sm text-gray-600 hover:text-gray-700"
+              className="text-sm text-gray-300 hover:text-gray-700"
             >
               ← Back to Showroom Login
             </a>

@@ -217,16 +217,16 @@ export default function WhatsAppSettingsPage() {
       {/* Settings List */}
       <div className="space-y-4">
         {settings.map((setting) => (
-          <div key={setting.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div key={setting.id} className="bg-white/5 backdrop-blur-sm rounded-xl shadow-sm border border-white/10 overflow-hidden">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 border-b border-gray-200 gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 border-b border-white/10 gap-4">
               <div className="flex items-center space-x-3 sm:space-x-4">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-green-600 text-lg sm:text-xl">📱</span>
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">{setting.tenantName}</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">{formatPhoneNumber(setting.phoneNumber)}</p>
+                  <h3 className="text-base sm:text-lg font-semibold text-white">{setting.tenantName}</h3>
+                  <p className="text-xs sm:text-sm text-gray-300">{formatPhoneNumber(setting.phoneNumber)}</p>
                 </div>
               </div>
 
@@ -260,7 +260,7 @@ export default function WhatsAppSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Default Message</label>
-                  <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-900">
+                  <div className="p-3 bg-[#0a3d47] rounded-lg text-sm text-white">
                     {setting.defaultMessage}
                   </div>
                 </div>
@@ -290,7 +290,7 @@ export default function WhatsAppSettingsPage() {
                       {setting.aiAutoAnswer ? '✓ AI Aktif' : '✗ AI Mati'}
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     {setting.aiAutoAnswer
                       ? 'AI akan otomatis merespons pesan customer'
                       : 'AI tidak akan merespons, perlu manual'}
@@ -299,7 +299,7 @@ export default function WhatsAppSettingsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Jam Kerja</label>
-                  <div className="text-sm text-gray-900">
+                  <div className="text-sm text-white">
                     {setting.workingHours.start} - {setting.workingHours.end} ({setting.workingHours.timezone})
                   </div>
                 </div>
@@ -328,7 +328,7 @@ export default function WhatsAppSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Dibuat</label>
-                  <div className="text-sm text-gray-900">
+                  <div className="text-sm text-white">
                     {new Date(setting.createdAt).toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'long',
@@ -339,7 +339,7 @@ export default function WhatsAppSettingsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Terakhir Diupdate</label>
-                  <div className="text-sm text-gray-900">
+                  <div className="text-sm text-white">
                     {new Date(setting.updatedAt).toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'long',
@@ -355,7 +355,7 @@ export default function WhatsAppSettingsPage() {
 
       {settings.length === 0 && (
         <div className="text-center py-12">
-          <div className="text-gray-500 text-lg">Belum ada WhatsApp settings</div>
+          <div className="text-gray-400 text-lg">Belum ada WhatsApp settings</div>
           <p className="text-gray-400 mt-2">Tambahkan nomor WhatsApp untuk mulai menerima leads</p>
         </div>
       )}
@@ -363,9 +363,9 @@ export default function WhatsAppSettingsPage() {
       {/* Edit Modal */}
       {editingSetting && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl mx-4">
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl shadow-xl p-6 w-full max-w-2xl mx-4">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-white">
                 {editingSetting.id.includes('new') ? 'Tambah WhatsApp' : 'Edit WhatsApp'}
               </h2>
               <button

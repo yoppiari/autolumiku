@@ -99,8 +99,8 @@ export default function ScraperDashboard() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
           <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Dashboard</h2>
           <p className="text-red-700 mb-4">{error}</p>
-          <div className="bg-white rounded p-4 border border-red-200">
-            <p className="text-sm text-gray-500">Check server logs or connection.</p>
+          <div className="bg-white/5 backdrop-blur-sm rounded p-4 border border-red-200">
+            <p className="text-sm text-gray-400">Check server logs or connection.</p>
           </div>
         </div>
       </div>
@@ -167,21 +167,21 @@ export default function ScraperDashboard() {
       </div>
 
       {/* Recent Jobs */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow">
         <div className="px-6 py-4 border-b">
           <h2 className="text-xl font-semibold">Recent Jobs</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#0a3d47]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Found</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">New</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duplicates</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Time</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Source</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Found</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">New</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Duplicates</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">

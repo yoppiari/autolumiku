@@ -203,7 +203,7 @@ const AnalyticsContent: React.FC = () => {
   if (!analytics) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Failed to load analytics data</div>
+        <div className="text-gray-400">Failed to load analytics data</div>
       </div>
     );
   }
@@ -213,8 +213,8 @@ const AnalyticsContent: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tenant Analytics</h1>
-          <p className="text-gray-600 mt-1">Comprehensive analytics for tenant vehicle data and performance</p>
+          <h1 className="text-3xl font-bold text-white">Tenant Analytics</h1>
+          <p className="text-gray-300 mt-1">Comprehensive analytics for tenant vehicle data and performance</p>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -269,8 +269,8 @@ const AnalyticsContent: React.FC = () => {
       </div>
 
       {/* Tenant Legend */}
-      <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
-        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tenant Legend:</span>
+      <div className="bg-white/5 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
+        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tenant Legend:</span>
         {analytics.tenantSummary.map(tenant => (
           <div key={tenant.tenantId} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
             <span
@@ -284,42 +284,42 @@ const AnalyticsContent: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Vehicles</h3>
+        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-white/10">
+          <h3 className="text-lg font-semibold text-white mb-2">Total Vehicles</h3>
           <div className="text-3xl font-bold text-blue-600">
             {analytics.tenantSummary.reduce((sum, tenant) => sum + tenant.totalVehicles, 0).toLocaleString()}
           </div>
-          <div className="text-sm text-gray-600 mt-1">Across {analytics.tenantSummary.length} tenants</div>
+          <div className="text-sm text-gray-300 mt-1">Across {analytics.tenantSummary.length} tenants</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Views</h3>
+        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-white/10">
+          <h3 className="text-lg font-semibold text-white mb-2">Total Views</h3>
           <div className="text-3xl font-bold text-green-600">
             {analytics.tenantSummary.reduce((sum, tenant) => sum + tenant.totalViews, 0).toLocaleString()}
           </div>
-          <div className="text-sm text-gray-600 mt-1">Last 7 days</div>
+          <div className="text-sm text-gray-300 mt-1">Last 7 days</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Inquiries</h3>
+        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-white/10">
+          <h3 className="text-lg font-semibold text-white mb-2">Total Inquiries</h3>
           <div className="text-3xl font-bold text-yellow-600">
             {analytics.tenantSummary.reduce((sum, tenant) => sum + tenant.totalInquiries, 0).toLocaleString()}
           </div>
-          <div className="text-sm text-gray-600 mt-1">From AI conversations</div>
+          <div className="text-sm text-gray-300 mt-1">From AI conversations</div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Vehicles Sold</h3>
+        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-white/10">
+          <h3 className="text-lg font-semibold text-white mb-2">Vehicles Sold</h3>
           <div className="text-3xl font-bold text-purple-600">
             {analytics.tenantSummary.reduce((sum, tenant) => sum + tenant.soldVehicles, 0).toLocaleString()}
           </div>
-          <div className="text-sm text-gray-600 mt-1">Status changed to sold</div>
+          <div className="text-sm text-gray-300 mt-1">Status changed to sold</div>
         </div>
       </div>
 
       {/* Time Series Chart - Moved Up for Better Visibility */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Activity Trends (Real-time)</h3>
+      <div className="bg-white/5 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-white/10">
+        <h3 className="text-lg font-semibold text-white mb-4">Daily Activity Trends (Real-time)</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={analytics.timeSeriesData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -336,9 +336,9 @@ const AnalyticsContent: React.FC = () => {
       </div>
 
       {/* Consolidated Vehicle Statistics Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-100 bg-gray-50 px-6 py-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Vehicles</h3>
+      <div className="bg-white/5 backdrop-blur-sm rounded-xl shadow-sm border border-white/10 overflow-hidden">
+        <div className="border-b border-gray-100 bg-[#0a3d47] px-6 py-4">
+          <h3 className="text-lg font-semibold text-white mb-4">Top Performing Vehicles</h3>
           <div className="flex flex-wrap gap-2">
             {[
               { id: 'mostViewed', label: 'Most Viewed', color: 'bg-green-100 text-green-700' },
@@ -372,7 +372,7 @@ const AnalyticsContent: React.FC = () => {
                   return [
                     <div key="tooltip">
                       <p className="font-bold">{value.toLocaleString()} {activeChartTab === 'mostViewed' ? 'views' : activeChartTab === 'mostAsked' ? 'inquiries' : activeChartTab === 'mostSold' ? 'sold' : 'units'}</p>
-                      <p className="text-[10px] text-gray-500">Tenant: {data.tenantName}</p>
+                      <p className="text-[10px] text-gray-400">Tenant: {data.tenantName}</p>
                     </div>,
                     'Count'
                   ];
@@ -389,26 +389,26 @@ const AnalyticsContent: React.FC = () => {
       </div>
 
       {/* Tenant Summary Table */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white/5 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-white/10">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Tenant Performance Summary</h3>
+          <h3 className="text-lg font-semibold text-white">Tenant Performance Summary</h3>
 
           <div className="relative group">
-            <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white/5 backdrop-blur-sm border border-gray-300 rounded-lg hover:bg-gray-50">
               <span className="mr-1">🏳️</span>
               Filter Tenants
               <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded-full ml-1">
                 {selectedTenantIds.length}
               </span>
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
 
             {/* Dropdown Checklist */}
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 p-2 hidden group-hover:block z-10">
+            <div className="absolute right-0 mt-2 w-64 bg-white/5 backdrop-blur-sm rounded-lg shadow-lg border border-gray-100 p-2 hidden group-hover:block z-10">
               <div className="mb-2 pb-2 border-b border-gray-100 flex justify-between items-center px-1">
-                <span className="text-xs font-bold text-gray-500 uppercase">Select Tenants</span>
+                <span className="text-xs font-bold text-gray-400 uppercase">Select Tenants</span>
                 <button
                   onClick={() => setSelectedTenantIds(analytics?.tenantSummary.map(t => t.tenantId) || [])}
                   className="text-xs text-blue-600 hover:text-blue-700 font-medium"
@@ -445,22 +445,22 @@ const AnalyticsContent: React.FC = () => {
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#0a3d47]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Vehicles</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sold</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Views</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inquiries</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversion Rate</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tenant</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Total Vehicles</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sold</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Total Views</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Inquiries</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Conversion Rate</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white/5 backdrop-blur-sm divide-y divide-gray-200">
               {analytics.tenantSummary
                 .filter(tenant => selectedTenantIds.includes(tenant.tenantId))
                 .map((tenant) => (
                   <tr key={tenant.tenantId} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                       <div className="flex items-center gap-2">
                         <span
                           className="w-3 h-3 rounded-full shadow-sm border border-black/5"
@@ -469,11 +469,11 @@ const AnalyticsContent: React.FC = () => {
                         {tenant.tenantName}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalVehicles}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.soldVehicles}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalViews.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tenant.totalInquiries}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{tenant.totalVehicles}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{tenant.soldVehicles}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{tenant.totalViews.toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{tenant.totalInquiries}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tenant.conversionRate >= 18 ? 'bg-green-100 text-green-800' :
                         tenant.conversionRate >= 15 ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'

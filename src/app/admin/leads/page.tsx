@@ -212,30 +212,30 @@ export default function LeadsDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-xs sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Total Leads</h3>
+        <div className="bg-white/5 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-sm border border-white/10">
+          <h3 className="text-xs sm:text-lg font-semibold text-white mb-1 sm:mb-2">Total Leads</h3>
           <div className="text-xl sm:text-3xl font-bold text-blue-600">{stats.total}</div>
         </div>
 
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-xs sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Lead Baru</h3>
+        <div className="bg-white/5 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-sm border border-white/10">
+          <h3 className="text-xs sm:text-lg font-semibold text-white mb-1 sm:mb-2">Lead Baru</h3>
           <div className="text-xl sm:text-3xl font-bold text-blue-600">{stats.new}</div>
         </div>
 
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-xs sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Tertarik</h3>
+        <div className="bg-white/5 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-sm border border-white/10">
+          <h3 className="text-xs sm:text-lg font-semibold text-white mb-1 sm:mb-2">Tertarik</h3>
           <div className="text-xl sm:text-3xl font-bold text-purple-600">{stats.interested}</div>
         </div>
 
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-xs sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Konversi</h3>
+        <div className="bg-white/5 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-sm border border-white/10">
+          <h3 className="text-xs sm:text-lg font-semibold text-white mb-1 sm:mb-2">Konversi</h3>
           <div className="text-xl sm:text-3xl font-bold text-green-600">{stats.converted}</div>
-          <div className="hidden sm:block text-sm text-gray-600 mt-1">{stats.conversionRate}% rate</div>
+          <div className="hidden sm:block text-sm text-gray-300 mt-1">{stats.conversionRate}% rate</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white/5 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-sm border border-white/10">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">Cari Leads</label>
@@ -283,9 +283,9 @@ export default function LeadsDashboard() {
       </div>
 
       {/* WhatsApp Settings Summary - Mobile Optimized */}
-      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white/5 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-sm border border-white/10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">WhatsApp Settings</h2>
+          <h2 className="text-lg font-semibold text-white">WhatsApp Settings</h2>
           <Link
             href="/admin/leads/whatsapp-settings"
             className="text-blue-600 hover:text-blue-800 text-sm font-medium"
@@ -295,15 +295,15 @@ export default function LeadsDashboard() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {whatsappSettings.map((setting) => (
-            <div key={setting.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+            <div key={setting.id} className="border border-white/10 rounded-lg p-3 sm:p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-gray-900 text-sm sm:text-base">{setting.tenantName}</h3>
+                <h3 className="font-medium text-white text-sm sm:text-base">{setting.tenantName}</h3>
                 <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${setting.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                   }`}>
                   {setting.isActive ? 'Aktif' : 'Non-Aktif'}
                 </span>
               </div>
-              <div className="text-xs sm:text-sm text-gray-600 space-y-1">
+              <div className="text-xs sm:text-sm text-gray-300 space-y-1">
                 <p><strong>Nomor:</strong> {setting.phoneNumber}</p>
                 <p><strong>Auto Reply:</strong> {setting.autoReply ? 'Ya' : 'Tidak'}</p>
               </div>
@@ -313,7 +313,7 @@ export default function LeadsDashboard() {
       </div>
 
       {/* Leads List - Mobile: Cards, Desktop: Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white/5 backdrop-blur-sm rounded-xl shadow-sm border border-white/10 overflow-hidden">
 
         {/* Mobile View */}
         <div className="block sm:hidden divide-y divide-gray-200">
@@ -321,8 +321,8 @@ export default function LeadsDashboard() {
             <div key={lead.id} className="p-4 space-y-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <div className="font-medium text-gray-900">{lead.customerName}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{getSourceIcon(lead.source)} {lead.phone}</div>
+                  <div className="font-medium text-white">{lead.customerName}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{getSourceIcon(lead.source)} {lead.phone}</div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(lead.urgency)}`}>
@@ -332,7 +332,7 @@ export default function LeadsDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-300 bg-[#0a3d47] p-2 rounded">
                 <div>Interested: <span className="font-medium text-gray-800">{lead.vehicleInterest || '-'}</span></div>
                 <div>Budget: <span className="font-medium text-gray-800">{lead.budget || '-'}</span></div>
               </div>
@@ -374,46 +374,46 @@ export default function LeadsDashboard() {
         {/* Desktop View */}
         <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#0a3d47]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Kendaraan
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Budget
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Urgensi
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Sumber
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Tenant
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Tanggal
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Aksi
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white/5 backdrop-blur-sm divide-y divide-gray-200">
               {filteredLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-white">
                         {lead.customerName}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-400">
                         {getSourceIcon(lead.source)} {lead.phone}
                       </div>
                       {lead.email && (
@@ -423,10 +423,10 @@ export default function LeadsDashboard() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                     {lead.vehicleInterest || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                     {lead.budget || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -434,7 +434,7 @@ export default function LeadsDashboard() {
                       {lead.urgency.toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                     {getSourceIcon(lead.source)} {lead.source.toUpperCase()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -450,10 +450,10 @@ export default function LeadsDashboard() {
                       <option value="converted">KONVERSI</option>
                     </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                     {lead.tenantName}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                     {formatDate(lead.createdAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -483,7 +483,7 @@ export default function LeadsDashboard() {
 
       {filteredLeads.length === 0 && (
         <div className="text-center py-12">
-          <div className="text-gray-500 text-lg">Tidak ada leads yang ditemukan</div>
+          <div className="text-gray-400 text-lg">Tidak ada leads yang ditemukan</div>
           <p className="text-gray-400 mt-2">Coba ubah filter atau tunggu leads baru dari WhatsApp</p>
         </div>
       )}
