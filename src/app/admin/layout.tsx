@@ -105,7 +105,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f2e35] text-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#0e7490] to-[#0f172a] text-white">
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div
