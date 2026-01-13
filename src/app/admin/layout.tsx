@@ -87,11 +87,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Tenants', href: '/admin/tenants', icon: '🏢' },
     { name: 'Users', href: '/admin/users', icon: '👥' },
     { name: 'Analytics', href: '/admin/health', icon: '📊' },
-    {
-      name: 'Data Management', href: '/admin/data-management', icon: '🗄️', submenu: [
-        { name: 'Vehicle Scraper', href: '/admin/data-management/scraper', icon: '🤖' },
-      ]
-    },
+    { name: 'Data Management', href: '/admin/data-management', icon: '🗄️' },
     { name: 'Audit Logs', href: '/admin/audit', icon: '📋' },
     { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
   ];

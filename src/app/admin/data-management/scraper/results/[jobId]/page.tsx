@@ -188,10 +188,10 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
             ← Back to Dashboard
           </Link>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Results</h2>
-          <p className="text-red-700">{error}</p>
-          <p className="text-gray-600 mt-4">The job may not exist or has been deleted.</p>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-red-400 mb-2">Error Loading Results</h2>
+          <p className="text-red-300">{error}</p>
+          <p className="text-gray-400 mt-4">The job may not exist or has been deleted.</p>
         </div>
       </div>
     );
@@ -235,21 +235,21 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="p-4 bg-white rounded-lg shadow">
-          <div className="text-2xl font-bold">{results.length}</div>
-          <div className="text-sm text-gray-600">Total</div>
+        <div className="p-4 bg-white/5 border border-white/10 rounded-lg shadow backdrop-blur-sm">
+          <div className="text-2xl font-bold text-white">{results.length}</div>
+          <div className="text-sm text-gray-400">Total</div>
         </div>
-        <div className="p-4 bg-yellow-50 rounded-lg shadow">
-          <div className="text-2xl font-bold text-yellow-700">{stats.pending}</div>
-          <div className="text-sm text-yellow-600">Pending</div>
+        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg shadow backdrop-blur-sm">
+          <div className="text-2xl font-bold text-yellow-400">{stats.pending}</div>
+          <div className="text-sm text-yellow-300">Pending</div>
         </div>
-        <div className="p-4 bg-green-50 rounded-lg shadow">
-          <div className="text-2xl font-bold text-green-700">{stats.approved}</div>
-          <div className="text-sm text-green-600">Approved</div>
+        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg shadow backdrop-blur-sm">
+          <div className="text-2xl font-bold text-green-400">{stats.approved}</div>
+          <div className="text-sm text-green-300">Approved</div>
         </div>
-        <div className="p-4 bg-gray-50 rounded-lg shadow">
-          <div className="text-2xl font-bold text-gray-700">{stats.duplicate}</div>
-          <div className="text-sm text-gray-600">Duplicates</div>
+        <div className="p-4 bg-gray-500/10 border border-gray-500/20 rounded-lg shadow backdrop-blur-sm">
+          <div className="text-2xl font-bold text-gray-300">{stats.duplicate}</div>
+          <div className="text-sm text-gray-400">Duplicates</div>
         </div>
       </div>
 
@@ -260,22 +260,22 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
           placeholder="Search make, model, year..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-4 py-2 border rounded-lg"
+          className="flex-1 px-4 py-2 bg-[#0a3d47] border border-white/10 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
         />
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
+          className="px-4 py-2 bg-[#0a3d47] border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
         >
-          <option value="all">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="duplicate">Duplicate</option>
+          <option value="all" className="bg-[#0a3d47] text-white">All Status</option>
+          <option value="pending" className="bg-[#0a3d47] text-white">Pending</option>
+          <option value="approved" className="bg-[#0a3d47] text-white">Approved</option>
+          <option value="duplicate" className="bg-[#0a3d47] text-white">Duplicate</option>
         </select>
         {filter === 'pending' && filteredResults.length > 0 && (
           <button
             onClick={toggleSelectAll}
-            className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 bg-[#0a3d47] border border-white/10 rounded-lg text-white hover:bg-white/10"
           >
             {selectedIds.size === filteredResults.length ? '☑ Deselect All' : '☐ Select All'}
           </button>
@@ -283,10 +283,10 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
       </div>
 
       {/* Results Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white/5 border border-white/10 rounded-lg shadow overflow-hidden backdrop-blur-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#0a3d47]">
               <tr>
                 <th className="px-4 py-3 w-12">
                   {filter === 'pending' && (
@@ -294,22 +294,22 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                       type="checkbox"
                       checked={selectedIds.size > 0 && selectedIds.size === filteredResults.filter(r => r.status === 'pending').length}
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-gray-300"
+                      className="w-4 h-4 rounded border-gray-300 accent-cyan-500"
                     />
                   )}
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Specs</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Quality</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Vehicle</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Year</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Price</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Specs</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Data Quality</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-white/10">
               {filteredResults.map((result) => (
-                <tr key={result.id} className={`hover:bg-gray-50 ${selectedIds.has(result.id) ? 'bg-blue-50' : ''}`}>
+                <tr key={result.id} className={`hover:bg-white/5 ${selectedIds.has(result.id) ? 'bg-cyan-500/10' : ''}`}>
                   <td className="px-4 py-3">
                     {result.status === 'pending' && (
                       <input
@@ -321,7 +321,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium">{result.make} {result.model}</div>
+                    <div className="font-medium text-white">{result.make} {result.model}</div>
                     {result.variant && (
                       <div className="text-xs text-gray-500 truncate max-w-xs">{result.variant}</div>
                     )}
@@ -337,7 +337,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                   <td className="px-4 py-3 text-xs">
                     <div className="space-y-1">
                       {result.transmission && result.fuelType ? (
-                        <div className="text-gray-700">
+                        <div className="text-gray-300">
                           ⚙️ {result.transmission} • ⛽ {result.fuelType}
                         </div>
                       ) : (
@@ -360,7 +360,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                         const featureCount = result.features ? result.features.split(',').length : 0;
                         const totalFields = fields.length;
                         const quality = totalFields >= 5 ? 'High' : totalFields >= 3 ? 'Medium' : 'Low';
-                        const qualityColor = quality === 'High' ? 'text-green-600' : quality === 'Medium' ? 'text-yellow-600' : 'text-red-600';
+                        const qualityColor = quality === 'High' ? 'text-green-400' : quality === 'Medium' ? 'text-yellow-400' : 'text-red-400';
 
                         return (
                           <div>
@@ -381,9 +381,9 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 text-xs rounded-full ${result.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      result.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
-                        'bg-yellow-100 text-yellow-800'
+                    <span className={`px-2 py-1 text-xs rounded-full border ${result.status === 'approved' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
+                      result.status === 'duplicate' ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' :
+                        'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
                       }`}>
                       {result.status}
                     </span>
@@ -392,14 +392,14 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                     <div className="flex flex-col gap-2">
                       <button
                         onClick={() => openDetailModal(result)}
-                        className="text-purple-600 hover:text-purple-800 font-medium text-left"
+                        className="text-purple-400 hover:text-purple-300 font-medium text-left"
                       >
                         📋 Details
                       </button>
                       {result.status === 'pending' && (
                         <button
                           onClick={() => approveResult(result.id)}
-                          className="text-green-600 hover:text-green-800 font-medium text-left"
+                          className="text-green-400 hover:text-green-300 font-medium text-left"
                         >
                           ✓ Approve
                         </button>
@@ -408,7 +408,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                         href={result.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-cyan-400 hover:text-cyan-300"
                       >
                         🔗 {getSourceFromUrl(result.url)}
                       </a>
@@ -430,15 +430,15 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
       {/* Detail Modal */}
       {detailModalOpen && selectedResult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#0d4450] border border-white/10 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold">
+            <div className="sticky top-0 bg-[#0a3d47] border-b border-white/10 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">
                 {selectedResult.make} {selectedResult.model} {selectedResult.year}
               </h2>
               <button
                 onClick={closeDetailModal}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-400 hover:text-white text-2xl"
               >
                 ×
               </button>
@@ -448,9 +448,9 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
             <div className="p-6">
               {/* Status Badge */}
               <div className="mb-6">
-                <span className={`px-3 py-1 text-sm rounded-full ${selectedResult.status === 'approved' ? 'bg-green-100 text-green-800' :
-                  selectedResult.status === 'duplicate' ? 'bg-gray-100 text-gray-800' :
-                    'bg-yellow-100 text-yellow-800'
+                <span className={`px-3 py-1 text-sm rounded-full border ${selectedResult.status === 'approved' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
+                  selectedResult.status === 'duplicate' ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' :
+                    'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
                   }`}>
                   {selectedResult.status.toUpperCase()}
                 </span>
@@ -463,13 +463,13 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
 
               {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="text-sm text-gray-500 mb-1">Price</div>
-                  <div className="text-xl font-bold text-green-600">{selectedResult.priceDisplay}</div>
+                <div className="bg-[#0a3d47] border border-white/10 p-4 rounded-lg">
+                  <div className="text-sm text-gray-300 mb-1">Price</div>
+                  <div className="text-xl font-bold text-green-400">{selectedResult.priceDisplay}</div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="text-sm text-gray-500 mb-1">Year</div>
-                  <div className="text-xl font-bold">{selectedResult.year || 'N/A'}</div>
+                <div className="bg-[#0a3d47] border border-white/10 p-4 rounded-lg">
+                  <div className="text-sm text-gray-300 mb-1">Year</div>
+                  <div className="text-xl font-bold text-white">{selectedResult.year || 'N/A'}</div>
                 </div>
               </div>
 
@@ -531,7 +531,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
                 {selectedResult.features ? (
                   <div className="flex flex-wrap gap-2">
                     {selectedResult.features.split(',').map((feature, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                      <span key={idx} className="px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-full text-sm font-medium">
                         ✨ {feature.trim()}
                       </span>
                     ))}
@@ -547,7 +547,7 @@ export default function ResultsPage({ params }: { params: Promise<{ jobId: strin
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3 border-b pb-2">Description</h3>
                 {selectedResult.description ? (
-                  <p className="text-gray-700 leading-relaxed">{selectedResult.description}</p>
+                  <p className="text-gray-300 leading-relaxed">{selectedResult.description}</p>
                 ) : (
                   <div className="text-gray-500 italic">
                     No description available. Title contains limited descriptive information.

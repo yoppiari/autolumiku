@@ -121,18 +121,18 @@ export default function ScraperDashboard() {
               className="px-4 py-2 bg-[#0a3d47] border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isRunning}
             >
-              <option value="ALL">🌐 All Sources</option>
-              <option disabled>──────────</option>
+              <option value="ALL" className="bg-[#0a3d47] text-white">🌐 All Sources</option>
+              <option disabled className="bg-[#0a3d47] text-gray-500">──────────</option>
               {/* Added AI Powered Labels */}
-              <option value="OLX_AUTOS">🟠 OLX Autos (AI Powered)</option>
-              <option value="CARSOME">🔵 Carsome (AI Powered)</option>
-              <option value="SEVA">🟢 Seva.id (AI Powered)</option>
-              <option value="CARMUDI">🟤 Carmudi (AI Powered)</option>
-              <option value="OTO">⚪ Oto.com (AI Powered)</option>
-              <option value="CAROLINE">🟡 Caroline.id (AI Powered)</option>
-              <option value="AUTO2000">🟦 Auto2000 (AI Powered)</option>
-              <option value="MOBIL88">🟥 Mobil88 (AI Powered)</option>
-              <option value="CARRO">🟧 Carro (AI Powered)</option>
+              <option value="OLX_AUTOS" className="bg-[#0a3d47] text-white">🟠 OLX Autos (AI Powered)</option>
+              <option value="CARSOME" className="bg-[#0a3d47] text-white">🔵 Carsome (AI Powered)</option>
+              <option value="SEVA" className="bg-[#0a3d47] text-white">🟢 Seva.id (AI Powered)</option>
+              <option value="CARMUDI" className="bg-[#0a3d47] text-white">🟤 Carmudi (AI Powered)</option>
+              <option value="OTO" className="bg-[#0a3d47] text-white">⚪ Oto.com (AI Powered)</option>
+              <option value="CAROLINE" className="bg-[#0a3d47] text-white">🟡 Caroline.id (AI Powered)</option>
+              <option value="AUTO2000" className="bg-[#0a3d47] text-white">🟦 Auto2000 (AI Powered)</option>
+              <option value="MOBIL88" className="bg-[#0a3d47] text-white">🟥 Mobil88 (AI Powered)</option>
+              <option value="CARRO" className="bg-[#0a3d47] text-white">🟧 Carro (AI Powered)</option>
             </select>
           </div>
           <button
