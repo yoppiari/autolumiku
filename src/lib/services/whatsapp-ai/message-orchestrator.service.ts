@@ -186,6 +186,14 @@ export class MessageOrchestratorService {
       } catch (e) {
         console.error(`[Orchestrator] Failed to process stop command:`, e);
       }
+    } else {
+      // CLEAR STOP SIGNAL on any new message that is NOT a stop command
+      // This allows the user to start a new stream (e.g. photos) without being immediately stopped
+      const stopKey = `${incoming.accountId}:${incoming.from}`;
+      if (stopSignals.has(stopKey)) {
+        console.log(`[Orchestrator] 🔄 new message detected, clearing stop signal for ${stopKey}`);
+        stopSignals.delete(stopKey);
+      }
     }
 
     try {

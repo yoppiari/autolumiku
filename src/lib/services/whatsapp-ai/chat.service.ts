@@ -348,7 +348,7 @@ export class WhatsAppAIChatService {
         if (vehicles.length > 0) {
           const vehicleList = this.formatVehicleListDetailed(vehicles.slice(0, 3));
           responseMessage = `Berikut unit ready di ${showroomName}:\n\n${vehicleList}\n\n` +
-            `Mau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))`;
+            `Mau lihat fotonya? 📸 (Ketik "Ya" atau "Foto [ID]" untuk melihat)`;
 
           return {
             message: responseMessage,
@@ -485,9 +485,11 @@ export class WhatsAppAIChatService {
                 const vehicleList = this.formatVehicleListDetailed(searchResults.slice(0, 5));
                 let searchResultText = `\n\nDitemukan ${searchResults.length} mobil yang cocok:\n\n${vehicleList}\n\n`;
 
-                searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
+                if (searchResults.length > 5) {
+                  searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
+                }
 
-                searchResultText += `Mau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit))\n\n`;
+                searchResultText += `Mau lihat fotonya? 📸 (Ketik "Ya" atau "Foto [ID]" untuk melihat)\n\n`;
                 searchResultText += `Apakah ada hal lain yang bisa kami bantu? 😊`;
 
                 responseMessage += searchResultText;
@@ -1215,7 +1217,7 @@ export class WhatsAppAIChatService {
           }).join('\n');
           console.log(`[SmartFallback] ⚠️ No photos available, returning vehicle list`);
           return {
-            message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau lihat fotonya? 📸 (format: \"iya/ baik/ ya/ ok/ oke\" [ID] foto unit))`,
+            message: `Maaf, foto belum tersedia saat ini 🙏\n\nTapi ada unit ready nih:\n${vehicleList}\n\nMau lihat fotonya? 📸 (Ketik "Ya" atau "Foto [ID]" untuk melihat)`,
             shouldEscalate: false,
           };
         }
@@ -1308,7 +1310,7 @@ export class WhatsAppAIChatService {
               const id = v.displayId || v.id.substring(0, 6).toUpperCase();
               return `• ${v.make} ${v.model} ${v.year} | ${id}`;
             }).join('\n')}\n\n` +
-            `Mau lihat fotonya? 📸 (format: "iya/ baik/ ya/ ok/ oke" [ID] foto unit)) 😊`,
+            `Mau lihat fotonya? 📸 (Ketik "Ya" atau "Foto [ID]" untuk melihat) 😊`,
           shouldEscalate: false,
         };
       }
@@ -2135,7 +2137,7 @@ export class WhatsAppAIChatService {
       // If user explicitly asks for photos (e.g., "iya mana fotonya"),
       // try to send ANY recent available vehicle photos as last resort
       if (userExplicitlyAsksPhoto) {
-        
+
         // CRITICAL FIX: If user message contains BUDGET info, do NOT fallback to random photos
         // Let the AI handle the budget search instead
         const hasBudget = WhatsAppAIChatService.extractBudget(userMessage) !== null;
