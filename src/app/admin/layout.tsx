@@ -105,7 +105,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0e7490] to-[#0f172a] text-white">
+    <div className="min-h-screen bg-[#0d4450] text-white">
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div
@@ -118,12 +118,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 admin-sidebar transform transition-transform duration-300 ease-in-out bg-[#113f47] text-white border-r border-[#1e5763]
+        fixed inset-y-0 left-0 z-50 w-64 admin-sidebar transform transition-transform duration-300 ease-in-out bg-[#0a3d47] text-white border-r border-[#22d3ee]/20
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-center h-20 px-6 border-b border-[#1e5763] bg-[#0d343b]">
+          <div className="flex items-center justify-center h-20 px-6 border-b border-[#22d3ee]/20 bg-[#083944]">
             <img src="/autolumiku-logo.png" alt="AutoLumiKu" className="h-14 w-auto object-contain" />
           </div>
 
@@ -201,7 +201,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
 
           {/* User menu */}
-          <div className="border-t border-[#1e5763] p-4">
+          <div className="border-t border-[#22d3ee]/20 p-4">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm">
@@ -230,7 +230,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="admin-header h-16 px-4 sm:px-6 lg:px-8 border-b border-[#1e5763]/30">
+        <header className="admin-header h-16 px-4 sm:px-6 lg:px-8 border-b border-[#22d3ee]/20">
           <div className="flex items-center justify-between h-full">
             <div className="flex items-center">
               {/* Mobile menu button */}
