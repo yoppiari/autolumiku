@@ -55,14 +55,30 @@ export default function VehiclesPage() {
   const [priceFilter, setPriceFilter] = useState<string>('');
 
   // Access guard & Load current user info
+  // Access guard & Load current user info
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setCurrentUserId(parsedUser.id || parsedUser.userId || '');
-      setCurrentUserRoleLevel(parsedUser.roleLevel || ROLE_LEVELS.SALES);
-      console.log('[Vehicles] Current user:', parsedUser.id, 'roleLevel:', parsedUser.roleLevel);
-    }
+    const loadUser = () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setCurrentUserId(parsedUser.id || parsedUser.userId || '');
+          setCurrentUserRoleLevel(parsedUser.roleLevel || ROLE_LEVELS.SALES);
+          console.log('[Vehicles] Current user loaded:', parsedUser.id, 'roleLevel:', parsedUser.roleLevel);
+        } catch (e) {
+          console.error('[Vehicles] Error parsing user:', e);
+        }
+      }
+    };
+
+    loadUser(); // Initial load
+
+    // Listen for updates from Layout (when role is synced)
+    window.addEventListener('user-updated', loadUser);
+
+    return () => {
+      window.removeEventListener('user-updated', loadUser);
+    };
   }, [router]);
 
   useEffect(() => {
@@ -553,6 +569,12 @@ export default function VehiclesPage() {
                       <div className="text-[10px] text-gray-500">
                         {vehicle.mileage ? `${vehicle.mileage.toLocaleString('id-ID')} km` : '-'} • {vehicle.color || 'Unknown'}
                       </div>
+
+                      {/* Updated By (Grid View) */}
+                      <div className="text-[10px] text-gray-500 mt-1 pt-1 border-t border-[#333]">
+                        Update by {getUserName(vehicle.updatedBy)}<br />
+                        {new Date(vehicle.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
                     </div>
                   )}
 
@@ -650,7 +672,7 @@ export default function VehiclesPage() {
                 </div>
 
                 {/* Actions */}
-                <div className={`border-t border-[#333] bg-[#222] flex items-center gap-2 p-2 ${viewMode === 'list' ? 'border-t-0 border-l w-36 flex-col justify-center hidden md:flex' : ''}`}>
+                < div className={`border-t border-[#333] bg-[#222] flex items-center gap-2 p-2 ${viewMode === 'list' ? 'border-t-0 border-l w-36 flex-col justify-center hidden md:flex' : ''}`}>
 
                   {/* Status Badge - Equal width */}
                   {viewMode === 'list' && (
@@ -693,8 +715,9 @@ export default function VehiclesPage() {
               </div>
             ))}
           </div>
-        )}
-      </div>
-    </div>
+        )
+        }
+      </div >
+    </div >
   );
 }

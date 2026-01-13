@@ -139,6 +139,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const syncUserRole = async () => {
       if (!user?.id) return;
 
+      // Force update from localStorage first (in case it was updated by another tab/login)
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.roleLevel !== user.roleLevel) {
+          console.log(`[Dashboard] Sync from localStorage: ${user.roleLevel} → ${parsed.roleLevel}`);
+          setUser(parsed);
+          // Proceed to verify with API...
+        }
+      }
+
       try {
         const token = localStorage.getItem('authToken');
         if (!token) return;
@@ -160,6 +171,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             const updatedUser = { ...user, roleLevel: freshUser.roleLevel, role: freshUser.role };
             setUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
+
+            // Notify other components (like VehiclesPage) that user data has changed
+            window.dispatchEvent(new Event('user-updated'));
           }
         }
       } catch (error) {
