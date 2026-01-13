@@ -60,16 +60,24 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm w-full max-w-md">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        backgroundImage: 'url(/admin-bg.jpg)',
+        backgroundSize: '300px', // Tile size based on the image pattern
+        backgroundRepeat: 'repeat'
+      }}
+    >
+      <div className="rounded-lg border bg-[#ffffff]/95 backdrop-blur-sm shadow-xl w-full max-w-md">
         <div className="flex flex-col p-6 space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="text-4xl font-bold text-gray-600">AutoLumiKu</div>
+            {/* Logo text matching the branding in background */}
+            <div className="text-4xl font-bold text-cyan-500 drop-shadow-sm">AutoLumiKu</div>
           </div>
-          <h3 className="font-semibold tracking-tight text-2xl text-center">Super Admin Login</h3>
-          <p className="text-sm text-muted-foreground text-center">Platform administration access</p>
+          <h3 className="font-semibold tracking-tight text-2xl text-center text-gray-800">Super Admin Login</h3>
+          <p className="text-sm text-gray-500 text-center">Platform administration access</p>
         </div>
-        
+
         <div className="p-6 pt-0">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -77,7 +85,7 @@ export default function AdminLoginPage() {
                 {error}
               </div>
             )}
-            
+
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-gray-700">
                 Email
@@ -93,7 +101,7 @@ export default function AdminLoginPage() {
                 onChange={handleChange}
               />
             </div>
-            
+
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium text-gray-700">
                 Password
@@ -109,7 +117,7 @@ export default function AdminLoginPage() {
                 onChange={handleChange}
               />
             </div>
-            
+
             <button
               type="submit"
               disabled={isLoading}
@@ -118,10 +126,10 @@ export default function AdminLoginPage() {
               {isLoading ? 'Signing in...' : 'Sign in as Admin'}
             </button>
           </form>
-          
+
           <div className="mt-6 text-center">
-            <a 
-              href="/login" 
+            <a
+              href="/login"
               className="text-sm text-gray-600 hover:text-gray-700"
             >
               ← Back to Showroom Login
