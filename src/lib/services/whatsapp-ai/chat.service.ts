@@ -2135,6 +2135,15 @@ export class WhatsAppAIChatService {
       // If user explicitly asks for photos (e.g., "iya mana fotonya"),
       // try to send ANY recent available vehicle photos as last resort
       if (userExplicitlyAsksPhoto) {
+        
+        // CRITICAL FIX: If user message contains BUDGET info, do NOT fallback to random photos
+        // Let the AI handle the budget search instead
+        const hasBudget = WhatsAppAIChatService.extractBudget(userMessage) !== null;
+        if (hasBudget) {
+          console.log(`[PhotoConfirm DEBUG] 💰 Budget criteria detected (${userMessage}), aborting generic photo fallback`);
+          return null;
+        }
+
         console.log(`[PhotoConfirm DEBUG] 🔄 Entering fallback: send any available photos...`);
         try {
           const anyVehicles = await prisma.vehicle.findMany({

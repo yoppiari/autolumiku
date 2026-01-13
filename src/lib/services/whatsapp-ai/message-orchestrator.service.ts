@@ -137,7 +137,9 @@ export class MessageOrchestratorService {
 
     // CHECK FOR STOP/CANCEL COMMANDS (Priority High)
     // Stops any ongoing operations like bulk photo sending
-    const stopPatterns = /^(cukup|sudah|berhenti|stop|sudah\s*cukup|cukup\s*ya)$/i;
+    // Updated to be safer: "sudah" only matches if standalone or "sudah cukup"
+    // "stop"/"berhenti" match anywhere
+    const stopPatterns = /(?:^|\b)(stop|berhenti|jangan\s*kirim)(?:\b|$)|^(cukup|sudah)$|^(cukup|sudah)\s+(ya|dong|mas|kak|min|gan|bang|pak|bu|udah|cukup)$/i;
     const normalizedMsg = (incoming.message || "").trim();
     if (stopPatterns.test(normalizedMsg)) {
       console.log(`[Orchestrator] 🛑 STOP command detected from ${incoming.from}`);
@@ -993,7 +995,8 @@ export class MessageOrchestratorService {
         const stopPhotoKeywords = [
           'no photo', 'no foto', 'jangan foto', 'bukan foto', 'ga usah foto', 'nggak usah foto', 'gak usah foto',
           'hanya info', 'cuma info', 'info aja', 'keterangan aja', 'detail aja',
-          'bukan minta foto', 'bukan minta fotonya', 'jangan kirim foto'
+          'bukan minta foto', 'bukan minta fotonya', 'jangan kirim foto',
+          'stop', 'berhenti', 'cukup', 'udah', 'sudah', 'jangan lagi'
         ];
 
         // Check if ANY keyword is in the message (case insensitive)
