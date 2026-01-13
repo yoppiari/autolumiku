@@ -64,8 +64,9 @@ export default function AdminLoginPage() {
       className="min-h-screen flex items-center justify-center p-4"
       style={{
         backgroundImage: 'url(/admin-bg.jpg)',
-        backgroundSize: '300px', // Tile size based on the image pattern
-        backgroundRepeat: 'repeat'
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
       }}
     >
       <div className="rounded-lg border bg-[#ffffff]/95 backdrop-blur-sm shadow-xl w-full max-w-md">
