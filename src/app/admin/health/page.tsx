@@ -222,7 +222,7 @@ const AnalyticsContent: React.FC = () => {
           <select
             value={selectedTimeRange}
             onChange={(e) => handleTimeRangeChange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 bg-[#0a3d47] border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="24h">Last 24 Hours</option>
             <option value="7d">Last 7 Days</option>
@@ -237,9 +237,9 @@ const AnalyticsContent: React.FC = () => {
               id="autoRefresh"
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-white/10 rounded bg-[#0a3d47]"
             />
-            <label htmlFor="autoRefresh" className="text-sm text-gray-700">
+            <label htmlFor="autoRefresh" className="text-sm text-gray-300">
               Auto Refresh
             </label>
           </div>
@@ -249,7 +249,7 @@ const AnalyticsContent: React.FC = () => {
             <select
               value={refreshInterval}
               onChange={(e) => setRefreshInterval(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value={30}>30s</option>
               <option value={60}>1m</option>
@@ -269,10 +269,10 @@ const AnalyticsContent: React.FC = () => {
       </div>
 
       {/* Tenant Legend */}
-      <div className="bg-white/5 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
+      <div className="bg-white/5 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-white/10 flex flex-wrap gap-4 items-center">
         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tenant Legend:</span>
         {analytics.tenantSummary.map(tenant => (
-          <div key={tenant.tenantId} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+          <div key={tenant.tenantId} className="flex items-center gap-1.5 text-xs font-medium text-white">
             <span
               className="w-2.5 h-2.5 rounded-full"
               style={{ backgroundColor: getTenantColor(tenant.tenantId) }}
@@ -322,10 +322,13 @@ const AnalyticsContent: React.FC = () => {
         <h3 className="text-lg font-semibold text-white mb-4">Daily Activity Trends (Real-time)</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={analytics.timeSeriesData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+            <XAxis dataKey="date" stroke="#9ca3af" />
+            <YAxis stroke="#9ca3af" />
+            <Tooltip
+              contentStyle={{ backgroundColor: '#0d4450', border: '1px solid #ffffff20', color: '#fff' }}
+              itemStyle={{ color: '#fff' }}
+            />
             <Legend />
             <Bar dataKey="views" fill="#3b82f6" name="Views" />
             <Bar dataKey="inquiries" fill="#f59e0b" name="Inquiries" />
@@ -337,21 +340,21 @@ const AnalyticsContent: React.FC = () => {
 
       {/* Consolidated Vehicle Statistics Tabs */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl shadow-sm border border-white/10 overflow-hidden">
-        <div className="border-b border-gray-100 bg-[#0a3d47] px-6 py-4">
+        <div className="border-b border-white/10 bg-[#0a3d47] px-6 py-4">
           <h3 className="text-lg font-semibold text-white mb-4">Top Performing Vehicles</h3>
           <div className="flex flex-wrap gap-2">
             {[
-              { id: 'mostViewed', label: 'Most Viewed', color: 'bg-green-100 text-green-700' },
-              { id: 'mostAsked', label: 'Most Asked', color: 'bg-yellow-100 text-yellow-700' },
-              { id: 'mostSold', label: 'Most Sold', color: 'bg-purple-100 text-purple-700' },
-              { id: 'mostStocked', label: 'Most Stocked', color: 'bg-blue-100 text-blue-700' }
+              { id: 'mostViewed', label: 'Most Viewed', color: 'bg-green-500/20 text-green-300 border-green-500/30' },
+              { id: 'mostAsked', label: 'Most Asked', color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' },
+              { id: 'mostSold', label: 'Most Sold', color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+              { id: 'mostStocked', label: 'Most Stocked', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30' }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveChartTab(tab.id as any)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeChartTab === tab.id
-                  ? tab.color + ' ring-2 ring-offset-1 ring-gray-200'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${activeChartTab === tab.id
+                  ? tab.color
+                  : 'bg-[#0a3d47] text-gray-400 hover:bg-[#0d4450] border-white/10'
                   }`}
               >
                 {tab.label}
@@ -363,10 +366,12 @@ const AnalyticsContent: React.FC = () => {
         <div className="p-6">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={analytics[activeChartTab]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} interval={0} fontSize={12} />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+              <XAxis dataKey={(data) => `${data.make} ${data.model}`} angle={-45} textAnchor="end" height={80} interval={0} fontSize={12} stroke="#9ca3af" />
+              <YAxis stroke="#9ca3af" />
               <Tooltip
+                contentStyle={{ backgroundColor: '#0d4450', border: '1px solid #ffffff20', color: '#fff' }}
+                cursor={{ fill: '#ffffff10' }}
                 formatter={(value, name, props) => {
                   const data = props.payload;
                   return [
@@ -394,10 +399,10 @@ const AnalyticsContent: React.FC = () => {
           <h3 className="text-lg font-semibold text-white">Tenant Performance Summary</h3>
 
           <div className="relative group">
-            <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white/5 backdrop-blur-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-[#0a3d47] border border-white/10 rounded-lg hover:bg-white/10">
               <span className="mr-1">🏳️</span>
               Filter Tenants
-              <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded-full ml-1">
+              <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded-full ml-1">
                 {selectedTenantIds.length}
               </span>
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,19 +411,19 @@ const AnalyticsContent: React.FC = () => {
             </button>
 
             {/* Dropdown Checklist */}
-            <div className="absolute right-0 mt-2 w-64 bg-white/5 backdrop-blur-sm rounded-lg shadow-lg border border-gray-100 p-2 hidden group-hover:block z-10">
-              <div className="mb-2 pb-2 border-b border-gray-100 flex justify-between items-center px-1">
+            <div className="absolute right-0 mt-2 w-64 bg-[#0d4450] rounded-lg shadow-lg border border-white/10 p-2 hidden group-hover:block z-10">
+              <div className="mb-2 pb-2 border-b border-white/10 flex justify-between items-center px-1">
                 <span className="text-xs font-bold text-gray-400 uppercase">Select Tenants</span>
                 <button
                   onClick={() => setSelectedTenantIds(analytics?.tenantSummary.map(t => t.tenantId) || [])}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-xs text-blue-400 hover:text-blue-300 font-medium"
                 >
                   Select All
                 </button>
               </div>
               <div className="max-h-60 overflow-y-auto space-y-1">
                 {analytics?.tenantSummary.map(tenant => (
-                  <label key={tenant.tenantId} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
+                  <label key={tenant.tenantId} className="flex items-center gap-2 px-2 py-1.5 hover:bg-white/10 rounded cursor-pointer">
                     <input
                       type="checkbox"
                       checked={selectedTenantIds.includes(tenant.tenantId)}
@@ -429,9 +434,9 @@ const AnalyticsContent: React.FC = () => {
                           setSelectedTenantIds(selectedTenantIds.filter((id: string) => id !== tenant.tenantId));
                         }
                       }}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                      className="rounded border-gray-500 bg-[#0a3d47] text-blue-600 focus:ring-blue-500 w-4 h-4"
                     />
-                    <span className="text-sm text-gray-700 truncate">{tenant.tenantName}</span>
+                    <span className="text-sm text-white truncate">{tenant.tenantName}</span>
                     <span
                       className="w-2 h-2 rounded-full ml-auto flex-shrink-0"
                       style={{ backgroundColor: getTenantColor(tenant.tenantId) }}
@@ -444,36 +449,36 @@ const AnalyticsContent: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-white/10">
             <thead className="bg-[#0a3d47]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tenant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Total Vehicles</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sold</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Total Views</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Inquiries</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Conversion Rate</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Tenant</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Total Vehicles</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Sold</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Total Views</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Inquiries</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Conversion Rate</th>
               </tr>
             </thead>
-            <tbody className="bg-white/5 backdrop-blur-sm divide-y divide-gray-200">
+            <tbody className="bg-white/5 backdrop-blur-sm divide-y divide-white/10">
               {analytics.tenantSummary
                 .filter(tenant => selectedTenantIds.includes(tenant.tenantId))
                 .map((tenant) => (
-                  <tr key={tenant.tenantId} className="hover:bg-gray-50">
+                  <tr key={tenant.tenantId} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                       <div className="flex items-center gap-2">
                         <span
-                          className="w-3 h-3 rounded-full shadow-sm border border-black/5"
+                          className="w-3 h-3 rounded-full shadow-sm border border-white/20"
                           style={{ backgroundColor: getTenantColor(tenant.tenantId) }}
                         ></span>
                         {tenant.tenantName}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{tenant.totalVehicles}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{tenant.soldVehicles}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{tenant.totalViews.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{tenant.totalInquiries}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{tenant.totalVehicles}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{tenant.soldVehicles}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{tenant.totalViews.toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{tenant.totalInquiries}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tenant.conversionRate >= 18 ? 'bg-green-100 text-green-800' :
                         tenant.conversionRate >= 15 ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'

@@ -121,9 +121,8 @@ export default function GlobalSettingsPage() {
 
       {/* Save Message */}
       {saveMessage && (
-        <div className={`mb-6 p-4 rounded-lg ${
-          saveMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-        }`}>
+        <div className={`mb-6 p-4 rounded-lg ${saveMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+          }`}>
           {saveMessage.text}
         </div>
       )}
@@ -135,11 +134,10 @@ export default function GlobalSettingsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === tab.id
+                ? 'border-cyan-500 text-cyan-400'
+                : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-white/20'
+                }`}
             >
               <span className="mr-2">{tab.icon}</span>
               {tab.name}
@@ -156,7 +154,7 @@ export default function GlobalSettingsPage() {
             <h2 className="text-lg font-semibold text-white">Platform Configuration</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Platform Name
               </label>
               <input
@@ -166,12 +164,12 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   platform: { ...settings.platform, platformName: e.target.value }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Support Email
               </label>
               <input
@@ -181,7 +179,7 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   platform: { ...settings.platform, supportEmail: e.target.value }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
 
@@ -196,21 +194,19 @@ export default function GlobalSettingsPage() {
                     ...settings,
                     platform: { ...settings.platform, maintenanceMode: !settings.platform.maintenanceMode }
                   })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    settings.platform.maintenanceMode ? 'bg-blue-600' : 'bg-gray-200'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.platform.maintenanceMode ? 'bg-cyan-600' : 'bg-white/10'
+                    }`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      settings.platform.maintenanceMode ? 'translate-x-6' : 'translate-x-1'
-                    }`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.platform.maintenanceMode ? 'translate-x-6' : 'translate-x-1'
+                      }`}
                   />
                 </button>
               </div>
 
               {settings.platform.maintenanceMode && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Maintenance Message (Bahasa Indonesia)
                   </label>
                   <textarea
@@ -220,7 +216,7 @@ export default function GlobalSettingsPage() {
                       platform: { ...settings.platform, maintenanceMessage: e.target.value }
                     })}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
               )}
@@ -234,7 +230,7 @@ export default function GlobalSettingsPage() {
             <h2 className="text-lg font-semibold text-white">Indonesian Market Configuration</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Default Timezone
               </label>
               <select
@@ -243,7 +239,7 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   indonesian: { ...settings.indonesian, timezone: e.target.value }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
                 <option value="Asia/Jakarta">WIB - Jakarta, Sumatera, Jawa</option>
                 <option value="Asia/Makassar">WITA - Kalimantan, Sulawesi, Bali</option>
@@ -252,20 +248,20 @@ export default function GlobalSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Currency
               </label>
               <input
                 type="text"
                 value={settings.indonesian.currency}
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-400"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-gray-400 cursor-not-allowed"
               />
               <p className="text-xs text-gray-400 mt-1">Indonesian Rupiah (IDR) only</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Default Language
               </label>
               <select
@@ -274,7 +270,7 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   indonesian: { ...settings.indonesian, language: e.target.value }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
                 <option value="id">Bahasa Indonesia</option>
                 <option value="en">English</option>
@@ -282,7 +278,7 @@ export default function GlobalSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Date Format
               </label>
               <select
@@ -291,7 +287,7 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   indonesian: { ...settings.indonesian, dateFormat: e.target.value }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
                 <option value="DD/MM/YYYY">DD/MM/YYYY (Indonesian standard)</option>
                 <option value="MM/DD/YYYY">MM/DD/YYYY (US format)</option>
@@ -310,14 +306,12 @@ export default function GlobalSettingsPage() {
                     ...settings,
                     indonesian: { ...settings.indonesian, complianceMode: !settings.indonesian.complianceMode }
                   })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    settings.indonesian.complianceMode ? 'bg-blue-600' : 'bg-gray-200'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.indonesian.complianceMode ? 'bg-cyan-600' : 'bg-white/10'
+                    }`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      settings.indonesian.complianceMode ? 'translate-x-6' : 'translate-x-1'
-                    }`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.indonesian.complianceMode ? 'translate-x-6' : 'translate-x-1'
+                      }`}
                   />
                 </button>
               </div>
@@ -331,7 +325,7 @@ export default function GlobalSettingsPage() {
             <h2 className="text-lg font-semibold text-white">System Configuration</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Max Tenants Per Database
               </label>
               <input
@@ -341,12 +335,12 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   system: { ...settings.system, maxTenantsPerDb: parseInt(e.target.value) }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Default Storage Quota (MB)
               </label>
               <input
@@ -356,12 +350,12 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   system: { ...settings.system, defaultStorageQuota: parseInt(e.target.value) }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 API Rate Limit (requests/minute)
               </label>
               <input
@@ -371,12 +365,12 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   system: { ...settings.system, apiRateLimit: parseInt(e.target.value) }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Session Timeout (seconds)
               </label>
               <input
@@ -386,7 +380,7 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   system: { ...settings.system, sessionTimeout: parseInt(e.target.value) }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
           </div>
@@ -398,7 +392,7 @@ export default function GlobalSettingsPage() {
             <h2 className="text-lg font-semibold text-white">Security Configuration</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Minimum Password Length
               </label>
               <input
@@ -410,7 +404,7 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   security: { ...settings.security, passwordMinLength: parseInt(e.target.value) }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
 
@@ -424,14 +418,12 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   security: { ...settings.security, passwordRequireSpecial: !settings.security.passwordRequireSpecial }
                 })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.security.passwordRequireSpecial ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.security.passwordRequireSpecial ? 'bg-cyan-600' : 'bg-white/10'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    settings.security.passwordRequireSpecial ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.security.passwordRequireSpecial ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>
@@ -446,20 +438,18 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   security: { ...settings.security, mfaRequired: !settings.security.mfaRequired }
                 })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.security.mfaRequired ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.security.mfaRequired ? 'bg-cyan-600' : 'bg-white/10'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    settings.security.mfaRequired ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.security.mfaRequired ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Session Inactivity Timeout (seconds)
               </label>
               <input
@@ -469,7 +459,7 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   security: { ...settings.security, sessionInactivityTimeout: parseInt(e.target.value) }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
           </div>
@@ -490,14 +480,12 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   notifications: { ...settings.notifications, emailEnabled: !settings.notifications.emailEnabled }
                 })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.notifications.emailEnabled ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.notifications.emailEnabled ? 'bg-cyan-600' : 'bg-white/10'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    settings.notifications.emailEnabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.notifications.emailEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>
@@ -512,14 +500,12 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   notifications: { ...settings.notifications, smsEnabled: !settings.notifications.smsEnabled }
                 })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.notifications.smsEnabled ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.notifications.smsEnabled ? 'bg-cyan-600' : 'bg-white/10'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    settings.notifications.smsEnabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.notifications.smsEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>
@@ -534,20 +520,18 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   notifications: { ...settings.notifications, whatsappEnabled: !settings.notifications.whatsappEnabled }
                 })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.notifications.whatsappEnabled ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.notifications.whatsappEnabled ? 'bg-cyan-600' : 'bg-white/10'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    settings.notifications.whatsappEnabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.notifications.whatsappEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Default Sender Name
               </label>
               <input
@@ -557,7 +541,7 @@ export default function GlobalSettingsPage() {
                   ...settings,
                   notifications: { ...settings.notifications, defaultSender: e.target.value }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
           </div>
@@ -568,7 +552,7 @@ export default function GlobalSettingsPage() {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
           >
             {isSaving ? 'Menyimpan...' : 'Simpan Pengaturan'}
           </button>

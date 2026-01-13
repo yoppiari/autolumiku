@@ -110,15 +110,15 @@ export default function ScraperDashboard() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Vehicle Data Scraper</h1>
+        <h1 className="text-3xl font-bold text-white">Vehicle Data Scraper</h1>
         <div className="flex gap-4 items-center">
           {/* Source Selector */}
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Source:</label>
+            <label className="text-sm font-medium text-gray-300">Source:</label>
             <select
               value={selectedSource}
               onChange={(e) => setSelectedSource(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-2 bg-[#0a3d47] border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isRunning}
             >
               <option value="ALL">🌐 All Sources</option>
@@ -148,66 +148,66 @@ export default function ScraperDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="p-6 bg-gradient-to-br from-purple-500 to-purple-700 text-white rounded-lg shadow">
+        <div className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-900/40 border border-purple-500/30 text-white rounded-lg shadow backdrop-blur-sm">
           <div className="text-3xl font-bold">{stats?.lastRun ? new Date(stats.lastRun).toLocaleDateString() : 'Never'}</div>
-          <div className="text-sm opacity-90">Last Run</div>
+          <div className="text-sm opacity-90 text-purple-200">Last Run</div>
         </div>
-        <div className="p-6 bg-gradient-to-br from-green-500 to-green-700 text-white rounded-lg shadow">
+        <div className="p-6 bg-gradient-to-br from-green-500/20 to-green-900/40 border border-green-500/30 text-white rounded-lg shadow backdrop-blur-sm">
           <div className="text-3xl font-bold">{stats?.totalVehicles || 0}</div>
-          <div className="text-sm opacity-90">Total Vehicles</div>
+          <div className="text-sm opacity-90 text-green-200">Total Vehicles</div>
         </div>
-        <div className="p-6 bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-lg shadow">
+        <div className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-900/40 border border-orange-500/30 text-white rounded-lg shadow backdrop-blur-sm">
           <div className="text-3xl font-bold">{stats?.pendingReview || 0}</div>
-          <div className="text-sm opacity-90">Pending Review</div>
+          <div className="text-sm opacity-90 text-orange-200">Pending Review</div>
         </div>
-        <div className="p-6 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-lg shadow">
+        <div className="p-6 bg-gradient-to-br from-cyan-500/20 to-cyan-900/40 border border-cyan-500/30 text-white rounded-lg shadow backdrop-blur-sm">
           <div className="text-3xl font-bold">{stats?.todayImported || 0}</div>
-          <div className="text-sm opacity-90">Imported Today</div>
+          <div className="text-sm opacity-90 text-cyan-200">Imported Today</div>
         </div>
       </div>
 
       {/* Recent Jobs */}
-      <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold">Recent Jobs</h2>
+      <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow border border-white/10">
+        <div className="px-6 py-4 border-b border-white/10">
+          <h2 className="text-xl font-semibold text-white">Recent Jobs</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#0a3d47]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Time</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Source</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Found</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">New</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Duplicates</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Action</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Time</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Source</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Found</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">New</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Duplicates</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-white/10">
               {jobs.map((job) => (
-                <tr key={job.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                <tr key={job.id} className="hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {new Date(job.startedAt).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${job.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      job.status === 'running' ? 'bg-blue-100 text-blue-800' :
-                        job.status === 'failed' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
+                    <span className={`px-2 py-1 text-xs rounded-full ${job.status === 'completed' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                      job.status === 'running' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                        job.status === 'failed' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                          'bg-gray-500/20 text-gray-300 border border-gray-500/30'
                       }`}>
                       {job.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{job.source}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{job.vehiclesFound}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{job.vehiclesNew}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{job.duplicates}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{job.source}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{job.vehiclesFound}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{job.vehiclesNew}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{job.duplicates}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {job.status === 'completed' && (
                       <Link
                         href={`/admin/data-management/scraper/results/${job.id}`}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-cyan-400 hover:text-cyan-300"
                       >
                         View Results →
                       </Link>

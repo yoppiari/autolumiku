@@ -118,7 +118,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 admin-sidebar transform transition-transform duration-300 ease-in-out bg-[#0a3d47] text-white border-r border-[#22d3ee]/20
+        fixed inset-y-0 left-0 z-50 w-64 h-screen overflow-y-auto transform transition-transform duration-300 ease-in-out bg-[#0a3d47] text-white border-r border-[#22d3ee]/20
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
@@ -230,7 +230,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="admin-header h-16 px-4 sm:px-6 lg:px-8 border-b border-[#22d3ee]/20">
+        <header className="h-16 px-4 sm:px-6 lg:px-8 border-b border-[#22d3ee]/20 bg-[#0a3d47] shadow-sm">
           <div className="flex items-center justify-between h-full">
             <div className="flex items-center">
               {/* Mobile menu button */}
@@ -268,7 +268,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="admin-content p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 min-h-screen bg-[#0d4450]">
           {children}
         </main>
       </div>
