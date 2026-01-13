@@ -118,12 +118,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 admin-sidebar transform transition-transform duration-300 ease-in-out bg-white border-r border-gray-200
+        fixed inset-y-0 left-0 z-50 w-64 admin-sidebar transform transition-transform duration-300 ease-in-out bg-[#113f47] text-white
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-center h-20 px-6 border-b border-gray-200 bg-[#0f172a]">
+          <div className="flex items-center justify-center h-20 px-6 border-b border-[#1e5763] bg-[#0d343b]">
             <img src="/autolumiku-logo.png" alt="AutoLumiKu" className="h-14 w-auto object-contain" />
           </div>
 
@@ -139,8 +139,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       className={`
                         w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors
                         ${pathname.startsWith(item.href)
-                          ? 'bg-[#06b6d4]/10 text-[#06b6d4]'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                          ? 'bg-[#06b6d4] text-white'
+                          : 'text-gray-300 hover:bg-white/10 hover:text-white'
                         }
                       `}
                     >
@@ -168,8 +168,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             className={`
                               flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                               ${pathname === subitem.href
-                                ? 'bg-[#06b6d4]/10 text-[#06b6d4]'
-                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                ? 'bg-[#06b6d4] text-white'
+                                : 'text-gray-300 hover:bg-white/10 hover:text-white'
                               }
                             `}
                           >
@@ -187,8 +187,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     className={`
                       flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                       ${pathname === item.href
-                        ? 'bg-[#06b6d4]/10 text-[#06b6d4]'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        ? 'bg-[#06b6d4] text-white'
+                        : 'text-gray-300 hover:bg-white/10 hover:text-white'
                       }
                     `}
                   >
@@ -201,25 +201,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
 
           {/* User menu */}
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-[#1e5763] p-4">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-gray-600 text-sm">
+              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm">
                   {user?.firstName?.[0] || 'A'}
                 </span>
               </div>
               <div className="ml-3">
-                <div className="text-sm font-medium text-gray-900">
+                <div className="text-sm font-medium text-white">
                   {user?.firstName} {user?.lastName}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-400">
                   {user?.role?.replace('_', ' ')}
                 </div>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm font-medium text-white bg-white/10 border border-transparent rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               Keluar
             </button>
