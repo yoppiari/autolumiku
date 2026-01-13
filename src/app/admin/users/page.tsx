@@ -126,16 +126,16 @@ export default function UsersPage() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'super_admin': return 'bg-purple-100 text-purple-800';
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'manager': return 'bg-blue-100 text-blue-800';
-      case 'staff': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'super_admin': return 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
+      case 'admin': return 'bg-red-500/20 text-red-300 border border-red-500/30';
+      case 'manager': return 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
+      case 'staff': return 'bg-green-500/20 text-green-300 border border-green-500/30';
+      default: return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
     }
   };
 
   const getStatusBadgeColor = (isActive: boolean) => {
-    return isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+    return isActive ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30';
   };
 
   const formatDate = (dateString: string) => {
@@ -299,7 +299,11 @@ export default function UsersPage() {
                             }}
                           />
                         ) : (
-                          <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold text-white ${getRoleBadgeColor(user.role).replace('bg-', 'bg-opacity-100 bg-').replace('text-', 'text-white ')}`}>
+                          <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ${user.role === 'super_admin' ? 'bg-purple-600' :
+                              user.role === 'admin' ? 'bg-red-600' :
+                                user.role === 'manager' ? 'bg-blue-600' :
+                                  user.role === 'staff' ? 'bg-green-600' : 'bg-gray-600'
+                            }`}>
                             {(user.firstName[0] || '').toUpperCase()}
                           </div>
                         )}

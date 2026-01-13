@@ -103,7 +103,7 @@ export default function ImageUpload({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
+      <label className="block text-sm font-medium text-gray-300">
         {label}
       </label>
 
@@ -115,7 +115,7 @@ export default function ImageUpload({
         className={`
           relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
           transition-all duration-200
-          ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
+          ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/30 hover:bg-white/5'}
           ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
@@ -133,16 +133,16 @@ export default function ImageUpload({
             <img
               src={preview}
               alt="Preview"
-              className="max-h-32 mx-auto rounded"
+              className="max-h-32 mx-auto rounded border border-white/10"
             />
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-400">
               {isUploading ? 'Mengupload...' : 'Klik atau drag file untuk mengganti'}
             </p>
           </div>
         ) : (
           <div className="space-y-2">
             <svg
-              className="mx-auto h-12 w-12 text-gray-400"
+              className="mx-auto h-12 w-12 text-gray-500"
               stroke="currentColor"
               fill="none"
               viewBox="0 0 48 48"
@@ -155,8 +155,8 @@ export default function ImageUpload({
                 strokeLinejoin="round"
               />
             </svg>
-            <div className="text-sm text-gray-600">
-              <span className="font-medium text-blue-600 hover:text-blue-500">
+            <div className="text-sm text-gray-400">
+              <span className="font-medium text-cyan-400 hover:text-cyan-300">
                 Upload file
               </span>
               {' atau drag and drop'}
@@ -166,14 +166,14 @@ export default function ImageUpload({
         )}
 
         {isUploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="absolute inset-0 flex items-center justify-center bg-[#0a3d47]/80 backdrop-blur-sm rounded-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
           </div>
         )}
       </div>
 
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-400">{error}</p>
       )}
     </div>
   );

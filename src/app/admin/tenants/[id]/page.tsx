@@ -139,19 +139,19 @@ export default function TenantDetailPage() {
       <div className="mb-6">
         <button
           onClick={() => router.push('/admin/tenants')}
-          className="text-sm text-gray-600 hover:text-gray-900 mb-4"
+          className="text-sm text-gray-400 hover:text-white mb-4 flex items-center gap-1 transition-colors"
         >
           ← Kembali ke Daftar Tenant
         </button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{tenant.name}</h1>
-            <p className="text-sm text-gray-600 mt-1">ID: {tenant.id}</p>
+            <h1 className="text-3xl font-bold text-white shadow-sm">{tenant.name}</h1>
+            <p className="text-sm text-gray-400 mt-1 font-mono">ID: {tenant.id}</p>
           </div>
           <div className="flex space-x-3">
             <button
               onClick={() => router.push(`/admin/tenants/${tenant.id}/edit`)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20 border border-blue-500/50"
             >
               Edit Tenant
             </button>
@@ -163,53 +163,52 @@ export default function TenantDetailPage() {
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
           {/* Basic Information */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Dasar</h2>
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow-sm border border-white/10 p-6">
+            <h2 className="text-lg font-semibold text-white mb-4 border-b border-white/10 pb-2">Informasi Dasar</h2>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <dt className="text-sm font-medium text-gray-500">Nama Tenant</dt>
-                <dd className="mt-1 text-sm text-gray-900">{tenant.name}</dd>
+                <dt className="text-sm font-medium text-gray-400">Nama Tenant</dt>
+                <dd className="mt-1 text-sm text-white font-medium">{tenant.name}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Subdomain</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium text-gray-400">Subdomain</dt>
+                <dd className="mt-1 text-sm text-cyan-300 font-mono">
                   {tenant.slug}.autolumiku.com
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Custom Domain</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium text-gray-400">Custom Domain</dt>
+                <dd className="mt-1 text-sm text-white">
                   {tenant.domain ? (
                     <div className="flex items-center space-x-2">
-                      <span>{tenant.domain}</span>
-                      <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">
+                      <span className="font-mono text-cyan-300">{tenant.domain}</span>
+                      <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded border border-blue-500/30 bg-blue-500/20 text-blue-300">
                         Custom
                       </span>
                     </div>
                   ) : (
-                    <span className="text-gray-400 italic">Tidak ada</span>
+                    <span className="text-gray-500 italic">Tidak ada</span>
                   )}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Status</dt>
+                <dt className="text-sm font-medium text-gray-400">Status</dt>
                 <dd className="mt-1">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    tenant.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${tenant.status === 'active' ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                    }`}>
                     {tenant.status === 'active' ? 'Aktif' : tenant.status}
                   </span>
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Dibuat</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium text-gray-400">Dibuat</dt>
+                <dd className="mt-1 text-sm text-white">
                   {format(new Date(tenant.createdAt), 'dd MMMM yyyy, HH:mm', { locale: localeId })}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Terakhir Diupdate</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium text-gray-400">Terakhir Diupdate</dt>
+                <dd className="mt-1 text-sm text-white">
                   {format(new Date(tenant.updatedAt), 'dd MMMM yyyy, HH:mm', { locale: localeId })}
                 </dd>
               </div>
@@ -217,8 +216,8 @@ export default function TenantDetailPage() {
           </div>
 
           {/* Branding */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Branding</h2>
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow-sm border border-white/10 p-6">
+            <h2 className="text-lg font-semibold text-white mb-4 border-b border-white/10 pb-2">Branding</h2>
 
             <div className="space-y-6">
               {/* Logo and Favicon Upload */}
@@ -238,30 +237,30 @@ export default function TenantDetailPage() {
               </div>
 
               {/* Color Settings */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-white/10">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Warna Utama</dt>
+                  <dt className="text-sm font-medium text-gray-400">Warna Utama</dt>
                   <dd className="mt-1 flex items-center space-x-2">
                     <div
-                      className="w-8 h-8 rounded border border-gray-300"
+                      className="w-8 h-8 rounded border border-white/20 shadow-sm"
                       style={{ backgroundColor: tenant.primaryColor }}
                     />
-                    <span className="text-sm text-gray-900">{tenant.primaryColor}</span>
+                    <span className="text-sm text-white font-mono">{tenant.primaryColor}</span>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Warna Sekunder</dt>
+                  <dt className="text-sm font-medium text-gray-400">Warna Sekunder</dt>
                   <dd className="mt-1 flex items-center space-x-2">
                     <div
-                      className="w-8 h-8 rounded border border-gray-300"
+                      className="w-8 h-8 rounded border border-white/20 shadow-sm"
                       style={{ backgroundColor: tenant.secondaryColor }}
                     />
-                    <span className="text-sm text-gray-900">{tenant.secondaryColor}</span>
+                    <span className="text-sm text-white font-mono">{tenant.secondaryColor}</span>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Tema</dt>
-                  <dd className="mt-1 text-sm text-gray-900 capitalize">{tenant.theme}</dd>
+                  <dt className="text-sm font-medium text-gray-400">Tema</dt>
+                  <dd className="mt-1 text-sm text-white capitalize">{tenant.theme}</dd>
                 </div>
               </div>
             </div>
@@ -269,16 +268,16 @@ export default function TenantDetailPage() {
 
           {/* Statistics */}
           {tenant._count && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Statistik</h2>
+            <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow-sm border border-white/10 p-6">
+              <h2 className="text-lg font-semibold text-white mb-4 border-b border-white/10 pb-2">Statistik</h2>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <dt className="text-sm font-medium text-blue-600">Total User</dt>
-                  <dd className="mt-1 text-3xl font-bold text-blue-900">{tenant._count.users}</dd>
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <dt className="text-sm font-medium text-blue-300">Total User</dt>
+                  <dd className="mt-1 text-3xl font-bold text-white">{tenant._count.users}</dd>
                 </div>
-                <div className="bg-green-50 rounded-lg p-4">
-                  <dt className="text-sm font-medium text-green-600">Total Kendaraan</dt>
-                  <dd className="mt-1 text-3xl font-bold text-green-900">{tenant._count.vehicles}</dd>
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                  <dt className="text-sm font-medium text-green-300">Total Kendaraan</dt>
+                  <dd className="mt-1 text-3xl font-bold text-white">{tenant._count.vehicles}</dd>
                 </div>
               </div>
             </div>
@@ -289,34 +288,33 @@ export default function TenantDetailPage() {
         <div className="space-y-6">
           {/* Subscription Info */}
           {tenant.subscription && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Subscription</h2>
+            <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow-sm border border-white/10 p-6">
+              <h2 className="text-lg font-semibold text-white mb-4 border-b border-white/10 pb-2">Subscription</h2>
               <dl className="space-y-3">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Plan</dt>
-                  <dd className="mt-1 text-sm text-gray-900 capitalize font-medium">{tenant.subscription.plan}</dd>
+                  <dt className="text-sm font-medium text-gray-400">Plan</dt>
+                  <dd className="mt-1 text-sm text-white capitalize font-medium">{tenant.subscription.plan}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Status</dt>
+                  <dt className="text-sm font-medium text-gray-400">Status</dt>
                   <dd className="mt-1">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      tenant.subscription.status === 'active' ? 'bg-green-100 text-green-800' :
-                      tenant.subscription.status === 'trialing' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${tenant.subscription.status === 'active' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
+                        tenant.subscription.status === 'trialing' ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' :
+                          'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                      }`}>
                       {tenant.subscription.status === 'trialing' ? 'Trial' : tenant.subscription.status}
                     </span>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Harga/Bulan</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-gray-400">Harga/Bulan</dt>
+                  <dd className="mt-1 text-sm text-white font-mono">
                     Rp {tenant.subscription.pricePerMonth.toLocaleString('id-ID')}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Periode Saat Ini</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-gray-400">Periode Saat Ini</dt>
+                  <dd className="mt-1 text-sm text-white">
                     {format(new Date(tenant.subscription.currentPeriodStart), 'dd MMM yyyy', { locale: localeId })}
                     {' - '}
                     {format(new Date(tenant.subscription.currentPeriodEnd), 'dd MMM yyyy', { locale: localeId })}
@@ -324,8 +322,8 @@ export default function TenantDetailPage() {
                 </div>
                 {tenant.subscription.trialEnd && (
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Trial Berakhir</dt>
-                    <dd className="mt-1 text-sm text-gray-900">
+                    <dt className="text-sm font-medium text-gray-400">Trial Berakhir</dt>
+                    <dd className="mt-1 text-sm text-white">
                       {format(new Date(tenant.subscription.trialEnd), 'dd MMM yyyy', { locale: localeId })}
                     </dd>
                   </div>
@@ -335,20 +333,20 @@ export default function TenantDetailPage() {
           )}
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow-sm border border-white/10 p-6">
+            <h2 className="text-lg font-semibold text-white mb-4 border-b border-white/10 pb-2">Quick Actions</h2>
             <div className="space-y-2">
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/10 rounded-md transition-colors border border-transparent hover:border-white/5">
                 Lihat Users
               </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/10 rounded-md transition-colors border border-transparent hover:border-white/5">
                 Lihat Kendaraan
               </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/10 rounded-md transition-colors border border-transparent hover:border-white/5">
                 Audit Logs
               </button>
-              <hr className="my-2" />
-              <button className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors">
+              <hr className="my-2 border-white/10" />
+              <button className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors border border-transparent hover:border-red-500/20">
                 Deactivate Tenant
               </button>
             </div>

@@ -92,16 +92,16 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
   };
 
   const healthColor = {
-    healthy: 'text-green-600 bg-green-50',
-    warning: 'text-yellow-600 bg-yellow-50',
-    critical: 'text-red-600 bg-red-50',
+    healthy: 'text-green-300 bg-green-500/20',
+    warning: 'text-yellow-300 bg-yellow-500/20',
+    critical: 'text-red-300 bg-red-500/20',
   };
 
   const statusColor = {
-    'setup_required': 'text-yellow-600 bg-yellow-50',
-    active: 'text-green-600 bg-green-50',
-    suspended: 'text-red-600 bg-red-50',
-    deactivated: 'text-gray-600 bg-gray-50',
+    'setup_required': 'text-yellow-300 bg-yellow-500/20',
+    active: 'text-green-300 bg-green-500/20',
+    suspended: 'text-red-300 bg-red-500/20',
+    deactivated: 'text-gray-300 bg-gray-500/20',
   };
 
   return (
@@ -118,12 +118,12 @@ export default function TenantDashboard({ tenants, onRefresh }: TenantDashboardP
           <select
             value={selectedTimeRange}
             onChange={(e) => setSelectedTimeRange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-white"
           >
-            <option value="24h">24 Jam</option>
-            <option value="7d">7 Hari</option>
-            <option value="30d">30 Hari</option>
-            <option value="90d">90 Hari</option>
+            <option value="24h" className="bg-[#0a3d47] text-white">24 Jam</option>
+            <option value="7d" className="bg-[#0a3d47] text-white">7 Hari</option>
+            <option value="30d" className="bg-[#0a3d47] text-white">30 Hari</option>
+            <option value="90d" className="bg-[#0a3d47] text-white">90 Hari</option>
           </select>
           <button
             onClick={handleRefresh}

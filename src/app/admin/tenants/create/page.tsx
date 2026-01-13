@@ -151,7 +151,7 @@ export default function CreateTenantPage() {
       {/* Existing Tenants List (Reference) */}
       <div className="pt-4">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-white">
             Existing Tenants Reference
             <span className="ml-2 text-sm font-normal text-gray-400">
               (Live Data)

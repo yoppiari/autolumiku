@@ -61,34 +61,34 @@ export default function AdminLoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
+      className="min-h-screen flex items-center justify-center p-4 bg-[#0d4450]"
       style={{
-        backgroundImage: 'url(/admin-bg.jpg)',
+        backgroundImage: 'linear-gradient(rgba(13, 68, 80, 0.9), rgba(13, 68, 80, 0.9)), url(/admin-bg.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}
     >
-      <div className="rounded-lg border bg-[#ffffff]/95 backdrop-blur-sm shadow-xl w-full max-w-md">
+      <div className="rounded-lg border border-white/10 bg-[#0a3d47]/90 backdrop-blur-md shadow-2xl w-full max-w-md">
         <div className="flex flex-col p-6 space-y-1">
           <div className="flex justify-center mb-4">
             {/* Logo text matching the branding in background */}
-            <div className="text-4xl font-bold text-cyan-500 drop-shadow-sm">AutoLumiKu</div>
+            <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 drop-shadow-sm">AutoLumiKu</div>
           </div>
-          <h3 className="font-semibold tracking-tight text-2xl text-center text-gray-800">Super Admin Login</h3>
-          <p className="text-sm text-gray-400 text-center">Platform administration access</p>
+          <h3 className="font-semibold tracking-tight text-2xl text-center text-white">Super Admin Login</h3>
+          <p className="text-sm text-gray-300 text-center">Platform administration access</p>
         </div>
 
         <div className="p-6 pt-0">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-200 px-4 py-3 rounded text-sm">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="text-sm font-medium text-gray-200">
                 Email
               </label>
               <input
@@ -96,7 +96,7 @@ export default function AdminLoginPage() {
                 name="email"
                 type="email"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-[#0d4450] border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-white placeholder-gray-500"
                 placeholder="admin@autolumiku.com"
                 value={formData.email}
                 onChange={handleChange}
@@ -104,7 +104,7 @@ export default function AdminLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="text-sm font-medium text-gray-200">
                 Password
               </label>
               <input
@@ -112,7 +112,7 @@ export default function AdminLoginPage() {
                 name="password"
                 type="password"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-[#0d4450] border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-white placeholder-gray-500"
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
@@ -122,7 +122,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded-lg font-medium transition-colors disabled:opacity-50 shadow-lg shadow-cyan-900/20"
             >
               {isLoading ? 'Signing in...' : 'Sign in as Admin'}
             </button>
@@ -131,7 +131,7 @@ export default function AdminLoginPage() {
           <div className="mt-6 text-center">
             <a
               href="/login"
-              className="text-sm text-gray-300 hover:text-gray-700"
+              className="text-sm text-cyan-300 hover:text-cyan-200 transition-colors"
             >
               ← Back to Showroom Login
             </a>
