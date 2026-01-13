@@ -83,7 +83,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: '🏠' },
+    { name: 'Management Dashboard', href: '/admin', icon: '🏠' },
     { name: 'Tenants', href: '/admin/tenants', icon: '🏢' },
     { name: 'Users', href: '/admin/users', icon: '👥' },
     { name: 'Analytics', href: '/admin/health', icon: '📊' },
@@ -118,21 +118,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 admin-sidebar transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-64 admin-sidebar transform transition-transform duration-300 ease-in-out bg-white border-r border-gray-200
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center h-16 px-6 border-b border-gray-200">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
-              <div className="ml-3">
-                <div className="text-lg font-bold text-gray-900">autolumiku</div>
-                <div className="text-xs text-gray-500">Admin Panel</div>
-              </div>
-            </div>
+          <div className="flex items-center justify-center h-20 px-6 border-b border-gray-200 bg-[#0f172a]">
+            <img src="/autolumiku-logo.png" alt="AutoLumiKu" className="h-14 w-auto object-contain" />
           </div>
 
           {/* Navigation */}
@@ -147,7 +139,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       className={`
                         w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors
                         ${pathname.startsWith(item.href)
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'bg-[#06b6d4]/10 text-[#06b6d4]'
                           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                         }
                       `}
@@ -176,7 +168,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             className={`
                               flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                               ${pathname === subitem.href
-                                ? 'bg-blue-100 text-blue-700'
+                                ? 'bg-[#06b6d4]/10 text-[#06b6d4]'
                                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                               }
                             `}
@@ -195,7 +187,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     className={`
                       flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                       ${pathname === item.href
-                        ? 'bg-blue-100 text-blue-700'
+                        ? 'bg-[#06b6d4]/10 text-[#06b6d4]'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                       }
                     `}
