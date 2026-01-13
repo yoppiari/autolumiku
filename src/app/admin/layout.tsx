@@ -88,7 +88,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Users', href: '/admin/users', icon: '👥' },
     { name: 'Analytics', href: '/admin/health', icon: '📊' },
     {
-      name: 'Data Management', href: '/admin/data-management/scraper', icon: '🗄️', submenu: [
+      name: 'Data Management', href: '/admin/data-management', icon: '🗄️', submenu: [
         { name: 'Vehicle Scraper', href: '/admin/data-management/scraper', icon: '🤖' },
       ]
     },
