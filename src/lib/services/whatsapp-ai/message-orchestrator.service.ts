@@ -205,6 +205,27 @@ export class MessageOrchestratorService {
         incoming.customerName
       );
 
+      // FORCE CLEAR DB STOP SIGNAL FOR ANY NEW MESSAGE
+      // This is critical: if a user previously said "Stop", the flag might be stuck in DB.
+      // We must clear it now so the new request (e.g. "Ya PM-xxx foto") is not immediately stopped.
+      const ctx = (conversation.contextData as Record<string, any>) || {};
+      if (ctx.stopSignal === true) {
+        console.log(`[Orchestrator] 🧹 Force-clearing stuck stopSignal from DB for conversation ${conversation.id}`);
+        await prisma.whatsAppConversation.update({
+          where: { id: conversation.id },
+          data: {
+            contextData: {
+              ...ctx,
+              stopSignal: false,
+              stopSignalClearedAt: Date.now()
+            }
+          }
+        });
+        // Update local object to reflect change immediately
+        ctx.stopSignal = false;
+        conversation.contextData = ctx;
+      }
+
       // 1.5. Lookup user by phone number (for ALL messages, not just commands)
       // Normalize phone number to handle format differences (628... vs 08...)
       const normalizedPhone = normalizePhoneNumber(incoming.from);
