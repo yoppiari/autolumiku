@@ -546,170 +546,149 @@ export default function VehiclesPage() {
             {filteredVehicles.map((vehicle) => (
               <div
                 key={vehicle.id}
-                className={`bg-[#1e1e1e] border border-[#333] rounded-xl shadow-lg overflow-hidden flex flex-col ${viewMode === 'list' ? 'md:flex-row' : ''}`}
+                className={`bg-[#1e1e1e] border border-[#333] rounded-xl shadow-lg overflow-hidden flex flex-col isolate`}
               >
-                {/* Top Section: Image + Info (Row on Mobile List, Col on Grid) */}
-                <div className={`flex ${viewMode === 'list' ? 'flex-row' : 'flex-col'} relative`}>
+                {/* Main Card Layout - Flex Column to ensure bottom actions sit right */}
+                <div className="flex flex-col h-full">
 
-                  {/* Poto Section */}
-                  <div className={`relative bg-black shrink-0 ${viewMode === 'list'
-                      ? 'w-[40%] md:w-56 h-auto min-h-[140px]'
-                      : 'w-full h-40'
-                    }`}>
-                    <VehicleImageCarousel
-                      photos={vehicle.photos || []}
-                      alt={`${vehicle.make} ${vehicle.model}`}
-                      aspectRatio="h-full"
-                      roundedClass=""
-                      showCounter={false}
-                      showIndicators={false}
-                      interval={99999}
-                    />
-                    {/* Overlay Status Label for Sold (Always Visible if Sold) */}
-                    {vehicle.status === 'SOLD' && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                        <span className="text-white text-[10px] font-bold bg-red-600 px-2 py-0.5 rounded rotate-[-12deg]">TERJUAL</span>
+                  {/* Card Body: Row on List, Col on Grid */}
+                  <div className={`flex flex-1 relative ${viewMode === 'list' ? 'flex-row' : 'flex-col'}`}>
+
+                    {/* Photo Section */}
+                    <div className={`relative bg-black shrink-0 overflow-hidden ${viewMode === 'list'
+                        ? 'w-[35%] md:w-56 h-auto md:h-auto'
+                        : 'w-full h-40'
+                      }`}>
+                      <VehicleImageCarousel
+                        photos={vehicle.photos || []}
+                        alt={`${vehicle.make} ${vehicle.model}`}
+                        aspectRatio="h-full"
+                        roundedClass=""
+                        showCounter={false}
+                        showIndicators={false}
+                        interval={99999}
+                      />
+                      {/* Overlay Status Label for Sold */}
+                      {vehicle.status === 'SOLD' && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+                          <span className="text-white text-[10px] font-bold bg-red-600 px-2 py-0.5 rounded rotate-[-12deg]">TERJUAL</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info Section */}
+                    <div className={`flex-1 p-2 md:p-3 flex flex-col justify-between min-w-0 ${viewMode === 'list' ? '' : 'gap-2'}`}>
+
+                      {/* Header */}
+                      <div className="flex flex-col gap-0.5 md:gap-1">
+                        <div className="flex justify-between items-start">
+                          <Link href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`} className="hover:text-blue-400 transition-colors">
+                            <h3 className="text-white font-bold text-sm md:text-lg leading-tight line-clamp-2">
+                              {vehicle.make} {vehicle.model}
+                            </h3>
+                          </Link>
+                        </div>
+
+                        {/* ID & Status */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-rose-400 font-bold text-[10px] md:text-sm">
+                            {vehicle.displayId || vehicle.id.slice(0, 8)}
+                          </span>
+                          <span className={`px-1.5 py-px rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(vehicle.status)}`}>
+                            {getStatusLabel(vehicle.status)}
+                          </span>
+                        </div>
+
+                        {/* Price */}
+                        <div className="text-blue-400 font-bold text-base md:text-xl mt-0.5">
+                          {formatPrice(vehicle.price)}
+                        </div>
+                      </div>
+
+                      {/* Specs Grid */}
+                      <div className={`mt-2 text-[10px] text-gray-400 ${viewMode === 'list' ? 'flex flex-wrap items-center gap-2' : 'grid grid-cols-2 gap-x-2 gap-y-1'}`}>
+                        {/* Variant Badge */}
+                        {vehicle.variant && (
+                          <span className={`px-1.5 py-px bg-blue-900/20 text-blue-300 rounded border border-blue-500/20 font-bold uppercase ${viewMode === 'list' ? '' : 'col-span-2 w-fit'}`}>
+                            {vehicle.variant}
+                          </span>
+                        )}
+
+                        <span className="text-gray-300 font-medium">{vehicle.year}</span>
+                        <span className="text-gray-600 hidden md:inline">•</span>
+
+                        <span>{vehicle.transmissionType}</span>
+                        <span className="text-gray-600 hidden md:inline">•</span>
+
+                        <span className="text-emerald-400 font-medium">
+                          {vehicle.engineCapacity ? `${vehicle.engineCapacity}cc` : ''}
+                        </span>
+                      </div>
+
+                      {/* Updated By (Minimal) */}
+                      <div className="mt-2 pt-2 border-t border-[#333] text-[9px] text-gray-600 truncate flex justify-between items-center">
+                        <span>Upd: {getUserName(vehicle.updatedBy)}</span>
+                        <span>{new Date(vehicle.updatedAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    {/* Desktop List View Sidebar Actions */}
+                    {viewMode === 'list' && (
+                      <div className="hidden md:flex flex-col w-24 border-l border-[#333] bg-[#222] items-center justify-center shrink-0">
+                        {canModifyVehicle(vehicle) ? (
+                          <Link
+                            href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
+                            className="w-full h-1/2 flex items-center justify-center text-xs font-bold text-blue-400 hover:bg-blue-600/10 hover:text-blue-300 transition-all uppercase tracking-wider border-b border-[#333]"
+                          >
+                            "edit"
+                          </Link>
+                        ) : (
+                          <span className="w-full h-1/2 flex items-center justify-center text-xs font-bold text-gray-700 cursor-not-allowed uppercase tracking-wider border-b border-[#333]">
+                            "edit"
+                          </span>
+                        )}
+
+                        <button
+                          onClick={() => handleDelete(vehicle)}
+                          disabled={deleting === vehicle.id || !canModifyVehicle(vehicle)}
+                          className={`w-full h-1/2 flex items-center justify-center text-xs font-bold transition-all uppercase tracking-wider ${canModifyVehicle(vehicle)
+                              ? 'text-rose-500 hover:bg-rose-900/10 hover:text-rose-300'
+                              : 'text-gray-700 cursor-not-allowed'
+                            }`}
+                        >
+                          {deleting === vehicle.id ? '...' : '"hapus"'}
+                        </button>
                       </div>
                     )}
                   </div>
 
-                  {/* Info Section */}
-                  <div className={`flex-1 p-3 flex flex-col justify-between min-w-0 ${viewMode === 'list' ? '' : 'gap-2'}`}>
-
-                    {/* Header: Title, ID, Status */}
-                    <div className="flex flex-col gap-1">
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-white font-bold text-base md:text-lg leading-tight line-clamp-2">
-                          {vehicle.make} {vehicle.model}
-                        </h3>
-                      </div>
-
-                      {/* ID & Status Row */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-rose-400 font-bold text-xs md:text-sm">
-                          {vehicle.displayId || vehicle.id.slice(0, 8)}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(vehicle.status)}`}>
-                          {getStatusLabel(vehicle.status)}
-                        </span>
-                      </div>
-
-                      {/* Price */}
-                      <div className="text-blue-400 font-bold text-lg md:text-xl mt-1">
-                        {formatPrice(vehicle.price)}
-                      </div>
-                    </div>
-
-                    {/* Specs Grid */}
-                    <div className={`grid grid-cols-2 gap-x-2 gap-y-1 mt-2 text-xs text-gray-400 ${viewMode === 'list' ? 'md:flex md:flex-wrap md:items-center' : ''}`}>
-                      {/* Variant Badge */}
-                      {vehicle.variant && (
-                        <span className="col-span-2 md:col-span-auto w-fit px-2 py-0.5 bg-[#2563eb]/20 text-blue-300 rounded border border-blue-500/30 font-bold uppercase text-[10px]">
-                          {vehicle.variant}
-                        </span>
-                      )}
-
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-300 font-medium">{vehicle.year}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <span>{vehicle.transmissionType}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1 text-emerald-400 font-medium">
-                        {vehicle.engineCapacity ? `${vehicle.engineCapacity}cc` : ''}
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        {vehicle.fuelType}
-                      </div>
-                    </div>
-
-                    {/* Footer Infos */}
-                    <div className="mt-3 pt-2 border-t border-[#333] flex flex-wrap gap-3 text-[10px] text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-gray-600 rounded-full"></span>
-                        {vehicle.mileage ? `${vehicle.mileage.toLocaleString('id-ID')} km` : '0 km'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-gray-600 rounded-full"></span>
-                        {vehicle.licensePlate || 'No Plat'}
-                      </span>
-
-                      {/* Stock Age */}
-                      {(() => {
-                        const diff = new Date().getTime() - new Date(vehicle.createdAt).getTime();
-                        const days = Math.ceil(Math.abs(diff) / (1000 * 3600 * 24));
-                        return (
-                          <span className={`px-1.5 py-px rounded border font-bold ${days > 60 ? 'bg-red-900/10 text-red-500 border-red-900/30' : 'bg-emerald-900/10 text-emerald-500 border-emerald-900/30'}`}>
-                            {days} Hari
-                          </span>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Updated By */}
-                    <div className="text-[9px] text-gray-600 mt-1 truncate">
-                      Update by {getUserName(vehicle.updatedBy)} • {new Date(vehicle.updatedAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions Bar - Always visible at bottom on mobile/list, separate col on desktop list?? 
-                    Actually for the "After" look, a bottom bar is cleaner. */}
-                <div className={`grid grid-cols-2 divide-x divide-[#333] border-t border-[#333] bg-[#252525] ${viewMode === 'list' && 'md:hidden'}`}>
-                  {canModifyVehicle(vehicle) ? (
-                    <Link
-                      href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
-                      className="py-2.5 text-center text-xs font-bold text-blue-400 hover:bg-[#333] hover:text-white transition-colors"
-                    >
-                      EDIT
-                    </Link>
-                  ) : (
-                    <span className="py-2.5 text-center text-xs font-bold text-gray-600 cursor-not-allowed">
-                      EDIT
-                    </span>
-                  )}
-
-                  <button
-                    onClick={() => handleDelete(vehicle)}
-                    disabled={deleting === vehicle.id || !canModifyVehicle(vehicle)}
-                    className={`py-2.5 text-center text-xs font-bold transition-colors ${canModifyVehicle(vehicle)
-                        ? 'text-rose-500 hover:bg-rose-900/20'
-                        : 'text-gray-600 cursor-not-allowed'
-                      }`}
-                  >
-                    {deleting === vehicle.id ? '...' : 'HAPUS'}
-                  </button>
-                </div>
-
-                {/* Desktop List View Actions (Sidebar style) - Only if ViewMode is List and Desktop */}
-                {viewMode === 'list' && (
-                  <div className="hidden md:flex flex-col w-32 border-l border-[#333] bg-[#222] p-2 justify-center gap-2 shrink-0">
+                  {/* Bottom Actions Bar - Mobile List & All Grid Views */}
+                  <div className={`grid grid-cols-2 divide-x divide-[#333] border-t border-[#333] bg-[#252525] ${viewMode === 'list' ? 'md:hidden' : ''}`}>
                     {canModifyVehicle(vehicle) ? (
                       <Link
                         href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`}
-                        className="w-full py-2 text-center text-xs font-bold bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded hover:bg-blue-600 hover:text-white transition-all"
+                        className="py-2.5 text-center text-xs font-bold text-blue-400 hover:bg-[#333] hover:text-white transition-colors uppercase tracking-wider"
                       >
-                        EDIT
+                        "edit"
                       </Link>
                     ) : (
-                      <button disabled className="w-full py-2 text-center text-xs font-bold bg-[#333] text-gray-600 border border-[#444] rounded cursor-not-allowed">EDIT</button>
+                      <span className="py-2.5 text-center text-xs font-bold text-gray-600 cursor-not-allowed uppercase tracking-wider">
+                        "edit"
+                      </span>
                     )}
 
                     <button
                       onClick={() => handleDelete(vehicle)}
                       disabled={deleting === vehicle.id || !canModifyVehicle(vehicle)}
-                      className={`w-full py-2 text-center text-xs font-bold border rounded transition-all ${canModifyVehicle(vehicle)
-                          ? 'bg-rose-900/20 text-rose-500 border-rose-500/30 hover:bg-rose-600 hover:text-white'
-                          : 'bg-[#333] text-gray-600 border-[#444] cursor-not-allowed'
+                      className={`py-2.5 text-center text-xs font-bold transition-colors uppercase tracking-wider ${canModifyVehicle(vehicle)
+                          ? 'text-rose-500 hover:bg-rose-900/20'
+                          : 'text-gray-600 cursor-not-allowed'
                         }`}
                     >
-                      {deleting === vehicle.id ? '...' : 'HAPUS'}
+                      {deleting === vehicle.id ? '...' : '"hapus"'}
                     </button>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
