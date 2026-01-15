@@ -58,6 +58,15 @@ export async function middleware(request: NextRequest) {
   const isCustomDomain = !!tenantSlug;
   const isPlatformDomain = cleanHost.includes('auto.lumiku.com');
 
+  // Redirect /login to /admin/login only on the platform domain (AutoLumiKu)
+  // This resolves the URL conflict where the platform owner expects /login to lead to the admin panel
+  if (isPlatformDomain && pathname === '/login') {
+    console.log(`[Middleware] Platform domain detected on /login, redirecting to /admin/login`);
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/login';
+    return NextResponse.redirect(url);
+  }
+
   // Skip middleware for:
   // - API routes (handled separately)
   // - Static files (but NOT _next/static/ with encoded brackets - handled above)
