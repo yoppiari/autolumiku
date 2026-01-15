@@ -1759,12 +1759,13 @@ export class WhatsAppAIChatService {
     const dateStr = wibTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     // Determine appropriate greeting based on time
+    // Determine appropriate greeting based on time matching identity.ts rules
     let timeGreeting: string;
-    if (hour >= 6 && hour < 12) {
+    if (hour >= 4 && hour < 11) {
       timeGreeting = "Selamat pagi";
-    } else if (hour >= 12 && hour < 16) {
+    } else if (hour >= 11 && hour < 15) {
       timeGreeting = "Selamat siang";
-    } else if (hour >= 16 && hour < 19) {
+    } else if (hour >= 15 && hour < 18) {
       timeGreeting = "Selamat sore";
     } else {
       timeGreeting = "Selamat malam";
