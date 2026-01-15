@@ -181,31 +181,31 @@ export default function TenantEditPage() {
       <div className="mb-8">
         <button
           onClick={() => router.push(`/admin/tenants/${tenantId}`)}
-          className="group flex items-center text-sm text-gray-500 hover:text-blue-600 mb-4 transition-colors"
+          className="group flex items-center text-sm text-gray-400 hover:text-white mb-4 transition-colors"
         >
           <span className="mr-2 group-hover:-translate-x-1 transition-transform">←</span>
           Kembali ke Detail Tenant
         </button>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Edit Tenant</h1>
-        <p className="text-gray-500 mt-1">Kelola konfigurasi, branding, dan domain untuk showroom ini.</p>
+        <h1 className="text-3xl font-bold text-white tracking-tight shadow-sm">Edit Tenant</h1>
+        <p className="text-gray-400 mt-1">Kelola konfigurasi, branding, dan domain untuk showroom ini.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Error Notification */}
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+          <div className="bg-red-500/10 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <span className="text-red-500 text-xl font-bold">⚠️</span>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-bold text-red-800">{error}</h3>
+                <h3 className="text-sm font-bold text-red-300">{error}</h3>
                 {errorDetails && (
-                  <div className="mt-2 text-xs text-red-700 font-mono bg-red-100/50 p-2 rounded border border-red-200 overflow-x-auto max-h-32">
+                  <div className="mt-2 text-xs text-red-300 font-mono bg-red-500/10 p-2 rounded border border-red-500/20 overflow-x-auto max-h-32">
                     {errorDetails}
                   </div>
                 )}
-                <p className="mt-2 text-xs text-red-600 italic">
+                <p className="mt-2 text-xs text-red-400 italic">
                   Database tenant tetap diupdate, namun sinkronisasi jaringan (Traefik) terkendala.
                 </p>
               </div>
@@ -215,10 +215,10 @@ export default function TenantEditPage() {
 
         {/* Success/Sync Notification */}
         {syncStatus && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
+          <div className="bg-green-500/10 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
             <div className="flex">
               <span className="text-green-500 mr-3">✅</span>
-              <p className="text-sm font-medium text-green-800">{syncStatus}</p>
+              <p className="text-sm font-medium text-green-300">{syncStatus}</p>
             </div>
           </div>
         )}
@@ -226,31 +226,31 @@ export default function TenantEditPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Column 1: Core Configuration */}
           <div className="space-y-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
+              <div className="px-6 py-4 bg-white/5 border-b border-white/10">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                   Informasi Dasar
                 </h2>
               </div>
               <div className="p-6 space-y-5">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-1.5 leading-tight">
-                    Nama Tenant <span className="text-red-500">*</span>
+                  <label htmlFor="name" className="block text-sm font-bold text-gray-300 mb-1.5 leading-tight">
+                    Nama Tenant <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleChange('name', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                    className="w-full px-4 py-2.5 bg-[#0a3d47] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-white transition-all shadow-sm placeholder-gray-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="slug" className="block text-sm font-bold text-gray-700 mb-1.5 leading-tight">
-                    Subdomain (Slug) <span className="text-red-500">*</span>
+                  <label htmlFor="slug" className="block text-sm font-bold text-gray-300 mb-1.5 leading-tight">
+                    Subdomain (Slug) <span className="text-red-400">*</span>
                   </label>
                   <div className="flex">
                     <input
@@ -258,11 +258,11 @@ export default function TenantEditPage() {
                       id="slug"
                       value={formData.slug}
                       onChange={(e) => handleChange('slug', e.target.value)}
-                      className="flex-1 min-w-0 px-4 py-2.5 border border-gray-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono z-10"
+                      className="flex-1 min-w-0 px-4 py-2.5 bg-[#0a3d47] border border-white/10 border-r-0 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-white transition-all shadow-sm font-mono z-10 placeholder-gray-500"
                       placeholder="primamobil-id"
                       required
                     />
-                    <span className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 bg-gray-50 text-gray-400 text-[10px] md:text-sm rounded-r-xl whitespace-nowrap overflow-hidden font-medium">
+                    <span className="inline-flex items-center px-3 py-2 border border-white/10 bg-white/5 text-gray-400 text-[10px] md:text-sm rounded-r-xl whitespace-nowrap overflow-hidden font-medium">
                       .autolumiku.com
                     </span>
                   </div>
@@ -272,34 +272,34 @@ export default function TenantEditPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="status" className="block text-sm font-bold text-gray-700 mb-1.5">
+                  <label htmlFor="status" className="block text-sm font-bold text-gray-300 mb-1.5">
                     Status Operasional
                   </label>
                   <select
                     id="status"
                     value={formData.status}
                     onChange={(e) => handleChange('status', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-medium"
+                    className="w-full px-4 py-2.5 bg-[#0a3d47] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-white transition-all shadow-sm font-medium"
                   >
-                    <option value="active">Aktif (Online)</option>
-                    <option value="inactive">Tidak Aktif</option>
-                    <option value="suspended">Suspended (Blokir)</option>
+                    <option value="active" className="bg-[#0a3d47] text-white">Aktif (Online)</option>
+                    <option value="inactive" className="bg-[#0a3d47] text-white">Tidak Aktif</option>
+                    <option value="suspended" className="bg-[#0a3d47] text-white">Suspended (Blokir)</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-purple-600 rounded-full"></span>
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
+              <div className="px-6 py-4 bg-white/5 border-b border-white/10">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
                   Konfigurasi Domain & Jaringan
                 </h2>
               </div>
               <div className="p-6 space-y-6">
                 <div>
-                  <label htmlFor="domain" className="block text-sm font-bold text-gray-700 mb-1.5 leading-tight">
-                    Custom Domain / Hostname <span className="text-red-500">*</span>
+                  <label htmlFor="domain" className="block text-sm font-bold text-gray-300 mb-1.5 leading-tight">
+                    Custom Domain / Hostname <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -307,19 +307,19 @@ export default function TenantEditPage() {
                       id="domain"
                       value={formData.domain}
                       onChange={(e) => handleChange('domain', e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono text-blue-600 font-bold"
+                      className="w-full px-4 py-2.5 bg-[#0a3d47] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-cyan-400 font-mono font-bold transition-all shadow-sm placeholder-gray-600"
                       placeholder="primamobil.id"
                       required
                     />
-                    <div className="absolute right-3 top-2.5 text-blue-400">🌐</div>
+                    <div className="absolute right-3 top-2.5 text-cyan-500">🌐</div>
                   </div>
                 </div>
 
-                <div className="bg-blue-50/80 border border-blue-100 rounded-2xl p-4">
-                  <h3 className="text-[11px] font-black text-blue-900 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
+                  <h3 className="text-[11px] font-black text-blue-300 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                     🚀 DNS Setup Guide
                   </h3>
-                  <ul className="text-[10px] text-blue-800 space-y-2 font-medium">
+                  <ul className="text-[10px] text-blue-200 space-y-2 font-medium">
                     <li className="flex items-start gap-2">
                       <span className="pt-0.5">1.</span>
                       <span>Arahkan A Record / CNAME domain Anda ke IP server platform.</span>
@@ -338,7 +338,7 @@ export default function TenantEditPage() {
                     type="button"
                     onClick={handleManualSync}
                     disabled={isSyncing}
-                    className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-blue-700 border border-blue-200 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm font-bold text-xs disabled:opacity-50 active:scale-95"
+                    className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white border border-transparent rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 font-bold text-xs disabled:opacity-50 active:scale-95"
                   >
                     {isSyncing ? '🔄 Sedang Sinkronisasi...' : '🔄 Sinkronisasi Traefik (Manual)'}
                   </button>
@@ -349,9 +349,9 @@ export default function TenantEditPage() {
 
           {/* Column 2: Visual Branding */}
           <div className="space-y-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
+              <div className="px-6 py-4 bg-white/5 border-b border-white/10">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
                   Visual Branding & Media
                 </h2>
@@ -374,17 +374,17 @@ export default function TenantEditPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-indigo-600 rounded-full"></span>
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
+              <div className="px-6 py-4 bg-white/5 border-b border-white/10">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
                   Warna & Tema Portal
                 </h2>
               </div>
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="primaryColor" className="block text-sm font-bold text-gray-700 mb-2 leading-tight">
+                    <label htmlFor="primaryColor" className="block text-sm font-bold text-gray-300 mb-2 leading-tight">
                       Warna Utama
                     </label>
                     <div className="flex items-center gap-3">
@@ -393,19 +393,19 @@ export default function TenantEditPage() {
                         id="primaryColor"
                         value={formData.primaryColor}
                         onChange={(e) => handleChange('primaryColor', e.target.value)}
-                        className="h-12 w-16 border-0 rounded-xl cursor-pointer p-0 bg-transparent ring-1 ring-gray-200"
+                        className="h-12 w-16 border border-white/10 rounded-xl cursor-pointer p-0 bg-transparent"
                       />
                       <input
                         type="text"
                         value={formData.primaryColor}
                         onChange={(e) => handleChange('primaryColor', e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono uppercase focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-xl text-sm font-mono uppercase text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="secondaryColor" className="block text-sm font-bold text-gray-700 mb-2 leading-tight">
+                    <label htmlFor="secondaryColor" className="block text-sm font-bold text-gray-300 mb-2 leading-tight">
                       Warna Sekunder
                     </label>
                     <div className="flex items-center gap-3">
@@ -414,38 +414,38 @@ export default function TenantEditPage() {
                         id="secondaryColor"
                         value={formData.secondaryColor}
                         onChange={(e) => handleChange('secondaryColor', e.target.value)}
-                        className="h-12 w-16 border-0 rounded-xl cursor-pointer p-0 bg-transparent ring-1 ring-gray-200"
+                        className="h-12 w-16 border border-white/10 rounded-xl cursor-pointer p-0 bg-transparent"
                       />
                       <input
                         type="text"
                         value={formData.secondaryColor}
                         onChange={(e) => handleChange('secondaryColor', e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono uppercase focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 bg-[#0a3d47] border border-white/10 rounded-xl text-sm font-mono uppercase text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="theme" className="block text-sm font-bold text-gray-700 mb-2">
+                  <label htmlFor="theme" className="block text-sm font-bold text-gray-300 mb-2">
                     Mode Tampilan Default
                   </label>
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       type="button"
                       onClick={() => handleChange('theme', 'light')}
-                      className={`px-4 py-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${formData.theme === 'light' ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 shadow-sm' : 'bg-white border-gray-200 hover:border-blue-300'}`}
+                      className={`px-4 py-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${formData.theme === 'light' ? 'bg-blue-500/20 border-blue-500 ring-1 ring-blue-500' : 'bg-white/5 border-white/10 hover:border-blue-500/50'}`}
                     >
                       <span className="text-xl">☀️</span>
-                      <span className={`text-xs font-bold ${formData.theme === 'light' ? 'text-blue-700' : 'text-gray-600'}`}>Light Mode</span>
+                      <span className={`text-xs font-bold ${formData.theme === 'light' ? 'text-blue-400' : 'text-gray-400'}`}>Light Mode</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleChange('theme', 'dark')}
-                      className={`px-4 py-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${formData.theme === 'dark' ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500 shadow-sm' : 'bg-white border-gray-200 hover:border-indigo-300'}`}
+                      className={`px-4 py-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${formData.theme === 'dark' ? 'bg-indigo-500/20 border-indigo-500 ring-1 ring-indigo-500' : 'bg-white/5 border-white/10 hover:border-indigo-500/50'}`}
                     >
                       <span className="text-xl">🌙</span>
-                      <span className={`text-xs font-bold ${formData.theme === 'dark' ? 'text-indigo-700' : 'text-gray-600'}`}>Dark Mode</span>
+                      <span className={`text-xs font-bold ${formData.theme === 'dark' ? 'text-indigo-400' : 'text-gray-400'}`}>Dark Mode</span>
                     </button>
                   </div>
                 </div>
@@ -455,18 +455,18 @@ export default function TenantEditPage() {
         </div>
 
         {/* Form Actions */}
-        <div className="flex flex-col sm:flex-row justify-end items-center gap-4 pt-8 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-end items-center gap-4 pt-8 border-t border-white/10">
           <button
             type="button"
             onClick={() => router.push(`/admin/tenants/${tenantId}`)}
-            className="w-full sm:w-auto px-8 py-3 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
+            className="w-full sm:w-auto px-8 py-3 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-gray-300 hover:bg-white/10 transition-all active:scale-95 shadow-sm"
             disabled={isSaving}
           >
             Batal
           </button>
           <button
             type="submit"
-            className="w-full sm:w-auto px-12 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 disabled:opacity-50 text-sm font-black uppercase tracking-wider"
+            className="w-full sm:w-auto px-12 py-3 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-all shadow-lg shadow-cyan-900/20 active:scale-95 disabled:opacity-50 text-sm font-black uppercase tracking-wider"
             disabled={isSaving}
           >
             {isSaving ? 'Menyimpan Perubahan...' : 'Simpan & Update Konfigurasi'}
