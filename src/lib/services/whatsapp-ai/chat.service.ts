@@ -55,6 +55,7 @@ export interface ChatContext {
     name: string;
     status: string;
     interestedIn?: string;
+    budgetRange?: string; // AI 5.2 requirement
     lastInteraction?: Date;
     location?: string; // Notes/tags might store this
   } | null;
@@ -116,6 +117,64 @@ export class WhatsAppAIChatService {
     'bisa', 'tolong', 'tampilkan', 'kasih', 'berikan', 'tunjukin', 'tunjukkan', 'siap', 'ok',
     'kan', 'kok', 'itu', 'ini', 'yang', 'dan', 'atau', 'apa', 'sih', 'deh'
   ];
+
+  /**
+   * Analyze customer tone based on message characteristics (AI 5.2)
+   * Scores: < 5 words (+2), 1 word (+2), Typo (+1), Question (-1), Emoji (-1), Greeting (-1)
+   */
+  /**
+   * Analyze customer tone based on message characteristics (AI 5.2)
+   * Algorithm based on User's Pseudo-Code:
+   * Score = Cuek_Score - Aktif_Score
+   * Thresholds: >= 2 (CUEK), <= -2 (AKTIF)
+   */
+  private static analyzeCustomerTone(message: string): 'CUEK' | 'NORMAL' | 'AKTIF' {
+    let cuekScore = 0;
+    let aktifScore = 0;
+    const msg = message.trim();
+    const words = msg.split(/\s+/);
+    const wordCount = words.length;
+
+    // 1. Word Count <= 3 -> Cuek +2
+    if (wordCount <= 3) {
+      cuekScore += 2;
+    }
+
+    // 2. Response Time < 60s -> Aktif +2
+    // Note: Since we don't have exact response time diff here without DB query, 
+    // we skip this factor or assume neutral. 
+    // if (responseTime < 60) aktifScore += 2;
+
+    // 3. Emoji -> Aktif +1
+    const emojiPattern = /[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/u;
+    if (emojiPattern.test(msg)) {
+      aktifScore += 1;
+    }
+
+    // 4. Greeting -> Aktif +1 (New Proxy)
+    const greetingPattern = /^(halo|hai|selamat|pagi|siang|sore|malam|assalam|permisi|hi|hello)/i;
+    if (greetingPattern.test(msg)) {
+      aktifScore += 1;
+    }
+
+    // 5. Question -> Aktif +1 (New Proxy)
+    if (msg.includes('?')) {
+      aktifScore += 1;
+    }
+
+    // 6. Typo/Slang -> Cuek +1
+    const typoPattern = /\b(brp|hrg|kpn|knp|sy|u|yg|gak|gx|ga|tx|thx|cm|kmn|dp|skrg|dmn)\b/i;
+    if (typoPattern.test(msg)) {
+      cuekScore += 1;
+    }
+
+    // Calculate Final Score
+    const score = cuekScore - aktifScore;
+
+    if (score >= 2) return 'CUEK';
+    if (score <= -2) return 'AKTIF';
+    return 'NORMAL';
+  }
 
   /**
    * Generate AI response untuk customer message
@@ -233,6 +292,11 @@ export class WhatsAppAIChatService {
       } else {
         // Build system prompt with sender info
         console.log(`[WhatsApp AI Chat] Building system prompt for tenant: ${account.tenant.name}`);
+
+        // 🔥 AI 5.2: Analyze Customer Tone
+        const customerTone = this.analyzeCustomerTone(userMessage);
+        console.log(`[WhatsApp AI Chat] 🎯 Customer Tone Analysis: "${userMessage}" -> ${customerTone}`);
+
         const senderInfo = {
           isStaff: context.isStaff || false,
           staffInfo: context.staffInfo,
@@ -243,7 +307,9 @@ export class WhatsAppAIChatService {
           account.tenant || { name: "Showroom Kami", city: "Indonesia" },
           config,
           context.intent,
-          senderInfo
+          senderInfo,
+          customerTone, // Pass tone result
+          context.leadInfo // Pass CRM Lead Info
         );
 
         // Build context dengan conversation history
@@ -1077,9 +1143,10 @@ export class WhatsAppAIChatService {
 
     if (isCorrection) {
       console.log(`[SmartFallback] ⚠️ Correction detected: "${msg}"`);
+      // Fallback 3 — Lempar ke Human/Eskalasi
       return {
-        message: `Waduh, mohon maaf Bapak/Ibu! 🙏 Sepertinya saya salah memberikan informasi tadi. \n\nBisa diinfokan kembali unit apa yang sedang Bapak/Ibu cari? Saya akan pastikan datanya benar kali ini. 😊`,
-        shouldEscalate: true, // Escalate to human because AI made a mistake
+        message: `Supaya lebih jelas, saya bisa hubungkan Kakak ke tim kami ya 👍\nTetap via WhatsApp kok.`, // User requested template
+        shouldEscalate: true,
       };
     }
 
@@ -1663,10 +1730,11 @@ export class WhatsAppAIChatService {
       };
     }
 
-    // No vehicles available - be honest
+    // No vehicles available - Fallback 2 (Pilihan Cepat) or Fallback 1 (Netral)
+
+    // Fallback 1 — Netral (Default catch-all)
     return {
-      message: `Mohon maaf ya, saat ini stok kami sedang kosong. 🙏\n\n` +
-        `Bisa sebutkan jenis mobil yang dicari? Nanti kalau sudah ada unit yang cocok, kami kabari. 😊`,
+      message: `Maaf Kak, saya mau pastikan tidak salah tangkap 😊\nKakak lagi mau cari mobil seperti apa ya?`,
       shouldEscalate: false,
     };
   }
@@ -1679,7 +1747,9 @@ export class WhatsAppAIChatService {
     tenant: any,
     config: any,
     intent: MessageIntent,
-    senderInfo?: { isStaff: boolean; staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string }; customerPhone: string; isEscalated?: boolean }
+    senderInfo?: { isStaff: boolean; staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string }; customerPhone: string; isEscalated?: boolean },
+    customerTone: 'CUEK' | 'NORMAL' | 'AKTIF' = 'NORMAL',
+    leadInfo?: { id: string; name: string; status: string; interestedIn?: string; budgetRange?: string; location?: string; } | null
   ): Promise<string> {
     // Get current time in Indonesia (WIB - UTC+7)
     const now = new Date();
@@ -1716,6 +1786,42 @@ export class WhatsAppAIChatService {
     // 3. ROLE & SENDER CONTEXT
     systemPrompt += getRolePrompt(senderInfo);
 
+    // --- AI 5.2 LOGIC INJECTION START ---
+    // TONE ADAPTATION
+    if (customerTone === 'CUEK') {
+      systemPrompt += `\n\n- Customer ini "CUEK" (singkat & to-the-point).\n- JAWABAN HARUS SINGKAT (max 2-3 kalimat).\n- HILANGKAN basa-basi berlebihan.\n- JANGAN gunakan emoji berlebihan.\n- Fokus ke data/angka.\n- Contoh: "Ada kak, harga 150jt. Mau lihat foto?"`;
+    } else if (customerTone === 'AKTIF') {
+      systemPrompt += `\n\n- Customer ini "AKTIF" dan antusias.\n- JAWABAN LEBIH DETAIL & INTERAKTIF.\n- GUNAKAN EMOJI yang cheerful (😊✨🚗).\n- Berikan apresiasi atas pertanyaannya.`;
+    } else {
+      systemPrompt += `\n\n- Customer "NORMAL".\n- Jawab dengan ramah, standar, dan profesional.\n- Gunakan emoji secukupnya.`;
+    }
+
+    // CRM STATE & LEAD COMPLETION
+    if (leadInfo) {
+      const missing = [];
+      if (!leadInfo.name || leadInfo.name === 'Customer') missing.push("NAMA");
+      if (!leadInfo.location) missing.push("DOMISILI");
+      if (!leadInfo.budgetRange) missing.push("BUDGET");
+      if (!leadInfo.interestedIn) missing.push("KEBUTUHAN/JENIS MOBIL");
+
+      systemPrompt += `\n\n📊 STATUS DATA CRM LEAD SAAT INI (REAL-TIME):`;
+      systemPrompt += `\n- Nama: ${leadInfo.name !== 'Customer' ? leadInfo.name : "❌ BELUM ADA (Nama Default)"}`;
+      systemPrompt += `\n- Domisili: ${leadInfo.location || "❌ BELUM ADA"}`;
+      systemPrompt += `\n- Budget: ${leadInfo.budgetRange || "❌ BELUM ADA"}`;
+      systemPrompt += `\n- Kebutuhan: ${leadInfo.interestedIn || "❌ BELUM ADA"}`;
+      systemPrompt += `\n- Status Lead: ${leadInfo.status}`;
+
+      if (missing.length > 0) {
+        systemPrompt += `\n\n🎯 PRIORITAS MISI: Data lead belum lengkap (${missing.join(", ")}).`;
+        systemPrompt += `\nIkuti "NEW CUSTOMER FLOW" untuk melengkapi data ini satu per satu secara natural (JANGAN SEKALIGUS!).`;
+      } else {
+        systemPrompt += `\n\n✅ DATA LENGKAP. Gunakan "EXISTING CUSTOMER FLOW" -> Fokus ke closing, update unit, atau tawaran tukar tambah.`;
+      }
+    } else {
+      systemPrompt += `\n\n⚠️ LEAD STATUS: NEW (Belum tersimpan di CRM). Lakukan pendekatan awal (New Customer Flow) untuk mendapatkan Nama, Kebutuhan, dan Budget.`;
+    }
+    // --- AI 5.2 LOGIC INJECTION END ---
+
     // 4. STAFF HELP (Conditional)
     if (senderInfo?.isStaff) {
       systemPrompt += '\n' + STAFF_COMMAND_HELP;
@@ -1734,6 +1840,17 @@ export class WhatsAppAIChatService {
 
     // 7. RESPONSE GUIDELINES
     systemPrompt += getResponseGuidelines();
+
+    // 8. TONE ADAPTATION (AI 5.2 - DYNAMIC PERSONA)
+    systemPrompt += `\n\n🎯 MODE ADAPTASI TONE: ${customerTone}\n`;
+    systemPrompt += `INSTRUKSI RESPONS KHUSUS:\n`;
+    if (customerTone === 'CUEK') {
+      systemPrompt += `- Customer ini "CUEK" (singkat & to-the-point).\n- JAWABAN HARUS SINGKAT (max 2-3 kalimat).\n- HILANGKAN basa-basi berlebihan.\n- JANGAN gunakan emoji berlebihan.\n- Fokus ke data/angka.\n- Contoh: "Ada kak, harga 150jt. Mau lihat foto?"`;
+    } else if (customerTone === 'AKTIF') {
+      systemPrompt += `- Customer ini "AKTIF" dan antusias.\n- JAWABAN LEBIH DETAIL & INTERAKTIF.\n- GUNAKAN EMOJI yang cheerful (😊✨🚗).\n- Berikan apresiasi atas pertanyaannya.`;
+    } else {
+      systemPrompt += `- Customer "NORMAL".\n- Jawab dengan ramah, standar, dan profesional.\n- Gunakan emoji secukupnya.`;
+    }
 
     // 8. DYNAMIC INVENTORY CONTEXT
     const inventory = await this.getAvailableVehiclesDetailed(tenant.id);
