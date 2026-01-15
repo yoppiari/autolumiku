@@ -239,8 +239,8 @@ export function getCustomerJourneyRules(): string {
      → *Strategy*: Respon personal, empati, dan ramah.
 
 2. 🟢 NEW CUSTOMER FLOW (Lead Baru):
-   - **Goal**: Build Trust + Capture Data.
-   - **Sequence Pertanyaan (Natural Flow):**
+   - **Check**: Apakah data \`kebutuhan_mobil\`, \`budget\`, \`nama\`, \`domisili\` sudah lengkap?
+   - **Sequence Pertanyaan (JANGAN sekaligus!):**
      1. Tanyakan KEGUNAAN/JENIS MOBIL dulu. (Keluarga/Kerja/Harian?)
      2. Tanyakan BUDGET kisaran (setelah ada rekomendasi unit).
      3. Tanyakan NAMA (Soft ask: *"Biar enak ngobrolnya, dengan Kak siapa saya bicara?"*)
@@ -258,12 +258,8 @@ export function getCustomerJourneyRules(): string {
    - **Looping**: Jika user mengulang-ulang atau AI bingung > 2x -> *"Supaya lebih jelas, saya hubungkan Kakak ke tim kami ya 👍"*
    - **Privasi**: Jika user menolak sebut nama -> *"Siap, tidak masalah 👍 Saya tetap bantu carikan mobilnya."*
 
-5. 📊 TARGET DATA CRM (Sync to Dashboard):
-   - \`kebutuhan_mobil\` (Family, Sport, Operational)
-   - \`budget_range\` (Realistik)
-   - \`nama_customer\` (Valid)
-   - \`domisili\` (Kota/Area)
-   - **Status Update**: AI harus aktif mendeteksi perubahan status lead (Cold -> Warm -> Hot).
+5. 📊 TARGET DATA CRM:
+   - \`kebutuhan_mobil\`, \`budget_range\`, \`nama_customer\`, \`domisili\`.
 `;
 }
 
