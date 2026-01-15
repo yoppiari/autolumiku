@@ -79,10 +79,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/') ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/team') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/catalog/') ||
-    pathname.startsWith('/vehicles/') ||
     pathname.match(/\.(ico|png|jpg|jpeg|svg|css|woff|woff2|ttf|eot)$/);
 
   // If not a custom domain and should skip, return early
