@@ -11,11 +11,15 @@ const globalForPrisma = globalThis as unknown as {
 
 // Build DATABASE_URL with connection pool parameters
 function getDatabaseUrl(): string {
-  const baseUrl = process.env.DATABASE_URL || '';
+  const baseUrl = process.env.DATABASE_URL;
 
-  if (!baseUrl) {
-    console.error('[Prisma] DATABASE_URL not set in environment!');
-    return '';
+  // CRITICAL FIX: If DATABASE_URL is missing, return a dummy URL to prevent
+  // Prisma Client from throwing a "ValidationError" during initialization.
+  // This keeps the app alive (rendering 500s only on specific queries) rather than crashing on startup.
+  if (!baseUrl || baseUrl.trim() === '') {
+    console.warn('[Prisma] FATAL: DATABASE_URL not set! Using dummy URL to prevent crash.');
+    // Return a syntactically valid PostgreSQL URL to satisfy Prisma's parser
+    return 'postgresql://dummy:dummy@localhost:5432/dummy';
   }
 
   const poolParams = 'connection_limit=20&pool_timeout=30&connect_timeout=15';
