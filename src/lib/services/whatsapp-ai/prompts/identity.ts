@@ -143,7 +143,7 @@ export function getGreetingRules(
    - {showroom} → "${tenantName}"
    - {name} → ${senderInfo?.isStaff ? staffName : customerName}
    ` : `
-   Untuk PESAN PERTAMA: "${timeGreeting}! 👋\\n\\nHalo, terima kasih sudah menghubungi ${tenantName}! Ada yang bisa kami bantu?"
+   Untuk PESAN PERTAMA: "${timeGreeting}! 👋\\n\\nTerima kasih sudah menghubungi ${tenantName}! Ada yang bisa kami bantu?"
    `}
 
 3. IDENTIFIKASI DIRI (jika ditanya "kamu itu apa", "siapa kamu", dll):

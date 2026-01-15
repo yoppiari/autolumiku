@@ -686,11 +686,13 @@ export class WhatsAppAIChatService {
       }
 
       // 4. Ensure Mandatory Follow-up Question
-      const endsWithQuestion = responseMessage.trim().endsWith("?") || responseMessage.trim().endsWith("😊");
-
-      if (!endsWithQuestion && !responseMessage.toLowerCase().includes("bantu") && !responseMessage.toLowerCase().includes("terima kasih") && responseMessage.length > 0) {
-        responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
-      }
+      // REVISION AI 5.2: Removed forced suffix. 
+      // The AI prompt is now capable of natural closings. 
+      // Forcing a generic "anything else?" destroys the natural flow of specific questions (e.g. "Mau test drive?").
+      // const endsWithQuestion = responseMessage.trim().endsWith("?") || responseMessage.trim().endsWith("😊");
+      // if (!endsWithQuestion && !responseMessage.toLowerCase().includes("bantu") && !responseMessage.toLowerCase().includes("terima kasih") && responseMessage.length > 0) {
+      //   responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
+      // }
 
       // If AI sent images but no text, add default message
       if (resultImages && resultImages.length > 0 && !responseMessage) {
