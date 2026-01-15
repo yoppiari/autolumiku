@@ -7,6 +7,7 @@ import { createVehicleSlug } from '@/lib/utils';
 import { api } from '@/lib/api-client';
 import VehicleImageCarousel from '@/components/ui/VehicleImageCarousel';
 import { ROLE_LEVELS } from '@/lib/rbac';
+import { LayoutGrid, List, Filter } from 'lucide-react';
 
 type VehicleStatus = 'DRAFT' | 'AVAILABLE' | 'BOOKED' | 'SOLD' | 'DELETED';
 type ViewMode = 'grid' | 'list';
@@ -383,67 +384,115 @@ export default function VehiclesPage() {
         </Link>
       </div>
 
-      {/* Stats Badges */}
-      <div className="flex items-center gap-2 mb-3 shrink-0 overflow-x-auto">
-        {/* Total Badge */}
-        <button
-          onClick={() => setStatusFilter('ALL')}
-          className="px-3 py-1.5 bg-gray-700 text-white rounded-full text-xs font-bold border border-gray-600 hover:bg-gray-600 transition-all whitespace-nowrap"
-        >
-          {vehicles.length} Total
-        </button>
+      {/* Action Bar: Stats & Controls */}
+      <div className="flex flex-col md:flex-row gap-3 mb-4">
 
-        {/* Tersedia Badge - Green with pulse animation */}
-        <button
-          onClick={() => setStatusFilter('AVAILABLE')}
-          className="px-3 py-1.5 bg-green-600 text-white rounded-full text-xs font-bold border border-green-500 hover:bg-green-500 transition-all whitespace-nowrap animate-pulse"
-        >
-          {stats.available} Tersedia
-        </button>
+        {/* Left: Stats Badges - Scrollable & Modern */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0 flex-1">
+          <button
+            onClick={() => setStatusFilter('ALL')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm ${statusFilter === 'ALL'
+              ? 'bg-slate-100 text-slate-900 border-white ring-2 ring-white/20 scale-105'
+              : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200'
+              }`}
+          >
+            {vehicles.length} Total
+          </button>
 
-        {/* Booking Badge - Orange/Yellow with pulse animation */}
-        <button
-          onClick={() => setStatusFilter('BOOKED')}
-          className="px-3 py-1.5 bg-amber-600 text-white rounded-full text-xs font-bold border border-amber-500 hover:bg-amber-500 transition-all whitespace-nowrap animate-pulse"
-        >
-          {stats.booked} Booking
-        </button>
+          <button
+            onClick={() => setStatusFilter('AVAILABLE')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm ${statusFilter === 'AVAILABLE'
+              ? 'bg-emerald-600 text-white border-emerald-500 ring-2 ring-emerald-500/30 scale-105'
+              : 'bg-emerald-900/20 text-emerald-500 border-emerald-900/50 hover:bg-emerald-900/40'
+              }`}
+          >
+            {stats.available} Tersedia
+          </button>
 
-        {/* Terjual Badge - Pink/Red with pulse animation */}
-        <button
-          onClick={() => setStatusFilter('SOLD')}
-          className="px-2 md:px-3 py-1.5 bg-rose-600 text-white rounded-full text-[11px] md:text-xs font-bold border border-rose-500 hover:bg-rose-500 transition-all whitespace-nowrap animate-pulse"
-        >
-          {stats.sold} Terjual
-        </button>
+          <button
+            onClick={() => setStatusFilter('BOOKED')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm ${statusFilter === 'BOOKED'
+              ? 'bg-amber-600 text-white border-amber-500 ring-2 ring-amber-500/30 scale-105'
+              : 'bg-amber-900/20 text-amber-500 border-amber-900/50 hover:bg-amber-900/40'
+              }`}
+          >
+            {stats.booked} Booking
+          </button>
+
+          <button
+            onClick={() => setStatusFilter('SOLD')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm ${statusFilter === 'SOLD'
+              ? 'bg-rose-600 text-white border-rose-500 ring-2 ring-rose-500/30 scale-105'
+              : 'bg-rose-900/20 text-rose-500 border-rose-900/50 hover:bg-rose-900/40'
+              }`}
+          >
+            {stats.sold} Terjual
+          </button>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-3 justify-between md:justify-end shrink-0">
+
+          {/* View Mode Toggle - Now separate & visible */}
+          <div className="flex items-center bg-[#1a1a1a] border border-[#333] rounded-lg p-1 shadow-inner">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded transition-all ${viewMode === 'grid'
+                ? 'bg-[#333] text-white shadow-sm scale-105'
+                : 'text-gray-500 hover:text-gray-300'
+                }`}
+              title="Grid View"
+            >
+              <LayoutGrid size={18} />
+            </button>
+            <div className="w-px h-4 bg-[#333] mx-1"></div>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded transition-all ${viewMode === 'list'
+                ? 'bg-[#333] text-white shadow-sm scale-105'
+                : 'text-gray-500 hover:text-gray-300'
+                }`}
+              title="List View"
+            >
+              <List size={18} />
+            </button>
+          </div>
+
+          {/* New "Cooler" Mobile Filter Button */}
+          <button
+            onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+            className={`md:hidden flex items-center gap-2 px-4 py-2 rounded-lg border transition-all shadow-lg ${isFilterExpanded
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-400 ring-2 ring-blue-500/30'
+              : 'bg-[#2a2a2a] text-gray-200 border-[#3a3a3a] hover:bg-[#333] hover:border-[#444]'
+              }`}
+          >
+            <Filter size={16} className={isFilterExpanded ? 'animate-bounce' : ''} />
+            <span className="text-sm font-semibold">Filter</span>
+          </button>
+        </div>
       </div>
 
-      {/* Filter Toggle Button - Only on mobile */}
-      <div className="mb-3 shrink-0 md:hidden">
-        <button
-          onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-          className="flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <span className="text-[10px] font-medium">Filter</span>
-        </button>
-      </div>
+
 
       {/* Filters - Collapsible on mobile, always visible on desktop */}
-      <div className={`flex flex-wrap items-center gap-3 mb-4 bg-[#2a2a2a] p-2 rounded-lg border border-[#3a3a3a] shrink-0 ${isFilterExpanded ? 'block' : 'hidden md:flex'}`}>
-        <input
-          type="text"
-          placeholder="Cari mobil..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm w-full md:w-64"
-        />
+      <div className={`flex flex-wrap items-center gap-3 mb-4 bg-[#1f1f1f] p-3 rounded-xl border border-[#333] shadow-lg shrink-0 transition-all duration-300 ease-in-out ${isFilterExpanded ? 'block opacity-100 translate-y-0' : 'hidden md:flex opacity-0 md:opacity-100 -translate-y-2 md:translate-y-0'
+        }`}>
+        <div className="relative w-full md:w-64">
+          {/* Search Icon */}
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <input
+            type="text"
+            placeholder="Cari merk, model, atau ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-[#2a2a2a] border border-[#444] text-white pl-10 pr-3 py-2 rounded-lg text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder-gray-500"
+          />
+        </div>
+
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as VehicleStatus | 'ALL')}
-          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
+          className="bg-[#2a2a2a] border border-[#444] text-white px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none hover:border-[#555] cursor-pointer"
         >
           <option value="ALL">Semua Status</option>
           <option value="AVAILABLE">Tersedia</option>
@@ -455,7 +504,7 @@ export default function VehiclesPage() {
         <select
           value={yearFilter}
           onChange={(e) => setYearFilter(e.target.value)}
-          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
+          className="bg-[#2a2a2a] border border-[#444] text-white px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none hover:border-[#555] cursor-pointer"
         >
           <option value="">Semua Tahun</option>
           <option value="2024">2024</option>
@@ -471,7 +520,7 @@ export default function VehiclesPage() {
         <select
           value={priceFilter}
           onChange={(e) => setPriceFilter(e.target.value)}
-          className="bg-[#333] border border-[#444] text-white px-3 py-1.5 rounded text-sm"
+          className="bg-[#2a2a2a] border border-[#444] text-white px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none hover:border-[#555] cursor-pointer"
         >
           <option value="">Semua Harga</option>
           <option value="0-50">0 - 50 jt</option>
@@ -480,21 +529,6 @@ export default function VehiclesPage() {
           <option value="150-200">150 - 200 jt</option>
           <option value="200+">200 jt+</option>
         </select>
-
-        <div className="flex border border-[#444] rounded overflow-hidden ml-auto">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`px-3 py-1.5 ${viewMode === 'grid' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
-          >
-            Grid
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`px-3 py-1.5 ${viewMode === 'list' ? 'bg-blue-700 text-white' : 'bg-[#333] text-gray-400'}`}
-          >
-            List
-          </button>
-        </div>
       </div>
 
       {/* Warning/Error */}
