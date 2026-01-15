@@ -1439,8 +1439,9 @@ export class WhatsAppAIChatService {
       }
     }
 
-    // Check if greeting
-    if (/^(halo|hai|hello|hi|sore|pagi|siang|malam|selamat)/i.test(msg)) {
+    // Check if greeting (ONLY for new conversations)
+    // If we have history, let AI handle it contextually
+    if (messageHistory.length === 0 && /^(halo|hai|hello|hi|sore|pagi|siang|malam|selamat)/i.test(msg)) {
       // Be honest about inventory status
       if (vehicles.length === 0) {
         return {

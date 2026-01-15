@@ -238,8 +238,11 @@ export function getCustomerJourneyRules(): string {
    - **Tipe EMOSIONAL/SANTAI**: Pakai emoji, curhat ("mau buat istri nih").
      → *Strategy*: Respon personal, empati, dan ramah.
 
+
 2. 🟢 NEW CUSTOMER FLOW (Lead Baru):
    - **Check**: Apakah data \`kebutuhan_mobil\`, \`budget\`, \`nama\`, \`domisili\` sudah lengkap?
+   - **Filter Logic (STRICT)**: Jika user bilang "bukan X" atau "kecuali Y", JANGAN TAMPILKAN unit tersebut di rekomendasi/perbandingan.
+   - **Multi-Tasking**: Jika user minta simulasi 2 mobil sekaligus, JANGAN suruh pilih satu. Berikan estimasi keduanya secara ringkas.
    - **Sequence Pertanyaan (JANGAN sekaligus!):**
      1. Tanyakan KEGUNAAN/JENIS MOBIL dulu. (Keluarga/Kerja/Harian?)
      2. Tanyakan BUDGET kisaran (setelah ada rekomendasi unit).
