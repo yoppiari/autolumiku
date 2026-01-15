@@ -19,49 +19,61 @@ export async function generateMetadata(): Promise<Metadata> {
   let appleIcon = '/favicon-48.png';
 
   try {
-    // 1. Try to get tenant from Headers (Standard Showroom Logic)
-    // This allows primamobil.id to work natively like the working Contact Page
-    const headersList = headers();
-    const tenantSlug = headersList.get('x-tenant-slug');
+    // Wrap DB operations in a timeout to prevent build hangs
+    // This addresses the "Deployment loading..." issue caused by database connectivity blocks
+    const fetchTenantWithTimeout = async () => {
+      const headersList = headers();
+      const tenantSlug = headersList.get('x-tenant-slug');
 
-    let tenant = null;
-    if (tenantSlug) {
-      tenant = await prisma.tenant.findUnique({
-        where: { slug: tenantSlug },
-        select: { faviconUrl: true }
-      });
-    }
+      let foundTenant = null;
 
-    // 2. Fallback: If no header (Admin Panel), use the Correct ID provided by User
-    if (!tenant) {
-      tenant = await prisma.tenant.findUnique({
-        where: { id: 'e592973f-9eff-4f40-adf6-ca6b2ad9721f' },
-        select: { faviconUrl: true, id: true, slug: true }
-      });
-    }
+      // 1. Try Header Slug
+      if (tenantSlug) {
+        foundTenant = await prisma.tenant.findUnique({
+          where: { slug: tenantSlug },
+          select: { faviconUrl: true }
+        });
+      }
 
-    // 3. Last Resort: Search by Name (Legacy)
-    if (!tenant) {
-      tenant = await prisma.tenant.findFirst({
-        where: {
-          OR: [
-            { name: { contains: 'Prima Mobil', mode: 'insensitive' } },
-            { slug: 'prima-mobil' }
-          ]
-        },
-        select: { faviconUrl: true, id: true, slug: true } // Added id and slug for the new logic
-      });
-    }
+      // 2. Fallback Admin
+      if (!foundTenant) {
+        foundTenant = await prisma.tenant.findUnique({
+          where: { id: 'e592973f-9eff-4f40-adf6-ca6b2ad9721f' },
+          select: { faviconUrl: true }
+        });
+      }
+
+      // 3. Fallback Name
+      if (!foundTenant) {
+        foundTenant = await prisma.tenant.findFirst({
+          where: {
+            OR: [
+              { name: { contains: 'Prima Mobil', mode: 'insensitive' } },
+              { slug: 'prima-mobil' }
+            ]
+          },
+          select: { faviconUrl: true }
+        });
+      }
+      return foundTenant;
+    };
+
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => {
+        console.warn('[Layout] Metadata DB fetch timed out - using defaults');
+        resolve(null);
+      }, 2000) // 2 seconds timeout
+    );
+
+    // Race to finish
+    const tenant = await Promise.race([fetchTenantWithTimeout(), timeoutPromise]);
 
     if (tenant?.faviconUrl) {
-      // Use the stored icon (could be data URL or remote link)
       const isDataUrl = tenant.faviconUrl.startsWith('data:');
-
       if (isDataUrl) {
         favicon = tenant.faviconUrl;
         appleIcon = tenant.faviconUrl;
       } else {
-        // Only add version tag for remote URLs to force cache refresh
         const v = new Date().getTime().toString();
         favicon = `${tenant.faviconUrl}?v=${v}`;
         appleIcon = `${tenant.faviconUrl}?v=${v}`;
