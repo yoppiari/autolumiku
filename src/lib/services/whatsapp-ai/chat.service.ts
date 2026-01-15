@@ -353,8 +353,8 @@ export class WhatsAppAIChatService {
           }
         } catch (apiError: any) {
           console.error(`[WhatsApp AI Chat] ❌ ZAI API call failed, using fallback: ${apiError.message}`);
-          const fallbackResult = await this.generateSmartFallback(userMessage, context.messageHistory, context.tenantId, context);
-          aiResponse = { content: fallbackResult.message, shouldEscalate: true };
+          // SILENT FAIL - Don't send error message
+          aiResponse = { content: "", shouldEscalate: false };
         }
       }
 
