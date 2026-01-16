@@ -71,20 +71,54 @@ export default async function VehicleDetailPage({ params }: PageProps) {
     }
 
     // 2. Parse Vehicle ID/Slug
-    // If "id" is a slug (e.g. honda-brio-2023-UUID), parse it.
-    // If it's a raw UUID, use it directly but consider redirecting to canonical slug?
     const parsed = parseVehicleSlug(id);
-    const vehicleId = parsed ? parsed.id : id;
+    const idCandidate = parsed.id;
+    const isUuid = parsed.isUuid;
 
     // 3. Fetch Vehicle
-    const vehicle = await prisma.vehicle.findUnique({
-        where: { id: vehicleId },
-        include: {
-            photos: {
-                orderBy: { displayOrder: 'asc' },
+    let vehicle = null;
+
+    // A. Try as UUID (Original ID)
+    if (isUuid) {
+        vehicle = await prisma.vehicle.findUnique({
+            where: { id: idCandidate },
+            include: {
+                photos: {
+                    orderBy: { displayOrder: 'asc' },
+                },
             },
-        },
-    });
+        });
+    }
+
+    // B. Try as Display ID (from Slug)
+    if (!vehicle) {
+        vehicle = await prisma.vehicle.findUnique({
+            where: { displayId: idCandidate },
+            include: {
+                photos: {
+                    orderBy: { displayOrder: 'asc' },
+                },
+            },
+        });
+    }
+
+    // C. Fallback: Search in Tenant Context (if simple ID or mismatch)
+    if (!vehicle) {
+        vehicle = await prisma.vehicle.findFirst({
+            where: {
+                tenantId: tenant.id,
+                OR: [
+                    { displayId: idCandidate },
+                    { displayId: id }, // Try raw param
+                ]
+            },
+            include: {
+                photos: {
+                    orderBy: { displayOrder: 'asc' },
+                },
+            },
+        });
+    }
 
     if (!vehicle) {
         return notFound();
@@ -99,15 +133,9 @@ export default async function VehicleDetailPage({ params }: PageProps) {
         year: vehicle.year
     });
 
-    // If the current ID parameter doesn't match the canonical slug, redirect
-    // We skip this check if the user is already on the slug, or if we want to support both.
-    // However, forcing redirect ensures better SEO.
-    // Note: 'id' param from Next.js might be encoded. Canonical slug should be safe.
-    if (id !== canonicalSlug && id !== vehicle.id) {
-        // If the URL is partially matching or different slug, redirect to canonical
-        // But if it's strictly UUID, we might want to redirect too.
-        // For now, let's allow UUID to render but maybe set canonical link header?
-        // Let's NOT force redirect yet to avoid loops if logic is flawed, just render.
+    // Validasi tenant ownership
+    if (vehicle.tenantId !== tenant.id) {
+        return notFound();
     }
 
     const formatPrice = (price: bigint | number) => {
