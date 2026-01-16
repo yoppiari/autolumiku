@@ -765,8 +765,16 @@ async function handleTestImageCommand(ctx: CommandContext): Promise<CommandResul
     return { success: false, message: "❌ Gagal: Tidak ada kendaraan dengan foto untuk testing." };
   }
 
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
-  if (!tenant?.aimeowApiClientId) return { success: false, message: "❌ Gagal: Client ID tidak ditemukan." };
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    include: { aimeowAccount: true }
+  });
+
+  // Access client ID safely
+  const account = tenant?.aimeowAccount as any;
+  const clientId = account?.id || account?.clientId || (tenant as any)?.aimeowApiClientId;
+
+  if (!clientId) return { success: false, message: "❌ Gagal: Client ID tidak ditemukan." };
 
   // 2. Read file
   // Try to find file path
@@ -795,7 +803,7 @@ async function handleTestImageCommand(ctx: CommandContext): Promise<CommandResul
     return { success: false, message: "❌ Gagal: Library 'sharp' tidak terinstall." };
   }
 
-  const endpoint = `${process.env.AIMEOW_BASE_URL || 'https://meow.lumiku.com'}/api/v1/clients/${tenant.aimeowApiClientId}/send-images`;
+  const endpoint = `${process.env.AIMEOW_BASE_URL || 'https://meow.lumiku.com'}/api/v1/clients/${clientId}/send-images`;
 
   const send = async (name: string, payload: any) => {
     try {

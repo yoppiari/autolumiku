@@ -242,6 +242,9 @@ export class WhatsAppAIChatService {
       const config = account.aiConfig!;
       console.log(`[WhatsApp AI Chat] AI Config loaded. customerChatEnabled: ${config.customerChatEnabled}`);
 
+      // Global variable for scope
+      const showroomName = account?.tenant?.name || "Showroom Kami";
+
       // Check if customer chat is enabled
       if (!config.customerChatEnabled) {
         console.log(`[WhatsApp AI Chat] Customer chat is DISABLED. Sending fallback message.`);
@@ -619,7 +622,7 @@ export class WhatsAppAIChatService {
       // This section ensures that EVERYTHING (AI text + tool results) follows brand rules
 
       // 1. Critical Showroom Name Check
-      const showroomName = account?.tenant?.name || "Showroom Kami";
+      // const showroomName = account?.tenant?.name || "Showroom Kami"; // Moved up
 
       // 2. SELF-HEALING GREETINGS (Context-Aware)
       // Only add greeting if:
