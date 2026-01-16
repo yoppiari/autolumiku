@@ -566,7 +566,6 @@ export default function VehiclesPage() {
                         roundedClass=""
                         showCounter={false}
                         showIndicators={false}
-                        interval={99999}
                       />
                       {/* Overlay Status Label for Sold */}
                       {vehicle.status === 'SOLD' && (

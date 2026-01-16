@@ -28,7 +28,7 @@ export default function VehicleImageCarousel({
   alt,
   className = '',
   imageClassName = '',
-  interval = 7000, // 7 seconds default
+  interval = 6000, // 6 seconds default
   showIndicators = true,
   showCounter = true,
   grayscale = false,
