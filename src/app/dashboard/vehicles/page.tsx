@@ -391,8 +391,8 @@ export default function VehiclesPage() {
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0 flex-1">
           <button
             onClick={() => setStatusFilter('ALL')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm ${statusFilter === 'ALL'
-              ? 'bg-slate-100 text-slate-900 border-white ring-2 ring-white/20 scale-105'
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${statusFilter === 'ALL'
+              ? 'bg-slate-100 text-slate-900 border-white ring-2 ring-white/50 scale-105 shadow-[0_0_15px_rgba(255,255,255,0.4)] animate-pulse'
               : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200'
               }`}
           >
@@ -401,8 +401,8 @@ export default function VehiclesPage() {
 
           <button
             onClick={() => setStatusFilter('AVAILABLE')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm ${statusFilter === 'AVAILABLE'
-              ? 'bg-emerald-600 text-white border-emerald-500 ring-2 ring-emerald-500/30 scale-105'
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${statusFilter === 'AVAILABLE'
+              ? 'bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-400/50 scale-105 shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse'
               : 'bg-emerald-900/20 text-emerald-500 border-emerald-900/50 hover:bg-emerald-900/40'
               }`}
           >
@@ -411,8 +411,8 @@ export default function VehiclesPage() {
 
           <button
             onClick={() => setStatusFilter('BOOKED')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm ${statusFilter === 'BOOKED'
-              ? 'bg-amber-600 text-white border-amber-500 ring-2 ring-amber-500/30 scale-105'
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${statusFilter === 'BOOKED'
+              ? 'bg-amber-600 text-white border-amber-400 ring-2 ring-amber-400/50 scale-105 shadow-[0_0_15px_rgba(245,158,11,0.5)] animate-pulse'
               : 'bg-amber-900/20 text-amber-500 border-amber-900/50 hover:bg-amber-900/40'
               }`}
           >
@@ -421,8 +421,8 @@ export default function VehiclesPage() {
 
           <button
             onClick={() => setStatusFilter('SOLD')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm ${statusFilter === 'SOLD'
-              ? 'bg-rose-600 text-white border-rose-500 ring-2 ring-rose-500/30 scale-105'
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${statusFilter === 'SOLD'
+              ? 'bg-rose-600 text-white border-rose-400 ring-2 ring-rose-400/50 scale-105 shadow-[0_0_15px_rgba(244,63,94,0.5)] animate-pulse'
               : 'bg-rose-900/20 text-rose-500 border-rose-900/50 hover:bg-rose-900/40'
               }`}
           >
