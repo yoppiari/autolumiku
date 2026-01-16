@@ -576,18 +576,18 @@ export default function VehiclesPage() {
                       )}
                     </div>
 
-                    {/* Info Section - Split Layout for Desktop List to fill empty space */}
-                    <div className={`flex-1 p-1.5 md:p-2 flex flex-col min-w-0 ${viewMode === 'list'
-                        ? 'md:grid md:grid-cols-2 md:gap-4 md:items-start justify-start gap-1'
-                        : 'justify-between gap-1'
+                    {/* Info Section - Professional Layout */}
+                    <div className={`flex-1 p-2 md:p-3 flex flex-col min-w-0 ${viewMode === 'list'
+                      ? 'md:flex-row md:gap-6 justify-start'
+                      : 'justify-between gap-1'
                       }`}>
 
-                      {/* Left Side (Desktop List) / Top (Mobile/Grid) */}
-                      <div className={`flex flex-col gap-0.5 ${viewMode === 'list' ? 'md:gap-1' : ''}`}>
+                      {/* Left Side: Identity & Price */}
+                      <div className={`flex flex-col gap-0.5 ${viewMode === 'list' ? 'md:w-[40%] md:justify-center md:gap-1' : ''}`}>
                         {/* Header */}
                         <div className="flex justify-between items-start">
                           <Link href={`/dashboard/vehicles/${createVehicleSlug(vehicle)}/edit`} className="hover:text-blue-400 transition-colors">
-                            <h3 className="text-white font-bold text-xs md:text-base leading-tight line-clamp-2">
+                            <h3 className="text-white font-bold text-xs md:text-lg leading-tight line-clamp-2">
                               {vehicle.make} {vehicle.model}
                             </h3>
                           </Link>
@@ -595,67 +595,78 @@ export default function VehiclesPage() {
 
                         {/* ID & Status */}
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-mono text-rose-400 font-bold text-[9px] md:text-xs">
+                          <span className="font-mono text-rose-400 font-bold text-[9px] md:text-sm">
                             {vehicle.displayId || vehicle.id.slice(0, 8)}
                           </span>
-                          <span className={`px-1 py-px rounded text-[8px] md:text-[9px] font-bold uppercase tracking-wide border ${getStatusColor(vehicle.status)}`}>
+                          <span className={`px-1.5 py-px rounded text-[8px] md:text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(vehicle.status)}`}>
                             {getStatusLabel(vehicle.status)}
                           </span>
                         </div>
 
-                        {/* Price */}
-                        <div className="text-blue-400 font-bold text-sm md:text-lg">
+                        {/* Price (Large & Bold) */}
+                        <div className="text-blue-400 font-bold text-sm md:text-xl mt-0.5">
                           {formatPrice(vehicle.price)}
                         </div>
                       </div>
 
-                      {/* Right Side (Desktop List) / Bottom (Mobile/Grid) */}
+                      {/* Right Side: Specs & Details (Larger Fonts, Better Spacing) */}
                       <div className={`flex flex-col ${viewMode === 'list'
-                          ? 'md:h-full md:justify-between md:border-l md:border-[#333] md:pl-3'
-                          : ''
+                        ? 'md:flex-1 md:border-l md:border-[#333] md:pl-6 md:justify-center'
+                        : ''
                         }`}>
                         {/* Specs Grid */}
-                        <div className={`text-[9px] md:text-[10px] text-gray-400 ${viewMode === 'list'
-                            ? 'flex flex-wrap items-center gap-1 md:grid md:grid-cols-2 md:gap-x-2 md:gap-y-1'
-                            : 'grid grid-cols-2 gap-x-1 gap-y-0.5'
+                        <div className={`text-[9px] text-gray-400 ${viewMode === 'list'
+                          ? 'md:text-xs grid grid-cols-2 gap-x-8 gap-y-1'
+                          : 'grid grid-cols-2 gap-x-1 gap-y-0.5'
                           }`}>
                           {/* Variant Badge */}
                           {vehicle.variant && (
-                            <span className={`px-1 py-px bg-blue-900/20 text-blue-300 rounded border border-blue-500/20 font-bold uppercase col-span-2 w-fit mb-0.5`}>
+                            <span className={`px-1.5 py-px bg-blue-900/20 text-blue-300 rounded border border-blue-500/20 font-bold uppercase col-span-2 w-fit mb-0.5`}>
                               {vehicle.variant}
                             </span>
                           )}
 
-                          <span className="flex items-center gap-1">
-                            <span className={`text-gray-500 ${viewMode === 'list' ? 'hidden md:inline' : 'hidden'}`}>Thn:</span>
-                            <span className="text-gray-300 font-medium">{vehicle.year}</span>
-                          </span>
-                          <span className={`text-gray-600 ${viewMode === 'list' ? 'md:hidden' : ''} hidden md:inline`}>•</span>
+                          {/* Year */}
+                          <div className="flex items-center gap-2">
+                            <span className={`text-gray-500 font-medium ${viewMode === 'list' ? 'w-10' : 'hidden'}`}>Thn</span>
+                            <span className="text-gray-200 font-bold">{vehicle.year}</span>
+                          </div>
 
-                          <span className="flex items-center gap-1">
-                            <span className={`text-gray-500 ${viewMode === 'list' ? 'hidden md:inline' : 'hidden'}`}>Trs:</span>
+                          {/* Transmission */}
+                          <div className="flex items-center gap-2">
+                            <span className={`text-gray-500 font-medium ${viewMode === 'list' ? 'w-10' : 'hidden'}`}>Trs</span>
                             <span className="text-gray-300">{vehicle.transmissionType}</span>
-                          </span>
-                          <span className={`text-gray-600 ${viewMode === 'list' ? 'md:hidden' : ''} hidden md:inline`}>•</span>
+                          </div>
 
-                          <span className="flex items-center gap-1 text-emerald-400 font-medium col-span-2">
-                            {vehicle.engineCapacity ? `${vehicle.engineCapacity}cc` : ''} • {vehicle.fuelType}
-                          </span>
+                          {/* Engine & Fuel */}
+                          <div className={`flex items-center gap-2 ${viewMode === 'list' ? 'col-span-1' : 'col-span-2'}`}>
+                            <span className={`text-gray-500 font-medium ${viewMode === 'list' ? 'w-10' : 'hidden'}`}>Mesin</span>
+                            <span className="text-emerald-400 font-medium">
+                              {vehicle.engineCapacity ? `${vehicle.engineCapacity}cc` : '-'}
+                              <span className={`text-gray-500 mx-1 ${viewMode === 'list' ? '' : 'hidden'}`}>•</span>
+                              <span className={`${viewMode === 'list' ? '' : 'ml-1'}`}>{vehicle.fuelType}</span>
+                            </span>
+                          </div>
 
-                          {/* Mileage & Plate for Desktop List Grid */}
+                          {/* Mileage (Desktop List) */}
                           {viewMode === 'list' && (
-                            <>
-                              <span className="hidden md:flex gap-1 col-span-2 mt-1 pt-1 border-t border-[#333]/50 text-gray-500">
-                                <span>{vehicle.mileage ? `${(vehicle.mileage / 1000).toFixed(0)}k km` : '-'}</span>
-                                <span>•</span>
-                                <span>{vehicle.licensePlate || 'No Plat'}</span>
-                              </span>
-                            </>
+                            <div className="hidden md:flex items-center gap-2">
+                              <span className="text-gray-500 font-medium w-10">Km</span>
+                              <span className="text-gray-300">{vehicle.mileage ? `${(vehicle.mileage / 1000).toFixed(0)}k` : '-'}</span>
+                            </div>
+                          )}
+
+                          {/* Plate (Desktop List) */}
+                          {viewMode === 'list' && (
+                            <div className="hidden md:flex items-center gap-2 col-span-2 mt-1 pt-1 border-t border-[#333]/50 text-gray-500">
+                              <span className="text-[10px] w-10">Plat</span>
+                              <span className="text-gray-300 font-mono">{vehicle.licensePlate || '-'}</span>
+                            </div>
                           )}
                         </div>
 
                         {/* Updated By (Minimal) */}
-                        <div className={`border-t border-[#333] text-[8px] md:text-[9px] text-gray-600 truncate flex justify-between items-center ${viewMode === 'list' ? 'mt-1 pt-1 md:mt-0' : 'mt-1 pt-1'
+                        <div className={`border-t border-[#333] text-[8px] md:text-[9px] text-gray-600 truncate flex justify-between items-center ${viewMode === 'list' ? 'hidden' : 'mt-1 pt-1'
                           }`}>
                           <span>{getUserName(vehicle.updatedBy)}</span>
                           <span>{new Date(vehicle.updatedAt).toLocaleDateString()}</span>
