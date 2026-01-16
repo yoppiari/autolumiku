@@ -556,8 +556,8 @@ export default function VehiclesPage() {
 
                     {/* Photo Section */}
                     <div className={`relative bg-black shrink-0 overflow-hidden ${viewMode === 'list'
-                        ? 'w-[35%] md:w-56 h-auto md:h-auto'
-                        : 'w-full h-40'
+                      ? 'w-[35%] md:w-56 h-auto md:h-auto'
+                      : 'w-full h-40'
                       }`}>
                       <VehicleImageCarousel
                         photos={vehicle.photos || []}
@@ -577,7 +577,7 @@ export default function VehiclesPage() {
                     </div>
 
                     {/* Info Section */}
-                    <div className={`flex-1 p-2 md:p-3 flex flex-col justify-between min-w-0 ${viewMode === 'list' ? '' : 'gap-2'}`}>
+                    <div className={`flex-1 p-1.5 md:p-2 flex flex-col min-w-0 ${viewMode === 'list' ? 'justify-start gap-0.5' : 'justify-between gap-1'}`}>
 
                       {/* Header */}
                       <div className="flex flex-col gap-0.5 md:gap-1">
@@ -606,7 +606,7 @@ export default function VehiclesPage() {
                       </div>
 
                       {/* Specs Grid */}
-                      <div className={`mt-2 text-[10px] text-gray-400 ${viewMode === 'list' ? 'flex flex-wrap items-center gap-2' : 'grid grid-cols-2 gap-x-2 gap-y-1'}`}>
+                      <div className={`mt-1 text-[9px] md:text-[10px] text-gray-400 ${viewMode === 'list' ? 'flex flex-wrap items-center gap-1 md:gap-1.5' : 'grid grid-cols-2 gap-x-1 gap-y-0.5'}`}>
                         {/* Variant Badge */}
                         {vehicle.variant && (
                           <span className={`px-1.5 py-px bg-blue-900/20 text-blue-300 rounded border border-blue-500/20 font-bold uppercase ${viewMode === 'list' ? '' : 'col-span-2 w-fit'}`}>
@@ -626,7 +626,7 @@ export default function VehiclesPage() {
                       </div>
 
                       {/* Updated By (Minimal) */}
-                      <div className="mt-2 pt-2 border-t border-[#333] text-[9px] text-gray-600 truncate flex justify-between items-center">
+                      <div className="mt-1 pt-1 border-t border-[#333] text-[9px] text-gray-600 truncate flex justify-between items-center">
                         <span>Upd: {getUserName(vehicle.updatedBy)}</span>
                         <span>{new Date(vehicle.updatedAt).toLocaleDateString()}</span>
                       </div>
@@ -652,8 +652,8 @@ export default function VehiclesPage() {
                           onClick={() => handleDelete(vehicle)}
                           disabled={deleting === vehicle.id || !canModifyVehicle(vehicle)}
                           className={`w-full h-1/2 flex items-center justify-center text-xs font-bold transition-all uppercase tracking-wider ${canModifyVehicle(vehicle)
-                              ? 'text-rose-500 hover:bg-rose-900/10 hover:text-rose-300'
-                              : 'text-gray-700 cursor-not-allowed'
+                            ? 'text-rose-500 hover:bg-rose-900/10 hover:text-rose-300'
+                            : 'text-gray-700 cursor-not-allowed'
                             }`}
                         >
                           {deleting === vehicle.id ? '...' : '"hapus"'}
@@ -681,8 +681,8 @@ export default function VehiclesPage() {
                       onClick={() => handleDelete(vehicle)}
                       disabled={deleting === vehicle.id || !canModifyVehicle(vehicle)}
                       className={`py-2.5 text-center text-xs font-bold transition-colors uppercase tracking-wider ${canModifyVehicle(vehicle)
-                          ? 'text-rose-500 hover:bg-rose-900/20'
-                          : 'text-gray-600 cursor-not-allowed'
+                        ? 'text-rose-500 hover:bg-rose-900/20'
+                        : 'text-gray-600 cursor-not-allowed'
                         }`}
                     >
                       {deleting === vehicle.id ? '...' : '"hapus"'}
