@@ -324,9 +324,32 @@ export class UploadNotificationService {
           displayId: editData.displayId || editData.vehicleId.substring(0, 8),
         });
       } else {
-        // Fallback to ID-based URL if details missing
-        vehicleUrl = `${baseUrl}/vehicles/${editData.vehicleId}`;
-        dashboardUrl = `${baseUrl}/dashboard/vehicles/${editData.vehicleId}/edit`;
+        // Fallback: Fetch vehicle details from DB to ensure we NEVER use UUID URLs
+        const vehicle = await prisma.vehicle.findUnique({
+          where: { id: editData.vehicleId },
+          select: { make: true, model: true, year: true, displayId: true },
+        });
+
+        if (vehicle) {
+          vehicleUrl = generateVehicleUrl({
+            make: vehicle.make,
+            model: vehicle.model,
+            year: vehicle.year,
+            displayId: vehicle.displayId || editData.vehicleId.substring(0, 8),
+          });
+
+          dashboardUrl = generateVehicleDashboardUrl({
+            make: vehicle.make,
+            model: vehicle.model,
+            year: vehicle.year,
+            displayId: vehicle.displayId || editData.vehicleId.substring(0, 8),
+          });
+        } else {
+          // Final fallback (should never happen): use displayId if available
+          const fallbackId = editData.displayId || editData.vehicleId.substring(0, 8);
+          vehicleUrl = `${baseUrl}/vehicles/unknown-vehicle-${fallbackId}`;
+          dashboardUrl = `${baseUrl}/dashboard/vehicles/unknown-vehicle-${fallbackId}/edit`;
+        }
       }
 
       const message =

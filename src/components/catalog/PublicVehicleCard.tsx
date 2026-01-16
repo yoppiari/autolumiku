@@ -86,8 +86,9 @@ export default function PublicVehicleCard({
             roundedClass="rounded-xl"
             showIndicators={false}
             showCounter={true}
-            interval={7000}
+            interval={6000}
             grayscale={isSold}
+            href={getUrl('')}
             overlay={
               (isSold || isBooked) && (
                 <div className={`absolute inset-0 ${isSold ? 'bg-black/50' : 'bg-black/30'} flex items-center justify-center z-20 transition-all duration-500`}>

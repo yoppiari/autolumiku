@@ -26,6 +26,7 @@ import {
   getBlogUrl,
   getContactUrl,
 } from '@/lib/utils/url-helper';
+import { createVehicleSlug } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
 export default async function ShowroomHomePage({ params }: { params: any }) {
@@ -243,6 +244,17 @@ export default async function ShowroomHomePage({ params }: { params: any }) {
                     const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${vehicle.make} ${vehicle.model} ${vehicle.year} (${formatPrice(vehicle.price)}). Apakah unit masih tersedia?`);
                     const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
 
+                    const vehicleSlug = createVehicleSlug({
+                      id: vehicle.id,
+                      displayId: vehicle.displayId,
+                      make: vehicle.make,
+                      model: vehicle.model,
+                      year: vehicle.year
+                    });
+                    const vehicleUrl = isCustomDomain
+                      ? `/vehicles/${vehicleSlug}`
+                      : `/catalog/${tenant.slug}/vehicles/${vehicleSlug}`;
+
                     return (
                       <HomepageVehicleCard
                         key={vehicle.id}
@@ -257,7 +269,7 @@ export default async function ShowroomHomePage({ params }: { params: any }) {
                           status: vehicle.status,
                           photos: vehicle.photos,
                         }}
-                        vehicleUrl={getVehicleUrl(vehicle.id)}
+                        vehicleUrl={vehicleUrl}
                         waLink={waLink}
                         waNumber={waNumber}
                       />

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 
 interface Photo {
   thumbnailUrl?: string;
@@ -21,6 +22,7 @@ interface VehicleImageCarouselProps {
   aspectRatio?: string; // Aspect ratio class (default: 'aspect-[16/10]')
   roundedClass?: string; // Rounded corners class
   onClick?: () => void;
+  href?: string; // Optional URL to link to
 }
 
 export default function VehicleImageCarousel({
@@ -37,6 +39,7 @@ export default function VehicleImageCarousel({
   aspectRatio = 'aspect-[16/10]',
   roundedClass = 'rounded-t-lg',
   onClick,
+  href,
 }: VehicleImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -91,19 +94,28 @@ export default function VehicleImageCarousel({
       {photoUrl ? (
         <>
           {/* Main Image with transition */}
-          <img
-            src={photoUrl}
-            alt={alt}
-            className={`w-full h-full object-cover transition-opacity duration-500 ${grayscale ? 'grayscale' : ''
-              } ${imageClassName}`}
-          />
+          {href ? (
+            <Link href={href} className="block w-full h-full cursor-pointer relative z-0">
+              <img
+                src={photoUrl}
+                alt={alt}
+                className={`w-full h-full object-cover transition-opacity duration-500 ${grayscale ? 'grayscale' : ''} ${imageClassName}`}
+              />
+            </Link>
+          ) : (
+            <img
+              src={photoUrl}
+              alt={alt}
+              className={`w-full h-full object-cover transition-opacity duration-500 relative z-0 ${grayscale ? 'grayscale' : ''} ${imageClassName}`}
+            />
+          )}
 
           {/* Navigation Arrows (visible on hover) */}
           {hasMultiplePhotos && (
             <>
               <button
                 onClick={goToPrev}
-                className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none group-hover:pointer-events-auto"
                 aria-label="Previous photo"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,7 +124,7 @@ export default function VehicleImageCarousel({
               </button>
               <button
                 onClick={goToNext}
-                className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none group-hover:pointer-events-auto"
                 aria-label="Next photo"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +136,7 @@ export default function VehicleImageCarousel({
 
           {/* Dot Indicators */}
           {hasMultiplePhotos && showIndicators && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 py-1 px-2 rounded-full bg-black/20 backdrop-blur-[2px]">
               {photos.slice(0, 5).map((_, idx) => (
                 <button
                   key={idx}
@@ -133,15 +145,15 @@ export default function VehicleImageCarousel({
                     e.stopPropagation();
                     goToPhoto(idx);
                   }}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentIndex
-                    ? 'bg-white w-3'
-                    : 'bg-white/60 hover:bg-white/80'
+                  className={`w-1.5 h-1.5 rounded-full transition-all shadow-sm ${idx === currentIndex
+                    ? 'bg-white w-3 scale-110'
+                    : 'bg-white/60 hover:bg-white/90'
                     }`}
                   aria-label={`Go to photo ${idx + 1}`}
                 />
               ))}
               {photoCount > 5 && (
-                <span className="text-white text-[10px] ml-1">+{photoCount - 5}</span>
+                <span className="text-white/90 text-[10px] ml-1 font-medium ring-0">+{photoCount - 5}</span>
               )}
             </div>
           )}
@@ -166,11 +178,11 @@ export default function VehicleImageCarousel({
         </div>
       )}
 
-      {/* Custom Overlay (e.g., SOLD badge) */}
-      {overlay}
+      {/* Custom Overlay (e.g., SOLD badge) - Pass pointer events through unless interactive */}
+      {overlay && <div className="absolute inset-0 z-20 pointer-events-none">{overlay}</div>}
 
-      {/* Custom Badges */}
-      {badges}
+      {/* Custom Badges - Pass pointer events through */}
+      {badges && <div className="pointer-events-none z-20">{badges}</div>}
     </div>
   );
 }

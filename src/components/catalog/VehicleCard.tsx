@@ -12,6 +12,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { createVehicleSlug } from '@/lib/utils';
 import WhatsAppContactModal from './WhatsAppContactModal';
 import VehicleImageCarousel from '@/components/ui/VehicleImageCarousel';
 
@@ -55,12 +56,25 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
     }
   };
 
+  // Generate canonical slug-based URL
+  const vehicleSlug = createVehicleSlug({
+    id: vehicle.id,
+    displayId: vehicle.displayId,
+    make: vehicle.make,
+    model: vehicle.model,
+    year: vehicle.year
+  });
+
+  // Determine URL based on domain context
+  // If we are already in a tenant context (slug provided), assume we can use it.
+  const vehicleUrl = `/catalog/${slug}/vehicles/${vehicleSlug}`;
+
   const photoCount = vehicle.photos.length;
 
   return (
     <Card className="hover:shadow-xl transition-shadow overflow-hidden">
-      {/* Image Carousel - Auto-rotate every 10 seconds */}
-      <Link href={`/catalog/${slug}/vehicles/${vehicle.id}`}>
+      {/* Image Carousel - Auto-rotate every 6 seconds (default) */}
+      <Link href={vehicleUrl}>
         <VehicleImageCarousel
           photos={vehicle.photos}
           alt={`${vehicle.make} ${vehicle.model}`}
@@ -68,7 +82,8 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
           roundedClass="rounded-t-lg"
           showIndicators={false}
           showCounter={true}
-          interval={7000}
+          interval={6000}
+          href={vehicleUrl}
           badges={
             <>
               {/* Status badge - Top Left */}
@@ -90,7 +105,7 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
 
       {/* Content */}
       <CardContent className="p-4">
-        <Link href={`/catalog/${slug}/vehicles/${vehicle.id}`}>
+        <Link href={vehicleUrl}>
           <h3 className="font-bold text-lg text-foreground mb-1 hover:text-primary transition-colors">
             {vehicle.make} {vehicle.model}
           </h3>
@@ -132,7 +147,7 @@ export default function VehicleCard({ vehicle, slug, tenantId, onWhatsAppClick }
       {/* Actions */}
       <CardFooter className="p-4 pt-0 flex gap-2">
         <Button asChild className="flex-1" variant="default">
-          <Link href={`/catalog/${slug}/vehicles/${vehicle.id}`}>
+          <Link href={vehicleUrl}>
             Lihat Detail
           </Link>
         </Button>
