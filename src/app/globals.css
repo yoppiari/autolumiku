@@ -61,15 +61,15 @@
 
 /* Custom styles for admin panel */
 .admin-sidebar {
-  @apply bg-white border-r border-gray-200 h-screen overflow-y-auto;
+  @apply bg-neutral-950 border-r border-neutral-800 h-screen overflow-y-auto;
 }
 
 .admin-header {
-  @apply bg-white border-b border-gray-200 shadow-sm;
+  @apply bg-neutral-950 border-b border-neutral-800 shadow-sm;
 }
 
 .admin-content {
-  @apply bg-gray-50 min-h-screen;
+  @apply bg-black min-h-screen;
 }
 
 /* Premium gray theme colors */
