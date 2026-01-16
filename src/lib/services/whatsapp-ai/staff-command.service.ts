@@ -979,6 +979,13 @@ export class StaffCommandService {
           },
         });
 
+        // Calculate missing fields
+        const requiredFields = ["make", "model", "year", "price", "color", "transmissionType", "fuelType", "mileage"];
+        const missingFields = requiredFields.filter(field => {
+          const val = existingVehicleData[field as keyof typeof existingVehicleData];
+          return val === null || val === undefined || val === "";
+        });
+
         return {
           success: true,
           message: `Oke foto ${photos.length}/6 masuk! 📸\n\nMasih perlu data: ${missingFields.join(", ")}\nLanjut upload atau lengkapi data ya! 👍`,

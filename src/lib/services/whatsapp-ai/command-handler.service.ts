@@ -728,10 +728,14 @@ https://primamobil.id/dashboard/vehicles?status=AVAILABLE`;
 }
 
 async function generateAveragePriceText(ctx: CommandContext): Promise<CommandResult> {
-  const data = await fetchInventoryData(ctx);
-  const totalValue = data.totalValue;
-  const count = data.totalStock;
-  const avg = count > 0 ? totalValue / count : 0;
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
+
+  const data = await ReportDataService.gather('total-inventory', ctx.tenantId, startDate, now);
+
+  const count = data.totalInventory || 0;
+  const avg = data.avgStockPrice || 0;
 
   const message = `🏷️ *RATA-RATA HARGA STOK*
 
