@@ -652,13 +652,13 @@ export default function VehiclesPage() {
                           {viewMode === 'list' && (
                             <div className="hidden md:flex items-center gap-2">
                               <span className="text-gray-500 font-medium w-10">Km</span>
-                              <span className="text-gray-300">{vehicle.mileage ? `${(vehicle.mileage / 1000).toFixed(0)}k` : '-'}</span>
+                              <span className="text-gray-300">{vehicle.mileage ? vehicle.mileage.toLocaleString('id-ID') : '-'}</span>
                             </div>
                           )}
 
                           {/* Plate (Desktop List) */}
                           {viewMode === 'list' && (
-                            <div className="hidden md:flex items-center gap-2 col-span-2 mt-1 pt-1 border-t border-[#333]/50 text-gray-500">
+                            <div className="hidden md:flex items-center gap-2 mt-1 pt-1 border-t border-[#333]/50 text-gray-500">
                               <span className="text-[10px] w-10">Plat</span>
                               <span className="text-gray-300 font-mono">{vehicle.licensePlate || '-'}</span>
                             </div>
@@ -666,7 +666,7 @@ export default function VehiclesPage() {
                         </div>
 
                         {/* Updated By (Minimal) */}
-                        <div className={`border-t border-[#333] text-[8px] md:text-[9px] text-gray-600 truncate flex justify-between items-center ${viewMode === 'list' ? 'hidden' : 'mt-1 pt-1'
+                        <div className={`border-t border-[#333] text-[8px] md:text-[9px] text-gray-600 truncate flex justify-between items-center ${viewMode === 'list' ? 'mt-auto pt-2' : 'mt-1 pt-1'
                           }`}>
                           <span>{getUserName(vehicle.updatedBy)}</span>
                           <span>{new Date(vehicle.updatedAt).toLocaleDateString()}</span>
