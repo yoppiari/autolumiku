@@ -1166,6 +1166,46 @@ export class MessageOrchestratorService {
     // 3. Must be a distinct word (followed by space or end of string)
     // Exception: 'help' or 'bantuan' might be asked as a question, but generally commands are directives.
 
+    // SPECIAL HANDLING: Verify command (needs special logic to define user identity)
+    // Intercept BEFORE generic universal command check
+    // This allows unverified LID users (guest role) to execute this specific command
+    const isVerifyCommand = /^(?:\/)?(verify|verifikasi)\b/i.test(message);
+    if (isVerifyCommand) {
+      console.log(`[Orchestrator] 🔐 Verify command intercepted`);
+      const verifyResult = await this.handleStaffVerify(
+        null, // No conversation needed for initial check
+        message,
+        incoming.from,
+        incoming.tenantId
+      );
+
+      if (verifyResult.verified && verifyResult.verifiedPhone) {
+        // Update conversation immediately if we have the ID (we should pass it if possible, but for now fallback is ok)
+        // Ideally we should have passed conversationId to handleStaffVerify
+        // Let's do a quick update if we know the conversationId
+        if (conversationId) {
+          await prisma.whatsAppConversation.update({
+            where: { id: conversationId },
+            data: {
+              contextData: {
+                verifiedStaffPhone: verifyResult.verifiedPhone,
+                isStaffVerified: true
+              }
+            }
+          });
+        }
+      }
+
+      return {
+        isCommand: true,
+        result: {
+          success: verifyResult.verified,
+          message: verifyResult.message,
+          followUp: false
+        }
+      };
+    }
+
     const isQuestion = message.includes('?');
     const isUniversalCommand = !isQuestion && universalCommands.some(k => {
       // Regex: Start with optional '/', then keyword, then word boundary

@@ -16,9 +16,9 @@ import {
   AUTOMOTIVE_KNOWLEDGE_BASE,
   getCompanyKnowledgeBase,
   STAFF_COMMAND_HELP,
-  STAFF_TROUBLESHOOTING,
-  STAFF_EDIT_FEATURE,
   STAFF_RULES,
+  ADMIN_COMMAND_HELP,
+  ADMIN_SYSTEM_PROMPT_ADDITION,
   getCustomerJourneyRules,
   getResponseGuidelines
 } from "./prompts";
@@ -315,6 +315,20 @@ export class WhatsAppAIChatService {
           context.leadInfo // Pass CRM Lead Info
         );
 
+        // --- SPECIFIC ROLE INJECTION ---
+        // Inject Admin/Owner specific prompt addition if applicable to give them full access context
+        if (senderInfo.isStaff && senderInfo.staffInfo?.roleLevel && senderInfo.staffInfo.roleLevel >= ROLE_LEVELS.ADMIN) {
+          console.log(`[WhatsApp AI Chat] 👑 Admin/Owner detected (Level ${senderInfo.staffInfo.roleLevel}). Injecting Admin Prompt.`);
+          // This ensures AI knows it's talking to an Admin and can offer the full menu
+          // We append this to the system prompt
+          systemPrompt.content += "\n\n" + ADMIN_SYSTEM_PROMPT_ADDITION;
+
+          // CRITICAL: Override the standard "help/menu" behavior for Admins
+          // We tell the AI explicitly: "If this Admin asks for 'help' or 'menu', output the text from ADMIN_COMMAND_HELP."
+          systemPrompt.content += `\n\n[ADMIN MENU OVERRIDE]\nIf the user asks for 'help', 'menu', 'panduan', or 'fitur', YOU MUST DISPLAY the following text EXACTLY:\n"""\n${ADMIN_COMMAND_HELP}\n"""`;
+        }
+
+
         // Build context dengan conversation history
         const conversationContext = this.buildConversationContext(
           context.messageHistory,
@@ -356,8 +370,18 @@ export class WhatsAppAIChatService {
           }
         } catch (apiError: any) {
           console.error(`[WhatsApp AI Chat] ❌ ZAI API call failed, using fallback: ${apiError.message}`);
-          // SILENT FAIL - Don't send error message
-          aiResponse = { content: "", shouldEscalate: false };
+
+          // GENERATE FALLBACK CONTENT
+          // If greeting, return greeting. If other query, return generic error.
+          const isGreeting = context.intent === "customer_greeting";
+          const fallbackContent = isGreeting
+            ? "Halo! 👋 Mohon maaf, sistem AI kami sedang sibuk. Ada yang bisa dibantu?"
+            : "Mohon maaf, koneksi AI sedang gangguan. Bisa diulangi pesannya ya? 🙏";
+
+          aiResponse = {
+            content: fallbackContent,
+            shouldEscalate: false
+          };
         }
       }
 

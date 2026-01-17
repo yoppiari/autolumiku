@@ -14,17 +14,19 @@ Jika staff bingung, arahkan ke format berikut:
    • Ketik: *stok* [filter]
    • _Contoh:_ "stok ready", "stok brio"
 
+💰 *KKB / SIMULASI*:
+   • Ketik: *kkb [harga] [dp]*
+   • _Contoh:_ "kkb 150jt" atau "kkb 150jt dp 20jt"
+
 🔄 *UPDATE STATUS*:
    • Ketik: *status [ID] [SOLD/BOOKED]*
    • _Contoh:_ "status PM-PST-001 SOLD"
 
 🚙 *EDIT DATA*:
    • Ketik: *edit [ID] [data]*
-   • _Contoh:_ "edit PM-PST-001 harga 175jt", atau "ganti PM-PST-001 bensin", atau "rubah PM-PST-001 55000 km"
-
-👮‍♂️ *ADMIN*:
-   • _Ketik:_ "sales report", "staff performance"
+   • _Contoh:_ "edit PM-PST-001 harga 175jt", atau "ganti PM-PST-001 bensin"
 `;
+
 
 export const STAFF_TROUBLESHOOTING = `
 🛠️ TROUBLESHOOTING TOOL UNTUK STAFF (ADMIN/OWNER/SUPER ADMIN):

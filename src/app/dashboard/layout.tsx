@@ -207,8 +207,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Dashboard', href: '/dashboard', icon: '🏠', minRole: ROLE_LEVELS.SALES },
     // Vehicles - Visible to all
     { name: 'Vehicles', href: '/dashboard/vehicles', icon: '🚗', minRole: ROLE_LEVELS.SALES },
-    // Team - Visible to all
-    { name: 'Team', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.SALES },
+    // Team - Visible to Admin+
+    { name: 'Team', href: '/dashboard/users', icon: '👥', minRole: ROLE_LEVELS.ADMIN },
     // WhatsApp AI - ADMIN+ only
     { name: 'WhatsApp AI', href: '/dashboard/whatsapp-ai', icon: '💬', minRole: ROLE_LEVELS.ADMIN },
     // Leads - ADMIN+ only

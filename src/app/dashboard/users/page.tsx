@@ -90,6 +90,16 @@ export default function UsersPage() {
       setUserRoleLevel(roleLevel);
 
       setTenantId(parsedUser.tenantId);
+
+      // Strict Access Control: ADMIN (90+) only
+      if (roleLevel < ROLE_LEVELS.ADMIN) {
+        console.warn('[Users Page] Access denied for role:', roleLevel);
+        setAccessDenied(true);
+        // Optional: Auto redirect after short delay
+        setTimeout(() => router.push('/dashboard'), 2000);
+        return; // Stop loading data
+      }
+
       loadUsers(parsedUser.tenantId);
     }
   }, [router]);
@@ -435,8 +445,8 @@ export default function UsersPage() {
     }
   };
 
-  // No access restrictions for viewing
-  if (false && accessDenied) {
+  // Enforce access restriction
+  if (accessDenied) {
     return (
       <div className="p-6 flex items-center justify-center h-[calc(100vh-64px)]">
         <div className="text-center">

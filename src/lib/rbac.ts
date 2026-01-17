@@ -43,8 +43,8 @@ export const PAGE_ACCESS: Record<string, { minRole: number; excludeRoles?: numbe
   // Dashboard - all roles can access
   '/dashboard': { minRole: ROLE_LEVELS.SALES },
 
-  // Tim/Users - visible to all
-  '/dashboard/users': { minRole: ROLE_LEVELS.SALES },
+  // Tim/Users - visible to Admin+
+  '/dashboard/users': { minRole: ROLE_LEVELS.ADMIN },
 
   // Kendaraan/Vehicles - visible to all
   '/dashboard/vehicles': { minRole: ROLE_LEVELS.SALES },
@@ -142,8 +142,8 @@ export const permissions = {
   canViewAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
   canExportAnalytics: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
 
-  // Team/Users - Visible to all, but actions restricted
-  canViewTeam: (roleLevel: number) => roleLevel >= ROLE_LEVELS.SALES,
+  // Team/Users - Visible to Admin+, but actions restricted
+  canViewTeam: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
   canManageTeam: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
   canAddStaff: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
   canEditStaff: (roleLevel: number) => roleLevel >= ROLE_LEVELS.ADMIN,
@@ -206,6 +206,10 @@ export function getRoleName(roleLevel: number): string {
  * Invoice: HIDDEN for all roles
  */
 export function getVisibleDashboardCards(roleLevel: number): string[] {
-  // Everyone can see all cards now as requested
+  // Everyone can see overview, kendaraan, blog
+  // Tim and Analytics restricted to Admin+
+  if (roleLevel < ROLE_LEVELS.ADMIN) {
+    return ['overview', 'kendaraan', 'blog'];
+  }
   return ['overview', 'kendaraan', 'tim', 'analytics', 'blog'];
 }
