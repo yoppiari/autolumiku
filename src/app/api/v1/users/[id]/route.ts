@@ -213,12 +213,12 @@ export async function PUT(
       );
     }
 
-    // Check for duplicate phone in StaffWhatsAppAuth if phone is being updated
-    if (normalizedPhone && normalizedPhone !== currentUser.phone) {
+    // Check for duplicate phone in StaffWhatsAppAuth
+    if (normalizedPhone) {
       const existingStaffAuthWithPhone = await prisma.staffWhatsAppAuth.findFirst({
         where: {
           phoneNumber: normalizedPhone,
-          NOT: { userId: id }, // Exclude the current user's own staff auth entry
+          userId: { not: id }, // Exclude the current user
         },
       });
 
@@ -230,100 +230,103 @@ export async function PUT(
       }
     }
 
-    // Update user
+    // Update user and related data in a transaction
     const normalizedRole = role.toUpperCase();
-    const user = await prisma.user.update({
-      where: { id },
-      data: {
-        firstName,
-        lastName: lastName || '',
-        phone: normalizedPhone,
-        role: normalizedRole,
-        roleLevel: getRoleLevel(normalizedRole),
-        ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        role: true,
-        roleLevel: true,
-        emailVerified: true,
-        lastLoginAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update user
+      const updatedUser = await tx.user.update({
+        where: { id },
+        data: {
+          firstName,
+          lastName: lastName || '',
+          phone: normalizedPhone,
+          role: normalizedRole,
+          roleLevel: getRoleLevel(normalizedRole),
+          ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          role: true,
+          roleLevel: true,
+          emailVerified: true,
+          lastLoginAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
 
-    // Sync with WhatsApp staff auth
-    const existingStaffAuth = await prisma.staffWhatsAppAuth.findFirst({
-      where: { userId: id },
-    });
+      // 2. Sync with WhatsApp staff auth
+      const existingStaffAuth = await tx.staffWhatsAppAuth.findFirst({
+        where: { userId: id },
+      });
 
-    if (normalizedPhone) {
-      // Phone provided - create or update staff auth
-      if (existingStaffAuth) {
-        // Update existing
-        await prisma.staffWhatsAppAuth.update({
-          where: { id: existingStaffAuth.id },
-          data: {
-            phoneNumber: normalizedPhone,
-            role: role.toLowerCase(),
-            canViewAnalytics: role.toUpperCase() === 'ADMIN',
-          },
-        });
-      } else {
-        // Create new - verify user has tenantId
-        if (!currentUser.tenantId) {
-          return NextResponse.json(
-            { error: 'User has no tenant assigned' },
-            { status: 400 }
-          );
+      if (normalizedPhone) {
+        // Phone provided - create or update staff auth
+        if (existingStaffAuth) {
+          // Update existing
+          await tx.staffWhatsAppAuth.update({
+            where: { id: existingStaffAuth.id },
+            data: {
+              phoneNumber: normalizedPhone,
+              role: role.toLowerCase(),
+              canViewAnalytics: ['ADMIN', 'OWNER', 'SUPER_ADMIN'].includes(role.toUpperCase()),
+            },
+          });
+        } else {
+          // Verify user has tenantId if we need to create
+          if (!currentUser.tenantId) {
+            throw new Error('User has no tenant assigned');
+          }
+
+          await tx.staffWhatsAppAuth.create({
+            data: {
+              tenantId: currentUser.tenantId,
+              userId: id,
+              phoneNumber: normalizedPhone,
+              role: role.toLowerCase(),
+              isActive: true,
+              canUploadVehicle: true,
+              canUpdateStatus: true,
+              canViewAnalytics: ['ADMIN', 'OWNER', 'SUPER_ADMIN'].includes(role.toUpperCase()),
+              canManageLeads: true,
+            },
+          });
         }
-
-        await prisma.staffWhatsAppAuth.create({
-          data: {
-            tenantId: currentUser.tenantId,
-            userId: id,
-            phoneNumber: normalizedPhone,
-            role: role.toLowerCase(),
-            isActive: true,
-            canUploadVehicle: true,
-            canUpdateStatus: true,
-            canViewAnalytics: role.toUpperCase() === 'ADMIN',
-            canManageLeads: true,
-          },
+      } else if (existingStaffAuth) {
+        // Phone removed - delete staff auth
+        await tx.staffWhatsAppAuth.delete({
+          where: { id: existingStaffAuth.id },
         });
       }
 
-      // Sync existing WhatsApp conversations - mark as staff
-      // This handles cases where phone was added/changed
-      if (currentUser.tenantId && normalizedPhone !== currentUser.phone) {
-        const syncResult = await syncConversationsAsStaff(
-          currentUser.tenantId,
-          normalizedPhone,
-          `${firstName} ${lastName || ''}`.trim()
-        );
+      return updatedUser;
+    });
+
+    // 3. Sync existing WhatsApp conversations - mark as staff (Outside transaction to avoid long locks)
+    if (normalizedPhone && currentUser.tenantId && normalizedPhone !== currentUser.phone) {
+      const syncResult = await syncConversationsAsStaff(
+        currentUser.tenantId,
+        normalizedPhone,
+        `${firstName} ${lastName || ''}`.trim()
+      );
+      if (syncResult.updated > 0) {
         console.log(`[Users API] Synced ${syncResult.updated} conversations as staff for ${normalizedPhone}`);
       }
-    } else if (existingStaffAuth) {
-      // Phone removed - delete staff auth
-      await prisma.staffWhatsAppAuth.delete({
-        where: { id: existingStaffAuth.id },
-      });
     }
 
     return NextResponse.json({
       success: true,
-      data: user,
+      data: result,
       message: 'User updated successfully',
     });
   } catch (error) {
     console.error('Update user error:', error);
     return NextResponse.json(
-      { error: 'Failed to update user' },
+      { error: error instanceof Error ? error.message : 'Failed to update user' },
       { status: 500 }
     );
   }
