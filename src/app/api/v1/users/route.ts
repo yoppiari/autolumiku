@@ -254,8 +254,9 @@ export async function POST(request: NextRequest) {
 
     // Check if phone number is already used in StaffWhatsAppAuth
     if (normalizedPhone) {
-      const existingAuth = await prisma.staffWhatsAppAuth.findUnique({
+      const existingAuth = await prisma.staffWhatsAppAuth.findFirst({
         where: { phoneNumber: normalizedPhone },
+        select: { id: true }, // Only select what's needed to avoid column errors
       });
 
       if (existingAuth) {
@@ -307,6 +308,7 @@ export async function POST(request: NextRequest) {
           canViewAnalytics: role.toUpperCase() === 'ADMIN',
           canManageLeads: true,
         },
+        select: { id: true },
       });
 
       // Sync existing WhatsApp conversations - mark as staff

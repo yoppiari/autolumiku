@@ -39,6 +39,12 @@ export class WhatsAppReportService {
             case 'ringkasan_penjualan':
             case 'ringkasan penjualan':
                 return await this.getSalesSummary(tenantId);
+            case 'kkb':
+            case 'simulasi_kkb':
+            case 'simulasi kkb':
+            case 'simulasi_kredit':
+                return await this.getKKBSimulation(tenantId);
+
 
             // ✅ Inventory & Stock
             case 'total_inventory':
@@ -446,9 +452,19 @@ export class WhatsAppReportService {
         // Get sales performance data
         const salesByStaff = await prisma.vehicle.groupBy({
             by: ['createdBy'],
-            where: { tenantId, status: 'SOLD' },
-            _count: true,
-            orderBy: { _count: 'desc' }
+            where: {
+                tenantId,
+                status: 'SOLD',
+                createdBy: { not: null }
+            },
+            _count: {
+                createdBy: true
+            },
+            orderBy: {
+                _count: {
+                    createdBy: 'desc'
+                }
+            }
         });
 
         // Get total leads for conversion metrics
@@ -469,7 +485,7 @@ export class WhatsAppReportService {
 
                 // Check if this staff has sales
                 const staffSales = salesByStaff.find(s => s.createdBy === staff.id);
-                const salesCount = staffSales?._count || 0;
+                const salesCount = staffSales?._count?.createdBy || 0;
 
                 msg += `* ${fullName} (${roleLabel}) ⭐ Active`;
                 if (salesCount > 0) {
@@ -484,7 +500,7 @@ export class WhatsAppReportService {
 
         // Section 2: Sales Performance Metrics
         msg += `📈 *METRIK BULAN INI:*\n`;
-        const totalSales = salesByStaff.reduce((sum, s) => sum + s._count, 0);
+        const totalSales = salesByStaff.reduce((sum, s) => sum + (Number(s._count?.createdBy) || 0), 0);
         const conversionRate = totalLeads > 0 ? ((totalSales / totalLeads) * 100).toFixed(0) : '0';
 
         msg += `* Total Leads: ${totalLeads}\n`;
@@ -502,7 +518,7 @@ export class WhatsAppReportService {
                     select: { firstName: true, lastName: true }
                 });
                 const name = user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'System';
-                msg += `* ${name}: ${perf._count} unit\n`;
+                msg += `* ${name}: ${perf._count?.createdBy || 0} unit\n`;
             }
             msg += `\n`;
         }
@@ -579,6 +595,30 @@ export class WhatsAppReportService {
         msg += `• Tambah keyword 'promo' dan 'kredit' untuk meningkatkan handling rate.\n\n`;
 
         msg += `🔗 *Detail Efisiensi:* https://primamobil.id/dashboard/whatsapp-ai/analytics`;
+        return msg;
+    }
+
+    private static async getKKBSimulation(tenantId: string): Promise<string> {
+        // This is a generic simulation guide for staff
+        let msg = `📉 *SIMULASI KKB (KREDIT KENDARAAN)*\n\n`;
+        msg += `Untuk simulasi kredit, tim sales bisa menyarankan tenor berikut:\n\n`;
+
+        msg += `1️⃣ *Tenor 1 Tahun (12x)*\n`;
+        msg += `   • Est. Bunga: 5-6% (Flat)\n`;
+        msg += `2️⃣ *Tenor 2 Tahun (24x)*\n`;
+        msg += `   • Est. Bunga: 6-7% (Flat)\n`;
+        msg += `3️⃣ *Tenor 3 Tahun (36x)*\n`;
+        msg += `   • Est. Bunga: 7-8% (Flat)\n`;
+        msg += `4️⃣ *Tenor 4 Tahun (48x)*\n`;
+        msg += `   • Est. Bunga: 8-9% (Flat)\n\n`;
+
+        msg += `🧮 *CONTOH HITUNGAN:* \n`;
+        msg += `Mobil Rp 150jt, DP 30jt (20%)\n`;
+        msg += `Pokok Hutang: Rp 120jt\n`;
+        msg += `Angsuran 4th: *~Rp 3.3jt / bulan*\n\n`;
+
+        msg += `💡 *TIPS:* Konsultasikan dengan leasing partner untuk hitungan presisi.\n\n`;
+        msg += `🔗 *Detail Unit:* https://primamobil.id/dashboard/vehicles`;
         return msg;
     }
 }

@@ -1156,7 +1156,8 @@ export class MessageOrchestratorService {
       'upload', 'tambah', 'input',
       'inventory', 'stok', 'stock',
       'status', 'update', 'ubah', 'edit', 'rubah',
-      'statistik', 'stats', 'laporan'
+      'statistik', 'stats', 'laporan', 'report',
+      'verify', 'verifikasi', 'simulasi', 'kkb', 'kredit', 'angsuran'
     ];
 
     // STRICT CHECK:
@@ -1230,6 +1231,10 @@ export class MessageOrchestratorService {
       message.includes('total inventory') ||
       message.includes('average price') ||
       message.includes('sales summary') ||
+      message.includes('kkb') ||
+      message.includes('kredit') ||
+      message.includes('angsuran') ||
+      message.includes('credit') ||
       // Diagnostic
       message.includes('test-image') ||
       message.includes('test image') ||

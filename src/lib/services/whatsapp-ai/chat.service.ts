@@ -1477,9 +1477,9 @@ export class WhatsAppAIChatService {
     // ==================== KKB / CREDIT SIMULATION HANDLER ====================
     // Detect finance, credit, simulation, dp, or installment queries
     const creditPatterns = [
-      /\b(kredit|cicilan|angsuran|kkb|finance|leasing|rate|bunga)\b/i,
+      /\b(kredit|cicilan|angsuran|kkb|finance|leasing|rate|bunga|credit)\b/i,
       /\b(dp|down\s*payment|uang\s*muka)\b/i,
-      /\b(simulasi|hitung|berapa)\b.*\b(bulan|tahun|cicil)\b/i,
+      /\b(simulasi|hitung|berapa)\b.*\b(bulan|tahun|cicil|angsur)\b/i,
     ];
     const isCreditQuery = creditPatterns.some(p => p.test(msg));
 

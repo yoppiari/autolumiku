@@ -56,6 +56,10 @@ interface DashboardStats {
     lastMonth: number;
     changePercent: number;
   };
+  blog: {
+    total: number;
+    thisMonth: number;
+  };
 }
 
 interface KPIData {
@@ -365,8 +369,8 @@ export default function ShowroomDashboardPage() {
     {
       key: 'blog',
       title: 'Blog',
-      value: 0, // TODO: Add blog stats
-      subValue: 0,
+      value: stats?.blog.total || 0,
+      subValue: stats?.blog.thisMonth || 0,
       subLabel: 'artikel',
       subColor: 'text-emerald-400',
       emoji: '📝',

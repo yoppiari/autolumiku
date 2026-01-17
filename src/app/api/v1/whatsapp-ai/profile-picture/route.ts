@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     // Always fetch connected clients from Aimeow
     // This is more reliable than checking database isActive flag
     let apiClientId: string | null = null;
+    let tenantAccount: any = null;
 
     try {
       const clientsResponse = await fetch(`${AIMEOW_BASE_URL}/api/v1/clients`, {
@@ -38,15 +39,15 @@ export async function GET(request: NextRequest) {
 
         // If tenantId provided, try to match with account in database
         if (tenantId) {
-          const account = await prisma.aimeowAccount.findUnique({
+          tenantAccount = await prisma.aimeowAccount.findUnique({
             where: { tenantId },
           });
 
-          if (account) {
+          if (tenantAccount) {
             // Try to find client by phone number match first
-            if (account.phoneNumber) {
+            if (tenantAccount.phoneNumber) {
               const matchingClient = clients.find((c: any) =>
-                c.isConnected && c.phone === account.phoneNumber
+                c.isConnected && c.phone === tenantAccount.phoneNumber
               );
               if (matchingClient) {
                 apiClientId = matchingClient.id;
@@ -54,9 +55,9 @@ export async function GET(request: NextRequest) {
             }
 
             // If not found by phone, try by clientId
-            if (!apiClientId && account.clientId) {
+            if (!apiClientId && tenantAccount.clientId) {
               const matchingClient = clients.find((c: any) =>
-                c.isConnected && c.id === account.clientId
+                c.isConnected && c.id === tenantAccount.clientId
               );
               if (matchingClient) {
                 apiClientId = matchingClient.id;
@@ -65,8 +66,7 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // Fallback: use any connected client
-        // This handles cases where tenantId is wrong or not provided
+        // Fallback: use any connected client if still not found
         if (!apiClientId) {
           const anyConnected = clients.find((c: any) => c.isConnected);
           if (anyConnected) {
@@ -103,13 +103,12 @@ export async function GET(request: NextRequest) {
     // Fetch profile picture from Aimeow
     let pictureUrl: string | null = null;
     let hasPicture = false;
+    let pushName: string | null = null;
 
     console.log(`[Profile Picture API] Attempting fetch for phone: ${cleanPhone}, clientId: ${apiClientId}`);
 
     try {
-      // PHASE 1: Resolve JID first
-      // Some versions of WA Web API fail if we ask for profile picture using simple phone number
-      // We must get the real JID (e.g. 6281234@s.whatsapp.net) from check-whatsapp first
+      // PHASE 1: Resolve JID and Pushname
       let targetJid = cleanPhone;
 
       try {
@@ -122,28 +121,18 @@ export async function GET(request: NextRequest) {
         if (checkRes.ok) {
           const checkData = await checkRes.json();
           if (checkData && checkData.jid) {
-            // Use the authoritative JID from WhatsApp
             targetJid = checkData.jid;
-            console.log(`[Profile Picture API] Resolved JID: ${cleanPhone} -> ${targetJid}`);
-
-            // Encode JID properly for URL
-            // targetJid usually contains @s.whatsapp.net, which might need encoding if API expects it
-            // but usually standard URL path handles it fine or encoded. 
-            // We'll try to use the user part first if it fails, or full JID.
-            // Aimeow usually expects just the number part OR full JID.
-
-            // Let's try to use the number part from JID which is guaranteed to be correct format
-            targetJid = targetJid.split('@')[0];
-            console.log(`[Profile Picture API] Using standardized number from JID: ${targetJid}`);
+            pushName = checkData.pushname || null;
+            console.log(`[Profile Picture API] Resolved: ${cleanPhone} -> ${targetJid} (${pushName})`);
           }
         }
       } catch (jidError) {
-        console.warn(`[Profile Picture API] Failed to resolve JID, falling back to cleanPhone:`, jidError);
+        console.warn(`[Profile Picture API] Failed to resolve JID:`, jidError);
       }
 
-      // PHASE 2: Fetch Profile Picture using resolved target
-      const profilePicUrl = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${targetJid}`;
-      console.log(`[Profile Picture API] Fetching from: ${profilePicUrl}`);
+      // PHASE 2: Fetch Profile Picture
+      // Aimeow prefers JID if available
+      const profilePicUrl = `${AIMEOW_BASE_URL}/api/v1/clients/${apiClientId}/profile-picture/${targetJid.split('@')[0]}`;
 
       const response = await fetch(
         profilePicUrl,
@@ -153,35 +142,26 @@ export async function GET(request: NextRequest) {
         }
       );
 
-      console.log(`[Profile Picture API] Response status: ${response.status}`);
-
       if (response.ok) {
         const data = await response.json();
-        console.log(`[Profile Picture API] Response data:`, data);
-
         if (data && data.success) {
           pictureUrl = data.pictureUrl || null;
           hasPicture = data.hasPicture || false;
-          console.log(`[Profile Picture API] ✅ Got picture - URL: ${pictureUrl}, hasPicture: ${hasPicture}`);
-        } else {
-          console.log(`[Profile Picture API] ❌ Response not successful or no data`);
         }
-      } else {
-        console.error(`[Profile Picture API] ❌ HTTP Error: ${response.status} ${response.statusText}`);
       }
     } catch (fetchError: any) {
-      console.error("[Profile Picture API] ❌ Fetch failed:", fetchError.message, fetchError.stack);
+      console.error("[Profile Picture API] Fetch failed:", fetchError.message);
     }
 
     return NextResponse.json({
       success: true,
       pictureUrl: pictureUrl,
       hasPicture: hasPicture,
+      pushName: pushName,
     }, {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0',
       }
     });
   } catch (error: any) {

@@ -32,7 +32,7 @@ Contoh BENAR (WAJIB):
 CONTOH FORMAT YANG BENAR:
 🚗 Toyota Fortuner VRZ AT 2021 | PM-PST-002
 * Harga: Rp 470 juta
-* Kilometer: 155.000 km
+* Kilometer: 25.000 km
 * Transmisi: Automatic
 * Bahan bakar: Diesel
 * Warna: Hitam
@@ -40,9 +40,9 @@ CONTOH FORMAT YANG BENAR:
 
 🚗 Honda City S AT 2006 | PM-PST-001
 * Harga: Rp 79 juta
-* Kilometer: 65.000 km
+* Kilometer: 165.000 km
 * Transmisi: Automatic
-* Bahan bakar: Electric
+* Bahan bakar: Bensin
 * Warna: Silver
 * 🎯 Website: https://primamobil.id/vehicles/honda-city-2006-PM-PST-001
 
@@ -122,5 +122,8 @@ SEMUA DATA YANG DIBERIKAN KE CUSTOMER HARUS 100% DATA ASLI DARI DATABASE!
 4. Data yang disebutkan HARUS sesuai PERSIS dengan database (harga, km, tahun, dll)
 
 🎯 PRINSIP UTAMA:
-"Hanya berikan informasi yang ada di sistem. Jika tidak ada, katakan dengan jujur bahwa tidak ada."
+1. "Hanya berikan informasi yang ada di sistem. Jika tidak ada, katakan dengan jujur bahwa tidak ada."
+2. **HIERARKI DATA**: Data dari "📋 INVENTORY TERSEDIA" (DATABASE) bersifat MUTLAK dan WAJIB MENGALAHKAN data dari "📚 KLASIFIKASI KENDARAAN" (KNOWLEDGE BASE). 
+   - Contoh: Jika Database bilang Honda City pakai Listrik (Electric), jangan bantah pakai teori Knowledge Base. Sebutkan apa adanya dari Database.
+   - Sebaliknya, jangan gunakan spek Fortuner (SUV, Diesel) untuk menjelaskan Honda City hanya karena mereka ada di Knowledge Base yang sama. Fokus pada data UNIT terkait!
 `;

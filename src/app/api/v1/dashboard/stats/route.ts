@@ -51,6 +51,8 @@ export async function GET(request: NextRequest) {
       teamMembers,
       salesThisMonth,
       salesLastMonth,
+      totalBlogPosts,
+      blogPostsThisMonth,
     ] = await Promise.all([
       // Total vehicles
       prisma.vehicle.count({
@@ -123,6 +125,23 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
+      // Total published blog posts
+      prisma.blogPost.count({
+        where: {
+          tenantId,
+          status: 'PUBLISHED',
+        },
+      }),
+      // Blog posts added this month
+      prisma.blogPost.count({
+        where: {
+          tenantId,
+          createdAt: {
+            gte: firstDayOfMonth,
+            lte: lastDayOfMonth,
+          },
+        },
+      }),
     ]);
 
     // Calculate sales percentage change
@@ -149,6 +168,10 @@ export async function GET(request: NextRequest) {
           thisMonth: salesThisMonth,
           lastMonth: salesLastMonth,
           changePercent: salesChange,
+        },
+        blog: {
+          total: totalBlogPosts,
+          thisMonth: blogPostsThisMonth,
         },
       },
     });

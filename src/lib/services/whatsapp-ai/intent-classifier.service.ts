@@ -71,9 +71,9 @@ const STAFF_COMMAND_PATTERNS = {
     /^upload\s+(kendaraan|mobil|unit)\s+baru/i, // upload kendaraan baru, upload unit baru
   ],
   verify_staff: [
-    /^\/verify\s+/i,                 // /verify 081234567890
-    /^verify\s+/i,                   // verify 081234567890
-    /^verifikasi\s+/i,               // verifikasi 081234567890
+    /^\/verify(\s+|$)/i,             // /verify or /verify 08123...
+    /^verify(\s+|$)/i,               // verify or verify 08123...
+    /^verifikasi(\s+|$)/i,           // verifikasi or verifikasi 08123...
     /^\/?verify$/i,                  // standalone verify (check self or formatting help)
   ],
   update_status: [
@@ -112,6 +112,7 @@ const STAFF_COMMAND_PATTERNS = {
     /(?:sales|penjualan)\s*report/i,
     /total\s*(?:sales|penjualan)/i,
     /total\s*(?:revenue|pendapatan)/i,
+    /kkb|simulasi\s*(?:kkb|kredit|angsuran)|credit|kredit\s*simulation|angsuran/i,
     /(?:tren|tren\s*penjualan|sales\s*trend)/i,
     /(?:metrik\s*penjualan|sales\s*metric|kpi)/i,
     /(?:sales\s*summary|ringkasan)/i,

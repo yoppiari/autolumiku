@@ -220,6 +220,7 @@ export async function PUT(
           phoneNumber: normalizedPhone,
           userId: { not: id }, // Exclude the current user
         },
+        select: { id: true }
       });
 
       if (existingStaffAuthWithPhone) {
@@ -260,8 +261,10 @@ export async function PUT(
       });
 
       // 2. Sync with WhatsApp staff auth
+      // NOTE: Using specific select to avoid selecting profilePicUrl which might be missing from DB
       const existingStaffAuth = await tx.staffWhatsAppAuth.findFirst({
         where: { userId: id },
+        select: { id: true }
       });
 
       if (normalizedPhone) {
@@ -275,6 +278,7 @@ export async function PUT(
               role: role.toLowerCase(),
               canViewAnalytics: ['ADMIN', 'OWNER', 'SUPER_ADMIN'].includes(role.toUpperCase()),
             },
+            select: { id: true }
           });
         } else {
           // Verify user has tenantId if we need to create
@@ -294,6 +298,7 @@ export async function PUT(
               canViewAnalytics: ['ADMIN', 'OWNER', 'SUPER_ADMIN'].includes(role.toUpperCase()),
               canManageLeads: true,
             },
+            select: { id: true }
           });
         }
       } else if (existingStaffAuth) {

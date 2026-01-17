@@ -112,6 +112,14 @@ export async function processCommand(
     return staffOperation;
   }
 
+  // Finance/KKB Commands (STAFF+ only) - NEW CHECK
+  if (cmd.includes('kkb') || cmd.includes('simulasi') ||
+    cmd.includes('kredit') || cmd.includes('angsuran') || cmd.includes('credit')) {
+    if (userRoleLevel >= 30) {
+      return await generateKKBSimulationText(context);
+    }
+  }
+
   // Unknown command
   console.log(`[CommandHandler] ❌ Unknown command - returning help message`);
   return {
@@ -176,17 +184,6 @@ function isReportCommand(cmd: string): boolean {
     'average price',
     'sales summary',
     'report pdf',
-    'pdf report',
-    'kirim report',
-    'kirim pdf',
-    'kirim pdf nya',
-    'kirim reportnya',
-    'kirim pdfnya',
-    'laporan penjualan',
-    'laporan penjualan lengkap',
-    'laporan lengkap',
-    'sales report lengkap',
-    'penjualan showroom'
   ];
 
   // Check for exact phrase matches (with word boundaries)
@@ -465,8 +462,7 @@ export async function handleReportCommand(
 
     // Revenue - keeping only unique reports
     'sales summary': generateSalesReportText,
-    'penjualan': generateSalesReportText,
-    'laporan penjualan': generateSalesReportText,
+    'total penjualan': generateSalesReportText,
     'test-image': handleTestImageCommand,
     'test image': handleTestImageCommand,
     'debug image': handleTestImageCommand,
@@ -745,6 +741,16 @@ Total Stok: ${count} unit
 🔗 *Lihat Inventory:*
 https://primamobil.id/dashboard/vehicles`;
   return { success: true, message, followUp: true };
+}
+
+async function generateKKBSimulationText(ctx: CommandContext): Promise<CommandResult> {
+  try {
+    const { WhatsAppReportService } = await import('./report.service');
+    const message = await WhatsAppReportService.getReport('kkb', ctx.tenantId);
+    return { success: true, message, followUp: true };
+  } catch (error: any) {
+    return { success: false, message: `Gagal mengambil simulasi KKB: ${error.message}` };
+  }
 }
 
 // ============================================================================

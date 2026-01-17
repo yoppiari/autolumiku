@@ -29,6 +29,7 @@ interface WhatsAppProfile {
   pictureUrl: string | null;
   hasPicture: boolean;
   isRegistered: boolean;
+  pushName?: string | null;
   loading: boolean;
 }
 
@@ -179,6 +180,7 @@ export default function UsersPage() {
           [phone]: {
             pictureUrl: picData.success ? picData.pictureUrl : null,
             hasPicture: picData.success ? picData.hasPicture : false,
+            pushName: picData.success ? picData.pushName : null,
             isRegistered: regData.success ? regData.isRegistered : false,
             loading: false
           }
@@ -221,6 +223,7 @@ export default function UsersPage() {
           [phone]: {
             pictureUrl: picData.success ? picData.pictureUrl : null,
             hasPicture: picData.success ? picData.hasPicture : false,
+            pushName: picData.success ? picData.pushName : null,
             isRegistered: regData.success ? regData.isRegistered : false,
             loading: false
           }
@@ -617,6 +620,7 @@ export default function UsersPage() {
                             {user.phone && whatsAppProfiles[user.phone]?.hasPicture && whatsAppProfiles[user.phone]?.pictureUrl ? (
                               <>
                                 <img
+                                  key={`${user.id}-${whatsAppProfiles[user.phone].pictureUrl}`}
                                   src={whatsAppProfiles[user.phone].pictureUrl!}
                                   alt={`${user.firstName} ${user.lastName}`}
                                   className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover border border-[#444] shadow-sm"
@@ -642,12 +646,17 @@ export default function UsersPage() {
                             )}
                             {/* WhatsApp Status Indicator on Profile Picture */}
                             {user.phone && whatsAppProfiles[user.phone] && !whatsAppProfiles[user.phone].loading && (
-                              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-[#2a2a2a] ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_2px_rgba(239,68,68,0.5)]'}`}></div>
+                              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-[#2a2a2a] ${whatsAppProfiles[user.phone].isRegistered ? 'bg-green-500' : 'bg-red-500'}`}></div>
                             )}
                           </div>
                           <div className="ml-3">
                             <div className="text-xs md:text-sm font-bold text-gray-100 leading-tight">
                               {user.firstName} {user.lastName}
+                              {user.phone && whatsAppProfiles[user.phone]?.pushName && (
+                                <span className="ml-1 text-[10px] text-gray-500 font-normal">
+                                  ({whatsAppProfiles[user.phone].pushName})
+                                </span>
+                              )}
                             </div>
                             {user.phone && (
                               <div className="flex items-center mt-1">
