@@ -961,8 +961,8 @@ export class WhatsAppAIChatService {
     // ==================== GREETING HANDLER (OPENING GREETING) ====================
     // Detect greeting patterns for new conversations
     const greetingPatterns = [
-      /^(halo|hai|hello|hi|hey)$/i,
-      /^(pagi|siang|sore|malam)$/i,
+      /^(halo|hai|hello|hi|hey)\b/i, // Broadened to catch "Halo ..."
+      /^(pagi|siang|sore|malam)\b/i,
       /^selamat\s+(pagi|siang|sore|malam)/i,
       /^(assalamualaikum|assalamu'?alaikum)/i,
       /^(halo|hai|hi)\s+(kak|mas|mbak|pak|bu)/i,
@@ -1023,6 +1023,27 @@ export class WhatsAppAIChatService {
         message: personalizedGreeting + "\n\nApakah ada hal lain yang bisa kami bantu? 😊",
         shouldEscalate: false,
       };
+    }
+
+    // ==================== GENERAL INVENTORY INQUIRY HANDLER ====================
+    // Detect if user is asking to see cars in general (e.g. "lihat mobil", "stok ready")
+    const inventoryPatterns = [
+      /\b(lihat|liat|liat2|pilihan|stok|stock|inventory|unit|ready|koleksi|daftar)\b.*\b(mobil|kendaraan|show\s*room)\b/i,
+      /\b(ada|punya)\s+(mobil|kendaraan|stok|unit)\s+(apa|apa\s*aja|ready)\b/i,
+      /\b(stok|stock|unit|mobil|kendaraan)\s+(ready|tersedia|baru)\b/i,
+      /^\s*(lihat|liat|pilihan|pilihkan|tampilkan)\s+mobil\s*\??$/i,
+    ];
+
+    if (inventoryPatterns.some(p => p.test(msg))) {
+      console.log(`[SmartFallback] 🚗 General inventory inquiry detected: "${msg}"`);
+      if (vehicles.length > 0) {
+        const list = WhatsAppAIChatService.formatVehicleListDetailed(vehicles.slice(0, 3));
+        return {
+          message: `Siap kak! Berikut beberapa unit *READY STOCK* kami di ${tenantName} saat ini: 🚗✨\n\n${list}\n\n` +
+            `Ada unit yang menarik perhatian Kakak? Atau ingin cari mobil dengan kriteria tertentu (sepasu budget/jenis)? 😊`,
+          shouldEscalate: false,
+        };
+      }
     }
 
     // ==================== FAMILY/MPV RECOMMENDATION HANDLER ====================
@@ -1794,9 +1815,9 @@ export class WhatsAppAIChatService {
       const list = WhatsAppAIChatService.formatVehicleListDetailed(recommendations);
 
       return {
-        message: `Mohon maaf, sepertinya unit spesifik yang Bapak/Ibu cari belum tersedia saat ini. 🙏\n\n` +
-          `Namun jangan khawatir! Kami memiliki beberapa rekomendasi unit premium/terbaik yang *READY STOCK* dan mungkin cocok untuk Anda:\n\n${list}\n\n` +
-          `Apakah ada dari unit di atas yang menarik perhatian Bapak/Ibu? Atau ingin dibantu carikan jenis lain? 😊`,
+        message: `Maaf kak, saya mau pastikan tidak salah tangkap 😊\n\n` +
+          `Apakah Kakak ingin melihat unit ready stock kami? Berikut beberapa rekomendasi unit terbaik kami saat ini:\n\n${list}\n\n` +
+          `Atau Kakak sedang mencari mobil dengan merk, budget, atau kriteria spesifik lainnya? Silakan diinfokan ya! 🙏`,
         shouldEscalate: false,
       };
     }

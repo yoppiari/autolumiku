@@ -363,8 +363,9 @@ export class MessageOrchestratorService {
         /^(tolong|help)\s*$/i,                       // tolong, help (alone)
         /^(menu|fitur)$/i,                           // menu, fitur (alone)
         /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
-        /\b(foto|gambar|lihat|stok|inventory)\s*(nya|dong|ya|aja|mana)?\??$/i, // "fotonya mana?", "stoknya ada?"
+        /\b(foto|gambar|lihat|liat|stok|inventory|unit|ready|koleksi)\b/i, // Broad match for any stock/photo related keyword
         /^(ada|punya)\s+(foto|gambar|stok|unit)/i,    // "ada foto", "punya stok"
+        /\b(mobil|unit|stok)\s+(baru|ready|prima\s*mobil)\b/i, // "mobil baru", "stok ready", "prima mobil"
         // CRITICAL: Photo/image requests with vehicle IDs - these are VIEW requests, not upload data
         /^(kirim|kirimin|send|mana|tunjuk|kasih|lihat|liat)\s+(foto|gambar|photo|image)\s+(PM-|[A-Z]{2,3}-)/i, // "kirim foto PM-PST-003"
         /^(foto|gambar|photo|image)\s+(PM-|[A-Z]{2,3}-)/i, // "foto PM-PST-003"
