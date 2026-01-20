@@ -5,7 +5,7 @@ export class WhatsAppReportService {
     /**
      * Main entry point for fetching reports based on keyword
      */
-    static async getReport(reportType: string, tenantId: string): Promise<string> {
+    static async getReport(reportType: string, tenantId: string, vehicleCode?: string): Promise<string> {
         console.log(`[Report Service] Generating report: ${reportType} for tenant: ${tenantId}`);
 
         switch (reportType.toLowerCase()) {
@@ -43,7 +43,7 @@ export class WhatsAppReportService {
             case 'simulasi_kkb':
             case 'simulasi kkb':
             case 'simulasi_kredit':
-                return await this.getKKBSimulation(tenantId);
+                return await this.getKKBSimulation(tenantId, vehicleCode);
 
 
             // ✅ Inventory & Stock
@@ -598,27 +598,70 @@ export class WhatsAppReportService {
         return msg;
     }
 
-    private static async getKKBSimulation(tenantId: string): Promise<string> {
-        // This is a generic simulation guide for staff
-        let msg = `📉 *SIMULASI KKB (KREDIT KENDARAAN)*\n\n`;
-        msg += `Untuk simulasi kredit, tim sales bisa menyarankan tenor berikut:\n\n`;
+    private static async getKKBSimulation(tenantId: string, vehicleCode?: string): Promise<string> {
+        let vehicle = null;
+        if (vehicleCode) {
+            vehicle = await prisma.vehicle.findFirst({
+                where: {
+                    tenantId,
+                    id: vehicleCode, // ID is the code (e.g. PM-PST-002)
+                    status: { not: 'DELETED' }
+                }
+            });
+        }
 
+        const price = vehicle ? Number(vehicle.price || 0) : 150000000;
+
+        if (price === 0) {
+            return `⚠️ *SIMULASI KKB: ${vehicle?.make || ''} ${vehicle?.model || ''}*\n\nMaaf kak, harga unit ini (*${vehicleCode}*) belum tercatat di database kami. Silakan hubungi admin untuk info harga dan simulasi kreditnya ya! 🙏`;
+        }
+
+        const dpPercent = 20;
+        const dpAmount = Math.floor(price * (dpPercent / 100));
+        const pokokHutang = price - dpAmount;
+
+        // Rates (Flat)
+        const rates = {
+            1: 0.055, // 5.5%
+            2: 0.065, // 6.5%
+            3: 0.075, // 7.5%
+            4: 0.085  // 8.5%
+        };
+
+        const calculateAngsuran = (tenorYears: number) => {
+            const rate = rates[tenorYears as keyof typeof rates];
+            const totalBunga = pokokHutang * rate * tenorYears;
+            const totalHutang = pokokHutang + totalBunga;
+            const months = tenorYears * 12;
+            return Math.floor(totalHutang / months);
+        };
+
+        let msg = vehicle
+            ? `📉 *SIMULASI KKB: ${vehicle.make} ${vehicle.model} (${vehicle.year})*\n`
+            : `📉 *SIMULASI KKB (KREDIT KENDARAAN)*\n`;
+
+        msg += `ID Unit: *${vehicle?.id || 'CONTOH'}*\n`;
+        msg += `Harga: *Rp ${formatCurrency(price)}*\n\n`;
+
+        msg += `💰 *Rincian Kredit (DP ${dpPercent}%):*\n`;
+        msg += `• DP: *Rp ${formatCurrency(dpAmount)}*\n`;
+        msg += `• Pokok Hutang: *Rp ${formatCurrency(pokokHutang)}*\n\n`;
+
+        msg += `🗓️ *Estimasi Angsuran (Flat):*\n`;
         msg += `1️⃣ *Tenor 1 Tahun (12x)*\n`;
-        msg += `   • Est. Bunga: 5-6% (Flat)\n`;
+        msg += `   • Angsuran: *Rp ${formatCurrency(calculateAngsuran(1))} / bln*\n`;
         msg += `2️⃣ *Tenor 2 Tahun (24x)*\n`;
-        msg += `   • Est. Bunga: 6-7% (Flat)\n`;
+        msg += `   • Angsuran: *Rp ${formatCurrency(calculateAngsuran(2))} / bln*\n`;
         msg += `3️⃣ *Tenor 3 Tahun (36x)*\n`;
-        msg += `   • Est. Bunga: 7-8% (Flat)\n`;
+        msg += `   • Angsuran: *Rp ${formatCurrency(calculateAngsuran(3))} / bln*\n`;
         msg += `4️⃣ *Tenor 4 Tahun (48x)*\n`;
-        msg += `   • Est. Bunga: 8-9% (Flat)\n\n`;
-
-        msg += `🧮 *CONTOH HITUNGAN:* \n`;
-        msg += `Mobil Rp 150jt, DP 30jt (20%)\n`;
-        msg += `Pokok Hutang: Rp 120jt\n`;
-        msg += `Angsuran 4th: *~Rp 3.3jt / bulan*\n\n`;
+        msg += `   • Angsuran: *Rp ${formatCurrency(calculateAngsuran(4))} / bln*\n\n`;
 
         msg += `💡 *TIPS:* Konsultasikan dengan leasing partner untuk hitungan presisi.\n\n`;
-        msg += `🔗 *Detail Unit:* https://primamobil.id/dashboard/vehicles`;
+        msg += vehicle
+            ? `🔗 *Detail Unit:* https://primamobil.id/vehicles/${vehicle.id}`
+            : `🔗 *Detail Unit:* https://primamobil.id/dashboard/vehicles`;
+
         return msg;
     }
 }

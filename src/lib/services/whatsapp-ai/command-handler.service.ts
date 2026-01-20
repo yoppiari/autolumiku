@@ -116,7 +116,7 @@ export async function processCommand(
   if (cmd.includes('kkb') || cmd.includes('simulasi') ||
     cmd.includes('kredit') || cmd.includes('angsuran') || cmd.includes('credit')) {
     if (userRoleLevel >= 30) {
-      return await generateKKBSimulationText(context);
+      return await generateKKBSimulationText(cmd, context);
     }
   }
 
@@ -743,10 +743,15 @@ https://primamobil.id/dashboard/vehicles`;
   return { success: true, message, followUp: true };
 }
 
-async function generateKKBSimulationText(ctx: CommandContext): Promise<CommandResult> {
+async function generateKKBSimulationText(cmd: string, ctx: CommandContext): Promise<CommandResult> {
   try {
     const { WhatsAppReportService } = await import('./report.service');
-    const message = await WhatsAppReportService.getReport('kkb', ctx.tenantId);
+
+    // Extract vehicle ID if present (e.g. PM-PST-001)
+    const vehicleCodeMatch = cmd.match(/pm-[a-z0-9]+-\d+/i);
+    const vehicleCode = vehicleCodeMatch ? vehicleCodeMatch[0].toUpperCase() : undefined;
+
+    const message = await WhatsAppReportService.getReport('kkb', ctx.tenantId, vehicleCode);
     return { success: true, message, followUp: true };
   } catch (error: any) {
     return { success: false, message: `Gagal mengambil simulasi KKB: ${error.message}` };
