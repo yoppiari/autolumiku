@@ -944,15 +944,19 @@ export class WhatsAppAIChatService {
 
       let featureResponse = `${timeGreeting}! 👋\n\n`;
 
-      if (msg.includes("lead") || msg.includes("manajemen")) {
-        featureResponse += `Terkait **Manajemen Leads**, sistem kami secara otomatis merekam setiap percakapan yang menunjukkan minat beli (seperti tanya harga, minta foto, atau simulasi kredit).\n\n` +
-          `Data tersebut kemudian diolah menjadi profil Lead yang bisa Anda akses di Dashboard untuk tindak lanjut tim sales. 📊\n\n` +
-          `Ada yang spesifik ingin ditanyakan tentang cara kerja fitur ini? 😊`;
+      if (msg.includes("lead") || msg.includes("manajemen") || msg.includes("data")) {
+        featureResponse += `Terkait **Manajemen Leads**, AI 5.2 kami bekerja secara cerdas dengan menggali detail calon customer secara **bertahap** (tidak langsung to-the-point).\n\n` +
+          `**Data yang dikumpulkan secara otomatis:**\n` +
+          `• Nama, Asal/Domisili, dan Budget.\n` +
+          `• Tipe kendaraan, Kategori/Status, dan Sumber leads.\n` +
+          `• Urgensi dan Aksi yang diinginkan.\n\n` +
+          `Semua data ini otomatis terinput ke [Leads Dashboard](https://primamobil.id/dashboard/leads) Anda. 📊\n\n` +
+          `**Tujuannya:** Agar saat customer menghubungi lagi, AI bisa langsung mengenali mereka secara personal (Sapa Pak Andi/Bu Aya) berbasis histori chat sebelumnya. 😊`;
       } else if (msg.includes("customer") || msg.includes("pelanggan") || msg.includes("handle")) {
-        featureResponse += `Untuk **Handling Customer**, sistem AI 5.2 kami dapat membedakan antara customer baru dan customer lama:\n\n` +
-          `• **Customer Baru**: AI akan menyapa ramah dan mulai menggali kebutuhan serta budget secara perlahan.\n` +
-          `• **Customer Lama**: AI akan mengenali histori percakapan sebelumnya dan melanjutkan topik yang relevan.\n\n` +
-          `Semua data ini otomatis tersinkronisasi ke Dashboard Manajemen Leads Anda untuk memudahkan pemantauan. 🚀`;
+        featureResponse += `Untuk **Handling Customer**, AI 5.2 menggunakan pendekatan natural:\n\n` +
+          `• **Customer Baru**: AI akan menggali data (identitas, budget, kebutuhan) secara mengalir dalam percakapan.\n` +
+          `• **Customer Lama**: AI mengenali data histori dari [Dashboard Conversations](https://primamobil.id/dashboard/whatsapp-ai/conversations) dan menyapa secara personal.\n\n` +
+          `Ini memastikan transisi yang mulus dari asisten virtual ke tim sales Anda. 🚀`;
       } else {
         featureResponse += `Sistem **Autolumiku (AI 5.2)** bekerja dengan memproses setiap pesan masuk secara cerdas. Saya bisa membantu memberikan info stok, foto, lokasi showroom, hingga simulasi kredit secara otomatis.\n\n` +
           `Semua data ini terintegrasi langsung dengan database showroom sehingga informasinya selalu akurat. ✅\n\n` +
