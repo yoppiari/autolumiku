@@ -898,6 +898,8 @@ export class WhatsAppAIChatService {
       /\b(conversation|percakapan|chat|pesan|message)\b.*\b(masuk|simpan|save|record|catat)\b/i,
       /\b(fitur|feature|fungsi|function|cara\s*kerja|how\s*it\s*works?)\b/i,
       /\b(supaya|agar|biar|gimana|bagaimana|caranya)\b.*\b(masuk|simpan|tersimpan|tercatat)\b/i,
+      /\b(customer|pelanggan|leads?)\s+(baru|lama)\b/i, // "customer baru", "leads lama"
+      /\b(handle|handling|melayani|proses|cara)\s+(customer|pelanggan|leads?)\b/i, // "handle customer"
     ];
 
     const isSystemFeatureQuestion = systemFeaturePatterns.some(p => p.test(msg));
@@ -946,6 +948,11 @@ export class WhatsAppAIChatService {
         featureResponse += `Terkait **Manajemen Leads**, sistem kami secara otomatis merekam setiap percakapan yang menunjukkan minat beli (seperti tanya harga, minta foto, atau simulasi kredit).\n\n` +
           `Data tersebut kemudian diolah menjadi profil Lead yang bisa Anda akses di Dashboard untuk tindak lanjut tim sales. 📊\n\n` +
           `Ada yang spesifik ingin ditanyakan tentang cara kerja fitur ini? 😊`;
+      } else if (msg.includes("customer") || msg.includes("pelanggan") || msg.includes("handle")) {
+        featureResponse += `Untuk **Handling Customer**, sistem AI 5.2 kami dapat membedakan antara customer baru dan customer lama:\n\n` +
+          `• **Customer Baru**: AI akan menyapa ramah dan mulai menggali kebutuhan serta budget secara perlahan.\n` +
+          `• **Customer Lama**: AI akan mengenali histori percakapan sebelumnya dan melanjutkan topik yang relevan.\n\n` +
+          `Semua data ini otomatis tersinkronisasi ke Dashboard Manajemen Leads Anda untuk memudahkan pemantauan. 🚀`;
       } else {
         featureResponse += `Sistem **Autolumiku (AI 5.2)** bekerja dengan memproses setiap pesan masuk secara cerdas. Saya bisa membantu memberikan info stok, foto, lokasi showroom, hingga simulasi kredit secara otomatis.\n\n` +
           `Semua data ini terintegrasi langsung dengan database showroom sehingga informasinya selalu akurat. ✅\n\n` +
