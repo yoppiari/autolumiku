@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import DashboardErrorBoundary from '@/components/dashboard/ErrorBoundary';
 import SessionManager from '@/components/auth/SessionManager';
-import { ROLE_LEVELS, canAccessPage, getRoleName } from '@/lib/rbac';
+import { ROLE_LEVELS, canAccessPage, getRoleName, getRoleLevelFromRole } from '@/lib/rbac';
 
 // Tooltip wrapper component for unauthorized navigation items
 interface AuthorizedNavLinkProps {
@@ -221,8 +221,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Settings', href: '/dashboard/settings', icon: '⚙️', minRole: ROLE_LEVELS.ADMIN },
   ];
 
-  // Get user's role level
-  const userRoleLevel = user?.roleLevel || ROLE_LEVELS.SALES;
+  // Get user's role level - derive from role string if level is missing from storage
+  const userRoleLevel = user?.roleLevel ??
+    (user?.role ? getRoleLevelFromRole(user.role) : ROLE_LEVELS.SALES);
 
   // Show all navigation items but with authorization check using centralized RBAC
   const navigation = useMemo(() => {

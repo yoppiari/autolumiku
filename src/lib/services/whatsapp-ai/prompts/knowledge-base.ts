@@ -233,7 +233,12 @@ DATABASE PENGETAHUAN KENDARAAN (CATALOG REFERENCE ONLY):
 
 
 **KEBIJAKAN KKB & SIMULASI KREDIT (PENGETAHUAN FINANSIAL):**
-- Partner Leasing: BCA Finance, Adira Finance, Mandiri Tunas Finance (MTF), OTO, WOM Finance.
+- Partner Leasing:
+  1. **BCA Finance** (https://www.bcafinance.co.id/)
+  2. **Adira Finance** (https://www.adira.co.id/)
+  3. **Mandiri Tunas Finance** (https://www.mtf.co.id/)
+  4. **OTO Finance** (https://www.oto.co.id/)
+  5. **WOM Finance** (https://www.wom.co.id/)
 - Estimasi Bunga (Flat p.a.):
   - Tenor 1-3 thn: 4.5% - 6.5% (BCA/Priority) | 8% - 9.5% (Umum)
   - Tenor 4-5 thn: 6.25% - 9.0% (BCA/Priority) | 10% - 11.5% (Umum)
@@ -256,6 +261,20 @@ ATURAN SEARCH QUERY (PENTING):
 - Jika user upload foto dan tanya info, JANGAN tebak jika tidak yakin. Cukup bilang "Maaf saya belum mengenali unit ini, bisa sebutkan nama mobilnya?"
 - JANGAN PERNAH mengirim foto mobil yang BEDA dengan yang diminta user. Jika user minta Brio, jangan kirim foto City walaupun stok Brio habis. Bilang saja "Mohon maaf, unit Brio sedang tidak tersedia".
 `;
+
+// Single Source of Truth for KKB Calculation
+export const KKB_CONSTANTS = {
+  leasingPartners: ["BCA Finance", "Adira Finance", "Mandiri Tunas Finance (MTF)", "OTO", "WOM Finance"],
+  minDP: 20, // 20%
+  rates: {
+    // Rates based on "BCA/Priority" (Flat p.a)
+    1: 0.055, // 5.5%
+    2: 0.065, // 6.5%
+    3: 0.075, // 7.5%
+    4: 0.085, // 8.5%
+    5: 0.095  // 9.5%
+  }
+};
 
 
 export function getCompanyKnowledgeBase(tenant: any): string {

@@ -604,7 +604,10 @@ export class WhatsAppReportService {
             vehicle = await prisma.vehicle.findFirst({
                 where: {
                     tenantId,
-                    id: vehicleCode, // ID is the code (e.g. PM-PST-002)
+                    OR: [
+                        { id: vehicleCode },
+                        { displayId: vehicleCode }
+                    ],
                     status: { not: 'DELETED' }
                 }
             });
@@ -616,17 +619,14 @@ export class WhatsAppReportService {
             return `⚠️ *SIMULASI KKB: ${vehicle?.make || ''} ${vehicle?.model || ''}*\n\nMaaf kak, harga unit ini (*${vehicleCode}*) belum tercatat di database kami. Silakan hubungi admin untuk info harga dan simulasi kreditnya ya! 🙏`;
         }
 
-        const dpPercent = 20;
+        const { KKB_CONSTANTS } = await import('./prompts/knowledge-base');
+
+        const dpPercent = KKB_CONSTANTS.minDP;
         const dpAmount = Math.floor(price * (dpPercent / 100));
         const pokokHutang = price - dpAmount;
 
-        // Rates (Flat)
-        const rates = {
-            1: 0.055, // 5.5%
-            2: 0.065, // 6.5%
-            3: 0.075, // 7.5%
-            4: 0.085  // 8.5%
-        };
+        // Rates (Flat) - Source: Knowledge Base
+        const rates = KKB_CONSTANTS.rates;
 
         const calculateAngsuran = (tenorYears: number) => {
             const rate = rates[tenorYears as keyof typeof rates];
@@ -640,26 +640,26 @@ export class WhatsAppReportService {
             ? `📉 *SIMULASI KKB: ${vehicle.make} ${vehicle.model} (${vehicle.year})*\n`
             : `📉 *SIMULASI KKB (KREDIT KENDARAAN)*\n`;
 
-        msg += `ID Unit: *${vehicle?.id || 'CONTOH'}*\n`;
-        msg += `Harga: *Rp ${formatCurrency(price)}*\n\n`;
+        msg += `ID Unit: *${vehicle?.displayId || vehicle?.id || 'CONTOH'}*\n`;
+        msg += `Harga: *${formatCurrency(price)}*\n\n`;
 
         msg += `💰 *Rincian Kredit (DP ${dpPercent}%):*\n`;
-        msg += `• DP: *Rp ${formatCurrency(dpAmount)}*\n`;
-        msg += `• Pokok Hutang: *Rp ${formatCurrency(pokokHutang)}*\n\n`;
+        msg += `• DP: *${formatCurrency(dpAmount)}*\n`;
+        msg += `• Pokok Hutang: *${formatCurrency(pokokHutang)}*\n\n`;
 
         msg += `🗓️ *Estimasi Angsuran (Flat):*\n`;
         msg += `1️⃣ *Tenor 1 Tahun (12x)*\n`;
-        msg += `   • Angsuran: *Rp ${formatCurrency(calculateAngsuran(1))} / bln*\n`;
+        msg += `   • Angsuran: *${formatCurrency(calculateAngsuran(1))} / bln*\n`;
         msg += `2️⃣ *Tenor 2 Tahun (24x)*\n`;
-        msg += `   • Angsuran: *Rp ${formatCurrency(calculateAngsuran(2))} / bln*\n`;
+        msg += `   • Angsuran: *${formatCurrency(calculateAngsuran(2))} / bln*\n`;
         msg += `3️⃣ *Tenor 3 Tahun (36x)*\n`;
-        msg += `   • Angsuran: *Rp ${formatCurrency(calculateAngsuran(3))} / bln*\n`;
+        msg += `   • Angsuran: *${formatCurrency(calculateAngsuran(3))} / bln*\n`;
         msg += `4️⃣ *Tenor 4 Tahun (48x)*\n`;
-        msg += `   • Angsuran: *Rp ${formatCurrency(calculateAngsuran(4))} / bln*\n\n`;
+        msg += `   • Angsuran: *${formatCurrency(calculateAngsuran(4))} / bln*\n\n`;
 
         msg += `💡 *TIPS:* Konsultasikan dengan leasing partner untuk hitungan presisi.\n\n`;
         msg += vehicle
-            ? `🔗 *Detail Unit:* https://primamobil.id/vehicles/${vehicle.id}`
+            ? `🔗 *Detail Unit:* https://primamobil.id/vehicles/${vehicle.displayId || vehicle.id}`
             : `🔗 *Detail Unit:* https://primamobil.id/dashboard/vehicles`;
 
         return msg;

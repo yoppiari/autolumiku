@@ -113,19 +113,25 @@ export async function processCommand(
   }
 
   // Finance/KKB Commands (STAFF+ only) - NEW CHECK
-  if (cmd.includes('kkb') || cmd.includes('simulasi') ||
-    cmd.includes('kredit') || cmd.includes('angsuran') || cmd.includes('credit')) {
+  // Exclude "syarat" or "cara" questions so they go to AI Chat Service
+  const isKkbCommand = (cmd.includes('kkb') || cmd.includes('simulasi') ||
+    cmd.includes('kredit') || cmd.includes('angsuran') || cmd.includes('credit'));
+
+  const isKkbQuestion = cmd.includes('syarat') || cmd.includes('cara') || cmd.includes('dokumen');
+
+  if (isKkbCommand && !isKkbQuestion) {
     if (userRoleLevel >= 30) {
       return await generateKKBSimulationText(cmd, context);
     }
   }
 
-  // Unknown command
-  console.log(`[CommandHandler] ❌ Unknown command - returning help message`);
+  // Unknown command - Return NULL to allow Fallback to Chat Service (LLM)
+  // Previously this returned an error message, which blocked natural conversation
+  console.log(`[CommandHandler] ⏩ Not a command - passing to Chat Service`);
   return {
     success: false,
-    message: 'Maaf, saya tidak mengerti command tersebut. Ketik "help" untuk daftar command yang tersedia.',
-    followUp: true,
+    message: '', // Empty message signals orchestrator to use Chat Service
+    followUp: false
   };
 }
 
@@ -747,9 +753,10 @@ async function generateKKBSimulationText(cmd: string, ctx: CommandContext): Prom
   try {
     const { WhatsAppReportService } = await import('./report.service');
 
-    // Extract vehicle ID if present (e.g. PM-PST-001)
-    const vehicleCodeMatch = cmd.match(/pm-[a-z0-9]+-\d+/i);
-    const vehicleCode = vehicleCodeMatch ? vehicleCodeMatch[0].toUpperCase() : undefined;
+    // Extract vehicle ID if present (e.g. PM-PST-001, PM=PST=001)
+    const vehicleCodeMatch = cmd.match(/pm[-=\s]+[a-z0-9]+[-=\s]+\d+/i);
+    // Normalize to PM-CODE-NUMBER (replace = or space with -)
+    const vehicleCode = vehicleCodeMatch ? vehicleCodeMatch[0].toUpperCase().replace(/[=\s]+/g, '-') : undefined;
 
     const message = await WhatsAppReportService.getReport('kkb', ctx.tenantId, vehicleCode);
     return { success: true, message, followUp: true };

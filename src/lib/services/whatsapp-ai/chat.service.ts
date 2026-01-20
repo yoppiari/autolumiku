@@ -2307,10 +2307,12 @@ export class WhatsAppAIChatService {
     let vehicleName = "";
 
     // Priority 1: Check for explicit Vehicle ID in current message
-    // Matches: "PM-PST-001", "id pm-pst-001", "foto unit pm-pst-001"
-    const idMatch = userMessage.match(/pm-[a-zA-Z0-9]+-\d+/i);
+    // Matches: "PM-PST-001", "id pm-pst-001", "foto unit pm=pst=001"
+    // Supports - or = or space as separator
+    const idMatch = userMessage.match(/pm[-=\s]+[a-zA-Z0-9]+[-=\s]+\d+/i);
     if (idMatch) {
-      vehicleName = idMatch[0].toUpperCase();
+      // Normalize to PM-CODE-NUMBER format (replace = or space with -)
+      vehicleName = idMatch[0].toUpperCase().replace(/[=\s]+/g, '-');
       console.log(`[PhotoConfirm DEBUG] 🎯 Found EXPLICIT Vehicle ID: "${vehicleName}"`);
     }
 
@@ -2323,9 +2325,9 @@ export class WhatsAppAIChatService {
         if (!msg.content) continue;
 
         // Check for ID in history
-        const histIdMatch = msg.content.match(/pm-[a-zA-Z0-9]+-\d+/i);
+        const histIdMatch = msg.content.match(/pm[-=\s]+[a-zA-Z0-9]+[-=\s]+\d+/i);
         if (histIdMatch) {
-          vehicleName = histIdMatch[0].toUpperCase();
+          vehicleName = histIdMatch[0].toUpperCase().replace(/[=\s]+/g, '-');
           console.log(`[PhotoConfirm DEBUG] 🎯 Found Vehicle ID in history (${msg.role}): "${vehicleName}"`);
           break;
         }

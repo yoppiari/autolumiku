@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ROLE_LEVELS } from '@/lib/rbac';
+import { ROLE_LEVELS, getRoleLevelFromRole } from '@/lib/rbac';
 
 /**
  * Higher-Order Component for Role-Based Page Protection
@@ -32,14 +32,30 @@ export function withRoleProtection<P extends object>(
 
             try {
                 const user = JSON.parse(storedUser);
-                const roleLevel = user.roleLevel || ROLE_LEVELS.SALES;
 
-                console.log(`[RoleProtection] User roleLevel: ${roleLevel}, required: ${minRoleLevel}`);
+                // Get role level - prioritize the higher value between stored level and derived level
+                // This fixes issues where localStorage has stale roleLevel (e.g. 30) but role is "ADMIN"
+                let roleLevel = user.roleLevel || 0;
+                if (user.role) {
+                    const derivedLevel = getRoleLevelFromRole(user.role);
+                    if (derivedLevel > roleLevel) {
+                        console.log(`[RoleProtection] Upgrading role level from ${roleLevel} to ${derivedLevel} based on role "${user.role}"`);
+                        roleLevel = derivedLevel;
+                    }
+                }
+
+                // Fallback if still 0
+                if (roleLevel === 0) roleLevel = ROLE_LEVELS.SALES;
+
+                console.log(`[RoleProtection] User role: ${user.role}, roleLevel: ${roleLevel}, required: ${minRoleLevel}`);
 
                 // Not authorized - show alert and redirect
                 if (roleLevel < minRoleLevel) {
-                    console.warn(`[RoleProtection] Access denied - roleLevel ${roleLevel} < ${minRoleLevel}`);
-                    alert('Akses Ditolak: Anda tidak memiliki izin untuk mengakses halaman ini.\n\nHanya Admin, Owner, dan Super Admin yang dapat mengakses fitur ini.');
+                    const currentRole = user.role || 'Staff';
+                    console.warn(`[RoleProtection] Access denied - roleLevel ${roleLevel} < ${minRoleLevel} (User Role: ${currentRole})`);
+
+                    alert(`Akses Ditolak: Anda login sebagai "${currentRole}" (Level ${roleLevel}).\n\nHalaman ini hanya dapat diakses oleh Admin, Owner, atau Super Admin.\n\nJika Anda seharusnya memiliki akses, silakan logout dan login kembali untuk memperbarui sesi.`);
+
                     router.push('/dashboard');
                     return;
                 }
