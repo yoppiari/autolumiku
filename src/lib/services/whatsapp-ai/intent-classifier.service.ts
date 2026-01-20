@@ -225,11 +225,11 @@ const CUSTOMER_PATTERNS = {
     /^(minta|kirim|boleh)\s+(nomer|nomor|no|wa|kontak|sales|admin)/i,
     /\b(hubungi|hubungin|kontak)\s+(siapa|mana)\b/i,
   ],
-  // New: AI Capability patterns (AI 5.0)
+  // New: AI Capability patterns (AI 5.2)
   ai_capability: [
     // Standalone identity words (High Priority)
     /\bau\s*to\s*lu\s*mi\s*ku\b/i,
-    /\bai\s*5\.0\b/i,
+    /\bai\s*5\.2\b/i,
 
     // Direct AI questions (Unanchored)
     /\b(kamu|anda|u)\s+(pakai|menggunakan|pake|ini|siapa|apa|sistem|bot|robot|ai)\b/i,
@@ -702,7 +702,7 @@ export class IntentClassifierService {
       };
     }
 
-    // 1b. Check AI Capability inquiry (AI 5.0) - High Priority
+    // 1b. Check AI Capability inquiry (AI 5.2) - High Priority
     // MUST be checked before general greetings/questions to catch identity questions
     if (CUSTOMER_PATTERNS.ai_capability.some((p) => p.test(message))) {
       console.log('[Intent Classifier] 🤖 AI Capability/Identity detected:', message);

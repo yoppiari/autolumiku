@@ -888,31 +888,72 @@ export class WhatsAppAIChatService {
       });
     } catch (e) { /* ignore */ }
 
-    // ==================== AI CAPABILITY & IDENTITY HANDLER (AI 5.0) ====================
+    // ==================== AI CAPABILITY & IDENTITY HANDLER (AI 5.2) ====================
     // Detect if user is asking about AI technology, identity, or Autolumiku
-    const aiCapabilityPatterns = [
-      /\b(kamu|anda|u)\s+(pakai|menggunakan|pake|ini|siapa|apa|sistem|bot|robot|ai|program|mesin)\b/i,
-      /\b(teknologi|tech|stack|ai|robot|bot|system|sistem|autolumiku|ai\s*5\.0)\b/i,
-      /\b(siapa|apa|darimana|dari\s*mana|buatan|dibuat|bikin)\s*(kamu|anda|u|ini|sistem|platform|ai|bot)?/i,
-      /\b(siapa|apa)\b\s*(kamu|anda|u)\b/i, // Explicitly handle "siapa kamu", "apa kamu"
-      /\b(ai\s*5\.0|kecerdasan\s*buatan|backend|platform)\b/i
+    // IMPORTANT: Only trigger for DIRECT identity questions, not system feature questions
+
+    // First, check if this is a question about SYSTEM FEATURES (not AI identity)
+    const systemFeaturePatterns = [
+      /\b(leads?|lead\s*management|manajemen\s*leads?)\b/i,
+      /\b(conversation|percakapan|chat|pesan|message)\b.*\b(masuk|simpan|save|record|catat)\b/i,
+      /\b(fitur|feature|fungsi|function|cara\s*kerja|how\s*it\s*works?)\b/i,
+      /\b(supaya|agar|biar|gimana|bagaimana|caranya)\b.*\b(masuk|simpan|tersimpan|tercatat)\b/i,
     ];
 
-    // Check if it's an AI capability query but NOT explicitly asking for sales/phone
-    const looksLikeAICapability = aiCapabilityPatterns.some(p => p.test(msg));
-    const isExplicitContactRequest = /\b(nomer|nomor|wa|whatsapp|kontak|contact|telp|telepon|phone)\b/i.test(msg); // Strictly NO "no" here
+    const isSystemFeatureQuestion = systemFeaturePatterns.some(p => p.test(msg));
 
-    if (looksLikeAICapability && !isExplicitContactRequest) {
-      console.log(`[SmartFallback] 🤖 AI Capability/Identity detected in fallback: "${msg}"`);
+    // AI Identity patterns - more specific, focused on direct identity questions
+    const aiIdentityPatterns = [
+      /^\s*(kamu|anda|u)\s+(siapa|apa)\s*\??$/i, // "kamu siapa?", "kamu apa?"
+      /^\s*(siapa|apa)\s+(kamu|anda|u)\s*\??$/i, // "siapa kamu?", "apa kamu?"
+      /^\s*(kamu|anda|u)\s+(ini|itu)\s+(siapa|apa)\s*\??$/i, // "kamu ini siapa?"
+      /\b(kamu|anda|u)\s+(pakai|menggunakan|pake)\s+(teknologi|tech|ai|sistem)\s+(apa|mana)\b/i, // "kamu pakai teknologi apa?"
+      /\bautolumiku\b/i, // Explicit mention of Autolumiku
+      /\bai\s*5\.2\b/i, // Explicit mention of AI 5.2
+      /\b(kamu|anda|u)\s+(bot|robot|ai|manusia|orang)\s*\??$/i, // "kamu bot?", "kamu manusia?"
+    ];
+
+    const looksLikeAIIdentity = aiIdentityPatterns.some(p => p.test(msg));
+    const isExplicitContactRequest = /\b(nomer|nomor|wa|whatsapp|kontak|contact|telp|telepon|phone)\b/i.test(msg);
+
+    // ONLY trigger identity response if:
+    // 1. It matches AI identity patterns
+    // 2. It's NOT a system feature question
+    // 3. It's NOT a contact request
+    if (looksLikeAIIdentity && !isSystemFeatureQuestion && !isExplicitContactRequest) {
+      console.log(`[SmartFallback] 🤖 AI Identity question detected: "${msg}"`);
 
       const identityResponse =
         `${timeGreeting}! 👋\n\n` +
-        `Saya adalah AI Assistant **Prima Mobil** yang ditenagai oleh teknologi **Autolumiku (AI 5.0)**. 🤖⚡\n\n` +
+        `Saya adalah AI Assistant **Prima Mobil** yang ditenagai oleh teknologi **Autolumiku (AI 5.2)**. 🤖⚡\n\n` +
         `Saya menggunakan teknologi *Natural Language Processing* tingkat lanjut untuk memberikan informasi stok kendaraan secara real-time, simulasi kredit, hingga pengolahan data visual unit kami.\n\n` +
         `Ada yang bisa saya bantu terkait unit mobil di showroom kami hari ini? 😊`;
 
       return {
         message: identityResponse,
+        shouldEscalate: false,
+      };
+    }
+
+    // ==================== SYSTEM FEATURE HANDLER ====================
+    // If the user asks about leads, conversation management, or how system works
+    if (isSystemFeatureQuestion) {
+      console.log(`[SmartFallback] ⚙️ System feature question detected: "${msg}"`);
+
+      let featureResponse = `${timeGreeting}! 👋\n\n`;
+
+      if (msg.includes("lead") || msg.includes("manajemen")) {
+        featureResponse += `Terkait **Manajemen Leads**, sistem kami secara otomatis merekam setiap percakapan yang menunjukkan minat beli (seperti tanya harga, minta foto, atau simulasi kredit).\n\n` +
+          `Data tersebut kemudian diolah menjadi profil Lead yang bisa Anda akses di Dashboard untuk tindak lanjut tim sales. 📊\n\n` +
+          `Ada yang spesifik ingin ditanyakan tentang cara kerja fitur ini? 😊`;
+      } else {
+        featureResponse += `Sistem **Autolumiku (AI 5.2)** bekerja dengan memproses setiap pesan masuk secara cerdas. Saya bisa membantu memberikan info stok, foto, lokasi showroom, hingga simulasi kredit secara otomatis.\n\n` +
+          `Semua data ini terintegrasi langsung dengan database showroom sehingga informasinya selalu akurat. ✅\n\n` +
+          `Mau saya bantu cek unit atau info lainnya? 😊`;
+      }
+
+      return {
+        message: featureResponse,
         shouldEscalate: false,
       };
     }

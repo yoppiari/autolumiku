@@ -147,7 +147,7 @@ export class StaffCommandService {
 
       switch (intent) {
         case "staff_greeting":
-          result = await this.handleStaffGreeting(tenantId, staffPhone);
+          result = await this.handleStaffGreeting(tenantId, staffPhone, true);
           break;
 
         case "staff_upload_vehicle":
@@ -1597,11 +1597,13 @@ export class StaffCommandService {
   }
 
   /**
-   * Handle staff greeting - show welcome menu with config-based welcome message
+   * Handle staff greeting - show welcome menu ONLY for explicit help requests
+   * For general greetings, provide brief welcome to allow natural AI conversation
    */
   private static async handleStaffGreeting(
     tenantId: string,
-    staffPhone: string
+    staffPhone: string,
+    isExplicitMenuRequest: boolean = true // Default true for backward compatibility
   ): Promise<CommandExecutionResult> {
     // Get staff name
     const normalizedPhone = this.normalizePhone(staffPhone);
@@ -1649,6 +1651,16 @@ export class StaffCommandService {
 
     // Standard professional greeting for staff
     greeting = `${timeGreeting}, ${staffName}!`;
+
+    // ONLY show full menu if explicitly requested (menu/help/bantuan command)
+    // Otherwise, provide brief welcome to allow natural conversation
+    if (!isExplicitMenuRequest) {
+      // Brief welcome for general greetings - let AI handle the conversation
+      return {
+        success: true,
+        message: `${greeting}\n\nAda yang bisa saya bantu? 😊\n\n_Ketik "menu" untuk melihat daftar fitur staff._`,
+      };
+    }
 
     // Build simplified, clear staff menu with better formatting
     let message =

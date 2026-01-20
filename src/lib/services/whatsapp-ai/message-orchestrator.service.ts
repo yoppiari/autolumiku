@@ -365,6 +365,10 @@ export class MessageOrchestratorService {
         /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
         /\b(foto|gambar|lihat|stok|inventory)\s*(nya|dong|ya|aja|mana)?\??$/i, // "fotonya mana?", "stoknya ada?"
         /^(ada|punya)\s+(foto|gambar|stok|unit)/i,    // "ada foto", "punya stok"
+        // CRITICAL: Photo/image requests with vehicle IDs - these are VIEW requests, not upload data
+        /^(kirim|kirimin|send|mana|tunjuk|kasih|lihat|liat)\s+(foto|gambar|photo|image)\s+(PM-|[A-Z]{2,3}-)/i, // "kirim foto PM-PST-003"
+        /^(foto|gambar|photo|image)\s+(PM-|[A-Z]{2,3}-)/i, // "foto PM-PST-003"
+        /^(mana|dimana|ada)\s+(foto|gambar)\s+(PM-|[A-Z]{2,3}-)/i, // "mana foto PM-PST-001"
       ];
 
       const normalizedMessage = (incoming.message || "").trim();
@@ -825,7 +829,7 @@ export class MessageOrchestratorService {
 
         console.log(`[Orchestrator] AI greeting response: ${responseMessage?.substring(0, 50)}...`);
       } else if (classification.intent === "customer_ai_capability") {
-        // ==================== AI CAPABILITY QUERY (AI 5.0) ====================
+        // ==================== AI CAPABILITY QUERY (AI 5.2) ====================
         console.log(`[Orchestrator] AI Capability Question - Routing to AI for direct response`);
 
         // Use standard customer inquiry handler but with specific intent
