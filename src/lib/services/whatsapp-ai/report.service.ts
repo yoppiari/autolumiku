@@ -611,6 +611,11 @@ export class WhatsAppReportService {
                     status: { not: 'DELETED' }
                 }
             });
+            
+            // If specific vehicle ID requested but not found, return error message
+            if (!vehicle) {
+                return `❌ *UNIT TIDAK DITEMUKAN*\n\nMaaf kak, unit dengan ID *${vehicleCode}* tidak ditemukan di database kami.\n\nSilakan cek kembali ID unitnya atau hubungi admin untuk info lebih lanjut ya! 🙏`;
+            }
         }
 
         const price = vehicle ? Number(vehicle.price || 0) : 150000000;

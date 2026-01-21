@@ -2224,8 +2224,8 @@ export class WhatsAppAIChatService {
       /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
       /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
       // Info/Detail requests (NEW)
-      /\b(info|detail|spesifikasi|spek)\b/i,
-      /\b(minta|bagi)\b.*\b(info|detail|data)\b/i,
+      /\b(info|detail|spesifikasi|spek|kondisi|keadaan|surat|dokumen|bpkb|stnk)\b/i,
+      /\b(minta|bagi)\b.*\b(info|detail|data|foto|gambar)\b/i,
       // Complaint patterns - User saying they didn't receive photos
       /\b(belum|tidak|gak|ga|nggak)\s+(terima|sampai|masuk|dapat|dapet)\b/i,
       /\b(belum|tidak|gak|ga|nggak)\s+.*\b(foto|gambar)\b/i,
@@ -2258,8 +2258,8 @@ export class WhatsAppAIChatService {
 
     console.log(`[WhatsApp AI Chat] 📸 Detected photo confirmation: "${userMessage}"`);
 
-    // Check if user is EXPLICITLY asking for photos (contains "foto" or "gambar")
-    const userExplicitlyAsksPhoto = msg.includes("foto") || msg.includes("gambar");
+    // Check if user is EXPLICITLY asking for photos or info (contains "foto", "gambar", "detail", etc)
+    const userExplicitlyAsksPhoto = /\b(foto|gambar|info|detail|spek|spesifikasi|kondisi|surat|dokumen|bpkb|stnk)\b/i.test(msg);
     console.log(`[PhotoConfirm DEBUG] userExplicitlyAsksPhoto: ${userExplicitlyAsksPhoto}`);
 
     // Get the last AI message to check if it offered photos
@@ -2477,6 +2477,8 @@ export class WhatsAppAIChatService {
       /\bfoto.*(semua|lengkap|detail)\b/i,
       /\b(semua|lengkap).*(foto|gambar)\b/i,
       /\b(info|spesifikasi|spek)\b/i, // Added info/spek to trigger detailed view
+      /\b(kondisi|keadaan|status)\b/i, // Added kondisi/keadaan
+      /\b(surat|dokumen|kelengkapan|bpkb|stnk)\b/i, // Added document-related keywords
     ];
     const wantsDetailedPhotos = detailPatterns.some(p => p.test(userMessage));
     console.log(`[PhotoConfirm DEBUG] Wants detailed photos: ${wantsDetailedPhotos}`);
@@ -3000,7 +3002,13 @@ export class WhatsAppAIChatService {
       }
     }
 
-    message += `\n📸 Berikut foto-foto unitnya 👇`;
+    // Documents & Tax info (Commonly asked)
+    message += `\n📄 *Kelengkapan Dokumen:*\\n`;
+    message += `• BPKB & STNK: Lengkap & Asli\\n`;
+    message += `• Pajak: Hidup / On (Siap Pakai)\\n`;
+    message += `• Faktur: Tersedia\\n`;
+
+    message += `\n📸 Berikut foto-foto unitnya (Interior & Eksterior) 👇`;
 
     return message;
   }
