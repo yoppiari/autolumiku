@@ -257,13 +257,30 @@ export class WhatsAppAIChatService {
       }
       console.log(`[WhatsApp AI Chat] Customer chat is ENABLED. Proceeding with AI response.`);
 
-      // Check business hours (optional) - STAFF BYPASS business hours check
+      // Check business hours (optional) - Apply to all customers (new and returning)
+      // STAFF ALWAYS BYPASS business hours check
       const isStaff = context.isStaff || false;
-      const shouldCheckHours = config.businessHours && config.afterHoursMessage && !isStaff;
+      const showroomName = account?.tenant?.name || "Showroom Kami";
+
+      // Determine if we should check hours: if config has businessHours AND user is NOT staff
+      const hasBusinessHours = config.businessHours &&
+        typeof config.businessHours === 'object' &&
+        Object.keys(config.businessHours as object).length > 0;
+
+      const shouldCheckHours = hasBusinessHours && !isStaff;
+
       if (shouldCheckHours && !this.isWithinBusinessHours(config.businessHours, config.timezone)) {
-        console.log(`[WhatsApp AI Chat] Outside business hours, returning after-hours message`);
+        console.log(`[WhatsApp AI Chat] 🌙 Outside business hours for ${context.customerPhone}`);
+
+        // Use custom message if set, otherwise professional default
+        const afterHoursMsg = config.afterHoursMessage ||
+          `Halo! 👋 Terima kasih sudah menghubungi ${showroomName}.\n\n` +
+          `Mohon maaf, saat ini kami sedang di luar jam operasional. 🙏\n\n` +
+          `Pesan Anda sudah kami catat dan asisten virtual kami akan segera membantu Anda kembali di jam kerja.\n\n` +
+          `Terima kasih atas pengertiannya! 😊`;
+
         return {
-          message: config.afterHoursMessage || "Kami sedang tutup. Silakan hubungi lagi pada jam operasional.",
+          message: afterHoursMsg,
           shouldEscalate: false,
           confidence: 1.0,
           processingTime: Date.now() - startTime,
@@ -2685,22 +2702,31 @@ export class WhatsAppAIChatService {
   ): boolean {
     const tz = timezone || "Asia/Jakarta";
     const now = new Date();
-    const day = now
-      .toLocaleDateString("en-US", { weekday: "long", timeZone: tz })
-      .toLowerCase();
-    const currentHour = now.toLocaleTimeString("en-US", {
+
+    // Get current time string in target timezone (24h format HH:mm)
+    const timeFormatter = new Intl.DateTimeFormat("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
       timeZone: tz,
     });
+    const currentStr = timeFormatter.format(now); // e.g. "17:29"
+
+    // Get current day name in target timezone
+    const day = now.toLocaleDateString("en-US", { weekday: "long", timeZone: tz }).toLowerCase();
 
     const todayHours = businessHours[day];
-    if (!todayHours || todayHours.open === "closed") {
+
+    // If no config for today, or explicit "closed", return false
+    if (!todayHours || todayHours.open === "closed" || !todayHours.open || !todayHours.close) {
+      console.log(`[BusinessHours] No config or closed for ${day}`);
       return false;
     }
 
-    return currentHour >= todayHours.open && currentHour <= todayHours.close;
+    console.log(`[BusinessHours] Current: ${currentStr}, Target: ${todayHours.open} - ${todayHours.close} (${day})`);
+
+    // Lexicographical comparison works for "HH:mm" in 24h format
+    return currentStr >= todayHours.open && currentStr <= todayHours.close;
   }
 
   /**
