@@ -107,7 +107,7 @@ function LeadsDashboard() {
               vehicleInterest: lead.vehicleName || 'N/A',
               budget: lead.budget || '',
               urgency: (lead.priority?.toLowerCase() as 'high' | 'medium' | 'low') || 'medium',
-              status: lead.status?.toLowerCase() || 'new',
+              status: lead.status?.toLowerCase() || 'new', // new, contacted, qualified, won, lost, negotiating
               source: lead.source?.toLowerCase() || 'whatsapp',
               message: lead.notes || lead.message || '',
               tenantId: lead.tenantId,
@@ -126,10 +126,8 @@ function LeadsDashboard() {
                 new: leadsData.data.stats.byStatus?.NEW || 0,
                 contacted: leadsData.data.stats.byStatus?.CONTACTED || 0,
                 interested: leadsData.data.stats.byStatus?.QUALIFIED || 0,
-                converted: leadsData.data.stats.byStatus?.CONVERTED || 0,
-                conversionRate: leadsData.data.stats.byStatus?.CONVERTED
-                  ? Math.round((leadsData.data.stats.byStatus.CONVERTED / leadsData.data.stats.total) * 100 * 10) / 10
-                  : 0,
+                converted: leadsData.data.stats.byStatus?.WON || 0,
+                conversionRate: leadsData.data.stats.conversionRate || 0,
               });
             }
           }
@@ -192,8 +190,12 @@ function LeadsDashboard() {
     switch (status) {
       case 'new': return 'bg-blue-900/40 text-blue-300 border border-blue-800/50';
       case 'contacted': return 'bg-yellow-900/40 text-yellow-300 border border-yellow-800/50';
+      case 'qualified':
       case 'interested': return 'bg-purple-900/40 text-purple-300 border border-purple-800/50';
+      case 'negotiating': return 'bg-orange-900/40 text-orange-300 border border-orange-800/50';
+      case 'lost':
       case 'not_interested': return 'bg-gray-700 text-gray-300 border border-gray-600';
+      case 'won':
       case 'converted': return 'bg-green-900/40 text-green-300 border border-green-800/50';
       default: return 'bg-gray-700 text-gray-300 border border-gray-600';
     }
@@ -348,9 +350,10 @@ function LeadsDashboard() {
                 <option value="all">Semua</option>
                 <option value="new">Baru</option>
                 <option value="contacted">Dihubungi</option>
-                <option value="interested">Tertarik</option>
-                <option value="not_interested">Tidak Tertarik</option>
-                <option value="converted">Konversi</option>
+                <option value="qualified">Qualified</option>
+                <option value="negotiating">Negosiasi</option>
+                <option value="won">Won (Berhasil)</option>
+                <option value="lost">Lost (Gagal)</option>
               </select>
             </div>
 
@@ -464,9 +467,10 @@ function LeadsDashboard() {
                     >
                       <option value="new" className="text-black">BARU</option>
                       <option value="contacted" className="text-black">DIHUBUNGI</option>
-                      <option value="interested" className="text-black">TERTARIK</option>
-                      <option value="not_interested" className="text-black">TIDAK TERTARIK</option>
-                      <option value="converted" className="text-black">KONVERSI</option>
+                      <option value="qualified" className="text-black">QUALIFIED</option>
+                      <option value="negotiating" className="text-black">NEGOSIASI</option>
+                      <option value="won" className="text-black">WON</option>
+                      <option value="lost" className="text-black">LOST</option>
                     </select>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-[11px] text-gray-500">
@@ -523,9 +527,10 @@ function LeadsDashboard() {
                   >
                     <option value="new" className="text-black">BARU</option>
                     <option value="contacted" className="text-black">DIHUBUNGI</option>
-                    <option value="interested" className="text-black">TERTARIK</option>
-                    <option value="not_interested" className="text-black">TIDAK TERTARIK</option>
-                    <option value="converted" className="text-black">KONVERSI</option>
+                    <option value="qualified" className="text-black">QUALIFIED</option>
+                    <option value="negotiating" className="text-black">NEGOSIASI</option>
+                    <option value="won" className="text-black">WON</option>
+                    <option value="lost" className="text-black">LOST</option>
                   </select>
 
                   <div className="flex gap-2">

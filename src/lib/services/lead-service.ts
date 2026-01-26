@@ -221,12 +221,15 @@ export class LeadService {
         prisma.lead.count({ where }),
       ]);
 
+      const stats = await this.getLeadStats(tenantId, filters.status ? undefined : (filters as any).dateRange);
+
       return {
         leads,
         total,
         page,
         limit,
         totalPages: Math.ceil(total / limit),
+        stats, // Unified stats included in list call
       };
     } catch (error) {
       console.error('Failed to list leads:', error);
@@ -311,20 +314,30 @@ export class LeadService {
 
       const newCount = statusMap.NEW || 0;
       const contactedCount = statusMap.CONTACTED || 0;
-      const interestedCount = statusMap.INTERESTED || 0;
-      const notInterestedCount = statusMap.NOT_INTERESTED || 0;
-      const convertedCount = statusMap.CONVERTED || 0;
+      const qualifiedCount = statusMap.QUALIFIED || 0;
+      const wonCount = statusMap.WON || 0;
+      const lostCount = statusMap.LOST || 0;
+      const negotiatingCount = statusMap.NEGOTIATING || 0;
 
-      const conversionRate = total > 0 ? (convertedCount / total) * 100 : 0;
+      const conversionRate = total > 0 ? (wonCount / total) * 100 : 0;
 
       return {
         total,
         new: newCount,
         contacted: contactedCount,
-        interested: interestedCount,
-        notInterested: notInterestedCount,
-        converted: convertedCount,
+        interested: qualifiedCount, // alias for qualified
+        converted: wonCount, // alias for won
+        notInterested: lostCount, // alias for lost
+        negotiating: negotiatingCount,
         conversionRate: Math.round(conversionRate * 100) / 100,
+        byStatus: {
+          NEW: newCount,
+          CONTACTED: contactedCount,
+          QUALIFIED: qualifiedCount,
+          WON: wonCount,
+          LOST: lostCount,
+          NEGOTIATING: negotiatingCount
+        }
       };
     } catch (error) {
       console.error('Failed to get lead stats:', error);
@@ -361,25 +374,25 @@ export class LeadService {
 
       // 2. Try to find existing lead
       let lead = await this.getLeadByPhone(tenantId, cleanPhone);
-      
+
       // Calculate basic score impact based on intent
       let scoreIncrement = 0;
       let statusUpdate = undefined;
       let interestUpdate = undefined;
-      
+
       if (intent) {
         // Simple heuristic rules for immediate updates
         if (intent.includes('price') || intent.includes('harga')) {
           scoreIncrement = 10;
-          statusUpdate = 'INTERESTED';
+          statusUpdate = 'QUALIFIED';
         }
         if (intent.includes('location') || intent.includes('lokasi')) {
           scoreIncrement = 15;
-          statusUpdate = 'INTERESTED';
+          statusUpdate = 'QUALIFIED';
         }
         if (intent.includes('consultation') || intent.includes('credit')) {
           scoreIncrement = 20;
-          statusUpdate = 'INTERESTED';
+          statusUpdate = 'QUALIFIED';
         }
       }
 
@@ -392,17 +405,17 @@ export class LeadService {
           // If customer asks about a specific vehicle, update interest
           ...(vehicleId ? { vehicleId, interestedIn: vehicleId } : {}),
         };
-        
+
         // Only update status if it's an "upgrade" (e.g. dont set CONTACTED back to NEW)
-        if (statusUpdate && lead.status === 'NEW' && statusUpdate === 'INTERESTED') {
-           updateData.status = 'INTERESTED';
+        if (statusUpdate && lead.status === 'NEW' && statusUpdate === 'QUALIFIED') {
+          updateData.status = 'QUALIFIED';
         }
 
         lead = await prisma.lead.update({
           where: { id: lead.id },
           data: updateData
         });
-        
+
         // Update score if needed
         if (scoreIncrement > 0) {
           // We'll implement specific score tracking later, for now just log/metadata could be used
@@ -412,8 +425,8 @@ export class LeadService {
       } else {
         // --- CREATE NEW LEAD ---
         // Auto-determine source based on context
-        const source = 'whatsapp_auto'; 
-        
+        const source = 'whatsapp_auto';
+
         lead = await prisma.lead.create({
           data: {
             tenantId,
@@ -429,7 +442,7 @@ export class LeadService {
             lastContactAt: new Date(),
           }
         });
-        
+
         console.log(`[Smart Leads] New lead captured from WhatsApp: ${cleanPhone}`);
       }
 
@@ -459,15 +472,15 @@ export class LeadService {
     try {
       // Map buying stage/score to LeadStatus
       let newStatus: any = undefined;
-      
+
       if (analysis.sentiment === 'NEGATIVE') {
-         newStatus = 'NOT_INTERESTED';
+        newStatus = 'LOST';
       } else if (analysis.score >= 80 || analysis.buyingStage === 'ACTION') {
-         newStatus = 'CONVERTED'; // Or 'HOT' if available
+        newStatus = 'WON'; // Or 'HOT' if available
       } else if (analysis.score >= 50 || analysis.buyingStage === 'DESIRE') {
-         newStatus = 'INTERESTED';
+        newStatus = 'QUALIFIED';
       } else if (analysis.buyingStage === 'INTEREST') {
-         newStatus = 'CONTACTED';
+        newStatus = 'CONTACTED';
       }
 
       await prisma.lead.update({
@@ -479,7 +492,7 @@ export class LeadService {
           ...(newStatus ? { status: newStatus } : {})
         }
       });
-      
+
       return true;
     } catch (error) {
       console.error('Failed to update lead analysis:', error);

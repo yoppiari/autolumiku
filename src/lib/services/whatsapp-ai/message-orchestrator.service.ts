@@ -2051,7 +2051,7 @@ export class MessageOrchestratorService {
           // Map AI Intent to Lead Status
           let newStatus = "NEW";
           if (intent === "customer_interested" || intent === "customer_negotiation") {
-            newStatus = "INTERESTED";
+            newStatus = "QUALIFIED";
           } else if (intent === "customer_specific_vehicle") {
             newStatus = "CONTACTED";
           } else if (intent === "customer_asking_price") {
@@ -2075,7 +2075,7 @@ export class MessageOrchestratorService {
             console.log(`[Orchestrator] ✅ Created Lead ID: ${lead.id}`);
           } else {
             // Update Existing Lead
-            // Only update status if it progresses (e.g. don't downgrade INTERESTED to CONTACTED)
+            // Only update status if it progresses (e.g. don't downgrade QUALIFIED to CONTACTED)
             // But for now, we'll just track last activity. 
             // We can optionally append the message to notes to keep a log, 
             // but message history is already in WhatsAppConversation for detail.
@@ -2087,7 +2087,7 @@ export class MessageOrchestratorService {
             };
 
             const currentStatus = lead.status;
-            const statusPriority = { "NEW": 1, "CONTACTED": 2, "INTERESTED": 3, "CONVERTED": 4, "NOT_INTERESTED": 0 };
+            const statusPriority = { "NEW": 1, "CONTACTED": 2, "QUALIFIED": 3, "NEGOTIATING": 4, "WON": 5, "LOST": 0 };
 
             // Upgrade status if intent implies higher interest
             // @ts-ignore
