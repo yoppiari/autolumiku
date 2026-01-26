@@ -260,7 +260,6 @@ export class WhatsAppAIChatService {
       // Check business hours (optional) - Apply to all customers (new and returning)
       // STAFF ALWAYS BYPASS business hours check
       const isStaff = context.isStaff || false;
-      const showroomName = account?.tenant?.name || "Showroom Kami";
 
       // Determine if we should check hours: if config has businessHours AND user is NOT staff
       const hasBusinessHours = config.businessHours &&
