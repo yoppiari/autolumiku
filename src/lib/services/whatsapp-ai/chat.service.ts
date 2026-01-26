@@ -372,16 +372,22 @@ export class WhatsAppAIChatService {
           console.error(`[WhatsApp AI Chat] ❌ ZAI API call failed, using fallback: ${apiError.message}`);
 
           // GENERATE FALLBACK CONTENT
-          // If greeting, return greeting. If other query, return generic error.
-          const isGreeting = context.intent === "customer_greeting";
-          const fallbackContent = isGreeting
-            ? "Halo! 👋 Mohon maaf, sistem AI kami sedang sibuk. Ada yang bisa dibantu?"
-            : "Mohon maaf, koneksi AI sedang gangguan. Bisa diulangi pesannya ya? 🙏";
+          // Use smart fallback instead of hardcoded generic messages
+          const smartFallback = await this.generateSmartFallback(
+            userMessage,
+            context.messageHistory,
+            context.tenantId,
+            context
+          );
 
           aiResponse = {
-            content: fallbackContent,
-            shouldEscalate: false
+            content: smartFallback.message,
+            shouldEscalate: smartFallback.shouldEscalate
           };
+
+          if (smartFallback.images && smartFallback.images.length > 0) {
+            resultImages = smartFallback.images;
+          }
         }
       }
 
@@ -888,9 +894,81 @@ export class WhatsAppAIChatService {
       });
     } catch (e) { /* ignore */ }
 
+    // ==================== (MOVED) SPECIFIC VEHICLE INQUIRY HANDLER ====================
+    // Priority 1: Check if asking about specific vehicle (Brand, Model, Year)
+    const vehicleBrands = ['toyota', 'honda', 'suzuki', 'daihatsu', 'mitsubishi', 'nissan', 'mazda', 'bmw', 'mercedes', 'hyundai', 'kia', 'wuling', 'ford', 'chery', 'lexus'];
+    const vehicleModels = [
+      'innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'crv', 'hrv', 'yaris', 'camry', 'calya', 'sigra', 'xpander',
+      'palisade', 'creta', 'stargazer', 'ioniq', 'santa fe', 'kona', 'staria', // Hyundai
+      'rocky', 'raize', 'agya', 'ayla', 'veloz', 'zernix', // Toyota/Daihatsu
+      'cx-5', 'cx-3', 'mazda 2', 'mazda 3', // Mazda
+      'almaz', 'confero', 'cortez', 'air ev', 'binguo', // Wuling
+      'xsr', 'march', 'livina', 'serena', 'terra' // Nissan
+    ];
+
+    const mentionedBrand = vehicleBrands.find(b => msg.includes(b.toLowerCase()));
+    const mentionedModel = vehicleModels.find(m => msg.includes(m.toLowerCase()));
+    const yearMatch = msg.match(/\b(20\d{2}|19\d{2})\b/);
+    const mentionedYear = yearMatch ? parseInt(yearMatch[1]) : null;
+
+    if (mentionedBrand || mentionedModel) {
+      // Targeted search in DB for better accuracy
+      console.log(`[SmartFallback] 🔍 Specific vehicle mentioned: brand=${mentionedBrand}, model=${mentionedModel}, year=${mentionedYear}`);
+
+      let matchingVehicle = null;
+      try {
+        matchingVehicle = await prisma.vehicle.findFirst({
+          where: {
+            tenantId,
+            status: "AVAILABLE",
+            ...(mentionedYear ? { year: mentionedYear } : {}),
+            OR: [
+              ...(mentionedBrand ? [{ make: { contains: mentionedBrand, mode: 'insensitive' as const } }] : []),
+              ...(mentionedModel ? [{ model: { contains: mentionedModel, mode: 'insensitive' as const } }] : []),
+            ]
+          },
+          select: { id: true, displayId: true, make: true, model: true, year: true, price: true, mileage: true, transmissionType: true, color: true, variant: true, fuelType: true },
+          orderBy: { createdAt: 'desc' }
+        });
+      } catch (e) {
+        // Fallback to searching in pre-fetched collection if DB fails
+        const searchTerm = (mentionedModel || mentionedBrand || "").toLowerCase();
+        matchingVehicle = vehicles.find(v =>
+          v.make.toLowerCase().includes(searchTerm) ||
+          v.model.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      if (matchingVehicle) {
+        const priceJuta = Math.round(Number(matchingVehicle.price) / 1000000);
+        const id = matchingVehicle.displayId || matchingVehicle.id.substring(0, 6).toUpperCase();
+
+        const response = `Ada nih ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year} | ${id} 🚗✨\n\n` +
+          `💰 Harga: Rp ${priceJuta} juta\n` +
+          `⚙️ Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
+          `⛽ Bahan Bakar: ${matchingVehicle.fuelType || 'Bensin'}\n` +
+          `${matchingVehicle.mileage ? `📊 Kilometer: ${matchingVehicle.mileage.toLocaleString('id-ID')} km\n` : ''}` +
+          `🎨 Warna: ${matchingVehicle.color || '-'}\n\n` +
+          `Mau lihat fotonya? 📸`;
+
+        return { message: response, shouldEscalate: false };
+      } else {
+        const searchTerm = (mentionedModel || mentionedBrand || "").charAt(0).toUpperCase() + (mentionedModel || mentionedBrand || "").slice(1);
+        return {
+          message: `Mohon maaf kak, unit ${searchTerm} yang Anda cari saat ini belum tersedia di showroom kami. 👋\n\n` +
+            `Namun, kami memiliki beberapa koleksi unit favorit lainnya yang mungkin sesuai dengan selera Anda:\n\n${vehicles.slice(0, 3).map(v => {
+              const id = v.displayId || v.id.substring(0, 6).toUpperCase();
+              return `• ${v.make} ${v.model} ${v.year} | ${id}`;
+            }).join('\n')}\n\n` +
+            `Mau lihat fotonya? 📸 (Ketik "Ya" atau "Foto [ID]" untuk melihat) 😊`,
+          shouldEscalate: false,
+        };
+      }
+    }
+
     // ==================== AI CAPABILITY & IDENTITY HANDLER (AI 5.2) ====================
     // Detect if user is asking about AI technology, identity, or Autolumiku
-    // IMPORTANT: Only trigger for DIRECT identity questions, not system feature questions
+    // IMPORTANT: Only trigger if SPECIFIC VEHICLE patterns were NOT matched above
 
     // First, check if this is a question about SYSTEM FEATURES (not AI identity)
     const systemFeaturePatterns = [
@@ -904,15 +982,15 @@ export class WhatsAppAIChatService {
 
     const isSystemFeatureQuestion = systemFeaturePatterns.some(p => p.test(msg));
 
-    // AI Identity patterns - more specific, focused on direct identity questions
+    // AI Identity patterns - more specific
     const aiIdentityPatterns = [
-      /^\s*(kamu|anda|u)\s+(siapa|apa)\s*\??$/i, // "kamu siapa?", "kamu apa?"
-      /^\s*(siapa|apa)\s+(kamu|anda|u)\s*\??$/i, // "siapa kamu?", "apa kamu?"
-      /^\s*(kamu|anda|u)\s+(ini|itu)\s+(siapa|apa)\s*\??$/i, // "kamu ini siapa?"
-      /\b(kamu|anda|u)\s+(pakai|menggunakan|pake)\s+(teknologi|tech|ai|sistem)\s+(apa|mana)\b/i, // "kamu pakai teknologi apa?"
-      /\bautolumiku\b/i, // Explicit mention of Autolumiku
-      /\bai\s*5\.2\b/i, // Explicit mention of AI 5.2
-      /\b(kamu|anda|u)\s+(bot|robot|ai|manusia|orang)\s*\??$/i, // "kamu bot?", "kamu manusia?"
+      /^\s*(kamu|anda|u)\s+(siapa|apa)\s*\??$/i,
+      /^\s*(siapa|apa)\s+(kamu|anda|u)\s*\??$/i,
+      /^\s*(kamu|anda|u)\s+(ini|itu)\s+(siapa|apa)\s*\??$/i,
+      /\b(kamu|anda|u)\s+(pakai|menggunakan|pake)\s+(teknologi|tech|ai|sistem)\s+(apa|mana)\b/i,
+      /\bautolumiku\b/i,
+      /\bai\s*5\.2\b/i,
+      /\b(kamu|anda|u)\s+(bot|robot|ai|manusia|orang)\s*\??$/i,
     ];
 
     const looksLikeAIIdentity = aiIdentityPatterns.some(p => p.test(msg));
@@ -933,6 +1011,44 @@ export class WhatsAppAIChatService {
 
       return {
         message: identityResponse,
+        shouldEscalate: false,
+      };
+    }
+
+    // ==================== POLICY/SOP INQUIRY HANDLER ====================
+    // Detect if user (especially staff/owner) is asking "How do you respond to X?"
+    const policyInquiryPatterns = [
+      /\b(respon|balas|jawab|cara)\b.*\b(gimana|bagaimana|kamu)\b/i,
+      /\bkalau\s+ada\s+(yang|customer|orang)\s+(tanya|nanya)\b/i,
+      /\bgimana\s+(respon|jawaban)\b/i,
+    ];
+
+    if (policyInquiryPatterns.some(p => p.test(msg))) {
+      console.log(`[SmartFallback] 📋 Policy/SOP inquiry detected: "${msg}"`);
+
+      let policyResponse = `${timeGreeting}! 👋\n\n`;
+
+      if (msg.includes("interior") || msg.includes("eksterior") || msg.includes("foto")) {
+        policyResponse += `Jika ada yang tanya **interior atau eksterior**, saya akan:\n\n` +
+          `1. Mencari unit yang dimaksud di database.\n` +
+          `2. Jika ada foto detail, saya akan **langsung mengirimkan galeri foto** unit tersebut (interior, eksterior, & mesin).\n` +
+          `3. Jika foto belum lengkap, saya akan menawarkan untuk mengirimkan foto terbaru segera setelah tim sales menyediakannya. 📸`;
+      } else if (msg.includes("surat") || msg.includes("dokumen") || msg.includes("bpkb") || msg.includes("stnk")) {
+        policyResponse += `Jika ada yang tanya tentang **surat-surat kendaraan**, saya akan merespon dengan tegas bahwa:\n\n` +
+          `• Semua unit kami memiliki **dokumen lengkap dan sah** (BPKB & STNK ready).\n` +
+          `• Unit dijamin **bebas banjir dan bebas tabrak**.\n` +
+          `• Pajak kendaraan dipastikan hidup/on-process sesuai kondisi saat transaksi. ✅`;
+      } else if (msg.includes("kredit") || msg.includes("cicilan") || msg.includes("angsuran")) {
+        policyResponse += `Jika ada yang tanya **kredit atau angsuran**, saya akan:\n\n` +
+          `1. Meminta info unit yang diminati (jika belum ada).\n` +
+          `2. Melakukan **Simulasi KKB Otomatis** menggunakan mitra leasing kami (BCA, Adira, dll).\n` +
+          `3. Memberikan rincian DP dan cicilan sesuai tenor yang diinginkan (1-5 tahun). 📊`;
+      } else {
+        policyResponse += `Saya akan merespon setiap pertanyaan customer dengan ramah, akurat sesuai database, dan selalu berusaha menggali data leads (Nama, Lokasi, Budget) secara natural agar bisa di-follow up oleh tim sales. 😊`;
+      }
+
+      return {
+        message: policyResponse + "\n\nAda skenario respon lain yang ingin Bapak/Ibu cek? 😊",
         shouldEscalate: false,
       };
     }
@@ -1158,6 +1274,22 @@ export class WhatsAppAIChatService {
       return {
         message: `Mohon maaf atas kesalahan informasi sebelumnya 🙏\n\nSaya stop dulu. Bisa diinfokan ulang unit yang Bapak/Ibu cari? Sebutkan ID unit (contoh: PM-PST-001) agar saya bisa memberikan info yang tepat. 😊`,
         shouldEscalate: true, // Escalate because AI was making mistakes
+      };
+    }
+
+    // ==================== PHOTO QUANTITY COMPLAINT HANDLER ====================
+    // Detect if user is complaining about the number of photos (e.g., "Cuma 2 fotonya?", "Kok dikit?")
+    const photoQuantityPatterns = [
+      /\b(cuma|hanya|kok|dikit|sedikit)\b.*\b(foto|gambar)\b/i,
+      /\b(foto|gambar)\b.*\b(cuma|hanya|dikit|sedikit|kurang)\b/i,
+      /\b(tambah|lagi|lebih)\s+(foto|gambar)\b/i,
+    ];
+
+    if (photoQuantityPatterns.some(p => p.test(msg))) {
+      console.log(`[SmartFallback] 📸 Photo quantity complaint detected: "${msg}"`);
+      return {
+        message: `Mohon maaf jika fotonya terlihat sedikit kak. 🙏\n\nFoto yang saya kirimkan tadi adalah **preview cepat** dari beberapa unit stok terbaru kami.\n\nJika Kakak ingin melihat **foto lengkap (Interior, Eksterior, Mesin)** untuk unit tertentu, silakan sebutkan nama mobil atau ID-nya (contoh: "Lihat detail Avanza" atau "Foto PM-PST-001").\n\nSaya akan kirimkan seluruh galeri foto yang tersedia! 😊`,
+        shouldEscalate: false,
       };
     }
 
@@ -1436,54 +1568,7 @@ export class WhatsAppAIChatService {
     }
     // ==================== END PHOTO CONFIRMATION HANDLER ====================
 
-    // Pattern matching for user intent
-    const vehicleBrands = ['toyota', 'honda', 'suzuki', 'daihatsu', 'mitsubishi', 'nissan', 'mazda', 'bmw', 'mercedes', 'hyundai', 'kia', 'wuling', 'ford', 'chery', 'lexus'];
-    const vehicleModels = [
-      'innova', 'avanza', 'xenia', 'brio', 'jazz', 'ertiga', 'rush', 'terios', 'fortuner', 'pajero', 'alphard', 'civic', 'crv', 'hrv', 'yaris', 'camry', 'calya', 'sigra', 'xpander',
-      'palisade', 'creta', 'stargazer', 'ioniq', 'santa fe', 'kona', 'staria', // Hyundai
-      'rocky', 'raize', 'agya', 'ayla', 'veloz', 'zernix', // Toyota/Daihatsu
-      'cx-5', 'cx-3', 'mazda 2', 'mazda 3', // Mazda
-      'almaz', 'confero', 'cortez', 'air ev', 'binguo', // Wuling
-      'xsr', 'march', 'livina', 'serena', 'terra' // Nissan
-    ];
-
-    // Check if asking about specific vehicle
-    const mentionedBrand = vehicleBrands.find(b => msg.includes(b));
-    const mentionedModel = vehicleModels.find(m => msg.includes(m));
-
-    if (mentionedBrand || mentionedModel) {
-      // User asking about specific vehicle - try to find it
-      const searchTerm = mentionedModel || mentionedBrand || "";
-      const matchingVehicle = vehicles.find(v =>
-        v.make.toLowerCase().includes(searchTerm) ||
-        v.model.toLowerCase().includes(searchTerm)
-      );
-
-      if (matchingVehicle) {
-        const priceJuta = Math.round(Number(matchingVehicle.price) / 1000000);
-        const id = matchingVehicle.displayId || matchingVehicle.id.substring(0, 6).toUpperCase();
-
-        const response = `Ada nih ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year} | ${id} 🚗✨\n\n` +
-          `💰 Harga: Rp ${priceJuta} juta\n` +
-          `⚙️ Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
-          `⛽ Bahan Bakar: ${matchingVehicle.fuelType || 'Bensin'}\n` +
-          `${matchingVehicle.mileage ? `📊 Kilometer: ${matchingVehicle.mileage.toLocaleString('id-ID')} km\n` : ''}` +
-          `🎨 Warna: ${matchingVehicle.color || '-'}\n\n` +
-          `Mau lihat fotonya? 📸`;
-
-        return { message: response, shouldEscalate: false };
-      } else {
-        return {
-          message: `Mohon maaf kak, unit ${searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1)} yang Anda cari saat ini belum tersedia di showroom kami. 👋\n\n` +
-            `Namun, kami memiliki beberapa koleksi unit favorit lainnya yang mungkin sesuai dengan selera Anda:\n\n${vehicles.slice(0, 3).map(v => {
-              const id = v.displayId || v.id.substring(0, 6).toUpperCase();
-              return `• ${v.make} ${v.model} ${v.year} | ${id}`;
-            }).join('\n')}\n\n` +
-            `Mau lihat fotonya? 📸 (Ketik "Ya" atau "Foto [ID]" untuk melihat) 😊`,
-          shouldEscalate: false,
-        };
-      }
-    }
+    // Handlers moved up to increase priority (Specific Vehicle Brand/Model)
 
     // Check if asking about price/budget - use extractBudget for consistent parsing
     const budget = WhatsAppAIChatService.extractBudget(msg);
@@ -2077,7 +2162,7 @@ export class WhatsAppAIChatService {
       .filter((s) => s.phone) // Extra filter for null phones
       .map((s) => ({
         name: `${s.firstName || ""} ${s.lastName || ""}`.trim() || "Staff",
-        role: s.role === "ADMIN" ? "Admin" : s.role === "MANAGER" ? "Manager" : "Sales",
+        role: s.role === "OWNER" ? "Owner" : s.role === "ADMIN" ? "Admin" : s.role === "MANAGER" ? "Manager" : "Sales",
         phone: this.formatPhoneForDisplay(s.phone!),
       }));
   }
@@ -2384,7 +2469,7 @@ export class WhatsAppAIChatService {
               },
             },
             orderBy: { createdAt: 'desc' },
-            take: 2,
+            take: 3, // Increased from 2 to 3 for better preview
           });
 
           console.log(`[PhotoConfirm DEBUG] Fallback query result: ${anyVehicles.length} vehicles found`);

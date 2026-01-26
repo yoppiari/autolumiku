@@ -765,27 +765,30 @@ export class IntentClassifierService {
     }
 
     // 6. Check greeting
+    // Reduced confidence to 0.7 to allow specific inquiries to take precedence
     if (CUSTOMER_PATTERNS.greeting.some((p) => p.test(message))) {
-      maxConfidence = Math.max(maxConfidence, 0.9);
-      if (maxConfidence === 0.9) {
+      maxConfidence = Math.max(maxConfidence, 0.7);
+      if (maxConfidence === 0.7) {
         detectedIntent = "customer_greeting";
         reason = "Detected greeting pattern";
       }
     }
 
     // 7. Check vehicle inquiry
+    // Increased confidence to 0.9
     if (CUSTOMER_PATTERNS.vehicle_inquiry.some((p) => p.test(message))) {
-      maxConfidence = Math.max(maxConfidence, 0.85);
-      if (maxConfidence === 0.85) {
+      maxConfidence = Math.max(maxConfidence, 0.9);
+      if (maxConfidence === 0.9) {
         detectedIntent = "customer_vehicle_inquiry";
         reason = "Detected vehicle inquiry keywords";
       }
     }
 
     // 8. Check price inquiry
+    // Increased confidence to 0.9
     if (CUSTOMER_PATTERNS.price_inquiry.some((p) => p.test(message))) {
-      maxConfidence = Math.max(maxConfidence, 0.85);
-      if (maxConfidence === 0.85) {
+      maxConfidence = Math.max(maxConfidence, 0.9);
+      if (maxConfidence === 0.9) {
         detectedIntent = "customer_price_inquiry";
         reason = "Detected price inquiry keywords";
       }
