@@ -363,13 +363,13 @@ export class MessageOrchestratorService {
         /^(tolong|help)\s*$/i,                       // tolong, help (alone)
         /^(menu|fitur)$/i,                           // menu, fitur (alone)
         /^(cara\s+pakai|cara\s+upload)/i,            // cara pakai, cara upload
-        /\b(foto|gambar|lihat|liat|stok|inventory|unit|ready|koleksi)\b/i, // Broad match for any stock/photo related keyword
+        /\b(stok|inventory|unit|ready|koleksi)\b/i, // Broad match for any stock/photo related keyword
         /^(ada|punya)\s+(foto|gambar|stok|unit)/i,    // "ada foto", "punya stok"
         /\b(mobil|unit|stok)\s+(baru|ready|prima\s*mobil)\b/i, // "mobil baru", "stok ready", "prima mobil"
         // CRITICAL: Photo/image requests with vehicle IDs - these are VIEW requests, not upload data
-        /^(kirim|kirimin|send|mana|tunjuk|kasih|lihat|liat)\s+(foto|gambar|photo|image)\s+(PM-|[A-Z]{2,3}-)/i, // "kirim foto PM-PST-003"
-        /^(foto|gambar|photo|image)\s+(PM-|[A-Z]{2,3}-)/i, // "foto PM-PST-003"
-        /^(mana|dimana|ada)\s+(foto|gambar)\s+(PM-|[A-Z]{2,3}-)/i, // "mana foto PM-PST-001"
+        /^(kirim|kirimin|send|mana|tunjuk|kasih|lihat|liat|show)\s+(foto|gambar|photo|image|pic)\b/i, // Generic photo request
+        /^(foto|gambar|photo|image|pic)\b.*\b(PM-|[A-Z]{2,3}-)/i, // "foto PM-PST-003" or "foto unit PM-PST-003"
+        /^(mana|dimana|ada|lihat|pilih)\s+(foto|gambar)\b.*\b(PM-|[A-Z]{2,3}-)/i, // "mana foto PM-PST-001"
       ];
 
       const normalizedMessage = (incoming.message || "").trim();
@@ -634,13 +634,18 @@ export class MessageOrchestratorService {
           classification.isStaff = true;
           classification.isCustomer = false;
 
-          // Re-classify intent as staff command ONLY if it matches specific patterns
+          // Re-classify intent as staff command ONLY if it matches strict patterns
           // Otherwise, let AI handle naturally (don't force greeting menu)
           if (classification.intent.startsWith("customer_")) {
             const msg = incoming.message.toLowerCase();
-            if (/upload|tambah|input|masukin/i.test(msg) || hasMedia) {
+            const uploadKeywords = ["upload", "tambah mobil", "input unit", "masukin mobil", "tambah data"];
+            const isUploadTrigger = uploadKeywords.some(k => msg.includes(k));
+
+            // Only force upload_vehicle if it's explicitly an upload intent 
+            // OR if it's a photo being sent WITHOUT an escape/search pattern
+            if (isUploadTrigger || (hasMedia && !isEscapeMessage)) {
               classification.intent = "staff_upload_vehicle";
-              classification.reason = "Reclassified as staff upload (conversation is staff)";
+              classification.reason = "Defined as staff upload (explicit keywords or media)";
               console.log(`[Orchestrator] Reclassified intent to: ${classification.intent}`);
             }
             // NOTE: Don't force staff_greeting for all other messages!
@@ -681,6 +686,14 @@ export class MessageOrchestratorService {
               message: incoming.message,
               intent: classification.intent,
               isStaff: classification.isStaff
+            }).then(async (lead) => {
+              if (lead && lead.id && !conversation.leadId) {
+                console.log(`[Smart Leads] Linking conversation ${conversation.id} to new lead ${lead.id}`);
+                await prisma.whatsAppConversation.update({
+                  where: { id: conversation.id },
+                  data: { leadId: lead.id }
+                });
+              }
             }).catch(err => console.error('[Smart Leads] Background capture failed:', err));
           } else {
             console.log(`[Smart Leads] Skipped - Toggle OFF (Active: ${settings?.isActive}, AutoReply: ${settings?.autoReply})`);

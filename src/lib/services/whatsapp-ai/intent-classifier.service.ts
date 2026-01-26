@@ -556,6 +556,17 @@ export class IntentClassifierService {
       return null;
     }
 
+    // NEW RULE: If message is a request for photos or specific unit info (search)
+    // do NOT treat as upload command
+    const searchPatterns = [
+      /^(kirim|mana|tunjuk|kasih|lihat|liat|show|pilih)\s+(foto|gambar|photo|image|pic)\b/i,
+      /^(foto|gambar|photo|image|pic)\b.*\b(PM-|[A-Z]{2,3}-)/i,
+      /^(stok|stock|inventory|list|daftar)\b/i
+    ];
+    if (searchPatterns.some(p => p.test(message))) {
+      return null; // Let it be classified by customer logic (natural inquiry)
+    }
+
     // Check upload vehicle command patterns
     if (STAFF_COMMAND_PATTERNS.upload_vehicle.some((p) => p.test(message))) {
       return {

@@ -536,7 +536,7 @@ export class WhatsAppAIChatService {
                 // Create new
                 resultLead = await LeadService.createLead({
                   tenantId: context.tenantId,
-                  name: toolArgs.name || context.customerName || "Customer",
+                  name: toolArgs.name || context.customerName || "Customer Baru",
                   phone: phone,
                   interestedIn: toolArgs.interest || toolArgs.vehicle_id,
                   budgetRange: toolArgs.budget,
@@ -547,6 +547,14 @@ export class WhatsAppAIChatService {
                   notes: toolArgs.location ? `Location: ${toolArgs.location}` : undefined
                 });
                 console.log('[WhatsAppAI] ✅ Lead created:', resultLead.id);
+              }
+
+              // CRITICAL: Link conversation to lead for dashboard synchronization
+              if (resultLead?.id && context.conversationId) {
+                await prisma.whatsAppConversation.update({
+                  where: { id: context.conversationId },
+                  data: { leadId: resultLead.id }
+                }).catch(err => console.error('[WhatsAppAI] Failed to link conversation to lead:', err));
               }
 
               // Add result to messages for AI to know process succeeded
