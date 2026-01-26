@@ -207,9 +207,9 @@ export function getRoleName(roleLevel: number): string {
  */
 export function getVisibleDashboardCards(roleLevel: number): string[] {
   // Everyone can see overview, kendaraan, blog
-  // Tim and Analytics restricted to Admin+
+  // Tim, Analytics, and Leads restricted to Admin+
   if (roleLevel < ROLE_LEVELS.ADMIN) {
     return ['overview', 'kendaraan', 'blog'];
   }
-  return ['overview', 'kendaraan', 'tim', 'analytics', 'blog'];
+  return ['overview', 'kendaraan', 'tim', 'analytics', 'leads', 'blog'];
 }
