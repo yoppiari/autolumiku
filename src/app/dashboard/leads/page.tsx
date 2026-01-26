@@ -88,10 +88,13 @@ function LeadsDashboard() {
         const parsedUser = JSON.parse(storedUser);
         const tenantId = parsedUser.tenantId;
 
+        const token = localStorage.getItem('authToken');
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
         // Fetch leads and stats from API
         const [leadsResponse, whatsappResponse] = await Promise.all([
-          fetch(`/api/v1/leads?tenantId=${tenantId}`),
-          fetch(`/api/v1/whatsapp-settings?tenantId=${tenantId}`),
+          fetch(`/api/v1/leads?tenantId=${tenantId}`, { headers }),
+          fetch(`/api/v1/whatsapp-settings?tenantId=${tenantId}`, { headers }),
         ]);
 
         if (leadsResponse.ok) {
@@ -100,11 +103,11 @@ function LeadsDashboard() {
             // Map API response to Lead interface
             const fetchedLeads: Lead[] = (leadsData.data.leads || []).map((lead: any) => ({
               id: lead.id,
-              customerName: lead.customerName || 'Unknown',
-              phone: lead.phoneNumber || '',
-              whatsappNumber: lead.whatsappNumber || lead.phoneNumber || '',
+              customerName: lead.name || 'Unknown',
+              phone: lead.phone || '',
+              whatsappNumber: lead.whatsappNumber || lead.phone || '',
               email: lead.email,
-              vehicleInterest: lead.vehicleName || 'N/A',
+              vehicleInterest: lead.interestedIn || 'N/A',
               budget: lead.budget || '',
               urgency: (lead.priority?.toLowerCase() as 'high' | 'medium' | 'low') || 'medium',
               status: lead.status?.toLowerCase() || 'new', // new, contacted, qualified, won, lost, negotiating
@@ -231,12 +234,16 @@ function LeadsDashboard() {
 
   const handleStatusChange = async (leadId: string, newStatus: string) => {
     try {
+      const token = localStorage.getItem('authToken');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
       // Real API call to update lead status
       const response = await fetch(`/api/v1/leads/${leadId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ status: newStatus.toUpperCase() }),
       });
 
