@@ -935,9 +935,9 @@ export class WhatsAppAIChatService {
     const yearMatch = msg.match(/\b(20\d{2}|19\d{2})\b/);
     const mentionedYear = yearMatch ? parseInt(yearMatch[1]) : null;
 
-    if (mentionedBrand || mentionedModel) {
+    if ((mentionedBrand || mentionedModel) && !msg.match(/\b(foto|gambar|interior|eksterior|detail|mesin|body|dalam|luar)\b/i)) {
       // Targeted search in DB for better accuracy
-      console.log(`[SmartFallback] 🔍 Specific vehicle mentioned: brand=${mentionedBrand}, model=${mentionedModel}, year=${mentionedYear}`);
+      console.log(`[SmartFallback] 🔍 Specific vehicle mentioned (Standard Inquiry): brand=${mentionedBrand}, model=${mentionedModel}, year=${mentionedYear}`);
 
       let matchingVehicle = null;
       try {
@@ -1738,6 +1738,8 @@ export class WhatsAppAIChatService {
       // Try to find a vehicle mentioned in current message or history
       // (vehicleName is already extracted at the top of the function)
       let targetVehicle: any = null;
+
+      // 1. Try finding in local cache first
       if (vehicleName) {
         targetVehicle = vehicles.find(v =>
           v.make.toLowerCase().includes(vehicleName.toLowerCase().split(' ')[0]) ||
@@ -1746,8 +1748,55 @@ export class WhatsAppAIChatService {
         );
       }
 
-      // If no specific vehicle found, use the first available one as an example
-      if (!targetVehicle && vehicles.length > 0) {
+      // 2. If valid vehicle name/ID but not in local cache, try DB search
+      if (!targetVehicle && vehicleName) {
+        console.log(`[SmartFallback] 🔍 Vehicle "${vehicleName}" not in local cache, searching DB...`);
+
+        try {
+          // Check if it looks like an ID
+          const idMatch = vehicleName.match(/pm-[a-zA-Z0-9]+-\d+/i);
+          if (idMatch) {
+            targetVehicle = await prisma.vehicle.findFirst({
+              where: {
+                tenantId,
+                displayId: { equals: idMatch[0], mode: 'insensitive' }
+              }
+            });
+          } else {
+            // Search by make/model text
+            // Clean search terms
+            const cleanName = vehicleName.replace(/[\(\)]/g, '').trim();
+            const nameParts = cleanName.split(' ');
+            const brand = nameParts[0];
+            const model = nameParts.length > 1 ? nameParts[1] : '';
+            const yearMatch = vehicleName.match(/\b(20\d{2}|19\d{2})\b/);
+            const year = yearMatch ? parseInt(yearMatch[1]) : undefined;
+
+            targetVehicle = await prisma.vehicle.findFirst({
+              where: {
+                tenantId,
+                status: 'AVAILABLE',
+                AND: [
+                  { make: { contains: brand, mode: 'insensitive' } },
+                  ...(model ? [{ model: { contains: model, mode: 'insensitive' } }] : []),
+                  ...(year ? [{ year: { equals: year } }] : [])
+                ]
+              },
+              orderBy: { price: 'asc' } // Get cheapest matching variant
+            });
+          }
+
+          if (targetVehicle) {
+            console.log(`[SmartFallback] ✅ Found vehicle in DB: ${targetVehicle.make} ${targetVehicle.model}`);
+          }
+        } catch (dbErr) {
+          console.error("[SmartFallback] DB ID search error:", dbErr);
+        }
+      }
+
+      // 3. Fallback: If no specific vehicle found but we have inventory, use the first available one as an example
+      // ONLY if the user didn't specify a name (generic "simulasi kredit" request)
+      if (!targetVehicle && vehicles.length > 0 && !vehicleName) {
         targetVehicle = vehicles[0];
       }
 
