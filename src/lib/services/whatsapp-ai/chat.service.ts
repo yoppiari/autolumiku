@@ -1410,14 +1410,14 @@ export class WhatsAppAIChatService {
 
     // ==================== GENERAL INVENTORY INQUIRY ====================
     // User asking "ada apa saja?", "ready stock?", "list mobil", "report ada apa saja"
-    const inventoryPatterns = [
+    const generalInventoryPatterns = [
       /\b(ada|ready|stok|stock)\s+(apa|mobil|unit|saja|aja)\b/i,
       /\b(lihat|liat|daftar|list)\s+(mobil|unit|stok|stock)\b/i,
       /\b(available|tersedia)\b/i,
       /^report\s+(ada|apa)/i, // Catch the specific user typo "report ada apa saja"
     ];
 
-    const isInventoryCheck = inventoryPatterns.some(p => p.test(msg));
+    const isInventoryCheck = generalInventoryPatterns.some(p => p.test(msg));
 
     if (isInventoryCheck) {
       console.log(`[SmartFallback] 📋 General inventory inquiry detected: "${msg}"`);
