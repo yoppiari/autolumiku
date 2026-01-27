@@ -106,7 +106,7 @@ const STAFF_COMMAND_PATTERNS = {
     /^stats\b/i,                     // stats, stats today, stats week
     /^laporan/i,                     // laporan
     /^statistik/i,                   // statistik
-    /^report\b/i,                    // report, report today
+    // Removed loose "report" to avoid conflict with customer queries like "report ada apa saja"
   ],
   get_report: [
     /(?:sales|penjualan)\s*report/i,
@@ -155,6 +155,9 @@ const CUSTOMER_PATTERNS = {
     /\b(terbaru|terlama|newest|oldest)\b/i, // newest/oldest queries
     /\b(matic|manual|automatic|mt|at)\b/i, // transmission queries
     /\b(bensin|diesel|solar|hybrid|electric)\b/i, // fuel type queries
+    /\b(ada|ready)\s+(apa|unit|stok|stock|mobil)\s*(aja|saja)?\b/i, // "ada apa saja", "ready apa aja"
+    /\b(daftar|list)\s+(unit|mobil|stock|stok)\b/i, // "daftar mobil"
+    /^report\s+(ada|apa)/i, // Handle user specific typo "report ada apa saja"
   ],
   price_inquiry: [
     /\b(harga|price|berapa|biaya|cost)\b/i,

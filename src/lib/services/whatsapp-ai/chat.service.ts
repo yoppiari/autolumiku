@@ -1408,6 +1408,49 @@ export class WhatsAppAIChatService {
       };
     }
 
+    // ==================== GENERAL INVENTORY INQUIRY ====================
+    // User asking "ada apa saja?", "ready stock?", "list mobil", "report ada apa saja"
+    const inventoryPatterns = [
+      /\b(ada|ready|stok|stock)\s+(apa|mobil|unit|saja|aja)\b/i,
+      /\b(lihat|liat|daftar|list)\s+(mobil|unit|stok|stock)\b/i,
+      /\b(available|tersedia)\b/i,
+      /^report\s+(ada|apa)/i, // Catch the specific user typo "report ada apa saja"
+    ];
+
+    const isInventoryCheck = inventoryPatterns.some(p => p.test(msg));
+
+    if (isInventoryCheck) {
+      console.log(`[SmartFallback] 📋 General inventory inquiry detected: "${msg}"`);
+
+      // Fetch top available vehicles
+      const inventoryVehicles = await prisma.vehicle.findMany({
+        where: {
+          tenantId,
+          status: 'AVAILABLE'
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      });
+
+      if (inventoryVehicles.length > 0) {
+        const list = inventoryVehicles.map(v => {
+          const priceJuta = Math.round(Number(v.price) / 1000000);
+          const id = v.displayId || v.id.substring(0, 6).toUpperCase();
+          return `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta}jt | ${id}`;
+        }).join('\n');
+
+        return {
+          message: `Siap kak! Berikut beberapa unit *READY STOCK* kami saat ini: 🚗✨\n\n${list}\n\nMau lihat foto detail unit yang mana? (Ketik nama/ID mobilnya ya) 😊`,
+          shouldEscalate: false,
+        };
+      } else {
+        return {
+          message: `Mohon maaf kak, saat ini stok unit kami sedang sold out semua. 🙏\n\nNanti saya kabari lagi ya kalau ada unit baru masuk! 😊`,
+          shouldEscalate: false
+        };
+      }
+    }
+
     // Check if photos were already sent recently (last 3 messages) for THIS specific vehicle
     const recentPhotosSent = messageHistory
       .slice(-3)
