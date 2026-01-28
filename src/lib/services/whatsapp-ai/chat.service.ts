@@ -503,78 +503,85 @@ export class WhatsAppAIChatService {
           console.log(`[WhatsAppAI] 🔧 Tool: ${toolName}`, toolArgs);
 
           if (toolName === 'create_lead') {
-            try {
-              console.log('[WhatsAppAI] 📝 Creating lead...');
-
-              // Normalize phone number
-              let phone = toolArgs.phone || context.customerPhone;
-
-              // If phone is missing/invalid, try to use context phone
-              if (!phone || phone.length < 5) {
-                phone = context.customerPhone;
-              }
-
-              // Check if lead already exists to decide between create or update
-              // But for now, we'll try findExisting logic inside createLead equivalent using LeadService
-              // Since LeadService.createLead creates a NEW record, we might want to check existence first
-              // However, let's keep it simple: createLead is fine, but we should check if we can update if exists
-
-              const existingLead = await LeadService.getLeadByPhone(context.tenantId, phone);
-
-              let resultLead;
-              if (existingLead) {
-                // Update existing
-                resultLead = await LeadService.updateLead(existingLead.id, context.tenantId, {
-                  name: toolArgs.name || existingLead.name, // Keep existing name if not provided
-                  interestedIn: toolArgs.interest || toolArgs.vehicle_id || existingLead.interestedIn,
-                  budgetRange: toolArgs.budget || existingLead.budgetRange,
-                  notes: toolArgs.location ? `Location: ${toolArgs.location}\n${existingLead.notes || ''}` : existingLead.notes,
-                  status: 'CONTACTED' // Update status to reflect active engagement
-                });
-                console.log('[WhatsAppAI] ✅ Lead updated:', resultLead.id);
-              } else {
-                // Create new
-                resultLead = await LeadService.createLead({
-                  tenantId: context.tenantId,
-                  name: toolArgs.name || context.customerName || "Customer Baru",
-                  phone: phone,
-                  interestedIn: toolArgs.interest || toolArgs.vehicle_id,
-                  budgetRange: toolArgs.budget,
-                  source: toolArgs.source || 'whatsapp',
-                  message: context.messageHistory.map(m => `${m.role}: ${m.content}`).slice(-3).join('\n'), // Store recent chat as initial message
-                  status: 'NEW',
-                  priority: (toolArgs.urgency as LeadPriority) || 'MEDIUM',
-                  notes: toolArgs.location ? `Location: ${toolArgs.location}` : undefined
-                });
-                console.log('[WhatsAppAI] ✅ Lead created:', resultLead.id);
-              }
-
-              // CRITICAL: Link conversation to lead for dashboard synchronization
-              if (resultLead?.id && context.conversationId) {
-                await prisma.whatsAppConversation.update({
-                  where: { id: context.conversationId },
-                  data: { leadId: resultLead.id }
-                }).catch(err => console.error('[WhatsAppAI] Failed to link conversation to lead:', err));
-              }
-
-              // Add result to messages for AI to know process succeeded
+            // BLOCK STAFF/ADMIN FROM CREATING LEADS
+            if (context.isStaff) {
+              console.log('[WhatsAppAI] 🛑 Creating lead SKIPPED because user is STAFF/ADMIN/OWNER.');
               messages.push({
                 role: "function",
                 name: toolName,
-                content: JSON.stringify({ success: true, lead_id: resultLead.id, message: "Lead saved successfully." })
+                content: JSON.stringify({ success: false, message: "Lead creation skipped for staff/admin." })
               } as any);
 
-            } catch (error) {
-              console.error('[WhatsAppAI] ❌ Failed to create/update lead:', error);
-              // Fallback error message if needed, or just log
-            }
-
-            // Append confirmation to responseMessage so the user knows it worked
-            if (!responseMessage) {
-              responseMessage = "Baik, data Anda sudah kami simpan. Terima kasih! 🙏\n\nAda lagi yang bisa kami bantu?";
+              if (!responseMessage) {
+                responseMessage = "Lead tidak dibuat karena Anda terdeteksi sebagai Staff/Admin (Internal Team). 🔒";
+              }
             } else {
-              // If AI already generated text, maybe just append a checkmark or nothing
-              // responseMessage += " ✅";
+              try {
+                console.log('[WhatsAppAI] 📝 Creating lead...');
+
+                // Normalize phone number
+                let phone = toolArgs.phone || context.customerPhone;
+
+                // If phone is missing/invalid, try to use context phone
+                if (!phone || phone.length < 5) {
+                  phone = context.customerPhone;
+                }
+
+                // Check if lead already exists to decide between create or update
+                const existingLead = await LeadService.getLeadByPhone(context.tenantId, phone);
+
+                let resultLead;
+                if (existingLead) {
+                  // Update existing
+                  resultLead = await LeadService.updateLead(existingLead.id, context.tenantId, {
+                    name: toolArgs.name || existingLead.name, // Keep existing name if not provided
+                    interestedIn: toolArgs.interest || toolArgs.vehicle_id || existingLead.interestedIn,
+                    budgetRange: toolArgs.budget || existingLead.budgetRange,
+                    notes: toolArgs.location ? `Location: ${toolArgs.location}\n${existingLead.notes || ''}` : existingLead.notes,
+                    status: 'CONTACTED' // Update status to reflect active engagement
+                  });
+                  console.log('[WhatsAppAI] ✅ Lead updated:', resultLead.id);
+                } else {
+                  // Create new
+                  resultLead = await LeadService.createLead({
+                    tenantId: context.tenantId,
+                    name: toolArgs.name || context.customerName || "Customer Baru",
+                    phone: phone,
+                    interestedIn: toolArgs.interest || toolArgs.vehicle_id,
+                    budgetRange: toolArgs.budget,
+                    source: toolArgs.source || 'whatsapp',
+                    message: context.messageHistory.map(m => `${m.role}: ${m.content}`).slice(-3).join('\n'), // Store recent chat as initial message
+                    status: 'NEW',
+                    priority: (toolArgs.urgency as LeadPriority) || 'MEDIUM',
+                    notes: toolArgs.location ? `Location: ${toolArgs.location}` : undefined
+                  });
+                  console.log('[WhatsAppAI] ✅ Lead created:', resultLead.id);
+                }
+
+                // CRITICAL: Link conversation to lead for dashboard synchronization
+                if (resultLead?.id && context.conversationId) {
+                  await prisma.whatsAppConversation.update({
+                    where: { id: context.conversationId },
+                    data: { leadId: resultLead.id }
+                  }).catch(err => console.error('[WhatsAppAI] Failed to link conversation to lead:', err));
+                }
+
+                // Add result to messages for AI to know process succeeded
+                messages.push({
+                  role: "function",
+                  name: toolName,
+                  content: JSON.stringify({ success: true, lead_id: resultLead.id, message: "Lead saved successfully." })
+                } as any);
+
+              } catch (error) {
+                console.error('[WhatsAppAI] ❌ Failed to create/update lead:', error);
+                // Fallback error message if needed, or just log
+              }
+
+              // Append confirmation to responseMessage so the user knows it worked
+              if (!responseMessage) {
+                responseMessage = "Baik, data Anda sudah kami simpan. Terima kasih! 🙏\n\nAda lagi yang bisa kami bantu?";
+              }
             }
 
           } else if (toolName === 'send_vehicle_images') {
@@ -1485,7 +1492,21 @@ export class WhatsAppAIChatService {
     // Check if user explicitly asks for photos (contains "foto", "gambar", "mana fotonya" etc)
     const userExplicitlyAsksPhoto = msg.includes("foto") || msg.includes("gambar") ||
       /mana.*(foto|gambar)/i.test(msg) ||
-      msg.startsWith("mana ");
+      msg.startsWith("mana ") ||
+      // ADDED: Detailed visual keywords -- THIS FIXES "Eksterior PM-PST-004"
+      msg.includes("interior") ||
+      msg.includes("eksterior") ||
+      msg.includes("detail") ||
+      msg.includes("mesin") ||
+      msg.includes("dalam") ||
+      msg.includes("body");
+    // ADDED: Detailed visual keywords
+    msg.includes("interior") ||
+      msg.includes("eksterior") ||
+      msg.includes("detail") ||
+      msg.includes("mesin") ||
+      msg.includes("dalam") ||
+      msg.includes("body");
 
     console.log(`[SmartFallback] Photo check: msg="${msg}", isPhotoConfirmation=${isPhotoConfirmation}, explicit=${userExplicitlyAsksPhoto}`);
 
