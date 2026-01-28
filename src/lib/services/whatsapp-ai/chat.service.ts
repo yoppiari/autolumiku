@@ -926,6 +926,71 @@ export class WhatsAppAIChatService {
       });
     } catch (e) { /* ignore */ }
 
+    // ==================== PRIORITY 0: CONTEXTUAL ANSWER HANDLER ====================
+    // Handle short answers to previous AI questions (e.g. "Malang", "Cash", "Budi")
+    // preventing AI from treating them as new search queries
+    const lastAiMsg = messageHistory.filter(m => m.role === "assistant").pop();
+
+    if (lastAiMsg) {
+      const lastContent = lastAiMsg.content.toLowerCase();
+
+      // 1. Location Answer (AI asked "area mana", "domisili", "kota")
+      if (lastContent.includes("area mana") || lastContent.includes("domisili") || lastContent.includes("kota mana")) {
+        console.log(`[SmartFallback] 📍 Location answer detected: "${msg}"`);
+
+        // Extract vehicle context from history
+        let vehicleContext = "";
+        const vehiclePatterns = [
+          /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\s]+(?:\d{4})?/i,
+          /PM-PST-\d+/i
+        ];
+
+        // Look back 5 messages for vehicle context
+        const recentMsgs = messageHistory.slice(-5).reverse();
+        for (const m of recentMsgs) {
+          for (const p of vehiclePatterns) {
+            const match = m.content.match(p);
+            if (match) {
+              vehicleContext = match[0];
+              break;
+            }
+          }
+          if (vehicleContext) break;
+        }
+
+        return {
+          message: `Siap kak, terima kasih infonya! 🙏\n\nUntuk penggunaan di area **${userMessage}**, unit ${vehicleContext || 'yang Kakak minati'} sudah sangat cocok dan siap pakai.\n\nKebetulan unitnya masih ready, apakah Kakak ada rencana untuk cek unit langsung ke showroom atau mau saya kirimkan video detailnya dulu? 😊`,
+          shouldEscalate: false
+        };
+      }
+
+      // 2. Name Answer (AI asked "dengan siapa", "kakak siapa")
+      if (lastContent.includes("dengan siapa") || lastContent.includes("kakak siapa") || lastContent.includes("boleh tau nama")) {
+        console.log(`[SmartFallback] 👤 Name answer detected: "${msg}"`);
+        return {
+          message: `Salam kenal Kak ${userMessage}! 👋\n\nSenang bisa membantu Kakak. Ada lagi yang ingin ditanyakan tentang unit yang diminati? Atau mau saya bantu hitungkan simulasi kreditnya sekalian? 😊`,
+          shouldEscalate: false
+        };
+      }
+
+      // 3. Payment Answer (AI asked "cash atau kredit", "rencana pembayaran")
+      if (lastContent.includes("cash") || lastContent.includes("kredit") || lastContent.includes("tunai")) {
+        // Only trigger if user answer matches
+        if (msg.includes("cash") || msg.includes("tunai") || msg.includes("keras")) {
+          return {
+            message: `Baik kak, untuk pembelian **Cash** kami bisa bantu pengurusan surat-surat agar lebih cepat selesai. ⚡\n\nUnit mau dicek kapan kak? Supaya kami siapkan. 😊`,
+            shouldEscalate: false
+          };
+        }
+        else if (msg.includes("kredit") || msg.includes("cicil") || msg.includes("angsur")) {
+          return {
+            message: `Siap kak, untuk **Kredit** boleh saya bantu simulasikan hitungannya? 💰\n\nKakak rencananya mau DP berapa dan tenor berapa tahun? (Contoh: "DP 50jt tenor 3 tahun")`,
+            shouldEscalate: false
+          };
+        }
+      }
+    }
+
     // ==================== (MOVED) SPECIFIC VEHICLE INQUIRY HANDLER ====================
     // Priority 1: Check if asking about specific vehicle (Brand, Model, Year)
     const vehicleBrands = ['toyota', 'honda', 'suzuki', 'daihatsu', 'mitsubishi', 'nissan', 'mazda', 'bmw', 'mercedes', 'hyundai', 'kia', 'wuling', 'ford', 'chery', 'lexus'];
