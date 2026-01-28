@@ -367,12 +367,55 @@ export class LeadService {
     isStaff?: boolean;
   }) {
     try {
-      if (isStaff) return null; // Don't track staff as leads
+      // CRITICAL: Double-check staff status by phone lookup
+      // This prevents leads from being created even if isStaff flag is wrong
+      if (isStaff) {
+        console.log('[LeadService] Skipping lead creation - isStaff flag is true');
+        return null;
+      }
 
       // 1. Normalize phone for lookup
       const cleanPhone = customerPhone.replace(/\D/g, '');
 
-      // 2. Try to find existing lead
+      // 2. ADDITIONAL SAFETY CHECK: Verify phone is not a staff member
+      // This catches cases where isStaff might be incorrectly set to false
+      const staffUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { tenantId },
+            { tenantId: null }
+          ],
+          phone: { not: null },
+          AND: [
+            {
+              OR: [
+                { roleLevel: { gte: 30 } },
+                { role: { in: ['STAFF', 'SALES', 'ADMIN', 'OWNER', 'SUPER_ADMIN'] } }
+              ]
+            }
+          ]
+        },
+        select: { phone: true, role: true, firstName: true }
+      });
+
+      // Normalize and compare phone numbers
+      const normalizePhone = (phone: string) => phone?.replace(/\D/g, '') || '';
+      const isStaffPhone = staffUsers?.some(user => {
+        const userPhone = normalizePhone(user.phone || '');
+        const customerPhoneNorm = normalizePhone(customerPhone);
+
+        // Match exact or with country code conversion (62xxx <-> 0xxx)
+        return userPhone === customerPhoneNorm ||
+          (userPhone.startsWith('62') && '0' + userPhone.slice(2) === customerPhoneNorm) ||
+          (customerPhoneNorm.startsWith('62') && '0' + customerPhoneNorm.slice(2) === userPhone);
+      });
+
+      if (isStaffPhone) {
+        console.log(`[LeadService] ⚠️ BLOCKED: Phone ${customerPhone} belongs to staff member. Not creating lead.`);
+        return null;
+      }
+
+      // 3. Try to find existing lead
       let lead = await this.getLeadByPhone(tenantId, cleanPhone);
 
       // Calculate basic score impact based on intent
