@@ -967,13 +967,29 @@ export class WhatsAppAIChatService {
         const priceJuta = Math.round(Number(matchingVehicle.price) / 1000000);
         const id = matchingVehicle.displayId || matchingVehicle.id.substring(0, 6).toUpperCase();
 
-        const response = `Ada nih ${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year} | ${id} 🚗✨\n\n` +
-          `💰 Harga: Rp ${priceJuta} juta\n` +
-          `⚙️ Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
-          `⛽ Bahan Bakar: ${matchingVehicle.fuelType || 'Bensin'}\n` +
-          `${matchingVehicle.mileage ? `📊 Kilometer: ${matchingVehicle.mileage.toLocaleString('id-ID')} km\n` : ''}` +
-          `🎨 Warna: ${matchingVehicle.color || '-'}\n\n` +
-          `Mau lihat fotonya? 📸`;
+        // Dynamic Closing Question for Lead Gen
+        let closingQuestion = "Mau lihat fotonya? 📸";
+
+        // If we don't know the customer's name yet, ask for it naturally
+        if (!context.customerName || context.customerName === "Pelanggan") {
+          closingQuestion = "Boleh tau dengan Kakak siapa saya bicara? Supaya enak ngobrolnya 😊";
+        }
+        // If we know the name but not location (simple heuristic)
+        else if (!msg.toLowerCase().includes("jakarta") && !msg.toLowerCase().includes("bandung") && Math.random() > 0.5) {
+          closingQuestion = "Rencana untuk pemakaian di area mana kak? Biar sekalian saya cek plat-nya. 😊";
+        }
+        // Otherwise ask about purchase plan
+        else {
+          closingQuestion = "Rencana mau ambil Cash atau Kredit kak? Bisa saya bantu hitungkan simulasinya sekalian. 💰";
+        }
+
+        const response = `Yes kak, unit *${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}* ini MASIH AVAILABLE! 🔥\n\n` +
+          `• ID Unit: ${id}\n` +
+          `• Harga: Rp ${priceJuta} Juta (Nego)\n` +
+          `• Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
+          `• Warna: ${matchingVehicle.color || '-'}\n\n` +
+          `Unit siap gass, kondisi terawat! 👍\n\n` +
+          `${closingQuestion}`;
 
         return { message: response, shouldEscalate: false };
       } else {
@@ -2427,6 +2443,8 @@ export class WhatsAppAIChatService {
       // Info/Detail requests (NEW)
       /\b(info|detail|spesifikasi|spek|kondisi|keadaan|surat|dokumen|bpkb|stnk)\b/i,
       /\b(minta|bagi)\b.*\b(info|detail|data|foto|gambar)\b/i,
+      // Specific parts (NEW)
+      /\b(interior|eksterior|dalam|luar|kabin|mesin|body)\b/i,
       // Complaint patterns - User saying they didn't receive photos
       /\b(belum|tidak|gak|ga|nggak)\s+(terima|sampai|masuk|dapat|dapet)\b/i,
       /\b(belum|tidak|gak|ga|nggak)\s+.*\b(foto|gambar)\b/i,
