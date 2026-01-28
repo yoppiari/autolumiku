@@ -1075,22 +1075,35 @@ export class WhatsAppAIChatService {
 
       let policyResponse = `${timeGreeting}! 👋\n\n`;
 
-      if (msg.includes("interior") || msg.includes("eksterior") || msg.includes("foto")) {
-        policyResponse += `Jika ada yang tanya **interior atau eksterior**, saya akan:\n\n` +
-          `1. Mencari unit yang dimaksud di database.\n` +
-          `2. Jika ada foto detail, saya akan **langsung mengirimkan galeri foto** unit tersebut (interior, eksterior, & mesin).\n` +
-          `3. Jika foto belum lengkap, saya akan menawarkan untuk mengirimkan foto terbaru segera setelah tim sales menyediakannya. 📸`;
-      } else if (msg.includes("surat") || msg.includes("dokumen") || msg.includes("bpkb") || msg.includes("stnk")) {
-        policyResponse += `Jika ada yang tanya tentang **surat-surat kendaraan**, saya akan merespon dengan tegas bahwa:\n\n` +
-          `• Semua unit kami memiliki **dokumen lengkap dan sah** (BPKB & STNK ready).\n` +
-          `• Unit dijamin **bebas banjir dan bebas tabrak**.\n` +
-          `• Pajak kendaraan dipastikan hidup/on-process sesuai kondisi saat transaksi. ✅`;
-      } else if (msg.includes("kredit") || msg.includes("cicilan") || msg.includes("angsuran")) {
-        policyResponse += `Jika ada yang tanya **kredit atau angsuran**, saya akan:\n\n` +
-          `1. Meminta info unit yang diminati (jika belum ada).\n` +
-          `2. Melakukan **Simulasi KKB Otomatis** menggunakan mitra leasing kami (BCA, Adira, dll).\n` +
-          `3. Memberikan rincian DP dan cicilan sesuai tenor yang diinginkan (1-5 tahun). 📊`;
-      } else {
+      if (msg.includes("interior") || msg.includes("eksterior") || msg.includes("foto") || msg.includes("detail") || msg.includes("dalam") || msg.includes("body")) {
+        policyResponse += `**1. Kebijakan Foto & Kondisi Fisik (Interior/Eksterior/Dalam):**\n` +
+          `• Jika customer meminta foto **eksterior**, saya akan mengirimkan tampak depan, samping, dan belakang mobil untuk menunjukkan kemulusan body.\n` +
+          `• Jika customer meminta **interior/dalam**, saya akan fokus pada dashboard, jok/kursi, dan odometer.\n` +
+          `• Saya akan memastikan bahwa foto yang dikirim adalah **real-pict** dari unit yang available.\n` +
+          `• Jika foto belum lengkap, saya akan menawarkan untuk memotretkan unitnya secara langsung. 📸\n\n`;
+      }
+
+      if (msg.includes("surat") || msg.includes("dokumen") || msg.includes("bpkb") || msg.includes("stnk") || msg.includes("faktur") || msg.includes("kuitansi")) {
+        policyResponse += `**2. Kebijakan Dokumen & Legalitas:**\n` +
+          `• **Kelengkapan Surat:** Kami menjamin BPKB, STNK, dan Faktur Pembelian lengkap dan asli.\n` +
+          `• **Pajak & Plat:** Saya akan menginfokan masa berlaku pajak dan plat seseuai kondisi (Hidup/Mati).\n` +
+          `• **Garansi Legalitas:** Kami memberikan garansi uang kembali 100% jika surat-surat bermasalah atau sengketa.\n` +
+          `• **Bukti Pembayaran:** Setiap transaksi akan disertakan **Kuitansi resmi** bermaterai sebagai bukti sah jual beli. 📝\n\n`;
+      }
+
+      if (msg.includes("kredit") || msg.includes("cicilan") || msg.includes("angsuran")) {
+        policyResponse += `**3. Kebijakan Simulasi Kredit:**\n` +
+          `• Meminta info unit yang diminati (jika belum ada).\n` +
+          `• Melakukan **Simulasi KKB Otomatis** menggunakan mitra leasing kami (BCA, Adira, dll).\n` +
+          `• Memberikan rincian DP dan cicilan sesuai tenor yang diinginkan (1-5 tahun). 📊\n\n`;
+      }
+
+      // Default catch-all only if NO specific topics matched
+      const topicsMatched = msg.includes("interior") || msg.includes("eksterior") || msg.includes("foto") || msg.includes("detail") || msg.includes("dalam") || msg.includes("body") ||
+        msg.includes("surat") || msg.includes("dokumen") || msg.includes("bpkb") || msg.includes("stnk") || msg.includes("faktur") ||
+        msg.includes("kredit") || msg.includes("cicilan") || msg.includes("angsuran");
+
+      if (!topicsMatched) {
         policyResponse += `Saya akan merespon setiap pertanyaan customer dengan ramah, akurat sesuai database, dan selalu berusaha menggali data leads (Nama, Lokasi, Budget) secara natural agar bisa di-follow up oleh tim sales. 😊`;
       }
 
@@ -1495,13 +1508,6 @@ export class WhatsAppAIChatService {
       msg.startsWith("mana ") ||
       // ADDED: Detailed visual keywords -- THIS FIXES "Eksterior PM-PST-004"
       msg.includes("interior") ||
-      msg.includes("eksterior") ||
-      msg.includes("detail") ||
-      msg.includes("mesin") ||
-      msg.includes("dalam") ||
-      msg.includes("body");
-    // ADDED: Detailed visual keywords
-    msg.includes("interior") ||
       msg.includes("eksterior") ||
       msg.includes("detail") ||
       msg.includes("mesin") ||
