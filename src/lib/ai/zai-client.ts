@@ -253,6 +253,10 @@ export class ZAIClient {
                   tenor_years: {
                     type: "integer",
                     description: "Tenor dalam tahun (1-5). Opsional."
+                  },
+                  vehicle_year: {
+                    type: "integer",
+                    description: "Tahun kendaraan (e.g. 2020). Penting untuk akurasi bunga."
                   }
                 },
                 required: ["vehicle_price"]
