@@ -2195,7 +2195,7 @@ export class WhatsAppAIChatService {
 - Salam waktu yang tepat: "${timeGreeting}"
 `;
 
-    systemPrompt += getGreetingRules(timeGreeting, config, senderInfo, tenant?.name || "Showroom Kami", tenant);
+    systemPrompt += getGreetingRules(timeGreeting, config, senderInfo, tenant?.name || "Showroom Kami", tenant, leadInfo);
 
     // 3. ROLE & SENDER CONTEXT
     systemPrompt += getRolePrompt(senderInfo);

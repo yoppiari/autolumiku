@@ -467,6 +467,25 @@ export class LeadService {
 
       } else {
         // --- CREATE NEW LEAD ---
+
+        // QUALITY CHECK: Don't create "junk" leads with no name and no vehicle interest
+        // At least one of these must be true:
+        // 1. We have a real name (not just phone number/Unknown)
+        // 2. We have a specific vehicle interest (vehicleId)
+
+        const isNameValid = customerName &&
+          customerName !== cleanPhone &&
+          customerName !== 'Unknown' &&
+          customerName !== 'Customer Baru' &&
+          customerName.trim().length > 0;
+
+        const hasInterest = !!vehicleId || (intent && (intent.includes('price') || intent.includes('stock') || intent.includes('credit')));
+
+        if (!isNameValid && !hasInterest) {
+          console.log(`[Smart Leads] ⏭️ Skipping low-quality lead: ${cleanPhone} (No name, no specific interest)`);
+          return null;
+        }
+
         // Auto-determine source based on context
         const source = 'whatsapp_auto';
 

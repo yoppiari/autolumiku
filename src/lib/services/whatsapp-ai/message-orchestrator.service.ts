@@ -1288,11 +1288,6 @@ export class MessageOrchestratorService {
       message.includes('total revenue') ||
       message.includes('total inventory') ||
       message.includes('average price') ||
-      message.includes('sales summary') ||
-      message.includes('kkb') ||
-      message.includes('kredit') ||
-      message.includes('angsuran') ||
-      message.includes('credit') ||
       // Diagnostic
       message.includes('test-image') ||
       message.includes('test image') ||
