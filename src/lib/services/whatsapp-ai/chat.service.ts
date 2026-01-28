@@ -1440,7 +1440,7 @@ export class WhatsAppAIChatService {
     ];
 
     let vehicleName = "";
-    const lastAiMsg = messageHistory.filter(m => m.role === "assistant").pop();
+    const lastAiMsgForPhoto = messageHistory.filter(m => m.role === "assistant").pop();
 
     // Try to extract from current message
     for (const pattern of vehiclePatterns) {
@@ -1452,9 +1452,9 @@ export class WhatsAppAIChatService {
     }
 
     // Try to extract from last AI message if not in current
-    if (!vehicleName && lastAiMsg) {
+    if (!vehicleName && lastAiMsgForPhoto) {
       for (const pattern of vehiclePatterns) {
-        const match = lastAiMsg.content.match(pattern);
+        const match = lastAiMsgForPhoto.content.match(pattern);
         if (match && match[0]) {
           vehicleName = match[0].trim();
           break;
