@@ -1111,7 +1111,7 @@ export class WhatsAppAIChatService {
           closingQuestion = "Rencana mau ambil Cash atau Kredit kak? Bisa saya bantu hitungkan simulasinya sekalian. 💰";
         }
 
-        const response = `Yes kak, unit *${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}* ini MASIH AVAILABLE! 🔥\n\n` +
+        const response = `Baik kak, unit *${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}* ini MASIH AVAILABLE! 🔥\n\n` +
           `• ID Unit: ${id}\n` +
           `• Harga: Rp ${priceJuta} Juta (Nego)\n` +
           `• Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
