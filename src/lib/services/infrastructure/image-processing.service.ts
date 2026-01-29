@@ -9,7 +9,7 @@ import {
   PhotoMetadata,
   PHOTO_SIZES,
   PhotoSize,
-} from '../../types/photo.types';
+} from '../../../types/photo.types';
 
 export class ImageProcessingService {
   /**

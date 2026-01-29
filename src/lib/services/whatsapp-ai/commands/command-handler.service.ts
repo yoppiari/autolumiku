@@ -751,7 +751,7 @@ https://primamobil.id/dashboard/vehicles`;
 
 async function generateKKBSimulationText(cmd: string, ctx: CommandContext): Promise<CommandResult> {
   try {
-    const { WhatsAppReportService } = await import('./report.service');
+    const { WhatsAppReportService } = await import('../operations/report.service');
 
     // Extract vehicle ID if present (e.g. PM-PST-001, PM=PST=001)
     const vehicleCodeMatch = cmd.match(/pm[-=\s]+[a-z0-9]+[-=\s]+\d+/i);

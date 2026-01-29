@@ -13,12 +13,12 @@ import { prisma } from '@/lib/prisma';
 // Dynamic imports for scrapers (only loaded at runtime, not during build)
 // NOTE: Legacy scrapers kept for reference but now unused in main flow
 async function loadOLXScraper() {
-  const { PuppeteerOLXScraper } = await import('../../../scripts/scrapers/puppeteer-olx-scraper');
+  const { PuppeteerOLXScraper } = await import('../../../../scripts/scrapers/puppeteer-olx-scraper');
   return new PuppeteerOLXScraper();
 }
 
 async function loadCarsomeScraper() {
-  const { PuppeteerCarsomeScraper } = await import('../../../scripts/scrapers/puppeteer-carsome-scraper');
+  const { PuppeteerCarsomeScraper } = await import('../../../../scripts/scrapers/puppeteer-carsome-scraper');
   return new PuppeteerCarsomeScraper();
 }
 
@@ -26,7 +26,7 @@ async function loadCarsomeScraper() {
 
 
 async function loadUniversalScraper() {
-  const { UniversalScraperEngine } = await import('../../../scripts/scrapers/universal-scraper-engine');
+  const { UniversalScraperEngine } = await import('../../../../scripts/scrapers/universal-scraper-engine');
   return new UniversalScraperEngine();
 }
 
@@ -451,11 +451,7 @@ export class ScraperService {
             commonKeywords: [],
             commonMisspellings: [],
             isActive: true,
-            columns: {
-              // Add default columns if needed or just let Prisma handle defaults
-            } as any,
-            // Note: 'columns' field might not exist in schema, removing if not sure. 
-            // Checked schema earlier, didn't see it.
+            // Note: 'columns' field removed as it does not exist in the schema
           },
         });
 
