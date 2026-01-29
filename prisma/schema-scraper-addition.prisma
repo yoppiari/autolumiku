@@ -1,0 +1,91 @@
+// ============================================================================
+// VEHICLE DATA SCRAPER (Story 2.10)
+// ============================================================================
+
+model ScraperJob {
+  id        String   @id @default(uuid())
+  status    String   @default("pending") // pending, running, completed, failed
+  source    String   // OLX, CARSOME, SEVA, MOBIL123, etc.
+  
+  // Job Configuration
+  targetCount Int      @default(50)
+  executedBy  String   // User ID who triggered the job
+  
+  // Results Summary
+  vehiclesFound Int      @default(0)
+  vehiclesNew   Int      @default(0)
+  duplicates    Int      @default(0)
+  vehiclesUpdated Int    @default(0)
+  
+  // Execution Info
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  duration    Int?     // in seconds
+  errors      String[] @default([])
+  
+  // Relations
+  results ScraperResult[]
+  
+  @@index([status])
+  @@index([source])
+  @@index([startedAt])
+  @@map("scraper_jobs")
+}
+
+model ScraperResult {
+  id      String @id @default(uuid())
+  jobId   String
+  source  String // OLX, CARSOME, SEVA, etc.
+  
+  // Vehicle Data
+  make         String
+  model        String
+  year         Int
+  price        BigInt  // in IDR cents
+  priceDisplay String
+  variant      String?
+  transmission String?
+  fuelType     String?
+  bodyType     String?
+  mileage      Int?
+  color        String?
+  location     String?
+  url          String?
+  features     String? @db.Text
+  description  String? @db.Text
+  
+  // Duplicate Detection
+  status           String  @default("pending") // pending, approved, rejected, duplicate
+  matchedVehicleId String? // ID of matched PopularVehicle if duplicate
+  confidence       Int     @default(0) // 0-100, confidence of duplicate match
+  
+  // Review
+  reviewedBy String?
+  reviewedAt DateTime?
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  
+  // Relations
+  job ScraperJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  @@index([jobId])
+  @@index([status])
+  @@index([source])
+  @@index([make])
+  @@index([matchedVehicleId])
+  @@map("scraper_results")
+}
+
+model ScraperConfig {
+  id    String @id @default(uuid())
+  key   String @unique
+  value Json
+  
+  // Metadata
+  updatedBy String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  
+  @@map("scraper_configs")
+}
