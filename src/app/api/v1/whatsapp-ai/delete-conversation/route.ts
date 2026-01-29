@@ -67,9 +67,30 @@ export async function DELETE(request: NextRequest) {
     console.log(`[Delete Conversation] Group delete: Deleting ${idsToDelete.length} conversations for phone ${targetPhone}`);
 
     if (idsToDelete.length > 0) {
-      // Hard delete all matching conversations
-      await prisma.whatsAppConversation.deleteMany({
+      // 1. Find all Lead IDs associated with these conversations
+      const conversationsWithLeads = await prisma.whatsAppConversation.findMany({
         where: { id: { in: idsToDelete } },
+        select: { leadId: true }
+      });
+
+      const leadIdsToDelete = conversationsWithLeads
+        .map(c => c.leadId)
+        .filter((id): id is string => !!id);
+
+      // 2. Delete conversations and associated leads in a transaction
+      await prisma.$transaction(async (tx) => {
+        // First delete associated leads (if any)
+        if (leadIdsToDelete.length > 0) {
+          console.log(`[Delete Conversation] Found ${leadIdsToDelete.length} associated leads to delete`);
+          await tx.lead.deleteMany({
+            where: { id: { in: leadIdsToDelete } }
+          });
+        }
+
+        // Then delete the conversations
+        await tx.whatsAppConversation.deleteMany({
+          where: { id: { in: idsToDelete } },
+        });
       });
     }
 

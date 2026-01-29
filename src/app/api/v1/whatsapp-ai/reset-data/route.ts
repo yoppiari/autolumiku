@@ -56,16 +56,17 @@ export async function POST(request: NextRequest) {
         console.log(`[Reset Data] Starting data reset for tenant: ${tenant.name} (${tenantId})`);
 
         // Count existing data before deletion
-        const [existingMessages, existingConversations, existingLogs] = await Promise.all([
+        const [existingMessages, existingConversations, existingLogs, existingLeads] = await Promise.all([
             prisma.whatsAppMessage.count({ where: { tenantId } }),
             prisma.whatsAppConversation.count({ where: { tenantId } }),
             prisma.staffCommandLog.count({ where: { tenantId } }),
+            prisma.lead.count({ where: { tenantId, source: 'whatsapp_auto' } }),
         ]);
 
-        console.log(`[Reset Data] Found: ${existingMessages} messages, ${existingConversations} conversations, ${existingLogs} command logs`);
+        console.log(`[Reset Data] Found: ${existingMessages} messages, ${existingConversations} conversations, ${existingLogs} command logs, ${existingLeads} auto-leads`);
 
         // Delete in order (messages first due to foreign key constraints)
-        const [deletedMessages, deletedConversations, deletedLogs] = await prisma.$transaction([
+        const [deletedMessages, deletedConversations, deletedLogs, deletedLeads] = await prisma.$transaction([
             // 1. Delete all WhatsApp Messages
             prisma.whatsAppMessage.deleteMany({
                 where: { tenantId }
@@ -80,9 +81,14 @@ export async function POST(request: NextRequest) {
             prisma.staffCommandLog.deleteMany({
                 where: { tenantId }
             }),
+
+            // 4. Delete all WhatsApp Auto Leads
+            prisma.lead.deleteMany({
+                where: { tenantId, source: 'whatsapp_auto' }
+            }),
         ]);
 
-        console.log(`[Reset Data] ✅ Deleted: ${deletedMessages.count} messages, ${deletedConversations.count} conversations, ${deletedLogs.count} command logs`);
+        console.log(`[Reset Data] ✅ Deleted: ${deletedMessages.count} messages, ${deletedConversations.count} conversations, ${deletedLogs.count} command logs, ${deletedLeads.count} auto-leads`);
 
         return NextResponse.json({
             success: true,
@@ -97,6 +103,7 @@ export async function POST(request: NextRequest) {
                     messages: deletedMessages.count,
                     conversations: deletedConversations.count,
                     commandLogs: deletedLogs.count,
+                    leads: deletedLeads.count,
                 },
                 timestamp: new Date().toISOString()
             }

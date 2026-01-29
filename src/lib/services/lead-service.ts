@@ -64,14 +64,64 @@ export class LeadService {
    */
   static async createLead(data: LeadCreateInput) {
     try {
+      // 1. STAFF CHECK (Safety Layer)
+      // Get all staff phone numbers to prevent accidental lead creation
+      const staffUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { tenantId: data.tenantId },
+            { tenantId: null }
+          ],
+          phone: { not: null },
+        },
+        select: { phone: true }
+      });
+
+      const normalizePhone = (phone: string) => phone?.replace(/\D/g, '') || '';
+      const cleanInputPhone = normalizePhone(data.phone);
+
+      const isStaffPhone = staffUsers.some(user => {
+        const userPhone = normalizePhone(user.phone || '');
+        return userPhone === cleanInputPhone ||
+          (userPhone.startsWith('62') && '0' + userPhone.slice(2) === cleanInputPhone) ||
+          (cleanInputPhone.startsWith('62') && '0' + cleanInputPhone.slice(2) === userPhone);
+      });
+
+      if (isStaffPhone) {
+        console.log(`[LeadService] ⚠️ BLOCKED: Phone ${data.phone} belongs to staff member. Skipping createLead.`);
+        return null;
+      }
+
+      // 2. QUALITY CHECK (Junk Prevention)
+      const phonePattern = /^(62|08|\+62|0)\d{8,13}$/;
+      const isPhoneNumberAsName = data.name ? phonePattern.test(data.name.replace(/[\s\-]/g, '')) : false;
+
+      const isNameValid = data.name &&
+        data.name !== data.phone &&
+        data.name !== 'Unknown' &&
+        data.name !== 'Customer Baru' &&
+        data.name !== 'Customer' &&
+        !isPhoneNumberAsName &&
+        data.name.trim().length > 2;
+
+      const hasInterest = !!data.vehicleId || !!data.interestedIn;
+
+      // STRICT: Both name and interest are required for auto-leads
+      if (data.source === 'whatsapp' || data.source === 'whatsapp_auto') {
+        if (!isNameValid || !hasInterest) {
+          console.log(`[LeadService] ⏭️ Skipping low-quality lead: ${data.phone} (Name: "${data.name}", Interest: "${data.interestedIn || data.vehicleId}")`);
+          return null;
+        }
+      }
+
       const lead = await prisma.lead.create({
         data: {
           tenantId: data.tenantId,
           vehicleId: data.vehicleId,
           name: data.name,
           email: data.email,
-          phone: data.phone,
-          whatsappNumber: data.whatsappNumber,
+          phone: cleanInputPhone,
+          whatsappNumber: data.whatsappNumber || data.phone,
           message: data.message,
           source: data.source || 'website',
           status: data.status || 'NEW',
@@ -469,20 +519,29 @@ export class LeadService {
         // --- CREATE NEW LEAD ---
 
         // QUALITY CHECK: Don't create "junk" leads with no name and no vehicle interest
-        // At least one of these must be true:
-        // 1. We have a real name (not just phone number/Unknown)
-        // 2. We have a specific vehicle interest (vehicleId)
+        // STRICT VALIDATION - Both name AND interest must be present!
+
+        // Check if name is a phone number pattern (starts with 62, 08, or is all digits)
+        const phonePattern = /^(62|08|\+62|0)\d{8,13}$/;
+        const isPhoneNumber = customerName ? phonePattern.test(customerName.replace(/[\s\-]/g, '')) : false;
 
         const isNameValid = customerName &&
           customerName !== cleanPhone &&
           customerName !== 'Unknown' &&
           customerName !== 'Customer Baru' &&
-          customerName.trim().length > 0;
+          customerName !== 'Customer' &&
+          customerName !== '' &&
+          !isPhoneNumber && // NEW: Reject if name is actually a phone number
+          customerName.trim().length > 2; // At least 3 characters
 
         const hasInterest = !!vehicleId || (intent && (intent.includes('price') || intent.includes('stock') || intent.includes('credit')));
 
-        if (!isNameValid && !hasInterest) {
-          console.log(`[Smart Leads] ⏭️ Skipping low-quality lead: ${cleanPhone} (No name, no specific interest)`);
+        // STRICT: BOTH name AND interest required (changed from OR to AND)
+        if (!isNameValid || !hasInterest) {
+          console.log(`[Smart Leads] ⏭️ Skipping low-quality lead: ${cleanPhone}`);
+          console.log(`[Smart Leads]   - Name valid: ${isNameValid} (value: "${customerName}")`);
+          console.log(`[Smart Leads]   - Has interest: ${hasInterest} (vehicleId: ${vehicleId})`);
+          console.log(`[Smart Leads]   - Is phone number: ${isPhoneNumber}`);
           return null;
         }
 
