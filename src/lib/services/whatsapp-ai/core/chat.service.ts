@@ -1016,29 +1016,32 @@ export class WhatsAppAIChatService {
         const priceJuta = Math.round(Number(matchingVehicle.price) / 1000000);
         const name = `${matchingVehicle.make} ${matchingVehicle.model}`;
 
-        let customLeadClosing = "";
+        let mainQuestion = "Mau saya kirimkan foto detail-nya atau Kakak ada yang ingin ditanyakan? 😊";
         if (!context?.customerName || context.customerName === "Pelanggan") {
-          customLeadClosing = "\n\nBoleh tau dengan Kakak siapa saya bicara? Supaya enak ngobrolnya 😊";
-        } else {
-          customLeadClosing = "\n\nAda lagi yang ingin ditanyakan tentang unit ini kak? Atau mau saya bantu hitungkan simulasinya? 😊";
+          mainQuestion = "Boleh tau dengan Kakak siapa saya bicara? Supaya enak ngobrolnya 😊";
         }
 
         // Handle "dokumen" / "surat" / "pajak" context
         if (msg.includes("dokumen") || msg.includes("surat") || msg.includes("bpkb") || msg.includes("stnk") || msg.includes("pajak")) {
           const isTaxOnly = msg.includes("pajak") && !msg.includes("dokumen") && !msg.includes("surat");
 
+          let docClosing = "Kakak rencana mau cek unit-nya kapan? Supaya kami siapkan surat-suratnya untuk Kakak lihat langsung. 😊";
+          if (!context?.customerName || context.customerName === "Pelanggan") {
+            docClosing = "Boleh tau dengan Kakak siapa saya bicara? Supaya enak ngobrolnya 😊";
+          }
+
           return {
             message: `Untuk unit *${name}* (${explicitId}), ${isTaxOnly ? 'pajaknya masih HIDUP dan panjang' : 'dokumennya (BPKB, STNK, Faktur) LENGKAP'} kak. ✅\n\n` +
-              `Semua berkas sudah kami cek keabsahannya dan dijamin aman. Kakak rencana mau cek unitnya kapan? Supaya kami siapkan surat-suratnya untuk Kakak lihat langsung. 😊${customLeadClosing}`,
+              `Semua berkas sudah kami cek keabsahannya dan dijamin aman. ${docClosing}`,
             shouldEscalate: false
           };
         }
 
         return {
-          message: `Yes kak, unit *${name} ${matchingVehicle.year}* (${explicitId}) ini MASIH AVAILABLE! 🔥\n\n` +
+          message: `Siap kak, unit *${name} ${matchingVehicle.year}* (${explicitId}) ini MASIH READY! 🔥\n\n` +
             `• Harga: Rp ${priceJuta} Juta (Nego)\n` +
             `• Kondisi: Terawat, siap pakai\n\n` +
-            `Unit ini salah satu favorit di sini. Mau saya kirimkan foto detailnya atau Kakak ada yang ingin ditanyakan? 😊${customLeadClosing}`,
+            `Unit ini salah satu favorit di sini. ${mainQuestion}`,
           shouldEscalate: false
         };
       }
