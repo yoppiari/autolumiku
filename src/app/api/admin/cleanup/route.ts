@@ -77,7 +77,84 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // 4. Delete leads (optional)
+      // 4. Delete specific leads
+      // Targeted: Junk leads (no name, no interest)
+      if (cleanupOptions?.garbageLeads === true) {
+        const phonePattern = /^(62|08|\+62|0)\d{8,13}$/;
+        // We'll use a raw query or multiple conditions for precision since regex in Prisma is complex
+        const deletedGarbageCount = await prisma.lead.deleteMany({
+          where: {
+            tenantId,
+            source: 'whatsapp_auto',
+            OR: [
+              { name: 'Unknown' },
+              { name: 'Customer Baru' },
+              { name: 'Customer' },
+              { interestedIn: null }
+            ]
+          }
+        });
+        results.operations.push({
+          type: 'garbage_leads_deleted',
+          count: deletedGarbageCount.count
+        });
+      }
+
+      // Targeted: Staff leads
+      if (cleanupOptions?.staffLeads === true) {
+        // Fetch all staff phones
+        const staff = await prisma.user.findMany({
+          where: {
+            OR: [{ tenantId }, { tenantId: null }],
+            phone: { not: null }
+          },
+          select: { phone: true }
+        });
+
+        const staffPhones = staff.map(s => s.phone?.replace(/\D/g, '')).filter(Boolean) as string[];
+        const staffPhonesWith0 = staffPhones.map(p => p.startsWith('62') ? '0' + p.substring(2) : p);
+
+        const deletedStaffLeads = await prisma.lead.deleteMany({
+          where: {
+            tenantId,
+            phone: { in: [...staffPhones, ...staffPhonesWith0] }
+          }
+        });
+
+        results.operations.push({
+          type: 'staff_leads_deleted',
+          count: deletedStaffLeads.count
+        });
+      }
+
+      // Targeted: Orphaned Leads (WhatsApp leads with no conversation)
+      if (cleanupOptions?.orphanedLeads === true) {
+        const orphanLeads = await prisma.lead.findMany({
+          where: { tenantId, source: 'whatsapp_auto' },
+          select: { id: true, phone: true }
+        });
+
+        const conversations = await prisma.whatsAppConversation.findMany({
+          where: { tenantId },
+          select: { customerPhone: true }
+        });
+
+        const convPhones = new Set(conversations.map(c => c.customerPhone.replace(/\D/g, '')));
+        const orphanIds = orphanLeads
+          .filter(l => !convPhones.has(l.phone.replace(/\D/g, '')))
+          .map(l => l.id);
+
+        const deletedOrphanCount = await prisma.lead.deleteMany({
+          where: { id: { in: orphanIds } }
+        });
+
+        results.operations.push({
+          type: 'orphaned_leads_deleted',
+          count: deletedOrphanCount.count
+        });
+      }
+
+      // 4. Delete ALL leads (Extreme)
       if (cleanupOptions?.leads === true) {
         const deletedLeads = await prisma.lead.deleteMany({
           where: { tenantId }
