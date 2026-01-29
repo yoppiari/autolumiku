@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/message-orchestrator.service";
+import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/core/message-orchestrator.service";
 
 export async function POST(request: NextRequest) {
   try {

@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
-import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/message-orchestrator.service";
+import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/core/message-orchestrator.service";
 
 const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
 

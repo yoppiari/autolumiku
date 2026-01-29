@@ -17,7 +17,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';
 import PDFDocument from 'pdfkit';
 import * as XLSX from 'xlsx';
-import { createPDFDocument } from '@/lib/services/whatsapp-ai/pdf-init';
+import { createPDFDocument } from '@/lib/services/whatsapp-ai/utils/pdf-init';
 import { WhatsAppCommandPDF } from '@/lib/reports/whatsapp-command-pdf';
 
 export const dynamic = 'force-dynamic';

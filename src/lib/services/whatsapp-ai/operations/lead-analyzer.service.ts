@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { LeadService } from "../leads/lead-service";
+import { LeadService } from "../../leads/lead-service";
 import { createZAIClient } from "@/lib/ai/zai-client";
 
 interface AnalyzedLead {

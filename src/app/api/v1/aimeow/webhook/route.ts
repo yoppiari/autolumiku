@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/message-orchestrator.service";
+import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/core/message-orchestrator.service";
 import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
 import { prisma } from "@/lib/prisma";
 

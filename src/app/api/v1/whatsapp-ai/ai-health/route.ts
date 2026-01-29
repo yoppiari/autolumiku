@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { AIHealthMonitorService } from "@/lib/services/whatsapp-ai/ai-health-monitor.service";
+import { AIHealthMonitorService } from "@/lib/services/whatsapp-ai/utils/ai-health-monitor.service";
 
 /**
  * GET - Get AI health status for a tenant

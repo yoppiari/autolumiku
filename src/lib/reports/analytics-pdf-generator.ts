@@ -5,7 +5,7 @@
  */
 
 import PDFDocument from 'pdfkit';
-import { createPDFDocument } from '@/lib/services/whatsapp-ai/pdf-init';
+import { createPDFDocument } from '@/lib/services/whatsapp-ai/utils/pdf-init';
 
 interface SalesData {
   summary: {

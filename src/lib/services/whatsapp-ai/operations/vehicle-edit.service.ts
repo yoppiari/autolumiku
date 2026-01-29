@@ -11,7 +11,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { UploadNotificationService } from "./upload-notification.service";
+import { UploadNotificationService } from "../utils/upload-notification.service";
 import { generateVehicleUrl } from "@/lib/utils/vehicle-slug";
 
 // ==================== TYPES ====================

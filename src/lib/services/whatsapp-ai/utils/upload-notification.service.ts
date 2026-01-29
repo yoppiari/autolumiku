@@ -5,7 +5,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { AimeowClientService } from "../aimeow/aimeow-client.service";
+import { AimeowClientService } from "../../aimeow/aimeow-client.service";
 import { generateVehicleUrl, generateVehicleDashboardUrl } from "@/lib/utils/vehicle-slug";
 
 // ==================== TYPES ====================

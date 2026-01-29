@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { processCommand } from "@/lib/services/whatsapp-ai/command-handler.service";
+import { processCommand } from "@/lib/services/whatsapp-ai/commands/command-handler.service";
 
 export async function POST(request: NextRequest) {
   try {

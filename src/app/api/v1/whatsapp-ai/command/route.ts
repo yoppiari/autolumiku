@@ -15,7 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { processCommand } from '@/lib/services/whatsapp-ai/command-handler.service';
+import { processCommand } from '@/lib/services/whatsapp-ai/commands/command-handler.service';
 
 export const dynamic = 'force-dynamic';
 

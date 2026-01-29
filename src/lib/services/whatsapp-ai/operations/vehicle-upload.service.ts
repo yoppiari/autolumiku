@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { vehicleAIService } from "@/lib/ai/vehicle-ai-service";
 import { ImageProcessingService } from "@/lib/services/infrastructure/image-processing.service";
 import { StorageService } from "@/lib/services/infrastructure/storage.service";
-import { UploadNotificationService } from "./upload-notification.service";
+import { UploadNotificationService } from "../utils/upload-notification.service";
 import { PlateDetectionService } from "@/lib/services/inventory/plate-detection.service";
 import { generateVehicleUrl } from "@/lib/utils/vehicle-slug";
 

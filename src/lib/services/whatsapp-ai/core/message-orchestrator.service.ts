@@ -8,13 +8,13 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { AimeowClientService } from "../aimeow/aimeow-client.service";
-import { StorageService } from "../infrastructure/storage.service";
+import { AimeowClientService } from "../../aimeow/aimeow-client.service";
+import { StorageService } from "../../infrastructure/storage.service";
 import { IntentClassifierService, MessageIntent } from "./intent-classifier.service";
 import { WhatsAppAIChatService } from "./chat.service";
-import { StaffCommandService } from "./staff-command.service";
-import { AIHealthMonitorService } from "./ai-health-monitor.service";
-import { processCommand } from "./command-handler.service";
+import { StaffCommandService } from "../commands/staff-command.service";
+import { AIHealthMonitorService } from "../utils/ai-health-monitor.service";
+import { processCommand } from "../commands/command-handler.service";
 import { LeadService } from "@/lib/services/leads/lead-service";
 
 // ==================== TYPES ====================

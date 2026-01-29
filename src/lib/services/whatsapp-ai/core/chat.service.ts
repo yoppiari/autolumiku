@@ -21,7 +21,7 @@ import {
   ADMIN_SYSTEM_PROMPT_ADDITION,
   getCustomerJourneyRules,
   getResponseGuidelines
-} from "./prompts";
+} from "../prompts";
 import { prisma } from "@/lib/prisma";
 import { MessageIntent } from "./intent-classifier.service";
 import { LeadService } from "@/lib/services/leads/lead-service";

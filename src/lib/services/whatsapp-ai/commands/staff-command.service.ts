@@ -9,11 +9,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { MessageIntent } from "./intent-classifier.service";
+import { MessageIntent } from "../core/intent-classifier.service";
 import { VehicleDataExtractorService } from "@/lib/ai/vehicle-data-extractor.service";
-import { WhatsAppVehicleUploadService } from "./vehicle-upload.service";
-import { UploadNotificationService } from "./upload-notification.service";
-import { WhatsAppReportService } from "./report.service";
+import { WhatsAppVehicleUploadService } from "../operations/vehicle-upload.service";
+import { UploadNotificationService } from "../utils/upload-notification.service";
+import { WhatsAppReportService } from "../operations/report.service";
 import { ROLE_LEVELS } from "@/lib/rbac";
 import { generateVehicleDashboardUrl } from "@/lib/utils/vehicle-slug";
 

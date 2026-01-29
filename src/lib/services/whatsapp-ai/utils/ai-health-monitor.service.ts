@@ -8,7 +8,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { AimeowClientService } from "../aimeow/aimeow-client.service";
+import { AimeowClientService } from "../../aimeow/aimeow-client.service";
 
 // Type alias for config with new fields (until Prisma client is regenerated)
 interface AIConfigWithHealth {
