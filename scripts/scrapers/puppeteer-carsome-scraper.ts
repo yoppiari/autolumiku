@@ -9,6 +9,7 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 interface ScrapedVehicle {
   source: string;
@@ -206,7 +207,8 @@ class PuppeteerCarsomeScraper {
       }
 
       // Debug: Take screenshot after popup handling
-      await page.screenshot({ path: '/tmp/carsome-debug.png' });
+      const debugPath = path.join(os.tmpdir(), 'carsome-debug.png');
+      await page.screenshot({ path: debugPath });
       console.log('📸 Screenshot saved to /tmp/carsome-debug.png for debugging\n');
 
       // Check what selectors are available
