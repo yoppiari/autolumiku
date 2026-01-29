@@ -1487,7 +1487,7 @@ export class WhatsAppAIChatService {
       /\b(mana|kirim|kasih|tunjuk|lihat)\b.*\b(foto|gambar)/i,
       /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
       /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
-      /^mana\s/i, // "mana fotonya", "mana gambarnya"
+      /^mana\s(mobil|unit|fotonya|gambarnya)/i, // "mana fotonya", "mana gambarnya"
     ];
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
 
@@ -1548,8 +1548,27 @@ export class WhatsAppAIChatService {
       for (const historyMsg of recentHistory.reverse()) {
         const match = historyMsg.content.match(idPattern);
         if (match && match[0]) {
+          // UPGRADE LOGIC: Generic -> Specific ID
+          // Only upgrade if the found ID actually matches the generic name context (loose check)
+          // e.g. "Honda City" -> "PM-PST-001" (assuming they are related in conversation flow)
           console.log(`[SmartFallback] 🎯 Upgrading generic "${vehicleName}" to specific ID "${match[0]}" from context`);
           vehicleName = match[0].trim();
+          break;
+        }
+      }
+    }
+
+    // 🔥 DOWNGRADE LOGIC: Specific ID -> Generic Name (Optimization)
+    // If user asks "Honda City" but we only found "PM-PST-001" which might NOT be available/photo-ready,
+    // we should also keep the "Honda City" as a fallback search term if the ID fails.
+    let fallbackGenericName = "";
+    if (vehicleName && idPattern.test(vehicleName)) {
+      // Find what the user ACTUALLY typed if it wasn't the ID
+      for (const pattern of vehiclePatterns) {
+        if (pattern.source.includes("PM-PST")) continue;
+        const match = msg.match(pattern);
+        if (match) {
+          fallbackGenericName = match[0].trim();
           break;
         }
       }
@@ -1706,7 +1725,14 @@ export class WhatsAppAIChatService {
 
           // Regular photo request
           console.log(`[SmartFallback] 🚗 Trying to fetch images for: "${vehicleName}"`);
-          const images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
+          let images = await this.fetchVehicleImagesByQuery(vehicleName, tenantId);
+
+          // Fallback to generic name if ID didn't return images
+          if ((!images || images.length === 0) && fallbackGenericName) {
+            console.log(`[SmartFallback] ⚠️ No images for ID "${vehicleName}", trying fallback name: "${fallbackGenericName}"`);
+            images = await this.fetchVehicleImagesByQuery(fallbackGenericName, tenantId);
+          }
+
           if (images && images.length > 0) {
             console.log(`[SmartFallback] ✅ Found ${images.length} images!`);
             return {
