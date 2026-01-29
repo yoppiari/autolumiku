@@ -469,6 +469,8 @@ export async function handleReportCommand(
     // Revenue - keeping only unique reports
     'sales summary': generateSalesReportText,
     'total penjualan': generateSalesReportText,
+    'total sales': generateSalesReportText,
+    'sales total': generateSalesReportText,
     'test-image': handleTestImageCommand,
     'test image': handleTestImageCommand,
     'debug image': handleTestImageCommand,
@@ -695,37 +697,87 @@ _Sistem memantau asal sumber leads secara otomatis._`;
   return { success: true, message, followUp: true };
 }
 
-async function generateOperationalMetricsText(_ctx: CommandContext): Promise<CommandResult> {
-  const message = `⚙️ *METRIK OPERASIONAL*
+async function generateOperationalMetricsText(ctx: CommandContext): Promise<CommandResult> {
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
 
-Analisis operasional tersedia lengkap di dashboard.
+  const data = await ReportDataService.gather('operational-metrics', ctx.tenantId, startDate, now);
 
-🔗 *Lihat di Dashboard:*
-https://primamobil.id/dashboard/analytics`;
+  let aiStats = "";
+  if (data.whatsapp) {
+    aiStats = `🤖 *Performa AI & Chat:*\n` +
+      `• Total Chat: ${data.whatsapp.totalConversations}\n` +
+      `• AI Response Rate: ${data.whatsapp.aiResponseRate}%\n` +
+      `• Escalation Rate: ${data.whatsapp.escalationRate}%\n` +
+      `• Avg Response Time: ${data.whatsapp.avgResponseTime}s\n\n`;
+  }
+
+  const message = `⚙️ *METRIK OPERASIONAL*\n` +
+    `_Data Analitik 30 Hari Terakhir_\n\n` +
+    aiStats +
+    `Analisis operasional dan efisiensi tim tersedia lengkap di dashboard.\n\n` +
+    `🔗 *Lihat di Dashboard:* \n` +
+    `https://primamobil.id/dashboard/analytics`;
+
   return { success: true, message, followUp: true };
 }
 
-async function generateSalesTrendsText(_ctx: CommandContext): Promise<CommandResult> {
-  // Trends are best viewed on charts
-  const message = `📈 *TREN PENJUALAN*
+async function generateSalesTrendsText(ctx: CommandContext): Promise<CommandResult> {
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
 
-Grafik tren dan analisis pertumbuhan tersedia di dashboard.
+  const data = await ReportDataService.gather('sales-trends', ctx.tenantId, startDate, now);
 
-🔗 *Lihat Grafik:*
-https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+  let trendDetail = "";
+  if (data.dailySales && data.dailySales.length > 0) {
+    const last7Days = data.dailySales.slice(-7);
+    const totalLast7 = last7Days.reduce((sum, d) => sum + d.count, 0);
+    const totalPrev7 = data.dailySales.slice(-14, -7).reduce((sum, d) => sum + d.count, 0);
+
+    trendDetail = `📊 *Ringkasan 30 Hari Terakhir*\n` +
+      `• Total Terjual: ${data.totalSales || 0} unit\n` +
+      `• Penjualan 7 hari terakhir: ${totalLast7} unit\n` +
+      `• Penjualan 7-14 hari lalu: ${totalPrev7} unit\n\n` +
+      (totalLast7 > totalPrev7 ? "📈 Tren sedang meningkat!" : totalLast7 < totalPrev7 ? "📉 Tren sedikit menurun." : "↔️ Tren stabil.") + "\n\n";
+  }
+
+  const message = `📈 *TREN PENJUALAN*\n` +
+    `_Analisis Performa 30 Hari Terakhir_\n\n` +
+    trendDetail +
+    `Grafik lengkap dan analisis pertumbuhan tersedia di dashboard.\n\n` +
+    `🔗 *Lihat Grafik:* \n` +
+    `https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=sales`;
+
   return { success: true, message, followUp: true };
 }
 
 
 
-async function generateLowStockText(_ctx: CommandContext): Promise<CommandResult> {
-  // Minimal logic for low stock
-  const message = `⚠️ *LOW STOCK ALERT*
+async function generateLowStockText(ctx: CommandContext): Promise<CommandResult> {
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 30);
 
-Cek daftar unit yang menipis atau perlu restock di dashboard inventory.
+  const data = await ReportDataService.gather('low-stock-alert', ctx.tenantId, startDate, now);
 
-🔗 *Lihat Inventory:*
-https://primamobil.id/dashboard/vehicles?status=AVAILABLE`;
+  let stockList = "";
+  if (data.lowStockVehicles && data.lowStockVehicles.length > 0) {
+    stockList = `Daftar unit yang sudah lama di stok:\n` +
+      data.lowStockVehicles.slice(0, 5).map(v =>
+        `• ${v.status === 'critical' ? '🔴' : '🟡'} [${v.displayId}] ${v.make} ${v.model} (${v.daysInStock} hari)`
+      ).join('\n') + (data.lowStockVehicles.length > 5 ? `\n...dan ${data.lowStockVehicles.length - 5} unit lainnya.` : "") + "\n\n";
+  } else {
+    stockList = "✅ Semua stok masih dalam kondisi fresh (di bawah 90 hari).\n\n";
+  }
+
+  const message = `⚠️ *LOW STOCK ALERT*\n\n` +
+    stockList +
+    `Cek detail unit yang perlu restock atau promo khusus di dashboard inventory.\n\n` +
+    `🔗 *Lihat Inventory:* \n` +
+    `https://primamobil.id/dashboard/vehicles?status=AVAILABLE`;
+
   return { success: true, message, followUp: true };
 }
 
@@ -734,18 +786,21 @@ async function generateAveragePriceText(ctx: CommandContext): Promise<CommandRes
   const startDate = new Date();
   startDate.setDate(now.getDate() - 30);
 
-  const data = await ReportDataService.gather('total-inventory', ctx.tenantId, startDate, now);
+  const data = await ReportDataService.gather('average-price', ctx.tenantId, startDate, now);
 
   const count = data.totalInventory || 0;
-  const avg = data.avgStockPrice || 0;
+  const avgStock = data.avgStockPrice || 0;
+  const avgSold = data.avgPrice || 0;
 
-  const message = `🏷️ *RATA-RATA HARGA STOK*
+  const message = `🏷️ *ANALISIS HARGA RATA-RATA*\n` +
+    `_Data Real-time ${formatDate(now)}_\n\n` +
+    `💰 *Rata-rata Harga Terjual*: ${formatCurrency(avgSold)}\n` +
+    `📦 *Rata-rata Harga Stok*: ${formatCurrency(avgStock)}\n` +
+    `📊 *Total Unit di Showroom*: ${count} unit\n\n` +
+    (avgSold > avgStock ? "💡 Unit yang terjual rata-rata lebih mahal dari stok saat ini." : "💡 Harga stok saat ini rata-rata lebih tinggi dari unit yang baru saja terjual.") + "\n\n" +
+    `🔗 *Lihat Inventory:* \n` +
+    `https://primamobil.id/dashboard/vehicles`;
 
-Rata-rata: ${formatCurrency(avg)}
-Total Stok: ${count} unit
-
-🔗 *Lihat Inventory:*
-https://primamobil.id/dashboard/vehicles`;
   return { success: true, message, followUp: true };
 }
 
