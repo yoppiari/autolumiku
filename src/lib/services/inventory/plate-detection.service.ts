@@ -5,7 +5,7 @@
 
 import sharp from 'sharp';
 import { createZAIClient } from '@/lib/ai/zai-client';
-import { ImageProcessingService } from './image-processing.service';
+import { ImageProcessingService } from '../infrastructure/image-processing.service';
 
 export interface PlateLocation {
   x: number;      // X coordinate (percentage from left, 0-100)

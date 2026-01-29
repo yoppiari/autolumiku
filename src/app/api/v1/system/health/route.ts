@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { SystemHealthService } from '@/lib/services/system-health.service';
+import { SystemHealthService } from '@/lib/services/infrastructure/system-health.service';
 
 export async function GET() {
     try {

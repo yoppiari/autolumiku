@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { LeadService } from '@/lib/services/lead-service';
+import { LeadService } from '@/lib/services/leads/lead-service';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';
 

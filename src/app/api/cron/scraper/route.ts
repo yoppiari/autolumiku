@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { scraperService } from '@/lib/services/scraper-service';
+import { scraperService } from '@/lib/services/inventory/scraper-service';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max duration

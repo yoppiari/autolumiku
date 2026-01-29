@@ -10,7 +10,7 @@ import { VehicleStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';
-import { VehicleService } from '@/lib/services/vehicle.service';
+import { VehicleService } from '@/lib/services/inventory/vehicle.service';
 
 /**
  * GET /api/v1/vehicles

@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { LeadService } from '@/lib/services/lead-service';
+import { LeadService } from '@/lib/services/leads/lead-service';
 
 import { withAuth } from '@/lib/auth/middleware';
 

@@ -6,7 +6,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { StorageUploadResult } from '../types/photo.types';
+import { StorageUploadResult } from '../../types/photo.types';
 
 export class StorageService {
   private static uploadDir = process.env.UPLOAD_DIR || '/app/uploads';

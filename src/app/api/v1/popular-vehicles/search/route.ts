@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { popularVehicleService } from '@/lib/services/popular-vehicle-service';
+import { popularVehicleService } from '@/lib/services/inventory/popular-vehicle-service';
 
 export const dynamic = 'force-dynamic';
 

@@ -24,7 +24,7 @@ import {
 } from "./prompts";
 import { prisma } from "@/lib/prisma";
 import { MessageIntent } from "./intent-classifier.service";
-import { LeadService } from "@/lib/services/lead-service";
+import { LeadService } from "@/lib/services/leads/lead-service";
 import { LeadPriority } from "@prisma/client";
 
 // ==================== TYPES ====================

@@ -4,7 +4,7 @@
  */
 
 import sharp from 'sharp';
-import { PhotoQualityResult } from '../types/photo.types';
+import { PhotoQualityResult } from '../../types/photo.types';
 
 export class PhotoQualityService {
   /**

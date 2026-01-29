@@ -9,13 +9,13 @@
 
 import { prisma } from "@/lib/prisma";
 import { AimeowClientService } from "../aimeow/aimeow-client.service";
-import { StorageService } from "../storage.service";
+import { StorageService } from "../infrastructure/storage.service";
 import { IntentClassifierService, MessageIntent } from "./intent-classifier.service";
 import { WhatsAppAIChatService } from "./chat.service";
 import { StaffCommandService } from "./staff-command.service";
 import { AIHealthMonitorService } from "./ai-health-monitor.service";
 import { processCommand } from "./command-handler.service";
-import { LeadService } from "@/lib/services/lead-service";
+import { LeadService } from "@/lib/services/leads/lead-service";
 
 // ==================== TYPES ====================
 
@@ -2726,9 +2726,9 @@ export class MessageOrchestratorService {
       console.log(`[Orchestrator] Adding photo to vehicle ${vehicleId} from ${mediaUrl}`);
 
       // Import required services
-      const { ImageProcessingService } = await import('@/lib/services/image-processing.service');
-      const { StorageService } = await import('@/lib/services/storage.service');
-      const { PlateDetectionService } = await import('@/lib/services/plate-detection.service');
+      const { ImageProcessingService } = await import('@/lib/services/infrastructure/image-processing.service');
+      const { StorageService } = await import('@/lib/services/infrastructure/storage.service');
+      const { PlateDetectionService } = await import('@/lib/services/inventory/plate-detection.service');
 
       // Get vehicle details
       const vehicle = await prisma.vehicle.findUnique({

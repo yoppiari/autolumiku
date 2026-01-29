@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { PlateDetectionService } from '@/lib/services/plate-detection.service';
+import { PlateDetectionService } from '@/lib/services/inventory/plate-detection.service';
 
 /**
  * API to regenerate vehicle photos WITHOUT license plate cover

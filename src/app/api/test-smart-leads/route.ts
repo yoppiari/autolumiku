@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { LeadService } from '@/lib/services/lead-service';
+import { LeadService } from '@/lib/services/leads/lead-service';
 
 export const dynamic = 'force-dynamic';
 

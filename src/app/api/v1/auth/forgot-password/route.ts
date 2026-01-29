@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { AuthGuardService } from '@/lib/services/auth-guard.service';
-import { PasswordResetService } from '@/lib/services/password-reset.service';
+import { AuthGuardService } from '@/lib/services/security/auth-guard.service';
+import { PasswordResetService } from '@/lib/services/security/password-reset.service';
 import type { ForgotPasswordRequest, ForgotPasswordResponse } from '@/types/auth.types';
 
 export async function POST(request: NextRequest) {

@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { StorageService } from '@/lib/services/storage.service';
+import { StorageService } from '@/lib/services/infrastructure/storage.service';
 
 // Allowed document types
 const ALLOWED_TYPES: Record<string, string[]> = {

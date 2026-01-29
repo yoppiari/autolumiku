@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { StorageService } from '@/lib/services/storage.service';
+import { StorageService } from '@/lib/services/infrastructure/storage.service';
 
 export async function POST(request: NextRequest) {
   try {

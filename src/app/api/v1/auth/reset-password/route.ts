@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { PasswordResetService } from '@/lib/services/password-reset.service';
+import { PasswordResetService } from '@/lib/services/security/password-reset.service';
 import type { ResetPasswordRequest, ResetPasswordResponse } from '@/types/auth.types';
 
 export async function POST(request: NextRequest) {

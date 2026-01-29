@@ -5,7 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { AimeowClientService } from './aimeow/aimeow-client.service';
+import { AimeowClientService } from '../aimeow/aimeow-client.service';
 import type {
   OTPGenerationResult,
   RateLimitCheck,

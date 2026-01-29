@@ -6,9 +6,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { PlateDetectionService } from '@/lib/services/plate-detection.service';
-import { ImageProcessingService } from '@/lib/services/image-processing.service';
-import { StorageService } from '@/lib/services/storage.service';
+import { PlateDetectionService } from '@/lib/services/inventory/plate-detection.service';
+import { ImageProcessingService } from '@/lib/services/infrastructure/image-processing.service';
+import { StorageService } from '@/lib/services/infrastructure/storage.service';
 
 export const maxDuration = 300; // 5 minutes timeout
 

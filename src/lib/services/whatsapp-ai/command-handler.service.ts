@@ -13,7 +13,7 @@
 import { prisma } from '@/lib/prisma';
 import { ROLE_LEVELS } from '@/lib/rbac';
 import { generateVCardBuffer, generateVCardFilename } from './vcard-generator';
-import { StorageService } from '../storage.service';
+import { StorageService } from '../infrastructure/storage.service';
 import { OnePageSalesPDF } from '@/lib/reports/one-page-sales-pdf';
 import { WhatsAppCommandPDF, formatCurrency, formatNumber } from '@/lib/reports/whatsapp-command-pdf';
 import {
