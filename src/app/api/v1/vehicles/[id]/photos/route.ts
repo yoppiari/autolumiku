@@ -4,10 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ImageProcessingService } from '@/lib/services/image-processing.service';
-import { StorageService } from '@/lib/services/storage.service';
-import { PhotoQualityService } from '@/lib/services/photo-quality.service';
-import { PlateDetectionService } from '@/lib/services/plate-detection.service';
+import { ImageProcessingService } from '@/lib/services/infrastructure/image-processing.service';
+import { StorageService } from '@/lib/services/infrastructure/storage.service';
+import { PhotoQualityService } from '@/lib/services/inventory/photo-quality.service';
+import { PlateDetectionService } from '@/lib/services/inventory/plate-detection.service';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';

@@ -11,7 +11,7 @@ import { VehicleStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { ROLE_LEVELS } from '@/lib/rbac';
-import { VehicleService } from '@/lib/services/vehicle.service';
+import { VehicleService } from '@/lib/services/inventory/vehicle.service';
 
 // Reserved route names that should not be treated as vehicle IDs
 const RESERVED_ROUTES = ['update-ids', 'ai-identify', 'search', 'bulk'];

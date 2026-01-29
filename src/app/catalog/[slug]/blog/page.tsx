@@ -23,7 +23,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { prisma } from '@/lib/prisma';
-import { getBlogUrl } from '@/lib/utils/url-helper';
+import { getBlogUrl } from '@/lib/utils/url-helper.server';
 
 
 export default async function BlogPage({ params }: { params: any }) {

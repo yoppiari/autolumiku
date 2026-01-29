@@ -25,7 +25,7 @@ import {
   getBlogsUrl,
   getBlogUrl,
   getContactUrl,
-} from '@/lib/utils/url-helper';
+} from '@/lib/utils/url-helper.server';
 import { createVehicleSlug } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
