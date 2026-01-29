@@ -268,7 +268,7 @@ export class ZAIClient {
             type: "function",
             function: {
               name: "create_lead",
-              description: "Simpan data prospek/lead baru. Panggil saat customer memberikan nama, menunjukkan minat serius, atau meminta info lebih lanjut.",
+              description: "Simpan data lead/prospeK ke CRM. PENTING: Tool ini HANYA BOLEH dipanggil SETELAH customer memberikan konfirmasi 'Ya' atau setuju saat ditanya apakah data ingin diteruskan ke tim Sales untuk closing/follow up manual.",
               parameters: {
                 type: "object",
                 properties: {

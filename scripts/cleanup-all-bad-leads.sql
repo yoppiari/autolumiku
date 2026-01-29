@@ -116,39 +116,39 @@ SELECT COUNT(*) as total_leads_backed_up FROM "Lead_Backup_20260129";
 -- 3.1 DELETE STAFF LEADS
 -- UNCOMMENT THE LINES BELOW TO EXECUTE:
 
--- DELETE FROM "Lead" l
--- WHERE EXISTS (
---     SELECT 1 FROM "User" u
---     WHERE (u."roleLevel" >= 30 OR u.role IN ('SALES', 'STAFF', 'ADMIN', 'MANAGER', 'OWNER', 'SUPER_ADMIN'))
---       AND (
---         REPLACE(REPLACE(REPLACE(u.phone, '+', ''), '-', ''), ' ', '') = REPLACE(REPLACE(REPLACE(l.phone, '+', ''), '-', ''), ' ', '')
---         OR REPLACE(REPLACE(REPLACE(u.phone, '+', ''), '-', ''), ' ', '') = REPLACE(REPLACE(REPLACE(l."whatsappNumber", '+', ''), '-', ''), ' ', '')
---         OR ('0' || SUBSTRING(REPLACE(REPLACE(REPLACE(u.phone, '+', ''), '-', ''), ' ', '') FROM 3)) = REPLACE(REPLACE(REPLACE(l.phone, '+', ''), '-', ''), ' ', '')
---         OR ('62' || SUBSTRING(REPLACE(REPLACE(REPLACE(u.phone, '+', ''), '-', ''), ' ', '') FROM 2)) = REPLACE(REPLACE(REPLACE(l.phone, '+', ''), '-', ''), ' ', '')
---       )
--- );
+DELETE FROM "Lead" l
+WHERE EXISTS (
+    SELECT 1 FROM "User" u
+    WHERE (u."roleLevel" >= 30 OR u.role IN ('SALES', 'STAFF', 'ADMIN', 'MANAGER', 'OWNER', 'SUPER_ADMIN'))
+      AND (
+        REPLACE(REPLACE(REPLACE(u.phone, '+', ''), '-', ''), ' ', '') = REPLACE(REPLACE(REPLACE(l.phone, '+', ''), '-', ''), ' ', '')
+        OR REPLACE(REPLACE(REPLACE(u.phone, '+', ''), '-', ''), ' ', '') = REPLACE(REPLACE(REPLACE(l."whatsappNumber", '+', ''), '-', ''), ' ', '')
+        OR ('0' || SUBSTRING(REPLACE(REPLACE(REPLACE(u.phone, '+', ''), '-', ''), ' ', '') FROM 3)) = REPLACE(REPLACE(REPLACE(l.phone, '+', ''), '-', ''), ' ', '')
+        OR ('62' || SUBSTRING(REPLACE(REPLACE(REPLACE(u.phone, '+', ''), '-', ''), ' ', '') FROM 2)) = REPLACE(REPLACE(REPLACE(l.phone, '+', ''), '-', ''), ' ', '')
+      )
+);
 
 -- 3.2 DELETE ORPHANED LEADS (from deleted conversations)
 -- UNCOMMENT THE LINES BELOW TO EXECUTE:
 
--- DELETE FROM "Lead" l
--- WHERE l.source = 'whatsapp_auto'
---   AND NOT EXISTS (
---     SELECT 1 
---     FROM "WhatsAppConversation" wc 
---     WHERE (wc."customerPhone" = l.phone OR wc."customerPhone" = l."whatsappNumber")
---       AND wc.status = 'active'
---   );
+DELETE FROM "Lead" l
+WHERE l.source = 'whatsapp_auto'
+  AND NOT EXISTS (
+    SELECT 1 
+    FROM "WhatsAppConversation" wc 
+    WHERE (wc."customerPhone" = l.phone OR wc."customerPhone" = l."whatsappNumber")
+      AND wc.status = 'active'
+  );
 
 -- 3.3 DELETE JUNK LEADS (no meaningful data)
 -- UNCOMMENT THE LINES BELOW TO EXECUTE:
 
--- DELETE FROM "Lead"
--- WHERE 
---     (name IS NULL OR name = phone OR name = '' OR name = 'Unknown' OR name = 'Customer Baru' OR name = 'Customer')
---     AND ("interestedIn" IS NULL OR "interestedIn" = '')
---     AND ("budgetRange" IS NULL OR "budgetRange" = '')
---     AND status = 'NEW';
+DELETE FROM "Lead"
+WHERE 
+    (name IS NULL OR name = phone OR name = '' OR name = 'Unknown' OR name = 'Customer Baru' OR name = 'Customer')
+    AND ("interestedIn" IS NULL OR "interestedIn" = '')
+    AND ("budgetRange" IS NULL OR "budgetRange" = '')
+    AND status = 'NEW';
 
 -- =====================================================================
 -- STEP 4: VERIFICATION (After deletion)
