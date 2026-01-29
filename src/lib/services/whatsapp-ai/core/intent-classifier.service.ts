@@ -126,8 +126,10 @@ const STAFF_COMMAND_PATTERNS = {
     /(?:operasional\s*metric|efisiensi\s*chat)/i,
     // Report Menu / List
     /(?:report\s*ada\s*apa(?:\s*saja)?)/i,
+    /(?:total\s*report\s*ada\s*apa(?:\s*saja)?)/i, // Added total report variant
     /(?:list|daftar|menu)\s*report/i,
     /(?:pilihan|opsi)\s*report/i,
+    /report\b/i, // Added standalone report to capture "report?"
   ],
   edit_vehicle: [
     /^\/edit/i,                      // edit PM-PST-001 km 50000
@@ -554,9 +556,11 @@ export class IntentClassifierService {
     hasMedia: boolean = false
   ): IntentClassificationResult | null {
     // STRICT RULE: If message contains a question mark, it's NOT a command
-    // This allows staff to ask the AI questions (e.g. "Stok ada apa aja?") 
-    // without triggering the strict staff command parser.
-    if (message.includes("?")) {
+    // EXCEPT for specific commands like reports and stats which are strictly for staff
+    // and often asked as questions (e.g. "total report ada apa saja?")
+    if (message.includes("?") &&
+      !STAFF_COMMAND_PATTERNS.get_report.some((p) => p.test(message)) &&
+      !STAFF_COMMAND_PATTERNS.get_stats.some((p) => p.test(message))) {
       return null;
     }
 

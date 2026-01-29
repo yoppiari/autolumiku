@@ -513,6 +513,8 @@ export class StaffCommandService {
 
       // Menu / List
       'report ada apa': 'report_menu',
+      'total report': 'report_menu', // Added total report
+      'report': 'report_menu',       // Added standalone report
       'menu report': 'report_menu',
       'list report': 'report_menu',
       'daftar report': 'report_menu',
