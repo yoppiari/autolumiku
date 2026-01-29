@@ -1022,6 +1022,17 @@ if (lastAiMsg) {
       if (vehicleContext) break;
     }
 
+    // AUTO-MINING: Capture Location
+    if (context?.leadInfo?.id) {
+      await LeadService.updateLeadAnalysis(context.leadInfo.id, {
+        score: 0, // No score change
+        sentiment: 'NEUTRAL',
+        buyingStage: 'INTEREST',
+        urgency: 'MEDIUM',
+        summary: `Lokasi User: ${userMessage}`
+      });
+    }
+
     return {
       message: `Siap kak, terima kasih infonya! 🙏\n\nUntuk penggunaan di area **${userMessage}**, unit ${vehicleContext || 'yang Kakak minati'} sudah sangat cocok dan siap pakai.\n\nKebetulan unitnya masih ready, apakah Kakak ada rencana untuk cek unit langsung ke showroom atau mau saya kirimkan video detailnya dulu? 😊`,
       shouldEscalate: false
@@ -1031,8 +1042,27 @@ if (lastAiMsg) {
   // 2. Name Answer (AI asked "dengan siapa", "kakak siapa")
   if (lastContent.includes("dengan siapa") || lastContent.includes("kakak siapa") || lastContent.includes("boleh tau nama")) {
     console.log(`[SmartFallback] 👤 Name answer detected: "${msg}"`);
+    // AUTO-MINING: Capture Name
+    // Extract clean name (remove "saya", "nama saya", etc)
+    const cleanName = userMessage.replace(/^(saya|nama|nama saya|aku|ini|dari)\s+/i, '').trim();
+    if (cleanName.length > 2 && context?.leadInfo?.id) {
+      // We need a way to update the lead name specifically
+      // For now, allow LeadService to handle generic updates or add a specific method later
+      // Using updateLeadAnalysis as a proxy to log it in notes for now
+      await LeadService.updateLeadAnalysis(context.leadInfo.id, {
+        score: 10, // +10 Score for identifying oneself
+        sentiment: 'POSITIVE',
+        buyingStage: 'INTEREST',
+        urgency: 'MEDIUM',
+        summary: `Nama Teridentifikasi: ${cleanName}`
+      });
+
+      // Also try to update the actual name field if we had the method exposed
+      // await LeadService.updateLead(context.leadInfo.id, { name: cleanName }); 
+    }
+
     return {
-      message: `Salam kenal Kak ${userMessage}! 👋\n\nSenang bisa membantu Kakak. Ada lagi yang ingin ditanyakan tentang unit yang diminati? Atau mau saya bantu hitungkan simulasi kreditnya sekalian? 😊`,
+      message: `Salam kenal Kak ${cleanName}! 👋\n\nSenang bisa membantu Kakak. Ada lagi yang ingin ditanyakan tentang unit yang diminati? Atau mau saya bantu hitungkan simulasi kreditnya sekalian? 😊`,
       shouldEscalate: false
     };
   }
@@ -1047,6 +1077,17 @@ if (lastAiMsg) {
       };
     }
     else if (msg.includes("kredit") || msg.includes("cicil") || msg.includes("angsur")) {
+      // AUTO-MINING: Capture Interest (Credit)
+      if (context?.leadInfo?.id) {
+        await LeadService.updateLeadAnalysis(context.leadInfo.id, {
+          score: 20, // +20 Score for Credit interest (Serious intent)
+          sentiment: 'POSITIVE',
+          buyingStage: 'DESIRE', // Upgrade stage
+          urgency: 'HIGH',
+          summary: `Minat: KREDIT / CICILAN`
+        });
+      }
+
       return {
         message: `Siap kak, untuk **Kredit** boleh saya bantu simulasikan hitungannya? 💰\n\nKakak rencananya mau DP berapa dan tenor berapa tahun? (Contoh: "DP 50jt tenor 3 tahun")`,
         shouldEscalate: false
