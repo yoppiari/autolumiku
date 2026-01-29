@@ -94,7 +94,7 @@ export class ZAIClient {
             type: "function",
             function: {
               name: "send_vehicle_images",
-              description: "Kirim foto kendaraan. Panggil saat customer confirm mau lihat foto (iya/boleh/mau/kirim) atau minta foto eksplisit. Jangan panggil jika menolak.",
+              description: "Kirim foto kendaraan. Panggil saat customer confirm mau lihat foto (iya/boleh/mau/kirim) atau minta foto eksplisit. JANGAN panggil jika customer tanya detail verbal (interior/mesin/surat) tanpa minta foto secara eksplisit.",
               parameters: {
                 type: "object",
                 properties: {

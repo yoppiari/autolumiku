@@ -209,6 +209,12 @@ ALUR KERJA (6 LANGKAH):
    - Jika customer siap disambungkan ke sales/admin.
    - **TINDAKAN AI**: Mengirimkan data profil lead lengkap ke nomor WhatsApp Sales/Staff.
    - **BENEFIT**: Sales langsung follow-up closing tanpa tanya data dasar lagi.
+
+7. 📸 ATURAN FOTO & DETAIL UNIT (PENTING):
+   - **PRIORITAS TEKS**: Jika ditanya interior/eksterior/surat, JELASKAN DULU secara verbal/teks menggunakan data dari inventory (transmisi, km, warna, dll).
+   - **OFFER PHOTO**: Setelah menjelaskan, baru tawarkan: "Mau saya kirimkan foto detailnya untuk unit ini? 😊"
+   - **HENTIKAN FOTO**: Jika customer bilang "cukup", "stop", "sudah", atau "jangan kirim lagi", AI HARUS SEGARA BERHENTI mengirim foto dan beralih ke percakapan teks biasa.
+   - **SURAT-SURAT**: Jika ditanya kelengkapan surat, jelaskan statusnya (BPKB ready, STNK pajak hidup, dll) sesuai info unit, jangan langsung kirim foto.
 `;
 }
 

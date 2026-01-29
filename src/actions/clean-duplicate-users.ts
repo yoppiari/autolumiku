@@ -66,10 +66,26 @@ export async function cleanDuplicateUsers(phone: string) {
     }
 
     // Find the "bad" records: firstName="User" and role="STAFF"
-    const badRecords = matches.filter(u =>
-        (u.firstName === 'User' || u.firstName === 'user') &&
-        (u.role === 'STAFF' || u.role === 'staff')
+    // Safety Logic: Identify which ones to delete
+    // Goal: Keep the "best" record (non-placeholder) or at least the oldest placeholder.
+    const bestRecord = matches.find(u =>
+        u.firstName.trim().toLowerCase() !== 'user'
     );
+
+    const badRecords = matches.filter(u => {
+        const isPlaceholder = (u.firstName.trim().toLowerCase() === 'user') &&
+            (u.role.toUpperCase() === 'STAFF');
+
+        if (!isPlaceholder) return false;
+
+        // If a real record exists, delete this placeholder
+        if (bestRecord && u.id !== bestRecord.id) return true;
+
+        // If ONLY placeholders exist, keep the oldest one (matches[0])
+        if (!bestRecord && u.id === matches[0].id) return false;
+
+        return true;
+    });
 
     if (badRecords.length === 0) {
         return {

@@ -1569,18 +1569,19 @@ export class WhatsAppAIChatService {
     }
 
     // Check if user explicitly asks for photos (contains "foto", "gambar", "mana fotonya" etc)
-    const userExplicitlyAsksPhoto = msg.includes("foto") || msg.includes("gambar") ||
+    const hasPhotoKeyword = msg.includes("foto") || msg.includes("gambar") ||
       /mana.*(foto|gambar)/i.test(msg) ||
-      msg.startsWith("mana ") ||
-      // ADDED: Detailed visual keywords -- THIS FIXES "Eksterior PM-PST-004"
-      msg.includes("interior") ||
-      msg.includes("eksterior") ||
-      msg.includes("detail") ||
-      msg.includes("mesin") ||
-      msg.includes("dalam") ||
-      msg.includes("body");
+      msg.startsWith("mana ");
 
-    console.log(`[SmartFallback] Photo check: msg="${msg}", isPhotoConfirmation=${isPhotoConfirmation}, explicit=${userExplicitlyAsksPhoto}`);
+    const hasVisualDetailKeyword = /\b(interior|eksterior|detail|mesin|dalam|body|kondisi|fisik)/i.test(msg);
+    const hasExplanationKeyword = /\b(jelaskan|penjelasan|jabarkan|penjabaran|deskripsi|ceritakan|info|kabar|surat|dokumen)/i.test(msg);
+
+    // AI 5.4 Logic: ONLY trigger auto-photo if:
+    // 1. Explicit photo keyword is present
+    // 2. Visual keyword is present AND NO explanation keyword is present
+    const userExplicitlyAsksPhoto = hasPhotoKeyword || (hasVisualDetailKeyword && !hasExplanationKeyword);
+
+    console.log(`[SmartFallback] Photo check: msg="${msg}", isPhotoConfirmation=${isPhotoConfirmation}, hasPhotoKeyword=${hasPhotoKeyword}, hasVisualDetailKeyword=${hasVisualDetailKeyword}, hasExplanationKeyword=${hasExplanationKeyword} -> result=${userExplicitlyAsksPhoto}`);
 
     if (isPhotoConfirmation || userExplicitlyAsksPhoto) {
       console.log(`[SmartFallback] 📸 Photo request detected: "${userMessage}"`);

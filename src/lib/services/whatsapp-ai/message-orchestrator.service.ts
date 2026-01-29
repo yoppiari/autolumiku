@@ -2314,11 +2314,10 @@ export class MessageOrchestratorService {
           for (let i = 0; i < images.length; i++) {
             const stopKey = `${accountId}:${to}`;
 
-
             // Check memory signal (fastest)
             let shouldStop = stopSignals.get(stopKey);
 
-            // Check DB signal (robustness) every 2 images or if memory is false
+            // Check DB signal (robustness) every iteration for better accuracy
             if (!shouldStop) {
               try {
                 const convo = await prisma.whatsAppConversation.findUnique({
@@ -2328,38 +2327,23 @@ export class MessageOrchestratorService {
                 const ctx = convo?.contextData as Record<string, any>;
                 if (ctx?.stopSignal) {
                   shouldStop = true;
-                  // Sync to memory
-                  stopSignals.set(stopKey, true);
-
-                  // Clear signal from DB so we don't stop future valid requests
-                  await prisma.whatsAppConversation.update({
-                    where: { id: conversationId },
-                    data: {
-                      contextData: {
-                        ...ctx,
-                        stopSignal: false
-                      }
-                    }
-                  });
+                  stopSignals.set(stopKey, true); // Sync to memory
                 }
-              } catch (e) { /* ignore DB error, rely on memory */ }
+              } catch (e) { /* ignore DB error */ }
             }
 
             if (shouldStop) {
               console.log(`[Orchestrator sendResponse] 🛑 STOP SIGNAL DETECTED! Aborting image stream at ${i}/${images.length}`);
+              // Clear signal ONLY after we are sure we've stopped everything
               stopSignals.delete(stopKey);
-
-              // Send immediate confirmation of stop
-              await AimeowClientService.sendMessage({
-                clientId: account.clientId,
-                to,
-                message: "✅ Oke, pengiriman foto dibatalkan."
-              });
               break;
             }
 
             const img = images[i];
             console.log(`[Orchestrator sendResponse] Sending image ${i + 1}/${images.length}: ${img.imageUrl}`);
+
+            // FINAL CHECK right before network call to minimize race window
+            if (stopSignals.get(stopKey)) break;
 
             const imageResult = await AimeowClientService.sendImage(
               account.clientId,
