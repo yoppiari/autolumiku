@@ -134,14 +134,17 @@ export class ScraperService {
 
       if (options.source === 'ALL') {
         console.log('Running ALL scrapers via Universal Engine...');
-        // Run sequentially to prevent server overload (503 errors) and ensure stability
-        const countPerSource = Math.floor((options.targetCount || 50) / 3);
+        // Run sequentially to prevent server overload and ensure stability
+        // Distribute target count across major sources
+        const countPerSource = Math.floor((options.targetCount || 50) / 5);
 
         // We use try-catch per source so one failure doesn't stop others
         try { await scraper.scrape('OLX', countPerSource, onProgress); } catch (e) { console.error('OLX failed', e); }
         try { await scraper.scrape('CARSOME', countPerSource, onProgress); } catch (e) { console.error('Carsome failed', e); }
-        try { await scraper.scrape('MOBIL123', countPerSource, onProgress); } catch (e) { console.error('Mobil123 failed', e); }
-
+        try { await scraper.scrape('SEVA', countPerSource, onProgress); } catch (e) { console.error('Seva failed', e); }
+        try { await scraper.scrape('CAROLINE', countPerSource, onProgress); } catch (e) { console.error('Caroline failed', e); }
+        try { await scraper.scrape('CARMUDI', countPerSource, onProgress); } catch (e) { console.error('Carmudi failed', e); }
+        try { await scraper.scrape('OTO', countPerSource, onProgress); } catch (e) { console.error('Oto failed', e); }
       } else {
         // Run Single Source
         // The scraping method throws if source is invalid, caught below

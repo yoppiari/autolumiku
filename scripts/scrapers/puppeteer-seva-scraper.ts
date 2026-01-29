@@ -78,19 +78,24 @@ export class PuppeteerSevaScraper {
             await this.initBrowser();
             const page = await this.browser!.newPage();
 
-            console.log('🚗 Navigating to SEVA Mobil Baru...');
+            console.log('🚗 Navigating to SEVA Mobil Bekas...');
             await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-            await page.goto('https://www.seva.id/mobil-baru', {
+            // Try Used Cars first as requested by user
+            await page.goto('https://www.seva.id/mobil-bekas', {
                 waitUntil: 'networkidle2',
                 timeout: 60000
             });
 
-            // Wait for vehicle cards to load
-            await page.waitForSelector('a[href^="/mobil-baru/"]', { timeout: 10000 });
+            // Wait for vehicle cards to load - Seva uses a[href*="/mobil-bekas/p/"] for used car detail links
+            try {
+                await page.waitForSelector('a[href*="/mobil-bekas/p/"], a[href^="/mobil-baru/"]', { timeout: 15000 });
+            } catch (e) {
+                console.warn('⚠️ Timeout waiting for Seva cards, proceeding with current DOM...');
+            }
 
             // Scroll to load more via infinite scroll
-            if (limit > 20) {
+            if (limit > 5) {
                 console.log('📜 Scrolling to load more vehicles...');
                 await page.evaluate(async () => {
                     await new Promise<void>((resolve) => {
@@ -101,11 +106,11 @@ export class PuppeteerSevaScraper {
                             window.scrollBy(0, distance);
                             totalHeight += distance;
 
-                            if (totalHeight >= scrollHeight || totalHeight >= 3000) {
+                            if (totalHeight >= scrollHeight || totalHeight >= 4000) {
                                 clearInterval(timer);
                                 resolve();
                             }
-                        }, 200);
+                        }, 250);
                     });
                 });
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -115,57 +120,46 @@ export class PuppeteerSevaScraper {
             console.log('📦 Extracting vehicle data from SEVA...');
 
             const vehicles = await page.evaluate((limitNum) => {
-                const cards = Array.from(document.querySelectorAll('a[href^="/mobil-baru/"]'));
+                // Support both used car and new car cards
+                const cards = Array.from(document.querySelectorAll('a[href*="/mobil-bekas/p/"], a[href^="/mobil-baru/"]'));
                 const results: any[] = [];
 
                 for (let i = 0; i < Math.min(cards.length, limitNum); i++) {
                     const card = cards[i] as HTMLAnchorElement;
 
                     try {
-                        // Get URL
                         const url = card.href;
+                        const textContent = card.innerText || '';
 
-                        // Parse URL to get brand and model
-                        // Format: /mobil-baru/toyota/all-new-hilux-rangga/jakarta-pusat
-                        const urlParts = url.split('/').filter(p => p);
-                        const brandIdx = urlParts.indexOf('mobil-baru') + 1;
-
-                        if (brandIdx <= 0 || urlParts.length <= brandIdx + 1) continue;
-
-                        const brand = urlParts[brandIdx];
-                        const modelSlug = urlParts[brandIdx + 1];
-
-                        // Get title from h2
-                        const titleEl = card.querySelector('h2');
+                        // 1. Get Title from h2 or h3
+                        const titleEl = card.querySelector('h1, h2, h3, p.font-bold');
                         const fullTitle = titleEl?.textContent?.trim() || '';
 
-                        // Extract model name from title
-                        const model = fullTitle || modelSlug.replace(/-/g, ' ');
+                        // 2. Extract Price
+                        // Used cars usually have direct "Rp 250.000.000"
+                        const priceMatch = textContent.match(/Rp\s*[\d,.]+/i);
+                        const priceDisplay = priceMatch ? priceMatch[0].trim() : '';
 
-                        // Get price
-                        const priceEl = card.querySelector('span');
-                        let priceDisplay = '';
+                        if (!priceDisplay || (!fullTitle && !url)) continue;
 
-                        // Look for price pattern "Rp X - Y juta"
-                        const textContent = card.textContent || '';
-                        const priceMatch = textContent.match(/Rp\s*[\d,.]+ - [\d,.]+\s*juta/i) ||
-                            textContent.match(/Rp\s*[\d,.]+\s*juta/i);
+                        // 3. Extract Year from Title if possible
+                        const yearMatch = fullTitle.match(/\b(20\d{2})\b/);
+                        const year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
 
-                        if (priceMatch) {
-                            priceDisplay = priceMatch[0].trim();
-                        }
-
-                        if (!priceDisplay || !model) continue;
+                        // 4. Extract Brand/Model
+                        const parts = fullTitle.split(' ');
+                        const brand = parts[0] || 'Unknown';
+                        const model = fullTitle || 'Unknown';
 
                         results.push({
                             brand,
                             model,
+                            year,
                             priceDisplay,
                             url,
                         });
 
                     } catch (err) {
-                        console.error('Error parsing card:', err);
                         continue;
                     }
                 }
@@ -173,92 +167,54 @@ export class PuppeteerSevaScraper {
                 return results;
             }, limit);
 
-            console.log(`✅ Found ${vehicles.length} vehicles from SEVA\n`);
-
             console.log(`✅ Found ${vehicles.length} vehicles from SEVA listing. Now fetching details...\n`);
 
             // Process and fetch details for results
             for (let i = 0; i < vehicles.length; i++) {
                 const raw = vehicles[i];
-                console.log(`🔍 [${i + 1}/${vehicles.length}] Fetching details for ${raw.model}...`);
+                console.log(`🔍 [${i + 1}/${vehicles.length}] Processing ${raw.model}...`);
 
-                let detailData: any = {};
+                // For used cars, we might not need separate spec page if data is on main page
+                // But let's try to visit the detail page to get specific specs
+                let detailData: any = { fuelType: 'Bensin', transmission: 'Automatic' };
+
                 try {
-                    // Construct Detail URL: insert '/eksterior/spesifikasi' before location segment
-                    // URL: https://www.seva.id/mobil-baru/brand/model/jakarta-pusat
-                    // Target: https://www.seva.id/mobil-baru/brand/model/eksterior/spesifikasi/jakarta-pusat
-                    const urlParts = raw.url.split('/');
-                    const location = urlParts.pop() || ''; // jakarta-pusat
-                    // Re-assemble
-                    const detailUrl = [...urlParts, 'eksterior', 'spesifikasi', location].join('/');
+                    // Only visit detail page if it's a new car or we want deep specs
+                    // For now, let's keep it simple for stability
+                    if (raw.url.includes('/mobil-baru/')) {
+                        const urlParts = raw.url.split('/');
+                        const location = urlParts.pop() || '';
+                        const detailUrl = [...urlParts, 'eksterior', 'spesifikasi', location].join('/');
+                        await page.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
-                    await page.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-
-                    // Extract Specs
-                    detailData = await page.evaluate(() => {
-                        const specs: any = {};
-
-                        // Inline logic to find value by label text
-                        const allElements = Array.from(document.querySelectorAll('div, span, p, label'));
-
-                        // 1. Fuel Type
-                        const fuelLabel = allElements.find(el => {
-                            const txt = el.textContent?.trim() || '';
-                            return txt === 'Jenis Bahan Bakar' || txt === 'Bahan Bakar';
+                        detailData = await page.evaluate(() => {
+                            const specs: any = {};
+                            const bodyText = document.body.innerText;
+                            if (bodyText.includes('Manual')) specs.transmission = 'Manual';
+                            else if (bodyText.includes('Automatic') || bodyText.includes('CVT') || bodyText.includes('A/T')) specs.transmission = 'Automatic';
+                            return specs;
                         });
-                        if (fuelLabel) {
-                            const sibling = fuelLabel.nextElementSibling;
-                            if (sibling && sibling.textContent) specs.fuelType = sibling.textContent.trim();
-                            else {
-                                const parentSibling = fuelLabel.parentElement?.nextElementSibling;
-                                if (parentSibling && parentSibling.textContent) specs.fuelType = parentSibling.textContent.trim();
-                            }
+                    } else {
+                        // For used cars, transmission is often in the title or URL
+                        if (raw.url.toLowerCase().includes('-m-t-') || raw.url.toLowerCase().includes('-manual-')) {
+                            detailData.transmission = 'Manual';
                         }
-
-                        // 2. Engine
-                        const engineLabel = allElements.find(el => {
-                            const txt = el.textContent?.trim() || '';
-                            return txt === 'Isi Silinder' || txt === 'Kapasitas Mesin';
-                        });
-                        if (engineLabel) {
-                            const sibling = engineLabel.nextElementSibling;
-                            if (sibling && sibling.textContent) specs.engine = sibling.textContent.trim();
-                            else {
-                                const parentSibling = engineLabel.parentElement?.nextElementSibling;
-                                if (parentSibling && parentSibling.textContent) specs.engine = parentSibling.textContent.trim();
-                            }
-                        }
-
-                        // 3. Transmission
-                        // Often masked in "Mesin & Transmisi" section or model name
-                        // Look for keywords in whole page if specific label not found
-                        const pageText = document.body.innerText.toLowerCase();
-                        if (pageText.includes('manual') && !pageText.includes('otomatis')) specs.transmission = 'Manual';
-                        else if (pageText.includes('otomatis') || pageText.includes('cvt') || pageText.includes('a/t')) specs.transmission = 'Automatic';
-                        else specs.transmission = 'Manual'; // Default fallback
-
-                        return specs;
-                    });
-
+                    }
                 } catch (err) {
-                    console.warn(`⚠️ Failed to fetch details for ${raw.model}:`, err);
-                    // Fallback values
-                    detailData = { fuelType: 'Bensin', transmission: 'Manual', engine: '' };
+                    console.warn(`⚠️ Failed to fetch deep details for ${raw.model}`);
                 }
 
                 this.results.push({
                     source: 'SEVA',
                     make: raw.brand.charAt(0).toUpperCase() + raw.brand.slice(1),
                     model: raw.model,
-                    year: new Date().getFullYear(),
+                    year: raw.year,
                     price: this.parsePrice(raw.priceDisplay),
                     priceDisplay: raw.priceDisplay,
                     url: raw.url,
                     location: 'Indonesia',
-                    // Detailed fields
                     fuelType: detailData.fuelType || 'Bensin',
-                    transmission: detailData.transmission || 'Manual',
-                    features: detailData.engine ? `Engine: ${detailData.engine}` : undefined,
+                    transmission: detailData.transmission || 'Automatic',
                     scrapedAt: new Date().toISOString(),
                 });
 
