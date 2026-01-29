@@ -22,7 +22,8 @@
     "scraper:analyze": "npx tsx scripts/scrapers/analyze-results.ts",
     "scraper:test": "npx tsx scripts/scrapers/run-all-tests.ts",
     "traefik:sync": "npx tsx scripts/sync-traefik-domains.ts",
-    "platform:create": "npx tsx scripts/create-platform-tenant.ts"
+    "platform:create": "npx tsx scripts/create-platform-tenant.ts",
+    "cleanup-leads": "npx tsx scripts/emergency-cleanup.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.936.0",
