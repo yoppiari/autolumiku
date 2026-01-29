@@ -26,6 +26,7 @@ export class ReportDataService {
             'sales-summary',
             'one-page-sales',
             'inventory-listing',
+            'customer-metrics',
         ].includes(reportType) || needsAllData;
 
         const needsInventoryData = [
@@ -368,12 +369,22 @@ export class ReportDataService {
         // Fetch Lead & Customer Data for specialized reports
         if (reportType === 'customer-metrics' || needsAllData) {
             try {
-                const [leads, salesCustomers] = await Promise.all([
+                const [leads, salesCustomers, allTimeCustomers, sourceBreakdown] = await Promise.all([
                     prisma.lead.count({ where: { tenantId, createdAt: { gte: startDate, lte: endDate } } }),
                     prisma.salesCustomer.count({ where: { tenantId, createdAt: { gte: startDate, lte: endDate } } }),
+                    prisma.salesCustomer.count({ where: { tenantId } }),
+                    prisma.lead.groupBy({
+                        by: ['source'],
+                        where: { tenantId, createdAt: { gte: startDate, lte: endDate } },
+                        _count: true,
+                    })
                 ]);
                 data.totalLeads = leads;
                 data.totalCustomers = salesCustomers;
+                data.totalAllTimeCustomers = allTimeCustomers;
+
+                // Add source breakdown to management insights or custom field if needed
+                // For now we'll just use it in the text generator if we add a field for it
             } catch (e) {
                 console.warn('[Reports] Lead/Customer data fetch failed:', e);
             }

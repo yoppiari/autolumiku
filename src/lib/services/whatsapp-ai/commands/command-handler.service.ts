@@ -680,19 +680,20 @@ async function generateCustomerMetricsText(ctx: CommandContext): Promise<Command
 
   const data = await ReportDataService.gather('customer-metrics', ctx.tenantId, startDate, now);
 
-  const message = `👥 *METRIK PELANGGAN & LEAD*
-_Data Real-time: ${formatDate(now)}_
+  const conversion = data.totalLeads ? Math.round(((data.totalSales || 0) / data.totalLeads) * 100) : 0;
 
-🔥 *Leads Baru (30 hari)*: ${data.totalLeads || 0} prospek
-✅ *Total Pelanggan*: ${data.totalCustomers || 0} terdaftar
-
-🔗 *Manajemen Lead:*
-https://primamobil.id/dashboard/leads
-
-🔗 *Manajemen Pelanggan:*
-https://primamobil.id/dashboard/admin/users
-
-_Sistem memantau asal sumber leads secara otomatis._`;
+  const message = `👥 *METRIK PELANGGAN & LEAD*\n` +
+    `_Data Real-time: ${formatDate(now)}_\n\n` +
+    `🔥 *Leads Baru (30 hari)*: ${data.totalLeads || 0} prospek\n` +
+    `✅ *Total Pelanggan Baru*: ${data.totalCustomers || 0} terdaftar\n` +
+    `📊 *Total Database Pelanggan*: ${data.totalAllTimeCustomers || 0} orang\n\n` +
+    `🎯 *Lead Conversion Rate*: ${conversion}%\n` +
+    (conversion > 15 ? "🚀 Performa konversi sangat baik!" : conversion > 5 ? "📈 Konversi stabil, terus tingkatkan follow-up." : "⚠️ Konversi rendah, perlu evaluasi alur sales.") + "\n\n" +
+    `🔗 *Manajemen Lead:* \n` +
+    `https://primamobil.id/dashboard/leads\n\n` +
+    `🔗 *Manajemen Pelanggan:* \n` +
+    `https://primamobil.id/dashboard/admin/users\n\n` +
+    `_Sistem memantau asal sumber leads secara otomatis._`;
 
   return { success: true, message, followUp: true };
 }

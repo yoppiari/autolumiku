@@ -2527,84 +2527,38 @@ export class WhatsAppAIChatService {
       return null; // Let the AI or smartFallback handle appreciation
     }
 
-    // Photo confirmation patterns - comprehensive list
+    // Photo confirmation patterns - ONLY true confirmation words/verbs
     const photoConfirmPatterns = [
-      // Exact single word confirmations
       /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti|yoi|gass?|cuss?)$/i,
-      /^(lihat|kirim|send|tampilkan|tunjukkan|kasih|berikan|kirimin|kirimkan|lanjut|lanjutkan)$/i,
-      /^(foto|gambar|pictures?|images?|hayuk|yuk|ayo)$/i,
-      // Phrases with "foto" - IMPORTANT for "iya mana fotonya" etc
-      /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
-      /\b(mana|kirim|kasih|tunjuk)\b.*\b(foto|gambar)/i,
-      /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
-      /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
-      // Info/Detail requests (NEW)
-      /\b(info|detail|spesifikasi|spek|kondisi|keadaan|surat|dokumen|bpkb|stnk)\b/i,
-      /\b(minta|bagi)\b.*\b(info|detail|data|foto|gambar)\b/i,
-      // Specific parts (NEW)
-      /\b(interior|eksterior|dalam|luar|kabin|mesin|body)\b/i,
-      // Complaint patterns - User saying they didn't receive photos
-      /\b(belum|tidak|gak|ga|nggak)\s+(terima|sampai|masuk|dapat|dapet)\b/i,
-      /\b(belum|tidak|gak|ga|nggak)\s+.*\b(foto|gambar)\b/i,
-      /\b(mana|kok)\s+(foto|gambar)\b/i,
-      /\bfoto.*\b(belum|tidak|gak|ga)\b/i,
-      // Re-request patterns
-      /\b(kirim\s+ulang|ulang|coba\s+lagi|lagi)\b/i,
-      // Other confirmations
+      /^(kirim|send|tampilkan|tunjukkan|kasih|berikan|kirimin|kirimkan|lanjut|lanjutkan|hayuk|yuk|ayo)$/i,
+      /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar|lihat)/i,
       /silahkan|silakan/i,
-      /ditunggu/i,
-      /tunggu/i,
-      /kirim\s*(aja|dong|ya|in)?/i,
-      /kirimin\s*(dong|ya|aja)?/i,
-      /kirimkan\s*(dong|ya)?/i,
-      /boleh\s*(dong|ya|lah|aja|silahkan|silakan|banget|info|detail)?/i,
-      /ok\s*(kirim|dong|ya|lanjut)?/i,
-      /sip\s*(ditunggu|tunggu|lanjut)?/i,
-      /mau\s*(dong|ya|lah|lihat|banget)?/i,
-      /lanjut\s*(kirim|aja)?/i,
-      /ok\s*lanjut\s*kirim/i,
-      /^(coba|tolong)\s*(lihat|kirim|kirimin|kirimkan)/i,
+      /ditunggu|tunggu/i,
+      /ok\s*(kirim|dong|ya|lanjut)/i,
+      /sip\s*(ditunggu|tunggu|lanjut)/i,
+      /mau\s*(dong|ya|lah|lihat|banget)/i,
+      /lanjut\s*(kirim|aja)/i,
     ];
 
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
-    console.log(`[PhotoConfirm DEBUG] isPhotoConfirmation: ${isPhotoConfirmation}`);
-    if (!isPhotoConfirmation) {
-      console.log(`[PhotoConfirm DEBUG] ❌ Not a photo confirmation, returning null`);
-      return null; // Not a photo confirmation, let AI handle it
-    }
+    if (!isPhotoConfirmation) return null;
 
-    console.log(`[WhatsApp AI Chat] 📸 Detected photo confirmation: "${userMessage}"`);
-
-    // Check if user is EXPLICITLY asking for photos or info (contains "foto", "gambar", "detail", etc)
-    const userExplicitlyAsksPhoto = /\b(foto|gambar|info|detail|spek|spesifikasi|kondisi|surat|dokumen|bpkb|stnk)\b/i.test(msg);
-    console.log(`[PhotoConfirm DEBUG] userExplicitlyAsksPhoto: ${userExplicitlyAsksPhoto}`);
-
+    // ALWAY REQUIRE AN OFFER or EXPLICIT HISTORY
     // Get the last AI message to check if it offered photos
     const lastAiMsg = messageHistory.filter(m => m.role === "assistant").pop();
-    console.log(`[PhotoConfirm DEBUG] lastAiMsg exists: ${!!lastAiMsg}`);
-    if (lastAiMsg) {
-      console.log(`[PhotoConfirm DEBUG] lastAiMsg content: "${lastAiMsg.content.substring(0, 150)}..."`);
-    }
+    if (!lastAiMsg) return null;
 
-    // If user explicitly asks for photo, we don't need AI to have offered
-    // This handles cases like "iya mana fotonya" even if message history is empty
-    if (!userExplicitlyAsksPhoto) {
-      if (!lastAiMsg) {
-        console.log(`[WhatsApp AI Chat] No previous AI message and user didn't explicitly ask for photos`);
-        return null;
-      }
+    const aiContent = lastAiMsg.content.toLowerCase();
+    const offeredPhotos = aiContent.includes("foto") ||
+      aiContent.includes("lihat") ||
+      aiContent.includes("gambar") ||
+      aiContent.includes("📸") ||
+      aiContent.includes("kirim");
 
-      const aiContent = lastAiMsg.content.toLowerCase();
-      const offeredPhotos = aiContent.includes("foto") ||
-        aiContent.includes("lihat") ||
-        aiContent.includes("gambar") ||
-        aiContent.includes("📸");
+    if (!offeredPhotos) return null;
 
-      if (!offeredPhotos) {
-        console.log(`[WhatsApp AI Chat] Previous AI message didn't offer photos and user didn't explicitly ask`);
-        return null;
-      }
-    }
+    console.log(`[WhatsApp AI Chat] 📸 Validated confirmation after offer: "${userMessage}"`);
+    const userExplicitlyAsksPhoto = /\b(foto|gambar|detail|interior|eksterior)\b/i.test(msg);
 
     console.log(`[WhatsApp AI Chat] Photo request detected (explicit: ${userExplicitlyAsksPhoto}), extracting vehicle...`);
 

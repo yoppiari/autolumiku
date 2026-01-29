@@ -46,6 +46,7 @@ export interface ReportData {
     avgStockPrice?: number;
     totalLeads?: number;
     totalCustomers?: number;
+    totalAllTimeCustomers?: number;
 
     // Trends (for charts)
     dailySales?: { date: Date; count: number; revenue: number }[];
