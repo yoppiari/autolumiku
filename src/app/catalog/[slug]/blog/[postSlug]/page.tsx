@@ -18,6 +18,49 @@ import { ArrowLeft, Calendar, User, Eye } from 'lucide-react';
 import ShareButtons from '@/components/blog/ShareButtons';
 import VehicleCard from '@/components/catalog/VehicleCard';
 import { prisma } from '@/lib/prisma';
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: any }): Promise<Metadata> {
+    const { slug, postSlug } = await params;
+
+    // Fetch tenant and post for metadata
+    const tenant = await prisma.tenant.findUnique({ where: { slug } });
+    if (!tenant) return {};
+
+    const post = await prisma.blogPost.findFirst({
+        where: {
+            tenantId: tenant.id,
+            slug: postSlug,
+            status: 'PUBLISHED',
+        },
+    });
+
+    if (!post) return { title: tenant.name };
+
+    const title = `${post.title} | ${tenant.name}`;
+    const description = post.excerpt || `${post.title}. Baca artikel selengkapnya di blog ${tenant.name}.`;
+
+    const headersList = headers();
+    const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
+    const canonicalUrl = isCustomDomain
+        ? `https://${tenant.domain}/blog/${postSlug}`
+        : `https://auto.lumiku.com/catalog/${slug}/blog/${postSlug}`;
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
+        openGraph: {
+            title,
+            description,
+            url: canonicalUrl,
+            images: post.featuredImage ? [{ url: post.featuredImage }] : [],
+            type: 'article',
+        }
+    };
+}
 
 
 export default async function BlogPostPage({

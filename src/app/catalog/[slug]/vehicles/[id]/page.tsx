@@ -28,11 +28,57 @@ import {
 } from 'lucide-react';
 import { parseVehicleSlug, createVehicleSlug } from '@/lib/utils';
 import { FaWhatsapp } from 'react-icons/fa';
+import SEOStructure from '@/components/catalog/SEOStructure';
+import { Metadata } from 'next';
 
 interface PageProps {
     params: {
         slug: string;
         id: string;
+    };
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { slug, id } = await params;
+
+    // Fetch tenant and vehicle for metadata
+    const tenant = await prisma.tenant.findUnique({ where: { slug } });
+    if (!tenant) return {};
+
+    const parsed = parseVehicleSlug(id);
+    const idCandidate = parsed.id;
+    const isUuid = parsed.isUuid;
+
+    let vehicle = null;
+    if (isUuid) {
+        vehicle = await prisma.vehicle.findUnique({ where: { id: idCandidate } });
+    } else {
+        vehicle = await prisma.vehicle.findUnique({ where: { displayId: idCandidate } });
+    }
+
+    if (!vehicle) return { title: tenant.name };
+
+    const title = `${vehicle.make} ${vehicle.model} ${vehicle.year} - ${tenant.name}`;
+    const description = `Beli ${vehicle.make} ${vehicle.model} ${vehicle.year} berkualitas di ${tenant.name}${tenant.city ? ` ${tenant.city}` : ''}. Harga: Rp ${Number(vehicle.price).toLocaleString('id-ID')}. KM: ${vehicle.mileage?.toLocaleString() || '-'}.`;
+
+    const headersList = headers();
+    const isCustomDomain = headersList.get('x-is-custom-domain') === 'true';
+    const canonicalUrl = isCustomDomain
+        ? `https://${tenant.domain}/vehicles/${id}`
+        : `https://auto.lumiku.com/catalog/${slug}/vehicles/${id}`;
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
+        openGraph: {
+            title,
+            description,
+            url: canonicalUrl,
+            type: 'website',
+        }
     };
 }
 
@@ -155,6 +201,14 @@ export default async function VehicleDetailPage({ params }: PageProps) {
 
     return (
         <ThemeProvider tenantId={tenant.id}>
+            <SEOStructure
+                tenant={tenant as any}
+                vehicle={{
+                    ...vehicle,
+                    price: Number(vehicle.price),
+                    photos: vehicle.photos.map(p => ({ thumbnailUrl: p.thumbnailUrl, originalUrl: p.originalUrl }))
+                }}
+            />
             <div className="min-h-screen bg-background flex flex-col">
                 <CatalogHeader
                     branding={{

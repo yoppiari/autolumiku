@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { getTheme, generateCSSVariables } from '@/lib/themes/theme-definitions';
+import SEOStructure from '@/components/catalog/SEOStructure';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
     try {
@@ -23,10 +24,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
         return {
             title: {
-                template: `%s | ${tenant.name}`,
-                default: tenant.name,
+                template: `%s | ${tenant.name} - Jual Beli Mobil Bekas${tenant.city ? ` ${tenant.city}` : ''}`,
+                default: `${tenant.name} - Jual Beli Mobil Bekas Berkualitas${tenant.city ? ` di ${tenant.city}` : ''}`,
             },
-            description: `Jelajahi koleksi kendaraan terlengkap di ${tenant.name}. Dapatkan mobil impian Anda dengan harga terbaik.`,
+            description: `Jelajahi koleksi kendaraan terlengkap di ${tenant.name}${tenant.city ? `, ${tenant.city}` : ''}. Jual beli mobil bekas berkualitas, aman, dan terpercaya. Dapatkan promo kredit mobil terbaik dengan cicilan ringan.`,
+            keywords: `jual beli mobil bekas, mobil bekas ${tenant.city || 'indonesia'}, mobil second ${tenant.city || ''}, kredit mobil bekas, showroom mobil ${tenant.name}`,
             ...(tenant.faviconUrl && {
                 icons: {
                     icon: tenant.faviconUrl,
@@ -36,8 +38,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
                 canonical: canonicalUrl,
             },
             openGraph: {
-                title: tenant.name,
-                description: `Jelajahi koleksi kendaraan terlengkap di ${tenant.name}`,
+                title: `${tenant.name} - Pusat Mobil Bekas Berkualitas${tenant.city ? ` di ${tenant.city}` : ''}`,
+                description: `Cari mobil impian Anda di ${tenant.name}. Unit pilihan, bergaransi, dan bebas banjir.`,
                 url: canonicalUrl,
                 siteName: tenant.name,
                 locale: 'id_ID',
@@ -80,7 +82,17 @@ export default async function TenantLayout({
             where: { slug: params.slug },
             select: {
                 selectedTheme: true,
-                theme: true // 'light' | 'dark' | 'auto'
+                theme: true, // 'light' | 'dark' | 'auto'
+                name: true,
+                slug: true,
+                domain: true,
+                logoUrl: true,
+                address: true,
+                city: true,
+                province: true,
+                phoneNumber: true,
+                whatsappNumber: true,
+                email: true,
             }
         });
     } catch (error) {
@@ -126,6 +138,11 @@ export default async function TenantLayout({
                 className={`min-h-screen ${mode} bg-background text-foreground`}
                 style={cssVarsObject}
             >
+                {/* SEO Structured Data */}
+                <SEOStructure
+                    tenant={tenant}
+                    isHomePage={headers().get('x-original-path') === '/' || headers().get('x-original-path') === ''}
+                />
                 {children}
             </div>
         </>
