@@ -45,7 +45,8 @@ export interface ProcessingResult {
 
 // Track recent messages to prevent double responses
 const recentMessages = new Map<string, { timestamp: number; messageId: string }>();
-const stopSignals = new Map<string, boolean>(); // Track stop requests per user
+const stopSignals = new Map<string, number>(); // Track stop requests per user (timestamp)
+const STOP_SIGNAL_EXPIRY_MS = 15000; // 15 seconds grace period for stop signal to persist
 const DUPLICATE_WINDOW_MS = 3000; // 3 seconds window for duplicate detection
 
 /**
@@ -138,14 +139,13 @@ export class MessageOrchestratorService {
 
     // CHECK FOR STOP/CANCEL COMMANDS (Priority High)
     // Stops any ongoing operations like bulk photo sending
-    // Updated to be safer: "sudah" only matches if standalone or "sudah cukup"
     // "stop"/"berhenti" match anywhere
-    const stopPatterns = /(?:^|\b)(stop|berhenti|jangan\s*kirim)(?:\b|$)|^(cukup|sudah)$|^(cukup|sudah)\s+(ya|dong|mas|kak|min|gan|bang|pak|bu|udah|cukup)$/i;
+    const stopPatterns = /(?:^|\b)(stop|berhenti|cukup|sudah|udah|selesai|jangan|gak\s*usah|nggak\s*usah|ga\s*usah|gak\s*butuh|ga\s*butuh|nggak\s*butuh|jangan\s*kirim|stop\s*foto)\b/i;
     const normalizedMsg = (incoming.message || "").trim();
     if (stopPatterns.test(normalizedMsg)) {
       console.log(`[Orchestrator] 🛑 STOP command detected from ${incoming.from}`);
       const stopKey = `${incoming.accountId}:${incoming.from}`;
-      stopSignals.set(stopKey, true);
+      stopSignals.set(stopKey, Date.now());
 
       // We can respond immediately here
       // But we need a valid conversation ID. Let's try to get it or create it briefly.
@@ -188,13 +188,8 @@ export class MessageOrchestratorService {
         console.error(`[Orchestrator] Failed to process stop command:`, e);
       }
     } else {
-      // CLEAR STOP SIGNAL on any new message that is NOT a stop command
-      // This allows the user to start a new stream (e.g. photos) without being immediately stopped
-      const stopKey = `${incoming.accountId}:${incoming.from}`;
-      if (stopSignals.has(stopKey)) {
-        console.log(`[Orchestrator] 🔄 new message detected, clearing stop signal for ${stopKey}`);
-        stopSignals.delete(stopKey);
-      }
+      // CLEAR STOP SIGNAL only if message is a clear "Go/Start" intent
+      // Handled later after classification to be more robust
     }
 
     try {
@@ -289,6 +284,33 @@ export class MessageOrchestratorService {
         conversation.id,
         incoming
       );
+
+      // 2.5. CHECK FOR STOP SIGNAL CLEARANCE
+      // If user starts a new inquiry AFTER a stop command, we clear the signal
+      const stopKey = `${incoming.accountId}:${incoming.from}`;
+      const stopIntents = [
+        "customer_vehicle_inquiry",
+        "customer_photo_confirmation",
+        "customer_price_inquiry",
+        "staff_upload_vehicle"
+      ];
+      // We check message content too since classification hasn't fully happened for all cases yet
+      const looksLikeNewRequest = stopPatterns.test(incoming.message) === false &&
+        (incoming.message.length > 5 || !!incoming.mediaUrl);
+
+      if (stopSignals.has(stopKey) && looksLikeNewRequest) {
+        console.log(`[Orchestrator] 🔄 Potential new request detected - clearing stop signal for ${stopKey}`);
+        stopSignals.delete(stopKey);
+
+        // Also clear in DB context
+        const ctx = (conversation.contextData as Record<string, any>) || {};
+        if (ctx.stopSignal) {
+          await prisma.whatsAppConversation.update({
+            where: { id: conversation.id },
+            data: { contextData: { ...ctx, stopSignal: false } }
+          }).catch(e => console.warn('[Orchestrator] Failed up clear DB stop signal:', e.message));
+        }
+      }
 
       // 2.5. CHECK FOR WHATSAPP AI COMMANDS (parallel processing)
       // Command diproses prioritas, tapi upload state TETAP dipertahankan
@@ -1051,7 +1073,8 @@ export class MessageOrchestratorService {
         // This prevents AI from sending photos when user explicitly said "cuma minta detail", "bukan foto", etc.
         const stopPhotoKeywords = [
           'no photo', 'no foto', 'jangan foto', 'bukan foto', 'ga usah foto', 'nggak usah foto', 'gak usah foto',
-          'hanya info', 'cuma info', 'info aja', 'keterangan aja', 'detail aja',
+          'ga butuh foto', 'nggak butuh foto', 'gak butuh foto', 'tanpa foto',
+          'hanya info', 'cuma info', 'info aja', 'keterangan aja', 'detail aja', 'penjelasan aja',
           'bukan minta foto', 'bukan minta fotonya', 'jangan kirim foto',
           'stop', 'berhenti', 'cukup', 'udah', 'sudah', 'jangan lagi'
         ];
@@ -2323,9 +2346,8 @@ export class MessageOrchestratorService {
           let batchSuccessCount = 0;
           for (let i = 0; i < images.length; i++) {
             const stopKey = `${accountId}:${to}`;
-
-            // Check memory signal (fastest)
-            let shouldStop = stopSignals.get(stopKey);
+            const stopTime = stopSignals.get(stopKey);
+            let shouldStop = !!(stopTime && (Date.now() - stopTime < STOP_SIGNAL_EXPIRY_MS));
 
             // Check DB signal (robustness) every iteration for better accuracy
             if (!shouldStop) {
@@ -2337,15 +2359,14 @@ export class MessageOrchestratorService {
                 const ctx = convo?.contextData as Record<string, any>;
                 if (ctx?.stopSignal) {
                   shouldStop = true;
-                  stopSignals.set(stopKey, true); // Sync to memory
+                  stopSignals.set(stopKey, Date.now()); // Sync to memory with current timestamp
                 }
               } catch (e) { /* ignore DB error */ }
             }
 
             if (shouldStop) {
               console.log(`[Orchestrator sendResponse] 🛑 STOP SIGNAL DETECTED! Aborting image stream at ${i}/${images.length}`);
-              // Clear signal ONLY after we are sure we've stopped everything
-              stopSignals.delete(stopKey);
+              // We DON'T delete here immediately to allow other concurrent loops for same user to also see it
               break;
             }
 
@@ -2353,7 +2374,8 @@ export class MessageOrchestratorService {
             console.log(`[Orchestrator sendResponse] Sending image ${i + 1}/${images.length}: ${img.imageUrl}`);
 
             // FINAL CHECK right before network call to minimize race window
-            if (stopSignals.get(stopKey)) break;
+            const finalStopTime = stopSignals.get(stopKey);
+            if (finalStopTime && (Date.now() - finalStopTime < STOP_SIGNAL_EXPIRY_MS)) break;
 
             const imageResult = await AimeowClientService.sendImage(
               account.clientId,

@@ -992,10 +992,11 @@ export class WhatsAppAIChatService {
     }
 
     // ==================== (MOVED) SPECIFIC VEHICLE INQUIRY HANDLER ====================
-    // Priority 0.5: Check for explicit Vehicle ID (PM-PST-XXX)
-    const idMatchMatch = msg.match(/pm-[a-zA-Z0-9]+-\d+/i);
+    // Priority 0.5: Check for explicit Vehicle ID (PM-PST-XXX or PM PST-XXX)
+    const idMatchMatch = msg.match(/\b(pm[- ]?[a-zA-Z0-9]+-\d+)\b/i);
     if (idMatchMatch) {
-      const explicitId = idMatchMatch[0].toUpperCase();
+      // Normalize to standard PM-PST-XXX format for searching
+      const explicitId = idMatchMatch[0].toUpperCase().replace(" ", "-");
       console.log(`[SmartFallback] 🎯 Explicit ID detected: ${explicitId}`);
 
       let matchingVehicle = null;
@@ -1022,11 +1023,13 @@ export class WhatsAppAIChatService {
           customLeadClosing = "\n\nAda lagi yang ingin ditanyakan tentang unit ini kak? Atau mau saya bantu hitungkan simulasinya? 😊";
         }
 
-        // Handle "dokumen" / "surat" context
-        if (msg.includes("dokumen") || msg.includes("surat") || msg.includes("bpkb") || msg.includes("stnk")) {
+        // Handle "dokumen" / "surat" / "pajak" context
+        if (msg.includes("dokumen") || msg.includes("surat") || msg.includes("bpkb") || msg.includes("stnk") || msg.includes("pajak")) {
+          const isTaxOnly = msg.includes("pajak") && !msg.includes("dokumen") && !msg.includes("surat");
+
           return {
-            message: `Untuk unit *${name}* (${explicitId}), dokumen (BPKB, STNK, Faktur) sudah kami cek dan LENGKAP serta DIJAMIN keabsahannya kak. ✅\n\n` +
-              `Pajaknya juga masih hidup. Kakak rencana mau cek fisik unitnya kapan? Supaya kami siapkan surat-suratnya untuk diperlihatkan juga. 😊${customLeadClosing}`,
+            message: `Untuk unit *${name}* (${explicitId}), ${isTaxOnly ? 'pajaknya masih HIDUP dan panjang' : 'dokumennya (BPKB, STNK, Faktur) LENGKAP'} kak. ✅\n\n` +
+              `Semua berkas sudah kami cek keabsahannya dan dijamin aman. Kakak rencana mau cek unitnya kapan? Supaya kami siapkan surat-suratnya untuk Kakak lihat langsung. 😊${customLeadClosing}`,
             shouldEscalate: false
           };
         }
@@ -1057,7 +1060,7 @@ export class WhatsAppAIChatService {
     const yearMatch = msg.match(/\b(20\d{2}|19\d{2})\b/);
     const mentionedYear = yearMatch ? parseInt(yearMatch[1]) : null;
 
-    if ((mentionedBrand || mentionedModel) && !msg.match(/\b(foto|gambar|interior|eksterior|detail|mesin|body|dalam|luar)\b/i)) {
+    if ((mentionedBrand || mentionedModel) && !msg.match(/\b(foto|gambar|interior|eksterior|detail|mesin|body|dalam|luar|dokumen|surat|pajak|bpkb|stnk)\b/i)) {
       // Targeted search in DB for better accuracy
       console.log(`[SmartFallback] 🔍 Specific vehicle mentioned (Standard Inquiry): brand=${mentionedBrand}, model=${mentionedModel}, year=${mentionedYear}`);
 
@@ -1621,7 +1624,13 @@ export class WhatsAppAIChatService {
       };
     }
 
-    // Check if user explicitly asks for photos (contains "foto", "gambar", "mana fotonya" etc)
+    // Detect negation/refusal (AI 5.4)
+    const hasNegation = /\b(jangan|janganlah|nggak|gak|enggak|tidak|tdk|ga usah|ndak|bukan|bkn|ngga|stop|cukup|udah|sudah|dah|berhenti)\b/i.test(msg);
+
+    // AI 5.4 Logic: ONLY trigger auto-photo if:
+    // 1. Explicit photo keyword is present
+    // 2. Visual keyword is present AND NO explanation keyword is present
+    // 3. AND NO negation is present
     const hasPhotoKeyword = msg.includes("foto") || msg.includes("gambar") ||
       /mana.*(foto|gambar)/i.test(msg) ||
       msg.startsWith("mana ");
@@ -1629,14 +1638,11 @@ export class WhatsAppAIChatService {
     const hasVisualDetailKeyword = /\b(interior|eksterior|detail|mesin|dalam|body|kondisi|fisik)/i.test(msg);
     const hasExplanationKeyword = /\b(jelaskan|penjelasan|jabarkan|penjabaran|deskripsi|ceritakan|info|kabar|surat|dokumen)/i.test(msg);
 
-    // AI 5.4 Logic: ONLY trigger auto-photo if:
-    // 1. Explicit photo keyword is present
-    // 2. Visual keyword is present AND NO explanation keyword is present
-    const userExplicitlyAsksPhoto = hasPhotoKeyword || (hasVisualDetailKeyword && !hasExplanationKeyword);
+    const userExplicitlyAsksPhoto = (hasPhotoKeyword || (hasVisualDetailKeyword && !hasExplanationKeyword)) && !hasNegation;
 
-    console.log(`[SmartFallback] Photo check: msg="${msg}", isPhotoConfirmation=${isPhotoConfirmation}, hasPhotoKeyword=${hasPhotoKeyword}, hasVisualDetailKeyword=${hasVisualDetailKeyword}, hasExplanationKeyword=${hasExplanationKeyword} -> result=${userExplicitlyAsksPhoto}`);
+    console.log(`[SmartFallback] Photo check: msg="${msg}", isPhotoConfirmation=${isPhotoConfirmation}, hasNegation=${hasNegation}, hasExplanation=${hasExplanationKeyword}, hasil=${userExplicitlyAsksPhoto}`);
 
-    if (isPhotoConfirmation || userExplicitlyAsksPhoto) {
+    if ((isPhotoConfirmation && !hasNegation) || userExplicitlyAsksPhoto) {
       console.log(`[SmartFallback] 📸 Photo request detected: "${userMessage}"`);
 
       // Get the last AI message
@@ -2989,11 +2995,13 @@ export class WhatsAppAIChatService {
     console.log('[WhatsApp AI Chat] 📸 Fetching vehicles for query:', searchQuery);
     console.log('[WhatsApp AI Chat] Tenant ID:', tenantId);
 
-    // CRITICAL FIX: Check for explicit Vehicle ID first (PM-PST-XXX)
-    // If ID is found, query EXACTLY that vehicle
-    const idMatch = searchQuery.match(/pm-[a-zA-Z0-9]+-\d+/i);
+    // CRITICAL FIX: Check for explicit Vehicle ID first (PM-PST-XXX or PM PST-XXX)
+    // Supports various formats to be robust for WhatsApp users
+    const idRegExp = /\b(pm[- ]?[a-zA-Z0-9]+-\d+)\b/i;
+    const idMatch = searchQuery.match(idRegExp);
+
     if (idMatch) {
-      const explicitId = idMatch[0].toUpperCase();
+      const explicitId = idMatch[0].toUpperCase().replace(" ", "-");
       console.log(`[WhatsApp AI Chat] 🎯 Explicit ID detected in query: ${explicitId}`);
 
       const specificVehicle = await prisma.vehicle.findFirst({
@@ -3001,7 +3009,7 @@ export class WhatsAppAIChatService {
           tenantId,
           displayId: {
             equals: explicitId,
-            mode: 'insensitive', // Case-insensitive match for PM-PST-001 vs pm-pst-001
+            mode: 'insensitive',
           },
         },
         include: {
