@@ -1012,7 +1012,7 @@ export class MessageOrchestratorService {
                 console.log(`[Orchestrator] User is staff, processing edit request...`);
 
                 // Import and use VehicleEditService
-                const { VehicleEditService } = await import('./vehicle-edit.service');
+                const { VehicleEditService } = await import('../operations/vehicle-edit.service');
 
                 const editResult = await VehicleEditService.editVehicle({
                   vehicleId: result.editRequest.vehicleId,

@@ -656,7 +656,7 @@ export class WhatsAppReportService {
             return `⚠️ *SIMULASI KKB: ${vehicle?.make || ''} ${vehicle?.model || ''}*\n\nMaaf kak, harga unit ini (*${vehicleCode}*) belum tercatat di database kami. Silakan hubungi admin untuk info harga dan simulasi kreditnya ya! 🙏`;
         }
 
-        const { KKB_CONSTANTS } = await import('./prompts/knowledge-base');
+        const { KKB_CONSTANTS } = await import('../prompts/knowledge-base');
 
         const dpPercent = KKB_CONSTANTS.minDP;
         const dpAmount = Math.floor(price * (dpPercent / 100));

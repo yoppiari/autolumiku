@@ -2306,7 +2306,7 @@ export class StaffCommandService {
       }
 
       // Import VehicleEditService
-      const { VehicleEditService } = await import('./vehicle-edit.service');
+      const { VehicleEditService } = await import('../operations/vehicle-edit.service');
 
       const editResult = await VehicleEditService.editVehicle({
         vehicleId: params.vehicleId,
