@@ -1324,7 +1324,8 @@ export class WhatsAppAIChatService {
         personalizedGreeting = `${timeGreeting}! 👋\n\n`;
         personalizedGreeting += `Halo, selamat datang di ${tenantName}!\n\n`;
         personalizedGreeting += `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian dan mendapatkan informasi yang Anda butuhkan.\n\n`;
-        personalizedGreeting += `Ada yang bisa kami bantu?${vehiclePreview}`;
+        personalizedGreeting += `Boleh tau dengan Kakak siapa saya bicara? 😊\n`; // Changed to ask for name directly
+        personalizedGreeting += `${vehiclePreview}`;
       }
 
       return {
