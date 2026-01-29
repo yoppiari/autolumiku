@@ -47,6 +47,7 @@ export interface ReportData {
     totalLeads?: number;
     totalCustomers?: number;
     totalAllTimeCustomers?: number;
+    leadSources?: { source: string; count: number }[];
 
     // Trends (for charts)
     dailySales?: { date: Date; count: number; revenue: number }[];

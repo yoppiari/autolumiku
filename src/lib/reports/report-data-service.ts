@@ -382,9 +382,7 @@ export class ReportDataService {
                 data.totalLeads = leads;
                 data.totalCustomers = salesCustomers;
                 data.totalAllTimeCustomers = allTimeCustomers;
-
-                // Add source breakdown to management insights or custom field if needed
-                // For now we'll just use it in the text generator if we add a field for it
+                data.leadSources = sourceBreakdown.map(s => ({ source: s.source || 'Unknown', count: s._count }));
             } catch (e) {
                 console.warn('[Reports] Lead/Customer data fetch failed:', e);
             }

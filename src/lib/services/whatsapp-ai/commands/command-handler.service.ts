@@ -682,9 +682,15 @@ async function generateCustomerMetricsText(ctx: CommandContext): Promise<Command
 
   const conversion = data.totalLeads ? Math.round(((data.totalSales || 0) / data.totalLeads) * 100) : 0;
 
+  const sourcesText = (data.leadSources || [])
+    .sort((a, b) => b.count - a.count)
+    .map(s => `• ${s.source}: ${s.count}`)
+    .join('\n');
+
   const message = `👥 *METRIK PELANGGAN & LEAD*\n` +
     `_Data Real-time: ${formatDate(now)}_\n\n` +
     `🔥 *Leads Baru (30 hari)*: ${data.totalLeads || 0} prospek\n` +
+    (sourcesText ? `*Asal Leads:*\n${sourcesText}\n\n` : '') +
     `✅ *Total Pelanggan Baru*: ${data.totalCustomers || 0} terdaftar\n` +
     `📊 *Total Database Pelanggan*: ${data.totalAllTimeCustomers || 0} orang\n\n` +
     `🎯 *Lead Conversion Rate*: ${conversion}%\n` +
