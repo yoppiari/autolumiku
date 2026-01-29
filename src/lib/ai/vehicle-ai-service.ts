@@ -6,7 +6,7 @@
  */
 
 import { createZAIClient, ZAIClient } from './zai-client';
-import { popularVehicleService } from '../services/popular-vehicle-service';
+import { popularVehicleService } from '../services/inventory/popular-vehicle-service';
 import { prisma } from '../prisma';
 
 export interface VehicleInput {
@@ -472,7 +472,44 @@ export class VehicleAIService {
     return null;
   }
 
-  // Vision-based identification removed - text-only identification is used
+  /**
+   * Identify vehicle from photos using AI Vision (GLM-4.5V)
+   */
+  async identifyFromVision(input: VehicleInput): Promise<VehicleAIResult> {
+    try {
+      if (!input.photos || input.photos.length === 0) {
+        throw new Error('No photos provided for vision identification');
+      }
+
+      console.log(`[VehicleAI] Identifying from ${input.photos.length} photos...`);
+
+      const response = await this.getClient().generateVision({
+        systemPrompt: VEHICLE_IDENTIFICATION_PROMPT,
+        userPrompt: input.userDescription || 'Identify this vehicle and extract all specifications.',
+        images: input.photos,
+        temperature: 0.1,
+      });
+
+      // Check if response was truncated
+      if (response.finishReason === 'length') {
+        throw new Error('AI Vision response truncated');
+      }
+
+      // Parse JSON
+      let result = this.getClient().parseJSON<VehicleAIResult>(response.content);
+
+      // Validate
+      this.validateResult(result);
+
+      // Simple enrichment
+      return this.applyDefaultEnrichment(result);
+    } catch (error) {
+      console.error('Vehicle AI Vision error:', error);
+      throw new Error(
+        `Failed to identify vehicle from photos: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
 
   /**
    * Validate AI result has required fields
@@ -608,6 +645,8 @@ export const vehicleAIService = {
   },
   identifyFromText: (...args: Parameters<VehicleAIService['identifyFromText']>) =>
     getVehicleAIService().identifyFromText(...args),
+  identifyFromVision: (...args: Parameters<VehicleAIService['identifyFromVision']>) =>
+    getVehicleAIService().identifyFromVision(...args),
   regenerateDescription: (...args: Parameters<VehicleAIService['regenerateDescription']>) =>
     getVehicleAIService().regenerateDescription(...args),
   analyzePricing: (...args: Parameters<VehicleAIService['analyzePricing']>) =>

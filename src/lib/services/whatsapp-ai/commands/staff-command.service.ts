@@ -510,6 +510,13 @@ export class StaffCommandService {
       'analisis pelanggan': 'customer_metrics',
       'metrik operasional': 'operational_metrics',
       'efisiensi chat': 'operational_metrics',
+
+      // Menu / List
+      'report ada apa': 'report_menu',
+      'menu report': 'report_menu',
+      'list report': 'report_menu',
+      'daftar report': 'report_menu',
+      'pilihan report': 'report_menu',
     };
 
     for (const [key, value] of Object.entries(reportMap)) {

@@ -1320,46 +1320,50 @@ export class WhatsAppAIChatService {
       const budgetMatch = msg.match(/(\d+)\s*(jt|juta)/i);
       const budget = budgetMatch ? parseInt(budgetMatch[1]) * 1000000 : 150000000; // Default 150jt
 
-      // Filter for MPV/7-seater vehicles within budget
-      const mpvVehicles = vehicles.filter(v => {
-        const price = Number(v.price);
-        const isMPV = [
-          'Innova', 'Avanza', 'Xenia', 'Ertiga', 'Xpander', 'Rush', 'Terios',
-          'Grand Livina', 'Livina', 'Spin', 'Apv', 'Luxio',
-          'Pregio', 'Travello', 'Elf'
-        ].some(model =>
-          (v.model || '').toLowerCase().includes(model.toLowerCase()) ||
-          (v.make || '').toLowerCase().includes(model.toLowerCase())
-        );
+      // DYNAMIC AI SEARCH: Query database directly instead of checking local 'vehicles' array
+      try {
+        const mpvVehicles = await prisma.vehicle.findMany({
+          where: {
+            tenantId,
+            status: 'AVAILABLE',
+            price: { lte: BigInt(Math.floor(budget * 1.3)) }, // Allow 30% over budget, convert to BigInt
+            OR: [
+              // Search by Categories (Array check)
+              { categories: { has: 'MPV' } },
+              // Fallback to model names for common MPVs
+              { model: { in: ['Innova', 'Avanza', 'Xenia', 'Ertiga', 'Xpander', 'Rush', 'Terios', 'Livina', 'Mobilio', 'Calya', 'Sigra'], mode: 'insensitive' } }
+            ]
+          },
+          take: 5,
+          orderBy: { price: 'asc' }
+        });
 
-        return isMPV && price <= budget * 1.3; // Allow 30% over budget
-      });
+        if (mpvVehicles.length > 0) {
+          const list = WhatsAppAIChatService.formatVehicleListDetailed(mpvVehicles);
 
-      if (mpvVehicles.length > 0) {
-        const list = mpvVehicles.slice(0, 3).map(v => {
-          const priceJuta = Math.round(Number(v.price) / 1000000);
-          return `• ${v.make} ${v.model} ${v.year} - Rp ${priceJuta} juta (MPV)`;
-        }).join('\n');
-
-        return {
-          message: `Untuk keluarga dengan ${familySize} anak, rekomendasi saya MPV 7-seater ini cocok! 👨‍👩‍👧‍👦\n\n` +
-            `Kenapa MPV?\n` +
-            `• Kapasitas 7 penumpang, muat seluruh keluarga\n` +
-            `• Bagasi luas untuk bawaan anak-anak\n` +
-            `• Suspensi nyaman untuk perjalanan keluarga\n` +
-            `• Hemat bahan bakar\n\n` +
-            `Berikut pilihannya di budget sekitar Rp ${Math.round(budget / 1000000)} juta:\n\n${list}\n\n` +
-            `Mau info detail yang mana? 😊`,
-          shouldEscalate: false,
-        };
-      } else {
-        return {
-          message: `Untuk keluarga dengan ${familySize} anak, saya sarankan MPV 7-seater seperti Innova, Avanza, atau Xpander 👨‍👩‍👧‍👦\n\n` +
-            `Sayangnya belum ada stok MPV saat ini 😔\n\n` +
-            `Mau info jenis mobil lain yang ada? 😊`,
-          shouldEscalate: false,
-        };
+          return {
+            message: `Untuk keluarga dengan ${familySize} anak, rekomendasi saya MPV 7-seater ini cocok! 👨‍👩‍👧‍👦\n\n` +
+              `Kenapa MPV?\n` +
+              `• Kapasitas 7 penumpang, muat seluruh keluarga\n` +
+              `• Bagasi luas untuk bawaan anak-anak\n` +
+              `• Suspensi nyaman untuk perjalanan keluarga\n` +
+              `• Hemat bahan bakar\n\n` +
+              `Berikut pilihannya di budget sekitar Rp ${Math.round(budget / 1000000)} juta:\n\n${list}\n\n` +
+              `Mau info detail yang mana? 😊`,
+            shouldEscalate: false,
+          };
+        }
+      } catch (error) {
+        console.error('[SmartFallback] MPV Search Error:', error);
       }
+
+      // Fallback if search fails or no vehicles found
+      return {
+        message: `Untuk keluarga dengan ${familySize} anak, saya sarankan MPV 7-seater seperti Innova, Avanza, atau Xpander 👨‍👩‍👧‍👦\n\n` +
+          `Sayangnya belum ada stok MPV di budget tersebut saat ini 😔\n\n` +
+          `Mau info jenis mobil lain yang ada? 😊`,
+        shouldEscalate: false,
+      };
     }
 
     // ==================== APPRECIATION/ACKNOWLEDGMENT HANDLER ====================

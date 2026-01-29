@@ -16,7 +16,7 @@ export interface ZAIClientConfig {
 }
 
 export class ZAIClient {
-  private client: OpenAI;
+  public client: OpenAI;
   private textModel: string;
   private visionModel: string;
 

@@ -607,7 +607,7 @@ export class LeadService {
       await prisma.lead.update({
         where: { id: leadId },
         data: {
-          urgency: analysis.urgency, // Assuming urgency field exists
+          priority: analysis.urgency as any, // Map urgency to priority field
           // We might store the score/summary in a notes field or separate score field
           notes: analysis.summary ? `[AI Analysis] ${analysis.summary}` : undefined,
           ...(newStatus ? { status: newStatus } : {})

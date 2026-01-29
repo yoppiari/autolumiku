@@ -124,6 +124,10 @@ const STAFF_COMMAND_PATTERNS = {
     /(?:whatsapp\s*ai|performa\s*bot)/i,
     /(?:customer\s*metric|analisis\s*pelanggan)/i,
     /(?:operasional\s*metric|efisiensi\s*chat)/i,
+    // Report Menu / List
+    /(?:report\s*ada\s*apa(?:\s*saja)?)/i,
+    /(?:list|daftar|menu)\s*report/i,
+    /(?:pilihan|opsi)\s*report/i,
   ],
   edit_vehicle: [
     /^\/edit/i,                      // edit PM-PST-001 km 50000
@@ -131,7 +135,7 @@ const STAFF_COMMAND_PATTERNS = {
     /^rubah\s+/i,                    // rubah PM-PST-001 km 50000, rubah PM-PST-001 diesel
     /^ganti\s+/i,                    // ganti PM-PST-001 tahun 2018
     /^ubah\s+/i,                     // ubah PM-PST-001 matic, ubah ubah PM-PST-001 manual
-    /^update\s+(km|harga|tahun|warna|transmisi|bensin|diesel|cc)/i, // update km 50000
+    /^update\s+(km|harga|tahun|warna|transmisi|bensin|diesel|cc)/i, // update PM-PST-001 km 50000
   ],
 };
 
@@ -154,7 +158,7 @@ const CUSTOMER_PATTERNS = {
     /\b(bensin|diesel|solar|hybrid|electric)\b/i, // fuel type queries
     /\b(ada|ready)\s+(apa|unit|stok|stock|mobil)\s*(aja|saja)?\b/i, // "ada apa saja", "ready apa aja"
     /\b(daftar|list)\s+(unit|mobil|stock|stok)\b/i, // "daftar mobil"
-    /^report\s+(ada|apa)/i, // Handle user specific typo "report ada apa saja"
+    // REMOVED: report typo rule that was conflicting with staff command
   ],
   price_inquiry: [
     /\b(harga|price|berapa|biaya|cost)\b/i,

@@ -13,6 +13,9 @@ import { StorageService } from "@/lib/services/infrastructure/storage.service";
 import { UploadNotificationService } from "../utils/upload-notification.service";
 import { PlateDetectionService } from "@/lib/services/inventory/plate-detection.service";
 import { generateVehicleUrl } from "@/lib/utils/vehicle-slug";
+import { blogAIService, BlogCategory, BlogTone } from "@/lib/ai/blog-ai-service";
+import fs from "fs/promises";
+import path from "path";
 
 // In-memory lock to prevent race condition on concurrent vehicle creation
 const uploadLocks = new Map<string, number>();
@@ -193,10 +196,42 @@ export class WhatsAppVehicleUploadService {
       console.log('[WhatsApp Vehicle Upload] Formatted description:', userDescription);
 
       // 2. Call AI service to get SEO-optimized description and analysis
-      console.log('[WhatsApp Vehicle Upload] Calling AI for SEO description generation...');
-      const aiResult = await vehicleAIService.identifyFromText({
-        userDescription,
-      });
+      // NEW: Use identification from Vision if we have photos but missing model/year
+      let aiResult;
+      const needsVision = photoUrls.length > 0 && (!vehicleData.model || !vehicleData.year);
+
+      if (needsVision) {
+        console.log('[WhatsApp Vehicle Upload] 👁️ Using AI Vision for vehicle identification...');
+        try {
+          // Download first 2 photos for vision analysis (Base64)
+          const visionPhotos = await Promise.all(
+            photoUrls.slice(0, 2).map(async (url) => {
+              const buffer = await this.downloadPhoto(url);
+              return buffer ? buffer.toString('base64') : null;
+            })
+          );
+
+          const validBase64 = visionPhotos.filter(p => p !== null) as string[];
+
+          if (validBase64.length > 0) {
+            aiResult = await vehicleAIService.identifyFromVision({
+              userDescription,
+              photos: validBase64
+            });
+            console.log('[WhatsApp Vehicle Upload] ✅ AI Vision Success:', aiResult.make, aiResult.model);
+          }
+        } catch (visionError) {
+          console.error('[WhatsApp Vehicle Upload] ❌ AI Vision failed, falling back to text:', visionError);
+        }
+      }
+
+      // Fallback or skip to text-only if vision was not needed or failed
+      if (!aiResult) {
+        console.log('[WhatsApp Vehicle Upload] Calling AI for SEO description generation (Text-only)...');
+        aiResult = await vehicleAIService.identifyFromText({
+          userDescription,
+        });
+      }
 
       console.log('[WhatsApp Vehicle Upload] AI result received:');
       console.log('[WhatsApp Vehicle Upload] - AI Confidence:', aiResult.aiConfidence);
@@ -412,6 +447,47 @@ export class WhatsAppVehicleUploadService {
         }
       }
 
+      // 6.5. AUTO BLOG GENERATION (Agentic Activation)
+      let blogSlug = null;
+      try {
+        console.log('[WhatsApp Vehicle Upload] ✍️ Generating Auto Blog Post...');
+        const blogResult = await blogAIService.generateBlogPost({
+          category: 'FEATURE_REVIEW' as BlogCategory,
+          topic: `Review Lengkap ${vehicle.make} ${vehicle.model} ${vehicle.year} ${aiResult.variant || ""}`,
+          tone: 'PROFESSIONAL' as BlogTone,
+          targetLocation: tenant?.city || "Indonesia",
+          tenantName: tenant?.name || "Showroom",
+          includeVehicles: true,
+          vehicleIds: [vehicle.id]
+        });
+
+        const blogPost = await prisma.blogPost.create({
+          data: {
+            tenantId,
+            title: blogResult.title,
+            slug: blogResult.slug,
+            content: blogResult.content,
+            excerpt: blogResult.metaDescription,
+            metaDescription: blogResult.metaDescription,
+            focusKeyword: blogResult.keywords[0] || `${vehicle.make} ${vehicle.model} bekas`,
+            keywords: blogResult.keywords,
+            category: 'FEATURE_REVIEW',
+            tone: 'FORMAL',
+            aiGenerated: true,
+            status: 'PUBLISHED',
+            publishedAt: new Date(),
+            authorId: staff.id,
+            authorName: `${staff.firstName} ${staff.lastName || ""}`.trim(),
+            relatedVehicles: [vehicle.id],
+            seoScore: blogResult.seoScore,
+          }
+        });
+        blogSlug = blogPost.slug;
+        console.log('[WhatsApp Vehicle Upload] ✅ Auto Blog Created:', blogSlug);
+      } catch (blogErr) {
+        console.error('[WhatsApp Vehicle Upload] ❌ Auto Blog failed:', blogErr);
+      }
+
       // 7. Format success message
       const priceInJuta = Math.round(vehicleData.price / 1000000);
       // aiSuggestedPrice is in cents, convert to juta: /100 (to IDR) then /1000000 (to juta)
@@ -459,6 +535,10 @@ export class WhatsAppVehicleUploadService {
       if (priceDiffPercent > 10) {
         message += `💡 *Saran harga:* Rp ${aiPriceInJuta} Jt\n`;
         message += `${aiResult.priceAnalysis.recommendation}\n\n`;
+      }
+
+      if (blogSlug) {
+        message += `✍️ *Blog Post SEO Berhasil:* \nhttps://primamobil.id/blog/${blogSlug}\n\n`;
       }
 
       // Generate SEO-friendly URL

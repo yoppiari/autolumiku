@@ -89,9 +89,41 @@ export class WhatsAppReportService {
             case 'efisiensi_chat':
                 return await this.getOperationalMetrics(tenantId);
 
+            // ✅ Menu
+            case 'report_menu':
+            case 'menu_report':
+            case 'daftar_report':
+            case 'list_report':
+                return this.getReportMenu();
+
             default:
                 return "Maaf kak, jenis report tersebut belum tersedia. 🙏\n\nCoba ketik 'menu report' untuk lihat daftar laporan yang bisa saya buatkan.";
         }
+    }
+
+    /**
+     * Get list of available reports
+     */
+    private static getReportMenu(): string {
+        return `📊 *DAFTAR REPORT AVAILABLE*\n\n` +
+            `*1. Penjualan & Revenue:*\n` +
+            `• "Total Sales" (Ringkasan penjualan)\n` +
+            `• "Sales Summary" (Ringkasan cepat hari ini)\n` +
+            `• "Sales Trends" (Tren grafik penjualan)\n` +
+            `• "Metrik Penjualan" (KPI & konversi)\n\n` +
+
+            `*2. Stok & Inventory:*\n` +
+            `• "Total Inventory" (Ringkasan stok)\n` +
+            `• "Vehicle Listing" (Daftar semua mobil)\n` +
+            `• "Low Stock Alert" (Stok menipis)\n` +
+            `• "Average Price" (Analisis harga rata-rata)\n\n` +
+
+            `*3. Team & AI Performance:*\n` +
+            `• "Staff Performance" (Leaderboard sales)\n` +
+            `• "WhatsApp AI Analytics" (Performa bot)\n` +
+            `• "Customer Metrics" (Analisis profil pelanggan)\n\n` +
+
+            `_Ketik nama report di atas untuk melihat detailnya._`;
     }
 
     // ==================== SALES & REVENUE REPORTS ====================
@@ -611,7 +643,7 @@ export class WhatsAppReportService {
                     status: { not: 'DELETED' }
                 }
             });
-            
+
             // If specific vehicle ID requested but not found, return error message
             if (!vehicle) {
                 return `❌ *UNIT TIDAK DITEMUKAN*\n\nMaaf kak, unit dengan ID *${vehicleCode}* tidak ditemukan di database kami.\n\nSilakan cek kembali ID unitnya atau hubungi admin untuk info lebih lanjut ya! 🙏`;

@@ -16,6 +16,7 @@ import { StaffCommandService } from "../commands/staff-command.service";
 import { AIHealthMonitorService } from "../utils/ai-health-monitor.service";
 import { processCommand } from "../commands/command-handler.service";
 import { LeadService } from "@/lib/services/leads/lead-service";
+import { LeadAnalyzerService } from "../operations/lead-analyzer.service";
 
 // ==================== TYPES ====================
 
@@ -687,12 +688,21 @@ export class MessageOrchestratorService {
               intent: classification.intent,
               isStaff: classification.isStaff
             }).then(async (lead) => {
-              if (lead && lead.id && !conversation.leadId) {
-                console.log(`[Smart Leads] Linking conversation ${conversation.id} to new lead ${lead.id}`);
-                await prisma.whatsAppConversation.update({
-                  where: { id: conversation.id },
-                  data: { leadId: lead.id }
-                });
+              if (lead && lead.id) {
+                // Link conversation to lead if not already linked
+                if (!conversation.leadId) {
+                  console.log(`[Smart Leads] Linking conversation ${conversation.id} to new lead ${lead.id}`);
+                  await prisma.whatsAppConversation.update({
+                    where: { id: conversation.id },
+                    data: { leadId: lead.id }
+                  });
+                }
+
+                // TRIGGER LEAD ANALYZER (Agentic Activation)
+                // Analyze sentiment and update lead score/stage in background
+                console.log(`[Smart Leads] 🧠 Triggering Lead Sentiment Analysis for ${lead.id}...`);
+                LeadAnalyzerService.analyzeLead(lead.id, incoming.tenantId)
+                  .catch(err => console.error('[LeadAnalyzer] Background analysis failed:', err));
               }
             }).catch(err => console.error('[Smart Leads] Background capture failed:', err));
           } else {

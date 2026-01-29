@@ -91,7 +91,7 @@ export class LeadAnalyzerService {
         }
       `;
 
-            const response = await zai.chat.completions.create({
+            const response = await zai.client.chat.completions.create({
                 model: "glm-4", // Use standard model for analysis
                 messages: [
                     { role: "system", content: "You are a senior sales manager expert in lead scoring." },
