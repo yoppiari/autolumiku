@@ -992,6 +992,55 @@ export class WhatsAppAIChatService {
     }
 
     // ==================== (MOVED) SPECIFIC VEHICLE INQUIRY HANDLER ====================
+    // Priority 0.5: Check for explicit Vehicle ID (PM-PST-XXX)
+    const idMatchMatch = msg.match(/pm-[a-zA-Z0-9]+-\d+/i);
+    if (idMatchMatch) {
+      const explicitId = idMatchMatch[0].toUpperCase();
+      console.log(`[SmartFallback] 🎯 Explicit ID detected: ${explicitId}`);
+
+      let matchingVehicle = null;
+      try {
+        matchingVehicle = await prisma.vehicle.findFirst({
+          where: {
+            tenantId,
+            displayId: { equals: explicitId, mode: 'insensitive' as const }
+          },
+          select: { id: true, displayId: true, make: true, model: true, year: true, price: true, mileage: true, transmissionType: true, color: true, variant: true, fuelType: true },
+        });
+      } catch (e) {
+        matchingVehicle = vehicles.find(v => (v.displayId || "").toUpperCase() === explicitId);
+      }
+
+      if (matchingVehicle) {
+        const priceJuta = Math.round(Number(matchingVehicle.price) / 1000000);
+        const name = `${matchingVehicle.make} ${matchingVehicle.model}`;
+
+        let customLeadClosing = "";
+        if (!context?.customerName || context.customerName === "Pelanggan") {
+          customLeadClosing = "\n\nBoleh tau dengan Kakak siapa saya bicara? Supaya enak ngobrolnya 😊";
+        } else {
+          customLeadClosing = "\n\nAda lagi yang ingin ditanyakan tentang unit ini kak? Atau mau saya bantu hitungkan simulasinya? 😊";
+        }
+
+        // Handle "dokumen" / "surat" context
+        if (msg.includes("dokumen") || msg.includes("surat") || msg.includes("bpkb") || msg.includes("stnk")) {
+          return {
+            message: `Untuk unit *${name}* (${explicitId}), dokumen (BPKB, STNK, Faktur) sudah kami cek dan LENGKAP serta DIJAMIN keabsahannya kak. ✅\n\n` +
+              `Pajaknya juga masih hidup. Kakak rencana mau cek fisik unitnya kapan? Supaya kami siapkan surat-suratnya untuk diperlihatkan juga. 😊${customLeadClosing}`,
+            shouldEscalate: false
+          };
+        }
+
+        return {
+          message: `Yes kak, unit *${name} ${matchingVehicle.year}* (${explicitId}) ini MASIH AVAILABLE! 🔥\n\n` +
+            `• Harga: Rp ${priceJuta} Juta (Nego)\n` +
+            `• Kondisi: Terawat, siap pakai\n\n` +
+            `Unit ini salah satu favorit di sini. Mau saya kirimkan foto detailnya atau Kakak ada yang ingin ditanyakan? 😊${customLeadClosing}`,
+          shouldEscalate: false
+        };
+      }
+    }
+
     // Priority 1: Check if asking about specific vehicle (Brand, Model, Year)
     const vehicleBrands = ['toyota', 'honda', 'suzuki', 'daihatsu', 'mitsubishi', 'nissan', 'mazda', 'bmw', 'mercedes', 'hyundai', 'kia', 'wuling', 'ford', 'chery', 'lexus'];
     const vehicleModels = [
