@@ -126,14 +126,12 @@ const STAFF_COMMAND_PATTERNS = {
     /(?:operasional\s*metric|efisiensi\s*chat)/i,
   ],
   edit_vehicle: [
-    /^\/edit/i,                      // /edit PM-PST-001 km 50000
-    /^edit\s+/i,                     // edit km 50000
-    /^rubah\s+/i,                    // rubah km 50000, rubah bensin jadi diesel
-    /^ganti\s+/i,                    // ganti tahun ke 2018
-    /^ubah\s+/i,                     // ubah transmisi ke matic
+    /^\/edit/i,                      // edit PM-PST-001 km 50000
+    /^edit\s+/i,                     // edit km 50000 PM-PST-001
+    /^rubah\s+/i,                    // rubah PM-PST-001 km 50000, rubah PM-PST-001 diesel
+    /^ganti\s+/i,                    // ganti PM-PST-001 tahun 2018
+    /^ubah\s+/i,                     // ubah PM-PST-001 matic, ubah ubah PM-PST-001 manual
     /^update\s+(km|harga|tahun|warna|transmisi|bensin|diesel|cc)/i, // update km 50000
-    /^koreksi\s+/i,                  // koreksi data
-    /^perbaiki\s+/i,                 // perbaiki km
   ],
 };
 
