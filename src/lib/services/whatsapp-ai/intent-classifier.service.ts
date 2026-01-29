@@ -112,7 +112,6 @@ const STAFF_COMMAND_PATTERNS = {
     /(?:sales|penjualan)\s*report/i,
     /total\s*(?:sales|penjualan)/i,
     /total\s*(?:revenue|pendapatan)/i,
-    /kkb|simulasi\s*(?:kkb|kredit|angsuran)|credit|kredit\s*simulation|angsuran/i,
     /(?:tren|tren\s*penjualan|sales\s*trend)/i,
     /(?:metrik\s*penjualan|sales\s*metric|kpi)/i,
     /(?:sales\s*summary|ringkasan)/i,
@@ -161,7 +160,7 @@ const CUSTOMER_PATTERNS = {
   ],
   price_inquiry: [
     /\b(harga|price|berapa|biaya|cost)\b/i,
-    /\b(kredit|cash|dp|cicilan|angsuran)\b/i,
+    /\b(kredit|cash|dp|cicilan|angsuran|kkb)\b/i,
     /\b(diskon|promo|potongan)\b/i,
     /\b(range|kisaran|sekitar)\b.*\b(\d+)\s*(jt|juta|rb|ribu)/i, // price range
   ],
@@ -809,7 +808,6 @@ export class IntentClassifierService {
     }
 
     // 10. Check contact inquiry
-    // 10. Check contact inquiry
     if (CUSTOMER_PATTERNS.contact_inquiry.some((p) => p.test(message))) {
       maxConfidence = Math.max(maxConfidence, 0.95);
       if (maxConfidence === 0.95) {
@@ -826,6 +824,7 @@ export class IntentClassifierService {
       reason,
     };
   }
+
   /**
    * Extract entities dari message (helper untuk future enhancements)
    */
@@ -841,6 +840,9 @@ export class IntentClassifierService {
       "mitsubishi",
       "nissan",
       "mazda",
+      "bmw",
+      "mercy",
+      "audi",
     ];
     const detectedBrand = brands.find((brand) =>
       new RegExp(`\\b${brand}\\b`, "i").test(message)

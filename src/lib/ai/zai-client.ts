@@ -234,7 +234,7 @@ export class ZAIClient {
             type: "function",
             function: {
               name: "calculate_kkb_simulation",
-              description: "Menghitung simulasi kredit mobil (KKB) dengan estimasi angsuran. Panggil saat user tanya 'cicilan', 'kredit', 'angsuran', 'dp', atau simulasi.",
+              description: "Menghitung simulasi kredit mobil (KKB). Panggil saat user tanya 'cicilan' atau simulasi. PENTING: Jangan panggil jika user hanya tanya 'syarat' atau dokumen tanpa minta hitungan baru.",
               parameters: {
                 type: "object",
                 properties: {
