@@ -2017,7 +2017,10 @@ export class WhatsAppAIChatService {
 
         if (dpPercentages.length > 1) {
           // Comparative Mode
-          fullSimulationText = `${timeGreeting}! 👋\n\nTentu kak! Ini perbandingan simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}* ${targetVehicle.displayId ? `| ${targetVehicle.displayId}` : ''}:\n\n`;
+          // Only add greeting if new conversation
+          const prefix = (messageHistory.length <= 2) ? `${timeGreeting}! 👋\n\n` : "";
+
+          fullSimulationText = `${prefix}Tentu kak! Ini perbandingan simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}* ${targetVehicle.displayId ? `| ${targetVehicle.displayId}` : ''}:\n\n`;
           fullSimulationText += `💰 Harga Mobil: Rp ${Math.round(Number(targetVehicle.price)).toLocaleString('id-ID')}\n\n`;
 
           dpPercentages.forEach((dp, index) => {
@@ -2046,7 +2049,11 @@ export class WhatsAppAIChatService {
             null,
             dpPercentages[0]
           );
-          fullSimulationText = `${timeGreeting}! 👋\n\nTentu kak! Ini estimasi simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}* ${targetVehicle.displayId ? `| ${targetVehicle.displayId}` : ''}:\n\n` +
+
+          // Only add greeting if new conversation
+          const prefix = (messageHistory.length <= 2) ? `${timeGreeting}! 👋\n\n` : "";
+
+          fullSimulationText = `${prefix}Tentu kak! Ini estimasi simulasi kredit untuk unit *${targetVehicle.make} ${targetVehicle.model} ${targetVehicle.year}* ${targetVehicle.displayId ? `| ${targetVehicle.displayId}` : ''}:\n\n` +
             simulation + `\n\n`;
         }
 
