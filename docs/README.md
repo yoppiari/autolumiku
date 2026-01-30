@@ -29,10 +29,11 @@
 - [Backup & Disaster Recovery](backup-disaster-recovery.md) - Backup procedures
 - [Production Readiness](LESSONS_LEARNED.md#production-readiness-score) - Current score: 56/100
 
-### ✨ Features
+### ✨ Features & Updates
+- [Changelogs Index](changelogs/README.md) 🆕 - Recent system updates & bug fixes
 - [Photo Upload Feature](features/PHOTO-UPLOAD-FEATURE.md) - Vehicle photo upload
-- [WhatsApp LLM Integration](README_WHATSAPP_LLM.md) - AI-powered WhatsApp bot
-- [WhatsApp Architecture](WHATSAPP_ARCHITECTURE_DIAGRAM.md) - WhatsApp system design
+- [WhatsApp LLM Integration](whatsapp/README_WHATSAPP_LLM.md) - AI-powered WhatsApp bot
+- [WhatsApp Architecture](whatsapp/WHATSAPP_ARCHITECTURE_DIAGRAM.md) - WhatsApp system design
 
 ---
 
@@ -52,6 +53,22 @@ docs/
 │
 ├── features/                           # Feature specifications
 │   └── PHOTO-UPLOAD-FEATURE.md        # Photo upload feature
+│
+├── changelogs/                         # Recent updates & fixes
+│   ├── README.md                      # Changelog index
+│   └── ...                            # Detailed fix records
+│
+├── whatsapp/                           # WhatsApp AI integration
+│   ├── README.md                      # WhatsApp index
+│   └── ...                            # Architecture & flow analysis
+│
+├── ux/                                 # UX & Design specifications
+│   └── ...                            # Specifications & themes
+│
+├── product/                            # Product management
+│   ├── prd.md                         # Product Requirements Document
+│   ├── epics.md                       # Project Epics
+│   └── backlog.md                     # Product backlog
 │
 ├── archive/                            # Historical documentation
 │   ├── IMPLEMENTATION_AUDIT.md        # Nov 21 audit (historical)
@@ -134,8 +151,8 @@ See [DEPLOYMENT_CHECKLIST.md:261-272](DEPLOYMENT_CHECKLIST.md) for details.
 
 ### For Product/Business
 1. Review [Product Brief](product-brief-autolumiku-2025-11-19.md)
-2. Check [PRD](prd.md)
-3. Review [Epics](epics.md)
+2. Check [PRD](product/prd.md)
+3. Review [Epics](product/epics.md)
 4. See [Multi-Tenant Domains](MULTI-TENANT-DOMAINS.md) for SEO strategy
 
 ---
