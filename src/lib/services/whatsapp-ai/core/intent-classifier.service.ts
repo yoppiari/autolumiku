@@ -881,6 +881,21 @@ export class IntentClassifierService {
       entities.brand = detectedBrand;
     }
 
+    // Extract vehicle models
+    const models = [
+      "avanza", "xenia", "brio", "jazz", "ertiga", "terios", "rush", "innova",
+      "fortuner", "pajero", "alphard", "civic", "accord", "crv", "hrv", "brv",
+      "mobilio", "freed", "city", "yaris", "vios", "camry", "corolla", "raize",
+      "rocky", "sigra", "ayla", "agya", "calya", "wuling", "confero", "almaz",
+      "cortez", "xpander", "livina", "serena", "grand"
+    ];
+    const detectedModel = models.find((model) =>
+      new RegExp(`\\b${model}\\b`, "i").test(message)
+    );
+    if (detectedModel) {
+      entities.model = detectedModel;
+    }
+
     // Extract price mentions
     const priceMatch = message.match(/(\d{2,3})\s*(juta|jt)/i);
     if (priceMatch) {

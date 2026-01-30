@@ -406,7 +406,9 @@ export class LeadService {
     message,
     vehicleId,
     intent,
-    isStaff = false
+    isStaff = false,
+    interestedIn,
+    budgetRange
   }: {
     tenantId: string;
     customerPhone: string;
@@ -415,6 +417,8 @@ export class LeadService {
     vehicleId?: string;
     intent?: string;
     isStaff?: boolean;
+    interestedIn?: string;
+    budgetRange?: string;
   }) {
     try {
       // CRITICAL: Double-check staff status by phone lookup
@@ -496,7 +500,9 @@ export class LeadService {
           // If we have a name now and didn't before, update it
           ...(customerName && (!lead.name || lead.name === cleanPhone || lead.name === 'Unknown') ? { name: customerName } : {}),
           // If customer asks about a specific vehicle, update interest
-          ...(vehicleId ? { vehicleId, interestedIn: vehicleId } : {}),
+          ...(vehicleId ? { vehicleId, interestedIn: vehicleId } : (interestedIn ? { interestedIn } : {})),
+          // Update budget range if provided
+          ...(budgetRange ? { budgetRange } : {}),
         };
 
         // Only update status if it's an "upgrade" (e.g. dont set CONTACTED back to NEW)
@@ -534,7 +540,7 @@ export class LeadService {
           !isPhoneNumber && // NEW: Reject if name is actually a phone number
           customerName.trim().length > 2; // At least 3 characters
 
-        const hasInterest = !!vehicleId || (intent && (intent.includes('price') || intent.includes('stock') || intent.includes('credit')));
+        const hasInterest = !!vehicleId || !!interestedIn || (intent && (intent.includes('price') || intent.includes('stock') || intent.includes('credit') || intent.includes('vehicle')));
 
         // STRICT: BOTH name AND interest required (changed from OR to AND)
         if (!isNameValid || !hasInterest) {
@@ -559,7 +565,8 @@ export class LeadService {
             status: 'NEW',
             priority: 'MEDIUM',
             vehicleId,
-            interestedIn: vehicleId,
+            interestedIn: vehicleId || interestedIn,
+            budgetRange,
             lastContactAt: new Date(),
           }
         });

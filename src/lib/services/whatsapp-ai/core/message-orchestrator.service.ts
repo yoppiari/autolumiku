@@ -702,13 +702,23 @@ export class MessageOrchestratorService {
 
           // Only proceed if ACTIVE and AUTO_REPLY are enabled
           if (settings?.isActive && settings?.autoReply) {
+            // Extract interest info from entities
+            const entities = classification.entities || {};
+            let interestedIn = undefined;
+            if (entities.brand || entities.model) {
+              interestedIn = [entities.brand, entities.model].filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+            }
+            const budgetRange = entities.price ? `< Rp ${(entities.price / 1000000).toFixed(0)} Juta` : undefined;
+
             LeadService.createOrUpdateFromWhatsApp({
               tenantId: incoming.tenantId,
               customerPhone: normalizedPhone,
               customerName: incoming.customerName,
               message: incoming.message,
               intent: classification.intent,
-              isStaff: classification.isStaff
+              isStaff: classification.isStaff,
+              interestedIn,
+              budgetRange
             }).then(async (lead) => {
               if (lead && lead.id) {
                 // Link conversation to lead if not already linked
