@@ -1424,15 +1424,15 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     // ==================== LOCATION & CONTACT INQUIRY HANDLER ====================
     // Detect if user is asking for showroom location or contact info
     const locationPatterns = [
-      /\b(lokasi|alamat|address|dimana|di mana|where)\b.*\b(showroom|toko|kantor|tempat|outlet|cabang)\b/i,
-      /\b(showroom|toko|kantor|tempat|outlet|cabang)\b.*\b(lokasi|alamat|dimana|di mana|where|ada|berada)\b/i,
-      /^(dimana|di mana|where|alamat|lokasi)\b/i,
-      /\b(maps|google maps|waze|gmaps|peta)\b/i,
+      /(lokasi|alamat|dimana|di mana|where).*(showroom|toko|kantor|tempat|outlet|cabang)/i,
+      /(showroom|toko|kantor|tempat|outlet|cabang).*(lokasi|alamat|dimana|di mana|where|ada|berada)/i,
+      /^(dimana|di mana|where|alamat|lokasi)/i,
+      /(maps|google maps|waze|gmaps|peta)/i,
     ];
 
     const contactPatterns = [
-      /\b(nomer|nomor|no|wa|whatsapp|kontak|contact|telp|telepon|phone)\b.*\b(sales|admin|marketing|staff|hubungi|hubungin|calling|call)\b/i,
-      /\b(sales|admin|marketing|staff)\b.*\b(siapa|mana|nomer|nomor|no|wa|kontak|hubungin|ada)\b/i,
+      /(nomer|nomor|no|wa|whatsapp|kontak|contact|telp|telepon|phone).*(sales|admin|marketing|staff|hubungi|hubungin|calling|call)/i,
+      /(sales|admin|marketing|staff).*(siapa|mana|nomer|nomor|no|wa|kontak|hubungin|ada)/i,
       /^(minta|kirim|boleh)\s+(nomer|nomor|no|wa|kontak|sales|admin)/i,
     ];
 
