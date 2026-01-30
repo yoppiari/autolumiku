@@ -1913,8 +1913,15 @@ export class StaffCommandService {
     message += `Unit Baru: +${newVehicles} unit\n\n`;
 
     message += `*Ringkasan Status:*\n`;
+
+    // Specifically format status summary as requested
+    const available = vehiclesByStatus.find(s => s.status === 'AVAILABLE')?._count || 0;
+    message += `✅ AVAILABLE: ${available} unit\n`;
+
+    // Add other statuses if they exist and aren't 0
     vehiclesByStatus.forEach((s) => {
-      const emoji = s.status === "AVAILABLE" ? "✅" : s.status === "BOOKED" ? "🔒" : s.status === "SOLD" ? "💰" : "🗑️";
+      if (s.status === 'AVAILABLE') return; // Already handled
+      const emoji = s.status === "BOOKED" ? "🔒" : s.status === "SOLD" ? "💰" : "🗑️";
       message += `${emoji} ${s.status}: ${s._count} unit\n`;
     });
 
@@ -1922,7 +1929,7 @@ export class StaffCommandService {
     message += `Total Leads: ${totalLeads}\n`;
     message += `Leads Baru: +${newLeads} 🔥\n\n`;
 
-    message += `Untuk laporan detail dalam format PDF, silakan ketik: "sales report pdf" atau "inventory report pdf".`;
+    message += `Untuk laporan detail dalam format PDF, silakan ketik: "sales report pdf" atau "inventory report pdf". (Fitur PDF dihidden, karena belum dibutuhkan owner. Dan Staff tidak perlu tool report owner). Staff hanya bisa mengakses Tool staff saja, bukan tool owner/ admin.`;
 
     return {
       success: true,
