@@ -224,6 +224,14 @@ const CUSTOMER_PATTERNS = {
     /^(tidak\s+ada|ga\s+ada|gak\s+ada|cuma\s+itu)$/i,
     /^(sampai\s+jumpa|bye|dadah|see\s+you)$/i,
   ],
+  // Location/Showroom inquiry
+  location_inquiry: [
+    /\b(lokasi|alamat|address|dimana|di mana|where)\b.*\b(showroom|toko|kantor|tempat|outlet|cabang)\b/i,
+    /\b(showroom|toko|kantor|tempat|outlet|cabang)\b.*\b(lokasi|alamat|dimana|di mana|where|ada|berada)\b/i,
+    /^(dimana|di mana|where|alamat|lokasi)\b/i, // Starts with location question
+    /\b(cara|route|rute|arah|jalan)\b.*\b(ke|menuju|sampai)\b.*\b(showroom|toko|kantor|tempat)\b/i,
+    /\b(maps|google maps|waze|gmaps|peta)\b/i,
+  ],
   contact_inquiry: [
     /\b(nomer|nomor|no|wa|whatsapp|kontak|contact|telp|telepon|phone)\b.*\b(sales|admin|marketing|staff|hubungi|hubungin|calling|call)\b/i,
     /\b(nomer|nomor|no|wa|whatsapp|kontak|telp|telepon|phone)\b\s*(sales|admin|marketing|staff|nya)?$/i,
@@ -790,7 +798,27 @@ export class IntentClassifierService {
       };
     }
 
-    // 6. Check greeting
+    // 6. Check contact inquiry (HIGH PRIORITY - before vehicle inquiry)
+    // This ensures "Salesnya siapa?" is correctly classified as contact inquiry, not vehicle inquiry
+    if (CUSTOMER_PATTERNS.contact_inquiry.some((p) => p.test(message))) {
+      maxConfidence = Math.max(maxConfidence, 0.95);
+      if (maxConfidence === 0.95) {
+        detectedIntent = "customer_contact_inquiry";
+        reason = "Detected contact inquiry (asking for sales/phone)";
+      }
+    }
+
+    // 7. Check location inquiry (HIGH PRIORITY - before vehicle inquiry)
+    // This ensures "Lokasi showroom dimana?" is correctly classified as location inquiry, not vehicle inquiry
+    if (CUSTOMER_PATTERNS.location_inquiry.some((p) => p.test(message))) {
+      maxConfidence = Math.max(maxConfidence, 0.95);
+      if (maxConfidence === 0.95) {
+        detectedIntent = "customer_general_question"; // Use general_question for now, AI will handle location info
+        reason = "Detected location inquiry (asking for showroom location)";
+      }
+    }
+
+    // 8. Check greeting
     // Reduced confidence to 0.7 to allow specific inquiries to take precedence
     if (CUSTOMER_PATTERNS.greeting.some((p) => p.test(message))) {
       maxConfidence = Math.max(maxConfidence, 0.7);
@@ -800,7 +828,7 @@ export class IntentClassifierService {
       }
     }
 
-    // 7. Check vehicle inquiry
+    // 9. Check vehicle inquiry
     // Increased confidence to 0.9
     if (CUSTOMER_PATTERNS.vehicle_inquiry.some((p) => p.test(message))) {
       maxConfidence = Math.max(maxConfidence, 0.9);
@@ -810,22 +838,13 @@ export class IntentClassifierService {
       }
     }
 
-    // 8. Check price inquiry
+    // 10. Check price inquiry
     // Increased confidence to 0.9
     if (CUSTOMER_PATTERNS.price_inquiry.some((p) => p.test(message))) {
       maxConfidence = Math.max(maxConfidence, 0.9);
       if (maxConfidence === 0.9) {
         detectedIntent = "customer_price_inquiry";
         reason = "Detected price inquiry keywords";
-      }
-    }
-
-    // 10. Check contact inquiry
-    if (CUSTOMER_PATTERNS.contact_inquiry.some((p) => p.test(message))) {
-      maxConfidence = Math.max(maxConfidence, 0.95);
-      if (maxConfidence === 0.95) {
-        detectedIntent = "customer_contact_inquiry";
-        reason = "Detected contact inquiry (asking for sales/phone)";
       }
     }
 
