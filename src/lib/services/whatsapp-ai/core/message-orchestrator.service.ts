@@ -139,10 +139,13 @@ export class MessageOrchestratorService {
 
     // CHECK FOR STOP/CANCEL COMMANDS (Priority High)
     // Stops any ongoing operations like bulk photo sending
-    // "stop"/"berhenti" match anywhere
-    const stopPatterns = /(?:^|\b)(stop|berhenti|cukup|sudah|udah|selesai|jangan|gak\s*usah|nggak\s*usah|ga\s*usah|gak\s*butuh|ga\s*butuh|nggak\s*butuh|jangan\s*kirim|stop\s*foto)\b/i;
-    const normalizedMsg = (incoming.message || "").trim();
-    if (stopPatterns.test(normalizedMsg)) {
+    // Optimized strict pattern: matches exact words OR specific command phrases
+    const stopPatterns = /^(stop|berhenti|cukup|selesai|batalkan|cancel)$|(?:\b)(stop\s+(foto|spam|kirim|unit)|jangan\s+kirim|gak\s*usah\s*kirim|berhenti\s*kirim|cukup\s*dulu)\b/i;
+
+    // Check if message matches stop pattern
+    const isStopCommand = stopPatterns.test(incoming.message.trim());
+
+    if (isStopCommand) {
       console.log(`[Orchestrator] 🛑 STOP command detected from ${incoming.from}`);
       const stopKey = `${incoming.accountId}:${incoming.from}`;
       stopSignals.set(stopKey, Date.now());
