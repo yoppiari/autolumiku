@@ -962,12 +962,27 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
     // Get tenant info
     let tenantName = "kami";
+    let tenantAddress = "";
+    let tenantContact = "";
+    let tenantWA = "";
     try {
       const tenant = await prisma.tenant.findUnique({
         where: { id: tenantId },
-        select: { name: true }
+        select: {
+          name: true,
+          address: true,
+          city: true,
+          province: true,
+          whatsappNumber: true,
+          phoneNumber: true
+        }
       });
-      if (tenant) tenantName = tenant.name;
+      if (tenant) {
+        tenantName = tenant.name;
+        tenantAddress = [tenant.address, tenant.city, tenant.province].filter(Boolean).join(", ");
+        tenantWA = tenant.whatsappNumber || "";
+        tenantContact = tenant.phoneNumber || tenant.whatsappNumber || "";
+      }
     } catch (e) { /* ignore */ }
 
     // Get available vehicles for context
@@ -1402,6 +1417,44 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
       return {
         message: featureResponse,
+        shouldEscalate: false,
+      };
+    }
+
+    // ==================== LOCATION & CONTACT INQUIRY HANDLER ====================
+    // Detect if user is asking for showroom location or contact info
+    const locationPatterns = [
+      /\b(lokasi|alamat|address|dimana|di mana|where)\b.*\b(showroom|toko|kantor|tempat|outlet|cabang)\b/i,
+      /\b(showroom|toko|kantor|tempat|outlet|cabang)\b.*\b(lokasi|alamat|dimana|di mana|where|ada|berada)\b/i,
+      /^(dimana|di mana|where|alamat|lokasi)\b/i,
+      /\b(maps|google maps|waze|gmaps|peta)\b/i,
+    ];
+
+    const contactPatterns = [
+      /\b(nomer|nomor|no|wa|whatsapp|kontak|contact|telp|telepon|phone)\b.*\b(sales|admin|marketing|staff|hubungi|hubungin|calling|call)\b/i,
+      /\b(sales|admin|marketing|staff)\b.*\b(siapa|mana|nomer|nomor|no|wa|kontak|hubungin|ada)\b/i,
+      /^(minta|kirim|boleh)\s+(nomer|nomor|no|wa|kontak|sales|admin)/i,
+    ];
+
+    const isLocationInquiry = locationPatterns.some(p => p.test(msg));
+    const isContactInquiry = contactPatterns.some(p => p.test(msg));
+
+    if (isLocationInquiry) {
+      console.log(`[SmartFallback] 📍 Location inquiry detected: "${msg}"`);
+      return {
+        message: `${timeGreeting}, Kak! 👋\n\nShowroom **${tenantName}** berlokasi di:\n📍 ${tenantAddress || 'Alamat sedang diperbarui'}\n\n` +
+          `Kakak bisa klik link Google Maps ini untuk rute lengkapnya: https://maps.google.com/?q=${encodeURIComponent(tenantAddress || tenantName)}\n\n` +
+          `Ada rencana mau mampir hari ini atau besok kak? 😊`,
+        shouldEscalate: false,
+      };
+    }
+
+    if (isContactInquiry) {
+      console.log(`[SmartFallback] 📞 Contact inquiry detected: "${msg}"`);
+      return {
+        message: `${timeGreeting}, Kak! 👋\n\nUntuk info lebih lanjut atau konsultasi unit, Kakak bisa hubungi tim sales kami di nomor berikut:\n` +
+          `📱 WhatsApp: ${tenantContact || 'Nomor sedang disiapkan'}\n\n` +
+          `Mau saya bantu carikan unit spesifik dulu di sini kak? 😊`,
         shouldEscalate: false,
       };
     }
