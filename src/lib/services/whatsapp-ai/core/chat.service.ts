@@ -1141,6 +1141,42 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           };
         }
 
+        // Handle Interior Context - Fallback Logic
+        if (msg.match(/\b(interior|dalam|dalem|jok|dashboard|kabin|setir)\b/i)) {
+          return {
+            message: `Untuk bagian **INTERIOR** unit *${name}* (${explicitId}) ini kondisinya masih sangat terawat kak! ✨\n\n` +
+              `• Jok & Dashboard: Masih orisinil, bersih, dan tidak ada sobek/retak.\n` +
+              `• AC & Kelistrikan: Berfungsi normal dan dingin.\n` +
+              `• Aroma kabin: Segar bebas bau rokok.\n\n` +
+              `Mau saya kirimkan foto-foto detail bagian dalamnya? 📸`,
+            shouldEscalate: false
+          };
+        }
+
+        // Handle Exterior Context - Fallback Logic
+        if (msg.match(/\b(eksterior|exterior|luar|body|bodi|cat|lecet|mulus)\b/i)) {
+          return {
+            message: `Untuk bagian **EKSTERIOR** unit *${name}* (${explicitId}) ini masih sangat mulus kak! ✨\n\n` +
+              `• Body & Cat: Kaleng (bukan dempulan), cat masih kinclong.\n` +
+              `• Tulang-tulang: Aman jaya, bebas bekas tabrak/banjir.\n` +
+              `• Ban & Velg: Ban masih tebal, velg orisinil/racing (sesuai foto).\n\n` +
+              `Mau saya kirimkan foto detail sekeliling body-nya? 📸`,
+            shouldEscalate: false
+          };
+        }
+
+        // Handle Engine/Mesin Context - Fallback Logic
+        if (msg.match(/\b(mesin|engine|kap|suara)\b/i)) {
+          return {
+            message: `Untuk kondisi **MESIN** unit *${name}* (${explicitId}) ini sangat prima kak! ⚙️\n\n` +
+              `• Suara mesin: Halus, tidak ada bunyi aneh.\n` +
+              `• Oli & Cairan: Aman tidak ada rembes.\n` +
+              `• Performa: Responsif dan siap luar kota.\n\n` +
+              `Boleh banget kalau Kakak mau datang untuk test drive dan cek mesin langsung lho! Kapan ada waktu luang? 😊`,
+            shouldEscalate: false
+          };
+        }
+
         return {
           message: `Siap kak, unit *${name} ${matchingVehicle.year}* (${explicitId}) ini MASIH READY! 🔥\n\n` +
             `• Harga: Rp ${priceJuta} Juta (Nego)\n` +
