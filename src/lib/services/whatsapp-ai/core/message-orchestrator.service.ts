@@ -847,7 +847,8 @@ export class MessageOrchestratorService {
           classification.intent,
           incoming.message,
           true, // isStaff
-          staffInfo as any
+          staffInfo as any,
+          classification.entities // Pass entities (aspect)
         );
         responseMessage = result.message;
         escalated = result.escalated;
@@ -866,7 +867,8 @@ export class MessageOrchestratorService {
           classification.intent,
           incoming.message,
           false, // isStaff = false (since this block is for customers)
-          undefined   // staffInfo
+          undefined,   // staffInfo
+          classification.entities // Pass entities (aspect)
         );
 
         responseMessage = result.message;
@@ -885,7 +887,8 @@ export class MessageOrchestratorService {
           classification.intent,
           incoming.message,
           classification.isStaff, // Preserve staff status
-          undefined
+          undefined,
+          classification.entities // Pass entities (aspect)
         );
 
         responseMessage = result.message;
@@ -918,7 +921,8 @@ export class MessageOrchestratorService {
               classification.intent,
               incoming.message,
               !!isActuallyStaff,
-              staffInfo as any
+              staffInfo as any,
+              classification.entities // Pass entities (aspect)
             );
             responseMessage = result.message;
             escalated = result.escalated;
@@ -1994,7 +1998,8 @@ export class MessageOrchestratorService {
     intent: MessageIntent,
     message: string,
     isStaff: boolean = false,
-    staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string }
+    staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string },
+    intentEntities?: Record<string, any> // New parameter for entities (aspect)
   ): Promise<{
     message: string;
     escalated: boolean;
@@ -2160,6 +2165,7 @@ export class MessageOrchestratorService {
           staffInfo: enhancedStaffInfo,
           isEscalated, // Escalated conversations get faster, more direct responses
           leadInfo,
+          intentEntities, // Pass entities to context
         },
         message
       );

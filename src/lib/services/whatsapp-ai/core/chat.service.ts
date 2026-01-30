@@ -39,6 +39,7 @@ export interface ChatContext {
     role: "user" | "assistant";
     content: string;
   }>;
+  intentEntities?: Record<string, any>; // Extracted entities from intent (e.g. aspect: interior)
   isStaff?: boolean;
   staffInfo?: {
     firstName?: string;
@@ -328,7 +329,8 @@ export class WhatsAppAIChatService {
           context.intent,
           senderInfo,
           customerTone, // Pass tone result
-          context.leadInfo // Pass CRM Lead Info
+          context.leadInfo, // Pass CRM Lead Info
+          context.intentEntities // Pass entities
         );
 
         // --- SPECIFIC ROLE INJECTION ---
@@ -2376,7 +2378,8 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     intent: MessageIntent,
     senderInfo?: { isStaff: boolean; staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string }; customerPhone: string; isEscalated?: boolean },
     customerTone: 'CUEK' | 'NORMAL' | 'AKTIF' = 'NORMAL',
-    leadInfo?: { id: string; name: string; status: string; interestedIn?: string; budgetRange?: string; location?: string; } | null
+    leadInfo?: { id: string; name: string; status: string; interestedIn?: string; budgetRange?: string; location?: string; } | null,
+    intentEntities?: Record<string, any>
   ): Promise<string> {
     // Get current time in Indonesia (WIB - UTC+7)
     const now = new Date();
@@ -2478,6 +2481,23 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       systemPrompt += `- Customer ini "AKTIF" dan antusias.\n- JAWABAN LEBIH DETAIL & INTERAKTIF.\n- GUNAKAN EMOJI yang cheerful (😊✨🚗).\n- Berikan apresiasi atas pertanyaannya.`;
     } else {
       systemPrompt += `- Customer "NORMAL".\n- Jawab dengan ramah, standar, dan profesional.\n- Gunakan emoji secukupnya.`;
+    }
+
+    // 7b. SPECIFIC ASPECT FOCUS (Interior/Exterior)
+    if (intentEntities?.aspect) {
+      const aspectMap: Record<string, string> = {
+        'interior': 'INTERIOR (Dalam Kabin)',
+        'exterior': 'EKSTERIOR (Tampilan Luar)',
+        'engine': 'MESIN & KAP',
+        'tires': 'BAN & VELG'
+      };
+      const aspectLabel = aspectMap[intentEntities.aspect] || intentEntities.aspect.toUpperCase();
+
+      systemPrompt += `\n\n🎯 FOKUS VISUAL: User secara spesifik menanyakan tentang bagian "${aspectLabel}".\n`;
+      systemPrompt += `INSTRUKSI KHUSUS:\n`;
+      systemPrompt += `1. JANGAN hanya bilang "ada" atau "ready". JELASKAN kondisi ${intentEntities.aspect} tersebut secara spesifik (misal: "Jok masih orisinil", "Cat mulus bebas baret").\n`;
+      systemPrompt += `2. WAJIB Tawarkan untuk mengirim FOTO KHUSUS bagian ${intentEntities.aspect}.\n`;
+      systemPrompt += `3. Contoh: "Untuk interiornya masih sangat rapi kak, jok original fabric tidak ada sobek. Mau saya kirimkan foto detail dashboard dan jok-nya?"\n`;
     }
 
     // 8. DYNAMIC INVENTORY CONTEXT

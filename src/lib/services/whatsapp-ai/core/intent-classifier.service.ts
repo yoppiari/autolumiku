@@ -264,6 +264,13 @@ const CUSTOMER_PATTERNS = {
     /\b(kamu|anda|u)\s+(robot|manusia|orang|mesin|program|asisten)\b/i,
     /\b(halusinasi|fake|palsu|bohong|nyata|asli)\b/i,
   ],
+  // New: Specific aspect patterns (interior/exterior)
+  specific_aspect: [
+    /\b(interior|dalam|dalem|kabin|dashboard|jok|kursi|setir)\b/i,
+    /\b(exterior|eksterior|luar|body|bodi|cat|lecet|mulus|tampak|depan|belakang|samping)\b/i,
+    /\b(mesin|engine|kap)\b/i,
+    /\b(ban|velg|kaki-kaki)\b/i,
+  ],
 };
 
 // Vehicle description pattern - detects natural language vehicle listings
@@ -822,12 +829,23 @@ export class IntentClassifierService {
       }
     }
 
+    // Extract entities including aspect
+    const entities = this.extractEntities(message, detectedIntent);
+
+    // If specific aspect detected but intent is general, upgrade to vehicle inquiry
+    if (entities.aspect && detectedIntent === "customer_general_question") {
+      detectedIntent = "customer_vehicle_inquiry";
+      maxConfidence = 0.85;
+      reason = `Inquiry about specific aspect: ${entities.aspect}`;
+    }
+
     return {
       intent: detectedIntent,
       confidence: maxConfidence || 0.6,
       isStaff: false,
       isCustomer: true,
       reason,
+      entities,
     };
   }
 
@@ -836,6 +854,12 @@ export class IntentClassifierService {
    */
   static extractEntities(message: string, intent: MessageIntent): Record<string, any> {
     const entities: Record<string, any> = {};
+
+    // Extract Specific Aspect (New)
+    if (CUSTOMER_PATTERNS.specific_aspect[0].test(message)) entities.aspect = 'interior';
+    else if (CUSTOMER_PATTERNS.specific_aspect[1].test(message)) entities.aspect = 'exterior';
+    else if (CUSTOMER_PATTERNS.specific_aspect[2].test(message)) entities.aspect = 'engine';
+    else if (CUSTOMER_PATTERNS.specific_aspect[3].test(message)) entities.aspect = 'tires';
 
     // Extract vehicle brands
     const brands = [
