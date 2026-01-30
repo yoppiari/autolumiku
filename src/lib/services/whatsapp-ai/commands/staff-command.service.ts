@@ -1927,9 +1927,7 @@ export class StaffCommandService {
 
     message += `\n👥 *LEADS & CUSTOMER*\n`;
     message += `Total Leads: ${totalLeads}\n`;
-    message += `Leads Baru: +${newLeads} 🔥\n\n`;
-
-    message += `Untuk laporan detail dalam format PDF, silakan ketik: "sales report pdf" atau "inventory report pdf". (Fitur PDF dihidden, karena belum dibutuhkan owner. Dan Staff tidak perlu tool report owner). Staff hanya bisa mengakses Tool staff saja, bukan tool owner/ admin.`;
+    message += `Leads Baru: +${newLeads} 🔥`;
 
     return {
       success: true,
