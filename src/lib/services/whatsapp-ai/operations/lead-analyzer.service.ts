@@ -54,7 +54,13 @@ export class LeadAnalyzerService {
             ).join('\n');
 
             // 3. Call AI for analysis
-            const analysis = await this.performAIAnalysis(transcript);
+            const leadContext = {
+                interestedIn: lead.interestedIn,
+                budgetRange: lead.budgetRange,
+                source: lead.source
+            };
+
+            const analysis = await this.performAIAnalysis(transcript, leadContext);
 
             if (analysis) {
                 // 4. Update Lead
@@ -70,13 +76,21 @@ export class LeadAnalyzerService {
     /**
      * Perform AI Analysis using Z.ai / LLM
      */
-    private static async performAIAnalysis(transcript: string): Promise<AnalyzedLead | null> {
+    private static async performAIAnalysis(
+        transcript: string,
+        context: { interestedIn?: string | null, budgetRange?: string | null, source?: string }
+    ): Promise<AnalyzedLead | null> {
         try {
             const zai = createZAIClient();
 
             const prompt = `
         Analyze this car showroom sales conversation. 
         Determine the lead's quality based on their interest/intent.
+        
+        Lead Context:
+        - Interest: ${context.interestedIn || 'Unknown'}
+        - Budget: ${context.budgetRange || 'Unknown'}
+        - Source: ${context.source || 'Unknown'}
 
         Conversation:
         ${transcript}
