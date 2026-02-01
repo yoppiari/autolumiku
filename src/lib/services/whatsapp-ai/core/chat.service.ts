@@ -1363,8 +1363,12 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
         // Handle Interior Context - Fallback Logic
         if (msg.match(/\b(interior|dalam|dalem|jok|dashboard|kabin|setir)\b/i)) {
+          const intro = (!context?.customerName || context.customerName === "Kak" || context.customerName === "Unknown")
+            ? "Siap kak! Sebelumnya dengan boleh tahu namanya kak? "
+            : `Siap Kak ${context.customerName}! `;
+
           return {
-            message: `Untuk bagian **INTERIOR** unit *${name}* (${explicitId}) ini kondisinya masih sangat terawat kak! ✨\n\n` +
+            message: `${intro}Untuk bagian **INTERIOR** unit *${name}* (${explicitId}) ini kondisinya masih sangat terawat kak! ✨\n\n` +
               `• Jok & Dashboard: Masih orisinil, bersih, dan tidak ada sobek/retak.\n` +
               `• AC & Kelistrikan: Berfungsi normal dan dingin.\n` +
               `• Aroma kabin: Segar bebas bau rokok.\n\n` +
@@ -1375,12 +1379,16 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
         // Handle Exterior Context - Fallback Logic
         if (msg.match(/\b(eksterior|exterior|luar|body|bodi|cat|lecet|mulus)\b/i)) {
+          const intro = (!context?.customerName || context.customerName === "Kak" || context.customerName === "Unknown")
+            ? "Siap kak! Sebelumnya dengan boleh tahu namanya kak? "
+            : `Siap Kak ${context.customerName}! `;
+
           return {
-            message: `Untuk bagian **EKSTERIOR** unit *${name}* (${explicitId}) ini masih sangat mulus kak! ✨\n\n` +
+            message: `${intro}Untuk bagian **EKSTERIOR** unit *${name}* (${explicitId}) ini masih sangat mulus kak! ✨\n\n` +
               `• Body & Cat: Kaleng (bukan dempulan), cat masih kinclong.\n` +
               `• Tulang-tulang: Aman jaya, bebas bekas tabrak/banjir.\n` +
               `• Ban & Velg: Ban masih tebal, velg orisinil/racing (sesuai foto).\n\n` +
-              `Mau saya kirimkan foto detail sekeliling body-nya? 📸`,
+              `Mau saya kirimkan foto detail eksteriornya kak? 📸 🚗`,
             shouldEscalate: false
           };
         }
@@ -2707,7 +2715,8 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       systemPrompt += `INSTRUKSI KHUSUS:\n`;
       systemPrompt += `1. JANGAN hanya bilang "ada" atau "ready". JELASKAN kondisi ${intentEntities.aspect} tersebut secara spesifik (misal: "Jok masih orisinil", "Cat mulus bebas baret").\n`;
       systemPrompt += `2. WAJIB Tawarkan untuk mengirim FOTO KHUSUS bagian ${intentEntities.aspect}.\n`;
-      systemPrompt += `3. Contoh: "Untuk interiornya masih sangat rapi kak, jok original fabric tidak ada sobek. Mau saya kirimkan foto detail dashboard dan jok-nya?"\n`;
+      systemPrompt += `3. DILARANG KERAS memanggil tool "send_vehicle_images" saat ini. Berikan penjelasan dulu dan tunggu user bilang "Ya/Kirim".\n`;
+      systemPrompt += `4. Contoh: "Untuk interiornya masih sangat rapi kak, jok original fabric tidak ada sobek. Mau saya kirimkan foto detail dashboard dan jok-nya?"\n`;
     }
 
     // 8. DYNAMIC INVENTORY CONTEXT
@@ -2944,6 +2953,18 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
   ): Promise<{ message: string; shouldEscalate: boolean; confidence: number; images?: Array<{ imageUrl: string; caption?: string }> } | null> {
     const msg = userMessage.trim().toLowerCase();
 
+    // SIMPLE NAME EXTRACTION: Catch "Yudho, kirim fotonya" or "Budi, mau lihat"
+    let capturedName = null;
+    const namePromptMatch = userMessage.match(/^([a-zA-Z]{3,15}),\s+(?:kirim|mau|lihat|tunjuk|minta|send|liat)\b/i);
+    if (namePromptMatch) {
+      const nameCandidate = namePromptMatch[1].trim();
+      // Filter out common verbs
+      if (!/\b(halo|hai|pagi|siang|sore|malam|ok|oke|ya|iya|mohon|tolong)\b/i.test(nameCandidate)) {
+        capturedName = nameCandidate;
+        console.log(`[PhotoConfirm] Captured name from request: "${capturedName}"`);
+      }
+    }
+
 
 
     // ==================== APPRECIATION HANDLER (MUST BE FIRST!) ====================
@@ -3112,7 +3133,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
             if (images && images.length > 0) {
               console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${images.length} images`);
               return {
-                message: `Ini foto unit terbaru kami ya 📸👇\n\nAda yang mau ditanyakan tentang unit-unit ini? 😊`,
+                message: `Siap ${capturedName ? `Kak ${capturedName}` : 'Kak'}! Ini foto unit terbaru kami ya 📸👇\n\nAda yang mau ditanyakan tentang unit-unit ini? 😊`,
                 shouldEscalate: false,
                 confidence: 0.85,
                 images,
@@ -3203,8 +3224,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         if (vehicleWithDetails && vehicleWithDetails.images.length > 0) {
           console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${vehicleWithDetails.images.length} images with DETAILS`);
           const detailedMessage = this.buildVehicleDetailMessage(vehicleWithDetails.vehicle);
+          const greeting = capturedName ? `Siap Kak ${capturedName}! ` : "Siap! ";
           return {
-            message: detailedMessage,
+            message: greeting + detailedMessage,
             shouldEscalate: false,
             confidence: 0.95,
             images: vehicleWithDetails.images,
@@ -3223,7 +3245,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           console.log(`[PhotoConfirm DEBUG]   Image ${i}: ${img.imageUrl?.substring(0, 80)}...`);
         });
         return {
-          message: `Siap! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain tentang unit ini? 😊`,
+          message: `Siap ${capturedName ? `Kak ${capturedName}` : 'Kak'}! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain tentang unit ini? 😊`,
           shouldEscalate: false,
           confidence: 0.95,
           images,
