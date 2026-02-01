@@ -392,18 +392,22 @@ export class WhatsAppAIChatService {
 
           if (vehicles.length > 0) {
             const v = vehicles[0];
-            const stockMsg =
-              `Halo! ⚡\n\n` +
-              `Selamat datang di showroom kami\n` +
-              `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
-              `Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${v.make} ${v.model} ${v.year}* ini MASIH AVAILABLE! 🔥\n\n` +
-              `* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}\n` +
-              `* Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))} (Nego)\n` +
-              `* Transmisi: ${v.transmissionType || '-'}\n` +
-              `* Warna: ${v.color || '-'}\n` +
-              `* Bahan Bakar: ${v.fuelType || 'Bensin'}\n\n` +
-              `Unit siap gass, kondisi terawat kak! 👍\n\n` +
-              `Rencana untuk pemakaian di area mana kak? Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
+            const stockMsg = `Halo! ⚡
+
+Selamat datang di showroom kami
+Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
+
+Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${v.make} ${v.model} ${v.year}* ini MASIH AVAILABLE! 🔥
+
+* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}
+* Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))} (Nego)
+* Transmisi: ${v.transmissionType || '-'}
+* Warna: ${v.color || '-'}
+* Bahan Bakar: ${v.fuelType || 'Bensin'}
+
+Unit siap gass, kondisi terawat kak! 👍
+
+Rencana untuk pemakaian di area mana kak? Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
 
             console.log(`[WhatsApp AI Chat] ✅ PRIORITY STOCK CHECK - Returning immediate response`);
             return {
@@ -414,13 +418,16 @@ export class WhatsAppAIChatService {
             };
           } else {
             // No stock - still answer immediately
-            const noStockMsg =
-              `Halo!\n\n` +
-              `Selamat datang di showroom kami\n` +
-              `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
-              `Baik kak, sebelumnya dengan kakak siapa saya berbicara? 😊\n\n` +
-              `Mohon maaf untuk unit *${vehicleKeyword}* saat ini stoknya sedang kosong di showroom kami. 🙏\n\n` +
-              `Apakah kakak ada alternatif unit lain yang diminati? Saya bisa bantu carikan unit sejenis lho!`;
+            const noStockMsg = `Halo! ⚡
+
+Selamat datang di showroom kami
+Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
+
+Baik kak, sebelumnya dengan kakak siapa saya berbicara? 😊
+
+Mohon maaf untuk unit *${vehicleKeyword}* saat ini stoknya sedang kosong di showroom kami. 🙏
+
+Apakah kakak ada alternatif unit lain yang diminati? Saya bisa bantu carikan unit sejenis lho!`;
 
             console.log(`[WhatsApp AI Chat] ✅ PRIORITY STOCK CHECK - No stock, returning polite response`);
             return {
@@ -1017,7 +1024,12 @@ export class WhatsAppAIChatService {
             else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
             else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
 
-            let stockMsg = `${timeGreeting} Kak! Sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${keyword}* ini MASIH AVAILABLE! 🔥\n\n`;
+            let stockMsg = `Halo! ⚡
+
+Selamat datang di showroom kami
+Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
+
+Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${keyword}* ini MASIH AVAILABLE! 🔥\n\n`;
 
             vehicles.forEach(v => {
               stockMsg += `* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}\n`;
@@ -1513,17 +1525,23 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         let closingQuestion = "Mau lihat fotonya kak? 📸";
 
         // ONE BREATH FORMAT: Ask name first, then confirm stock
-        let response = `${timeGreeting}! 👋 Halo Kak!\n\n` +
-          `Selamat datang di showroom Prima Mobil kami.\n` +
-          `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
-          `Sebelumnya dengan kakak siapa saya berbicara, dan dari mana? 😊 Untuk unit *${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}* ini MASIH AVAILABLE! 🔥\n\n` +
-          `* ID Unit: ${id}\n` +
-          `* Harga: Rp ${priceJuta} Juta (Nego)\n` +
-          `* Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
-          `* Warna: ${matchingVehicle.color || '-'}\n` +
-          `* Bahan Bakar: ${matchingVehicle.fuelType || 'Bensin'}\n\n` +
-          `Unit siap gass, kondisi terawat kak! 👍\n\n` +
-          `Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
+        // ONE BREATH FORMAT: Ask name first, then confirm stock
+        let response = `Halo! ⚡
+
+Selamat datang di showroom kami
+Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
+
+Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}* ini MASIH AVAILABLE! 🔥
+
+* ID Unit: ${id}
+* Harga: Rp ${priceJuta} Juta (Nego)
+* Transmisi: ${matchingVehicle.transmissionType || 'Manual'}
+* Warna: ${matchingVehicle.color || '-'}
+* Bahan Bakar: ${matchingVehicle.fuelType || 'Bensin'}
+
+Unit siap gass, kondisi terawat kak! 👍
+
+Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
 
         return { message: response, shouldEscalate: false };
       } else {
