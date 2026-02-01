@@ -218,7 +218,7 @@ async function handleUniversalCommand(
   const { tenantId, userRoleLevel } = context;
 
   // RICH FORMAT (Consistent with StaffCommandService)
-  const helpMsg =
+  let helpMsg =
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `📋 *MENU STAFF*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -243,10 +243,14 @@ async function handleUniversalCommand(
     `_Contoh:_ "edit PM-PST-001 harga 175jt"\n\n` +
 
     `🔍 *CARI MOBIL*\n` +
-    `_Contoh:_ "cari fortuner diesel", "ada brio?"` +
-    `\n\n` +
-    `👮‍♂️ *ADMIN/OWNER?*\n` +
-    `_Ketik:_ "sales report", "staff performance", atau "menu report" untuk akses laporan lengkap.`;
+    `_Contoh:_ "cari fortuner diesel", "ada brio?"`;
+
+  // Show Admin/Owner menu only for privileged users
+  if (userRoleLevel >= ROLE_LEVELS.ADMIN) {
+    helpMsg += `\n\n` +
+      `👮‍♂️ *ADMIN/OWNER*\n` +
+      `_Ketik:_ "sales report", "staff performance", atau "menu report" untuk akses laporan lengkap.`;
+  }
 
   return {
     success: true,
