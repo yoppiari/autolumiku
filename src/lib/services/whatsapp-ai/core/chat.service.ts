@@ -1209,26 +1209,6 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         (lastContent.includes("area mana") || lastContent.includes("domisili") || lastContent.includes("kota mana"))) {
         console.log(`[SmartFallback] 📍 Location answer detected: "${msg}"`);
 
-        // Extract vehicle context from history
-        let vehicleContext = "";
-        const vehiclePatterns = [
-          /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\s]+(?:\d{4})?/i,
-          /PM-PST-\d+/i
-        ];
-
-        // Look back 5 messages for vehicle context
-        const recentMsgs = messageHistory.slice(-5).reverse();
-        for (const m of recentMsgs) {
-          for (const p of vehiclePatterns) {
-            const match = m.content.match(p);
-            if (match) {
-              vehicleContext = match[0];
-              break;
-            }
-          }
-          if (vehicleContext) break;
-        }
-
         // AUTO-MINING: Capture Location
         if (context?.leadInfo?.id) {
           await LeadService.updateLeadAnalysis(context.leadInfo.id, {
@@ -1241,7 +1221,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         }
 
         return {
-          message: `Siap kak, terima kasih infonya! 🙏\n\nUntuk penggunaan di area **${userMessage}**, unit ${vehicleContext || 'yang Kakak minati'} sudah sangat cocok dan siap pakai.\n\nKebetulan unitnya masih ready, apakah Kakak ada rencana untuk cek unit langsung ke showroom atau mau saya kirimkan video detailnya dulu? 😊`,
+          message: `Siap kak, terima kasih infonya! 🙏\n\nUntuk penggunaan di area **${userMessage}**, unit ${vehicleName || 'yang Kakak minati'} sudah sangat cocok dan siap pakai.\n\nKebetulan unitnya masih ready, apakah Kakak ada rencana untuk cek unit langsung ke showroom atau mau saya kirimkan video detailnya dulu? 😊`,
           shouldEscalate: false
         };
       }
@@ -1877,73 +1857,6 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     ];
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
 
-    // Determine vehicle name from query or history first
-    const vehiclePatterns = [
-      /pm-[a-zA-Z0-9]+-\d+/i, // Unit IDs like PM-PST-001
-      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\s]+(?:\d{4})?/gi,
-      /\b(Innova\s*Reborn?|Fortuner|Pajero\s*Sport|Xpander|Rush|Terios|Ertiga|Avanza|Xenia|Brio|Jazz|Calya|Sigra|Ayla|Agya|HRV|CRV|BRV|Yaris|Camry|Alphard|City|Civic)\s*(?:20\d{2}|19\d{2})?\b/gi,
-    ];
-
-    let vehicleName = "";
-    const lastAiMsgForPhoto = messageHistory.filter(m => m.role === "assistant").pop();
-
-    // Try to extract from current message
-    for (const pattern of vehiclePatterns) {
-      const match = msg.match(pattern);
-      if (match && match[0]) {
-        vehicleName = match[0].trim();
-        break;
-      }
-    }
-
-    // Try to extract from last AI message if not in current
-    if (!vehicleName && lastAiMsgForPhoto) {
-      for (const pattern of vehiclePatterns) {
-        const match = lastAiMsgForPhoto.content.match(pattern);
-        if (match && match[0]) {
-          vehicleName = match[0].trim();
-          break;
-        }
-      }
-    }
-
-    // 🔥 NEW: If still no vehicle name, check recent conversation history (last 10 messages)
-    // This is crucial for cases like: User asks "KKB Honda City", then later "kirim foto"
-    // We need to remember the Honda City from the KKB context!
-    if (!vehicleName) {
-      const recentHistory = messageHistory.slice(-10);
-      for (const historyMsg of recentHistory.reverse()) { // Check most recent first
-        for (const pattern of vehiclePatterns) {
-          const match = historyMsg.content.match(pattern);
-          if (match && match[0]) {
-            vehicleName = match[0].trim();
-            console.log(`[SmartFallback] 🔍 Found vehicle "${vehicleName}" in conversation history`);
-            break;
-          }
-        }
-        if (vehicleName) break;
-      }
-    }
-
-    // 🔥 PRIORITIZE ID: Even if we found a name like "Honda City", check if we have a specific ID in history
-    // IDs (PM-PST-XXX) are much more reliable for fetching photos!
-    const idPattern = /pm-[a-zA-Z0-9]+-\d+/i;
-    // Check if current extracted name is NOT an ID (it might be just "Honda City")
-    if (vehicleName && !idPattern.test(vehicleName)) {
-      const recentHistory = messageHistory.slice(-10);
-      for (const historyMsg of recentHistory.reverse()) {
-        const match = historyMsg.content.match(idPattern);
-        if (match && match[0]) {
-          // UPGRADE LOGIC: Generic -> Specific ID
-          // Only upgrade if the found ID actually matches the generic name context (loose check)
-          // e.g. "Honda City" -> "PM-PST-001" (assuming they are related in conversation flow)
-          console.log(`[SmartFallback] 🎯 Upgrading generic "${vehicleName}" to specific ID "${match[0]}" from context`);
-          vehicleName = match[0].trim();
-          break;
-        }
-      }
-    }
-
     // 🔥 DOWNGRADE LOGIC: Specific ID -> Generic Name (Optimization)
     // If user asks "Honda City" but we only found "PM-PST-001" which might NOT be available/photo-ready,
     // we should also keep the "Honda City" as a fallback search term if the ID fails.
@@ -2087,13 +2000,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       }
       // ========================================================================
 
-      // Extract vehicle from AI message or conversation history
-      const vehiclePatterns = [
-        /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\-]+(?:\s+[\w\-]+)?\s*(?:20\d{2}|19\d{2})?/gi,
-        /\b(Innova\s*Reborn?|Fortuner|Pajero\s*Sport|Xpander|Rush|Terios|Ertiga|Avanza|Xenia|Brio|Jazz|Calya|Sigra|Ayla|Agya|HRV|CRV|BRV|Yaris|Camry|Alphard|City|Civic)\s*(?:20\d{2}|19\d{2})?\b/gi,
-      ];
-
-      // vehicleName is already extracted above
+      // vehicleName is already extracted at the top of the function
 
       // Check if user is asking for DETAILED photos
       const detailPatterns = [
