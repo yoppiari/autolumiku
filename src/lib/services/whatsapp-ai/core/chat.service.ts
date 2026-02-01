@@ -549,20 +549,29 @@ Apakah kakak ada alternatif unit lain yang diminati? Saya bisa bantu carikan uni
 
           // GENERATE FALLBACK CONTENT
           // Use smart fallback instead of hardcoded generic messages
-          const smartFallback = await this.generateSmartFallback(
-            userMessage,
-            context.messageHistory,
-            context.tenantId,
-            context
-          );
+          try {
+            const smartFallback = await this.generateSmartFallback(
+              userMessage,
+              context.messageHistory,
+              context.tenantId,
+              context
+            );
 
-          aiResponse = {
-            content: smartFallback.message,
-            shouldEscalate: smartFallback.shouldEscalate
-          };
+            aiResponse = {
+              content: smartFallback.message,
+              shouldEscalate: smartFallback.shouldEscalate
+            };
 
-          if (smartFallback.images && smartFallback.images.length > 0) {
-            resultImages = smartFallback.images;
+            if (smartFallback.images && smartFallback.images.length > 0) {
+              resultImages = smartFallback.images;
+            }
+          } catch (fallbackError: any) {
+            console.error(`[WhatsApp AI Chat] ❌ Smart Fallback also failed: ${fallbackError.message}`);
+            // Last resort generic message
+            aiResponse = {
+              content: `Mohon maaf kak, sistem sedang sibuk. 🙏\n\nBoleh diulangi pertanyaannya? Atau ketik "Menu" untuk opsi lainnya.`,
+              shouldEscalate: true
+            };
           }
         }
       }
@@ -1290,11 +1299,11 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         };
       }
 
-      // 2. Name Answer (AI asked "dengan siapa", "kakak siapa")
+      // 2. Name Answer (AI asked "dengan siapa saya bicara kak?", "boleh tahu nama kakak siapa")
       // CRITICAL: Only trigger if user is actually giving a name (not asking a technical question)
       const looksLikeNameAnswer = msg.length < 30 &&
         !msg.includes("?") &&
-        !/(interior|eksterior|ekterior|exterior|esterior|mesin|harga|stok|ready|brapa|berapa|gimana|bagaimana|mana)/i.test(msg);
+        !/(interior|eksterior|luar|dalam|mesin|harga|stok|ready|brapa|berapa|gimana|bagaimana|mana)/i.test(msg);
 
       if (looksLikeNameAnswer && (lastContent.includes("dengan siapa") || lastContent.includes("kakak siapa") || lastContent.includes("boleh tau nama"))) {
         console.log(`[SmartFallback] 👤 Name answer detected: "${msg}"`);

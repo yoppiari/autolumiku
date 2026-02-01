@@ -2200,9 +2200,17 @@ export class MessageOrchestratorService {
       };
     } catch (error: any) {
       console.error("[Message Orchestrator] AI response error:", error);
+
+      // Calculate time greeting
+      const now = new Date();
+      const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
+      let timeGreeting = "Selamat malam";
+      if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+      else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+      else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
       return {
-        message:
-          "Selamat sore! 👋\n\nMohon maaf, saat ini sistem kami sedang dalam pemeliharaan singkat. Silakan coba tanyakan kembali dalam beberapa saat, atau tim sales kami akan segera membantu Anda secara manual. Terima kasih atas pengertiannya! 😊",
+        message: `${timeGreeting}! 👋\n\nMohon maaf, saat ini saya sedang mengalami kendala teknis. 🙏\n\nBoleh diulangi pertanyaannya? Atau ketik "Menu" untuk opsi lainnya. 😊`,
         escalated: true,
       };
     }
