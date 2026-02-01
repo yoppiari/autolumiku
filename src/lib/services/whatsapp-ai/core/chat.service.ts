@@ -1813,7 +1813,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     // User says "stop" when AI keeps sending wrong info/photos repeatedly
     // This indicates AI made mistakes - acknowledge and offer correct help
     const stopPatterns = [
-      /^(stop|berhenti|udah|sudah|kagak|ndak|gak|nga)$/i,
+      /^(stop|berhenti|cukup|udah|sudah|kagak|ndak|gak|nga)$/i,
       /\b(stop|berhenti|cukup|jangan)\s*(kirim|kasi|tunjuk|lagi|terus)\b/i,
       /\b(cukup|udah|sudah)\b.*(foto|gambar|itu)\b/i,
       /\b(salah|keliru|bukan)\s*(itu|ini|yang)\b/i,
