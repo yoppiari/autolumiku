@@ -217,7 +217,35 @@ async function handleUniversalCommand(
 ): Promise<CommandResult> {
   const { tenantId, userRoleLevel } = context;
 
+  // SPECIAL CASE: If Admin asks for "Menu Admin", show the Report Menu directly
+  if (cmd.includes("admin") && userRoleLevel >= ROLE_LEVELS.ADMIN) {
+    const adminMenu =
+      `📊 *DAFTAR REPORT AVAILABLE*\n\n` +
+      `1. *Penjualan & Revenue:*\n` +
+      `   • "Total Sales" (Ringkasan penjualan)\n` +
+      `   • "Sales Summary" (Ringkasan cepat hari ini)\n` +
+      `   • "Sales Trends" (Tren grafik penjualan)\n` +
+      `   • "Metrik Penjualan" (KPI & konversi)\n\n` +
+      `2. *Stok & Inventory:*\n` +
+      `   • "Total Inventory" (Ringkasan stok)\n` +
+      `   • "Vehicle Listing" (Daftar semua mobil)\n` +
+      `   • "Low Stock Alert" (Stok menipis)\n` +
+      `   • "Average Price" (Analisis harga rata-rata)\n\n` +
+      `3. *Team & AI Performance:*\n` +
+      `   • "Staff Performance" (Leaderboard sales)\n` +
+      `   • "WhatsApp AI Analytics" (Performa bot)\n` +
+      `   • "Customer Metrics" (Analisis profil pelanggan)\n\n` +
+      `_Ketik nama report di atas untuk melihat detailnya._`;
+
+    return {
+      success: true,
+      message: adminMenu,
+      followUp: true
+    };
+  }
+
   // RICH FORMAT (Consistent with StaffCommandService)
+
   let helpMsg =
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `📋 *MENU STAFF*\n` +
