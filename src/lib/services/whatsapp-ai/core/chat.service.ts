@@ -861,15 +861,19 @@ export class WhatsAppAIChatService {
           });
 
           if (vehicles.length > 0) {
-            let stockMsg = `${timeGreeting}! 👋\n\nKabar baik kak! Untuk unit *${keyword}*, kami masih ada stock ${vehicles.length} unit yang siap dipinang: 🔥\n\n`;
+            // ONE BREATH GREETING STYLE (Fallback Mode)
+            let stockMsg = `Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${keyword}* ini MASIH AVAILABLE! 🔥\n\n`;
 
             vehicles.forEach(v => {
-              stockMsg += `🚗 *${v.make} ${v.model} ${v.year}*\n`;
-              stockMsg += `   • Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))}\n`;
-              stockMsg += `   • Transmisi: ${v.transmission || '-'}\n\n`;
+              stockMsg += `* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}\n`;
+              stockMsg += `* Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))} (Nego)\n`;
+              stockMsg += `* Transmisi: ${v.transmission || '-'}\n`;
+              stockMsg += `* Warna: ${v.color || '-'}\n`;
+              stockMsg += `* Bahan Bakar: ${v.fuelType || 'Bensin'}\n\n`;
             });
 
-            stockMsg += `Mau lihat foto detail unit yang mana kak? Atau mau simulasi kreditnya sekalian? 😊`;
+            stockMsg += `Unit siap gass, kondisi terawat kak! 👍\n\n`;
+            stockMsg += `Rencana untuk pemakaian di area mana kak? Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
 
             return {
               message: stockMsg,
