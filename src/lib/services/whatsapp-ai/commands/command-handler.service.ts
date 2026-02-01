@@ -61,6 +61,27 @@ function formatDate(date: Date): string {
   }).format(date);
 }
 
+/**
+ * Get unified Admin Menu text
+ */
+function getAdminMenuText(): string {
+  return `📊 *DAFTAR REPORT AVAILABLE*\n\n` +
+    `1. *Penjualan & Revenue:*\n` +
+    `   • "Total Sales" (Ringkasan penjualan)\n` +
+    `   • "Sales Summary" (Ringkasan cepat hari ini)\n` +
+    `   • "Sales Trends" (Tren grafik penjualan)\n` +
+    `   • "Metrik Penjualan" (KPI & konversi)\n\n` +
+    `2. *Stok & Inventory:*\n` +
+    `   • "Total Inventory" (Ringkasan stok)\n` +
+    `   • "Vehicle Listing" (Daftar semua mobil)\n` +
+    `   • "Low Stock Alert" (Stok menipis)\n` +
+    `   • "Average Price" (Analisis harga rata-rata)\n\n` +
+    `3. *Team & AI Performance:*\n` +
+    `   • "Staff Performance" (Leaderboard sales)\n` +
+    `   • "WhatsApp AI Analytics" (Performa bot)\n` +
+    `   • "Customer Metrics" (Analisis profil pelanggan)\n\n` +
+    `_Ketik nama report di atas untuk melihat detailnya._`;
+}
 
 
 /**
@@ -142,6 +163,7 @@ function isUniversalCommand(cmd: string): boolean {
   const universalCommands = [
     // Help commands are universal
     'help', 'bantuan', 'panduan', 'cara', 'guide', 'menu', 'fitur', 'tool', 'perintah', 'penggunaan', 'command',
+    'report', 'info', // Allow "report admin", "info report", etc.
     // 'halo', 'halo admin', 'halo owner', 'halo staff', 'hi', 'hello', // Let AI handle greetings
   ];
   return universalCommands.some(c => cmd.includes(c));
@@ -190,6 +212,12 @@ function isReportCommand(cmd: string): boolean {
     'average price',
     'sales summary',
     'report pdf',
+    'report admin',
+    'report owner',
+    'admin menu',
+    'menu report',
+    'menu admin',
+    'admin report',
   ];
 
   // Check for exact phrase matches (with word boundaries)
@@ -217,29 +245,12 @@ async function handleUniversalCommand(
 ): Promise<CommandResult> {
   const { tenantId, userRoleLevel } = context;
 
-  // SPECIAL CASE: If Admin asks for "Menu Admin", show the Report Menu directly
-  if (cmd.includes("admin") && userRoleLevel >= ROLE_LEVELS.ADMIN) {
-    const adminMenu =
-      `📊 *DAFTAR REPORT AVAILABLE*\n\n` +
-      `1. *Penjualan & Revenue:*\n` +
-      `   • "Total Sales" (Ringkasan penjualan)\n` +
-      `   • "Sales Summary" (Ringkasan cepat hari ini)\n` +
-      `   • "Sales Trends" (Tren grafik penjualan)\n` +
-      `   • "Metrik Penjualan" (KPI & konversi)\n\n` +
-      `2. *Stok & Inventory:*\n` +
-      `   • "Total Inventory" (Ringkasan stok)\n` +
-      `   • "Vehicle Listing" (Daftar semua mobil)\n` +
-      `   • "Low Stock Alert" (Stok menipis)\n` +
-      `   • "Average Price" (Analisis harga rata-rata)\n\n` +
-      `3. *Team & AI Performance:*\n` +
-      `   • "Staff Performance" (Leaderboard sales)\n` +
-      `   • "WhatsApp AI Analytics" (Performa bot)\n` +
-      `   • "Customer Metrics" (Analisis profil pelanggan)\n\n` +
-      `_Ketik nama report di atas untuk melihat detailnya._`;
-
+  // SPECIAL CASE: If Admin/Owner asks for any admin-related help, show the Report Menu directly
+  const isAdminRequest = cmd.includes("admin") || cmd.includes("owner") || cmd.includes("report");
+  if (isAdminRequest && userRoleLevel >= ROLE_LEVELS.ADMIN) {
     return {
       success: true,
-      message: adminMenu,
+      message: getAdminMenuText(),
       followUp: true
     };
   }
@@ -524,29 +535,11 @@ export async function handleReportCommand(
   }
   console.log(`[Command Handler] ❌ No report generator match found for: "${cmd}"`);
 
-  // Generic 'report' or 'pdf' without specific type
-  if (cmd.includes('report') || cmd.includes('pdf')) {
+  // Generic 'report' or 'pdf' or 'admin' without specific type
+  if (cmd.includes('report') || cmd.includes('pdf') || cmd.includes('admin') || cmd.includes('owner')) {
     return {
       success: true,
-      message: `📊 *Admin Dashboard & Reports*
-
-Silakan pilih info ringkasan yang diinginkan:
-
-📈 *Sales & Revenue:*
-• Sales Report
-• Metrik Penjualan
-• Tren Penjualan
-
-📦 *Inventory:*
-• Total Inventory
-• Low Stock Alert
-• Rata-rata Harga
-
-🤖 *System & Staff:*
-• WhatsApp AI Analytics
-• Staff Performance
-
-Ketik nama report (contoh: "sales report" atau "whatsapp ai") untuk mendapatkan ringkasan data real-time + link dashboard.`,
+      message: getAdminMenuText(),
       followUp: true,
     };
   }
