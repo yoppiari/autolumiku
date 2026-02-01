@@ -291,6 +291,73 @@ export class WhatsAppAIChatService {
         console.log(`[WhatsApp AI Chat] ✅ Staff detected - bypassing business hours check`);
       }
 
+      // ==================== PRIORITY STOCK CHECK (BEFORE AI) ====================
+      // For NEW customers asking stock availability, answer IMMEDIATELY without AI
+      // This ensures fast response even if AI is slow/down
+      const msg = userMessage.toLowerCase();
+      const isNewCustomer = !context.customerName || context.customerName === "Kak" || context.customerName === "Unknown";
+      const stockKeywords = /(?:apakah|masih|ada|ready|tersedia|stok|available|jual|cari).{0,30}(avanza|xenia|brio|mobilio|hrv|crv|fortuner|pajero|innova|agya|ayla|calya|sigra|jazz|yaris|rush|terios|xpander|ertiga|raize|rocky|alphard|vellfire|camry|city|civic|accord)/i;
+      const stockMatch = msg.match(stockKeywords);
+
+      if (isNewCustomer && stockMatch && stockMatch[1]) {
+        const vehicleKeyword = stockMatch[1];
+        console.log(`[WhatsApp AI Chat] 🚀 PRIORITY STOCK CHECK for: "${vehicleKeyword}"`);
+
+        try {
+          const vehicles = await prisma.vehicle.findMany({
+            where: {
+              tenantId: context.tenantId,
+              status: 'AVAILABLE',
+              OR: [
+                { model: { contains: vehicleKeyword, mode: 'insensitive' } },
+                { make: { contains: vehicleKeyword, mode: 'insensitive' } }
+              ]
+            },
+            take: 1,
+            orderBy: { year: 'desc' }
+          });
+
+          if (vehicles.length > 0) {
+            const v = vehicles[0];
+            const stockMsg =
+              `Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${v.make} ${v.model} ${v.year}* ini MASIH AVAILABLE! 🔥\n\n` +
+              `* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}\n` +
+              `* Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))} (Nego)\n` +
+              `* Transmisi: ${v.transmission || '-'}\n` +
+              `* Warna: ${v.color || '-'}\n` +
+              `* Bahan Bakar: ${v.fuelType || 'Bensin'}\n\n` +
+              `Unit siap gass, kondisi terawat kak! 👍\n\n` +
+              `Rencana untuk pemakaian di area mana kak? Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
+
+            console.log(`[WhatsApp AI Chat] ✅ PRIORITY STOCK CHECK - Returning immediate response`);
+            return {
+              message: stockMsg,
+              shouldEscalate: false,
+              confidence: 1.0,
+              processingTime: Date.now() - startTime
+            };
+          } else {
+            // No stock - still answer immediately
+            const noStockMsg =
+              `Baik kak, sebelumnya dengan kakak siapa saya berbicara? 😊\n\n` +
+              `Mohon maaf untuk unit *${vehicleKeyword}* saat ini stoknya sedang kosong di showroom kami. 🙏\n\n` +
+              `Apakah kakak ada alternatif unit lain yang diminati? Saya bisa bantu carikan unit sejenis lho!`;
+
+            console.log(`[WhatsApp AI Chat] ✅ PRIORITY STOCK CHECK - No stock, returning polite response`);
+            return {
+              message: noStockMsg,
+              shouldEscalate: false,
+              confidence: 1.0,
+              processingTime: Date.now() - startTime
+            };
+          }
+        } catch (err) {
+          console.error("[WhatsApp AI Chat] ❌ PRIORITY STOCK CHECK failed:", err);
+          // Continue to normal AI flow
+        }
+      }
+      // ==================== END PRIORITY STOCK CHECK ====================
+
       let aiResponse: any = null;
       let resultImages: Array<{ imageUrl: string; caption?: string }> | null = null;
 
