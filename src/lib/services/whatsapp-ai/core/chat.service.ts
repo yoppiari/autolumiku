@@ -16,6 +16,8 @@ import {
   AUTOMOTIVE_KNOWLEDGE_BASE,
   getCompanyKnowledgeBase,
   STAFF_COMMAND_HELP,
+  STAFF_TROUBLESHOOTING,
+  STAFF_EDIT_FEATURE,
   STAFF_RULES,
   ADMIN_COMMAND_HELP,
   ADMIN_SYSTEM_PROMPT_ADDITION,
@@ -916,7 +918,7 @@ export class WhatsAppAIChatService {
           // Quick DB check
           const vehicles = await prisma.vehicle.findMany({
             where: {
-              tenantId: tenantId,
+              tenantId: context.tenantId,
               status: 'AVAILABLE',
               OR: [
                 { model: { contains: keyword, mode: 'insensitive' } },
@@ -928,13 +930,20 @@ export class WhatsAppAIChatService {
           });
 
           if (vehicles.length > 0) {
-            // ONE BREATH GREETING STYLE (Fallback Mode)
-            let stockMsg = `Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${keyword}* ini MASIH AVAILABLE! 🔥\n\n`;
+            // One-breath style greeting
+            const now = new Date();
+            const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
+            let timeGreeting = "Selamat malam";
+            if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+            else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+            else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
+            let stockMsg = `${timeGreeting} Kak! Sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${keyword}* ini MASIH AVAILABLE! 🔥\n\n`;
 
             vehicles.forEach(v => {
               stockMsg += `* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}\n`;
               stockMsg += `* Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))} (Nego)\n`;
-              stockMsg += `* Transmisi: ${v.transmission || '-'}\n`;
+              stockMsg += `* Transmisi: ${v.transmissionType || '-'}\n`;
               stockMsg += `* Warna: ${v.color || '-'}\n`;
               stockMsg += `* Bahan Bakar: ${v.fuelType || 'Bensin'}\n\n`;
             });
@@ -944,13 +953,24 @@ export class WhatsAppAIChatService {
 
             return {
               message: stockMsg,
-              shouldEscalate: false
+              shouldEscalate: false,
+              confidence: 0.8,
+              processingTime: Date.now() - startTime
             };
           } else {
             // No stock found
+            const now = new Date();
+            const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
+            let timeGreetingFallback = "Selamat malam";
+            if (hour >= 4 && hour < 11) timeGreetingFallback = "Selamat pagi";
+            else if (hour >= 11 && hour < 15) timeGreetingFallback = "Selamat siang";
+            else if (hour >= 15 && hour < 18) timeGreetingFallback = "Selamat sore";
+
             return {
-              message: `${timeGreeting}! 👋\n\nMohon maaf kak, untuk unit *${keyword}* saat ini stoknya sedang kosong di showroom kami. 🙏\n\nApakah kakak ada alternatif unit lain yang diminati? Saya bisa bantu carikan unit sejenis lho. 😊`,
-              shouldEscalate: false
+              message: `${timeGreetingFallback}! 👋\n\nMohon maaf kak, untuk unit *${keyword}* saat ini stoknya sedang kosong di showroom kami. 🙏\n\nApakah kakak ada alternatif unit lain yang diminati? Saya bisa bantu carikan unit sejenis lho. 😊`,
+              shouldEscalate: false,
+              confidence: 0.8,
+              processingTime: Date.now() - startTime
             };
           }
         } catch (err) {

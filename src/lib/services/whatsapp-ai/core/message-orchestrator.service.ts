@@ -2411,9 +2411,9 @@ export class MessageOrchestratorService {
               console.error(`[Orchestrator sendResponse] ❌ Image ${i + 1} failed: ${imageResult.error} (URL: ${img.imageUrl})`);
             }
 
-            // Add slight delay between images to prevent overwhelming the user and allow stop command to come in
+            // Add slight delay between images
             if (i < images.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 800));
+              await new Promise(resolve => setTimeout(resolve, 500));
             }
           }
 
