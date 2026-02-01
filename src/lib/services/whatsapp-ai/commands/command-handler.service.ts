@@ -217,30 +217,36 @@ async function handleUniversalCommand(
 ): Promise<CommandResult> {
   const { tenantId, userRoleLevel } = context;
 
-  // Use the new CLEAN AND CONCISE format
-  const helpMsg = `
-📋 *PANDUAN STAFF* (Format baru, lebih ringkas):
-Jika staff bingung, arahkan ke format berikut:
+  // RICH FORMAT (Consistent with StaffCommandService)
+  const helpMsg =
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `📋 *MENU STAFF*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `📸 *UPLOAD KENDARAAN*\n` +
+    `Ketik: *upload* (ikuti instruksi)\n` +
+    `_Atau:_ "upload Brio 2020 120jt" (langsung)\n\n` +
 
-📸 *UPLOAD*:
-   • Ketik: *upload* (ikut flow)
-   • _Atau:_ "upload [nama] [tahun] [harga]"
+    `📋 *CEK STOK*\n` +
+    `Ketik: *stok* [spasi] [filter]\n` +
+    `_Contoh:_ "stok brio", "stok ready"\n\n` +
 
-📋 *CEK STOK*:
-   • Ketik: *stok* [filter]
-   • _Contoh:_ "stok ready", "stok brio"
+    `📊 *STATISTIK*\n` +
+    `Ketik: *stats* atau *laporan*\n` +
+    `_Opsi:_ stats today / week / month\n\n` +
 
-🔄 *UPDATE STATUS*:
-   • Ketik: *status [ID] [SOLD/BOOKED]*
-   • _Contoh:_ "status PM-PST-001 SOLD"
+    `🔄 *UPDATE STATUS*\n` +
+    `Ketik: *status [ID] [SOLD/BOOKED/AVAILABLE]*\n` +
+    `_Contoh:_ "status PM-PST-001 SOLD"\n\n` +
 
-🚙 *EDIT DATA*:
-   • Ketik: *edit [ID] [data]*
-   • _Contoh:_ "edit PM-PST-001 harga 150jt"
+    `🚙 *EDIT DATA*\n` +
+    `Ketik: *edit [ID] [data]*\n` +
+    `_Contoh:_ "edit PM-PST-001 harga 175jt"\n\n` +
 
-👮‍♂️ *ADMIN*:
-   • _Ketik:_ "sales report", "staff performance"
-`;
+    `🔍 *CARI MOBIL*\n` +
+    `_Contoh:_ "cari fortuner diesel", "ada brio?"` +
+    `\n\n` +
+    `👮‍♂️ *ADMIN/OWNER?*\n` +
+    `_Ketik:_ "sales report", "staff performance", atau "menu report" untuk akses laporan lengkap.`;
 
   return {
     success: true,
