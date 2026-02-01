@@ -1387,26 +1387,15 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         // Dynamic Closing Question for Lead Gen
         let closingQuestion = "Mau lihat fotonya? 📸";
 
-        // If we don't know the customer's name yet, ask for it naturally
-        if (!context.customerName || context.customerName === "Pelanggan") {
-          closingQuestion = "Boleh tau dengan Kakak siapa saya bicara? Supaya enak ngobrolnya 😊";
-        }
-        // If we know the name but not location (simple heuristic)
-        else if (!msg.toLowerCase().includes("jakarta") && !msg.toLowerCase().includes("bandung") && Math.random() > 0.5) {
-          closingQuestion = "Rencana untuk pemakaian di area mana kak? Biar sekalian saya cek plat-nya. 😊";
-        }
-        // Otherwise ask about purchase plan
-        else {
-          closingQuestion = "Rencana mau ambil Cash atau Kredit kak? Bisa saya bantu hitungkan simulasinya sekalian. 💰";
-        }
-
-        const response = `Baik kak, unit *${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}* ini MASIH AVAILABLE! 🔥\n\n` +
-          `• ID Unit: ${id}\n` +
-          `• Harga: Rp ${priceJuta} Juta (Nego)\n` +
-          `• Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
-          `• Warna: ${matchingVehicle.color || '-'}\n\n` +
-          `Unit siap gass, kondisi terawat! 👍\n\n` +
-          `${closingQuestion}`;
+        // ONE BREATH FORMAT: Ask name first, then confirm stock
+        let response = `Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}* ini MASIH AVAILABLE! 🔥\n\n` +
+          `* ID Unit: ${id}\n` +
+          `* Harga: Rp ${priceJuta} Juta (Nego)\n` +
+          `* Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n` +
+          `* Warna: ${matchingVehicle.color || '-'}\n` +
+          `* Bahan Bakar: ${matchingVehicle.fuelType || 'Bensin'}\n\n` +
+          `Unit siap gass, kondisi terawat kak! 👍\n\n` +
+          `Rencana untuk pemakaian di area mana kak? Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
 
         return { message: response, shouldEscalate: false };
       } else {
