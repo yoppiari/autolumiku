@@ -329,22 +329,27 @@ export class WhatsAppAIChatService {
       const shouldCheckHours = hasBusinessHours && !isStaff;
 
       if (shouldCheckHours && !this.isWithinBusinessHours(config.businessHours, config.timezone)) {
-        console.log(`[WhatsApp AI Chat] 🌙 Outside business hours for ${context.customerPhone}`);
+        // DOUBLE CHECK: If it is staff, do NOT send after hours message
+        if (isStaff) {
+          console.log(`[WhatsApp AI Chat] ✅ Staff detected (double check) - forcing bypass of after-hours`);
+        } else {
+          console.log(`[WhatsApp AI Chat] 🌙 Outside business hours for ${context.customerPhone}`);
 
-        // Use custom message if set, otherwise professional default
-        const afterHoursMsg = config.afterHoursMessage ||
-          `Halo! 👋 Terima kasih sudah menghubungi ${showroomName}.\n\n` +
-          `Mohon maaf, saat ini kami sedang di luar jam operasional. 🙏\n\n` +
-          `Pesan Anda sudah kami catat dan asisten virtual kami akan segera membantu Anda kembali di jam kerja.\n\n` +
-          `Terima kasih atas pengertiannya! 😊`;
+          // Use custom message if set, otherwise professional default
+          const afterHoursMsg = config.afterHoursMessage ||
+            `Halo! 👋 Terima kasih sudah menghubungi ${showroomName}.\n\n` +
+            `Mohon maaf, saat ini kami sedang di luar jam operasional. 🙏\n\n` +
+            `Pesan Anda sudah kami catat dan asisten virtual kami akan segera membantu Anda kembali di jam kerja.\n\n` +
+            `Terima kasih atas pengertiannya! 😊`;
 
-        return {
-          message: afterHoursMsg,
-          shouldEscalate: true, // Escalating so staff can also see it in the morning
-          needsCatchup: true,   // Flag for auto-catchup cron system
-          confidence: 1.0,
-          processingTime: Date.now() - startTime,
-        };
+          return {
+            message: afterHoursMsg,
+            shouldEscalate: true, // Escalating so staff can also see it in the morning
+            needsCatchup: true,   // Flag for auto-catchup cron system
+            confidence: 1.0,
+            processingTime: Date.now() - startTime,
+          };
+        }
       }
 
       if (isStaff) {
@@ -1378,7 +1383,12 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         const name = `${matchingVehicle.make} ${matchingVehicle.model}`;
 
         const intro = (!context?.customerName || context.customerName === "Kak" || context.customerName === "Unknown" || context.customerName === "Pelanggan" || context.messageHistory.length <= 2)
-          ? `Halo! ⚡\n\nSelamat datang di showroom kami\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, and mendapatkan informasi yang Anda butuhkan.\n\nBaik kak, sebelumnya dengan kakak siapa saya berbicara? `
+          ? `Halo! ⚡
+
+Selamat datang di showroom kami
+Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
+
+Baik kak, sebelumnya dengan kakak siapa saya berbicara? `
           : `Siap Kak ${context.customerName}! `;
 
         // Handle "dokumen" / "surat" / "pajak" context
