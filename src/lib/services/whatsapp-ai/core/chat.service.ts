@@ -836,6 +836,58 @@ export class WhatsAppAIChatService {
         }
       }
 
+
+      // ==================== STOCK AVAILABILITY FALLBACK HANDLER ====================
+      // Critical fallback: If AI is down, we must still be able to answer "Is X available?"
+      const stockQuery = msg.match(/(?:ada|ready|tersedia|stok|available|jual|cari|lihat).{0,20}(avanza|xenia|brio|mobilio|hrv|crv|fortuner|pajero|innova|agya|ayla|calya|sigra|jazz|yaris|rush|terios|xpander|ertiga|raize|rocky)/i);
+
+      if (stockQuery && stockQuery[1]) {
+        const keyword = stockQuery[1];
+        console.log(`[SmartFallback] 🚗 Stock availability query detected for: "${keyword}"`);
+
+        try {
+          // Quick DB check
+          const vehicles = await prisma.vehicle.findMany({
+            where: {
+              tenantId: tenantId,
+              status: 'AVAILABLE',
+              OR: [
+                { model: { contains: keyword, mode: 'insensitive' } },
+                { make: { contains: keyword, mode: 'insensitive' } }
+              ]
+            },
+            take: 3,
+            orderBy: { year: 'desc' }
+          });
+
+          if (vehicles.length > 0) {
+            let stockMsg = `${timeGreeting}! 👋\n\nKabar baik kak! Untuk unit *${keyword}*, kami masih ada stock ${vehicles.length} unit yang siap dipinang: 🔥\n\n`;
+
+            vehicles.forEach(v => {
+              stockMsg += `🚗 *${v.make} ${v.model} ${v.year}*\n`;
+              stockMsg += `   • Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))}\n`;
+              stockMsg += `   • Transmisi: ${v.transmission || '-'}\n\n`;
+            });
+
+            stockMsg += `Mau lihat foto detail unit yang mana kak? Atau mau simulasi kreditnya sekalian? 😊`;
+
+            return {
+              message: stockMsg,
+              shouldEscalate: false
+            };
+          } else {
+            // No stock found
+            return {
+              message: `${timeGreeting}! 👋\n\nMohon maaf kak, untuk unit *${keyword}* saat ini stoknya sedang kosong di showroom kami. 🙏\n\nApakah kakak ada alternatif unit lain yang diminati? Saya bisa bantu carikan unit sejenis lho. 😊`,
+              shouldEscalate: false
+            };
+          }
+        } catch (err) {
+          console.error("[SmartFallback] Failed to query stock:", err);
+          // Continue to default fallback
+        }
+      }
+
       // ==================== SMART CONTEXTUAL FALLBACK ====================
       // Instead of generic menu, try to give a helpful response based on user's message
       const smartFallback = await this.generateSmartFallback(
