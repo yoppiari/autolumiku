@@ -92,6 +92,7 @@ export interface ChatResponse {
   confidence: number;
   processingTime: number;
   images?: Array<{ imageUrl: string; caption?: string }>; // Optional vehicle images
+  needsCatchup?: boolean; // AI 5.2: Flag for proactive catch-up morning response
   uploadRequest?: {
     make: string;
     model: string;
@@ -283,7 +284,8 @@ export class WhatsAppAIChatService {
 
         return {
           message: afterHoursMsg,
-          shouldEscalate: false,
+          shouldEscalate: true, // Escalating so staff can also see it in the morning
+          needsCatchup: true,   // Flag for auto-catchup cron system
           confidence: 1.0,
           processingTime: Date.now() - startTime,
         };

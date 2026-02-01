@@ -791,6 +791,7 @@ export class MessageOrchestratorService {
       let responseMessage: string | undefined;
       let escalated = false;
       let responseImages: Array<{ imageUrl: string; caption?: string }> | undefined;
+      let needsCatchup = false; // Flag for after-hours proactive reply
 
       // Handle /verify command specially - allows LID users to verify themselves
       if (classification.intent === "staff_verify_identity") {
@@ -887,6 +888,7 @@ export class MessageOrchestratorService {
         responseMessage = result.message;
         escalated = result.escalated;
         responseImages = result.images;
+        needsCatchup = !!result.needsCatchup;
 
         console.log(`[Orchestrator] AI greeting response: ${responseMessage?.substring(0, 50)}...`);
       } else if (classification.intent === "customer_ai_capability") {
@@ -907,6 +909,7 @@ export class MessageOrchestratorService {
         responseMessage = result.message;
         escalated = result.escalated;
         responseImages = result.images;
+        needsCatchup = !!result.needsCatchup;
       } else {
         // Handle customer inquiry dengan AI
         console.log(`[Orchestrator] Routing to AI customer inquiry handler`);
@@ -940,6 +943,7 @@ export class MessageOrchestratorService {
             responseMessage = result.message;
             escalated = result.escalated;
             responseImages = result.images;
+            needsCatchup = !!result.needsCatchup;
             console.log(`[Orchestrator] AI response generated: ${responseMessage?.substring(0, 50)}...`);
             if (responseImages) {
               console.log(`[Orchestrator] AI also generated ${responseImages.length} images to send`);
@@ -1154,17 +1158,19 @@ export class MessageOrchestratorService {
             escalatedAt: new Date(),
             status: "escalated",
           }),
-          // Auto-resolve: close escalated conversation after closing greeting
-          // Use "closed" status (not "deleted") so it's still included in analytics
-          // "deleted" status is reserved for data that should be excluded from statistics
-          ...(shouldAutoResolve && {
-            status: "closed",
-            closedAt: new Date(),
+          // Auto-resolution or needsCatchup persistence
+          ...((shouldAutoResolve || needsCatchup) && {
             contextData: {
               ...((conversation.contextData as Record<string, any>) || {}),
-              resolvedAt: new Date().toISOString(),
-              resolvedReason: "closing_greeting",
-              closingMessage: incoming.message.substring(0, 100),
+              ...(shouldAutoResolve && {
+                resolvedAt: new Date().toISOString(),
+                resolvedReason: "closing_greeting",
+                closingMessage: incoming.message.substring(0, 100),
+              }),
+              ...(needsCatchup && {
+                needsCatchup: true,
+                lastAfterHoursMessageAt: new Date().toISOString(),
+              })
             },
           }),
         },
@@ -2019,6 +2025,7 @@ export class MessageOrchestratorService {
     images?: Array<{ imageUrl: string; caption?: string }>;
     uploadRequest?: any;
     editRequest?: any;
+    needsCatchup?: boolean;
   }> {
     // Lookup user by phone number for personalized responses
     let user = null;
@@ -2186,6 +2193,7 @@ export class MessageOrchestratorService {
       return {
         message: aiResponse.message,
         escalated: aiResponse.shouldEscalate,
+        needsCatchup: aiResponse.needsCatchup,
         ...(aiResponse.images && { images: aiResponse.images }),
         ...(aiResponse.uploadRequest && { uploadRequest: aiResponse.uploadRequest }),
         ...(aiResponse.editRequest && { editRequest: aiResponse.editRequest }),
