@@ -1127,6 +1127,65 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       });
     } catch (e) { /* ignore */ }
 
+    // ==================== VEHICLE CONTEXT DETECTION (PRIORITY #0) ====================
+    const vehiclePatterns = [
+      /pm-[a-zA-Z0-9]+-\d+/i, // Unit IDs like PM-PST-001
+      /(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia|Wuling)\s+[\w\s\-]+(?:\d{4})?/gi,
+      /\b(Innova\s*Reborn?|Fortuner|Pajero\s*Sport|Xpander|Rush|Terios|Ertiga|Avanza|Xenia|Brio|Jazz|Calya|Sigra|Ayla|Agya|HRV|CRV|BRV|Yaris|Camry|Alphard|City|Civic)\s*(?:20\d{2}|19\d{2})?\b/gi,
+    ];
+
+    let vehicleName = "";
+    const lastAiMsgForContext = messageHistory.filter(m => m.role === "assistant").pop();
+
+    // 1. Try to extract from current message
+    for (const pattern of vehiclePatterns) {
+      const match = msg.match(pattern);
+      if (match && match[0]) {
+        vehicleName = match[0].trim();
+        break;
+      }
+    }
+
+    // 2. Try to extract from last AI message if not in current
+    if (!vehicleName && lastAiMsgForContext) {
+      for (const pattern of vehiclePatterns) {
+        const match = lastAiMsgForContext.content.match(pattern);
+        if (match && match[0]) {
+          vehicleName = match[0].trim();
+          break;
+        }
+      }
+    }
+
+    // 3. Check recent conversation history (last 10 messages)
+    if (!vehicleName) {
+      const recentHistory = messageHistory.slice(-10);
+      for (const historyMsg of recentHistory.reverse()) {
+        for (const pattern of vehiclePatterns) {
+          const match = historyMsg.content.match(pattern);
+          if (match && match[0]) {
+            vehicleName = match[0].trim();
+            break;
+          }
+        }
+        if (vehicleName) break;
+      }
+    }
+
+    // 4. Upgrade Generic Name to Specific ID if available in history
+    const idPattern = /pm-[a-zA-Z0-9]+-\d+/i;
+    if (vehicleName && !idPattern.test(vehicleName)) {
+      const recentHistory = messageHistory.slice(-10);
+      for (const historyMsg of recentHistory.reverse()) {
+        const match = historyMsg.content.match(idPattern);
+        if (match && match[0]) {
+          console.log(`[SmartFallback] 🎯 Upgrading generic "${vehicleName}" to ID "${match[0]}" from context`);
+          vehicleName = match[0].trim();
+          break;
+        }
+      }
+    }
+
     // ==================== PRIORITY 0: CONTEXTUAL ANSWER HANDLER ====================
     // Handle short answers to previous AI questions (e.g. "Malang", "Cash", "Budi")
     // preventing AI from treating them as new search queries
@@ -1188,7 +1247,12 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       }
 
       // 2. Name Answer (AI asked "dengan siapa", "kakak siapa")
-      if (lastContent.includes("dengan siapa") || lastContent.includes("kakak siapa") || lastContent.includes("boleh tau nama")) {
+      // CRITICAL: Only trigger if user is actually giving a name (not asking a technical question)
+      const looksLikeNameAnswer = msg.length < 30 && // Use shorter limit for names
+        !msg.includes("?") &&
+        !/\b(interior|eksterior|mesin|harga|stok|ready|brapa|berapa|gimana|bagaimana|mana)\b/i.test(msg);
+
+      if (looksLikeNameAnswer && (lastContent.includes("dengan siapa") || lastContent.includes("kakak siapa") || lastContent.includes("boleh tau nama"))) {
         console.log(`[SmartFallback] 👤 Name answer detected: "${msg}"`);
         // AUTO-MINING: Capture Name
         // Extract clean name (remove "saya", "nama saya", etc)
@@ -1245,12 +1309,17 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     }
 
     // ==================== (MOVED) SPECIFIC VEHICLE INQUIRY HANDLER ====================
-    // Priority 0.5: Check for explicit Vehicle ID (PM-PST-XXX or PM PST-XXX)
-    const idMatchMatch = msg.match(/\b(pm[- ]?[a-zA-Z0-9]+-\d+)\b/i);
-    if (idMatchMatch) {
+    // Priority 0.5: Check for explicit Vehicle ID or Contextual Vehicle Name
+    const idInMsg = msg.match(/\b(pm[- ]?[a-zA-Z0-9]+-\d+)\b/i);
+    const contextId = vehicleName && vehicleName.match(/\b(pm[- ]?[a-zA-Z0-9]+-\d+)\b/i) ? vehicleName : null;
+
+    // Trigger if explicit ID in message OR if we have a car context AND a technical question
+    const isTechnicalQuestion = /\b(interior|eksterior|exterior|mesin|body|dalam|luar|dokumen|surat|pajak|bpkb|stnk)\b/i.test(msg);
+
+    if (idInMsg || (contextId && isTechnicalQuestion)) {
       // Normalize to standard PM-PST-XXX format for searching
-      const explicitId = idMatchMatch[0].toUpperCase().replace(" ", "-");
-      console.log(`[SmartFallback] 🎯 Explicit ID detected: ${explicitId}`);
+      const explicitId = (idInMsg ? idInMsg[0] : contextId as string).toUpperCase().replace(" ", "-");
+      console.log(`[SmartFallback] 🎯 Processing vehicle context: ${explicitId}`);
 
       let matchingVehicle = null;
       try {
