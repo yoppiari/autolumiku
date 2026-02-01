@@ -1069,7 +1069,18 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       const lastContent = lastAiMsg.content.toLowerCase();
 
       // 1. Location Answer (AI asked "area mana", "domisili", "kota")
-      if (lastContent.includes("area mana") || lastContent.includes("domisili") || lastContent.includes("kota mana")) {
+      // CRITICAL: Only trigger if user is ANSWERING (not asking a new question)
+      const looksLikeLocationAnswer = msg.length < 50 && // Short message (city names are short)
+        !msg.includes("?") && // Not a question
+        !msg.includes("apakah") && // Not asking availability
+        !msg.includes("masih") && // Not asking stock status
+        !msg.includes("tersedia") &&
+        !msg.includes("ada") &&
+        !msg.includes("ready");
+
+      if (looksLikeLocationAnswer &&
+        messageHistory.length > 2 && // Must have prior conversation
+        (lastContent.includes("area mana") || lastContent.includes("domisili") || lastContent.includes("kota mana"))) {
         console.log(`[SmartFallback] 📍 Location answer detected: "${msg}"`);
 
         // Extract vehicle context from history
