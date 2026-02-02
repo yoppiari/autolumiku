@@ -92,8 +92,6 @@ Mau lihat fotonya? 📸"
 
 ---
 
-## 🔨 TODO - NEXT STEPS
-
 ### 4. Chat History Display Labels
 **Status**: 🔜 **PENDING**
 
@@ -243,6 +241,24 @@ const loadWhatsAppStatus = async (conversations: Conversation[]) => {
 
 ---
 
+### 10. Automatic Lead Capture & Handover
+**Status**: ✅ **DONE**
+
+**Changes Made**:
+- ✅ Implemented `createOrUpdateFromWhatsApp` logic in `LeadService` to record data for new/returning customers.
+- ✅ Integrated lead auto-capture into `MessageOrchestratorService` to sync every WhatsApp interaction to the CRM dashboard.
+- ✅ Enhanced `IntentClassifierService` with advanced budget/price extraction (jt, juta, rb, m, b) for accurate segmentation.
+- ✅ Automated the sales handover process (`create_lead` tool) to trigger "silently" in the background once data (Name, Location, Interest, Budget) is complete.
+- ✅ Ensured all captured leads are visible and manageable at `https://primamobil.id/dashboard/leads`.
+
+**Files Modified**:
+- `src/lib/services/leads/lead-service.ts`
+- `src/lib/services/whatsapp-ai/core/message-orchestrator.service.ts`
+- `src/lib/services/whatsapp-ai/core/intent-classifier.service.ts`
+- `src/lib/services/whatsapp-ai/prompts/identity.ts`
+
+---
+
 ## 📝 Testing Checklist
 
 ### Personality Testing
@@ -269,4 +285,3 @@ const loadWhatsAppStatus = async (conversations: Conversation[]) => {
 1. **MEDIUM**: Implement Chat History Labels (#4) 🔜 NEXT
 2. **MEDIUM**: Fix WhatsApp Status Indicator (#5) 🔜 NEXT
 3. **LOW**: Comprehensive Personality Testing
-

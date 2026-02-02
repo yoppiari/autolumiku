@@ -694,8 +694,8 @@ export class MessageOrchestratorService {
 
       // === SMART LEADS AUTO-CAPTURE ===
       // FEATURE TOGGLE: Controlled via Dashboard -> Leads -> WhatsApp Settings
-      // We check prisma.whatsAppSettings (same model used by settings page)
-      if (normalizedPhone && classification.intent !== "staff_greeting") {
+      // CRITICAL: JANGAN memasukkan conversation admin/staff/owner ke manajemen leads
+      if (normalizedPhone && !classification.isStaff && classification.intent !== "staff_greeting") {
         try {
           // Use 'any' cast to avoid TS errors if model is missing in generated client
           // This matches the model used in /api/v1/whatsapp-settings/route.ts
