@@ -1307,7 +1307,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
   /**
    * Handles Family/MPV Recommendation Inquiries
    */
-  private static async handleFamilyRecommendationInquiry(msg: string, tenantId: string, vehicles: any[]): Promise<{ message: string; shouldEscalate: boolean; } | null> {
+  private static async handleFamilyRecommendationInquiry(msg: string, tenantId: string, vehicles: any[], context?: ChatContext): Promise<{ message: string; shouldEscalate: boolean; } | null> {
     const familyPatterns = [
       /\b(anak|family|keluarga)\s*(\d+)\s*(orang|orangnya|sih)\b/i,
       /\b(keluarga|family)\s*(kecil|besar)\b/i,
@@ -1344,10 +1344,11 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           take: 5,
           orderBy: { price: 'asc' }
         });
+        const customerName = context?.customerName || "Kak";
         if (mpvVehicles.length > 0) {
           const list = this.formatVehicleListDetailed(mpvVehicles);
           return {
-            message: `Tentu kak! Untuk keluarga ${familySize > 5 ? 'besar' : 'kecil'} seperti Kakak, kami merekomendasikan beberapa unit MPV/7-seater yang nyaman dan irit:\n\n${list}\n\n` +
+            message: `Tentu ${customerName}! Untuk keluarga ${familySize > 5 ? 'besar' : 'kecil'} seperti Kakak, kami merekomendasikan beberapa unit MPV/7-seater yang nyaman dan irit:\n\n${list}\n\n` +
               `Apakah ada unit yang menarik perhatian Kakak? Atau ingin saya bantu carikan yang lain? 😊`,
             shouldEscalate: false,
           };
@@ -1357,8 +1358,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         // Fallback to generic response if DB query fails
       }
 
+      const customerNameFallback = context?.customerName || "Kak";
       return {
-        message: `Mohon maaf kak, untuk kriteria mobil keluarga yang Kakak inginkan, saat ini stok kami sedang terbatas. 🙏\n\n` +
+        message: `Mohon maaf ${customerNameFallback}, untuk kriteria mobil keluarga yang Kakak inginkan, saat ini stok kami sedang terbatas. 🙏\n\n` +
           `Namun, kami punya beberapa unit lain yang mungkin cocok untuk kebutuhan harian Kakak. Mau saya tampilkan? 😊`,
         shouldEscalate: false,
       };
@@ -1403,15 +1405,20 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         });
       }
 
-      const name = context?.customerName || "Kak";
+      const isNewUser = !context?.customerName || ['Kak', 'Unknown', 'Pelanggan', 'siapa'].includes(context?.customerName || '');
+      const name = isNewUser ? "Kak" : context!.customerName;
       const timeGreeting = this.getTimeGreeting();
-      let introRes = `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian.\n\nSebelumnya dengan ${name} siapa saya bicara dan darimana? `;
-      if (context?.customerName && !['Kak', 'Unknown', 'Pelanggan'].includes(context.customerName)) {
+      const isFirstResponse = messageHistory.length <= 1;
+
+      let introRes = "";
+      if (isFirstResponse) {
+        introRes = `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian.\n\nSebelumnya dengan Kakak siapa saya bicara dan darimana? `;
+      } else {
         introRes = `Siap ${name}! `;
       }
 
       return {
-        message: `${introRes}Terima kasih infonya kak! 🙏\n\nUntuk penggunaan di area **${userMessage}**, unit ${vehicleName || 'yang Kakak minati'} sudah sangat cocok dan siap pakai.\n\nKebetulan unitnya masih ready, apakah Kakak ada rencana untuk cek unit langsung ke showroom atau mau saya kirimkan foto detailnya dulu? 😊`,
+        message: `${introRes}Terima kasih infonya kak! 🙏\n\nUntuk penggunaan di area **${userMessage}**${vehicleName ? `, unit ${vehicleName}` : ''} sudah sangat cocok dan siap pakai.\n\nKebetulan unitnya masih ready, apakah Kakak ada rencana untuk cek unit langsung ke showroom atau mau saya kirimkan foto detailnya dulu? 😊`,
         shouldEscalate: false
       };
     }
@@ -1454,7 +1461,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (lastContent.includes("cash") || lastContent.includes("kredit") || lastContent.includes("tunai")) {
       // Only trigger if user answer matches
       if (msg.includes("cash") || msg.includes("tunai") || msg.includes("keras")) {
-        const name = context?.customerName || "Kak";
+        const name = isNewUser ? "Kak" : context!.customerName;
         return {
           message: `Baik ${name}, untuk pembelian **Cash** kami bisa bantu pengurusan surat-surat agar lebih cepat selesai. ⚡\n\nUnit mau dicek kapan kak? Supaya kami siapkan. 😊`,
           shouldEscalate: false
@@ -1472,7 +1479,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           });
         }
 
-        const name = context?.customerName || "Kak";
+        const name = isNewUser ? "Kak" : context!.customerName;
         return {
           message: `Siap ${name}, untuk **Kredit** boleh saya bantu simulasikan hitungannya? 💰\n\nKakak rencananya mau DP berapa dan tenor berapa tahun? (Contoh: "DP 50jt tenor 3 tahun")`,
           shouldEscalate: false
@@ -1538,15 +1545,16 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       if (matchingVehicle) {
         const priceJuta = Math.round(Number(matchingVehicle.price) / 1000000);
         const name = `${matchingVehicle.make} ${matchingVehicle.model}`;
+        const isNewUser = !context?.customerName || ['Kak', 'Unknown', 'Pelanggan'].includes(context.customerName);
+        const customerName = isNewUser ? "Kak" : context!.customerName;
+        const isFirstResponse = messageHistory.length <= 1;
 
-        const intro = (!context?.customerName || context.customerName === "Kak" || context.customerName === "Unknown" || context.customerName === "Pelanggan" || context.messageHistory.length <= 2)
-          ? `Halo! ⚡
-
-Selamat datang di showroom kami
-Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
-
-Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
-          : `Siap ${context.customerName}! `;
+        let intro = "";
+        if (isFirstResponse) {
+          intro = `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian.\n\nSebelumnya dengan Kakak siapa saya bicara? `;
+        } else {
+          intro = `Siap ${customerName}! `;
+        }
 
         // Handle "dokumen" / "surat" / "pajak" context
         if (msg.includes("dokumen") || msg.includes("surat") || msg.includes("bpkb") || msg.includes("stnk") || msg.includes("pajak")) {
@@ -1558,10 +1566,8 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
             `berkasnya komplit kak (BPKB, STNK, Faktur). ✅\n\nDokumen sudah siap untuk proses balik nama atau mutasi kalau Kakak butuh.`
           ];
 
-          const name = context?.customerName || "Kak";
-          let docClosing = `Kakak ${name} rencananya mau cek unit kapan? Supaya kami siapkan surat-suratnya untuk Kakak lihat langsung. 😊`;
-          if (!context?.customerName || context.customerName === "Pelanggan" || context.customerName === "Unknown") {
-            docClosing = `Sebelumnya dengan Kakak siapa saya bicara, dan dari mana? Supaya enak ngobrolnya 😊`;
+          if (isNewUser) {
+            docClosing = `Boleh tahu dengan Kakak siapa saya bicara? Supaya enak ngobrolnya dan saya bantu cek jadwal cek unitnya 😊`;
           }
 
           const charSum = explicitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -1591,10 +1597,10 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
           const charSum = explicitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const extDesc = extVariations[charSum % extVariations.length];
 
-          // Check if user wants photos or just description
+          // Check if user explicitly asked for photos
           const name_p = context?.customerName || "Kak";
-          const wantsPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("kirim") || msg.includes("lihat");
-          const closingQuestion = wantsPhotos
+          const explicitlyAsksPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("lihat");
+          const closingQuestion = explicitlyAsksPhotos
             ? `Mau saya kirimkan foto detail eksteriornya ${name_p}? 📸 🚗`
             : `Ada yang ingin ditanyakan lagi tentang unit ini ${name_p}? 😊`;
 
@@ -1614,11 +1620,10 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
           const charSum = explicitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const intDesc = intVariations[charSum % intVariations.length];
 
-          // Check if user wants photos or just description
+          // Check if user explicitly asked for photos
           const name_i = context?.customerName || "Kak";
-          // Check if user wants photos or just description
-          const wantsPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("kirim") || msg.includes("lihat");
-          const closingQuestion = wantsPhotos
+          const explicitlyAsksPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("lihat");
+          const closingQuestion = explicitlyAsksPhotos
             ? `Mau saya kirimkan foto-foto detail bagian dalamnya ${name_i}? 📸 🚗`
             : `Ada yang ingin ditanyakan lagi tentang unit ini ${name_i}? 😊`;
 
@@ -1646,7 +1651,10 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
         }
 
         const name_gen = context?.customerName || "Kak";
-        const closingQuestion = `Mau saya kirimkan foto detail-nya atau ${name_gen} ada yang ingin ditanyakan? 😊`;
+        const explicitlyAsksPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("lihat");
+        const closingQuestion = explicitlyAsksPhotos
+          ? `Mau saya kirimkan foto detail-nya ${name_gen}? 📸 😊`
+          : `Ada yang ingin ditanyakan lagi tentang unit ini ${name_gen}? 😊`;
 
         return {
           message: `Siap ${name_gen}, unit *${name} ${matchingVehicle.year}* (${explicitId}) ini MASIH READY! 🔥\n\n` +
@@ -1858,7 +1866,7 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
           `Ini memastikan transisi yang mulus dari asisten virtual ke tim sales Anda. 🚀`;
       } else {
         const name_sf = context?.customerName || "Kak";
-        featureResponse += `Sistem **Autolumiku (AI 5.2)** bekerja dengan memproses setiap pesan masuk secara cerdas. Saya bisa membantu memberikan info stok, foto, lokasi showroom, hingga simulasi kredit secara otomatis.\n\n` +
+        featureResponse += `Sistem **Prima Mobil (AI 5.2)** bekerja dengan memproses setiap pesan masuk secara cerdas. Saya bisa membantu memberikan info stok, foto, lokasi showroom, hingga simulasi kredit secara otomatis.\n\n` +
           `Semua data ini terintegrasi langsung dengan database showroom sehingga informasinya selalu akurat. ✅\n\n` +
           `Mau saya bantu cek unit atau info lainnya ${name_sf}? 😊`;
       }
@@ -1886,7 +1894,7 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
       console.log(`[SmartFallback] 📍 Location inquiry detected: "${msg}"`);
       const name_lc = context?.customerName || "Kak";
       return {
-        message: `${timeGreeting}, Kak! 👋\n\nShowroom **${tenantName}** berlokasi di:\n📍 ${tenantAddress || 'Alamat sedang diperbarui'}\n\n` +
+        message: `Halo! ⚡\n\n${timeGreeting}, Showroom **${tenantName}** berlokasi di:\n📍 ${tenantAddress || 'Alamat sedang diperbarui'}\n\n` +
           `${name_lc} bisa klik link Google Maps ini untuk rute lengkapnya: https://maps.google.com/?q=${encodeURIComponent(tenantAddress || tenantName)}\n\n` +
           `Ada rencana mau mampir hari ini atau besok ${name_lc}? 😊`,
         shouldEscalate: false,
@@ -1909,12 +1917,12 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
       if (staffMembers.length > 0) {
         const staffList = staffMembers.map(s => `• ${s.name} (${s.role}) - ${s.phone}`).join("\n");
         return {
-          message: `${timeGreeting}! 👋\n\nTentu ${name_sc}! Silakan hubungi tim sales kami untuk informasi lebih lanjut mengenai unit atau proses pembelian:\n\n${staffList}\n\nSemoga membantu! Ada hal lain yang bisa kami bantu? 😊`,
+          message: `Halo! ⚡\n\n${timeGreeting}, tentu ${name_sc}! Silakan hubungi tim sales kami untuk informasi lebih lanjut mengenai unit atau proses pembelian:\n\n${staffList}\n\nSemoga membantu! Ada hal lain yang bisa kami bantu? 😊`,
           shouldEscalate: false,
         };
       } else {
         return {
-          message: `${timeGreeting}, ${name_sc}! 👋\n\nUntuk info lebih lanjut atau konsultasi unit, Kakak bisa hubungi tim sales kami di nomor berikut:\n` +
+          message: `Halo! ⚡\n\n${timeGreeting}, ${name_sc}! 👋\n\nUntuk info lebih lanjut atau konsultasi unit, Kakak bisa hubungi tim sales kami di nomor berikut:\n` +
             `📱 WhatsApp: ${tenantName} Sales Team\n\n` +
             `Mau saya bantu carikan unit spesifik dulu di sini kak? 😊`,
           shouldEscalate: false,
@@ -2033,8 +2041,9 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
     const list = WhatsAppAIChatService.formatVehicleListDetailed(recommendations);
 
     const name_br2 = context?.customerName || "Kak";
+    const timeGreeting = this.getTimeGreeting();
     return {
-      message: `Maaf ${name_br2}, saya mau pastikan tidak salah tangkap 😊\n\n` +
+      message: `Halo! ⚡\n\n${timeGreeting}, mohon maaf ${name_br2}, saya mau pastikan tidak salah tangkap 😊\n\n` +
         `Apakah ${name_br2} ingin melihat unit ready stock kami? Berikut beberapa rekomendasi unit terbaik kami saat ini:\n\n${list}\n\n` +
         `Atau ${name_br2} sedang mencari mobil dengan merk, budget, atau kriteria spesifik lainnya? Silakan diinfokan ya! 🙏`,
       shouldEscalate: false,

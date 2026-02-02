@@ -1097,7 +1097,7 @@ export class MessageOrchestratorService {
           'ga butuh foto', 'nggak butuh foto', 'gak butuh foto', 'tanpa foto',
           'hanya info', 'cuma info', 'info aja', 'keterangan aja', 'detail aja', 'penjelasan aja',
           'bukan minta foto', 'bukan minta fotonya', 'jangan kirim foto',
-          'stop', 'berhenti', 'cukup', 'udah', 'sudah', 'jangan lagi'
+          'berhenti', 'cukup', 'udah', 'sudah', 'jangan lagi'
         ];
 
         // Check if ANY keyword is in the message (case insensitive)
