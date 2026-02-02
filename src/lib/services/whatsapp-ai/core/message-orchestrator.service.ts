@@ -204,6 +204,13 @@ export class MessageOrchestratorService {
         incoming.customerName
       );
 
+      // CRITICAL: Update lastMessageAt immediately for dashboard visibility
+      // even if next steps (AI, commands) take time or fail
+      await prisma.whatsAppConversation.update({
+        where: { id: conversation.id },
+        data: { lastMessageAt: new Date() }
+      });
+
       // FORCE CLEAR DB STOP SIGNAL FOR ANY NEW MESSAGE
       // This is critical: if a user previously said "Stop", the flag might be stuck in DB.
       // We must clear it now so the new request (e.g. "Ya PM-xxx foto") is not immediately stopped.
@@ -1648,6 +1655,35 @@ export class MessageOrchestratorService {
       orderBy: { lastMessageAt: "desc" },
     });
 
+    // If not found by exact match, try fuzzy match (digits only) for non-LID numbers
+    // This catches format toggles (e.g. 628xxx vs 628xxx@s.whatsapp.net)
+    if (!conversation && !isLID) {
+      const digits = customerPhone.replace(/\D/g, "");
+      if (digits.length >= 10) {
+        console.log(`[Orchestrator] No exact match, searching by digits: ${digits}`);
+        conversation = await prisma.whatsAppConversation.findFirst({
+          where: {
+            accountId,
+            customerPhone: { contains: digits },
+            status: "active",
+          },
+          orderBy: { lastMessageAt: "desc" },
+        });
+
+        if (conversation) {
+          console.log(`[Orchestrator] ✅ Found existing conversation via fuzzy digits match: ${conversation.customerPhone}`);
+          // Update to the latest format to be consistent
+          await prisma.whatsAppConversation.update({
+            where: { id: conversation.id },
+            data: {
+              customerPhone,
+              lastMessageAt: new Date(), // Update immediately for visibility
+            },
+          });
+        }
+      }
+    }
+
     // If not found and this is an LID, try to find conversation with matching verified phone
     if (!conversation && isLID) {
       console.log(`[Orchestrator] LID detected, searching for linked conversation...`);
@@ -1831,6 +1867,7 @@ export class MessageOrchestratorService {
           isStaff: false,
           conversationType: "customer",
           status: "active",
+          lastMessageAt: new Date(), // Set initially for ordering
           // Store LID info in contextData if created with LID
           ...(isLID && { contextData: contextDataForNew }),
         },
@@ -2455,8 +2492,13 @@ export class MessageOrchestratorService {
       } // This brace closes the 'if (images && images.length > 0)' block
 
       // Save outbound message
-      const conversation = await prisma.whatsAppConversation.findUnique({
+      const conversation = await prisma.whatsAppConversation.update({
         where: { id: conversationId },
+        data: {
+          lastMessageAt: new Date(),
+          // Ensure it's active when AI responds (it was already active but this is double safety)
+          status: "active"
+        }
       });
 
       if (conversation) {

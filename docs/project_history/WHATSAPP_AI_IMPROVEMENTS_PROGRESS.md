@@ -221,6 +221,23 @@ Mau lihat fotonya? 📸"
 
 ---
 
+### 12. Stuck Conversation & Visibility Fixes
+**Status**: ✅ **DONE**
+
+**Changes Made**:
+- ✅ **Dashboard Visibility Fix**: Moved `lastMessageAt` update to the very beginning of message processing. This ensures that even if processing fails (AI timeout, etc.), the conversation moves to the top of the dashboard and is visible to staff for manual follow-up.
+- ✅ **Fuzzy Phone Matching**: Implementation logic to find existing conversations by normalized digits. This prevents duplicate conversations when phone formats toggle between raw digits and JID formats (e.g. `628...` vs `628...@s.whatsapp.net`).
+- ✅ **Robust Staff Matching**: Fixed staff phone number comparison in `LeadService` to correctly handle `62` and `0` prefixes.
+- ✅ **Dashboard Search Normalization**: Search term in the conversation list is now automatically normalized (digits extracted), allowing users to find people by searching for formatted numbers like `+62 812...`.
+- ✅ **Reliability Timeout**: Added a 45-second global timeout to message processing to prevent "stuck" workers and ensure the system recovers gracefully from API hangs.
+
+**Files Modified**:
+- `src/lib/services/whatsapp-ai/core/message-orchestrator.service.ts`
+- `src/lib/services/leads/lead-service.ts`
+- `src/app/dashboard/whatsapp-ai/conversations/page.tsx`
+
+---
+
 ## 📝 Testing Checklist
 
 ### Personality Testing

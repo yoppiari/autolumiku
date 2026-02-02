@@ -1038,7 +1038,9 @@ END:VCARD`;
       // Escalated: only show ACTIVE escalated (not closed/resolved)
       (filterType === 'escalated' && conv.isEscalated && conv.status !== 'closed');
 
+    const normalizedSearch = searchTerm.replace(/\D/g, "");
     const matchesSearch =
+      (normalizedSearch && conv.customerPhone.includes(normalizedSearch)) ||
       conv.customerPhone.includes(searchTerm) ||
       conv.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
 

@@ -453,15 +453,13 @@ export class LeadService {
       });
 
       // Normalize and compare phone numbers
-      const normalizePhone = (phone: string) => phone?.replace(/\D/g, '') || '';
-      const isStaffPhone = staffUsers?.some(user => {
-        const userPhone = normalizePhone(user.phone || '');
-        const customerPhoneNorm = normalizePhone(customerPhone);
+      const normalizeForComparison = (p: string) => p?.replace(/\D/g, '').replace(/^0/, '62') || '';
+      const customerPhoneNorm = normalizeForComparison(customerPhone);
 
-        // Match exact or with country code conversion (62xxx <-> 0xxx)
-        return userPhone === customerPhoneNorm ||
-          (userPhone.startsWith('62') && '0' + userPhone.slice(2) === customerPhoneNorm) ||
-          (customerPhoneNorm.startsWith('62') && '0' + customerPhoneNorm.slice(2) === userPhone);
+      const isStaffPhone = staffUsers?.some(user => {
+        const userPhone = normalizeForComparison(user.phone || '');
+        // Match exact normalized digits (both normalized to starting with 62)
+        return userPhone === customerPhoneNorm && userPhone.length >= 10;
       });
 
       if (isStaffPhone) {
