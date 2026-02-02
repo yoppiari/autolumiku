@@ -259,6 +259,22 @@ const loadWhatsAppStatus = async (conversations: Conversation[]) => {
 
 ---
 
+### 11. Trash & Internal Filter (Data Quality)
+**Status**: ✅ **DONE**
+
+**Changes Made**:
+- ✅ **Staff Exclusion**: Explicitly blocked Admins, Staff, and Owners from being recorded as leads in `MessageOrchestratorService`.
+- ✅ **Soft-Delete Sync**: Converted conversation deletion to a "Soft Delete" (status: `deleted`) to track ignored numbers.
+- ✅ **Trash Prevention**: Integrated a "Trash Check" in `LeadService` that automatically blocks any phone number with a history of deleted conversations from entering the lead dashboard.
+- ✅ **Lead Cleanup**: Associated leads are now automatically removed when a conversation is deleted, ensuring the CRM remains clean of test/junk data.
+
+**Files Modified**:
+- `src/lib/services/whatsapp-ai/core/message-orchestrator.service.ts`
+- `src/lib/services/leads/lead-service.ts`
+- `src/app/api/v1/whatsapp-ai/delete-conversation/route.ts`
+
+---
+
 ## 📝 Testing Checklist
 
 ### Personality Testing

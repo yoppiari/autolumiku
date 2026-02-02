@@ -469,7 +469,22 @@ export class LeadService {
         return null;
       }
 
-      // 3. Try to find existing lead
+      // 3. TRASH CHECK: Don't process phone numbers that have been intentionally deleted
+      // conversation status "deleted" indicates test data / trash data
+      const hasDeletedConversation = await prisma.whatsAppConversation.findFirst({
+        where: {
+          tenantId,
+          customerPhone: { contains: cleanPhone }, // Match digits to catch both raw phone and JIDs
+          status: "deleted"
+        }
+      });
+
+      if (hasDeletedConversation) {
+        console.log(`[LeadService] 🗑️ BLOCKED: Phone ${customerPhone} has previously deleted conversations (trash/test data). Skipping lead capture.`);
+        return null;
+      }
+
+      // 4. Try to find existing lead
       let lead = await this.getLeadByPhone(tenantId, cleanPhone);
 
       // Calculate basic score impact based on intent

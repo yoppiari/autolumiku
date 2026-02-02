@@ -87,9 +87,18 @@ export async function DELETE(request: NextRequest) {
           });
         }
 
-        // Then delete the conversations
-        await tx.whatsAppConversation.deleteMany({
+        // SOFT DELETE the conversations instead of hard delete
+        // This allows us to track "ignored" numbers and skip lead capture for them
+        await tx.whatsAppConversation.updateMany({
           where: { id: { in: idsToDelete } },
+          data: {
+            status: "deleted",
+            leadId: null, // Detach from lead
+            contextData: {
+              ...(targetConversation.contextData as any || {}),
+              userDeletedAt: new Date().toISOString()
+            }
+          }
         });
       });
     }
