@@ -198,6 +198,51 @@ const loadWhatsAppStatus = async (conversations: Conversation[]) => {
 
 ---
 
+### 7. AI Response Disconnects (Contextual Fix)
+**Status**: ✅ **DONE**
+
+**Changes Made**:
+- ✅ Fixed contextual answer detection to distinguish between location answers and unit-specific questions.
+- ✅ Improved direct photo delivery: AI now sends photos **immediately** when requested (Interior, Exterior, Ready status) without asking for confirmation.
+- ✅ Enhanced regex patterns to catch various ways users ask for photos ("mana photonya", "liat", "preview").
+- ✅ Prevented vehicle IDs (e.g., PM-PST-003) from being misinterpreted as location answers.
+
+**File Modified**:
+- `src/lib/services/whatsapp-ai/core/chat.service.ts`
+
+---
+
+### 8. "Kak [Name]" Standardization
+**Status**: ✅ **DONE**
+
+**Changes Made**:
+- ✅ Enforced "Kak [Name]" calling convention for all users in `prompts/identity.ts`.
+- ✅ Created `formatKakName` helper to standardize greetings across all modular handlers.
+- ✅ Removed redundant titles ("Pak", "Bu", "Bapak", "Ibu") and simplified long names to first names.
+- ✅ Applied consistent sapaan to 10+ modular handlers (Budget, Location, Technical, etc.).
+
+**Files Modified**:
+- `src/lib/services/whatsapp-ai/prompts/identity.ts`
+- `src/lib/services/whatsapp-ai/core/chat.service.ts`
+
+---
+
+### 9. Conversational Flexibility & Incentivized Mining
+**Status**: ✅ **DONE**
+
+**Changes Made**:
+- ✅ Removed rigid "One-Breath" script requirement in favor of natural flow.
+- ✅ Implemented **Incentivized Mining**: AI now "earns" lead data by offering value first (e.g., "Tell me your name so I can register your photo request").
+- ✅ Added `getRandomVariation` to decrease repetitiveness.
+- ✅ Refactored modular handlers (Greetings, Inventory, Contextual) to have 3-4 diverse response templates each.
+- ✅ Relaxed language rules to allow common terms like "ready", "stock", and "photo" for a more modern feel.
+
+**Files Modified**:
+- `src/lib/services/whatsapp-ai/prompts/identity.ts`
+- `src/lib/services/whatsapp-ai/core/chat.service.ts`
+
+---
+
 ## 📝 Testing Checklist
 
 ### Personality Testing
@@ -207,83 +252,21 @@ const loadWhatsAppStatus = async (conversations: Conversation[]) => {
 - [ ] Change config to "helpful" → verify detailed, patient explanations
 
 ### Greeting Testing
-- [ ] User asks "kamu itu apa" → should start with "Selamat siang! 👋"
-- [ ] User asks any question → should always start with greeting
-- [ ] Verify greeting changes based on time (pagi/siang/sore/malam)
+- [ ] User asks "kamu itu apa" → should start with greeting
+- [ ] User: "mana fotonya" → AI should respond with "Siap Kak [Name]!"
+- [ ] Verify name remains "Kak [First Name]" regardless of input (e.g., "Yudho D. L" → "Kak Yudho")
 
-### Budget Handling Testing
-- [ ] User: "mobil 50jt" → should explain NO unit available, offer nearest
-- [ ] User: "mobil 150jt" → should show available units in that range
-- [ ] Verify AI never says "saya cek dulu ya"
-
-### Status Indicator Testing
-- [ ] Check user +62 812 9832 9132 in conversations page → should be consistent
-- [ ] Check same user in users page → indicator color should match
-- [ ] Test with multiple users with different WA registration status
+### Response Accuracy Testing
+- [ ] Ask "eksterior Daihatsu Xenia" → AI should send exterior photos immediately
+- [ ] Ask "interiornya mana" → AI should send interior photos immediately
+- [ ] Ask "mana fotonya" after checking stock → AI should send photos immediately
+- [ ] Check if "PM-PST-003" still triggers "Lokasi di PM-PST-003" (should NOT happen)
 
 ---
 
 ## 🎯 Priority Order
 
-1. **HIGH**: Test Personality Integration (#1) ✅ DONE - Waiting for user test
-2. **HIGH**: Test Greeting Logic (#2) ✅ DONE - Waiting for user test
-3. **HIGH**: Test Budget Handling (#3) ✅ DONE - Waiting for user test
-4. **MEDIUM**: Implement Chat History Labels (#4) 🔜 NEXT
-5. **MEDIUM**: Fix WhatsApp Status Indicator (#5) 🔜 NEXT
-6. **LOW**: KKB Simulation Feature (#6) 🔜 FUTURE
-
----
-
-## 🔧 How to Test
-
-### Test Personality
-1. Go to https://primamobil.id/dashboard/whatsapp-ai/config
-2. Change "Personality" dropdown
-3. Save configuration
-4. Send test message via WhatsApp
-5. Verify AI tone matches selected personality
-
-### Test Greeting
-1. Send "kamu itu apa" via WhatsApp
-2. Verify response starts with "Selamat [waktu]! 👋"
-3. Send follow-up question
-4. Verify it still starts with greeting
-
-### Test Budget Handling
-1. Send "saya mencari mobil di harga 50jt"
-2. Verify AI immediately explains availability (no "saya cek dulu")
-3. Verify AI offers nearest unit above budget
-4. Check response format matches example
-
----
-
-## 📄 Modified Files Summary
-
-1. **src/lib/services/whatsapp-ai/prompts/identity.ts**
-   - Added `getPersonalityTone()` function
-   - Enhanced `getIdentityPrompt()` with personality integration
-   - Completely rewrote `getGreetingRules()` for mandatory greetings
-   - Enhanced `getCustomerJourneyRules()` for better budget handling
-
----
-
-## 💡 Notes for User
-
-**Perbaikan yang Sudah Dilakukan:**
-1. ✅ AI Personality sekarang dinamis based on config di dashboard
-2. ✅ Setiap response AI akan dimulai dengan "Selamat pagi/siang/sore/malam! 👋"
-3. ✅ Ketika ditanya "kamu itu apa", AI akan jawab lengkap dengan greeting
-4. ✅ Budget inquiry langsung dijawab, tidak ada lagi "saya cek dulu ya"
-
-**Yang Perlu Ditest:**
-- Test ubah personality di config, lihat apakah tone AI berubah
-- Test tanya "kamu itu apa" - pastikan greeting muncul
-- Test "mobil 50jt" - pastikan langsung dikasih info, bukan "saya cek dulu"
-
-**Belum Selesai (Butuh Approval User untuk Lanjut)**:
-- Label chat history (Customer/Admin/Owner/Staff)
-- Fix status indicator WA yang tidak konsisten
-- Fitur simulasi KKB
-
-Silakan test dulu yang sudah selesai, baru kita lanjutkan yang belum! 😊
+1. **MEDIUM**: Implement Chat History Labels (#4) 🔜 NEXT
+2. **MEDIUM**: Fix WhatsApp Status Indicator (#5) 🔜 NEXT
+3. **LOW**: Comprehensive Personality Testing
 
