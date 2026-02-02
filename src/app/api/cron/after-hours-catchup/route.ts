@@ -73,7 +73,8 @@ export async function GET(request: Request) {
                     from: convo.customerPhone,
                     message: lastInbound.content,
                     messageId: lastInbound.aimeowMessageId || `catchup_${Date.now()}`,
-                    customerName: convo.customerName || undefined
+                    customerName: convo.customerName || undefined,
+                    isCatchup: true
                 };
 
                 // Clear FLAG FIRST to prevent infinite loops if something fails

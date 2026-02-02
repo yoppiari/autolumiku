@@ -30,6 +30,7 @@ export interface IncomingMessage {
   mediaUrl?: string;
   mediaType?: string;
   messageId: string;
+  isCatchup?: boolean;
 }
 
 export interface ProcessingResult {
@@ -869,7 +870,8 @@ export class MessageOrchestratorService {
           incoming.message,
           true, // isStaff
           staffInfo as any,
-          classification.entities // Pass entities (aspect)
+          classification.entities, // Pass entities (aspect)
+          incoming.isCatchup || false
         );
         responseMessage = result.message;
         escalated = result.escalated;
@@ -889,7 +891,8 @@ export class MessageOrchestratorService {
           incoming.message,
           false, // isStaff = false (since this block is for customers)
           undefined,   // staffInfo
-          classification.entities // Pass entities (aspect)
+          classification.entities, // Pass entities (aspect)
+          incoming.isCatchup || false
         );
 
         responseMessage = result.message;
@@ -910,7 +913,8 @@ export class MessageOrchestratorService {
           incoming.message,
           classification.isStaff, // Preserve staff status
           undefined,
-          classification.entities // Pass entities (aspect)
+          classification.entities, // Pass entities (aspect)
+          incoming.isCatchup || false
         );
 
         responseMessage = result.message;
@@ -945,7 +949,8 @@ export class MessageOrchestratorService {
               incoming.message,
               !!isActuallyStaff,
               staffInfo as any,
-              classification.entities // Pass entities (aspect)
+              classification.entities, // Pass entities (aspect)
+              incoming.isCatchup || false
             );
             responseMessage = result.message;
             escalated = result.escalated;
@@ -2055,7 +2060,8 @@ export class MessageOrchestratorService {
     message: string,
     isStaff: boolean = false,
     staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string },
-    intentEntities?: Record<string, any> // New parameter for entities (aspect)
+    intentEntities?: Record<string, any>, // New parameter for entities (aspect)
+    isCatchup: boolean = false
   ): Promise<{
     message: string;
     escalated: boolean;
@@ -2223,6 +2229,7 @@ export class MessageOrchestratorService {
           isEscalated, // Escalated conversations get faster, more direct responses
           leadInfo,
           intentEntities, // Pass entities to context
+          isCatchup,      // Pass catchup flag
         },
         message
       );

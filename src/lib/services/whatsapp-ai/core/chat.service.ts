@@ -54,6 +54,7 @@ export interface ChatContext {
     userId?: string;
   };
   isEscalated?: boolean; // Escalated conversations get faster, more direct responses
+  isCatchup?: boolean;   // Flag indicating this is a morning catch-up response
   leadInfo?: {
     id: string;
     name: string;
@@ -462,6 +463,7 @@ export class WhatsAppAIChatService {
           staffInfo: context.staffInfo,
           customerPhone: context.customerPhone,
           isEscalated: context.isEscalated || false,
+          isCatchup: context.isCatchup || false,
         };
         let systemPrompt = await this.buildSystemPrompt(
           account.tenant || { name: "Showroom Kami", city: "Indonesia" },
@@ -2172,7 +2174,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     tenant: any,
     config: any,
     intent: MessageIntent,
-    senderInfo?: { isStaff: boolean; staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string }; customerPhone: string; isEscalated?: boolean },
+    senderInfo?: { isStaff: boolean; staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string }; customerPhone: string; isEscalated?: boolean; isCatchup?: boolean },
     customerTone: 'CUEK' | 'NORMAL' | 'AKTIF' = 'NORMAL',
     leadInfo?: { id: string; name: string; status: string; interestedIn?: string; budgetRange?: string; location?: string; } | null,
     intentEntities?: Record<string, any>
@@ -2226,6 +2228,17 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
     // 3. ROLE & SENDER CONTEXT
     systemPrompt += getRolePrompt(senderInfo);
+
+    // 3b. CATCH-UP CONTEXT (After Hours Recovery)
+    if (senderInfo?.isCatchup) {
+      systemPrompt += `\n\n📌 KONTEKS PENTING: Ini adalah pesan "CATCH-UP" (balasan pagi hari).
+      User mengirim pesan semalam saat showroom sudah TUTUP, dan kita baru membalas sekarang saat jam operasional dimulai (${timeGreeting}).
+      INSTRUKSI:
+      1. Ucapkan salam pembuka yang sesuai waktu: "${timeGreeting}!".
+      2. WAJIB MINTA MAAF karena baru bisa membalas sekarang (sebutkan karena semalam tim sudah istirahat/di luar jam operasional).
+      3. LANGSUNG JAWAB pertanyaan user di pesan terakhirnya dengan detail, ramah, dan solutif.
+      4. Gunakan gaya bahasa yang hangat agar customer merasa tetap diprioritaskan.`;
+    }
 
     // --- AI 5.2 LOGIC INJECTION START ---
     // TONE ADAPTATION
