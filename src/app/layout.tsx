@@ -25,44 +25,37 @@ export async function generateMetadata(): Promise<Metadata> {
       const headersList = headers();
       const tenantSlug = headersList.get('x-tenant-slug');
 
-      let foundTenant = null;
+      // Use a single query to find the best match to minimize round-trips
+      const conditions: any[] = [];
+      if (tenantSlug) conditions.push({ slug: tenantSlug });
+      conditions.push({ id: 'e592973f-9eff-4f40-adf6-ca6b2ad9721f' }); // Admin ID
+      conditions.push({ name: { contains: 'Prima Mobil', mode: 'insensitive' } }); // Keyword
 
-      // 1. Try Header Slug
+      const foundTenants = await prisma.tenant.findMany({
+        where: {
+          OR: conditions
+        },
+        select: { id: true, slug: true, name: true, faviconUrl: true },
+        take: 3
+      });
+
+      // Priority: 1. Exact slug, 2. Admin ID, 3. Name match
       if (tenantSlug) {
-        foundTenant = await prisma.tenant.findUnique({
-          where: { slug: tenantSlug },
-          select: { faviconUrl: true }
-        });
+        const slugMatch = foundTenants.find(t => t.slug === tenantSlug);
+        if (slugMatch) return slugMatch;
       }
 
-      // 2. Fallback Admin
-      if (!foundTenant) {
-        foundTenant = await prisma.tenant.findUnique({
-          where: { id: 'e592973f-9eff-4f40-adf6-ca6b2ad9721f' },
-          select: { faviconUrl: true }
-        });
-      }
+      const adminMatch = foundTenants.find(t => t.id === 'e592973f-9eff-4f40-adf6-ca6b2ad9721f');
+      if (adminMatch) return adminMatch;
 
-      // 3. Fallback Name
-      if (!foundTenant) {
-        foundTenant = await prisma.tenant.findFirst({
-          where: {
-            OR: [
-              { name: { contains: 'Prima Mobil', mode: 'insensitive' } },
-              { slug: 'prima-mobil' }
-            ]
-          },
-          select: { faviconUrl: true }
-        });
-      }
-      return foundTenant;
+      return foundTenants[0] || null;
     };
 
     const timeoutPromise = new Promise<null>((resolve) =>
       setTimeout(() => {
         console.warn('[Layout] Metadata DB fetch timed out - using defaults');
         resolve(null);
-      }, 2000) // 2 seconds timeout
+      }, 4000) // Increase to 4 seconds - metadata is heavy on first-load
     );
 
     // Race to finish
