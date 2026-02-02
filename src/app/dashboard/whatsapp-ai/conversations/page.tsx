@@ -1757,7 +1757,7 @@ END:VCARD`;
                                     })()}
                                   </span>
                                   {msg.direction === 'outbound' && (
-                                    <span className="text-blue-500 text-[11px] md:text-[10px]">✓✓</span>
+                                    <span className="text-blue-500 text-[11px] md:text-[10px]">✓</span>
                                   )}
                                 </div>
 

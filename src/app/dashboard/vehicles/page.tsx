@@ -641,7 +641,7 @@ export default function VehiclesPage() {
                           <div className={`flex items-center gap-2 ${viewMode === 'list' ? 'col-span-1' : 'col-span-2'}`}>
                             <span className={`text-gray-500 font-medium ${viewMode === 'list' ? 'w-10' : 'hidden'}`}>Mesin</span>
                             <span className="text-gray-200 font-bold">
-                              {vehicle.engineCapacity ? `${vehicle.engineCapacity} cc` : '-'}
+                              {vehicle.engineCapacity ? `${String(vehicle.engineCapacity).replace(/\D/g, '')} cc` : '-'}
                             </span>
                             <span className={`mx-2 ${viewMode === 'list' ? 'text-gray-500' : 'text-gray-600'}`}>•</span>
                             <span className="text-gray-200 font-bold">{vehicle.fuelType}</span>

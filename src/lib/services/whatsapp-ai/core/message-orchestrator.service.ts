@@ -1165,12 +1165,21 @@ export class MessageOrchestratorService {
         data: {
           lastMessageAt: new Date(),
           lastIntent: classification.intent,
+          // Handle Escalation
           ...(escalated && {
-            escalatedTo: "human", // In production, assign to specific staff
+            escalatedTo: "human",
             escalatedAt: new Date(),
             status: "escalated",
           }),
-          // Auto-resolution or needsCatchup persistence
+
+          // Handle De-escalation / Auto-Resolve
+          ...(shouldAutoResolve && !escalated && {
+            status: "active",       // Reset status to active
+            escalatedTo: null,      // Clear escalation
+            escalatedAt: null,
+          }),
+
+          // Context Data Updates
           ...((shouldAutoResolve || needsCatchup) && {
             contextData: {
               ...((conversation.contextData as Record<string, any>) || {}),
