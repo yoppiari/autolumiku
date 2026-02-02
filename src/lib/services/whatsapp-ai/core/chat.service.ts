@@ -405,7 +405,8 @@ export class WhatsAppAIChatService {
       const photoConfirmResult = await WhatsAppAIChatService.handlePhotoConfirmationDirectly(
         userMessage,
         context.messageHistory,
-        context.tenantId
+        context.tenantId,
+        context
       );
 
       if (photoConfirmResult) {
@@ -1160,12 +1161,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     let vehicles: any[] = [];
 
     // Standard Time-based Greeting
-    const now = new Date();
-    const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
-    let timeGreeting = "Selamat malam";
-    if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
-    else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
-    else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+    const timeGreeting = this.getTimeGreeting();
 
     try {
       vehicles = await prisma.vehicle.findMany({
@@ -1201,7 +1197,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (technical) return technical;
 
     // 3. IDENTITY & POLICIES (Siapa Anda, SOP)
-    const identity = await this.handleAIIdentityAndPolicyInquiry(msg, timeGreeting, tenantName);
+    const identity = await this.handleAIIdentityAndPolicyInquiry(msg, timeGreeting, tenantName, context);
     if (identity) return identity;
 
     // 4. GREETINGS & WELCOME
@@ -1209,7 +1205,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (greeting) return greeting;
 
     // 5. INVENTORY & RECOMMENDATIONS
-    const inventory = await this.handleInventoryInquiry(msg, tenantName, vehicles);
+    const inventory = await this.handleInventoryInquiry(msg, tenantName, vehicles, context);
     if (inventory) return inventory;
 
     // 6. FAMILY RECOMMENDATIONS
@@ -1217,23 +1213,23 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (family) return family;
 
     // 7. LOCATION & CONTACT (Alamat, Google Maps, Nomor Showroom)
-    const locationContact = await this.handleLocationContactInquiry(msg, timeGreeting, tenantName, tenantAddress);
+    const locationContact = await this.handleLocationContactInquiry(msg, timeGreeting, tenantName, tenantAddress, context);
     if (locationContact) return locationContact;
 
     // 8. STAFF CONTACT (Sales, Admin, Marketing)
-    const staffContact = await this.handleStaffContactInquiry(msg, timeGreeting, tenantId, tenantName);
+    const staffContact = await this.handleStaffContactInquiry(msg, timeGreeting, tenantId, tenantName, context);
     if (staffContact) return staffContact;
 
     // 9. BUDGET RECOMMENDATIONS (Budget aware search)
-    const budgetRec = await this.handleBudgetRecommendationInquiry(msg, tenantName, vehicles, messageHistory);
+    const budgetRec = await this.handleBudgetRecommendationInquiry(msg, tenantName, vehicles, messageHistory, context);
     if (budgetRec) return budgetRec;
 
     // 10. SYSTEM FEATURES
-    const system = await this.handleSystemFeatureInquiry(msg, timeGreeting, tenantName);
+    const system = await this.handleSystemFeatureInquiry(msg, timeGreeting, tenantName, context);
     if (system) return system;
 
     return {
-      message: `${timeGreeting}! 👋 Ada yang bisa kami bantu mengenai unit mobil di ${tenantName}? Kamu bisa tanya stok, harga, atau simulasi kredit lho! 😊`,
+      message: `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian di ${tenantName}. 😊\n\nAda yang bisa kami bantu? Kamu bisa tanya stok, harga, atau simulasi kredit lho!`,
       shouldEscalate: false
     };
   }
@@ -1261,9 +1257,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
       let personalizedGreeting = "";
       if (context?.staffInfo && (context.staffInfo.firstName || context.staffInfo.name)) {
-        personalizedGreeting = `${timeGreeting}, ${context.staffInfo.firstName || context.staffInfo.name}! 👋\n\nSelamat datang kembali di ${tenantName}! Ada yang bisa saya bantu hari ini?${vehiclePreview}`;
+        personalizedGreeting = `${timeGreeting}, ${context.staffInfo.firstName || context.staffInfo.name}! 👋\n\nSelamat datang kembali di ${tenantName}! Saya asisten virtual Anda, ada unit yang ingin dicek kembali hari ini?${vehiclePreview}`;
       } else {
-        personalizedGreeting = `${timeGreeting}! 👋 Halo Kak!\n\nSelamat datang di ${tenantName}. Saya Asisten Virtual Anda.\n\nBoleh tau dengan Kakak siapa saya bicara? 😊\n${vehiclePreview}`;
+        personalizedGreeting = `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian di ${tenantName}.\n\nSebelumnya dengan Kakak siapa saya bicara? 😊\n${vehiclePreview}`;
       }
 
       return { message: personalizedGreeting + "\n\nAda yang bisa kami bantu? 😊", shouldEscalate: false };
@@ -1274,14 +1270,15 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
   /**
    * Handles Inventory & Specific Unit Suggestions
    */
-  private static async handleInventoryInquiry(msg: string, tenantName: string, vehicles: any[]): Promise<{ message: string; shouldEscalate: boolean; } | null> {
+  private static async handleInventoryInquiry(msg: string, tenantName: string, vehicles: any[], context?: ChatContext): Promise<{ message: string; shouldEscalate: boolean; } | null> {
     const inventoryPatterns = /\b(lihat|liat|stok|ready|pilihan|unit|koleksi|daftar)\b.*\b(mobil|kendaraan|mobilnya|showroom)\b/i;
     if (inventoryPatterns.test(msg)) {
       if (vehicles.length > 0) {
         const list = this.formatVehicleListDetailed(vehicles.slice(0, 3));
+        const name_inv = context?.customerName || "Kak";
         return {
-          message: `Siap kak! Berikut beberapa unit *READY STOCK* kami di ${tenantName} saat ini: 🚗✨\n\n${list}\n\nAda unit yang menarik perhatian Kakak? 😊`,
-          shouldEscalate: false
+          message: `Tentu ${name_inv}! Berikut adalah daftar unit ready stock kami saat ini:\n\n${list}\n\nAda unit yang menarik perhatian Kakak? 😊`,
+          shouldEscalate: false,
         };
       }
     }
@@ -1291,11 +1288,16 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
   /**
    * Handles System Feature Inquiries (AI 5.2 Specialized)
    */
-  private static async handleSystemFeatureInquiry(msg: string, timeGreeting: string, tenantName: string): Promise<{ message: string; shouldEscalate: boolean; } | null> {
+  private static async handleSystemFeatureInquiry(
+    msg: string,
+    timeGreeting: string,
+    tenantName: string,
+    context?: ChatContext
+  ): Promise<{ message: string; shouldEscalate: boolean; } | null> {
     const systemPatterns = /\b(lead|manajemen|sistem|fitur|feature|cara kerja|how it works)\b/i;
     if (systemPatterns.test(msg)) {
       return {
-        message: `${timeGreeting}! 👋 Sistem **Autolumiku (AI 5.2)** bekerja cerdas dengan memproses stok unit, foto, dan simulasi kredit secara real-time.\n\nMau saya bantu cek unit tertentu? 😊`,
+        message: `${timeGreeting}! Halo! 👋 Saya adalah Asisten Virtual dari showroom kami yang ditenagai teknologi **Prima Mobil (AI 5.2)**. Saya bisa bantu cek stok, info detail unit, hingga simulasi kredit secara otomatis.\n\nMau saya bantu cek unit tertentu? 😊`,
         shouldEscalate: false
       };
     }
@@ -1401,9 +1403,11 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         });
       }
 
-      let introRes = `Halo! ⚡\n\nSelamat pagi, selamat datang di showroom kami\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan. Sebelumnya dengan siapa saya bicara dan darimana kakaknya?\n\n`;
-      if (context?.customerName && context.customerName !== "Kak" && context.customerName !== "Unknown") {
-        introRes = `Siap Kak ${context.customerName}! `;
+      const name = context?.customerName || "Kak";
+      const timeGreeting = this.getTimeGreeting();
+      let introRes = `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian.\n\nSebelumnya dengan ${name} siapa saya bicara dan darimana? `;
+      if (context?.customerName && !['Kak', 'Unknown', 'Pelanggan'].includes(context.customerName)) {
+        introRes = `Siap ${name}! `;
       }
 
       return {
@@ -1439,8 +1443,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         // await LeadService.updateLead(context.leadInfo.id, { name: cleanName });
       }
 
+      const name = context?.customerName || "Kak";
       return {
-        message: `Salam kenal Kak ${cleanName}! 👋\n\nSenang bisa membantu Kakak. Ada lagi yang ingin ditanyakan tentang unit yang diminati? Atau mau saya bantu hitungkan simulasi kreditnya sekalian? 😊`,
+        message: `Salam kenal ${name}! 👋\n\nSenang bisa membantu. Ada lagi yang ingin ditanyakan tentang unit yang diminati? Atau mau saya bantu hitungkan simulasi kreditnya sekalian? 😊`,
         shouldEscalate: false
       };
     }
@@ -1449,8 +1454,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (lastContent.includes("cash") || lastContent.includes("kredit") || lastContent.includes("tunai")) {
       // Only trigger if user answer matches
       if (msg.includes("cash") || msg.includes("tunai") || msg.includes("keras")) {
+        const name = context?.customerName || "Kak";
         return {
-          message: `Baik kak ${cleanName}`, untuk pembelian **Cash** kami bisa bantu pengurusan surat-surat agar lebih cepat selesai. ⚡\n\nUnit mau dicek kapan kak? Supaya kami siapkan. 😊`,
+          message: `Baik ${name}, untuk pembelian **Cash** kami bisa bantu pengurusan surat-surat agar lebih cepat selesai. ⚡\n\nUnit mau dicek kapan kak? Supaya kami siapkan. 😊`,
           shouldEscalate: false
         };
       }
@@ -1466,8 +1472,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           });
         }
 
+        const name = context?.customerName || "Kak";
         return {
-          message: `Siap kak ${cleanName}`, untuk **Kredit** boleh saya bantu simulasikan hitungannya? 💰\n\nKakak rencananya mau DP berapa dan tenor berapa tahun? (Contoh: "DP 50jt tenor 3 tahun")`,
+          message: `Siap ${name}, untuk **Kredit** boleh saya bantu simulasikan hitungannya? 💰\n\nKakak rencananya mau DP berapa dan tenor berapa tahun? (Contoh: "DP 50jt tenor 3 tahun")`,
           shouldEscalate: false
         };
       }
@@ -1538,8 +1545,8 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 Selamat datang di showroom kami
 Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
 
-Baik kak, sebelumnya dengan kakak siapa saya berbicara? `
-          : `Siap Kak ${context.customerName}! `;
+Baik kak, sebelumnya dengan kakak siapa saya berbicara dan darimana? `
+          : `Siap ${context.customerName}! `;
 
         // Handle "dokumen" / "surat" / "pajak" context
         if (msg.includes("dokumen") || msg.includes("surat") || msg.includes("bpkb") || msg.includes("stnk") || msg.includes("pajak")) {
@@ -1551,7 +1558,8 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara? `
             `berkasnya komplit kak (BPKB, STNK, Faktur). ✅\n\nDokumen sudah siap untuk proses balik nama atau mutasi kalau Kakak butuh.`
           ];
 
-          let docClosing = "Kakak rencana mau cek unit-nya kapan? Supaya kami siapkan surat-suratnya untuk Kakak lihat langsung. 😊";
+          const name = context?.customerName || "Kak";
+          let docClosing = `Kakak ${name} rencananya mau cek unit kapan? Supaya kami siapkan surat-suratnya untuk Kakak lihat langsung. 😊`;
           if (!context?.customerName || context.customerName === "Pelanggan" || context.customerName === "Unknown") {
             docClosing = `Sebelumnya dengan Kakak siapa saya bicara, dan dari mana? Supaya enak ngobrolnya 😊`;
           }
@@ -1584,10 +1592,11 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara? `
           const extDesc = extVariations[charSum % extVariations.length];
 
           // Check if user wants photos or just description
+          const name_p = context?.customerName || "Kak";
           const wantsPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("kirim") || msg.includes("lihat");
           const closingQuestion = wantsPhotos
-            ? "Mau saya kirimkan foto detail eksteriornya kak? 📸 🚗"
-            : "Ada yang ingin ditanyakan lagi tentang unit ini? 😊";
+            ? `Mau saya kirimkan foto detail eksteriornya ${name_p}? 📸 🚗`
+            : `Ada yang ingin ditanyakan lagi tentang unit ini ${name_p}? 😊`;
 
           return {
             message: `${intro}${extDesc}\n\n${closingQuestion}`,
@@ -1606,10 +1615,12 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara? `
           const intDesc = intVariations[charSum % intVariations.length];
 
           // Check if user wants photos or just description
+          const name_i = context?.customerName || "Kak";
+          // Check if user wants photos or just description
           const wantsPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("kirim") || msg.includes("lihat");
           const closingQuestion = wantsPhotos
-            ? "Mau saya kirimkan foto-foto detail bagian dalamnya? 📸 🚗"
-            : "Ada yang ingin ditanyakan lagi tentang unit ini? 😊";
+            ? `Mau saya kirimkan foto-foto detail bagian dalamnya ${name_i}? 📸 🚗`
+            : `Ada yang ingin ditanyakan lagi tentang unit ini ${name_i}? 😊`;
 
           return {
             message: `${intro}${intDesc}\n\n${closingQuestion}`,
@@ -1627,16 +1638,18 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara? `
           const charSum = explicitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const engDesc = engVariations[charSum % engVariations.length];
 
+          const name_e = context?.customerName || "Kak";
           return {
-            message: `${intro}${engDesc}\n\nBoleh banget kalau Kakak mau datang untuk test drive dan cek mesin langsung lho! Kapan ada waktu luang? 😊`,
+            message: `${intro}${engDesc}\n\nBoleh banget kalau ${name_e} mau datang untuk test drive dan cek mesin langsung lho! Kapan ada waktu luang? 😊`,
             shouldEscalate: false
           };
         }
 
-        const closingQuestion = "Mau saya kirimkan foto detail-nya atau Kakak ada yang ingin ditanyakan? 😊";
+        const name_gen = context?.customerName || "Kak";
+        const closingQuestion = `Mau saya kirimkan foto detail-nya atau ${name_gen} ada yang ingin ditanyakan? 😊`;
 
         return {
-          message: `Siap kak, unit *${name} ${matchingVehicle.year}* (${explicitId}) ini MASIH READY! 🔥\n\n` +
+          message: `Siap ${name_gen}, unit *${name} ${matchingVehicle.year}* (${explicitId}) ini MASIH READY! 🔥\n\n` +
             `• Harga: Rp ${priceJuta} Juta (Nego)\n` +
             `• Kondisi: Terawat, siap pakai\n\n` +
             `Unit ini salah satu favorit di sini. ${closingQuestion}`,
@@ -1693,27 +1706,13 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara? `
         const priceJuta = Math.round(Number(matchingVehicle.price) / 1000000);
         const id = matchingVehicle.displayId || matchingVehicle.id.substring(0, 6).toUpperCase();
 
+        const name_sq = context?.customerName || "Kak";
+        const timeGreeting = this.getTimeGreeting();
         // Dynamic Closing Question for Lead Gen
-        const closingQuestion = "Mau lihat fotonya kak? 📸";
+        const closingQuestion = `Mau lihat fotonya ${name_sq}? 📸`;
 
         // ONE BREATH FORMAT: Ask name first, then confirm stock
-        // ONE BREATH FORMAT: Ask name first, then confirm stock
-        const response = `Halo! ⚡
-
-Selamat datang di showroom kami
-Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
-
-Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}* ini MASIH AVAILABLE! 🔥
-
-* ID Unit: ${id}
-* Harga: Rp ${priceJuta} Juta (Nego)
-* Transmisi: ${matchingVehicle.transmissionType || 'Manual'}
-* Warna: ${matchingVehicle.color || '-'}
-* Bahan Bakar: ${matchingVehicle.fuelType || 'Bensin'}
-
-Unit siap gass, kondisi terawat kak! 👍
-
-Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
+        const response = `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian.\n\nBaik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${matchingVehicle.make} ${matchingVehicle.model} ${matchingVehicle.year}* ini MASIH AVAILABLE! 🔥\n\n* ID Unit: ${id}\n* Harga: Rp ${priceJuta} Juta (Nego)\n* Transmisi: ${matchingVehicle.transmissionType || 'Manual'}\n* Warna: ${matchingVehicle.color || '-'}\n* Bahan Bakar: ${matchingVehicle.fuelType || 'Bensin'}\n\nUnit siap gass, kondisi terawat ${name_sq}! 👍\n\nMau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
 
         return { message: response, shouldEscalate: false };
       } else {
@@ -1741,7 +1740,8 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
   private static async handleAIIdentityAndPolicyInquiry(
     msg: string,
     timeGreeting: string,
-    tenantName: string
+    tenantName: string,
+    context?: ChatContext
   ): Promise<{ message: string; shouldEscalate: boolean; } | null> {
     // AI Identity patterns - more specific
     const aiIdentityPatterns = [
@@ -1777,7 +1777,7 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
 
       const identityResponse =
         `${timeGreeting}! 👋\n\n` +
-        `Saya adalah AI Assistant **${tenantName}** yang ditenagai oleh teknologi **Autolumiku (AI 5.2)**. 🤖⚡\n\n` +
+        `Saya adalah AI Assistant **${tenantName}** yang ditenagai oleh teknologi **Prima Mobil (AI 5.2)**. 🤖⚡\n\n` +
         `Saya menggunakan teknologi *Natural Language Processing* tingkat lanjut untuk memberikan informasi stok kendaraan secara real-time, simulasi kredit, hingga pengolahan data visual unit kami.\n\n` +
         `Ada yang bisa saya bantu terkait unit mobil di showroom kami hari ini? 😊`;
 
@@ -1857,9 +1857,10 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
           `• **Customer Lama**: AI mengenali data histori dari [Dashboard Conversations](https://primamobil.id/dashboard/whatsapp-ai/conversations) dan menyapa secara personal.\n\n` +
           `Ini memastikan transisi yang mulus dari asisten virtual ke tim sales Anda. 🚀`;
       } else {
+        const name_sf = context?.customerName || "Kak";
         featureResponse += `Sistem **Autolumiku (AI 5.2)** bekerja dengan memproses setiap pesan masuk secara cerdas. Saya bisa membantu memberikan info stok, foto, lokasi showroom, hingga simulasi kredit secara otomatis.\n\n` +
           `Semua data ini terintegrasi langsung dengan database showroom sehingga informasinya selalu akurat. ✅\n\n` +
-          `Mau saya bantu cek unit atau info lainnya? 😊`;
+          `Mau saya bantu cek unit atau info lainnya ${name_sf}? 😊`;
       }
 
       return {
@@ -1873,7 +1874,7 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
   /**
    * Handles Location & Contact Inquiries
    */
-  private static async handleLocationContactInquiry(msg: string, timeGreeting: string, tenantName: string, tenantAddress: string): Promise<{ message: string; shouldEscalate: boolean; } | null> {
+  private static async handleLocationContactInquiry(msg: string, timeGreeting: string, tenantName: string, tenantAddress: string, context?: ChatContext): Promise<{ message: string; shouldEscalate: boolean; } | null> {
     const locationPatterns = [
       /(lokasi|alamat|dimana|di mana|where).*(showroom|toko|kantor|tempat|outlet|cabang)/i,
       /(showroom|toko|kantor|tempat|outlet|cabang).*(lokasi|alamat|dimana|di mana|where|ada|berada)/i,
@@ -1883,10 +1884,11 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
 
     if (locationPatterns.some(p => p.test(msg))) {
       console.log(`[SmartFallback] 📍 Location inquiry detected: "${msg}"`);
+      const name_lc = context?.customerName || "Kak";
       return {
         message: `${timeGreeting}, Kak! 👋\n\nShowroom **${tenantName}** berlokasi di:\n📍 ${tenantAddress || 'Alamat sedang diperbarui'}\n\n` +
-          `Kakak bisa klik link Google Maps ini untuk rute lengkapnya: https://maps.google.com/?q=${encodeURIComponent(tenantAddress || tenantName)}\n\n` +
-          `Ada rencana mau mampir hari ini atau besok kak? 😊`,
+          `${name_lc} bisa klik link Google Maps ini untuk rute lengkapnya: https://maps.google.com/?q=${encodeURIComponent(tenantAddress || tenantName)}\n\n` +
+          `Ada rencana mau mampir hari ini atau besok ${name_lc}? 😊`,
         shouldEscalate: false,
       };
     }
@@ -1896,22 +1898,23 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
   /**
    * Handles Staff Contact Handover Inquiries
    */
-  private static async handleStaffContactInquiry(msg: string, timeGreeting: string, tenantId: string, tenantName: string): Promise<{ message: string; shouldEscalate: boolean; } | null> {
+  private static async handleStaffContactInquiry(msg: string, timeGreeting: string, tenantId: string, tenantName: string, context?: ChatContext): Promise<{ message: string; shouldEscalate: boolean; } | null> {
     const contactKeywords = /\b(nomer|nomor|wa|whatsapp|kontak|contact|telp|telepon|phone)\b/i;
     const requestKeywords = /\b(minta|kirim|mana|boleh|hubungi|hubungin|calling|call|admin|office|staff|sales|marketing|manajer|manager)\b/i;
 
     if (contactKeywords.test(msg) && requestKeywords.test(msg)) {
       console.log(`[SmartFallback] 📞 Staff contact inquiry detected with Handover Intent: "${msg}"`);
       const staffMembers = await this.getRegisteredStaffContacts(tenantId);
+      const name_sc = context?.customerName || "Kak";
       if (staffMembers.length > 0) {
         const staffList = staffMembers.map(s => `• ${s.name} (${s.role}) - ${s.phone}`).join("\n");
         return {
-          message: `${timeGreeting}! 👋\n\nTentu kak! Silakan hubungi tim sales kami untuk informasi lebih lanjut mengenai unit atau proses pembelian:\n\n${staffList}\n\nSemoga membantu! Ada hal lain yang bisa kami bantu? 😊`,
+          message: `${timeGreeting}! 👋\n\nTentu ${name_sc}! Silakan hubungi tim sales kami untuk informasi lebih lanjut mengenai unit atau proses pembelian:\n\n${staffList}\n\nSemoga membantu! Ada hal lain yang bisa kami bantu? 😊`,
           shouldEscalate: false,
         };
       } else {
         return {
-          message: `${timeGreeting}, Kak! 👋\n\nUntuk info lebih lanjut atau konsultasi unit, Kakak bisa hubungi tim sales kami di nomor berikut:\n` +
+          message: `${timeGreeting}, ${name_sc}! 👋\n\nUntuk info lebih lanjut atau konsultasi unit, Kakak bisa hubungi tim sales kami di nomor berikut:\n` +
             `📱 WhatsApp: ${tenantName} Sales Team\n\n` +
             `Mau saya bantu carikan unit spesifik dulu di sini kak? 😊`,
           shouldEscalate: false,
@@ -1924,7 +1927,7 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
   /**
    * Handles Budget-Aware Vehicle Recommendations
    */
-  private static async handleBudgetRecommendationInquiry(msg: string, tenantName: string, vehicles: any[], messageHistory: any[]): Promise<{ message: string; shouldEscalate: boolean; } | null> {
+  private static async handleBudgetRecommendationInquiry(msg: string, tenantName: string, vehicles: any[], messageHistory: any[], context?: ChatContext): Promise<{ message: string; shouldEscalate: boolean; } | null> {
     // Check if question is about SPECIFIC DETAILS (capacity, type, color, transmission, specs)
     const isSpecificDetailQuestion = /\b(kapasitas|tipe|jenis|warna|transmisi|mesin|cc|bensin|diesel|manual|automatic|matic|spesifikasi|spec|fitur|kelengkapan|interior|eksterior|bagasi)\b/i.test(msg);
     const isTypeQuestion = /\b(suv|sedan|mpv|hatchback|lcgc|city car|pick.*up)\b.*\b(atau|apa|nggak|gak|bukan)\b/i.test(msg);
@@ -1998,10 +2001,11 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
 
         console.log(`[SmartFallback] ⚠️ No vehicles within budget Rp ${Math.round(finalBudget / 1000000)}jt, closest: ${closestVehicle.make} ${closestVehicle.model} at Rp ${closestPrice}jt`);
 
+        const name_br = context?.customerName || "Kak";
         return {
           message: `Mohon maaf, untuk budget Rp ${Math.round(finalBudget / 1000000)} juta saat ini belum ada unit ready yang pas. 🙏\n\n` +
             `Unit terdekat yang kami punya:\n• ${closestVehicle.make} ${closestVehicle.model} ${closestVehicle.year} - Rp ${closestPrice} juta | ${id}\n\n` +
-            `Apakah budget bisa disesuaikan atau ingin coba cari unit lain? 😊`,
+            `Apakah budget bisa disesuaikan atau ingin coba cari unit lain ${name_br}? 😊`,
           shouldEscalate: false,
         };
       }
@@ -2025,13 +2029,14 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
     // Take top 3 recommendations
     const recommendations = premiumVehicles.slice(0, 3);
 
-    // Use the DETAILED formatter
+    // Use the DETAILED formatter, after know customer name
     const list = WhatsAppAIChatService.formatVehicleListDetailed(recommendations);
 
+    const name_br2 = context?.customerName || "Kak";
     return {
-      message: `Maaf kak, saya mau pastikan tidak salah tangkap 😊\n\n` +
-        `Apakah Kakak ingin melihat unit ready stock kami? Berikut beberapa rekomendasi unit terbaik kami saat ini:\n\n${list}\n\n` +
-        `Atau Kakak sedang mencari mobil dengan merk, budget, atau kriteria spesifik lainnya? Silakan diinfokan ya! 🙏`,
+      message: `Maaf ${name_br2}, saya mau pastikan tidak salah tangkap 😊\n\n` +
+        `Apakah ${name_br2} ingin melihat unit ready stock kami? Berikut beberapa rekomendasi unit terbaik kami saat ini:\n\n${list}\n\n` +
+        `Atau ${name_br2} sedang mencari mobil dengan merk, budget, atau kriteria spesifik lainnya? Silakan diinfokan ya! 🙏`,
       shouldEscalate: false,
     };
   }
@@ -2399,7 +2404,8 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
   private static async handlePhotoConfirmationDirectly(
     userMessage: string,
     messageHistory: Array<{ role: "user" | "assistant"; content: string }>,
-    tenantId: string
+    tenantId: string,
+    context?: ChatContext
   ): Promise<{ message: string; shouldEscalate: boolean; confidence: number; images?: Array<{ imageUrl: string; caption?: string }> } | null> {
     const msg = userMessage.trim().toLowerCase();
 
@@ -2539,16 +2545,18 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
               const id = v.displayId || v.id.substring(0, 8).toUpperCase();
               return `• ${v.make} ${v.model} ${v.year} | ${id}`;
             }).join('\n');
+            const name_pc1 = context?.customerName || "Kak";
             return {
-              message: `Maaf kak, saat ini galeri foto unit sedang kami perbarui untuk kualitas terbaik. 👋\n\nTapi kami punya unit ready menarik lainnya:\n${vehicleList}\n\nIngin saya kirimkan fotonya segera setelah siap? 😊`,
+              message: `Maaf ${name_pc1}, saat ini galeri foto unit sedang kami perbarui untuk kualitas terbaik. 👋\n\nTapi kami punya unit ready menarik lainnya:\n${vehicleList}\n\nIngin saya kirimkan fotonya segera setelah siap? 😊`,
               shouldEscalate: false,
               confidence: 0.8,
             };
           }
           console.log(`[PhotoConfirm DEBUG] ❌ No vehicles found at all`);
+          const name_pc2 = context?.customerName || "Kak";
           // Return helpful message instead of falling through to null
           return {
-            message: `Maaf kak, saya belum tahu mobil mana yang ingin Anda lihat fotonya. 🤔\n\n` +
+            message: `Maaf ${name_pc2}, saya belum tahu mobil mana yang ingin Anda lihat fotonya. 🤔\n\n` +
               `Bisa sebutkan jenis atau ID mobilnya? Contoh:\n` +
               `• "Foto Avanza"\n` +
               `• "Foto PM-PST-002"\n` +
@@ -2560,18 +2568,20 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
         } catch (e: any) {
           console.error(`[PhotoConfirm DEBUG] ❌ ERROR in fallback:`, e.message);
           console.error(`[PhotoConfirm DEBUG] Error stack:`, e.stack);
+          const name_pc3 = context?.customerName || "Kak";
           // Return error guidance instead of null
           return {
-            message: `Maaf kak, ada kendala teknis. 😅 Bisa coba dengan "Foto [nama mobil]" atau ketik "mobil" untuk lihat daftar! 😊`,
+            message: `Maaf ${name_pc3}, ada kendala teknis. 😅 Bisa coba dengan "Foto [nama mobil]" atau ketik "mobil" untuk lihat daftar! 😊`,
             shouldEscalate: false,
             confidence: 0.8,
           };
         }
       } else {
         console.log(`[PhotoConfirm DEBUG] ❌ userExplicitlyAsksPhoto is false, not entering fallback`);
+        const name_pc4 = context?.customerName || "Kak";
         // User confirmed but didn't explicitly say "foto" - provide guidance
         return {
-          message: `Baik kak! 👍 Bisa sebutkan mobil mana yang ingin dilihat fotonya? Contoh: "Avanza" atau "PM-PST-002" 😊`,
+          message: `Baik ${name_pc4}! 👍 Bisa sebutkan mobil mana yang ingin dilihat fotonya? Contoh: "Avanza" atau "PM-PST-002" 😊`,
           shouldEscalate: false,
           confidence: 0.85,
         };
