@@ -155,8 +155,11 @@ export class WhatsAppAIChatService {
    */
   private static getTimeGreeting(): string {
     const now = new Date();
-    const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-    const hour = wibTime.getHours();
+    const hour = parseInt(new Intl.DateTimeFormat('en-GB', {
+      hour: 'numeric',
+      hour12: false,
+      timeZone: 'Asia/Jakarta'
+    }).format(now));
 
     if (hour >= 4 && hour < 11) return "Selamat pagi";
     if (hour >= 11 && hour < 15) return "Selamat siang";
@@ -1573,6 +1576,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
             `berkasnya komplit kak (BPKB, STNK, Faktur). ✅\n\nDokumen sudah siap untuk proses balik nama atau mutasi kalau Kakak butuh.`
           ];
 
+          let docClosing = "";
           if (isNewUser) {
             docClosing = `Boleh tahu dengan Kakak siapa saya bicara? Supaya enak ngobrolnya dan saya bantu cek jadwal cek unitnya 😊`;
           }
@@ -2068,10 +2072,24 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
   ): Promise<string> {
     // Get current time in Indonesia (WIB - UTC+7)
     const now = new Date();
-    const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-    const hour = wibTime.getHours();
-    const timeStr = wibTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    const dateStr = wibTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const hour = parseInt(new Intl.DateTimeFormat('en-GB', {
+      hour: 'numeric',
+      hour12: false,
+      timeZone: 'Asia/Jakarta'
+    }).format(now));
+
+    const timeStr = now.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Jakarta'
+    });
+    const dateStr = now.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'Asia/Jakarta'
+    });
 
     // Determine appropriate greeting based on time
     // Determine appropriate greeting based on time matching identity.ts rules

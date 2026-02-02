@@ -43,8 +43,11 @@ export interface CommandExecutionResult {
  */
 export function getTimeBasedGreeting(): string {
   const now = new Date();
-  const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-  const hour = wibTime.getHours();
+  const hour = parseInt(new Intl.DateTimeFormat('en-GB', {
+    hour: 'numeric',
+    hour12: false,
+    timeZone: 'Asia/Jakarta'
+  }).format(now));
 
   if (hour >= 4 && hour < 11) {
     return "Selamat pagi";
