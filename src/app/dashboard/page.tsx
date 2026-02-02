@@ -399,7 +399,7 @@ export default function ShowroomDashboardPage() {
       emoji: '💬',
       gradient: 'from-emerald-500 to-emerald-600',
       bgLight: 'bg-emerald-900/20',
-      href: '/dashboard/whatsapp-ai/analytics',
+      href: '/dashboard/whatsapp-ai/conversations',
       colorClass: 'hover:border-emerald-500 hover:bg-emerald-900/30',
       iconBg: 'bg-emerald-900/40 group-hover:bg-emerald-600 border-2 border-emerald-800 group-hover:border-emerald-500',
       isAuthorized: canSeeAnalytics,
