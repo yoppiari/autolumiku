@@ -276,6 +276,7 @@ export class WhatsAppAIChatService {
     userMessage: string
   ): Promise<ChatResponse> {
     const startTime = Date.now();
+    const msg = userMessage.trim().toLowerCase();
 
     console.log(`[WhatsApp AI Chat] Generating response for tenant: ${context.tenantId}, message: ${userMessage.substring(0, 50)}`);
 
@@ -305,7 +306,7 @@ export class WhatsAppAIChatService {
             tenantId: context.tenantId,
             aiName: "AI Assistant",
             aiPersonality: "friendly",
-            welcomeMessage: `{greeting}! Halo, terima kasih sudah menghubungi kami. Lagi cari mobil apa nih? Bisa sebutkan merk, budget, atau kebutuhannya ya!`,
+            welcomeMessage: `{greeting}, Halo! Selamat pagi, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan. Sebelumnya dengan kakak siapa saya bicara dan darimana? Ada yang bisa saya bantu`,
             customerChatEnabled: true,
             autoReply: true,
             staffCommandsEnabled: true,
@@ -428,7 +429,7 @@ export class WhatsAppAIChatService {
           customerPhone: context.customerPhone,
           isEscalated: context.isEscalated || false,
         };
-        const systemPrompt = await this.buildSystemPrompt(
+        let systemPrompt = await this.buildSystemPrompt(
           account.tenant || { name: "Showroom Kami", city: "Indonesia" },
           config,
           context.intent,
@@ -594,7 +595,7 @@ export class WhatsAppAIChatService {
       // Handle tool calls (function calling)
       let uploadRequest: any = null;
       let editRequest: any = null;
-      let messages: any[] = []; // Added for tool output feedback
+      const messages: any[] = []; // Added for tool output feedback
 
       // Handle tool calls
       if (aiResponse.toolCalls) {
@@ -820,6 +821,7 @@ export class WhatsAppAIChatService {
       }
 
       // 3. LAZINESS FILTER - Catch and replace "cek dulu" or "mohon ditunggu"
+      const hasToolCalls = aiResponse.toolCalls && aiResponse.toolCalls.length > 0;
       if (!hasToolCalls && (responseMessage.toLowerCase().includes("cek dulu") || responseMessage.toLowerCase().includes("mohon ditunggu"))) {
         console.log(`[WhatsApp AI Chat] ⚠️ Laziness detected in response: "${responseMessage}"`);
         const vehicles = await this.getAvailableVehiclesDetailed(context.tenantId);
@@ -1174,7 +1176,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     } catch (e) { /* ignore */ }
 
     // ==================== VEHICLE CONTEXT DETECTION (PRIORITY #0) ====================
-    let vehicleName = this.extractActiveVehicle(userMessage, messageHistory);
+    const vehicleName = this.extractActiveVehicle(userMessage, messageHistory);
 
     // ==================== PRIORITY 0: CONTEXTUAL ANSWER HANDLER ====================
     const contextualResponse = await this.handleContextualAnswers(msg, userMessage, messageHistory, vehicleName, context);
@@ -1399,7 +1401,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         });
       }
 
-      let introRes = `Halo! ⚡\n\nSelamat datang di showroom kami\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n`;
+      let introRes = `Halo! ⚡\n\nSelamat pagi, selamat datang di showroom kami\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan. Sebelumnya dengan siapa saya bicara dan darimana kakaknya?\n\n`;
       if (context?.customerName && context.customerName !== "Kak" && context.customerName !== "Unknown") {
         introRes = `Siap Kak ${context.customerName}! `;
       }
@@ -1416,7 +1418,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       !msg.includes("?") &&
       !/(interior|eksterior|luar|dalam|mesin|harga|stok|ready|brapa|berapa|gimana|bagaimana|mana)/i.test(msg);
 
-    if (looksLikeNameAnswer && (lastContent.includes("dengan siapa") || lastContent.includes("kakak siapa") || lastContent.includes("boleh tau nama"))) {
+    if (looksLikeNameAnswer && (lastContent.includes("dengan siapa saya bicara") || lastContent.includes("dengan kakak siapa") || lastContent.includes("boleh tahu dengan siapa nama kakaknya"))) {
       console.log(`[SmartFallback] 👤 Name answer detected: "${msg}"`);
       // AUTO-MINING: Capture Name
       // Extract clean name (remove "saya", "nama saya", etc)
@@ -1448,7 +1450,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       // Only trigger if user answer matches
       if (msg.includes("cash") || msg.includes("tunai") || msg.includes("keras")) {
         return {
-          message: `Baik kak, untuk pembelian **Cash** kami bisa bantu pengurusan surat-surat agar lebih cepat selesai. ⚡\n\nUnit mau dicek kapan kak? Supaya kami siapkan. 😊`,
+          message: `Baik kak ${cleanName}`, untuk pembelian **Cash** kami bisa bantu pengurusan surat-surat agar lebih cepat selesai. ⚡\n\nUnit mau dicek kapan kak? Supaya kami siapkan. 😊`,
           shouldEscalate: false
         };
       }
@@ -1465,7 +1467,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         }
 
         return {
-          message: `Siap kak, untuk **Kredit** boleh saya bantu simulasikan hitungannya? 💰\n\nKakak rencananya mau DP berapa dan tenor berapa tahun? (Contoh: "DP 50jt tenor 3 tahun")`,
+          message: `Siap kak ${cleanName}`, untuk **Kredit** boleh saya bantu simulasikan hitungannya? 💰\n\nKakak rencananya mau DP berapa dan tenor berapa tahun? (Contoh: "DP 50jt tenor 3 tahun")`,
           shouldEscalate: false
         };
       }
@@ -1692,11 +1694,11 @@ Baik kak, sebelumnya dengan kakak siapa saya berbicara? `
         const id = matchingVehicle.displayId || matchingVehicle.id.substring(0, 6).toUpperCase();
 
         // Dynamic Closing Question for Lead Gen
-        let closingQuestion = "Mau lihat fotonya kak? 📸";
+        const closingQuestion = "Mau lihat fotonya kak? 📸";
 
         // ONE BREATH FORMAT: Ask name first, then confirm stock
         // ONE BREATH FORMAT: Ask name first, then confirm stock
-        let response = `Halo! ⚡
+        const response = `Halo! ⚡
 
 Selamat datang di showroom kami
 Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
@@ -1902,7 +1904,7 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
       console.log(`[SmartFallback] 📞 Staff contact inquiry detected with Handover Intent: "${msg}"`);
       const staffMembers = await this.getRegisteredStaffContacts(tenantId);
       if (staffMembers.length > 0) {
-        let staffList = staffMembers.map(s => `• ${s.name} (${s.role}) - ${s.phone}`).join("\n");
+        const staffList = staffMembers.map(s => `• ${s.name} (${s.role}) - ${s.phone}`).join("\n");
         return {
           message: `${timeGreeting}! 👋\n\nTentu kak! Silakan hubungi tim sales kami untuk informasi lebih lanjut mengenai unit atau proses pembelian:\n\n${staffList}\n\nSemoga membantu! Ada hal lain yang bisa kami bantu? 😊`,
           shouldEscalate: false,
@@ -2471,7 +2473,7 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
     console.log(`[WhatsApp AI Chat] Photo request detected (explicit: ${userExplicitlyAsksPhoto}), extracting vehicle...`);
 
     // Extract vehicle name using prioritized helper
-    let vehicleName = this.extractActiveVehicle(userMessage, messageHistory);
+    const vehicleName = this.extractActiveVehicle(userMessage, messageHistory);
 
     if (vehicleName) {
       console.log(`[PhotoConfirm DEBUG] 🎯 Active Vehicle extracted: "${vehicleName}"`);
@@ -2704,7 +2706,7 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
     return null;
   }
 
-  private static formatPrice(price: number | BigInt | string): string {
+  private static formatPrice(price: number | bigint | string): string {
     // Convert to number for Intl.NumberFormat
     const numPrice = typeof price === 'bigint' ? Number(price) :
       typeof price === 'string' ? parseFloat(price) : Number(price);
@@ -3211,7 +3213,7 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
 
         // PRIORITY: Use originalUrl (JPEG) first for Mobile Compatibility.
         // AimeowClientService handles size safety (falls back to medium if > 6MB).
-        let imageUrl = photo.originalUrl || photo.mediumUrl || photo.largeUrl;
+        const imageUrl = photo.originalUrl || photo.mediumUrl || photo.largeUrl;
 
         if (!imageUrl) {
           console.log(`[WhatsApp AI Chat] ⚠️ No valid URL for photo ${photoIndex + 1}`);
@@ -3584,7 +3586,7 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
       Object.entries(baseRates).forEach(([leasing, rates]) => {
         // Safe access to rate (handle missing tenor index by taking last available)
         const rateIndex = Math.min(tenor - 1, rates.length - 1);
-        let baseRate = rates[Math.max(0, rateIndex)];
+        const baseRate = rates[Math.max(0, rateIndex)];
 
         // Apply age adjustment (max cap +3% to be realistic)
         const finalRate = baseRate + Math.min(ageRateAdjustment, 3.0);
@@ -3694,6 +3696,7 @@ Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
           return {
             message: smartFallback.message,
             shouldEscalate: smartFallback.shouldEscalate,
+            confidence: 0.95,
             images: smartFallback.images || [],
             processingTime: Date.now() - startTime,
           };

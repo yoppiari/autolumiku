@@ -117,7 +117,7 @@ RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
 USER nextjs
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3000
 
 # Health check (use 127.0.0.1 instead of localhost to avoid IPv6 issues)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
