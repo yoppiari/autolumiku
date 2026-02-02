@@ -205,6 +205,7 @@ function ConversationsPage() {
 
   // Track which phones have been requested (to avoid duplicate API calls)
   const loadedPhonesRef = useRef<Set<string>>(new Set());
+  const checkedWhatsAppStatusRef = useRef<Set<string>>(new Set());
 
   // Load profile pictures for conversations
   useEffect(() => {
@@ -267,56 +268,66 @@ function ConversationsPage() {
     loadProfilePictures();
   }, [conversations]);
 
+  // Helper to check a single WhatsApp status
+  const checkSingleWhatsAppStatus = async (phone: string, force = false) => {
+    const cleanPhone = phone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '');
+    if (!cleanPhone) return;
+
+    if (!force && checkedWhatsAppStatusRef.current.has(cleanPhone)) return;
+
+    try {
+      const storedUser = localStorage.getItem('user');
+      const tenantId = storedUser ? JSON.parse(storedUser).tenantId : null;
+
+      const response = await fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${cleanPhone}${tenantId ? `&tenantId=${tenantId}` : ''}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setWhatsAppStatus(prev => ({
+          ...prev,
+          [cleanPhone]: data.isRegistered || false
+        }));
+        checkedWhatsAppStatusRef.current.add(cleanPhone);
+      }
+    } catch (error) {
+      console.error(`[WhatsApp Status] Error checking ${phone}:`, error);
+    }
+  };
+
   // Load WhatsApp registration status for all conversations (real-time check)
   useEffect(() => {
     const loadWhatsAppStatuses = async () => {
       if (conversations.length === 0) return;
 
-      console.log('[WhatsApp Status] Checking registration status for all conversations...');
+      console.log(`[WhatsApp Status] Checking registration status for ${conversations.length} conversations...`);
 
       // Load statuses in parallel (max 5 at a time to avoid overwhelming the API)
       const batchSize = 5;
-      const phones = conversations.map(conv => conv.customerPhone);
+      const phones = conversations
+        .map(conv => conv.customerPhone)
+        .filter(phone => {
+          const clean = phone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '');
+          return !checkedWhatsAppStatusRef.current.has(clean);
+        });
+
+      if (phones.length === 0) return;
 
       for (let i = 0; i < phones.length; i += batchSize) {
         const batch = phones.slice(i, i + batchSize);
 
         await Promise.all(
-          batch.map(async (phone) => {
-            try {
-              // Clean phone number
-              const cleanPhone = phone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '');
-              if (!cleanPhone) return;
-
-              const response = await fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${cleanPhone}`);
-              const data = await response.json();
-
-              if (data.success) {
-                // Key by CLEAN phone number
-                setWhatsAppStatus(prev => ({
-                  ...prev,
-                  [cleanPhone]: data.isRegistered || false
-                }));
-                console.log(`[WhatsApp Status] ${cleanPhone}: ${data.isRegistered ? 'REGISTERED ✅' : 'NOT REGISTERED ❌'}`);
-              } else {
-                setWhatsAppStatus(prev => ({ ...prev, [cleanPhone]: false }));
-              }
-            } catch (error) {
-              console.error(`[WhatsApp Status] Error checking ${phone}:`, error);
-              const cleanPhone = phone.replace(/@.*$/, '').replace(/:/g, '').replace(/[^0-9]/g, '');
-              setWhatsAppStatus(prev => ({ ...prev, [cleanPhone]: false }));
-            }
-          })
+          batch.map(phone => checkSingleWhatsAppStatus(phone))
         );
       }
-
-      console.log('[WhatsApp Status] ✅ Status check completed');
     };
 
     loadWhatsAppStatuses();
 
-    // Refresh status every 2 minutes (WhatsApp status can change)
-    const interval = setInterval(loadWhatsAppStatuses, 120000);
+    // Refresh everything every 5 minutes
+    const interval = setInterval(() => {
+      checkedWhatsAppStatusRef.current.clear();
+      loadWhatsAppStatuses();
+    }, 300000);
     return () => clearInterval(interval);
   }, [conversations]);
 
@@ -417,6 +428,8 @@ function ConversationsPage() {
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation);
     loadMessages(conversation.id, conversation.allConversationIds);
+    // Check status immediately
+    checkSingleWhatsAppStatus(conversation.customerPhone, true);
   };
 
   // Export staff contacts to vCard (like WhatsApp)
@@ -1156,7 +1169,8 @@ END:VCARD`;
     setSelectedConversation(conversation);
     loadMessages(conversation.id, conversation.allConversationIds);
     setShowChatOnMobile(true);
-    // Hide notifications count for this convo locally
+    // Check status immediately
+    checkSingleWhatsAppStatus(conversation.customerPhone, true);
   };
 
   // Back to list on mobile
@@ -1667,7 +1681,11 @@ END:VCARD`;
                                 {msg.direction === 'inbound' && (
                                   <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
                                     <span className="text-[11px] md:text-[10px] font-semibold text-green-400">
-                                      👨‍💼 →
+                                      {(() => {
+                                        // Standard icons as per requirements
+                                        // Customer and Staff (Inbound) both get 👨‍💼
+                                        return '👨‍💼 →';
+                                      })()}
                                     </span>
                                     <span className="text-[11px] md:text-[10px] font-bold text-gray-300">
                                       {(() => {
@@ -1707,16 +1725,15 @@ END:VCARD`;
                                 )}
                                 {msg.direction === 'outbound' && (
                                   <div className="flex items-center space-x-1.5 md:space-x-1 mb-1 md:mb-0.5">
-                                    <span className="text-[11px] md:text-[10px] font-semibold text-blue-300">
+                                    <span className={`${msg.senderType === 'ai' || msg.aiResponse ? 'text-blue-300' : 'text-green-400'} text-[11px] md:text-[10px] font-semibold`}>
                                       {msg.senderType === 'ai' || msg.aiResponse ? '🤖 →' : '👨‍💼 →'}
                                     </span>
                                     <span className="text-[11px] md:text-[10px] font-bold text-gray-300">
                                       {msg.senderType === 'ai' || msg.aiResponse
-                                        ? (aiConfig?.aiName || 'AI Assistant')
+                                        ? `${aiConfig?.aiName || 'AI Assistant'} (Prima Virtual Assistant)`
                                         : (() => {
-                                          // Staff response logic
+                                          // Outbound staff response logic (Manual Reply from Dashboard)
                                           const role = msg.senderType === 'staff' ? 'Staff' : 'Admin';
-                                          // Try to map specific role from intent/metadata if available
                                           if (msg.intent?.includes('owner')) return 'Owner';
                                           if (msg.intent?.includes('admin')) return 'Admin';
                                           if (msg.intent?.includes('sales')) return 'Staff (Sales)';

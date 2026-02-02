@@ -93,84 +93,30 @@ Mau lihat fotonya? 📸"
 ---
 
 ### 4. Chat History Display Labels
-**Status**: 🔜 **PENDING**
+**Status**: ✅ **DONE**
 
-**Requirements**:
-- Format chat sender dengan label yang jelas
-- Customer messages: `👨‍💼 → Customer`
-- Staff messages: `👨‍💼 → Staff (Sales)` atau `👨‍💼 → Admin` dst
-- AI messages: `🤖 → AI Assistant (Prima Virtual Assistant)` - ambil nama dari `config.aiName`
+**Changes Made**:
+- ✅ Standardized chat sender labels with clear icons: `👨‍💼` for humans (Customer/Staff) and `🤖` for AI.
+- ✅ Implemented dynamic role labels for staff: `Owner`, `Admin`, `Staff (Sales)`.
+- ✅ Standardized AI label: `🤖 → [aiName] (Prima Virtual Assistant)`.
+- ✅ Used `aiConfig.aiName` from tenant configuration.
 
-**Files to Modify**:
+**File Modified**:
 - `src/app/dashboard/whatsapp-ai/conversations/page.tsx`
-
-**Proposed Changes**:
-```typescript
-// In message display section
-const getSenderLabel = (message: Message, conversation: Conversation) => {
-  if (message.aiResponse) {
-    return `🤖 → ${config?.aiName || 'AI Assistant'}`;
-  }
-  
-  if (conversation.isStaff) {
-    const role = message.senderRole || 'Staff';
-    const roleLabel = role === 'OWNER' ? 'Owner' :
-                      role === 'ADMIN' ? 'Admin' :
-                      role === 'SALES' ? 'Staff (Sales)' : 'Staff';
-    return `👨‍💼 → ${roleLabel}`;
-  }
-  
-  return `👨‍💼 → Customer`;
-};
-```
 
 ---
 
 ### 5. Real-time WhatsApp Status Check
-**Status**: 🔜 **PENDING**
+**Status**: ✅ **DONE**
 
-**Problem**:
-- No WA +62 812 9832 9132 shows RED indicator in conversations page
-- Same number shows GREEN indicator in users page
-- Inconsistent status
+**Changes Made**:
+- ✅ Added real-time WhatsApp registration status check to conversations list and chat header.
+- ✅ Optimized performance using `checkedWhatsAppStatusRef` to prevent redundant API calls.
+- ✅ Implemented immediate status refresh when a conversation is selected (desktop & mobile).
+- ✅ Updated UI indicators: **GREEN** with pulse = registered/active, **RED** = not registered.
 
-**Root Cause**:
-- Users page: Uses `/api/v1/whatsapp-ai/check-whatsapp` (real-time check ✅)
-- Conversations page: Uses conversation.status from database (NOT real-time ❌)
-
-**Solution Needed**:
-- Add real-time WhatsApp status check di conversations page
-- Fetch status for each conversation using `/api/v1/whatsapp-ai/check-whatsapp`
-- Update indicator color: **GREEN** = registered, **RED** = not registered
-
-**Files to Modify**:
+**File Modified**:
 - `src/app/dashboard/whatsapp-ai/conversations/page.tsx`
-
-**Proposed Logic**:
-```typescript
-// Load WhatsApp registration status for all conversations
-const loadWhatsAppStatus = async (conversations: Conversation[]) => {
-  const statusMap: Record<string, boolean> = {};
-  
-  for (const conv of conversations) {
-    try {
-      const response = await fetch(`/api/v1/whatsapp-ai/check-whatsapp?phone=${conv.customerPhone}`);
-      const data = await response.json();
-      statusMap[conv.customerPhone] = data.isRegistered;
-    } catch (error) {
-      console.error('Failed to check status:', error);
-      statusMap[conv.customerPhone] = false; // default to not registered
-    }
-  }
-  
-  setWhatsAppStatus(statusMap);
-};
-
-// In conversation list display
-<div className={`status-indicator ${
-  whatsAppStatus[conv.customerPhone] ? 'bg-green-500' : 'bg-red-500'
-}`} />
-```
 
 ---
 
