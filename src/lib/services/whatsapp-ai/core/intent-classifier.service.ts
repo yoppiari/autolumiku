@@ -915,10 +915,11 @@ export class IntentClassifierService {
       entities.model = detectedModel;
     }
 
-    // Extract price mentions
-    const priceMatch = message.match(/(\d{2,3})\s*(juta|jt)/i);
+    // Extract price mentions (Improved: handles spaces and up to 4 digits for billions/thousands of millions)
+    const priceMatch = message.match(/(\d{1,4})\s*(juta|jt|million|milyar|m|b)/i);
     if (priceMatch) {
-      entities.price = parseInt(priceMatch[1]) * 1000000;
+      const multiplier = /m(?:ilyar)?|b(?:illion)?/i.test(priceMatch[2]) ? 1000000000 : 1000000;
+      entities.price = parseInt(priceMatch[1]) * multiplier;
     }
 
     return entities;

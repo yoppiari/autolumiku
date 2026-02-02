@@ -2082,41 +2082,52 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (finalBudget) {
       console.log(`[SmartFallback] 💰 Budget detected: Rp ${Math.round(finalBudget / 1000000)} juta`);
 
-      // Allow up to 30% over budget for flexibility
+      const name_b = this.formatKakName(context?.customerName);
+
+      // Categorization Thresholds
+      const idealLower = finalBudget * 0.85;
+      const idealUpper = finalBudget * 1.15;
       const maxPrice = finalBudget * 1.3;
-      const budgetVehicles = vehicles.filter(v => Number(v.price) <= maxPrice);
 
-      if (budgetVehicles.length > 0) {
-        // Sort by price (closest to budget first)
-        budgetVehicles.sort((a, b) => {
-          const diffA = Math.abs(Number(a.price) - finalBudget);
-          const diffB = Math.abs(Number(b.price) - finalBudget);
-          return diffA - diffB;
-        });
+      const idealMatches = vehicles.filter(v => Number(v.price) >= idealLower && Number(v.price) <= idealUpper);
+      const economicalOptions = vehicles.filter(v => Number(v.price) < idealLower && Number(v.price) >= finalBudget * 0.4);
+      const premiumOptions = vehicles.filter(v => Number(v.price) > idealUpper && Number(v.price) <= maxPrice);
 
-        const list = WhatsAppAIChatService.formatVehicleListDetailed(budgetVehicles.slice(0, 3));
-        console.log(`[SmartFallback] ✅ Found ${budgetVehicles.length} vehicles within budget`);
+      if (idealMatches.length > 0 || economicalOptions.length > 0 || premiumOptions.length > 0) {
+        let responseMsg = `Siap ${name_b}! Untuk budget sekitar **Rp ${Math.round(finalBudget / 1000000)} juta**, asisten sudah pilihkan unit yang paling cocok buat Kakak: \n\n`;
 
-        const name_b = this.formatKakName(context?.customerName);
+        if (idealMatches.length > 0) {
+          responseMsg += `🎯 **UNIT PAS BUDGET:**\n${WhatsAppAIChatService.formatVehicleListDetailed(idealMatches.slice(0, 2))}\n\n`;
+        }
+
+        if (economicalOptions.length > 0) {
+          responseMsg += `💡 **OPSI LEBIH HEMAT:**\n${WhatsAppAIChatService.formatVehicleListDetailed(economicalOptions.slice(0, 2))}\n\n`;
+        }
+
+        if (premiumOptions.length > 0) {
+          responseMsg += `✨ **OPSI PREMIUM (Sedikit di atas budget):**\n${WhatsAppAIChatService.formatVehicleListDetailed(premiumOptions.slice(0, 1))}\n\n`;
+        }
+
+        responseMsg += `Gimana ${name_b}, ada unit yang membuat Kakak tertarik? Atau mau asisten carikan alternatif lain? 😊`;
+
         return {
-          message: `Siap kak ${name_b}! Untuk budget sekitar Rp ${Math.round(finalBudget / 1000000)} juta, kami punya unit ready berikut:\n\n${list}\n\nMau lihat fotonya atau info lebih detail ${name_b}? 📸😊`,
+          message: responseMsg,
           shouldEscalate: false,
         };
       } else {
-        // No vehicles within budget - be honest and show closest option
+        // No vehicles within range - show closest option
         const closestVehicle = [...vehicles].sort((a, b) =>
           Math.abs(Number(a.price) - finalBudget) - Math.abs(Number(b.price) - finalBudget)
         )[0];
         const closestPrice = Math.round(Number(closestVehicle.price) / 1000000);
         const id = closestVehicle.displayId || closestVehicle.id.substring(0, 6).toUpperCase();
 
-        console.log(`[SmartFallback] ⚠️ No vehicles within budget Rp ${Math.round(finalBudget / 1000000)}jt, closest: ${closestVehicle.make} ${closestVehicle.model} at Rp ${closestPrice}jt`);
+        console.log(`[SmartFallback] ⚠️ No vehicles within budget range, closest: ${closestVehicle.make} ${closestVehicle.model}`);
 
-        const name_br = this.formatKakName(context?.customerName);
         return {
-          message: `Mohon maaf, untuk budget Rp ${Math.round(finalBudget / 1000000)} juta saat ini belum ada unit ready yang pas. 🙏\n\n` +
+          message: `Mohon maaf ${name_b}, untuk budget Rp ${Math.round(finalBudget / 1000000)} juta saat ini belum ada unit ready yang pas. 🙏\n\n` +
             `Unit terdekat yang kami punya:\n• ${closestVehicle.make} ${closestVehicle.model} ${closestVehicle.year} - Rp ${closestPrice} juta | ${id}\n\n` +
-            `Apakah budget bisa disesuaikan atau ingin coba cari unit lain ${name_br}? 😊`,
+            `Apakah budget bisa disesuaikan atau ingin coba cari unit lain ${name_b}? 😊`,
           shouldEscalate: false,
         };
       }
