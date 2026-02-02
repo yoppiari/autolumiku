@@ -140,12 +140,12 @@ export class WhatsAppAIChatService {
   };
 
   private static readonly PHOTO_CONFIRM_PATTERNS = [
-    /^(boleh|ya|iya|mau|yup|bisa)$/i,
-    /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
-    /\b(mana|kirim|kasih|tunjuk|lihat)\b.*\b(foto|gambar)/i,
-    /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
+    /^(boleh|ya|iya|mau|yup|bisa|ok|oke|sip|siap)$/i,
+    /\b(iya|ya|ok|oke|mau|boleh|bisa|kirim|mana|tunjuk|lihat|minta)\b.*\b(foto|photo|gambar|preview|liat)/i,
+    /\b(foto|photo|gambar|preview|liat)\b.*\b(mana|nya|dong|ya|aja|ok|oke|sip|siap|kirim)\b/i,
+    /\b(foto|photo|gambar)\s*(nya|dong|ya|aja|mana)?\b/i,
     /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
-    /^mana\s(mobil|unit|fotonya|gambarnya)/i,
+    /^mana\s+(mobil|unit|fotonya|gambarnya|photonya)/i,
   ];
 
   private static readonly GREETING_PATTERNS = /^(halo|hai|selamat|pagi|siang|sore|malam|assalam|permisi|hi|hello)/i;
@@ -165,6 +165,28 @@ export class WhatsAppAIChatService {
     if (hour >= 11 && hour < 15) return "Selamat siang";
     if (hour >= 15 && hour < 18) return "Selamat sore";
     return "Selamat malam";
+  }
+
+  /**
+   * Format name with "Kak" prefix according to user rules
+   * Ensures "Kak Yudho" instead of "Pak Yudho" or "Yudho D. L"
+   */
+  private static formatKakName(name?: string | null): string {
+    if (!name || ['Kak', 'Unknown', 'Pelanggan', 'siapa', 'User'].includes(name)) return "Kak";
+
+    // Remove existing titles: Kak, Pak, Bu, Mas, Mbak, Bapak, Ibu
+    let cleanName = name.replace(/^(Kak|Pak|Bu|Mas|Mbak|Tuan|Nyonya|Bapak|Ibu)\s+/i, '').trim();
+
+    // Take the first part of the name (e.g., "Yudho" from "Yudho D. L")
+    const parts = cleanName.split(/\s+/);
+    if (parts.length > 0) {
+      cleanName = parts[0];
+    }
+
+    // Capitalize first letter properly
+    cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase();
+
+    return `Kak ${cleanName}`;
   }
 
   /**
@@ -1261,7 +1283,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
       let personalizedGreeting = "";
       if (context?.staffInfo && (context.staffInfo.firstName || context.staffInfo.name)) {
-        personalizedGreeting = `${timeGreeting}, ${context.staffInfo.firstName || context.staffInfo.name}! 👋\n\nSelamat datang kembali di ${tenantName}! Saya asisten virtual Anda, ada unit yang ingin dicek kembali hari ini?${vehiclePreview}`;
+        personalizedGreeting = `${timeGreeting}, ${this.formatKakName(context.staffInfo.firstName || context.staffInfo.name)}! 👋\n\nSelamat datang kembali di ${tenantName}! Saya asisten virtual Anda, ada unit yang ingin dicek kembali hari ini?${vehiclePreview}`;
       } else {
         personalizedGreeting = `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian di ${tenantName}.\n\nSebelumnya dengan Kakak siapa saya bicara? 😊\n${vehiclePreview}`;
       }
@@ -1279,7 +1301,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (inventoryPatterns.test(msg)) {
       if (vehicles.length > 0) {
         const list = this.formatVehicleListDetailed(vehicles.slice(0, 3));
-        const name_inv = context?.customerName || "Kak";
+        const name_inv = this.formatKakName(context?.customerName);
         return {
           message: `Tentu ${name_inv}! Berikut adalah daftar unit ready stock kami saat ini:\n\n${list}\n\nAda unit yang menarik perhatian Kakak? 😊`,
           shouldEscalate: false,
@@ -1348,7 +1370,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           take: 5,
           orderBy: { price: 'asc' }
         });
-        const customerName = context?.customerName || "Kak";
+        const customerName = this.formatKakName(context?.customerName);
         if (mpvVehicles.length > 0) {
           const list = this.formatVehicleListDetailed(mpvVehicles);
           return {
@@ -1362,7 +1384,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         // Fallback to generic response if DB query fails
       }
 
-      const customerNameFallback = context?.customerName || "Kak";
+      const customerNameFallback = this.formatKakName(context?.customerName);
       return {
         message: `Mohon maaf ${customerNameFallback}, untuk kriteria mobil keluarga yang Kakak inginkan, saat ini stok kami sedang terbatas. 🙏\n\n` +
           `Namun, kami punya beberapa unit lain yang mungkin cocok untuk kebutuhan harian Kakak. Mau saya tampilkan? 😊`,
@@ -1391,10 +1413,12 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       !msg.includes("apakah") && // Not asking availability
       !msg.includes("masih") && // Not asking stock status
       !msg.includes("ready") &&
-      !/(interior|eksterior|ekterior|exterior|mesin|body|bodi|dalam|luar|dokumen|surat|pajak|bpkb|stnk)/i.test(msg);
+      !WhatsAppAIChatService.VEHICLE_ID_PATTERN.test(msg) && // Not a vehicle ID
+      !WhatsAppAIChatService.VEHICLE_NAME_PATTERNS.some(p => p.test(msg)) && // Not a vehicle name
+      !/(interior|eksterior|exterior|mesin|body|bodi|dalam|luar|dokumen|surat|pajak|bpkb|stnk|foto|photo|gambar|kirim|lihat|minta|tunjuk)/i.test(msg);
 
     const isNewUser = !context?.customerName || ['Kak', 'Unknown', 'Pelanggan', 'siapa'].includes(context?.customerName || '');
-    const name = isNewUser ? "Kak" : context!.customerName;
+    const name = this.formatKakName(context?.customerName);
     const timeGreeting = this.getTimeGreeting();
     const isFirstResponse = messageHistory.length <= 1;
 
@@ -1431,7 +1455,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     // CRITICAL: Only trigger if user is actually giving a name (not asking a technical question)
     const looksLikeNameAnswer = msg.length < 30 &&
       !msg.includes("?") &&
-      !/(interior|eksterior|luar|dalam|mesin|harga|stok|ready|brapa|berapa|gimana|bagaimana|mana)/i.test(msg);
+      !/(interior|eksterior|luar|dalam|mesin|harga|stok|ready|brapa|berapa|gimana|bagaimana|mana|foto|photo|gambar|kirim|lihat)/i.test(msg);
 
     if (looksLikeNameAnswer && (lastContent.includes("dengan siapa saya bicara") || lastContent.includes("dengan kakak siapa") || lastContent.includes("boleh tahu dengan siapa nama kakaknya"))) {
       console.log(`[SmartFallback] 👤 Name answer detected: "${msg}"`);
@@ -1555,8 +1579,8 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       if (matchingVehicle) {
         const priceJuta = Math.round(Number(matchingVehicle.price) / 1000000);
         const name = `${matchingVehicle.make} ${matchingVehicle.model}`;
-        const isNewUser = !context?.customerName || ['Kak', 'Unknown', 'Pelanggan'].includes(context.customerName);
-        const customerName = isNewUser ? "Kak" : context!.customerName;
+        const isNewUser = !context?.customerName || ['Kak', 'Unknown', 'Pelanggan'].includes(context?.customerName || '');
+        const customerName = this.formatKakName(context?.customerName);
         const isFirstResponse = messageHistory.length <= 1;
 
         let intro = "";
@@ -1609,11 +1633,19 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           const extDesc = extVariations[charSum % extVariations.length];
 
           // Check if user explicitly asked for photos
-          const explicitlyAsksPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("lihat");
-          const closingQuestion = explicitlyAsksPhotos
-            ? `Mau saya kirimkan foto detail eksteriornya ${customerName}? 📸 🚗`
-            : `Ada yang ingin ditanyakan lagi tentang unit ini ${customerName}? 😊`;
+          const explicitlyAsksPhotos = /(foto|photo|gambar|lihat|mana|tunjuk)/i.test(msg);
+          if (explicitlyAsksPhotos) {
+            const images = await this.fetchVehicleImagesByQuery(explicitId, context?.tenantId || tenantId);
+            if (images && images.length > 0) {
+              return {
+                message: `${intro}${extDesc}\n\nIni foto detail eksteriornya kak! 📸👇`,
+                shouldEscalate: false,
+                images
+              };
+            }
+          }
 
+          const closingQuestion = `Ada yang ingin ditanyakan lagi tentang unit ini ${customerName}? 😊`;
           return {
             message: `${intro}${extDesc}\n\n${closingQuestion}`,
             shouldEscalate: false
@@ -1899,7 +1931,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
     if (locationPatterns.some(p => p.test(msg))) {
       console.log(`[SmartFallback] 📍 Location inquiry detected: "${msg}"`);
-      const name_lc = context?.customerName || "Kak";
+      const name_lc = this.formatKakName(context?.customerName);
       return {
         message: `Halo! ⚡\n\n${timeGreeting}, Showroom **${tenantName}** berlokasi di:\n📍 ${tenantAddress || 'Alamat sedang diperbarui'}\n\n` +
           `${name_lc} bisa klik link Google Maps ini untuk rute lengkapnya: https://maps.google.com/?q=${encodeURIComponent(tenantAddress || tenantName)}\n\n` +
@@ -1920,7 +1952,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (contactKeywords.test(msg) && requestKeywords.test(msg)) {
       console.log(`[SmartFallback] 📞 Staff contact inquiry detected with Handover Intent: "${msg}"`);
       const staffMembers = await this.getRegisteredStaffContacts(tenantId);
-      const name_sc = context?.customerName || "Kak";
+      const name_sc = this.formatKakName(context?.customerName);
       if (staffMembers.length > 0) {
         const staffList = staffMembers.map(s => `• ${s.name} (${s.role}) - ${s.phone}`).join("\n");
         return {
@@ -2016,7 +2048,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
         console.log(`[SmartFallback] ⚠️ No vehicles within budget Rp ${Math.round(finalBudget / 1000000)}jt, closest: ${closestVehicle.make} ${closestVehicle.model} at Rp ${closestPrice}jt`);
 
-        const name_br = context?.customerName || "Kak";
+        const name_br = this.formatKakName(context?.customerName);
         return {
           message: `Mohon maaf, untuk budget Rp ${Math.round(finalBudget / 1000000)} juta saat ini belum ada unit ready yang pas. 🙏\n\n` +
             `Unit terdekat yang kami punya:\n• ${closestVehicle.make} ${closestVehicle.model} ${closestVehicle.year} - Rp ${closestPrice} juta | ${id}\n\n` +
@@ -2047,7 +2079,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     // Use the DETAILED formatter, after know customer name
     const list = WhatsAppAIChatService.formatVehicleListDetailed(recommendations);
 
-    const name_br2 = context?.customerName || "Kak";
+    const name_br2 = this.formatKakName(context?.customerName);
     const timeGreeting = this.getTimeGreeting();
     return {
       message: `Halo! ⚡\n\n${timeGreeting}, mohon maaf ${name_br2}, saya mau pastikan tidak salah tangkap 😊\n\n` +
@@ -2475,17 +2507,8 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     }
 
     // Photo confirmation patterns - ONLY true confirmation words/verbs
-    const photoConfirmPatterns = [
-      /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti|yoi|gass?|cuss?)$/i,
-      /^(kirim|send|tampilkan|tunjukkan|kasih|berikan|kirimin|kirimkan|lanjut|lanjutkan|hayuk|yuk|ayo)$/i,
-      /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar|lihat)/i,
-      /silahkan|silakan/i,
-      /ditunggu|tunggu/i,
-      /ok\s*(kirim|dong|ya|lanjut)/i,
-      /sip\s*(ditunggu|tunggu|lanjut)/i,
-      /mau\s*(dong|ya|lah|lihat|banget)/i,
-      /lanjut\s*(kirim|aja)/i,
-    ];
+    // Photo confirmation patterns - ONLY true confirmation words/verbs
+    const photoConfirmPatterns = WhatsAppAIChatService.PHOTO_CONFIRM_PATTERNS;
 
     const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
     if (!isPhotoConfirmation) return null;
@@ -2562,8 +2585,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
             console.log(`[PhotoConfirm DEBUG] buildImageArray returned: ${images?.length || 0} images`);
             if (images && images.length > 0) {
               console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${images.length} images`);
+              const finalName = this.formatKakName(capturedName || context?.customerName);
               return {
-                message: `Siap ${capturedName ? `Kak ${capturedName}` : 'Kak'}! Ini foto unit terbaru kami ya 📸👇\n\nAda yang mau ditanyakan tentang unit-unit ini? 😊`,
+                message: `Siap ${finalName}! Ini foto unit terbaru kami ya 📸👇\n\nAda yang mau ditanyakan tentang unit-unit ini? 😊`,
                 shouldEscalate: false,
                 confidence: 0.85,
                 images,
@@ -2576,7 +2600,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
               const id = v.displayId || v.id.substring(0, 8).toUpperCase();
               return `• ${v.make} ${v.model} ${v.year} | ${id}`;
             }).join('\n');
-            const name_pc1 = context?.customerName || "Kak";
+            const name_pc1 = this.formatKakName(context?.customerName);
             return {
               message: `Maaf ${name_pc1}, saat ini galeri foto unit sedang kami perbarui untuk kualitas terbaik. 👋\n\nTapi kami punya unit ready menarik lainnya:\n${vehicleList}\n\nIngin saya kirimkan fotonya segera setelah siap? 😊`,
               shouldEscalate: false,
@@ -2584,7 +2608,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
             };
           }
           console.log(`[PhotoConfirm DEBUG] ❌ No vehicles found at all`);
-          const name_pc2 = context?.customerName || "Kak";
+          const name_pc2 = this.formatKakName(context?.customerName);
           // Return helpful message instead of falling through to null
           return {
             message: `Maaf ${name_pc2}, saya belum tahu mobil mana yang ingin Anda lihat fotonya. 🤔\n\n` +
@@ -2609,7 +2633,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         }
       } else {
         console.log(`[PhotoConfirm DEBUG] ❌ userExplicitlyAsksPhoto is false, not entering fallback`);
-        const name_pc4 = context?.customerName || "Kak";
+        const name_pc4 = this.formatKakName(context?.customerName);
         // User confirmed but didn't explicitly say "foto" - provide guidance
         return {
           message: `Baik ${name_pc4}! 👍 Bisa sebutkan mobil mana yang ingin dilihat fotonya? Contoh: "Avanza" atau "PM-PST-002" 😊`,
@@ -2658,7 +2682,8 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         if (vehicleWithDetails && vehicleWithDetails.images.length > 0) {
           console.log(`[PhotoConfirm DEBUG] ✅ SUCCESS! Returning ${vehicleWithDetails.images.length} images with DETAILS`);
           const detailedMessage = this.buildVehicleDetailMessage(vehicleWithDetails.vehicle);
-          const greeting = capturedName ? `Siap Kak ${capturedName}! ` : "Siap! ";
+          const finalName = this.formatKakName(capturedName || context?.customerName);
+          const greeting = `Siap ${finalName}! `;
           return {
             message: greeting + detailedMessage,
             shouldEscalate: false,
