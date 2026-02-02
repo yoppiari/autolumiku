@@ -1432,8 +1432,12 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (looksLikeNameAnswer && (lastContent.includes("dengan siapa saya bicara") || lastContent.includes("dengan kakak siapa") || lastContent.includes("boleh tahu dengan siapa nama kakaknya"))) {
       console.log(`[SmartFallback] 👤 Name answer detected: "${msg}"`);
       // AUTO-MINING: Capture Name
-      // Extract clean name (remove "saya", "nama saya", etc)
-      const cleanName = userMessage.replace(/^(saya|nama|nama saya|aku|ini|dari)\s+/i, '').trim();
+      // Extract clean name (remove "saya", "nama saya", "dengan", "cukup nama customer saja" etc)
+      const cleanName = userMessage
+        .replace(/^(nama saya adalah|nama saya|panggil saja saya|panggil saja|saya dengan|nama saya dengan|nama|saya)\s+/i, '')
+        .replace(/^(dengan|dari|ini|aku)\s+/i, '')
+        .trim();
+
       if (cleanName.length > 2 && context?.leadInfo?.id) {
         // We need a way to update the lead name specifically
         // For now, allow LeadService to handle generic updates or add a specific method later
@@ -1450,9 +1454,11 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         // await LeadService.updateLead(context.leadInfo.id, { name: cleanName });
       }
 
-      // Use name defined at the top
+      // Use extracted name if available, otherwise fallback to standard Kak
+      const greetingName = cleanName.length > 1 ? `Kak ${cleanName}` : name;
+
       return {
-        message: `Salam kenal ${name}! 👋\n\nSenang bisa membantu. Ada lagi yang ingin ditanyakan tentang unit yang diminati? Atau mau saya bantu hitungkan simulasi kreditnya sekalian? 😊`,
+        message: `Salam kenal ${greetingName}! 👋\n\nSenang bisa membantu. Ada lagi yang ingin ditanyakan tentang unit yang diminati? Atau mau saya bantu hitungkan simulasi kreditnya sekalian? 😊`,
         shouldEscalate: false
       };
     }
