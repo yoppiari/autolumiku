@@ -5,7 +5,7 @@ export class WhatsAppReportService {
     /**
      * Main entry point for fetching reports based on keyword
      */
-    static async getReport(reportType: string, tenantId: string, vehicleCode?: string): Promise<string> {
+    static async getReport(reportType: string, tenantId: string, vehicleCode?: string, fullCommand?: string): Promise<string> {
         console.log(`[Report Service] Generating report: ${reportType} for tenant: ${tenantId}`);
 
         switch (reportType.toLowerCase()) {
@@ -43,7 +43,7 @@ export class WhatsAppReportService {
             case 'simulasi_kkb':
             case 'simulasi kkb':
             case 'simulasi_kredit':
-                return await this.getKKBSimulation(tenantId, vehicleCode);
+                return await this.getKKBSimulation(tenantId, vehicleCode, fullCommand);
 
 
             // ✅ Inventory & Stock
@@ -630,74 +630,78 @@ export class WhatsAppReportService {
         return msg;
     }
 
-    private static async getKKBSimulation(tenantId: string, vehicleCode?: string): Promise<string> {
+    private static async getKKBSimulation(tenantId: string, vehicleCode?: string, fullCommand?: string): Promise<string> {
         let vehicle = null;
-        if (vehicleCode) {
+        let effectiveVehicleCode = vehicleCode;
+
+        // If vehicleCode is missing but fullCommand exists, try to extract it from fullCommand
+        if (!effectiveVehicleCode && fullCommand) {
+            const idMatch = fullCommand.match(/(?:kkb|simulasi|kredit|cicilan)\s+([A-Z,0-9]{2,3}-[A-Z,0-9]+-\d+)/i) ||
+                fullCommand.match(/([A-Z,0-9]{2,3}-[A-Z,0-9]+-\d+)/i);
+            if (idMatch) {
+                effectiveVehicleCode = idMatch[1].toUpperCase();
+            }
+        }
+
+        if (effectiveVehicleCode) {
             vehicle = await prisma.vehicle.findFirst({
                 where: {
                     tenantId,
                     OR: [
-                        { id: vehicleCode },
-                        { displayId: vehicleCode }
+                        { id: effectiveVehicleCode },
+                        { displayId: effectiveVehicleCode }
                     ],
                     status: { not: 'DELETED' }
                 }
             });
 
-            // If specific vehicle ID requested but not found, return error message
-            if (!vehicle) {
-                return `❌ *UNIT TIDAK DITEMUKAN*\n\nMaaf kak, unit dengan ID *${vehicleCode}* tidak ditemukan di database kami.\n\nSilakan cek kembali ID unitnya atau hubungi admin untuk info lebih lanjut ya! 🙏`;
+            if (!vehicle && vehicleCode) {
+                return `❌ *UNIT TIDAK DITEMUKAN*\n\nMaaf kak, unit dengan ID *${vehicleCode}* tidak ditemukan di database kami.`;
             }
         }
 
         const price = vehicle ? Number(vehicle.price || 0) : 150000000;
 
         if (price === 0) {
-            return `⚠️ *SIMULASI KKB: ${vehicle?.make || ''} ${vehicle?.model || ''}*\n\nMaaf kak, harga unit ini (*${vehicleCode}*) belum tercatat di database kami. Silakan hubungi admin untuk info harga dan simulasi kreditnya ya! 🙏`;
+            return `⚠️ *SIMULASI KKB: ${vehicle?.make || ''} ${vehicle?.model || ''}*\n\nMaaf kak, harga unit ini (*${vehicleCode}*) belum tercatat di database kami.`;
         }
 
-        const { KKB_CONSTANTS } = await import('../prompts/knowledge-base');
+        // Extract DP and Tenor from fullCommand if it exists
+        let dp: string | undefined;
+        let tenor: string | undefined;
 
-        const dpPercent = KKB_CONSTANTS.minDP;
-        const dpAmount = Math.floor(price * (dpPercent / 100));
-        const pokokHutang = price - dpAmount;
+        if (fullCommand) {
+            const dpMatch = fullCommand.match(/dp\s+([0-9%,.\s]+)/i);
+            if (dpMatch) dp = dpMatch[1].trim();
 
-        // Rates (Flat) - Source: Knowledge Base
-        const rates = KKB_CONSTANTS.rates;
+            const tenorMatch = fullCommand.match(/tenor\s+([0-9,.\s]+)/i);
+            if (tenorMatch) tenor = tenorMatch[1].trim();
+        }
 
-        const calculateAngsuran = (tenorYears: number) => {
-            const rate = rates[tenorYears as keyof typeof rates];
-            const totalBunga = pokokHutang * rate * tenorYears;
-            const totalHutang = pokokHutang + totalBunga;
-            const months = tenorYears * 12;
-            return Math.floor(totalHutang / months);
-        };
+        const { WhatsAppAIChatService } = await import('../core/chat.service');
+
+        const kkbText = WhatsAppAIChatService.calculateKKBSimulation(
+            price,
+            null,
+            dp,
+            tenor,
+            {
+                vehicleYear: vehicle?.year || undefined,
+                hideHeader: false,
+                hideTitle: false
+            }
+        );
 
         let msg = vehicle
-            ? `📉 *SIMULASI KKB: ${vehicle.make} ${vehicle.model} (${vehicle.year})*\n`
-            : `📉 *SIMULASI KKB (KREDIT KENDARAAN)*\n`;
+            ? `📉 *SIMULASI KKB [LAPORAN INTEL]: ${vehicle.make} ${vehicle.model} (${vehicle.year})*\n`
+            : `📉 *SIMULASI KKB (KREDIT KENDARAAN) [REFERENSI]*\n`;
 
         msg += `ID Unit: *${vehicle?.displayId || vehicle?.id || 'CONTOH'}*\n`;
-        msg += `Harga: *${formatCurrency(price)}*\n\n`;
+        msg += kkbText;
 
-        msg += `💰 *Rincian Kredit (DP ${dpPercent}%):*\n`;
-        msg += `• DP: *${formatCurrency(dpAmount)}*\n`;
-        msg += `• Pokok Hutang: *${formatCurrency(pokokHutang)}*\n\n`;
-
-        msg += `🗓️ *Estimasi Angsuran (Flat):*\n`;
-        msg += `1️⃣ *Tenor 1 Tahun (12x)*\n`;
-        msg += `   • Angsuran: *${formatCurrency(calculateAngsuran(1))} / bln*\n`;
-        msg += `2️⃣ *Tenor 2 Tahun (24x)*\n`;
-        msg += `   • Angsuran: *${formatCurrency(calculateAngsuran(2))} / bln*\n`;
-        msg += `3️⃣ *Tenor 3 Tahun (36x)*\n`;
-        msg += `   • Angsuran: *${formatCurrency(calculateAngsuran(3))} / bln*\n`;
-        msg += `4️⃣ *Tenor 4 Tahun (48x)*\n`;
-        msg += `   • Angsuran: *${formatCurrency(calculateAngsuran(4))} / bln*\n\n`;
-
-        msg += `💡 *TIPS:* Konsultasikan dengan leasing partner untuk hitungan presisi.\n\n`;
-        msg += vehicle
-            ? `🔗 *Detail Unit:* https://primamobil.id/vehicles/${vehicle.displayId || vehicle.id}`
-            : `🔗 *Detail Unit:* https://primamobil.id/dashboard/vehicles`;
+        if (vehicle) {
+            msg += `\n🔗 *Detail Unit:* https://primamobil.id/vehicles/${vehicle.displayId || vehicle.id}`;
+        }
 
         return msg;
     }

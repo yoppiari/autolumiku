@@ -79,7 +79,8 @@ function getAdminMenuText(): string {
     `3. *Team & AI Performance:*\n` +
     `   • "Staff Performance" (Leaderboard sales)\n` +
     `   • "WhatsApp AI Analytics" (Performa bot)\n` +
-    `   • "Customer Metrics" (Analisis profil pelanggan)\n\n` +
+    `   • "Customer Metrics" (Analisis profil pelanggan)\n` +
+    `   • "Simulasi KKB" (Kredit Kendaraan)\n\n` +
     `_Ketik nama report di atas untuk melihat detailnya._`;
 }
 
@@ -218,6 +219,9 @@ function isReportCommand(cmd: string): boolean {
     'menu report',
     'menu admin',
     'admin report',
+    'kkb report',
+    'simulasi kkb',
+    'simulasi kredit',
   ];
 
   // Check for exact phrase matches (with word boundaries)
@@ -523,6 +527,8 @@ export async function handleReportCommand(
     'test-image': handleTestImageCommand,
     'test image': handleTestImageCommand,
     'debug image': handleTestImageCommand,
+    'kkb': (ctx) => generateKKBSimulationText(cmd, ctx),
+    'simulasi': (ctx) => generateKKBSimulationText(cmd, ctx),
   };
 
   // Find matching generator
@@ -851,7 +857,7 @@ async function generateKKBSimulationText(cmd: string, ctx: CommandContext): Prom
     // Normalize to PM-CODE-NUMBER (replace = or space with -)
     const vehicleCode = vehicleCodeMatch ? vehicleCodeMatch[0].toUpperCase().replace(/[=\s]+/g, '-') : undefined;
 
-    const message = await WhatsAppReportService.getReport('kkb', ctx.tenantId, vehicleCode);
+    const message = await WhatsAppReportService.getReport('kkb', ctx.tenantId, vehicleCode, cmd);
     return { success: true, message, followUp: true };
   } catch (error: any) {
     return { success: false, message: `Gagal mengambil simulasi KKB: ${error.message}` };

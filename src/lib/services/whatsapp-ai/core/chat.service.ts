@@ -12,6 +12,7 @@ import {
   getRolePrompt,
   ATURAN_KOMUNIKASI,
   FORMATTING_RULES,
+  KKB_FORMATTING_RULES,
   DATA_INTEGRITY_RULES,
   AUTOMOTIVE_KNOWLEDGE_BASE,
   getCompanyKnowledgeBase,
@@ -2148,6 +2149,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
     // 5. CORE COMMUNICATION RULES
     systemPrompt += '\n' + FORMATTING_RULES;
+    systemPrompt += '\n' + KKB_FORMATTING_RULES;
     systemPrompt += '\n' + ATURAN_KOMUNIKASI;
 
     // 6. CUSTOMER JOURNEY
@@ -3535,54 +3537,59 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
    * Provides installment estimates for various leasing partners
    * Updated with Realistic Market Rates 2026
    */
-  private static calculateKKBSimulation(
+  public static calculateKKBSimulation(
     vehiclePrice: number,
     inputDpAmount?: number | null,
-    inputDpPercentage?: number | null,
-    inputTenor?: number | null,
+    inputDpPercentage?: number | string | number[] | null,
+    inputTenor?: number | string | number[] | null,
     options?: { hideSyarat?: boolean; hideTitle?: boolean; hideHeader?: boolean; vehicleYear?: number }
   ): string {
-    // 1. Determine DP
-    let dpAmount = 0;
-    let dpPercentage = 25; // Default 25% (Standard minimal DP 2026)
-
-    if (inputDpAmount) {
-      dpAmount = inputDpAmount;
-      dpPercentage = Math.round((dpAmount / vehiclePrice) * 100);
-    } else if (inputDpPercentage) {
-      dpPercentage = inputDpPercentage;
-      dpAmount = vehiclePrice * (dpPercentage / 100);
-    } else {
-      // Default DP calculation
-      dpAmount = vehiclePrice * (dpPercentage / 100);
+    // 1. Parse DPs
+    let dpPercentages: number[] = [25]; // Default 25%
+    if (inputDpPercentage) {
+      if (Array.isArray(inputDpPercentage)) {
+        dpPercentages = inputDpPercentage.map(v => Number(v));
+      } else if (typeof inputDpPercentage === 'string') {
+        dpPercentages = inputDpPercentage.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+      } else {
+        dpPercentages = [Number(inputDpPercentage)];
+      }
+    } else if (inputDpAmount) {
+      dpPercentages = [Math.round((inputDpAmount / vehiclePrice) * 100)];
     }
 
-    const principal = vehiclePrice - dpAmount;
+    // 2. Parse Tenors
+    let tenors: number[] = [3, 4, 5]; // Default 3, 4, 5 years
+    if (inputTenor) {
+      if (Array.isArray(inputTenor)) {
+        tenors = inputTenor.map(v => Number(v));
+      } else if (typeof inputTenor === 'string') {
+        tenors = inputTenor.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+      } else {
+        tenors = [Number(inputTenor)];
+      }
+    }
 
-    // 2. Define Leasing Rates (Estimasi Flat Rate per Tahun untuk Mobil Bekas 2026)
-    // Rate updated to reflect real market conditions (usually 8-12% for used cars)
+    // Sort to ensure clean display
+    dpPercentages.sort((a, b) => a - b);
+    tenors.sort((a, b) => a - b);
+
+    // 3. Define Leasing Rates (Estimasi Flat Rate per Tahun untuk Mobil Bekas 2026)
     const baseRates: Record<string, number[]> = {
-      // Tenor: 1, 2, 3, 4, 5 tahun (array index 0-4)
-      "BCA Finance": [6.5, 7.25, 7.75, 8.5, 9.5], // Competitive
-      "Adira Finance": [8.0, 9.0, 9.75, 10.5, 11.5], // Easy Approval
-      "Info Kredit": [7.5, 8.5, 9.25, 10.0, 11.0] // Generic Market Avg
+      "BCA Finance": [6.5, 7.25, 7.75, 8.5, 9.5],
+      "Adira Finance": [8.0, 9.0, 9.75, 10.5, 11.5],
+      "Info Kredit": [7.5, 8.5, 9.25, 10.0, 11.0]
     };
 
-    // Age Adjustment: Older cars have higher risk = higher interest
     let ageRateAdjustment = 0;
     if (options?.vehicleYear) {
       const currentYear = new Date().getFullYear();
       const age = currentYear - options.vehicleYear;
       if (age > 5) {
-        // Add 0.5% flat rate per year for cars older than 5 years
         ageRateAdjustment = (age - 5) * 0.5;
       }
     }
 
-    // 3. Determine Tenors to calculate
-    const tenors = inputTenor ? [inputTenor] : [3, 4, 5]; // Default calculate for 3, 4, 5 years if not specified
-
-    // 4. Build Result String
     const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString('id-ID');
 
     let result = options?.hideTitle ? "" : `📊 *SIMULASI KREDIT (KKB) UPDATE 2026* \n`;
@@ -3590,42 +3597,45 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       result += `Harga Mobil: ${formatRp(vehiclePrice)} \n`;
       if (options?.vehicleYear) result += `Tahun: ${options.vehicleYear} \n`;
     }
-    result += `DP (${dpPercentage}%): ${formatRp(dpAmount)} \n`;
-    if (!options?.hideHeader) {
-      result += `Pokok Hutang: ${formatRp(principal)} \n\n`;
-    }
 
-    result += `*Est. Angsuran per Bulan:* \n`;
+    // 4. Generate results for each DP
+    dpPercentages.forEach((dpPerc, dpIndex) => {
+      const dpAmt = vehiclePrice * (dpPerc / 100);
+      const principal = vehiclePrice - dpAmt;
 
-    tenors.forEach(tenor => {
-      // Detail per leasing range
-      let minInstallment = Infinity;
-      let maxInstallment = 0;
+      if (dpPercentages.length > 1) {
+        result += `\n--- **OPSI DP ${dpPerc}%** ---\n`;
+      }
 
-      const ratesUsed: number[] = [];
+      result += `DP (${dpPerc}%): ${formatRp(dpAmt)} \n`;
+      result += `Pokok Hutang: ${formatRp(principal)}\n`;
+      result += `\n*Est. Angsuran per Bulan:* \n`;
 
-      Object.entries(baseRates).forEach(([leasing, rates]) => {
-        // Safe access to rate (handle missing tenor index by taking last available)
-        const rateIndex = Math.min(tenor - 1, rates.length - 1);
-        const baseRate = rates[Math.max(0, rateIndex)];
+      tenors.forEach(tenor => {
+        let minInstallment = Infinity;
+        let maxInstallment = 0;
+        const ratesUsed: number[] = [];
 
-        // Apply age adjustment (max cap +3% to be realistic)
-        const finalRate = baseRate + Math.min(ageRateAdjustment, 3.0);
-        ratesUsed.push(finalRate);
+        Object.entries(baseRates).forEach(([leasing, rates]) => {
+          const rateIndex = Math.min(tenor - 1, rates.length - 1);
+          const baseRate = rates[Math.max(0, rateIndex)];
+          const finalRate = baseRate + Math.min(ageRateAdjustment, 3.0);
+          ratesUsed.push(finalRate);
 
-        const totalInterest = principal * (finalRate / 100) * tenor;
-        const totalPayment = principal + totalInterest;
-        const monthly = totalPayment / (tenor * 12);
+          const totalInterest = principal * (finalRate / 100) * tenor;
+          const totalPayment = principal + totalInterest;
+          const monthly = totalPayment / (tenor * 12);
 
-        if (monthly < minInstallment) minInstallment = monthly;
-        if (monthly > maxInstallment) maxInstallment = monthly;
+          if (monthly < minInstallment) minInstallment = monthly;
+          if (monthly > maxInstallment) maxInstallment = monthly;
+        });
+
+        const avgRate = ratesUsed.reduce((a, b) => a + b, 0) / ratesUsed.length;
+
+        result += `\n🕒 *Tenor ${tenor} Tahun* \n`;
+        result += `• Angsuran: ${formatRp(minInstallment)} - ${formatRp(maxInstallment)} \n`;
+        result += `• Bunga Est: ${(avgRate).toFixed(1)}% flat/thn\n`;
       });
-
-      const avgRate = ratesUsed.reduce((a, b) => a + b, 0) / ratesUsed.length;
-
-      result += `\n🕒 *Tenor ${tenor} Tahun* \n`;
-      result += `• Angsuran: ${formatRp(minInstallment)} - ${formatRp(maxInstallment)} \n`;
-      result += `• Bunga Est: ${(avgRate).toFixed(1)}% flat/thn\n`;
     });
 
     if (!options?.hideSyarat) {

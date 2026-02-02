@@ -519,13 +519,17 @@ export class StaffCommandService {
       'list report': 'report_menu',
       'daftar report': 'report_menu',
       'pilihan report': 'report_menu',
+      'simulasi kkb': 'kkb',
+      'kkb': 'kkb',
+      'kredit': 'kkb',
+      'simulasi cicilan': 'kkb',
     };
 
     for (const [key, value] of Object.entries(reportMap)) {
       if (msg.includes(key)) {
         return {
           command: "staff_get_report",
-          params: { type: value },
+          params: { type: value, originalMessage: message },
           isValid: true,
         };
       }
@@ -1699,7 +1703,11 @@ export class StaffCommandService {
       `_Contoh:_ "edit PM-PST-001 harga 175jt"\n\n` +
 
       `🔍 *CARI MOBIL*\n` +
-      `_Contoh:_ "cari fortuner diesel", "ada brio?"`;
+      `_Contoh:_ "cari fortuner diesel", "ada brio?"\n\n` +
+
+      `💰 *SIMULASI KKB*\n` +
+      `Ketik: *kkb [ID/Harga] [DP] [Tenor]*\n` +
+      `_Contoh:_ "kkb PM-PST-001 dp 20% tenor 3,4"`;
 
     // Determine user role for customized menu
     let userRole = identifiedRole || "STAFF";
@@ -1721,7 +1729,8 @@ export class StaffCommandService {
         `• Performa Staff\n` +
         `• Analisis WhatsApp AI\n` +
         `• Metrik Pelanggan\n` +
-        `• Metrik Operasional`;
+        `• Metrik Operasional\n` +
+        `• Simulasi KKB`;
     }
 
     return {
@@ -2398,7 +2407,8 @@ export class StaffCommandService {
 
     // 2. Fetch Report
     try {
-      const reportText = await WhatsAppReportService.getReport(type, tenantId);
+      const { originalMessage } = params;
+      const reportText = await WhatsAppReportService.getReport(type, tenantId, undefined, originalMessage);
       return {
         success: true,
         message: reportText,

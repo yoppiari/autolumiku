@@ -12,6 +12,7 @@ Anda terdeteksi sebagai Admin/Owner. Selain menu staff biasa, Anda memiliki akse
    • *sales report* : Ringkasan penjualan hari ini/bulan ini
    • *staff performance* : Kinerja upload & respon staff
    • *inventory report* : Ringkasan stok & aging unit
+   • *kkb report* : Simulasi kredit kendaraan
 
 👥 *MANAJEMEN STAFF*:
    • *list staff* : Lihat daftar staff & status online

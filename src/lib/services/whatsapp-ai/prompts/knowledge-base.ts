@@ -264,15 +264,24 @@ ATURAN SEARCH QUERY (PENTING):
 
 // Single Source of Truth for KKB Calculation
 export const KKB_CONSTANTS = {
-  leasingPartners: ["BCA Finance", "Adira Finance", "Mandiri Tunas Finance (MTF)", "OTO", "WOM Finance"],
+  leasingPartners: ["BCA Finance", "Adira Finance", "Mandiri Tunas Finance (MTF)", "OTO", "WOM Finance", "MUF"],
   minDP: 20, // 20%
+  defaultDP: 25, // 25%
   rates: {
-    // Rates based on "BCA/Priority" (Flat p.a)
-    1: 0.055, // 5.5%
-    2: 0.065, // 6.5%
-    3: 0.075, // 7.5%
-    4: 0.085, // 8.5%
-    5: 0.095  // 9.5%
+    // Average Market Rates (Flat p.a) for Used Vehicles 2026
+    1: 7.5, // 7.5%
+    2: 8.5, // 8.5%
+    3: 9.25, // 9.25%
+    4: 10.0, // 10.0%
+    5: 11.0  // 11.0%
+  },
+  // Tiered Rates for Premium Leasing (e.g. BCA Finance)
+  priorityRates: {
+    1: 6.5,
+    2: 7.25,
+    3: 7.75,
+    4: 8.5,
+    5: 9.5
   }
 };
 

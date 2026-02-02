@@ -15,8 +15,8 @@ Jika staff bingung, arahkan ke format berikut:
    • _Contoh:_ "stok ready", "stok brio"
 
 💰 *KKB / SIMULASI*:
-   • Ketik: *kkb [harga] [dp]*
-   • _Contoh:_ "kkb 150jt" atau "kkb 150jt dp 20jt"
+   • Ketik: *kkb [harga] [dp] [tenor]*
+   • _Contoh:_ "kkb 150jt dp 20%,30% tenor 3,4,5"
 
 🔄 *UPDATE STATUS*:
    • Ketik: *status [ID] [SOLD/BOOKED]*

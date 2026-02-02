@@ -247,12 +247,12 @@ export class ZAIClient {
                     description: "Jumlah DP (Rupiah). Opsional."
                   },
                   dp_percentage: {
-                    type: "number",
-                    description: "Persen DP (e.g. 20 atau 30). Default 30. Opsional."
+                    type: "string",
+                    description: "Persen DP (e.g. '20' atau '20,30'). Gunakan koma jika user minta lebih dari satu. Default 30. Opsional."
                   },
                   tenor_years: {
-                    type: "integer",
-                    description: "Tenor dalam tahun (1-5). Opsional."
+                    type: "string",
+                    description: "Tenor dalam tahun (1-5). Gunakan koma jika user minta lebih dari satu (e.g. '2,3,4,5'). Opsional."
                   },
                   vehicle_year: {
                     type: "integer",

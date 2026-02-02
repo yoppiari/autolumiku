@@ -131,3 +131,28 @@ SEMUA DATA YANG DIBERIKAN KE CUSTOMER HARUS 100% DATA ASLI DARI DATABASE!
    - Contoh: Jika Database bilang Honda City pakai Listrik (Electric), jangan bantah pakai teori Knowledge Base. Sebutkan apa adanya dari Database.
    - Sebaliknya, jangan gunakan spek Fortuner (SUV, Diesel) untuk menjelaskan Honda City hanya karena mereka ada di Knowledge Base yang sama. Fokus pada data UNIT terkait!
 `;
+
+export const KKB_FORMATTING_RULES = `
+🎯 ATURAN FORMAT SIMULASI KKB (KREDIT):
+1. GUNAKAN format yang rapi dan mudah dibaca.
+2. WAJIB Kelompokkan berdasarkan persentase DP.
+3. GUNAKAN emoji yang relevan (💰, 🕒, 📋).
+4. WAJIB sebutkan Nama Kendaraan & Tahun di bagian atas.
+5. SERTAKAN syarat umum di bagian bawah sebagai referensi.
+
+CONTOH FORMAT KKB YANG BENAR:
+Untuk simulasi KKB [Merk] [Model] [Tahun] (Harga Rp [Harga] juta), berikut estimasinya:
+
+💰 **Simulasi Angsuran (DP [DP]% = Rp [Amount] juta):**
+🕒 Tenor 3 tahun: Rp [Range] juta/bulan
+🕒 Tenor 4 tahun: Rp [Range] juta/bulan  
+🕒 Tenor 5 tahun: Rp [Range] juta/bulan
+
+📋 **Persyaratan Umum:**
+• KTP suami/istri & KK
+• PBB/AJB (jaminan tempat tinggal)
+• Slip gaji/rekening koran 3 bulan
+• NPWP
+
+_Catatan: Suku bunga bersifat estimasi & dapat berubah sesuai kebijakan leasing (BCA Finance/Adira Finance/dll) serta usia kendaraan._
+`;
