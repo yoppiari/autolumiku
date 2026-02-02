@@ -1218,9 +1218,14 @@ export class MessageOrchestratorService {
     if (!phone) return "";
     // Handle LID format - return as is for LID-specific lookup
     if (phone.includes("@lid")) return phone;
-    // Remove all non-digit characters and normalize Indonesian format
+    // Remove all non-digit characters
     let digits = phone.replace(/\D/g, "");
-    if (digits.startsWith("0")) digits = "62" + digits.substring(1);
+
+    // If starts with 0, replace with 62 (Standard Indonesia format)
+    if (digits.startsWith("0")) {
+      digits = "62" + digits.substring(1);
+    }
+
     return digits;
   }
 
