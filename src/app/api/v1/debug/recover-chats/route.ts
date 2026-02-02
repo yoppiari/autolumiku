@@ -1,7 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ChatService } from "@/lib/services/whatsapp-ai/core/chat.service";
+import { WhatsAppAIChatService } from "@/lib/services/whatsapp-ai/core/chat.service";
 import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
 
 // Mark as dynamic to avoid static generation issues
@@ -86,8 +86,8 @@ export async function GET(req: Request) {
                 };
 
                 // Generate Response (Force Smart Fallback if needed, or normal AI)
-                // We use ChatService.generateResponse
-                const aiResponse = await ChatService.generateResponse(
+                // We use WhatsAppAIChatService.generateResponse
+                const aiResponse = await WhatsAppAIChatService.generateResponse(
                     lastMsg.content,
                     context,
                     false // No media by default for recovery

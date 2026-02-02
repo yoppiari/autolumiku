@@ -22,7 +22,7 @@ export async function DELETE(request: NextRequest) {
     // Find the target conversation to get phone number and tenant
     const targetConversation = await prisma.whatsAppConversation.findUnique({
       where: { id: conversationId },
-      select: { customerPhone: true, tenantId: true }
+      select: { customerPhone: true, tenantId: true, contextData: true }
     });
 
     if (!targetConversation) {
