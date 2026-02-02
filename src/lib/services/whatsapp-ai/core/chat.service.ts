@@ -141,10 +141,10 @@ export class WhatsAppAIChatService {
 
   private static readonly PHOTO_CONFIRM_PATTERNS = [
     /^(boleh|ya|iya|mau|yup|bisa|ok|oke|sip|siap)$/i,
-    /\b(iya|ya|ok|oke|mau|boleh|bisa|kirim|mana|tunjuk|lihat|minta)\b.*\b(foto|photo|gambar|preview|liat)/i,
+    /\b(iya|ya|ok|oke|mau|boleh|bisa|kirim)\b.*\b(foto|photo|gambar|preview|liat)/i,
     /\b(foto|photo|gambar|preview|liat)\b.*\b(mana|nya|dong|ya|aja|ok|oke|sip|siap|kirim)\b/i,
-    /\b(foto|photo|gambar)\s*(nya|dong|ya|aja|mana)?\b/i,
-    /\bgambar\s*(nya|dong|ya|aja|mana)?\b/i,
+    /\b(foto|photo|gambar)\b\s*(nya|dong|ya|aja|mana)?\b/i,
+    /\bgambar\b\s*(nya|dong|ya|aja|mana)?\b/i,
     /^mana\s+(mobil|unit|fotonya|gambarnya|photonya)/i,
   ];
 
@@ -987,6 +987,7 @@ export class WhatsAppAIChatService {
           });
 
           if (vehicles.length > 0) {
+            const name_st = this.formatKakName(context?.customerName);
             // One-breath style greeting
             const now = new Date();
             const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
@@ -995,12 +996,9 @@ export class WhatsAppAIChatService {
             else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
             else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
 
-            let stockMsg = `Halo! kak ${name_no}⚡
-
-Selamat datang di showroom kami
-Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.
-
-Baik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${keyword}* ini MASIH AVAILABLE! 🔥\n\n`;
+            let stockMsg = `Halo! ${name_st} ⚡\n\n` +
+              `Selamat datang di showroom kami! Saya adalah asisten virtual yang siap membantu menemukan mobil impian Anda.\n\n` +
+              `Baik Kak, sebelumnya dengan siapa saya bicara? Untuk unit *${keyword}* ini MASIH AVAILABLE! 🔥\n\n`;
 
             vehicles.forEach(v => {
               stockMsg += `* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}\n`;
@@ -1690,23 +1688,10 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           const charSum = explicitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const extDesc = extVariations[charSum % extVariations.length];
 
-          // Check if user explicitly asked for photos
-          const explicitlyAsksPhotos = /(foto|photo|gambar|lihat|mana|tunjuk)/i.test(msg);
-          if (explicitlyAsksPhotos) {
-            const images = await this.fetchVehicleImagesByQuery(explicitId, context?.tenantId || tenantId);
-            if (images && images.length > 0) {
-              return {
-                message: `${intro}${extDesc}\n\nIni foto detail eksteriornya kak! 📸👇`,
-                shouldEscalate: false,
-                images
-              };
-            }
-          }
-
           const closingVariations = [
             `Ada yang ingin ditanyakan lagi tentang unit ini ${customerName}? 😊`,
-            `Gimana ${customerName}, mau asisten bantu siapkan jadwal cek unitnya atau ada bagian lain yang mau dilihat?`,
-            `Kira-kira unit ini bakal dipakai di area mana ${customerName}? Biar asisten bantu cek kecocokannya buat medan di sana. 😊`
+            `Gimana ${customerName}, mau asisten kirimkan **foto detail eksteriornya** untuk kelengkapan referensi? 📸`,
+            `Unitnya mulus banget kelihatannya ${customerName}. Mau asisten bantu siapkan jadwal cek unitnya?`
           ];
           return {
             message: `${intro}${extDesc}\n\n${this.getRandomVariation(closingVariations)}`,
@@ -1724,22 +1709,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           const charSum = explicitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const intDesc = intVariations[charSum % intVariations.length];
 
-          // Check if user explicitly asked for photos
-          const explicitlyAsksPhotos = /(foto|photo|gambar|lihat|mana|tunjuk)/i.test(msg);
-          if (explicitlyAsksPhotos) {
-            const images = await this.fetchVehicleImagesByQuery(explicitId, context?.tenantId || tenantId);
-            if (images && images.length > 0) {
-              return {
-                message: `${intro}${intDesc}\n\nIni foto detail bagian dalamnya kak! 📸👇`,
-                shouldEscalate: false,
-                images
-              };
-            }
-          }
-
           const closingVariations = [
             `Ada yang ingin ditanyakan lagi tentang unit ini ${customerName}? 😊`,
-            `Mau asisten kirimkan foto detail kabinnya untuk kelengkapan referensi ${customerName}? 📸`,
+            `Mau asisten kirimkan **foto detail bagian dalam (interior)** untuk kelengkapan referensi ${customerName}? 📸`,
             `Kabinnya nyaman banget lho ${customerName}. Mau asisten bantu hitungkan simulasi cicilannya sekalian? 💰`
           ];
           return {
@@ -2020,9 +1992,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       const locationTemplates = [
         `Halo! ⚡\n\n${timeGreeting}, Showroom **${tenantName}** berlokasi di:\n📍 ${tenantAddress || 'Alamat sedang diperbarui'}\n\n` +
         `${name_lc} bisa klik link Google Maps ini untuk rute lengkapnya: https://maps.google.com/?q=${encodeURIComponent(tenantAddress || tenantName)}\n\n` +
-        `Ada rencana mau mampir hari ini atau besok kak ${name_lc}? 😊`,
+        `Ada rencana mau mampir hari ini atau besok ${name_lc}? 😊`,
         `Siap ${name_lc}! ✨\n\nUntuk alamat lengkap kami ada di:\n📍 ${tenantAddress || 'Alamat sedang diperbarui'}\n\nIni link lokasinya di Google Maps ya: https://maps.google.com/?q=${encodeURIComponent(tenantAddress || tenantName)}\n\nKira-kira jam berapa mau asisten siapkan unitnya buat dicek? 😊`,
-        `Tentu ${name_lc}! Showroom kami bisa Kakak temukan di:\n📍 ${tenantAddress || 'Alamat sedang diperbarui'}\n\n📍 Google Maps: https://maps.google.com/?q=${encodeURIComponent(tenantAddress || tenantName)}\n\nShowroom buka setiap hari lho. ${name_lc} rencana mau mampir kapan? 🙏`
+        `Tentu ${name_lc}! Showroom kami bisa ditemukan di:\n📍 ${tenantAddress || 'Alamat sedang diperbarui'}\n\n📍 Google Maps: https://maps.google.com/?q=${encodeURIComponent(tenantAddress || tenantName)}\n\nShowroom buka setiap hari lho. ${name_lc} rencana mau mampir kapan? 🙏`
       ];
       return {
         message: this.getRandomVariation(locationTemplates),
@@ -2050,10 +2022,11 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           shouldEscalate: false,
         };
       } else {
+        const name_sc = this.formatKakName(context?.customerName);
         return {
-          message: `Halo! kak ${name_no} ⚡\n\n${timeGreeting}, ${name_sc}! 👋\n\nUntuk info lebih lanjut atau konsultasi unit, ${name_sc} bisa hubungi tim sales kami di nomor berikut:\n` +
+          message: `Halo! ${name_sc} ⚡\n\n${timeGreeting}! 👋\n\nUntuk info lebih lanjut atau konsultasi unit, ${name_sc} bisa hubungi tim sales kami di nomor berikut:\n` +
             `📱 WhatsApp: ${tenantName} Sales Team\n\n` +
-            `Mau asisten bantu carikan unit spesifik dulu di sini kak ${name_sc}? 😊`,
+            `Mau asisten bantu carikan unit spesifik dulu di sini ${name_sc}? 😊`,
           shouldEscalate: false,
         };
       }
