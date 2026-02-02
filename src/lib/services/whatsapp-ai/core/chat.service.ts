@@ -1389,6 +1389,11 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       !msg.includes("ready") &&
       !/(interior|eksterior|ekterior|exterior|mesin|body|bodi|dalam|luar|dokumen|surat|pajak|bpkb|stnk)/i.test(msg);
 
+    const isNewUser = !context?.customerName || ['Kak', 'Unknown', 'Pelanggan', 'siapa'].includes(context?.customerName || '');
+    const name = isNewUser ? "Kak" : context!.customerName;
+    const timeGreeting = this.getTimeGreeting();
+    const isFirstResponse = messageHistory.length <= 1;
+
     if (looksLikeLocationAnswer &&
       messageHistory.length > 2 && // Must have prior conversation
       (lastContent.includes("area mana") || lastContent.includes("domisili") || lastContent.includes("kota mana"))) {
@@ -1404,11 +1409,6 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           summary: `Lokasi User: ${userMessage}`
         });
       }
-
-      const isNewUser = !context?.customerName || ['Kak', 'Unknown', 'Pelanggan', 'siapa'].includes(context?.customerName || '');
-      const name = isNewUser ? "Kak" : context!.customerName;
-      const timeGreeting = this.getTimeGreeting();
-      const isFirstResponse = messageHistory.length <= 1;
 
       let introRes = "";
       if (isFirstResponse) {
@@ -1450,7 +1450,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         // await LeadService.updateLead(context.leadInfo.id, { name: cleanName });
       }
 
-      const name = context?.customerName || "Kak";
+      // Use name defined at the top
       return {
         message: `Salam kenal ${name}! 👋\n\nSenang bisa membantu. Ada lagi yang ingin ditanyakan tentang unit yang diminati? Atau mau saya bantu hitungkan simulasi kreditnya sekalian? 😊`,
         shouldEscalate: false
@@ -1598,11 +1598,10 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           const extDesc = extVariations[charSum % extVariations.length];
 
           // Check if user explicitly asked for photos
-          const name_p = context?.customerName || "Kak";
           const explicitlyAsksPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("lihat");
           const closingQuestion = explicitlyAsksPhotos
-            ? `Mau saya kirimkan foto detail eksteriornya ${name_p}? 📸 🚗`
-            : `Ada yang ingin ditanyakan lagi tentang unit ini ${name_p}? 😊`;
+            ? `Mau saya kirimkan foto detail eksteriornya ${customerName}? 📸 🚗`
+            : `Ada yang ingin ditanyakan lagi tentang unit ini ${customerName}? 😊`;
 
           return {
             message: `${intro}${extDesc}\n\n${closingQuestion}`,
@@ -1621,11 +1620,10 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           const intDesc = intVariations[charSum % intVariations.length];
 
           // Check if user explicitly asked for photos
-          const name_i = context?.customerName || "Kak";
           const explicitlyAsksPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("lihat");
           const closingQuestion = explicitlyAsksPhotos
-            ? `Mau saya kirimkan foto-foto detail bagian dalamnya ${name_i}? 📸 🚗`
-            : `Ada yang ingin ditanyakan lagi tentang unit ini ${name_i}? 😊`;
+            ? `Mau saya kirimkan foto-foto detail bagian dalamnya ${customerName}? 📸 🚗`
+            : `Ada yang ingin ditanyakan lagi tentang unit ini ${customerName}? 😊`;
 
           return {
             message: `${intro}${intDesc}\n\n${closingQuestion}`,
@@ -1643,21 +1641,19 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           const charSum = explicitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const engDesc = engVariations[charSum % engVariations.length];
 
-          const name_e = context?.customerName || "Kak";
           return {
-            message: `${intro}${engDesc}\n\nBoleh banget kalau ${name_e} mau datang untuk test drive dan cek mesin langsung lho! Kapan ada waktu luang? 😊`,
+            message: `${intro}${engDesc}\n\nBoleh banget kalau ${customerName} mau datang untuk test drive dan cek mesin langsung lho! Kapan ada waktu luang? 😊`,
             shouldEscalate: false
           };
         }
 
-        const name_gen = context?.customerName || "Kak";
         const explicitlyAsksPhotos = msg.includes("foto") || msg.includes("gambar") || msg.includes("lihat");
         const closingQuestion = explicitlyAsksPhotos
-          ? `Mau saya kirimkan foto detail-nya ${name_gen}? 📸 😊`
-          : `Ada yang ingin ditanyakan lagi tentang unit ini ${name_gen}? 😊`;
+          ? `Mau saya kirimkan foto detail-nya ${customerName}? 📸 😊`
+          : `Ada yang ingin ditanyakan lagi tentang unit ini ${customerName}? 😊`;
 
         return {
-          message: `Siap ${name_gen}, unit *${name} ${matchingVehicle.year}* (${explicitId}) ini MASIH READY! 🔥\n\n` +
+          message: `Siap ${customerName}, unit *${name} ${matchingVehicle.year}* (${explicitId}) ini MASIH READY! 🔥\n\n` +
             `• Harga: Rp ${priceJuta} Juta (Nego)\n` +
             `• Kondisi: Terawat, siap pakai\n\n` +
             `Unit ini salah satu favorit di sini. ${closingQuestion}`,
