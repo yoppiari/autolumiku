@@ -1271,44 +1271,25 @@ export class MessageOrchestratorService {
     // 3. Must be a distinct word (followed by space or end of string)
     // Exception: 'help' or 'bantuan' might be asked as a question, but generally commands are directives.
 
-    // SPECIAL HANDLING: Verify command (needs special logic to define user identity)
-    // Intercept BEFORE generic universal command check
-    // This allows unverified LID users (guest role) to execute this specific command
-    const isVerifyCommand = /^(?:\/)?(verify|verifikasi)\b/i.test(message);
-    if (isVerifyCommand) {
-      console.log(`[Orchestrator] 🔐 Verify command intercepted`);
-      const verifyResult = await this.handleStaffVerify(
-        null, // No conversation needed for initial check
-        message,
-        incoming.from,
-        incoming.tenantId
-      );
+    // 0.5. STAFF STATUS COMMANDS (/online, /offline)
+    const statusMatch = message.match(/^(?:\/)?(online|offline|ready|away|aktif|nonaktif)\b/i);
+    if (statusMatch && isStaff) {
+      const newStatus = statusMatch[1].toLowerCase();
+      const dbStatus = (newStatus === 'online' || newStatus === 'ready' || newStatus === 'aktif') ? 'online' : 'offline';
 
-      if (verifyResult.verified && verifyResult.verifiedPhone) {
-        // Update conversation immediately if we have the ID (we should pass it if possible, but for now fallback is ok)
-        // Ideally we should have passed conversationId to handleStaffVerify
-        // Let's do a quick update if we know the conversationId
-        if (conversationId) {
-          await prisma.whatsAppConversation.update({
-            where: { id: conversationId },
-            data: {
-              contextData: {
-                verifiedStaffPhone: verifyResult.verifiedPhone,
-                isStaffVerified: true
-              }
-            }
-          });
-        }
+      try {
+        await prisma.$executeRawUnsafe(`UPDATE "users" SET "waStatus" = $1 WHERE "id" = $2`, dbStatus, user?.id);
+        return {
+          isCommand: true,
+          result: {
+            success: true,
+            message: `✅ Status berhasil diupdate ke: *${dbStatus.toUpperCase()}*\n\nSekarang asisten tahu Anda sedang ${dbStatus === 'online' ? 'siap melayani customer! 🦾' : 'istirahat sebentar. 🙏'}`,
+            followUp: false
+          }
+        };
+      } catch (e) {
+        console.error('[Command] Failed to update staff status:', e);
       }
-
-      return {
-        isCommand: true,
-        result: {
-          success: verifyResult.verified,
-          message: verifyResult.message,
-          followUp: false
-        }
-      };
     }
 
     const isQuestion = message.includes('?');
