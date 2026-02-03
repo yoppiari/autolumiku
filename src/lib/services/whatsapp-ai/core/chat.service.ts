@@ -394,9 +394,13 @@ export class WhatsAppAIChatService {
       // Rule (Updated 2026-02-03):
       // - CUSTOMERS: Bypass hours if config.alwaysReplyCustomer is true (24/7).
       // - STAFF: Bypass hours only if config.bypassHoursForStaff is true.
+      // NOTE: Default to true for alwaysReplyCustomer if undefined to support AI 5.2 requirement
+      const alwaysReply = (config as any).alwaysReplyCustomer ?? true;
+      const bypassStaff = (config as any).bypassHoursForStaff ?? false;
+
       const shouldCheckHours = hasBusinessHours &&
-        ((!isStaff && !(config as any).alwaysReplyCustomer) ||
-          (isStaff && !(config as any).bypassHoursForStaff));
+        ((!isStaff && !alwaysReply) ||
+          (isStaff && !bypassStaff));
 
       if (shouldCheckHours && !this.isWithinBusinessHours(config.businessHours, config.timezone)) {
         if (isStaff) {
