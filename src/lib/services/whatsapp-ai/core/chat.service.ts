@@ -386,9 +386,10 @@ export class WhatsAppAIChatService {
 
       const isStaff = context.isStaff || false;
 
-      // Rule (Updated 2026-02-03):
-      // - NEW/EXISTING CUSTOMERS: 24/7 access (no business hours check).
-      // - SALES/STAFF: Business hours check applies (to manage staff command availability).
+      const hasBusinessHours = config.businessHours &&
+        typeof config.businessHours === 'object' &&
+        Object.keys(config.businessHours as object).length > 0;
+
       const shouldCheckHours = hasBusinessHours && isStaff;
 
       if (shouldCheckHours && !this.isWithinBusinessHours(config.businessHours, config.timezone)) {
