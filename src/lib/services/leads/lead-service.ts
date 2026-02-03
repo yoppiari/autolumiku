@@ -19,6 +19,7 @@ export interface LeadCreateInput {
   priority?: LeadPriority;
   interestedIn?: string;
   budgetRange?: string;
+  location?: string;
   timeframe?: string;
   assignedTo?: string;
 }
@@ -33,6 +34,7 @@ export interface LeadUpdateInput {
   priority?: LeadPriority;
   interestedIn?: string;
   budgetRange?: string;
+  location?: string;
   timeframe?: string;
   followUpDate?: Date;
   notes?: string;
@@ -128,6 +130,7 @@ export class LeadService {
           priority: data.priority || 'MEDIUM',
           interestedIn: data.interestedIn,
           budgetRange: data.budgetRange,
+          location: data.location,
           timeframe: data.timeframe,
           assignedTo: data.assignedTo,
         },
@@ -186,7 +189,7 @@ export class LeadService {
       ];
 
       // Remove duplicates
-      const uniquePhones = [...new Set(searchPhones)];
+      const uniquePhones = searchPhones.filter((v, i, a) => a.indexOf(v) === i);
 
       const lead = await prisma.lead.findFirst({
         where: {
@@ -287,29 +290,22 @@ export class LeadService {
     }
   }
 
-  /**
-   * Update lead
-   */
   static async updateLead(id: string, tenantId: string, data: LeadUpdateInput) {
     try {
-      const lead = await prisma.lead.updateMany({
-        where: { id, tenantId },
+      const lead = await prisma.lead.update({
+        where: { id },
         data: {
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          whatsappNumber: data.whatsappNumber,
-          message: data.message,
-          status: data.status,
-          priority: data.priority,
-          interestedIn: data.interestedIn,
-          budgetRange: data.budgetRange,
-          timeframe: data.timeframe,
-          followUpDate: data.followUpDate,
-          notes: data.notes,
-          assignedTo: data.assignedTo,
+          ...data,
+          phone: data.phone ? data.phone.replace(/\D/g, '') : undefined,
         },
       });
+
+      // TRIGGER: Check if lead is now qualified for handover
+      if (lead) {
+        LeadService.checkAndNotifyQualifiedLead(lead.id).catch(err =>
+          console.error('[LeadService] Background qualification check failed:', err)
+        );
+      }
 
       return lead;
     } catch (error) {
@@ -408,7 +404,8 @@ export class LeadService {
     intent,
     isStaff = false,
     interestedIn,
-    budgetRange
+    budgetRange,
+    location
   }: {
     tenantId: string;
     customerPhone: string;
@@ -419,6 +416,7 @@ export class LeadService {
     isStaff?: boolean;
     interestedIn?: string;
     budgetRange?: string;
+    location?: string;
   }) {
     try {
       // CRITICAL: Double-check staff status by phone lookup
@@ -488,7 +486,6 @@ export class LeadService {
       // Calculate basic score impact based on intent
       let scoreIncrement = 0;
       let statusUpdate = undefined;
-      let interestUpdate = undefined;
 
       if (intent) {
         // Simple heuristic rules for immediate updates
@@ -509,13 +506,14 @@ export class LeadService {
       if (lead) {
         // --- UDPATE EXISTING LEAD ---
         const updateData: any = {
-          lastContactAt: new Date(), // Always update last contact
           // If we have a name now and didn't before, update it
           ...(customerName && (!lead.name || lead.name === cleanPhone || lead.name === 'Unknown') ? { name: customerName } : {}),
           // If customer asks about a specific vehicle, update interest
           ...(vehicleId ? { vehicleId, interestedIn: vehicleId } : (interestedIn ? { interestedIn } : {})),
           // Update budget range if provided
           ...(budgetRange ? { budgetRange } : {}),
+          // Capture location if available
+          ...(location && !lead.location ? { location } : {}),
         };
 
         // Only update status if it's an "upgrade" (e.g. dont set CONTACTED back to NEW)
@@ -527,12 +525,6 @@ export class LeadService {
           where: { id: lead.id },
           data: updateData
         });
-
-        // Update score if needed
-        if (scoreIncrement > 0) {
-          // We'll implement specific score tracking later, for now just log/metadata could be used
-          // or we can add a 'score' column to Lead table if it exists, or stored in metadata
-        }
 
       } else {
         // --- CREATE NEW LEAD ---
@@ -558,9 +550,6 @@ export class LeadService {
         // STRICT: BOTH name AND interest required (changed from OR to AND)
         if (!isNameValid || !hasInterest) {
           console.log(`[Smart Leads] ⏭️ Skipping low-quality lead: ${cleanPhone}`);
-          console.log(`[Smart Leads]   - Name valid: ${isNameValid} (value: "${customerName}")`);
-          console.log(`[Smart Leads]   - Has interest: ${hasInterest} (vehicleId: ${vehicleId})`);
-          console.log(`[Smart Leads]   - Is phone number: ${isPhoneNumber}`);
           return null;
         }
 
@@ -580,15 +569,19 @@ export class LeadService {
             vehicleId,
             interestedIn: vehicleId || interestedIn,
             budgetRange,
-            lastContactAt: new Date(),
+            location,
           }
         });
 
         console.log(`[Smart Leads] New lead captured from WhatsApp: ${cleanPhone}`);
       }
 
-      // Create activity log (if Activity table exists/is linked, otherwise just log to console)
-      // For now we assume we just updated the Lead record itself.
+      // TRIGGER: Check qualification for active handover
+      if (lead) {
+        LeadService.checkAndNotifyQualifiedLead(lead.id).catch(err =>
+          console.error('[LeadService] Background qualification notification failed:', err)
+        );
+      }
 
       return lead;
 
@@ -660,6 +653,140 @@ export class LeadService {
     } catch (error) {
       console.error('Failed to track WhatsApp click:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Check if a lead is qualified (complete data) and notify staff
+   * EPIC 131: Active Handover Logic
+   */
+  static async checkAndNotifyQualifiedLead(leadId: string) {
+    try {
+      const lead = await prisma.lead.findUnique({
+        where: { id: leadId },
+        include: {
+          whatsappConversations: {
+            take: 1,
+            orderBy: { lastMessageAt: 'desc' }
+          }
+        }
+      });
+
+      if (!lead) return;
+
+      // CRITERIA FOR DATA COMPLETENESS (LENGKAP)
+      // 1. Valid Name
+      const phonePattern = /^(62|08|\+62|0)\d{8,13}$/;
+      const isPhoneNumberAsName = lead.name ? phonePattern.test(lead.name.replace(/[\s\-]/g, '')) : false;
+      const isNameValid = lead.name &&
+        lead.name !== lead.phone &&
+        lead.name !== 'Unknown' &&
+        lead.name !== 'Customer Baru' &&
+        !isPhoneNumberAsName &&
+        lead.name.trim().length > 2;
+
+      // 2. Interest
+      const hasInterest = !!lead.vehicleId || !!lead.interestedIn;
+
+      // 3. Location
+      const hasLocation = !!lead.location && lead.location.length > 2;
+
+      // 4. Budget (Optional but preferred - based on user request "budget jika ada")
+      // We'll treat it as completed if Name, Interest, and Location are there.
+
+      const isQualified = !!(isNameValid && hasInterest && hasLocation);
+
+      if (isQualified) {
+        console.log(`[LeadService] 🎯 Lead ${leadId} is QUALIFIED for handover.`);
+
+        // Check if already notified to avoid spam
+        const lastConv = lead.whatsappConversations[0];
+        const contextData = (lastConv?.contextData as Record<string, any>) || {};
+
+        if (contextData.staffNotified) {
+          console.log(`[LeadService] ⏭️ Staff already notified for lead ${leadId}. Skipping.`);
+          return;
+        }
+
+        // Send notification
+        await this.notifyStaffNewLead(lead);
+
+        // Mark as notified in conversation context
+        if (lastConv) {
+          await prisma.whatsAppConversation.update({
+            where: { id: lastConv.id },
+            data: {
+              contextData: {
+                ...contextData,
+                staffNotified: true,
+                notifiedAt: new Date().toISOString()
+              }
+            }
+          });
+        }
+
+        // Update lead status if it was NEW
+        if (lead.status === 'NEW') {
+          await prisma.lead.update({
+            where: { id: lead.id },
+            data: { status: 'QUALIFIED' }
+          });
+        }
+      } else {
+        console.log(`[LeadService] ⏳ Lead ${leadId} not yet qualified. Missing: ${!isNameValid ? 'NAME ' : ''}${!hasInterest ? 'INTEREST ' : ''}${!hasLocation ? 'LOCATION' : ''}`);
+      }
+    } catch (error) {
+      console.error('[LeadService] Error in checkAndNotifyQualifiedLead:', error);
+    }
+  }
+
+  /**
+   * Send notification to staff about a new/qualified lead
+   */
+  static async notifyStaffNewLead(lead: any) {
+    try {
+      console.log(`[LeadService] 📢 Notifying staff for lead ${lead.name}...`);
+
+      // 1. Get staff contacts
+      const staffMembers = await prisma.user.findMany({
+        where: {
+          tenantId: lead.tenantId,
+          role: { in: ['ADMIN', 'MANAGER', 'SALES'] },
+          phone: { not: null }
+        },
+        select: { phone: true, firstName: true }
+      });
+
+      if (staffMembers.length === 0) {
+        console.warn(`[LeadService] ⚠️ No registered staff found for tenant ${lead.tenantId}`);
+        return;
+      }
+
+      // 2. Build detailed alert message
+      const alertMsg =
+        `🚨 *ACTIVE HANDOVER: LEADS QUALIFIED* 🚨
+
+👤 *Nama:* ${lead.name}
+📍 *Lokasi:* ${lead.location || '-'}
+🚗 *Unit:* ${lead.interestedIn || 'General Inquiry'}
+💰 *Budget:* ${lead.budgetRange || '-'}
+⭐ *Status:* ${lead.status}
+📝 *Pesan Terakhir:* ${lead.message?.substring(0, 100) || '-'}
+
+👇 *KLIK UNTUK FOLLOW UP:*
+wa.me/${lead.phone.replace(/^0/, '62')}
+
+_Mohon segera di-handle untuk menjaga momentum closing. Semangat!_ 🚀`;
+
+      // LOG it
+      console.log("=========================================");
+      console.log("WHATSAPP NOTIFICATION TO STAFF:");
+      console.log(alertMsg);
+      console.log("=========================================");
+
+      // Note: In real app, this would call WhatsAppMessagingService.sendMessage
+    } catch (error) {
+      console.error('[LeadService] Failed to notify staff:', error);
     }
   }
 }

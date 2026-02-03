@@ -716,7 +716,8 @@ export class WhatsAppAIChatService {
                     name: toolArgs.name || existingLead.name, // Keep existing name if not provided
                     interestedIn: toolArgs.interest || toolArgs.vehicle_id || existingLead.interestedIn,
                     budgetRange: toolArgs.budget || existingLead.budgetRange,
-                    notes: toolArgs.location ? `Location: ${toolArgs.location}\n${existingLead.notes || ''}` : existingLead.notes,
+                    location: toolArgs.location || existingLead.location, // MODIFIED: Use explicit location field
+                    notes: existingLead.notes,
                     status: 'CONTACTED' // Update status to reflect active engagement
                   });
                   console.log('[WhatsAppAI] ✅ Lead updated:', resultLead.id);
@@ -728,11 +729,11 @@ export class WhatsAppAIChatService {
                     phone: phone,
                     interestedIn: toolArgs.interest || toolArgs.vehicle_id,
                     budgetRange: toolArgs.budget,
+                    location: toolArgs.location, // MODIFIED: Use explicit location field
                     source: toolArgs.source || 'whatsapp',
                     message: context.messageHistory.map(m => `${m.role}: ${m.content}`).slice(-3).join('\n'), // Store recent chat as initial message
                     status: 'NEW',
                     priority: (toolArgs.urgency as LeadPriority) || 'MEDIUM',
-                    notes: toolArgs.location ? `Location: ${toolArgs.location}` : undefined
                   });
                   console.log('[WhatsAppAI] ✅ Lead created:', resultLead.id);
                 }
@@ -2313,11 +2314,12 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       if (missing.length > 0) {
         systemPrompt += `\n\n🎯 PRIORITAS MISI: Data lead belum lengkap (${missing.join(", ")}).`;
         systemPrompt += `\nIkuti "NEW CUSTOMER FLOW" untuk melengkapi data ini satu per satu secara natural (JANGAN SEKALIGUS!).`;
+        systemPrompt += `\n\n🎯 MISI KUALIFIKASI (ACTIVE HANDOVER): Untuk meneruskan chat ini ke Tim Sales (Human), Anda WAJIB melengkapi minimal Nama dan Domisili secara natural. Segera setelah customer menyebutkan info ini, panggil tool 'create_lead'!`;
       } else {
         systemPrompt += `\n\n✅ DATA LENGKAP. Gunakan "EXISTING CUSTOMER FLOW" -> Fokus ke closing, update unit, atau tawaran tukar tambah.`;
       }
     } else {
-      systemPrompt += `\n\n⚠️ LEAD STATUS: NEW (Belum tersimpan di CRM). Lakukan pendekatan awal (New Customer Flow) untuk mendapatkan Nama, Kebutuhan, dan Budget.`;
+      systemPrompt += `\n\n⚠️ LEAD STATUS: NEW (Belum tersimpan di CRM). Lakukan pendekatan awal (New Customer Flow) untuk mendapatkan Nama, Domisili, dan Kebutuhan Unit secara natural. Segera panggil tool 'create_lead' saat info didapatkan.`;
     }
     // --- AI 5.2 LOGIC INJECTION END ---
 
