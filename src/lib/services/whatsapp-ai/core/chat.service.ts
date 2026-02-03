@@ -397,7 +397,7 @@ export class WhatsAppAIChatService {
       // AI 5.2: 24/7 support for both Customer & Staff.
       // - CUSTOMERS: Bypass hours if config.alwaysReplyCustomer is true (default 24/7).
       // - STAFF: Bypass hours if config.bypassHoursForStaff is true (now default 24/7).
-      const alwaysReply = (config as any).alwaysReplyCustomer ?? true;
+      const alwaysReply = true; // AI 5.2 requirement: customer is also 24/7
       const bypassStaff = true; // AI 5.2 requirement: staff is also 24/7
 
       const shouldCheckHours = hasBusinessHours &&
