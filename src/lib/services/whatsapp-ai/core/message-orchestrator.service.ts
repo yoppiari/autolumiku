@@ -2104,6 +2104,7 @@ export class MessageOrchestratorService {
     uploadRequest?: any;
     editRequest?: any;
     needsCatchup?: boolean;
+    customerTone?: string;
   }> {
     // Lookup user by phone number for personalized responses
     let user = null;
@@ -2148,10 +2149,15 @@ export class MessageOrchestratorService {
     }
 
     try {
-      // Get conversation history (limit to 5 for faster response)
+      // Get conversation history 
+      // AI 5.2 Deep Memory: Fetch more history if catchup or explicit history request
+      const isHistoryRequest = /\b(history|riwayat|awal|tadi|dulu|sebelumnya|chat|percakapan)\b/i.test(message);
+      const historyLimit = (isCatchup || isHistoryRequest) ? 20 : 10;
+
+      // Pass historyLimit to getConversationHistory
       const messageHistory = await WhatsAppAIChatService.getConversationHistory(
         conversation.id,
-        5
+        historyLimit
       );
 
       // Generate AI response with staff info context
