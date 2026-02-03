@@ -2071,7 +2071,7 @@ model WhatsAppAIConfig {
   customerChatEnabled  Boolean @default(true)
   alwaysReplyCustomer  Boolean @default(true) // AI 5.2: Bypass business hours for customers
   staffCommandsEnabled Boolean @default(true)
-  bypassHoursForStaff  Boolean @default(false) // Whether staff also bypass business hours
+  bypassHoursForStaff  Boolean @default(true) // Whether staff also bypass business hours
 
   // Business Hours (for AI responses)
   businessHours     Json? // { monday: {open: "08:00", close: "17:00"}, ... }

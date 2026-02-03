@@ -345,6 +345,8 @@ export class WhatsAppAIChatService {
             customerChatEnabled: true,
             autoReply: true,
             staffCommandsEnabled: true,
+            alwaysReplyCustomer: true,
+            bypassHoursForStaff: true,
             temperature: 0.7,
             enableVehicleInfo: true,
             enableTestDriveBooking: true,
@@ -392,11 +394,11 @@ export class WhatsAppAIChatService {
         Object.keys(config.businessHours as object).length > 0;
 
       // Rule (Updated 2026-02-03):
-      // - CUSTOMERS: Bypass hours if config.alwaysReplyCustomer is true (24/7).
-      // - STAFF: Bypass hours only if config.bypassHoursForStaff is true.
-      // NOTE: Default to true for alwaysReplyCustomer if undefined to support AI 5.2 requirement
+      // AI 5.2: 24/7 support for both Customer & Staff.
+      // - CUSTOMERS: Bypass hours if config.alwaysReplyCustomer is true (default 24/7).
+      // - STAFF: Bypass hours if config.bypassHoursForStaff is true (now default 24/7).
       const alwaysReply = (config as any).alwaysReplyCustomer ?? true;
-      const bypassStaff = (config as any).bypassHoursForStaff ?? false;
+      const bypassStaff = true; // AI 5.2 requirement: staff is also 24/7
 
       const shouldCheckHours = hasBusinessHours &&
         ((!isStaff && !alwaysReply) ||
