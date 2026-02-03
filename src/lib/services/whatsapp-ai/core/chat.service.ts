@@ -1670,11 +1670,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
         let intro = "";
         if (isFirstResponse) {
-          intro = this.getRandomVariation([
-            `Halo! ⚡\n\n${timeGreeting}, selamat datang! Saya asisten virtual yang siap bantu info unit *${name}* ini.\n\nAnyway, dengan Kakak siapa saya bicara? 😊 `,
-            `Selamat datang! ✨\n\n${timeGreeting}, saya asisten virtual di sini. Terkait unit *${name}* yang Kakak tanyakan, saya bantu jelaskan ya.\n\nBoleh tahu nama Kakak siapa sebelumnya? 😊 `,
-            `Halo Kak! 👋\n\n${timeGreeting}. Saya asisten virtual ${tenantName}. Senang Kakak tertarik dengan *${name}* ini!\n\nSebelum lanjut, boleh kenalan dulu dengan Kakak siapa? 😊 `
-          ]);
+          intro = `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\nBaik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${name}* yang kakak tanyakan, saya bantu jelaskan ya. 😊 `;
         } else {
           intro = this.getRandomVariation([
             `Siap ${customerName}! `,
