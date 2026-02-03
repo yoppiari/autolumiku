@@ -384,43 +384,32 @@ export class WhatsAppAIChatService {
       }
       console.log(`[WhatsApp AI Chat] Customer chat is ENABLED. Proceeding with AI response.`);
 
-      // Check business hours (optional) - Apply to all customers (new and returning)
-      // STAFF ALWAYS BYPASS business hours check
       const isStaff = context.isStaff || false;
 
-      // Determine if we should check hours: if config has businessHours AND user is NOT staff
-      const hasBusinessHours = config.businessHours &&
-        typeof config.businessHours === 'object' &&
-        Object.keys(config.businessHours as object).length > 0;
-
-      const shouldCheckHours = hasBusinessHours && !isStaff;
+      // Rule (Updated 2026-02-03):
+      // - NEW/EXISTING CUSTOMERS: 24/7 access (no business hours check).
+      // - SALES/STAFF: Business hours check applies (to manage staff command availability).
+      const shouldCheckHours = hasBusinessHours && isStaff;
 
       if (shouldCheckHours && !this.isWithinBusinessHours(config.businessHours, config.timezone)) {
-        // DOUBLE CHECK: If it is staff, do NOT send after hours message
-        if (isStaff) {
-          console.log(`[WhatsApp AI Chat] ✅ Staff detected (double check) - forcing bypass of after-hours`);
-        } else {
-          console.log(`[WhatsApp AI Chat] 🌙 Outside business hours for ${context.customerPhone}`);
+        console.log(`[WhatsApp AI Chat] 🌙 Outside business hours for STAFF: ${context.staffInfo?.name || context.customerPhone}`);
 
-          // Use custom message if set, otherwise professional default
-          const afterHoursMsg = config.afterHoursMessage ||
-            `Halo! 👋 Terima kasih sudah menghubungi ${showroomName}.\n\n` +
-            `Mohon maaf, saat ini kami sedang di luar jam operasional. 🙏\n\n` +
-            `Pesan Anda sudah kami catat dan asisten virtual kami akan segera membantu Anda kembali di jam kerja.\n\n` +
-            `Terima kasih atas pengertiannya! 😊`;
+        // Staff-specific after hours message or use general config
+        const afterHoursMsg = config.afterHoursMessage ||
+          `Halo! 👋 Saat ini Showroom sedang di luar jam operasional.\n\n` +
+          `Fitur asisten untuk staff akan tersedia kembali di jam operasional. 🙏`;
 
-          return {
-            message: afterHoursMsg,
-            shouldEscalate: true, // Escalating so staff can also see it in the morning
-            needsCatchup: true,   // Flag for auto-catchup cron system
-            confidence: 1.0,
-            processingTime: Date.now() - startTime,
-          };
-        }
+        return {
+          message: afterHoursMsg,
+          shouldEscalate: false,
+          needsCatchup: false,
+          confidence: 1.0,
+          processingTime: Date.now() - startTime,
+        };
       }
 
       if (isStaff) {
-        console.log(`[WhatsApp AI Chat] ✅ Staff detected - bypassing business hours check`);
+        console.log(`[WhatsApp AI Chat] ✅ Staff detected - currently within business hours`);
       }
 
       // ==================== PRIORITY STOCK CHECK (BEFORE AI) ====================

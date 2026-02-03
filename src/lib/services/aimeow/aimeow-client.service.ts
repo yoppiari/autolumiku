@@ -440,14 +440,19 @@ export class AimeowClientService {
         }
       }
 
-      // 1. Sanitize URL (Local -> Public)
+      // 1. Sanitize URL (Local/Previous -> Public)
       let sanitizedUrl = imageUrl;
+      const appDomain = process.env.NEXT_PUBLIC_APP_URL || 'https://primamobil.id';
+
       if (imageUrl.includes('localhost') || imageUrl.includes('0.0.0.0') || imageUrl.includes('127.0.0.1')) {
-        sanitizedUrl = imageUrl.replace(/http:\/\/.*?:3000/, 'https://auto.lumiku.com').replace(/http:\/\/.*?:8080/, 'https://auto.lumiku.com');
+        sanitizedUrl = imageUrl.replace(/http:\/\/.*?:3000/, appDomain).replace(/http:\/\/.*?:8080/, appDomain);
       }
 
+      // Also catch previous hardcoded domains from migrations
+      sanitizedUrl = sanitizedUrl.replace(/https:\/\/auto\.lumiku\.com/g, appDomain);
+
       // 2. Ensure full public URL
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://auto.lumiku.com';
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://primamobil.id';
       const publicUrl = sanitizedUrl.startsWith('http')
         ? sanitizedUrl
         : `${baseUrl}${sanitizedUrl.startsWith('/') ? '' : '/'}${sanitizedUrl}`;
