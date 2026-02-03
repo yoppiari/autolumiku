@@ -1172,7 +1172,10 @@ export class MessageOrchestratorService {
       // This usually implies a trigger. If this process is triggered by "scan-pending", 'isCatchup' will be true.
       if (isCatchup && !responseMessage) {
       console.log(`[Orchestrator] 🎣 Executing PROACTIVE CATCH-UP for pending lead...`);
-      const catchupMsg = `Halo Kak! Maaf semalam showroom kami tutup jam operationalnya. 🙏\n\nSoal unit yang kemarin kakak tanyakan, masih AVAILABLE nih kak. Boleh saya bantu prosesnya? 😊\n\nSekalian boleh tahu namanya siapa dan dari mana biar enak ngobrolnya?`;
+      const contextData = conversation.contextData as Record<string, any> || {};
+      const vehicleName = contextData.lastVehicleInterested || "unit yang kakak tanyakan";
+
+      const catchupMsg = `Halo Kak! Maaf semalam Ada gangguan teknis sistem whatsapp Prima Mobil. 🙏\n\nSoal ${vehicleName} yang kemarin ditanyakan, masih tersedia AVAILABLE nih kak. Boleh saya bantu prosesnya? Sekalian boleh tahu namanya siapa dan dari mana biar enak ngobrolnya? 😊`;
 
       await this.sendResponse(
         incoming.accountId,
