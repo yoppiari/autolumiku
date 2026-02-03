@@ -110,6 +110,7 @@ export interface ChatResponse {
     oldValue?: string;
     newValue: string;
   }; // Optional vehicle edit request from AI
+  customerTone?: 'CUEK' | 'NORMAL' | 'AKTIF'; // AI 5.2: Analyzed tone
 }
 
 // ==================== WHATSAPP AI CHAT SERVICE ====================
@@ -185,7 +186,7 @@ export class WhatsAppAIChatService {
     // Remove existing titles: Kak, Pak, Bu, Mas, Mbak, Bapak, Ibu
     let cleanName = name.replace(/^(Kak|Pak|Bu|Mas|Mbak|Tuan|Nyonya|Bapak|Ibu)\s+/i, '').trim();
 
-    // Take the first part of the name (e.g., "Yudho" from "Yudho D. L")
+    // Take the first part of the name (e.g., Kak "Yudho" from "Yudho D. L")
     const parts = cleanName.split(/\s+/);
     if (parts.length > 0) {
       cleanName = parts[0];
@@ -390,23 +391,40 @@ export class WhatsAppAIChatService {
         typeof config.businessHours === 'object' &&
         Object.keys(config.businessHours as object).length > 0;
 
-      const shouldCheckHours = hasBusinessHours && isStaff;
+      // Rule (Updated 2026-02-03):
+      // - CUSTOMERS: Bypass hours if config.alwaysReplyCustomer is true (24/7).
+      // - STAFF: Bypass hours only if config.bypassHoursForStaff is true.
+      const shouldCheckHours = hasBusinessHours &&
+        ((!isStaff && !(config as any).alwaysReplyCustomer) ||
+          (isStaff && !(config as any).bypassHoursForStaff));
 
       if (shouldCheckHours && !this.isWithinBusinessHours(config.businessHours, config.timezone)) {
-        console.log(`[WhatsApp AI Chat] 🌙 Outside business hours for STAFF: ${context.staffInfo?.name || context.customerPhone}`);
+        if (isStaff) {
+          console.log(`[WhatsApp AI Chat] 🌙 Outside business hours for STAFF: ${context.staffInfo?.name || context.customerPhone}`);
 
-        // Staff-specific after hours message or use general config
-        const afterHoursMsg = config.afterHoursMessage ||
-          `Halo! 👋 Saat ini Showroom sedang di luar jam operasional.\n\n` +
-          `Fitur asisten untuk staff akan tersedia kembali di jam operasional. 🙏`;
+          const afterHoursMsg = config.afterHoursMessage ||
+            `Halo! 👋 Saat ini Showroom sedang di luar jam operasional.\n\n` +
+            `Fitur asisten untuk staff akan tersedia kembali di jam operasional. 🙏`;
 
-        return {
-          message: afterHoursMsg,
-          shouldEscalate: false,
-          needsCatchup: false,
-          confidence: 1.0,
-          processingTime: Date.now() - startTime,
-        };
+          return {
+            message: afterHoursMsg,
+            shouldEscalate: false,
+            needsCatchup: false,
+            confidence: 1.0,
+            processingTime: Date.now() - startTime,
+          };
+        } else {
+          // Extra safety for customers (though should be bypassed by logic above)
+          console.log(`[WhatsApp AI Chat] 🌙 Outside business hours for CUSTOMER: ${context.customerPhone}`);
+
+          return {
+            message: config.afterHoursMessage || "Mohon maaf, saat ini kami sedang offline. 🙏",
+            shouldEscalate: true,
+            needsCatchup: true,
+            confidence: 1.0,
+            processingTime: Date.now() - startTime,
+          };
+        }
       }
 
       if (isStaff) {
@@ -893,13 +911,15 @@ export class WhatsAppAIChatService {
       }
 
       return {
-        message: responseMessage,
-        shouldEscalate,
-        confidence: 0.85,
-        processingTime,
-        ...(resultImages && resultImages.length > 0 && { images: resultImages }),
-        ...(uploadRequest && { uploadRequest }),
-        ...(editRequest && { editRequest }),
+        message: responseMessage, // Assuming 'content' from user's snippet refers to 'responseMessage'
+        shouldEscalate: shouldEscalate, // Assuming 'response.shouldEscalate' from user's snippet refers to 'shouldEscalate'
+        confidence: 0.85, // Assuming 'response.confidence' from user's snippet refers to 'confidence' (or a fixed value)
+        processingTime: processingTime, // Assuming 'response.processingTime' from user's snippet refers to 'processingTime'
+        images: resultImages, // Assuming 'response.images' from user's snippet refers to 'resultImages'
+        // needsCatchup: response.needsCatchup, // This variable is not defined in the provided context. Keeping it commented out to avoid syntax error.
+        uploadRequest: uploadRequest, // Assuming 'response.uploadRequest' from user's snippet refers to 'uploadRequest'
+        editRequest: editRequest, // Assuming 'response.editRequest' from user's snippet refers to 'editRequest'
+        customerTone: undefined, // Placeholder for 'tone', as 'tone' is not defined in the provided context.
       };
     } catch (error: any) {
       console.error("[WhatsApp AI Chat] ❌ ERROR generating response:");

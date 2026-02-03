@@ -1084,6 +1084,7 @@ model Lead {
   interestedIn String? // Make/model they're interested in
   budgetRange  String? // e.g., "100-200 juta"
   timeframe    String? // "Minggu ini", "Bulan ini", "Surveying"
+  location     String? // Customer location (e.g., "Jakarta Selatan")
 
   // Follow-up
   followUpDate DateTime?
@@ -2068,7 +2069,9 @@ model WhatsAppAIConfig {
   // Behavior Settings
   autoReply            Boolean @default(true)
   customerChatEnabled  Boolean @default(true)
+  alwaysReplyCustomer  Boolean @default(true) // AI 5.2: Bypass business hours for customers
   staffCommandsEnabled Boolean @default(true)
+  bypassHoursForStaff  Boolean @default(false) // Whether staff also bypass business hours
 
   // Business Hours (for AI responses)
   businessHours     Json? // { monday: {open: "08:00", close: "17:00"}, ... }
@@ -2129,6 +2132,11 @@ model WhatsAppConversation {
   lastIntent        String? // Last detected intent
   contextData       Json? // Conversation state
   conversationState String? // For multi-step commands (e.g., upload flow)
+
+  // AI 5.2: Catch-up & Proactivity
+  needsCatchup      Boolean   @default(false)
+  lastAfterHoursAt  DateTime? 
+  lastCustomerTone  String?   // CUEK, NORMAL, AKTIF
 
   // Status
   status      String    @default("active") // active, escalated, closed
