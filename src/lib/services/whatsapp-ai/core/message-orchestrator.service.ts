@@ -1292,6 +1292,41 @@ export class MessageOrchestratorService {
       }
     }
 
+    // SPECIAL HANDLING: Verify command (needs special logic to define user identity)
+    const isVerifyCommand = /^(?:\/)?(verify|verifikasi)\b/i.test(message);
+    if (isVerifyCommand) {
+      console.log(`[Orchestrator] 🔐 Verify command intercepted`);
+      const verifyResult = await this.handleStaffVerify(
+        null, // No conversation needed for initial check
+        message,
+        incoming.from,
+        incoming.tenantId
+      );
+
+      if (verifyResult.verified && verifyResult.verifiedPhone) {
+        if (conversationId) {
+          await prisma.whatsAppConversation.update({
+            where: { id: conversationId },
+            data: {
+              contextData: {
+                verifiedStaffPhone: verifyResult.verifiedPhone,
+                isStaffVerified: true
+              }
+            }
+          });
+        }
+      }
+
+      return {
+        isCommand: true,
+        result: {
+          success: verifyResult.verified,
+          message: verifyResult.message,
+          followUp: false
+        }
+      };
+    }
+
     const isQuestion = message.includes('?');
     const isUniversalCommand = !isQuestion && universalCommands.some(k => {
       // Regex: Start with optional '/', then keyword, then word boundary
