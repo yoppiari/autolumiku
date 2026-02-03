@@ -800,6 +800,7 @@ export class MessageOrchestratorService {
       let escalated = false;
       let responseImages: Array<{ imageUrl: string; caption?: string }> | undefined;
       let needsCatchup = false; // Flag for after-hours proactive reply
+      let customerTone: string | undefined;
 
       // Handle /verify command specially - allows LID users to verify themselves
       if (classification.intent === "staff_verify_identity") {
@@ -876,6 +877,7 @@ export class MessageOrchestratorService {
         responseMessage = result.message;
         escalated = result.escalated;
         responseImages = result.images;
+        customerTone = result.customerTone;
         console.log(`[Orchestrator] AI response for staff: ${responseMessage?.substring(0, 50)}...`);
       } else if (classification.intent === "customer_greeting") {
         // ==================== CUSTOMER GREETING - ROUTE TO AI ====================
@@ -956,6 +958,7 @@ export class MessageOrchestratorService {
             escalated = result.escalated;
             responseImages = result.images;
             needsCatchup = !!result.needsCatchup;
+            customerTone = result.customerTone;
             console.log(`[Orchestrator] AI response generated: ${responseMessage?.substring(0, 50)}...`);
             if (responseImages) {
               console.log(`[Orchestrator] AI also generated ${responseImages.length} images to send`);
@@ -1165,6 +1168,9 @@ export class MessageOrchestratorService {
         data: {
           lastMessageAt: new Date(),
           lastIntent: classification.intent,
+          needsCatchup: needsCatchup || (conversation as any).needsCatchup,
+          lastAfterHoursAt: needsCatchup ? new Date() : (conversation as any).lastAfterHoursAt,
+          lastCustomerTone: customerTone || (conversation as any).lastCustomerTone,
           // Handle Escalation
           ...(escalated && {
             escalatedTo: "human",
@@ -1180,20 +1186,18 @@ export class MessageOrchestratorService {
           }),
 
           // Context Data Updates
-          ...((shouldAutoResolve || needsCatchup) && {
-            contextData: {
-              ...((conversation.contextData as Record<string, any>) || {}),
-              ...(shouldAutoResolve && {
-                resolvedAt: new Date().toISOString(),
-                resolvedReason: "closing_greeting",
-                closingMessage: incoming.message.substring(0, 100),
-              }),
-              ...(needsCatchup && {
-                needsCatchup: true,
-                lastAfterHoursMessageAt: new Date().toISOString(),
-              })
-            },
-          }),
+          contextData: {
+            ...((conversation.contextData as Record<string, any>) || {}),
+            ...(shouldAutoResolve && {
+              resolvedAt: new Date().toISOString(),
+              resolvedReason: "closing_greeting",
+              closingMessage: incoming.message.substring(0, 500),
+            }),
+            ...(needsCatchup && {
+              needsCatchup: true,
+              lastAfterHoursMessageAt: new Date().toISOString(),
+            })
+          },
         },
       });
 
