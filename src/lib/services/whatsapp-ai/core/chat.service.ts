@@ -435,6 +435,31 @@ export class WhatsAppAIChatService {
         console.log(`[WhatsApp AI Chat] ✅ Staff detected - currently within business hours`);
       }
 
+      // ==================== GREETING HANDLER (BEFORE AI) ====================
+      // Use strict greeting for staff/admin at start of chat or when greeting intent detected
+      const isGreetingIntent = context.intent === "customer_greeting" || context.intent === "staff_greeting";
+      const isNewChat = context.messageHistory.length <= 2;
+
+      if (isGreetingIntent || isNewChat) {
+        const timeGreeting = this.getTimeGreeting();
+        // Simplified vehicle lookup for greeting context
+        const vehicles = await prisma.vehicle.findMany({
+          where: { tenantId: context.tenantId, status: 'AVAILABLE' },
+          take: 3,
+          select: { id: true, make: true, model: true, year: true, price: true }
+        }).catch(() => []);
+
+        const greetingResponse = await this.handleGreetingInquiry(msg, context.messageHistory, timeGreeting, showroomName, vehicles as any, context);
+        if (greetingResponse) {
+          console.log(`[WhatsApp AI Chat] ✅ Strict Greeting Handled: ${greetingResponse.message.substring(0, 50)}...`);
+          return {
+            ...greetingResponse,
+            confidence: 1.0,
+            processingTime: Date.now() - startTime
+          };
+        }
+      }
+
       // ==================== PRIORITY STOCK CHECK (BEFORE AI) ====================
       const stockCheckResponse = await this.handlePriorityStockCheck(msg, context, startTime);
       if (stockCheckResponse) return stockCheckResponse;
