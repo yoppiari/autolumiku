@@ -1,5 +1,5 @@
 /**
- * Enhanced Debug Index Route
+ * Consolidated Debug Route
  * GET /api/v1/debug?tenant=primamobil-id&mode=xxx
  */
 
@@ -43,6 +43,40 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ tenant, account, aimeowClient });
         }
 
+        // MODE: SQL Sync (Emergency Column Addition)
+        if (mode === 'sql-sync') {
+            const results = [];
+            results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_ai_configs" ADD COLUMN IF NOT EXISTS "alwaysReplyCustomer" BOOLEAN DEFAULT true`));
+            results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_ai_configs" ADD COLUMN IF NOT EXISTS "bypassHoursForStaff" BOOLEAN DEFAULT false`));
+            results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_conversations" ADD COLUMN IF NOT EXISTS "needsCatchup" BOOLEAN DEFAULT false`));
+            results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_conversations" ADD COLUMN IF NOT EXISTS "lastAfterHoursAt" TIMESTAMP`));
+            results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_conversations" ADD COLUMN IF NOT EXISTS "lastCustomerTone" TEXT`));
+            results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "location" TEXT`));
+
+            return NextResponse.json({ success: true, message: "Schema synced via SQL.", results });
+        }
+
+        // MODE: User Check
+        if (mode === 'user-check') {
+            const email = searchParams.get('email') || 'admin@primamobil.id';
+            const user = await prisma.user.findFirst({
+                where: { email: email.toLowerCase() },
+                select: { id: true, email: true, firstName: true, lastName: true, role: true, tenantId: true }
+            });
+            return NextResponse.json({ email, user, database: process.env.DATABASE_URL?.split('@')[1] });
+        }
+
+        // MODE: Vehicle Check
+        if (mode === 'vehicle-check') {
+            const vehicles = await prisma.vehicle.findMany({
+                where: { tenantId: tenant.id },
+                take: 10,
+                orderBy: { createdAt: 'desc' },
+                select: { id: true, make: true, model: true, year: true, price: true, status: true }
+            });
+            return NextResponse.json({ count: vehicles.length, samples: vehicles });
+        }
+
         // MODE: Force Fix WhatsApp Connection
         if (mode === 'fix-whatsapp') {
             const targetPhone = "6285385419766";
@@ -53,12 +87,7 @@ export async function GET(request: NextRequest) {
 
             const updated = await prisma.aimeowAccount.update({
                 where: { id: account.id },
-                data: {
-                    clientId: targetClientId,
-                    phoneNumber: targetPhone,
-                    connectionStatus: "connected",
-                    isActive: true,
-                }
+                data: { clientId: targetClientId, phoneNumber: targetPhone, connectionStatus: "connected", isActive: true }
             });
 
             await prisma.whatsAppAIConfig.upsert({
@@ -82,13 +111,12 @@ export async function GET(request: NextRequest) {
         if (mode === 'trigger-reply') {
             const phone = searchParams.get("phone") || "6281216206368";
             const cleanPhone = phone.replace(/\D/g, "");
-
             const conversation = await prisma.whatsAppConversation.findFirst({
                 where: { customerPhone: { contains: cleanPhone.substring(cleanPhone.length - 10) } },
                 include: { account: true, messages: { where: { direction: 'inbound' }, orderBy: { createdAt: 'desc' }, take: 1 } }
             });
 
-            if (!conversation || !conversation.messages[0]) return NextResponse.json({ error: "No recent message found" }, { status: 404 });
+            if (!conversation || !conversation.messages[0]) return NextResponse.json({ error: "No recent message" }, { status: 404 });
 
             const result = await MessageOrchestratorService.processIncomingMessage({
                 accountId: conversation.accountId,
@@ -103,40 +131,19 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, result });
         }
 
-        // MODE: DB Push (Sync Schema)
-        if (mode === 'db-push') {
-            const { exec } = require('child_process');
-            return new Promise((resolve) => {
-                // First, check prisma version to see if it's reachable
-                exec('npx prisma -v', (vErr: any, vStdout: string) => {
-                    exec('npx prisma db push --accept-data-loss', (error: any, stdout: string, stderr: string) => {
-                        resolve(NextResponse.json({
-                            success: !error,
-                            prismaVersion: vStdout.trim(),
-                            stdout,
-                            stderr,
-                            error: error ? error.message : null,
-                            env: process.env.DATABASE_URL ? 'URL_SET' : 'URL_MISSING'
-                        }));
-                    });
-                });
-            });
-        }
-
         // Default: List Tools
         const debugTools = [
             { name: 'WhatsApp Setup Details', path: '/api/v1/debug?mode=whatsapp-setup' },
+            { name: 'Manual SQL Schema Sync', path: '/api/v1/debug?mode=sql-sync' },
             { name: 'Force Fix Connection', path: '/api/v1/debug?mode=fix-whatsapp' },
-            { name: 'Sync Database Schema', path: '/api/v1/debug?mode=db-push' },
             { name: 'Trigger AI Reply', path: '/api/v1/debug?mode=trigger-reply&phone=6281216206368' },
-            { name: 'User Check', path: '/api/v1/debug/user-check' },
-            { name: 'Vehicle Check', path: '/api/v1/debug/vehicle-check' },
-            { name: 'WA Status', path: '/api/v1/debug/wa-status' },
+            { name: 'User Check', path: '/api/v1/debug?mode=user-check&email=admin@primamobil.id' },
+            { name: 'Vehicle Check', path: '/api/v1/debug?mode=vehicle-check' },
         ];
 
         return NextResponse.json({
             success: true,
-            message: 'AutoLumiKu Debug Tools',
+            message: 'AutoLumiKu Debug Tools Consolidated',
             tools: debugTools,
             tenant: tenantSlug
         });
