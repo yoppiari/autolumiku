@@ -1338,12 +1338,21 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
           `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
           `Apakah ada yang bisa saya bantu untuk showroom hari ini kak? Cek stok, update data, atau butuh info untuk customer? 😊`;
       } else {
-        const customerIntros = [
-          `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami! Saya asisten virtual yang siap bantu cari mobil impian Kakak. 😊\n\nBoleh tahu dengan Kakak siapa saya bicara?`,
-          `Selamat datang di ${tenantName}! ✨\n\n${timeGreeting}, saya asisten virtual di sini. Mau asisten bantu cek stok mobil yang ready?\n\nSebelumnya dengan Kakak siapa ya kalau boleh tahu? 😊`,
-          `Halo Kak! 👋\n\n${timeGreeting}, senang bisa menyapa. Saya asisten virtual ${tenantName} yang siap bantu info stok & harga.\n\nBoleh kenalan dulu, dengan Kakak siapa dan darimana kak? 😊`
-        ];
-        personalizedGreeting = this.getRandomVariation(customerIntros) + (vehiclePreview ? `\n${vehiclePreview}` : "");
+        const validName = context?.customerName &&
+          !['Unknown', 'Pelanggan', 'Customer', 'Guest', 'Kak', 'User'].includes(context.customerName) &&
+          context.customerName !== context.customerPhone;
+
+        if (validName) {
+          const name = this.formatKakName(context?.customerName);
+          personalizedGreeting = `Halo ${name}! 👋\n\n${timeGreeting}, senang bertemu Kakak lagi di ${tenantName}. 😊\n\nAda unit yang sedang Kakak cari hari ini? Atau mau cek update stok terbaru kami?` + (vehiclePreview ? `\n${vehiclePreview}` : "");
+        } else {
+          const customerIntros = [
+            `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami! Saya asisten virtual yang siap bantu cari mobil impian Kakak. 😊\n\nBoleh tahu dengan Kakak siapa saya bicara?`,
+            `Selamat datang di ${tenantName}! ✨\n\n${timeGreeting}, saya asisten virtual di sini. Mau asisten bantu cek stok mobil yang ready?\n\nSebelumnya dengan Kakak siapa ya kalau boleh tahu? 😊`,
+            `Halo Kak! 👋\n\n${timeGreeting}, senang bisa menyapa. Saya asisten virtual ${tenantName} yang siap bantu info stok & harga.\n\nBoleh kenalan dulu, dengan Kakak siapa dan darimana kak? 😊`
+          ];
+          personalizedGreeting = this.getRandomVariation(customerIntros) + (vehiclePreview ? `\n${vehiclePreview}` : "");
+        }
       }
 
       const closings = [
