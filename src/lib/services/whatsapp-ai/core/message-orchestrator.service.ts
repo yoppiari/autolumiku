@@ -1155,549 +1155,544 @@ export class MessageOrchestratorService {
         } else {
           console.log(`[Orchestrator] No response message generated (staff message)`);
         }
-        console.log(`[Orchestrator] Fallback response sent`);
-      } else {
-        console.log(`[Orchestrator] No response message generated (staff message)`);
+
+        // 5.5. PROACTIVE CATCH-UP (AI 5.2)
+        // If the conversation was marked as needing catch-up (e.g. from previous "closed" state),
+        // AND we just processed a message (or even if we didn't, but we are now "awake"),
+        // check if we should send a follow-up.
+        // NOTE: Ideally this runs on a cron, but here we can trigger it if the user texts again 
+        // OR if we are in a "scan-pending" flow.
+
+        // But per user request: "Harusnya AI bisa lanjut dan langsung mengirim pesan susulan"
+        // This usually implies a trigger. If this process is triggered by "scan-pending", 'isCatchup' will be true.
+        if (isCatchup && !responseMessage) {
+          console.log(`[Orchestrator] 🎣 Executing PROACTIVE CATCH-UP for pending lead...`);
+          const contextData = conversation.contextData as Record<string, any> || {};
+          const vehicleName = contextData.lastVehicleInterested || "unit yang kakak tanyakan";
+
+          const catchupMsg = `Halo Kak! Maaf semalam Ada gangguan teknis sistem whatsapp Prima Mobil. 🙏\n\nSoal ${vehicleName} yang kemarin ditanyakan, masih tersedia AVAILABLE nih kak. Boleh saya bantu prosesnya? Sekalian boleh tahu namanya siapa dan dari mana biar enak ngobrolnya? 😊`;
+
+          await this.sendResponse(
+            incoming.accountId,
+            incoming.from,
+            catchupMsg,
+            conversation.id,
+            "customer_catchup_followup" as any
+          );
+        }
+        const isClosingGreeting = this.isClosingGreeting(incoming.message);
+        const shouldAutoResolve = isClosingGreeting &&
+          (conversation.status === "escalated" || conversation.escalatedTo);
+
+        if (shouldAutoResolve) {
+          console.log(`[Orchestrator] 🏁 Closing greeting detected for escalated conversation - auto-resolving`);
+        }
+
+        // 7. Update conversation status
+        await prisma.whatsAppConversation.update({
+          where: { id: conversation.id },
+          data: {
+            lastMessageAt: new Date(),
+            lastIntent: classification.intent,
+            needsCatchup: needsCatchup || (conversation as any).needsCatchup,
+            lastAfterHoursAt: needsCatchup ? new Date() : (conversation as any).lastAfterHoursAt,
+            lastCustomerTone: customerTone || (conversation as any).lastCustomerTone,
+            // Handle Escalation
+            ...(escalated && {
+              escalatedTo: "human",
+              escalatedAt: new Date(),
+              status: "escalated",
+            }),
+
+            // Handle De-escalation / Auto-Resolve
+            ...(shouldAutoResolve && !escalated && {
+              status: "active",       // Reset status to active
+              escalatedTo: null,      // Clear escalation
+              escalatedAt: null,
+            }),
+
+            // Context Data Updates
+            contextData: {
+              ...((conversation.contextData as Record<string, any>) || {}),
+              ...(shouldAutoResolve && {
+                resolvedAt: new Date().toISOString(),
+                resolvedReason: "closing_greeting",
+                closingMessage: incoming.message.substring(0, 500),
+              }),
+              ...(needsCatchup && {
+                needsCatchup: true,
+                lastAfterHoursMessageAt: new Date().toISOString(),
+              })
+            },
+          },
+        });
+
+        if (shouldAutoResolve) {
+          console.log(`[Orchestrator] ✅ Conversation ${conversation.id} auto-resolved and closed`);
+        }
+
+        return {
+          success: true,
+          conversationId: conversation.id,
+          intent: classification.intent,
+          responseMessage: undefined, // Message already sent
+          escalated,
+        };
+      } catch (error: any) {
+        console.error("[Message Orchestrator] Error processing message:", error);
+        return {
+          success: false,
+          conversationId: "",
+          intent: "unknown",
+          escalated: true,
+          error: error.message,
+        };
       }
     }
-
-      // 5.5. PROACTIVE CATCH-UP (AI 5.2)
-      // If the conversation was marked as needing catch-up (e.g. from previous "closed" state),
-      // AND we just processed a message (or even if we didn't, but we are now "awake"),
-      // check if we should send a follow-up.
-      // NOTE: Ideally this runs on a cron, but here we can trigger it if the user texts again 
-      // OR if we are in a "scan-pending" flow.
-
-      // But per user request: "Harusnya AI bisa lanjut dan langsung mengirim pesan susulan"
-      // This usually implies a trigger. If this process is triggered by "scan-pending", 'isCatchup' will be true.
-      if (isCatchup && !responseMessage) {
-      console.log(`[Orchestrator] 🎣 Executing PROACTIVE CATCH-UP for pending lead...`);
-      const contextData = conversation.contextData as Record<string, any> || {};
-      const vehicleName = contextData.lastVehicleInterested || "unit yang kakak tanyakan";
-
-      const catchupMsg = `Halo Kak! Maaf semalam Ada gangguan teknis sistem whatsapp Prima Mobil. 🙏\n\nSoal ${vehicleName} yang kemarin ditanyakan, masih tersedia AVAILABLE nih kak. Boleh saya bantu prosesnya? Sekalian boleh tahu namanya siapa dan dari mana biar enak ngobrolnya? 😊`;
-
-      await this.sendResponse(
-        incoming.accountId,
-        incoming.from,
-        catchupMsg,
-        conversation.id,
-        "customer_catchup_followup" as any
-      );
-    }
-    const isClosingGreeting = this.isClosingGreeting(incoming.message);
-    const shouldAutoResolve = isClosingGreeting &&
-      (conversation.status === "escalated" || conversation.escalatedTo);
-
-    if (shouldAutoResolve) {
-      console.log(`[Orchestrator] 🏁 Closing greeting detected for escalated conversation - auto-resolving`);
-    }
-
-    // 7. Update conversation status
-    await prisma.whatsAppConversation.update({
-      where: { id: conversation.id },
-      data: {
-        lastMessageAt: new Date(),
-        lastIntent: classification.intent,
-        needsCatchup: needsCatchup || (conversation as any).needsCatchup,
-        lastAfterHoursAt: needsCatchup ? new Date() : (conversation as any).lastAfterHoursAt,
-        lastCustomerTone: customerTone || (conversation as any).lastCustomerTone,
-        // Handle Escalation
-        ...(escalated && {
-          escalatedTo: "human",
-          escalatedAt: new Date(),
-          status: "escalated",
-        }),
-
-        // Handle De-escalation / Auto-Resolve
-        ...(shouldAutoResolve && !escalated && {
-          status: "active",       // Reset status to active
-          escalatedTo: null,      // Clear escalation
-          escalatedAt: null,
-        }),
-
-        // Context Data Updates
-        contextData: {
-          ...((conversation.contextData as Record<string, any>) || {}),
-          ...(shouldAutoResolve && {
-            resolvedAt: new Date().toISOString(),
-            resolvedReason: "closing_greeting",
-            closingMessage: incoming.message.substring(0, 500),
-          }),
-          ...(needsCatchup && {
-            needsCatchup: true,
-            lastAfterHoursMessageAt: new Date().toISOString(),
-          })
-        },
-      },
-    });
-
-    if (shouldAutoResolve) {
-      console.log(`[Orchestrator] ✅ Conversation ${conversation.id} auto-resolved and closed`);
-    }
-
-    return {
-      success: true,
-      conversationId: conversation.id,
-      intent: classification.intent,
-      responseMessage: undefined, // Message already sent
-      escalated,
-    };
-  } catch(error: any) {
-    console.error("[Message Orchestrator] Error processing message:", error);
-    return {
-      success: false,
-      conversationId: "",
-      intent: "unknown",
-      escalated: true,
-      error: error.message,
-    };
-  }
-}
 
   /**
    * Normalize phone number for comparison
    */
   private static normalizePhoneForLookup(phone: string): string {
-  if (!phone) return "";
-  // Handle LID format - return as is for LID-specific lookup
-  if (phone.includes("@lid")) return phone;
-  // Remove all non-digit characters
-  let digits = phone.replace(/\D/g, "");
+    if (!phone) return "";
+    // Handle LID format - return as is for LID-specific lookup
+    if (phone.includes("@lid")) return phone;
+    // Remove all non-digit characters
+    let digits = phone.replace(/\D/g, "");
 
-  // If starts with 0, replace with 62 (Standard Indonesia format)
-  if (digits.startsWith("0")) {
-    digits = "62" + digits.substring(1);
+    // If starts with 0, replace with 62 (Standard Indonesia format)
+    if (digits.startsWith("0")) {
+      digits = "62" + digits.substring(1);
+    }
+
+    return digits;
   }
-
-  return digits;
-}
 
   /**
    * Check and process WhatsApp AI Commands
    * Returns true if message was a command and was processed
    */
   private static async checkAndProcessCommand(
-  incoming: IncomingMessage,
-  conversationId: string
-): Promise < { isCommand: boolean; result?: any } > {
-  const message = incoming.message.toLowerCase().trim();
+    incoming: IncomingMessage,
+    conversationId: string
+  ): Promise<{ isCommand: boolean; result?: any }> {
+    const message = incoming.message.toLowerCase().trim();
 
-  // Check if message contains command keywords (more flexible matching)
-  // Check if message contains command keywords (Universal + Operational)
-  // REMOVED: greetings (halo, hi, etc) to allow AI to handle them naturally for staff
-  const universalCommands = [
-    'help', 'bantuan', 'panduan', 'cara pakai', 'menu', 'fitur', 'perintah', 'command',
-    'upload', 'tambah', 'input',
-    'inventory', 'stok', 'stock',
-    'status', 'update', 'ubah', 'edit', 'rubah',
-    'statistik', 'stats', 'laporan', 'report',
-    'verify', 'verifikasi', 'simulasi', 'kkb', 'kredit', 'angsuran'
-  ];
+    // Check if message contains command keywords (more flexible matching)
+    // Check if message contains command keywords (Universal + Operational)
+    // REMOVED: greetings (halo, hi, etc) to allow AI to handle them naturally for staff
+    const universalCommands = [
+      'help', 'bantuan', 'panduan', 'cara pakai', 'menu', 'fitur', 'perintah', 'command',
+      'upload', 'tambah', 'input',
+      'inventory', 'stok', 'stock',
+      'status', 'update', 'ubah', 'edit', 'rubah',
+      'statistik', 'stats', 'laporan', 'report',
+      'verify', 'verifikasi', 'simulasi', 'kkb', 'kredit', 'angsuran'
+    ];
 
-  // STRICT CHECK:
-  // 1. Must START with the keyword (with optional '/')
-  // 2. Must NOT contain '?' (if it's a question, let AI handle it)
-  // 3. Must be a distinct word (followed by space or end of string)
-  // Exception: 'help' or 'bantuan' might be asked as a question, but generally commands are directives.
+    // STRICT CHECK:
+    // 1. Must START with the keyword (with optional '/')
+    // 2. Must NOT contain '?' (if it's a question, let AI handle it)
+    // 3. Must be a distinct word (followed by space or end of string)
+    // Exception: 'help' or 'bantuan' might be asked as a question, but generally commands are directives.
 
-  // 0.5. STAFF STATUS COMMANDS (/online, /offline)
-  const statusMatch = message.match(/^(?:\/)?(online|offline|ready|away|aktif|nonaktif)\b/i);
-  if(statusMatch && isStaff) {
-  const newStatus = statusMatch[1].toLowerCase();
-  const dbStatus = (newStatus === 'online' || newStatus === 'ready' || newStatus === 'aktif') ? 'online' : 'offline';
+    // 0.5. STAFF STATUS COMMANDS (/online, /offline)
+    const statusMatch = message.match(/^(?:\/)?(online|offline|ready|away|aktif|nonaktif)\b/i);
+    if (statusMatch && isStaff) {
+      const newStatus = statusMatch[1].toLowerCase();
+      const dbStatus = (newStatus === 'online' || newStatus === 'ready' || newStatus === 'aktif') ? 'online' : 'offline';
 
-  try {
-    await prisma.$executeRawUnsafe(`UPDATE "users" SET "waStatus" = $1 WHERE "id" = $2`, dbStatus, user?.id);
-    return {
-      isCommand: true,
-      result: {
-        success: true,
-        message: `✅ Status berhasil diupdate ke: *${dbStatus.toUpperCase()}*\n\nSekarang asisten tahu Anda sedang ${dbStatus === 'online' ? 'siap melayani customer! 🦾' : 'istirahat sebentar. 🙏'}`,
-        followUp: false
-      }
-    };
-  } catch (e) {
-    console.error('[Command] Failed to update staff status:', e);
-  }
-}
-
-// SPECIAL HANDLING: Verify command (needs special logic to define user identity)
-const isVerifyCommand = /^(?:\/)?(verify|verifikasi)\b/i.test(message);
-if (isVerifyCommand) {
-  console.log(`[Orchestrator] 🔐 Verify command intercepted`);
-  const verifyResult = await this.handleStaffVerify(
-    null, // No conversation needed for initial check
-    message,
-    incoming.from,
-    incoming.tenantId
-  );
-
-  if (verifyResult.verified && verifyResult.verifiedPhone) {
-    if (conversationId) {
-      await prisma.whatsAppConversation.update({
-        where: { id: conversationId },
-        data: {
-          contextData: {
-            verifiedStaffPhone: verifyResult.verifiedPhone,
-            isStaffVerified: true
+      try {
+        await prisma.$executeRawUnsafe(`UPDATE "users" SET "waStatus" = $1 WHERE "id" = $2`, dbStatus, user?.id);
+        return {
+          isCommand: true,
+          result: {
+            success: true,
+            message: `✅ Status berhasil diupdate ke: *${dbStatus.toUpperCase()}*\n\nSekarang asisten tahu Anda sedang ${dbStatus === 'online' ? 'siap melayani customer! 🦾' : 'istirahat sebentar. 🙏'}`,
+            followUp: false
           }
+        };
+      } catch (e) {
+        console.error('[Command] Failed to update staff status:', e);
+      }
+    }
+
+    // SPECIAL HANDLING: Verify command (needs special logic to define user identity)
+    const isVerifyCommand = /^(?:\/)?(verify|verifikasi)\b/i.test(message);
+    if (isVerifyCommand) {
+      console.log(`[Orchestrator] 🔐 Verify command intercepted`);
+      const verifyResult = await this.handleStaffVerify(
+        null, // No conversation needed for initial check
+        message,
+        incoming.from,
+        incoming.tenantId
+      );
+
+      if (verifyResult.verified && verifyResult.verifiedPhone) {
+        if (conversationId) {
+          await prisma.whatsAppConversation.update({
+            where: { id: conversationId },
+            data: {
+              contextData: {
+                verifiedStaffPhone: verifyResult.verifiedPhone,
+                isStaffVerified: true
+              }
+            }
+          });
         }
-      });
+      }
+
+      return {
+        isCommand: true,
+        result: {
+          success: verifyResult.verified,
+          message: verifyResult.message,
+          followUp: false
+        }
+      };
     }
-  }
 
-  return {
-    isCommand: true,
-    result: {
-      success: verifyResult.verified,
-      message: verifyResult.message,
-      followUp: false
-    }
-  };
-}
-
-const isQuestion = message.includes('?');
-const isUniversalCommand = !isQuestion && universalCommands.some(k => {
-  // Regex: Start with optional '/', then keyword, then word boundary
-  // e.g. "stok" matches "^(/)?stok\b"
-  // "stok brio" matches
-  // "cek stok" DOES NOT match
-  const pattern = new RegExp(`^(\\/)?${k}\\b`, 'i');
-  return pattern.test(message);
-});
-
-// CRITICAL FIX: If incoming.from is LID, use verifiedStaffPhone from conversation for user lookup
-// This fixes the issue where verify command links LID to real phone, but commands still use LID
-let phoneForLookup = incoming.from;
-if (incoming.from.includes('@lid')) {
-  const conversation = await prisma.whatsAppConversation.findUnique({
-    where: { id: conversationId },
-    select: {
-      contextData: true,
-      customerPhone: true,
-    },
-  });
-
-  const contextData = conversation?.contextData as Record<string, any> | null;
-  if (contextData?.verifiedStaffPhone) {
-    phoneForLookup = contextData.verifiedStaffPhone;
-    console.log(`[Orchestrator] 🔄 LID detected, using verifiedStaffPhone: ${incoming.from} -> ${phoneForLookup}`);
-  }
-}
-
-// PDF Commands - MUST match specific patterns to avoid false positives
-// Single word triggers:
-const isPDFCommand = message === 'report' ||
-  message === 'pdf' ||
-  message.includes('report pdf') ||
-  message.includes('pdf report') ||
-  message.includes('kirim report') ||
-  message.includes('kirim pdf') ||
-  message.includes('kirim pdf nya') ||
-  message.includes('kirim reportnya') ||
-  message.includes('kirim pdfnya') ||
-  // Specific report names:
-  message.includes('sales report') ||
-  message.includes('whatsapp ai') ||
-  message.includes('metrics penjualan') || message.includes('metrix penjualan') ||
-  message.includes('metrics pelanggan') || message.includes('metrix pelanggan') ||
-  message.includes('metrics operational') || message.includes('metrix operational') ||
-  message.includes('operational metrics') ||
-  message.includes('operational metric') ||
-  message.includes('tren penjualan') ||
-  message.includes('laporan penjualan') ||
-  message.includes('laporan penjualan lengkap') ||
-  message.includes('sales report lengkap') ||
-  // English keywords (add missing aliases):
-  message.includes('customer metrics') || message.includes('customer metric') ||
-  message.includes('sales trends') || message.includes('sales trend') ||
-  message.includes('total sales') || message.includes('sales total') ||
-  message.includes('total penjualan') ||
-  message.includes('total penjualan showroom') ||
-  message.includes('staff performance') ||
-  message.includes('low stock alert') ||
-  message.includes('low stock') ||
-  message.includes('total revenue') ||
-  message.includes('total inventory') ||
-  message.includes('average price') ||
-  // Diagnostic
-  message.includes('test-image') ||
-  message.includes('test image') ||
-  message.includes('debug image') ||
-  // More specific "penjualan"/"sales" patterns (not just any mention):
-  /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics|trends?|totals?)\b/i.test(message) ||
-  /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(message) ||
-  /\b(customer|pelanggan)\s+metrics\b/i.test(message) ||
-  /\btotal\s+(sales|penjualan)\b/i.test(message);
-
-// Check if it's a command
-const isCommand = isUniversalCommand || isPDFCommand;
-
-if (!isCommand) {
-  return { isCommand: false };
-}
-
-console.log(`[Orchestrator] 🔔 Command detected: ${message}`);
-console.log(`[Orchestrator] 📋 isPDFCommand:`, isPDFCommand, `isUniversalCommand:`, isUniversalCommand);
-
-// Find user by phone number with flexible matching
-// Use the same normalization as main user lookup (convert 62... to 0...)
-const digits = phoneForLookup.replace(/\D/g, '');
-const phoneWith0 = digits.startsWith('62') ? '0' + digits.slice(2) : digits;
-const phoneWith62 = digits.startsWith('0') ? '62' + digits.slice(1) : digits;
-
-console.log(`[Orchestrator] 🔍 Looking for user with phone formats: 0-prefix="${phoneWith0}", 62-prefix="${phoneWith62}", exact="${phoneForLookup}"`);
-
-// Get all users in tenant with staff roles
-const allUsers = await prisma.user.findMany({
-  where: {
-    OR: [
-      { tenantId: incoming.tenantId },
-      { tenantId: null }
-    ],
-    phone: { not: null }, // Must have phone number
-  },
-  select: {
-    id: true,
-    role: true,
-    roleLevel: true,
-    firstName: true,
-    lastName: true,
-    phone: true,
-  },
-});
-
-// Find matching user by trying all phone formats
-// ENHANCED: Normalize using shared helper to handle all formats (08.., 628.., +62 8..)
-const user = allUsers.find(u => {
-  if (!u.phone) return false;
-  return normalizePhoneNumber(u.phone) === normalizePhoneNumber(phoneForLookup);
-});
-
-if (!user) {
-  console.log(`[Orchestrator] ⚠️ No user found with phone: ${phoneForLookup} (tried ${allUsers.length} users)`);
-  return {
-    isCommand: true,
-    result: {
-      success: false,
-      message: 'Maaf, nomor WhatsApp Anda tidak terdaftar di sistem. Hubungi admin untuk registrasi.',
-      followUp: false,
-    },
-  };
-}
-
-console.log(`[Orchestrator] 👤 User found: ${user.firstName} ${user.lastName} (${user.role}, level ${user.roleLevel}, DB phone: ${user.phone})`);
-
-// Multi-tasking Split Logic
-const taskSplitters = [',', '.', ' lalu ', ' dan ', '\n'];
-let commandParts = [incoming.message];
-
-// Only split if it likely contains multiple distinct commands (e.g. "lalu", "dan", or multiple commas in a report request)
-const hasSequentialKey = message.includes(' lalu ') || message.includes(' dan ') || (message.includes(',') && isPDFCommand);
-
-if (hasSequentialKey) {
-  console.log(`[Orchestrator] 🧊 Multi-task message detected, attempting to split...`);
-  for (const splitter of taskSplitters) {
-    commandParts = commandParts.flatMap(p => p.split(splitter));
-  }
-  commandParts = commandParts.map(p => p.trim()).filter(p => p.length > 5); // Filter short/empty segments
-}
-
-if (commandParts.length > 1) {
-  console.log(`[Orchestrator] ⛓️ Processing ${commandParts.length} tasks sequentially...`);
-  let combinedMessage = '';
-  let combinedPDFs: Buffer[] = [];
-  let combinedFilenames: string[] = [];
-
-  for (const part of commandParts) {
-    console.log(`[Orchestrator] 🏃 Task Part: "${part}"`);
-    const partResult = await processCommand(part, {
-      tenantId: incoming.tenantId,
-      userRole: user.role,
-      userRoleLevel: user.roleLevel,
-      phoneNumber: incoming.from,
-      userId: user.id,
-      conversationId: conversationId
+    const isQuestion = message.includes('?');
+    const isUniversalCommand = !isQuestion && universalCommands.some(k => {
+      // Regex: Start with optional '/', then keyword, then word boundary
+      // e.g. "stok" matches "^(/)?stok\b"
+      // "stok brio" matches
+      // "cek stok" DOES NOT match
+      const pattern = new RegExp(`^(\\/)?${k}\\b`, 'i');
+      return pattern.test(message);
     });
 
-    if (partResult.success) {
-      combinedMessage += (combinedMessage ? '\n\n' : '') + partResult.message;
-      if (partResult.pdfBuffer) {
-        combinedPDFs.push(partResult.pdfBuffer);
-        combinedFilenames.push(partResult.filename || 'report.pdf');
+    // CRITICAL FIX: If incoming.from is LID, use verifiedStaffPhone from conversation for user lookup
+    // This fixes the issue where verify command links LID to real phone, but commands still use LID
+    let phoneForLookup = incoming.from;
+    if (incoming.from.includes('@lid')) {
+      const conversation = await prisma.whatsAppConversation.findUnique({
+        where: { id: conversationId },
+        select: {
+          contextData: true,
+          customerPhone: true,
+        },
+      });
+
+      const contextData = conversation?.contextData as Record<string, any> | null;
+      if (contextData?.verifiedStaffPhone) {
+        phoneForLookup = contextData.verifiedStaffPhone;
+        console.log(`[Orchestrator] 🔄 LID detected, using verifiedStaffPhone: ${incoming.from} -> ${phoneForLookup}`);
       }
     }
-  }
 
-  if (combinedMessage) {
-    return {
-      isCommand: true,
-      result: {
-        success: true,
-        message: combinedMessage,
-        pdfBuffer: combinedPDFs.length === 1 ? combinedPDFs[0] : undefined, // Native support for 1 PDF, multiple needs loop in sender
-        filename: combinedFilenames.length === 1 ? combinedFilenames[0] : undefined,
-        followUp: true
+    // PDF Commands - MUST match specific patterns to avoid false positives
+    // Single word triggers:
+    const isPDFCommand = message === 'report' ||
+      message === 'pdf' ||
+      message.includes('report pdf') ||
+      message.includes('pdf report') ||
+      message.includes('kirim report') ||
+      message.includes('kirim pdf') ||
+      message.includes('kirim pdf nya') ||
+      message.includes('kirim reportnya') ||
+      message.includes('kirim pdfnya') ||
+      // Specific report names:
+      message.includes('sales report') ||
+      message.includes('whatsapp ai') ||
+      message.includes('metrics penjualan') || message.includes('metrix penjualan') ||
+      message.includes('metrics pelanggan') || message.includes('metrix pelanggan') ||
+      message.includes('metrics operational') || message.includes('metrix operational') ||
+      message.includes('operational metrics') ||
+      message.includes('operational metric') ||
+      message.includes('tren penjualan') ||
+      message.includes('laporan penjualan') ||
+      message.includes('laporan penjualan lengkap') ||
+      message.includes('sales report lengkap') ||
+      // English keywords (add missing aliases):
+      message.includes('customer metrics') || message.includes('customer metric') ||
+      message.includes('sales trends') || message.includes('sales trend') ||
+      message.includes('total sales') || message.includes('sales total') ||
+      message.includes('total penjualan') ||
+      message.includes('total penjualan showroom') ||
+      message.includes('staff performance') ||
+      message.includes('low stock alert') ||
+      message.includes('low stock') ||
+      message.includes('total revenue') ||
+      message.includes('total inventory') ||
+      message.includes('average price') ||
+      // Diagnostic
+      message.includes('test-image') ||
+      message.includes('test image') ||
+      message.includes('debug image') ||
+      // More specific "penjualan"/"sales" patterns (not just any mention):
+      /\b(sales|penjualan)\s+(summary|report|metrics|data|analytics|trends?|totals?)\b/i.test(message) ||
+      /\b(metrics|metrix)\s+(sales|penjualan|operational|pelanggan|customer)\b/i.test(message) ||
+      /\b(customer|pelanggan)\s+metrics\b/i.test(message) ||
+      /\btotal\s+(sales|penjualan)\b/i.test(message);
+
+    // Check if it's a command
+    const isCommand = isUniversalCommand || isPDFCommand;
+
+    if (!isCommand) {
+      return { isCommand: false };
+    }
+
+    console.log(`[Orchestrator] 🔔 Command detected: ${message}`);
+    console.log(`[Orchestrator] 📋 isPDFCommand:`, isPDFCommand, `isUniversalCommand:`, isUniversalCommand);
+
+    // Find user by phone number with flexible matching
+    // Use the same normalization as main user lookup (convert 62... to 0...)
+    const digits = phoneForLookup.replace(/\D/g, '');
+    const phoneWith0 = digits.startsWith('62') ? '0' + digits.slice(2) : digits;
+    const phoneWith62 = digits.startsWith('0') ? '62' + digits.slice(1) : digits;
+
+    console.log(`[Orchestrator] 🔍 Looking for user with phone formats: 0-prefix="${phoneWith0}", 62-prefix="${phoneWith62}", exact="${phoneForLookup}"`);
+
+    // Get all users in tenant with staff roles
+    const allUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { tenantId: incoming.tenantId },
+          { tenantId: null }
+        ],
+        phone: { not: null }, // Must have phone number
+      },
+      select: {
+        id: true,
+        role: true,
+        roleLevel: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+      },
+    });
+
+    // Find matching user by trying all phone formats
+    // ENHANCED: Normalize using shared helper to handle all formats (08.., 628.., +62 8..)
+    const user = allUsers.find(u => {
+      if (!u.phone) return false;
+      return normalizePhoneNumber(u.phone) === normalizePhoneNumber(phoneForLookup);
+    });
+
+    if (!user) {
+      console.log(`[Orchestrator] ⚠️ No user found with phone: ${phoneForLookup} (tried ${allUsers.length} users)`);
+      return {
+        isCommand: true,
+        result: {
+          success: false,
+          message: 'Maaf, nomor WhatsApp Anda tidak terdaftar di sistem. Hubungi admin untuk registrasi.',
+          followUp: false,
+        },
+      };
+    }
+
+    console.log(`[Orchestrator] 👤 User found: ${user.firstName} ${user.lastName} (${user.role}, level ${user.roleLevel}, DB phone: ${user.phone})`);
+
+    // Multi-tasking Split Logic
+    const taskSplitters = [',', '.', ' lalu ', ' dan ', '\n'];
+    let commandParts = [incoming.message];
+
+    // Only split if it likely contains multiple distinct commands (e.g. "lalu", "dan", or multiple commas in a report request)
+    const hasSequentialKey = message.includes(' lalu ') || message.includes(' dan ') || (message.includes(',') && isPDFCommand);
+
+    if (hasSequentialKey) {
+      console.log(`[Orchestrator] 🧊 Multi-task message detected, attempting to split...`);
+      for (const splitter of taskSplitters) {
+        commandParts = commandParts.flatMap(p => p.split(splitter));
       }
-    };
-  }
-}
+      commandParts = commandParts.map(p => p.trim()).filter(p => p.length > 5); // Filter short/empty segments
+    }
 
-// Single task processing (fallback or single command)
-try {
-  console.log(`[Orchestrator] ⚙️ Calling processCommand with: "${message}"`);
-  const commandOptions: any = {
-    tenantId: incoming.tenantId,
-    userRole: user.role,
-    userRoleLevel: user.roleLevel,
-    phoneNumber: incoming.from,
-    userId: user.id,
-    conversationId: conversationId
-  };
+    if (commandParts.length > 1) {
+      console.log(`[Orchestrator] ⛓️ Processing ${commandParts.length} tasks sequentially...`);
+      let combinedMessage = '';
+      let combinedPDFs: Buffer[] = [];
+      let combinedFilenames: string[] = [];
 
-  const result = await processCommand(message, commandOptions);
-  console.log(`[Orchestrator] ✅ processCommand result:`, result.success, result.message ? result.message.substring(0, 100) : '');
-
-  // If PDF was generated, send it via WhatsApp using base64 (more secure)
-  if (result.pdfBuffer && result.filename) {
-    console.log(`[Orchestrator] 📄 Sending PDF: ${result.filename}`);
-    console.log(`[Orchestrator] 📊 PDF size: ${result.pdfBuffer.length} bytes`);
-
-    try {
-      // Encode PDF to base64 for secure transmission
-      // This avoids storing sensitive PDFs on public storage
-      const base64Pdf = result.pdfBuffer.toString('base64');
-      console.log(`[Orchestrator] 📦 PDF encoded to base64: ${base64Pdf.length} chars`);
-
-      // Send PDF via WhatsApp using base64 encoding
-      const to = incoming.from;
-      const clientId = incoming.clientId; // Use Aimeow client UUID, NOT Prisma account ID
-
-      console.log(`[Orchestrator] 📤 Sending PDF via WhatsApp to ${to} (base64 mode)`);
-      const sendResult = await AimeowClientService.sendDocumentBase64(
-        clientId,
-        to,
-        base64Pdf,
-        result.filename,
-        'Berikut adalah laporan yang Anda minta.'
-      );
-      console.log(`[Orchestrator] ✅ PDF sent:`, sendResult);
-
-      if (sendResult.success) {
-        result.message = result.message + '\n\n✅ PDF berhasil dikirim!';
-      } else {
-        result.message = result.message + `\n\n❌ Gagal mengirim PDF: ${sendResult.error}\n\nSilakan coba lagi.`;
-      }
-
-      // BROADCAST LOGIC: Send to other admins/owners if requested
-      if (result.broadcastToRoles && result.broadcastToRoles.length > 0) {
-        console.log(`[Orchestrator] 📢 Broadcasting PDF to roles: ${result.broadcastToRoles.join(', ')}`);
-
-        // Find all eligible recipients
-        const recipients = await prisma.user.findMany({
-          where: {
-            tenantId: incoming.tenantId,
-            role: { in: result.broadcastToRoles },
-            phone: { not: null },
-            // Exclude the original sender (already received)
-            NOT: {
-              OR: [
-                { phone: phoneWith0 },
-                { phone: phoneWith62 },
-                { phone: phoneForLookup }
-              ]
-            }
-          },
-          select: {
-            firstName: true,
-            lastName: true,
-            phone: true,
-            role: true
-          }
+      for (const part of commandParts) {
+        console.log(`[Orchestrator] 🏃 Task Part: "${part}"`);
+        const partResult = await processCommand(part, {
+          tenantId: incoming.tenantId,
+          userRole: user.role,
+          userRoleLevel: user.roleLevel,
+          phoneNumber: incoming.from,
+          userId: user.id,
+          conversationId: conversationId
         });
 
-        console.log(`[Orchestrator] 👥 Found ${recipients.length} broadcast recipients`);
-
-        // Send to each recipient with a small delay between messages
-        for (const recipient of recipients) {
-          if (!recipient.phone) continue;
-
-          console.log(`[Orchestrator] 📤 Broadcasting to ${recipient.firstName} (${recipient.role}) at ${recipient.phone}`);
-
-          try {
-            // Add a small delay (500ms) between broadcast messages to avoid rate limits
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            await AimeowClientService.sendDocumentBase64(
-              clientId,
-              recipient.phone!, // ! assertion safe because of check above
-              base64Pdf,
-              result.filename,
-              `📢 Broadcast Report from ${user.firstName}: ${result.message}`
-            );
-          } catch (err) {
-            console.error(`[Orchestrator] ❌ Failed to broadcast to ${recipient.phone}:`, err);
+        if (partResult.success) {
+          combinedMessage += (combinedMessage ? '\n\n' : '') + partResult.message;
+          if (partResult.pdfBuffer) {
+            combinedPDFs.push(partResult.pdfBuffer);
+            combinedFilenames.push(partResult.filename || 'report.pdf');
           }
         }
       }
 
-    } catch (error: any) {
-      console.error(`[Orchestrator] ❌ Error sending PDF:`, error);
-      result.message = result.message + `\n\n❌ Terjadi kesalahan saat mengirim PDF: ${error.message}\n\nSilakan coba lagi atau hubungi admin.`;
-    }
-  }
-
-  // If vCard was generated, send it via WhatsApp
-  if (result.vCardUrl && result.contactInfo) {
-    console.log(`[Orchestrator] 📇 Sending vCard: ${result.vCardFilename}`);
-
-    try {
-      // Get full public URL
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
-      const fullVCardUrl = result.vCardUrl.startsWith('http')
-        ? result.vCardUrl
-        : `${baseUrl}${result.vCardUrl}`;
-      console.log(`[Orchestrator] 📎 vCard URL: ${fullVCardUrl}`);
-
-      // Send vCard via WhatsApp
-      const clientId = incoming.clientId; // FIX: Use clientId (Aimeow UUID) instead of accountId (Prisma CUID)
-      const to = incoming.from;
-
-      console.log(`[Orchestrator] 📤 Sending vCard via WhatsApp to ${to}`);
-      const sendResult = await AimeowClientService.sendContact(
-        clientId,
-        to,
-        fullVCardUrl,
-        result.contactInfo.name,
-        result.contactInfo.phone
-      );
-
-      if (sendResult.success) {
-        console.log(`[Orchestrator] ✅ vCard sent successfully via WhatsApp`);
-        result.message = result.message + '\n\n✅ Kontak berhasil dikirim! Klik file vCard untuk menyimpan ke kontak.';
-      } else {
-        console.error(`[Orchestrator] ❌ Failed to send vCard: ${sendResult.error}`);
-        result.message = result.message + `\n\n❌ Gagal mengirim kontak: ${sendResult.error}\n\nSilakan coba lagi.`;
+      if (combinedMessage) {
+        return {
+          isCommand: true,
+          result: {
+            success: true,
+            message: combinedMessage,
+            pdfBuffer: combinedPDFs.length === 1 ? combinedPDFs[0] : undefined, // Native support for 1 PDF, multiple needs loop in sender
+            filename: combinedFilenames.length === 1 ? combinedFilenames[0] : undefined,
+            followUp: true
+          }
+        };
       }
-    } catch (error: any) {
-      console.error(`[Orchestrator] ❌ Error sending vCard:`, error);
-      result.message = result.message + `\n\n❌ Terjadi kesalahan saat mengirim kontak: ${error.message}\n\nSilakan coba lagi atau hubungi admin.`;
     }
-  }
 
-  return { isCommand: true, result };
-} catch (error) {
-  console.error(`[Orchestrator] ❌ Command processing error:`, error);
-  return {
-    isCommand: true,
-    result: {
-      success: false,
-      message: 'Maaf, terjadi kesalahan saat memproses command. Silakan coba lagi atau hubungi admin.',
-      followUp: false,
-    },
-  };
-}
+    // Single task processing (fallback or single command)
+    try {
+      console.log(`[Orchestrator] ⚙️ Calling processCommand with: "${message}"`);
+      const commandOptions: any = {
+        tenantId: incoming.tenantId,
+        userRole: user.role,
+        userRoleLevel: user.roleLevel,
+        phoneNumber: incoming.from,
+        userId: user.id,
+        conversationId: conversationId
+      };
+
+      const result = await processCommand(message, commandOptions);
+      console.log(`[Orchestrator] ✅ processCommand result:`, result.success, result.message ? result.message.substring(0, 100) : '');
+
+      // If PDF was generated, send it via WhatsApp using base64 (more secure)
+      if (result.pdfBuffer && result.filename) {
+        console.log(`[Orchestrator] 📄 Sending PDF: ${result.filename}`);
+        console.log(`[Orchestrator] 📊 PDF size: ${result.pdfBuffer.length} bytes`);
+
+        try {
+          // Encode PDF to base64 for secure transmission
+          // This avoids storing sensitive PDFs on public storage
+          const base64Pdf = result.pdfBuffer.toString('base64');
+          console.log(`[Orchestrator] 📦 PDF encoded to base64: ${base64Pdf.length} chars`);
+
+          // Send PDF via WhatsApp using base64 encoding
+          const to = incoming.from;
+          const clientId = incoming.clientId; // Use Aimeow client UUID, NOT Prisma account ID
+
+          console.log(`[Orchestrator] 📤 Sending PDF via WhatsApp to ${to} (base64 mode)`);
+          const sendResult = await AimeowClientService.sendDocumentBase64(
+            clientId,
+            to,
+            base64Pdf,
+            result.filename,
+            'Berikut adalah laporan yang Anda minta.'
+          );
+          console.log(`[Orchestrator] ✅ PDF sent:`, sendResult);
+
+          if (sendResult.success) {
+            result.message = result.message + '\n\n✅ PDF berhasil dikirim!';
+          } else {
+            result.message = result.message + `\n\n❌ Gagal mengirim PDF: ${sendResult.error}\n\nSilakan coba lagi.`;
+          }
+
+          // BROADCAST LOGIC: Send to other admins/owners if requested
+          if (result.broadcastToRoles && result.broadcastToRoles.length > 0) {
+            console.log(`[Orchestrator] 📢 Broadcasting PDF to roles: ${result.broadcastToRoles.join(', ')}`);
+
+            // Find all eligible recipients
+            const recipients = await prisma.user.findMany({
+              where: {
+                tenantId: incoming.tenantId,
+                role: { in: result.broadcastToRoles },
+                phone: { not: null },
+                // Exclude the original sender (already received)
+                NOT: {
+                  OR: [
+                    { phone: phoneWith0 },
+                    { phone: phoneWith62 },
+                    { phone: phoneForLookup }
+                  ]
+                }
+              },
+              select: {
+                firstName: true,
+                lastName: true,
+                phone: true,
+                role: true
+              }
+            });
+
+            console.log(`[Orchestrator] 👥 Found ${recipients.length} broadcast recipients`);
+
+            // Send to each recipient with a small delay between messages
+            for (const recipient of recipients) {
+              if (!recipient.phone) continue;
+
+              console.log(`[Orchestrator] 📤 Broadcasting to ${recipient.firstName} (${recipient.role}) at ${recipient.phone}`);
+
+              try {
+                // Add a small delay (500ms) between broadcast messages to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                await AimeowClientService.sendDocumentBase64(
+                  clientId,
+                  recipient.phone!, // ! assertion safe because of check above
+                  base64Pdf,
+                  result.filename,
+                  `📢 Broadcast Report from ${user.firstName}: ${result.message}`
+                );
+              } catch (err) {
+                console.error(`[Orchestrator] ❌ Failed to broadcast to ${recipient.phone}:`, err);
+              }
+            }
+          }
+
+        } catch (error: any) {
+          console.error(`[Orchestrator] ❌ Error sending PDF:`, error);
+          result.message = result.message + `\n\n❌ Terjadi kesalahan saat mengirim PDF: ${error.message}\n\nSilakan coba lagi atau hubungi admin.`;
+        }
+      }
+
+      // If vCard was generated, send it via WhatsApp
+      if (result.vCardUrl && result.contactInfo) {
+        console.log(`[Orchestrator] 📇 Sending vCard: ${result.vCardFilename}`);
+
+        try {
+          // Get full public URL
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://primamobil.id';
+          const fullVCardUrl = result.vCardUrl.startsWith('http')
+            ? result.vCardUrl
+            : `${baseUrl}${result.vCardUrl}`;
+          console.log(`[Orchestrator] 📎 vCard URL: ${fullVCardUrl}`);
+
+          // Send vCard via WhatsApp
+          const clientId = incoming.clientId; // FIX: Use clientId (Aimeow UUID) instead of accountId (Prisma CUID)
+          const to = incoming.from;
+
+          console.log(`[Orchestrator] 📤 Sending vCard via WhatsApp to ${to}`);
+          const sendResult = await AimeowClientService.sendContact(
+            clientId,
+            to,
+            fullVCardUrl,
+            result.contactInfo.name,
+            result.contactInfo.phone
+          );
+
+          if (sendResult.success) {
+            console.log(`[Orchestrator] ✅ vCard sent successfully via WhatsApp`);
+            result.message = result.message + '\n\n✅ Kontak berhasil dikirim! Klik file vCard untuk menyimpan ke kontak.';
+          } else {
+            console.error(`[Orchestrator] ❌ Failed to send vCard: ${sendResult.error}`);
+            result.message = result.message + `\n\n❌ Gagal mengirim kontak: ${sendResult.error}\n\nSilakan coba lagi.`;
+          }
+        } catch (error: any) {
+          console.error(`[Orchestrator] ❌ Error sending vCard:`, error);
+          result.message = result.message + `\n\n❌ Terjadi kesalahan saat mengirim kontak: ${error.message}\n\nSilakan coba lagi atau hubungi admin.`;
+        }
+      }
+
+      return { isCommand: true, result };
+    } catch (error) {
+      console.error(`[Orchestrator] ❌ Command processing error:`, error);
+      return {
+        isCommand: true,
+        result: {
+          success: false,
+          message: 'Maaf, terjadi kesalahan saat memproses command. Silakan coba lagi atau hubungi admin.',
+          followUp: false,
+        },
+      };
+    }
   }
 
   /**
@@ -1705,358 +1700,358 @@ try {
    * Enhanced to handle phone/LID format variations
    */
   private static async getOrCreateConversation(
-  accountId: string,
-  tenantId: string,
-  customerPhone: string,
-  customerName ?: string
-) {
-  console.log(`[Orchestrator] Getting/creating conversation - accountId: ${accountId}, tenantId: ${tenantId}, phone: ${customerPhone}, name: ${customerName}`);
+    accountId: string,
+    tenantId: string,
+    customerPhone: string,
+    customerName?: string
+  ) {
+    console.log(`[Orchestrator] Getting/creating conversation - accountId: ${accountId}, tenantId: ${tenantId}, phone: ${customerPhone}, name: ${customerName}`);
 
-  const normalizedPhone = this.normalizePhoneForLookup(customerPhone);
-  const isLID = customerPhone.includes("@lid");
+    const normalizedPhone = this.normalizePhoneForLookup(customerPhone);
+    const isLID = customerPhone.includes("@lid");
 
-  // Try to find active conversation by exact phone match first
-  let conversation = await prisma.whatsAppConversation.findFirst({
-    where: {
-      accountId,
-      customerPhone,
-      status: "active",
-    },
-    orderBy: { lastMessageAt: "desc" },
-  });
-
-  // If not found by exact match, try fuzzy match (digits only) for non-LID numbers
-  // This catches format toggles (e.g. 628xxx vs 628xxx@s.whatsapp.net)
-  if (!conversation && !isLID) {
-    const digits = customerPhone.replace(/\D/g, "");
-    if (digits.length >= 10) {
-      console.log(`[Orchestrator] No exact match, searching by digits: ${digits}`);
-      conversation = await prisma.whatsAppConversation.findFirst({
-        where: {
-          accountId,
-          customerPhone: { contains: digits },
-          status: "active",
-        },
-        orderBy: { lastMessageAt: "desc" },
-      });
-
-      if (conversation) {
-        console.log(`[Orchestrator] ✅ Found existing conversation via fuzzy digits match: ${conversation.customerPhone}`);
-        // Update to the latest format to be consistent
-        await prisma.whatsAppConversation.update({
-          where: { id: conversation.id },
-          data: {
-            customerPhone,
-            lastMessageAt: new Date(), // Update immediately for visibility
-          },
-        });
-      }
-    }
-  }
-
-  // If not found and this is an LID, try to find conversation with matching verified phone
-  if (!conversation && isLID) {
-    console.log(`[Orchestrator] LID detected, searching for linked conversation...`);
-    // Search for any staff conversation that might have this LID linked
-    const allActiveConvos = await prisma.whatsAppConversation.findMany({
+    // Try to find active conversation by exact phone match first
+    let conversation = await prisma.whatsAppConversation.findFirst({
       where: {
         accountId,
+        customerPhone,
         status: "active",
-        isStaff: true,
       },
       orderBy: { lastMessageAt: "desc" },
-      take: 50, // Check more conversations for better LID matching
     });
 
-    console.log(`[Orchestrator] Found ${allActiveConvos.length} active staff conversations to check`);
-
-    // Check if any conversation has this LID in linkedLIDs array
-    for (const conv of allActiveConvos) {
-      const contextData = conv.contextData as Record<string, any> | null;
-
-      // Check if this LID is in the linkedLIDs array
-      if (contextData?.linkedLIDs?.includes(customerPhone)) {
-        console.log(`[Orchestrator] ✅ Found conversation with this LID in linkedLIDs: ${conv.id}`);
-        conversation = conv;
-        break;
-      }
-
-      // Legacy check for old linkedLID field (single value)
-      if (contextData?.linkedLID === customerPhone) {
-        console.log(`[Orchestrator] ✅ Found conversation with legacy linkedLID: ${conv.id}`);
-        conversation = conv;
-        // Migrate to new linkedLIDs array format
-        await prisma.whatsAppConversation.update({
-          where: { id: conv.id },
-          data: {
-            contextData: {
-              ...contextData,
-              linkedLIDs: [customerPhone],
-              linkedLID: undefined, // Remove legacy field
-            },
+    // If not found by exact match, try fuzzy match (digits only) for non-LID numbers
+    // This catches format toggles (e.g. 628xxx vs 628xxx@s.whatsapp.net)
+    if (!conversation && !isLID) {
+      const digits = customerPhone.replace(/\D/g, "");
+      if (digits.length >= 10) {
+        console.log(`[Orchestrator] No exact match, searching by digits: ${digits}`);
+        conversation = await prisma.whatsAppConversation.findFirst({
+          where: {
+            accountId,
+            customerPhone: { contains: digits },
+            status: "active",
           },
+          orderBy: { lastMessageAt: "desc" },
         });
-        break;
-      }
-    }
 
-    // PRIORITY 1: Find conversation with active upload state (add_photo_to_vehicle or upload_vehicle)
-    // This is critical for multi-step flows where photo comes from LID after data came from regular phone
-    if (!conversation) {
-      console.log(`[Orchestrator] Checking for conversation with active upload state...`);
-      const uploadStateConvo = allActiveConvos.find(conv => {
-        const state = conv.conversationState;
-        const lastMessageAt = conv.lastMessageAt;
-        // Must be recent (within 2 hours - photos usually come quickly after data)
-        const isRecent = lastMessageAt && (Date.now() - new Date(lastMessageAt).getTime() < 2 * 60 * 60 * 1000);
-        return isRecent && (state === "add_photo_to_vehicle" || state === "upload_vehicle");
-      });
-
-      if (uploadStateConvo) {
-        console.log(`[Orchestrator] ✅ Found conversation with upload state: ${uploadStateConvo.id} (state: ${uploadStateConvo.conversationState})`);
-        conversation = uploadStateConvo;
-        const contextData = (uploadStateConvo.contextData as Record<string, any>) || {};
-        // Link this LID to the conversation
-        await prisma.whatsAppConversation.update({
-          where: { id: uploadStateConvo.id },
-          data: {
-            contextData: {
-              ...contextData,
-              linkedLIDs: Array.from(new Set([...(contextData.linkedLIDs || []), customerPhone])),
+        if (conversation) {
+          console.log(`[Orchestrator] ✅ Found existing conversation via fuzzy digits match: ${conversation.customerPhone}`);
+          // Update to the latest format to be consistent
+          await prisma.whatsAppConversation.update({
+            where: { id: conversation.id },
+            data: {
+              customerPhone,
+              lastMessageAt: new Date(), // Update immediately for visibility
             },
-          },
-        });
-        console.log(`[Orchestrator] Linked LID ${customerPhone} to upload state conversation`);
-      }
-    }
-
-    // PRIORITY 2: Find conversation with verifiedStaffPhone (recent)
-    if (!conversation) {
-      console.log(`[Orchestrator] Checking for recent staff conversation with verifiedStaffPhone...`);
-      // Get the most recent staff conversation (within last 24 hours)
-      const recentStaffConvo = allActiveConvos.find(conv => {
-        const contextData = conv.contextData as Record<string, any> | null;
-        const lastMessageAt = conv.lastMessageAt;
-        const isRecent = lastMessageAt && (Date.now() - new Date(lastMessageAt).getTime() < 24 * 60 * 60 * 1000);
-        // Must have a verified staff phone (not LID) to be linkable
-        return isRecent && contextData?.verifiedStaffPhone && !contextData.verifiedStaffPhone.includes("@lid");
-      });
-
-      if (recentStaffConvo) {
-        console.log(`[Orchestrator] ✅ Found recent staff conversation to link: ${recentStaffConvo.id}`);
-        conversation = recentStaffConvo;
-        const contextData = (recentStaffConvo.contextData as Record<string, any>) || {};
-        // Add this LID to the linkedLIDs array
-        await prisma.whatsAppConversation.update({
-          where: { id: recentStaffConvo.id },
-          data: {
-            contextData: {
-              ...contextData,
-              linkedLIDs: Array.from(new Set([...(contextData.linkedLIDs || []), customerPhone])),
-            },
-          },
-        });
-        console.log(`[Orchestrator] Linked LID ${customerPhone} to conversation`);
-      }
-    }
-
-    // PRIORITY 3: Find ANY recent staff conversation for this account (fallback)
-    if (!conversation) {
-      console.log(`[Orchestrator] Fallback: Checking for any recent staff conversation...`);
-      const anyRecentStaffConvo = allActiveConvos.find(conv => {
-        const lastMessageAt = conv.lastMessageAt;
-        // Must be very recent (within 30 minutes) for fallback linking
-        const isVeryRecent = lastMessageAt && (Date.now() - new Date(lastMessageAt).getTime() < 30 * 60 * 1000);
-        return isVeryRecent;
-      });
-
-      if (anyRecentStaffConvo) {
-        console.log(`[Orchestrator] ✅ Found very recent staff conversation (fallback): ${anyRecentStaffConvo.id}`);
-        conversation = anyRecentStaffConvo;
-        const contextData = (anyRecentStaffConvo.contextData as Record<string, any>) || {};
-        // Add this LID to the linkedLIDs array
-        await prisma.whatsAppConversation.update({
-          where: { id: anyRecentStaffConvo.id },
-          data: {
-            contextData: {
-              ...contextData,
-              linkedLIDs: Array.from(new Set([...(contextData.linkedLIDs || []), customerPhone])),
-            },
-          },
-        });
-        console.log(`[Orchestrator] Linked LID ${customerPhone} to conversation (fallback)`);
-      }
-    }
-  }
-
-  // If not found and this is a phone number, try to find conversation with matching LID
-  if (!conversation && !isLID) {
-    console.log(`[Orchestrator] Phone detected, searching for LID-linked conversation...`);
-    // First, search for staff conversations that have this phone as verifiedStaffPhone
-    const allStaffConvos = await prisma.whatsAppConversation.findMany({
-      where: {
-        accountId,
-        status: "active",
-        isStaff: true,
-      },
-      orderBy: { lastMessageAt: "desc" },
-      take: 20,
-    });
-
-    for (const conv of allStaffConvos) {
-      const contextData = conv.contextData as Record<string, any> | null;
-      if (contextData?.verifiedStaffPhone) {
-        // Normalize both for comparison
-        const verifiedPhone = this.normalizePhoneForLookup(contextData.verifiedStaffPhone);
-        if (verifiedPhone === normalizedPhone) {
-          console.log(`[Orchestrator] ✅ Found staff conversation with matching verifiedStaffPhone: ${conv.id}`);
-          conversation = conv;
-          break;
+          });
         }
       }
     }
+
+    // If not found and this is an LID, try to find conversation with matching verified phone
+    if (!conversation && isLID) {
+      console.log(`[Orchestrator] LID detected, searching for linked conversation...`);
+      // Search for any staff conversation that might have this LID linked
+      const allActiveConvos = await prisma.whatsAppConversation.findMany({
+        where: {
+          accountId,
+          status: "active",
+          isStaff: true,
+        },
+        orderBy: { lastMessageAt: "desc" },
+        take: 50, // Check more conversations for better LID matching
+      });
+
+      console.log(`[Orchestrator] Found ${allActiveConvos.length} active staff conversations to check`);
+
+      // Check if any conversation has this LID in linkedLIDs array
+      for (const conv of allActiveConvos) {
+        const contextData = conv.contextData as Record<string, any> | null;
+
+        // Check if this LID is in the linkedLIDs array
+        if (contextData?.linkedLIDs?.includes(customerPhone)) {
+          console.log(`[Orchestrator] ✅ Found conversation with this LID in linkedLIDs: ${conv.id}`);
+          conversation = conv;
+          break;
+        }
+
+        // Legacy check for old linkedLID field (single value)
+        if (contextData?.linkedLID === customerPhone) {
+          console.log(`[Orchestrator] ✅ Found conversation with legacy linkedLID: ${conv.id}`);
+          conversation = conv;
+          // Migrate to new linkedLIDs array format
+          await prisma.whatsAppConversation.update({
+            where: { id: conv.id },
+            data: {
+              contextData: {
+                ...contextData,
+                linkedLIDs: [customerPhone],
+                linkedLID: undefined, // Remove legacy field
+              },
+            },
+          });
+          break;
+        }
+      }
+
+      // PRIORITY 1: Find conversation with active upload state (add_photo_to_vehicle or upload_vehicle)
+      // This is critical for multi-step flows where photo comes from LID after data came from regular phone
+      if (!conversation) {
+        console.log(`[Orchestrator] Checking for conversation with active upload state...`);
+        const uploadStateConvo = allActiveConvos.find(conv => {
+          const state = conv.conversationState;
+          const lastMessageAt = conv.lastMessageAt;
+          // Must be recent (within 2 hours - photos usually come quickly after data)
+          const isRecent = lastMessageAt && (Date.now() - new Date(lastMessageAt).getTime() < 2 * 60 * 60 * 1000);
+          return isRecent && (state === "add_photo_to_vehicle" || state === "upload_vehicle");
+        });
+
+        if (uploadStateConvo) {
+          console.log(`[Orchestrator] ✅ Found conversation with upload state: ${uploadStateConvo.id} (state: ${uploadStateConvo.conversationState})`);
+          conversation = uploadStateConvo;
+          const contextData = (uploadStateConvo.contextData as Record<string, any>) || {};
+          // Link this LID to the conversation
+          await prisma.whatsAppConversation.update({
+            where: { id: uploadStateConvo.id },
+            data: {
+              contextData: {
+                ...contextData,
+                linkedLIDs: Array.from(new Set([...(contextData.linkedLIDs || []), customerPhone])),
+              },
+            },
+          });
+          console.log(`[Orchestrator] Linked LID ${customerPhone} to upload state conversation`);
+        }
+      }
+
+      // PRIORITY 2: Find conversation with verifiedStaffPhone (recent)
+      if (!conversation) {
+        console.log(`[Orchestrator] Checking for recent staff conversation with verifiedStaffPhone...`);
+        // Get the most recent staff conversation (within last 24 hours)
+        const recentStaffConvo = allActiveConvos.find(conv => {
+          const contextData = conv.contextData as Record<string, any> | null;
+          const lastMessageAt = conv.lastMessageAt;
+          const isRecent = lastMessageAt && (Date.now() - new Date(lastMessageAt).getTime() < 24 * 60 * 60 * 1000);
+          // Must have a verified staff phone (not LID) to be linkable
+          return isRecent && contextData?.verifiedStaffPhone && !contextData.verifiedStaffPhone.includes("@lid");
+        });
+
+        if (recentStaffConvo) {
+          console.log(`[Orchestrator] ✅ Found recent staff conversation to link: ${recentStaffConvo.id}`);
+          conversation = recentStaffConvo;
+          const contextData = (recentStaffConvo.contextData as Record<string, any>) || {};
+          // Add this LID to the linkedLIDs array
+          await prisma.whatsAppConversation.update({
+            where: { id: recentStaffConvo.id },
+            data: {
+              contextData: {
+                ...contextData,
+                linkedLIDs: Array.from(new Set([...(contextData.linkedLIDs || []), customerPhone])),
+              },
+            },
+          });
+          console.log(`[Orchestrator] Linked LID ${customerPhone} to conversation`);
+        }
+      }
+
+      // PRIORITY 3: Find ANY recent staff conversation for this account (fallback)
+      if (!conversation) {
+        console.log(`[Orchestrator] Fallback: Checking for any recent staff conversation...`);
+        const anyRecentStaffConvo = allActiveConvos.find(conv => {
+          const lastMessageAt = conv.lastMessageAt;
+          // Must be very recent (within 30 minutes) for fallback linking
+          const isVeryRecent = lastMessageAt && (Date.now() - new Date(lastMessageAt).getTime() < 30 * 60 * 1000);
+          return isVeryRecent;
+        });
+
+        if (anyRecentStaffConvo) {
+          console.log(`[Orchestrator] ✅ Found very recent staff conversation (fallback): ${anyRecentStaffConvo.id}`);
+          conversation = anyRecentStaffConvo;
+          const contextData = (anyRecentStaffConvo.contextData as Record<string, any>) || {};
+          // Add this LID to the linkedLIDs array
+          await prisma.whatsAppConversation.update({
+            where: { id: anyRecentStaffConvo.id },
+            data: {
+              contextData: {
+                ...contextData,
+                linkedLIDs: Array.from(new Set([...(contextData.linkedLIDs || []), customerPhone])),
+              },
+            },
+          });
+          console.log(`[Orchestrator] Linked LID ${customerPhone} to conversation (fallback)`);
+        }
+      }
+    }
+
+    // If not found and this is a phone number, try to find conversation with matching LID
+    if (!conversation && !isLID) {
+      console.log(`[Orchestrator] Phone detected, searching for LID-linked conversation...`);
+      // First, search for staff conversations that have this phone as verifiedStaffPhone
+      const allStaffConvos = await prisma.whatsAppConversation.findMany({
+        where: {
+          accountId,
+          status: "active",
+          isStaff: true,
+        },
+        orderBy: { lastMessageAt: "desc" },
+        take: 20,
+      });
+
+      for (const conv of allStaffConvos) {
+        const contextData = conv.contextData as Record<string, any> | null;
+        if (contextData?.verifiedStaffPhone) {
+          // Normalize both for comparison
+          const verifiedPhone = this.normalizePhoneForLookup(contextData.verifiedStaffPhone);
+          if (verifiedPhone === normalizedPhone) {
+            console.log(`[Orchestrator] ✅ Found staff conversation with matching verifiedStaffPhone: ${conv.id}`);
+            conversation = conv;
+            break;
+          }
+        }
+      }
+    }
+
+    // Create new conversation if not found
+    if (!conversation) {
+      console.log(`[Orchestrator] Creating new conversation for ${customerPhone}`);
+
+      // If this is an LID, mark it for later resolution
+      const contextDataForNew = isLID ? {
+        originalLID: customerPhone,
+        pendingPhoneResolution: true,
+        createdWithLID: true,
+      } : {};
+
+      conversation = await prisma.whatsAppConversation.create({
+        data: {
+          accountId,
+          tenantId,
+          customerPhone, // Store LID temporarily, will be updated when real phone is known
+          customerName: customerName || null,
+          isStaff: false,
+          conversationType: "customer",
+          status: "active",
+          lastMessageAt: new Date(), // Set initially for ordering
+          // Store LID info in contextData if created with LID
+          ...(isLID && { contextData: contextDataForNew }),
+        },
+      });
+      console.log(`[Orchestrator] Created conversation: ${conversation.id}, isLID: ${isLID}`);
+    } else {
+      console.log(`[Orchestrator] Found existing conversation: ${conversation.id}, isStaff: ${conversation.isStaff}, state: ${conversation.conversationState}`);
+    }
+
+    // AUTO-UPDATE: If this is a real phone (not LID), check if there are LID conversations to update
+    if (!isLID && !customerPhone.includes("@lid")) {
+      await this.updateLIDConversationsToRealPhone(accountId, tenantId, customerPhone);
+    }
+
+    return conversation;
   }
-
-  // Create new conversation if not found
-  if (!conversation) {
-    console.log(`[Orchestrator] Creating new conversation for ${customerPhone}`);
-
-    // If this is an LID, mark it for later resolution
-    const contextDataForNew = isLID ? {
-      originalLID: customerPhone,
-      pendingPhoneResolution: true,
-      createdWithLID: true,
-    } : {};
-
-    conversation = await prisma.whatsAppConversation.create({
-      data: {
-        accountId,
-        tenantId,
-        customerPhone, // Store LID temporarily, will be updated when real phone is known
-        customerName: customerName || null,
-        isStaff: false,
-        conversationType: "customer",
-        status: "active",
-        lastMessageAt: new Date(), // Set initially for ordering
-        // Store LID info in contextData if created with LID
-        ...(isLID && { contextData: contextDataForNew }),
-      },
-    });
-    console.log(`[Orchestrator] Created conversation: ${conversation.id}, isLID: ${isLID}`);
-  } else {
-    console.log(`[Orchestrator] Found existing conversation: ${conversation.id}, isStaff: ${conversation.isStaff}, state: ${conversation.conversationState}`);
-  }
-
-  // AUTO-UPDATE: If this is a real phone (not LID), check if there are LID conversations to update
-  if (!isLID && !customerPhone.includes("@lid")) {
-    await this.updateLIDConversationsToRealPhone(accountId, tenantId, customerPhone);
-  }
-
-  return conversation;
-}
 
   /**
    * Update conversations that have LID customerPhone to real phone number
    * Called when we receive a message from a real phone number
    */
   private static async updateLIDConversationsToRealPhone(
-  accountId: string,
-  tenantId: string,
-  realPhone: string
-) {
-  // Helper to check if a number looks like a LID
-  const isLIDNumber = (num: string): boolean => {
-    const digits = num.replace(/\D/g, "");
-    if (digits.length < 14) return false;
-    if (digits.startsWith("100") || digits.startsWith("101") || digits.startsWith("102")) return true;
-    if (digits.length >= 16) return true;
-    if (digits.startsWith("1") && digits.length > 11) return true;
-    if (digits.startsWith("62") && digits.length > 14) return true;
-    return false;
-  };
+    accountId: string,
+    tenantId: string,
+    realPhone: string
+  ) {
+    // Helper to check if a number looks like a LID
+    const isLIDNumber = (num: string): boolean => {
+      const digits = num.replace(/\D/g, "");
+      if (digits.length < 14) return false;
+      if (digits.startsWith("100") || digits.startsWith("101") || digits.startsWith("102")) return true;
+      if (digits.length >= 16) return true;
+      if (digits.startsWith("1") && digits.length > 11) return true;
+      if (digits.startsWith("62") && digits.length > 14) return true;
+      return false;
+    };
 
-  try {
-    // Find conversations with LID-like customerPhone
-    const lidConversations = await prisma.whatsAppConversation.findMany({
-      where: {
-        accountId,
-        tenantId,
-        status: "active",
-      },
-    });
+    try {
+      // Find conversations with LID-like customerPhone
+      const lidConversations = await prisma.whatsAppConversation.findMany({
+        where: {
+          accountId,
+          tenantId,
+          status: "active",
+        },
+      });
 
-    for (const conv of lidConversations) {
-      const customerPhoneDigits = conv.customerPhone.replace(/\D/g, "");
+      for (const conv of lidConversations) {
+        const customerPhoneDigits = conv.customerPhone.replace(/\D/g, "");
 
-      // Check if this conversation has a LID as customerPhone
-      if (isLIDNumber(customerPhoneDigits) || conv.customerPhone.includes("@lid")) {
-        const contextData = conv.contextData as Record<string, any> | null;
+        // Check if this conversation has a LID as customerPhone
+        if (isLIDNumber(customerPhoneDigits) || conv.customerPhone.includes("@lid")) {
+          const contextData = conv.contextData as Record<string, any> | null;
 
-        // Check if this LID conversation is linked to the real phone via verifiedStaffPhone
-        const normalizedReal = this.normalizePhoneForLookup(realPhone);
-        const verifiedPhone = contextData?.verifiedStaffPhone;
-        const normalizedVerified = verifiedPhone ? this.normalizePhoneForLookup(verifiedPhone) : "";
+          // Check if this LID conversation is linked to the real phone via verifiedStaffPhone
+          const normalizedReal = this.normalizePhoneForLookup(realPhone);
+          const verifiedPhone = contextData?.verifiedStaffPhone;
+          const normalizedVerified = verifiedPhone ? this.normalizePhoneForLookup(verifiedPhone) : "";
 
-        if (normalizedVerified === normalizedReal) {
-          console.log(`[Orchestrator] 🔄 Updating LID conversation ${conv.id}: ${conv.customerPhone} -> ${realPhone}`);
+          if (normalizedVerified === normalizedReal) {
+            console.log(`[Orchestrator] 🔄 Updating LID conversation ${conv.id}: ${conv.customerPhone} -> ${realPhone}`);
 
-          await prisma.whatsAppConversation.update({
-            where: { id: conv.id },
-            data: {
-              customerPhone: realPhone,
-              contextData: {
-                ...contextData,
-                previousLID: conv.customerPhone,
-                phoneUpdatedAt: new Date().toISOString(),
-                pendingPhoneResolution: false, // Clear the flag
+            await prisma.whatsAppConversation.update({
+              where: { id: conv.id },
+              data: {
+                customerPhone: realPhone,
+                contextData: {
+                  ...contextData,
+                  previousLID: conv.customerPhone,
+                  phoneUpdatedAt: new Date().toISOString(),
+                  pendingPhoneResolution: false, // Clear the flag
+                },
               },
-            },
-          });
+            });
 
-          console.log(`[Orchestrator] ✅ Successfully updated conversation phone number`);
+            console.log(`[Orchestrator] ✅ Successfully updated conversation phone number`);
+          }
         }
       }
+    } catch (error: any) {
+      console.error(`[Orchestrator] Error updating LID conversations:`, error.message);
     }
-  } catch (error: any) {
-    console.error(`[Orchestrator] Error updating LID conversations:`, error.message);
   }
-}
 
   /**
    * Save incoming message to database
    */
   private static async saveIncomingMessage(
-  conversationId: string,
-  incoming: IncomingMessage
-) {
-  console.log(`[Orchestrator] Saving incoming message - conversationId: ${conversationId}, messageId: ${incoming.messageId}`);
+    conversationId: string,
+    incoming: IncomingMessage
+  ) {
+    console.log(`[Orchestrator] Saving incoming message - conversationId: ${conversationId}, messageId: ${incoming.messageId}`);
 
-  const conversation = await prisma.whatsAppConversation.findUnique({
-    where: { id: conversationId },
-  });
+    const conversation = await prisma.whatsAppConversation.findUnique({
+      where: { id: conversationId },
+    });
 
-  if (!conversation) {
-    throw new Error("Conversation not found");
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    const message = await prisma.whatsAppMessage.create({
+      data: {
+        conversationId,
+        tenantId: conversation.tenantId,
+        direction: "inbound",
+        sender: incoming.from,
+        senderType: "customer", // Will be updated after classification
+        content: incoming.message,
+        mediaUrl: incoming.mediaUrl,
+        mediaType: incoming.mediaType,
+        aimeowMessageId: incoming.messageId,
+        aimeowStatus: "delivered",
+      },
+    });
+
+    console.log(`[Orchestrator] Saved message: ${message.id}`);
+    return message;
   }
-
-  const message = await prisma.whatsAppMessage.create({
-    data: {
-      conversationId,
-      tenantId: conversation.tenantId,
-      direction: "inbound",
-      sender: incoming.from,
-      senderType: "customer", // Will be updated after classification
-      content: incoming.message,
-      mediaUrl: incoming.mediaUrl,
-      mediaType: incoming.mediaType,
-      aimeowMessageId: incoming.messageId,
-      aimeowStatus: "delivered",
-    },
-  });
-
-  console.log(`[Orchestrator] Saved message: ${message.id}`);
-  return message;
-}
 
   /**
    * Handle staff command
@@ -2064,54 +2059,54 @@ try {
    * FIXED: Pass skipAuthorization=true when conversation is already verified as staff
    */
   private static async handleStaffCommand(
-  conversation: any,
-  intent: MessageIntent,
-  message: string,
-  staffPhone: string,
-  tenantId: string,
-  mediaUrl ?: string
-): Promise < { message: string; escalated: boolean; skipResponse?: boolean } > {
-  try {
-    // Determine if there's media
-    const hasMedia = !!mediaUrl;
-    console.log(`[Orchestrator] handleStaffCommand - message: "${message}", hasMedia: ${hasMedia}, mediaUrl: ${mediaUrl}, conversationIsStaff: ${conversation.isStaff}`);
+    conversation: any,
+    intent: MessageIntent,
+    message: string,
+    staffPhone: string,
+    tenantId: string,
+    mediaUrl?: string
+  ): Promise<{ message: string; escalated: boolean; skipResponse?: boolean }> {
+    try {
+      // Determine if there's media
+      const hasMedia = !!mediaUrl;
+      console.log(`[Orchestrator] handleStaffCommand - message: "${message}", hasMedia: ${hasMedia}, mediaUrl: ${mediaUrl}, conversationIsStaff: ${conversation.isStaff}`);
 
-    // Parse command (now async - supports AI-powered natural language extraction)
-    const parseResult = await StaffCommandService.parseCommand(message, intent, hasMedia);
+      // Parse command (now async - supports AI-powered natural language extraction)
+      const parseResult = await StaffCommandService.parseCommand(message, intent, hasMedia);
 
-    if(!parseResult.isValid) {
-  return {
-    message: parseResult.error || "❌ Format command tidak valid.",
-    escalated: false,
-  };
-}
+      if (!parseResult.isValid) {
+        return {
+          message: parseResult.error || "❌ Format command tidak valid.",
+          escalated: false,
+        };
+      }
 
-// Execute command
-// IMPORTANT: Skip authorization if conversation is already verified as staff
-// This fixes LID format issues where phone matching can fail
-const executionResult = await StaffCommandService.executeCommand(
-  intent,
-  parseResult.params,
-  tenantId,
-  staffPhone,
-  conversation.id,
-  mediaUrl,
-  conversation.isStaff === true // skipAuthorization if conversation is already verified
-);
+      // Execute command
+      // IMPORTANT: Skip authorization if conversation is already verified as staff
+      // This fixes LID format issues where phone matching can fail
+      const executionResult = await StaffCommandService.executeCommand(
+        intent,
+        parseResult.params,
+        tenantId,
+        staffPhone,
+        conversation.id,
+        mediaUrl,
+        conversation.isStaff === true // skipAuthorization if conversation is already verified
+      );
 
-return {
-  message: executionResult.message,
-  escalated: !executionResult.success,
-  skipResponse: executionResult.skipResponse,
-};
+      return {
+        message: executionResult.message,
+        escalated: !executionResult.success,
+        skipResponse: executionResult.skipResponse,
+      };
     } catch (error: any) {
-  console.error("[Message Orchestrator] Staff command error:", error);
-  return {
-    message: `Waduh, ada kendala nih 😅\n\n${error.message}\n\nCoba lagi ya! 🙏`,
-    escalated: true,
-    skipResponse: false,
-  };
-}
+      console.error("[Message Orchestrator] Staff command error:", error);
+      return {
+        message: `Waduh, ada kendala nih 😅\n\n${error.message}\n\nCoba lagi ya! 🙏`,
+        escalated: true,
+        skipResponse: false,
+      };
+    }
   }
 
 
@@ -2120,215 +2115,215 @@ return {
    * Handle customer inquiry dengan AI
    */
   private static async handleCustomerInquiry(
-  conversation: any,
-  intent: MessageIntent,
-  message: string,
-  isStaff: boolean = false,
-  staffInfo ?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string },
-  intentEntities ?: Record<string, any>, // New parameter for entities (aspect)
-  isCatchup: boolean = false
-): Promise < {
-  message: string;
-  escalated: boolean;
-  images?: Array<{ imageUrl: string; caption?: string }>;
-  uploadRequest?: any;
-  editRequest?: any;
-  needsCatchup?: boolean;
-  customerTone?: string;
-} > {
-  // Lookup user by phone number for personalized responses
-  let user = null;
-  let lead = null;
+    conversation: any,
+    intent: MessageIntent,
+    message: string,
+    isStaff: boolean = false,
+    staffInfo?: { firstName?: string; lastName?: string; name?: string; role?: string; roleLevel?: number; phone?: string; userId?: string },
+    intentEntities?: Record<string, any>, // New parameter for entities (aspect)
+    isCatchup: boolean = false
+  ): Promise<{
+    message: string;
+    escalated: boolean;
+    images?: Array<{ imageUrl: string; caption?: string }>;
+    uploadRequest?: any;
+    editRequest?: any;
+    needsCatchup?: boolean;
+    customerTone?: string;
+  }> {
+    // Lookup user by phone number for personalized responses
+    let user = null;
+    let lead = null;
 
-  if(conversation.customerPhone) {
-  try {
-    // Parallel lookup for User (Staff) and Lead (Customer)
-    const [foundUser, foundLead] = await Promise.all([
-      prisma.user.findFirst({
-        where: {
-          OR: [
-            { tenantId: conversation.tenantId },
-            { tenantId: null }
-          ],
-          phone: conversation.customerPhone,
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          roleLevel: true,
-          phone: true,
-        },
-      }),
-      LeadService.getLeadByPhone(conversation.tenantId, conversation.customerPhone)
-    ]);
+    if (conversation.customerPhone) {
+      try {
+        // Parallel lookup for User (Staff) and Lead (Customer)
+        const [foundUser, foundLead] = await Promise.all([
+          prisma.user.findFirst({
+            where: {
+              OR: [
+                { tenantId: conversation.tenantId },
+                { tenantId: null }
+              ],
+              phone: conversation.customerPhone,
+            },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              roleLevel: true,
+              phone: true,
+            },
+          }),
+          LeadService.getLeadByPhone(conversation.tenantId, conversation.customerPhone)
+        ]);
 
-    user = foundUser;
-    lead = foundLead;
+        user = foundUser;
+        lead = foundLead;
 
-    if (user) {
-      console.log(`[handleCustomerInquiry] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role})`);
+        if (user) {
+          console.log(`[handleCustomerInquiry] 👤 User identified: ${user.firstName} ${user.lastName} (${user.role})`);
+        }
+        if (lead) {
+          console.log(`[handleCustomerInquiry] 📋 Lead identified: ${lead.name} (${lead.status})`);
+        }
+      } catch (e) {
+        console.error('[handleCustomerInquiry] Error looking up user/lead:', e);
+      }
     }
-    if (lead) {
-      console.log(`[handleCustomerInquiry] 📋 Lead identified: ${lead.name} (${lead.status})`);
-    }
-  } catch (e) {
-    console.error('[handleCustomerInquiry] Error looking up user/lead:', e);
-  }
-}
 
-try {
-  // Get conversation history 
-  // AI 5.2 Deep Memory: Fetch more history if catchup or explicit history request
-  const isHistoryRequest = /\b(history|riwayat|awal|tadi|dulu|sebelumnya|chat|percakapan)\b/i.test(message);
-  const historyLimit = (isCatchup || isHistoryRequest) ? 20 : 10;
-
-  // Pass historyLimit to getConversationHistory
-  const messageHistory = await WhatsAppAIChatService.getConversationHistory(
-    conversation.id,
-    historyLimit
-  );
-
-  // Generate AI response with staff info context
-  // Pass isEscalated flag for priority handling (faster, more direct responses)
-  const isEscalated = !!(conversation.escalatedTo || conversation.status === "escalated");
-  if (isEscalated) {
-    console.log(`[Orchestrator] ⚡ Escalated conversation - using priority response mode`);
-  }
-
-  // Prepare staff info if user is identified
-  let enhancedStaffInfo = staffInfo;
-  if (user) {
-    const fullName = `${user.firstName} ${user.lastName || ''}`.trim();
-    enhancedStaffInfo = {
-      firstName: user.firstName,
-      lastName: user.lastName,
-      name: fullName, // Add combined name for AI system prompt
-      role: user.role,
-      roleLevel: user.roleLevel,
-      phone: user.phone || conversation.customerPhone,
-      userId: user.id,
-    };
-    console.log(`[Orchestrator] 📤 Passing user info to AI: ${fullName} (${user.role})`);
-  } else if (!isStaff) {
-    // ==================== LEAD SYNCHRONIZATION ====================
-    // If not staff, this is a customer. Sync with Lead system.
     try {
-      // Map AI Intent to Lead Status
-      let newStatus = "NEW";
-      if (intent === "customer_interested" || intent === "customer_negotiation") {
-        newStatus = "QUALIFIED";
-      } else if (intent === "customer_specific_vehicle") {
-        newStatus = "CONTACTED";
-      } else if (intent === "customer_asking_price") {
-        newStatus = "CONTACTED";
+      // Get conversation history 
+      // AI 5.2 Deep Memory: Fetch more history if catchup or explicit history request
+      const isHistoryRequest = /\b(history|riwayat|awal|tadi|dulu|sebelumnya|chat|percakapan)\b/i.test(message);
+      const historyLimit = (isCatchup || isHistoryRequest) ? 20 : 10;
+
+      // Pass historyLimit to getConversationHistory
+      const messageHistory = await WhatsAppAIChatService.getConversationHistory(
+        conversation.id,
+        historyLimit
+      );
+
+      // Generate AI response with staff info context
+      // Pass isEscalated flag for priority handling (faster, more direct responses)
+      const isEscalated = !!(conversation.escalatedTo || conversation.status === "escalated");
+      if (isEscalated) {
+        console.log(`[Orchestrator] ⚡ Escalated conversation - using priority response mode`);
       }
 
-      if (!lead) {
-        // Create New Lead
-        console.log(`[Orchestrator] ✨ Creating NEW Lead for ${conversation.customerPhone}`);
-        const customerName = conversation.customerName || conversation.customerPhone || "Unknown";
-
-        lead = await LeadService.createLead({
-          tenantId: conversation.tenantId,
-          name: customerName,
-          phone: conversation.customerPhone,
-          whatsappNumber: conversation.customerPhone,
-          message: message, // Initial message
-          status: newStatus as any,
-          source: "whatsapp",
-        });
-        console.log(`[Orchestrator] ✅ Created Lead ID: ${lead.id}`);
-      } else {
-        // Update Existing Lead
-        // Only update status if it progresses (e.g. don't downgrade QUALIFIED to CONTACTED)
-        // But for now, we'll just track last activity. 
-        // We can optionally append the message to notes to keep a log, 
-        // but message history is already in WhatsAppConversation for detail.
-
-        // Logic to upgrade status if intent is stronger
-        let updateData: any = {
-          // Always update last interaction time? 
-          // Implicitly handled by 'updatedAt' but we might want explicit field if schema has it.
+      // Prepare staff info if user is identified
+      let enhancedStaffInfo = staffInfo;
+      if (user) {
+        const fullName = `${user.firstName} ${user.lastName || ''}`.trim();
+        enhancedStaffInfo = {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: fullName, // Add combined name for AI system prompt
+          role: user.role,
+          roleLevel: user.roleLevel,
+          phone: user.phone || conversation.customerPhone,
+          userId: user.id,
         };
+        console.log(`[Orchestrator] 📤 Passing user info to AI: ${fullName} (${user.role})`);
+      } else if (!isStaff) {
+        // ==================== LEAD SYNCHRONIZATION ====================
+        // If not staff, this is a customer. Sync with Lead system.
+        try {
+          // Map AI Intent to Lead Status
+          let newStatus = "NEW";
+          if (intent === "customer_interested" || intent === "customer_negotiation") {
+            newStatus = "QUALIFIED";
+          } else if (intent === "customer_specific_vehicle") {
+            newStatus = "CONTACTED";
+          } else if (intent === "customer_asking_price") {
+            newStatus = "CONTACTED";
+          }
 
-        const currentStatus = lead.status;
-        const statusPriority = { "NEW": 1, "CONTACTED": 2, "QUALIFIED": 3, "NEGOTIATING": 4, "WON": 5, "LOST": 0 };
+          if (!lead) {
+            // Create New Lead
+            console.log(`[Orchestrator] ✨ Creating NEW Lead for ${conversation.customerPhone}`);
+            const customerName = conversation.customerName || conversation.customerPhone || "Unknown";
 
-        // Upgrade status if intent implies higher interest
-        // @ts-ignore
-        if (statusPriority[newStatus] > (statusPriority[currentStatus] || 0)) {
-          console.log(`[Orchestrator] 📈 Upgrading Lead Status: ${currentStatus} -> ${newStatus}`);
-          updateData.status = newStatus;
-        }
+            lead = await LeadService.createLead({
+              tenantId: conversation.tenantId,
+              name: customerName,
+              phone: conversation.customerPhone,
+              whatsappNumber: conversation.customerPhone,
+              message: message, // Initial message
+              status: newStatus as any,
+              source: "whatsapp",
+            });
+            console.log(`[Orchestrator] ✅ Created Lead ID: ${lead.id}`);
+          } else {
+            // Update Existing Lead
+            // Only update status if it progresses (e.g. don't downgrade QUALIFIED to CONTACTED)
+            // But for now, we'll just track last activity. 
+            // We can optionally append the message to notes to keep a log, 
+            // but message history is already in WhatsAppConversation for detail.
 
-        if (Object.keys(updateData).length > 0) {
-          await LeadService.updateLead(lead.id, conversation.tenantId, updateData);
+            // Logic to upgrade status if intent is stronger
+            let updateData: any = {
+              // Always update last interaction time? 
+              // Implicitly handled by 'updatedAt' but we might want explicit field if schema has it.
+            };
+
+            const currentStatus = lead.status;
+            const statusPriority = { "NEW": 1, "CONTACTED": 2, "QUALIFIED": 3, "NEGOTIATING": 4, "WON": 5, "LOST": 0 };
+
+            // Upgrade status if intent implies higher interest
+            // @ts-ignore
+            if (statusPriority[newStatus] > (statusPriority[currentStatus] || 0)) {
+              console.log(`[Orchestrator] 📈 Upgrading Lead Status: ${currentStatus} -> ${newStatus}`);
+              updateData.status = newStatus;
+            }
+
+            if (Object.keys(updateData).length > 0) {
+              await LeadService.updateLead(lead.id, conversation.tenantId, updateData);
+            }
+          }
+        } catch (leadError: any) {
+          console.error(`[Orchestrator] ❌ Failed to sync lead:`, leadError.message);
+          // Don't block AI response if lead sync fails
         }
       }
-    } catch (leadError: any) {
-      console.error(`[Orchestrator] ❌ Failed to sync lead:`, leadError.message);
-      // Don't block AI response if lead sync fails
+
+      // Prepare lead info
+      let leadInfo = null;
+      if (lead) {
+        leadInfo = {
+          id: lead.id,
+          name: lead.name,
+          status: lead.status,
+          interestedIn: lead.interestedIn || undefined,
+          lastInteraction: lead.updatedAt,
+          location: lead.notes?.includes('Location:') ? lead.notes.split('Location:')[1].split('\n')[0].trim() : undefined
+        };
+        console.log(`[Orchestrator] 📤 Passing lead info to AI: ${lead.name}`);
+      }
+
+      const aiResponse = await WhatsAppAIChatService.generateResponse(
+        {
+          tenantId: conversation.tenantId,
+          conversationId: conversation.id,
+          customerPhone: conversation.customerPhone,
+          customerName: conversation.customerName || lead?.name, // Use lead name if available
+          intent,
+          messageHistory,
+          isStaff,
+          staffInfo: enhancedStaffInfo,
+          isEscalated, // Escalated conversations get faster, more direct responses
+          leadInfo,
+          intentEntities, // Pass entities to context
+          isCatchup,      // Pass catchup flag
+        },
+        message
+      );
+
+      return {
+        message: aiResponse.message,
+        escalated: aiResponse.shouldEscalate,
+        needsCatchup: aiResponse.needsCatchup,
+        ...(aiResponse.images && { images: aiResponse.images }),
+        ...(aiResponse.uploadRequest && { uploadRequest: aiResponse.uploadRequest }),
+        ...(aiResponse.editRequest && { editRequest: aiResponse.editRequest }),
+      };
+    } catch (error: any) {
+      console.error("[Message Orchestrator] AI response error:", error);
+
+      // Calculate time greeting
+      const now = new Date();
+      const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
+      let timeGreeting = "Selamat malam";
+      if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
+      else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
+      else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
+
+      return {
+        message: `${timeGreeting}! 👋\n\nMohon maaf, saat ini saya sedang mengalami kendala teknis. 🙏\n\nBoleh diulangi pertanyaannya? Atau ketik "Menu" untuk opsi lainnya. 😊`,
+        escalated: true,
+      };
     }
-  }
-
-  // Prepare lead info
-  let leadInfo = null;
-  if (lead) {
-    leadInfo = {
-      id: lead.id,
-      name: lead.name,
-      status: lead.status,
-      interestedIn: lead.interestedIn || undefined,
-      lastInteraction: lead.updatedAt,
-      location: lead.notes?.includes('Location:') ? lead.notes.split('Location:')[1].split('\n')[0].trim() : undefined
-    };
-    console.log(`[Orchestrator] 📤 Passing lead info to AI: ${lead.name}`);
-  }
-
-  const aiResponse = await WhatsAppAIChatService.generateResponse(
-    {
-      tenantId: conversation.tenantId,
-      conversationId: conversation.id,
-      customerPhone: conversation.customerPhone,
-      customerName: conversation.customerName || lead?.name, // Use lead name if available
-      intent,
-      messageHistory,
-      isStaff,
-      staffInfo: enhancedStaffInfo,
-      isEscalated, // Escalated conversations get faster, more direct responses
-      leadInfo,
-      intentEntities, // Pass entities to context
-      isCatchup,      // Pass catchup flag
-    },
-    message
-  );
-
-  return {
-    message: aiResponse.message,
-    escalated: aiResponse.shouldEscalate,
-    needsCatchup: aiResponse.needsCatchup,
-    ...(aiResponse.images && { images: aiResponse.images }),
-    ...(aiResponse.uploadRequest && { uploadRequest: aiResponse.uploadRequest }),
-    ...(aiResponse.editRequest && { editRequest: aiResponse.editRequest }),
-  };
-} catch (error: any) {
-  console.error("[Message Orchestrator] AI response error:", error);
-
-  // Calculate time greeting
-  const now = new Date();
-  const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
-  let timeGreeting = "Selamat malam";
-  if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
-  else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
-  else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
-
-  return {
-    message: `${timeGreeting}! 👋\n\nMohon maaf, saat ini saya sedang mengalami kendala teknis. 🙏\n\nBoleh diulangi pertanyaannya? Atau ketik "Menu" untuk opsi lainnya. 😊`,
-    escalated: true,
-  };
-}
   }
 
   /**
@@ -2337,32 +2332,448 @@ try {
    * Format: /verify 081234567890
    */
   private static async handleStaffVerify(
-  conversation: any,
-  message: string,
-  senderPhone: string,
-  tenantId: string
-): Promise < { message: string; escalated: boolean; verified: boolean; verifiedPhone?: string } > {
-  try {
-    console.log(`[Orchestrator] handleStaffVerify - message: "${message}", sender: ${senderPhone}`);
+    conversation: any,
+    message: string,
+    senderPhone: string,
+    tenantId: string
+  ): Promise<{ message: string; escalated: boolean; verified: boolean; verifiedPhone?: string }> {
+    try {
+      console.log(`[Orchestrator] handleStaffVerify - message: "${message}", sender: ${senderPhone}`);
 
-    // Extract phone number from message
-    const phoneMatch = message.match(/(?:\/verify|verify|verifikasi)\s+(\+?[\d\s-]+)/i);
-    if(!phoneMatch) {
+      // Extract phone number from message
+      const phoneMatch = message.match(/(?:\/verify|verify|verifikasi)\s+(\+?[\d\s-]+)/i);
+      if (!phoneMatch) {
+        return {
+          message: "❌ Format salah!\n\nCara pakai:\n/verify 081234567890\n\nGanti dengan nomor HP staff kamu ya 📱",
+          escalated: false,
+          verified: false,
+        };
+      }
+
+      const claimedPhone = phoneMatch[1].replace(/[\s-]/g, "");
+      console.log(`[Orchestrator] Claimed phone: ${claimedPhone}`);
+
+      // Normalize the claimed phone
+      const normalizedClaimed = this.normalizePhone(claimedPhone);
+
+      // Check if this phone belongs to a staff member
+      const staffUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { tenantId },
+            { tenantId: null }
+          ],
+          role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
+        },
+        select: { id: true, phone: true, firstName: true, role: true },
+      });
+
+      let matchedStaff = null;
+      for (const user of staffUsers) {
+        if (!user.phone) continue;
+        const normalizedUserPhone = this.normalizePhone(user.phone);
+        if (normalizedClaimed === normalizedUserPhone) {
+          matchedStaff = user;
+          break;
+        }
+      }
+
+      if (!matchedStaff) {
+        console.log(`[Orchestrator] ❌ Phone ${claimedPhone} not found in staff list`);
+        return {
+          message: "❌ Nomor tidak terdaftar sebagai staff.\n\nPastikan nomor HP benar atau hubungi admin untuk menambahkan nomor kamu 📱",
+          escalated: false,
+          verified: false,
+        };
+      }
+
+      console.log(`[Orchestrator] ✅ Verified as staff: ${matchedStaff.firstName} (${matchedStaff.role})`);
+
       return {
-        message: "❌ Format salah!\n\nCara pakai:\n/verify 081234567890\n\nGanti dengan nomor HP staff kamu ya 📱",
+        message: `✅ Verifikasi berhasil!\n\nHalo ${matchedStaff.firstName} 👋\nKamu sudah terverifikasi sebagai ${matchedStaff.role}.\n\nSekarang kamu bisa pakai semua fitur staff!\nKetik 'halo' untuk melihat menu.`,
         escalated: false,
+        verified: true,
+        verifiedPhone: claimedPhone,
+      };
+    } catch (error: any) {
+      console.error("[Orchestrator] Staff verify error:", error);
+      return {
+        message: "❌ Terjadi kesalahan saat verifikasi.\n\nSilakan coba lagi.",
+        escalated: true,
         verified: false,
       };
     }
+  }
 
-      const claimedPhone = phoneMatch[1].replace(/[\s-]/g, "");
-    console.log(`[Orchestrator] Claimed phone: ${claimedPhone}`);
+  /**
+   * Send response via Aimeow
+   */
+  private static async sendResponse(
+    accountId: string,
+    to: string,
+    message: string,
+    conversationId: string,
+    intent: MessageIntent,
+    images?: Array<{ imageUrl: string; caption?: string }>
+  ) {
+    console.log("=".repeat(80));
+    console.log(`[Orchestrator sendResponse] Starting send...`);
+    console.log(`[Orchestrator sendResponse] Account ID: ${accountId}`);
+    console.log(`[Orchestrator sendResponse] To: ${to}`);
+    console.log(`[Orchestrator sendResponse] Message: ${message.substring(0, 100)}`);
+    console.log(`[Orchestrator sendResponse] Conversation ID: ${conversationId}`);
 
-    // Normalize the claimed phone
-    const normalizedClaimed = this.normalizePhone(claimedPhone);
+    try {
+      // Get account - fresh from DB to get updated clientId
+      const account = await prisma.aimeowAccount.findUnique({
+        where: { id: accountId },
+      });
 
-    // Check if this phone belongs to a staff member
-    const staffUsers = await prisma.user.findMany({
+      if (!account) {
+        console.error(`[Orchestrator sendResponse] ❌ Account not found: ${accountId}`);
+        throw new Error("Account not found");
+      }
+
+      console.log(`[Orchestrator sendResponse] ✅ Account found`);
+      console.log(`[Orchestrator sendResponse] Client ID: ${account.clientId}`);
+      console.log(`[Orchestrator sendResponse] Phone: ${account.phoneNumber}`);
+      console.log(`[Orchestrator sendResponse] Status: ${account.connectionStatus}`);
+      console.log(`[Orchestrator sendResponse] Active: ${account.isActive}`);
+
+      // Send text message via Aimeow
+      let result: any = { success: true, messageId: null };
+      if (message) {
+        console.log(`[Orchestrator sendResponse] Calling AimeowClientService.sendMessage...`);
+        result = await AimeowClientService.sendMessage({
+          clientId: account.clientId,
+          to,
+          message,
+        });
+
+        console.log(`[Orchestrator sendResponse] Send result:`, JSON.stringify(result, null, 2));
+
+        if (!result.success) {
+          console.error(`[Orchestrator sendResponse] ❌ Send FAILED: ${result.error}`);
+          throw new Error(result.error || "Failed to send message");
+        }
+
+        console.log(`[Orchestrator sendResponse] ✅ Text message sent SUCCESS!`);
+      } else {
+        console.log(`[Orchestrator sendResponse] No text message to send`);
+      }
+
+      // Send images if provided
+      let imagesSent = false;
+      if (images && images.length > 0) {
+
+        if (images.length === 1) {
+          // Send single image
+          console.log(`[Orchestrator sendResponse] Sending single image: ${images[0].imageUrl}`);
+          const imageResult = await AimeowClientService.sendImage(
+            account.clientId,
+            to,
+            images[0].imageUrl,
+            images[0].caption
+          );
+
+          if (!imageResult.success) {
+            console.error(`[Orchestrator sendResponse] ❌ Image send FAILED: ${imageResult.error}`);
+          } else {
+            console.log(`[Orchestrator sendResponse] ✅ Image sent SUCCESS!`);
+            imagesSent = true;
+            if (!result.messageId) result.messageId = imageResult.messageId;
+          }
+        } else {
+          // Send multiple images sequentially with CONTROLLED loop to respect STOP
+          console.log(`[Orchestrator sendResponse] Sending ${images.length} images sequentially (CONTROLLED LOOP)...`);
+
+          // Sequential loop with STOP check
+          let batchSuccessCount = 0;
+          for (let i = 0; i < images.length; i++) {
+            const stopKey = `${accountId}:${to}`;
+            const stopTime = stopSignals.get(stopKey);
+            let shouldStop = !!(stopTime && (Date.now() - stopTime < STOP_SIGNAL_EXPIRY_MS));
+
+            // Check DB signal (robustness) every iteration for better accuracy
+            if (!shouldStop) {
+              try {
+                const convo = await prisma.whatsAppConversation.findUnique({
+                  where: { id: conversationId },
+                  select: { contextData: true }
+                });
+                const ctx = convo?.contextData as Record<string, any>;
+                if (ctx?.stopSignal) {
+                  shouldStop = true;
+                  stopSignals.set(stopKey, Date.now()); // Sync to memory with current timestamp
+                }
+              } catch (e) { /* ignore DB error */ }
+            }
+
+            if (shouldStop) {
+              console.log(`[Orchestrator sendResponse] 🛑 STOP SIGNAL DETECTED! Aborting image stream at ${i}/${images.length}`);
+              // We DON'T delete here immediately to allow other concurrent loops for same user to also see it
+              break;
+            }
+
+            const img = images[i];
+            console.log(`[Orchestrator sendResponse] Sending image ${i + 1}/${images.length}: ${img.imageUrl}`);
+
+            // FINAL CHECK right before network call to minimize race window
+            const finalStopTime = stopSignals.get(stopKey);
+            if (finalStopTime && (Date.now() - finalStopTime < STOP_SIGNAL_EXPIRY_MS)) break;
+
+            const imageResult = await AimeowClientService.sendImage(
+              account.clientId,
+              to,
+              img.imageUrl,
+              img.caption
+            );
+
+            if (imageResult.success) {
+              imagesSent = true;
+              batchSuccessCount++;
+              if (!result.messageId) result.messageId = imageResult.messageId;
+            } else {
+              console.error(`[Orchestrator sendResponse] ❌ Image ${i + 1} failed: ${imageResult.error} (URL: ${img.imageUrl})`);
+            }
+
+            // Add slight delay between images
+            if (i < images.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+          }
+
+          if (batchSuccessCount > 0) {
+            console.log(`[Orchestrator sendResponse] ✅ Sent ${batchSuccessCount}/${images.length} images successfully`);
+          } else {
+            console.error(`[Orchestrator sendResponse] ❌ All images failed to send`);
+            // If we already sent a text message, send a follow-up warning
+            if (message) {
+              const warningMsg = `\n\n⚠️ Mohon maaf, ada kendala teknis saat mengirim foto. Silakan coba minta foto lagi ya! 🙏`;
+              await AimeowClientService.sendMessage({
+                clientId: account.clientId,
+                to,
+                message: warningMsg
+              });
+            }
+          }
+
+          if (imagesSent) {
+            console.log(`[Orchestrator sendResponse] ✅ All images sent successfully!`);
+          }
+        }
+      } // This brace closes the 'if (images && images.length > 0)' block
+
+      // Save outbound message
+      const conversation = await prisma.whatsAppConversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessageAt: new Date(),
+          // Ensure it's active when AI responds (it was already active but this is double safety)
+          status: "active"
+        }
+      });
+
+      if (conversation) {
+        console.log(`[Orchestrator sendResponse] Saving outbound message to database...`);
+        const contentToSave = message || (imagesSent ? `[${images?.length || 0} foto dikirim]` : '');
+        const savedMsg = await prisma.whatsAppMessage.create({
+          data: {
+            conversationId,
+            tenantId: conversation.tenantId,
+            direction: "outbound",
+            sender: account.phoneNumber || "AI",
+            senderType: "ai",
+            content: contentToSave,
+            intent,
+            aiResponse: true,
+            aimeowMessageId: result?.messageId || `msg_${Date.now()}`,
+            aimeowStatus: "sent",
+          },
+        });
+        console.log(`[Orchestrator sendResponse] ✅ Outbound message saved: ${savedMsg.id}`);
+      } else {
+        console.error(`[Orchestrator sendResponse] ❌ Conversation not found: ${conversationId}`);
+      }
+
+      console.log(`[Orchestrator sendResponse] ✅✅✅ SEND COMPLETE SUCCESS ✅✅✅`);
+    } catch (error: any) {
+      console.error("=".repeat(80));
+      console.error(`[Orchestrator sendResponse] ❌❌❌ CRITICAL ERROR ❌❌❌`);
+      console.error(`[Orchestrator sendResponse] Error message: ${error.message}`);
+      console.error(`[Orchestrator sendResponse] Error stack:`, error.stack);
+      console.error("=".repeat(80));
+
+      // Save failed message to database for tracking
+      try {
+        const conversation = await prisma.whatsAppConversation.findUnique({
+          where: { id: conversationId },
+        });
+
+        if (conversation) {
+          await prisma.whatsAppMessage.create({
+            data: {
+              conversationId,
+              tenantId: conversation.tenantId,
+              direction: "outbound",
+              sender: "AI",
+              senderType: "ai",
+              content: message,
+              intent,
+              aiResponse: true,
+              aimeowMessageId: null,
+              aimeowStatus: "failed",
+            },
+          });
+        }
+      } catch (dbError) {
+        console.error(`[Orchestrator sendResponse] Failed to save error to DB:`, dbError);
+      }
+    }
+  }
+
+  /**
+   * Get the actual staff phone from User table
+   * This resolves LID format issues by looking up the real phone number
+   */
+  private static async getStaffPhoneFromUser(phone: string, tenantId: string): Promise<string | null> {
+    // If this is an LID format, we can't match it directly - return null
+    if (phone.includes("@lid")) {
+      console.log(`[Orchestrator] getStaffPhoneFromUser: LID format detected, cannot lookup directly`);
+      return null;
+    }
+
+    const normalizedInput = this.normalizePhone(phone);
+
+    // Get all users in tenant with staff roles
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { tenantId },
+          { tenantId: null }
+        ],
+        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
+      },
+      select: { id: true, phone: true },
+    });
+
+    for (const user of users) {
+      if (!user.phone) continue;
+      const normalizedUserPhone = this.normalizePhone(user.phone);
+      if (normalizedInput === normalizedUserPhone) {
+        console.log(`[Orchestrator] getStaffPhoneFromUser: Found actual phone: ${user.phone}`);
+        return user.phone;
+      }
+    }
+
+    console.log(`[Orchestrator] getStaffPhoneFromUser: No staff match found for ${phone}`);
+    return null;
+  }
+
+  /**
+   * Get full staff info (name, role, phone) for a phone number
+   * IMPORTANT: Explicitly excludes bot phone numbers (Aimeow accounts)
+   */
+  private static async getStaffInfo(phone: string, tenantId: string): Promise<{ name: string; role: string; phone: string } | null> {
+    console.log(`[Orchestrator] getStaffInfo: Looking up phone="${phone}" in tenant=${tenantId}`);
+
+    // CRITICAL: Check if this is the bot phone (Aimeow account) - NEVER treat as staff
+    const aimeowAccount = await prisma.aimeowAccount.findFirst({
+      where: { tenantId },
+      select: { phoneNumber: true },
+    });
+
+    if (aimeowAccount?.phoneNumber) {
+      const botPhoneNormalized = this.normalizePhone(aimeowAccount.phoneNumber);
+      const inputNormalized = this.normalizePhone(phone);
+      if (inputNormalized === botPhoneNormalized) {
+        console.log(`[Orchestrator] getStaffInfo: 🤖 Bot phone detected - NOT staff`);
+        return null;
+      }
+    }
+
+    // Handle LID format - check conversation context for verified phone
+    if (phone.includes("@lid")) {
+      console.log(`[Orchestrator] getStaffInfo: LID format detected, checking conversation context`);
+      const conversation = await prisma.whatsAppConversation.findFirst({
+        where: { tenantId, customerPhone: phone, isStaff: true },
+        select: { contextData: true },
+      });
+      const contextData = conversation?.contextData as Record<string, any> | null;
+      if (contextData?.verifiedStaffPhone) {
+        console.log(`[Orchestrator] getStaffInfo: Found verified phone in context: ${contextData.verifiedStaffPhone}`);
+        return this.getStaffInfo(contextData.verifiedStaffPhone, tenantId);
+      }
+      console.log(`[Orchestrator] getStaffInfo: No verified phone in LID conversation context`);
+      return null;
+    }
+
+    const normalizedInput = this.normalizePhone(phone);
+    console.log(`[Orchestrator] getStaffInfo: Normalized input: "${normalizedInput}"`);
+
+    // Get all users in tenant with staff roles
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { tenantId },
+          { tenantId: null }
+        ],
+        role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
+      },
+      select: { id: true, phone: true, firstName: true, lastName: true, role: true },
+    });
+
+    console.log(`[Orchestrator] getStaffInfo: Found ${users.length} staff users in tenant`);
+
+    for (const user of users) {
+      if (!user.phone) {
+        console.log(`[Orchestrator] getStaffInfo: User ${user.firstName} has no phone`);
+        continue;
+      }
+      const normalizedUserPhone = this.normalizePhone(user.phone);
+      console.log(`[Orchestrator] getStaffInfo: Comparing "${normalizedInput}" with user ${user.firstName} phone="${user.phone}" normalized="${normalizedUserPhone}"`);
+
+      if (normalizedInput === normalizedUserPhone) {
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        console.log(`[Orchestrator] getStaffInfo: ✅ MATCH! Found staff: ${fullName} (${user.role})`);
+        return {
+          name: fullName || "Staff",
+          role: user.role,
+          phone: user.phone,
+        };
+      }
+    }
+
+    console.log(`[Orchestrator] getStaffInfo: ❌ No staff match found for ${phone} (normalized: ${normalizedInput})`);
+    return null;
+  }
+
+  /**
+   * Check if phone number belongs to staff
+   * Uses normalized phone comparison for flexible matching
+   * Includes: ADMIN, MANAGER, SALES, STAFF roles
+   * IMPORTANT: Explicitly excludes bot phone numbers (Aimeow accounts)
+   */
+  private static async isStaffMember(phone: string, tenantId: string): Promise<boolean> {
+    const normalizedInput = this.normalizePhone(phone);
+    console.log(`[Orchestrator] Checking staff - input: ${phone}, normalized: ${normalizedInput}`);
+
+    // CRITICAL: Check if this is the bot phone (Aimeow account) - NEVER treat as staff
+    const aimeowAccount = await prisma.aimeowAccount.findFirst({
+      where: { tenantId },
+      select: { phoneNumber: true },
+    });
+
+    if (aimeowAccount?.phoneNumber) {
+      const botPhoneNormalized = this.normalizePhone(aimeowAccount.phoneNumber);
+      if (normalizedInput === botPhoneNormalized) {
+        console.log(`[Orchestrator] 🤖 Bot phone detected (${aimeowAccount.phoneNumber}) - NOT staff, treating as customer`);
+        return false;
+      }
+    }
+
+    // Get all users in tenant with staff roles and check phone match with normalization
+    const users = await prisma.user.findMany({
       where: {
         OR: [
           { tenantId },
@@ -2373,655 +2784,239 @@ try {
       select: { id: true, phone: true, firstName: true, role: true },
     });
 
-    let matchedStaff = null;
-    for(const user of staffUsers) {
+    for (const user of users) {
       if (!user.phone) continue;
       const normalizedUserPhone = this.normalizePhone(user.phone);
-      if (normalizedClaimed === normalizedUserPhone) {
-        matchedStaff = user;
-        break;
+      if (normalizedInput === normalizedUserPhone) {
+        console.log(`[Orchestrator] ✅ Staff match found: ${user.firstName} (${user.role})`);
+        return true;
       }
     }
-
-      if(!matchedStaff) {
-      console.log(`[Orchestrator] ❌ Phone ${claimedPhone} not found in staff list`);
-      return {
-        message: "❌ Nomor tidak terdaftar sebagai staff.\n\nPastikan nomor HP benar atau hubungi admin untuk menambahkan nomor kamu 📱",
-        escalated: false,
-        verified: false,
-      };
-    }
-
-      console.log(`[Orchestrator] ✅ Verified as staff: ${matchedStaff.firstName} (${matchedStaff.role})`);
-
-    return {
-      message: `✅ Verifikasi berhasil!\n\nHalo ${matchedStaff.firstName} 👋\nKamu sudah terverifikasi sebagai ${matchedStaff.role}.\n\nSekarang kamu bisa pakai semua fitur staff!\nKetik 'halo' untuk melihat menu.`,
-      escalated: false,
-      verified: true,
-      verifiedPhone: claimedPhone,
-    };
-  } catch(error: any) {
-    console.error("[Orchestrator] Staff verify error:", error);
-    return {
-      message: "❌ Terjadi kesalahan saat verifikasi.\n\nSilakan coba lagi.",
-      escalated: true,
-      verified: false,
-    };
-  }
-}
-
-  /**
-   * Send response via Aimeow
-   */
-  private static async sendResponse(
-  accountId: string,
-  to: string,
-  message: string,
-  conversationId: string,
-  intent: MessageIntent,
-  images ?: Array<{ imageUrl: string; caption?: string }>
-) {
-  console.log("=".repeat(80));
-  console.log(`[Orchestrator sendResponse] Starting send...`);
-  console.log(`[Orchestrator sendResponse] Account ID: ${accountId}`);
-  console.log(`[Orchestrator sendResponse] To: ${to}`);
-  console.log(`[Orchestrator sendResponse] Message: ${message.substring(0, 100)}`);
-  console.log(`[Orchestrator sendResponse] Conversation ID: ${conversationId}`);
-
-  try {
-    // Get account - fresh from DB to get updated clientId
-    const account = await prisma.aimeowAccount.findUnique({
-      where: { id: accountId },
-    });
-
-    if (!account) {
-      console.error(`[Orchestrator sendResponse] ❌ Account not found: ${accountId}`);
-      throw new Error("Account not found");
-    }
-
-    console.log(`[Orchestrator sendResponse] ✅ Account found`);
-    console.log(`[Orchestrator sendResponse] Client ID: ${account.clientId}`);
-    console.log(`[Orchestrator sendResponse] Phone: ${account.phoneNumber}`);
-    console.log(`[Orchestrator sendResponse] Status: ${account.connectionStatus}`);
-    console.log(`[Orchestrator sendResponse] Active: ${account.isActive}`);
-
-    // Send text message via Aimeow
-    let result: any = { success: true, messageId: null };
-    if (message) {
-      console.log(`[Orchestrator sendResponse] Calling AimeowClientService.sendMessage...`);
-      result = await AimeowClientService.sendMessage({
-        clientId: account.clientId,
-        to,
-        message,
-      });
-
-      console.log(`[Orchestrator sendResponse] Send result:`, JSON.stringify(result, null, 2));
-
-      if (!result.success) {
-        console.error(`[Orchestrator sendResponse] ❌ Send FAILED: ${result.error}`);
-        throw new Error(result.error || "Failed to send message");
-      }
-
-      console.log(`[Orchestrator sendResponse] ✅ Text message sent SUCCESS!`);
-    } else {
-      console.log(`[Orchestrator sendResponse] No text message to send`);
-    }
-
-    // Send images if provided
-    let imagesSent = false;
-    if (images && images.length > 0) {
-
-      if (images.length === 1) {
-        // Send single image
-        console.log(`[Orchestrator sendResponse] Sending single image: ${images[0].imageUrl}`);
-        const imageResult = await AimeowClientService.sendImage(
-          account.clientId,
-          to,
-          images[0].imageUrl,
-          images[0].caption
-        );
-
-        if (!imageResult.success) {
-          console.error(`[Orchestrator sendResponse] ❌ Image send FAILED: ${imageResult.error}`);
-        } else {
-          console.log(`[Orchestrator sendResponse] ✅ Image sent SUCCESS!`);
-          imagesSent = true;
-          if (!result.messageId) result.messageId = imageResult.messageId;
-        }
-      } else {
-        // Send multiple images sequentially with CONTROLLED loop to respect STOP
-        console.log(`[Orchestrator sendResponse] Sending ${images.length} images sequentially (CONTROLLED LOOP)...`);
-
-        // Sequential loop with STOP check
-        let batchSuccessCount = 0;
-        for (let i = 0; i < images.length; i++) {
-          const stopKey = `${accountId}:${to}`;
-          const stopTime = stopSignals.get(stopKey);
-          let shouldStop = !!(stopTime && (Date.now() - stopTime < STOP_SIGNAL_EXPIRY_MS));
-
-          // Check DB signal (robustness) every iteration for better accuracy
-          if (!shouldStop) {
-            try {
-              const convo = await prisma.whatsAppConversation.findUnique({
-                where: { id: conversationId },
-                select: { contextData: true }
-              });
-              const ctx = convo?.contextData as Record<string, any>;
-              if (ctx?.stopSignal) {
-                shouldStop = true;
-                stopSignals.set(stopKey, Date.now()); // Sync to memory with current timestamp
-              }
-            } catch (e) { /* ignore DB error */ }
-          }
-
-          if (shouldStop) {
-            console.log(`[Orchestrator sendResponse] 🛑 STOP SIGNAL DETECTED! Aborting image stream at ${i}/${images.length}`);
-            // We DON'T delete here immediately to allow other concurrent loops for same user to also see it
-            break;
-          }
-
-          const img = images[i];
-          console.log(`[Orchestrator sendResponse] Sending image ${i + 1}/${images.length}: ${img.imageUrl}`);
-
-          // FINAL CHECK right before network call to minimize race window
-          const finalStopTime = stopSignals.get(stopKey);
-          if (finalStopTime && (Date.now() - finalStopTime < STOP_SIGNAL_EXPIRY_MS)) break;
-
-          const imageResult = await AimeowClientService.sendImage(
-            account.clientId,
-            to,
-            img.imageUrl,
-            img.caption
-          );
-
-          if (imageResult.success) {
-            imagesSent = true;
-            batchSuccessCount++;
-            if (!result.messageId) result.messageId = imageResult.messageId;
-          } else {
-            console.error(`[Orchestrator sendResponse] ❌ Image ${i + 1} failed: ${imageResult.error} (URL: ${img.imageUrl})`);
-          }
-
-          // Add slight delay between images
-          if (i < images.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-
-        if (batchSuccessCount > 0) {
-          console.log(`[Orchestrator sendResponse] ✅ Sent ${batchSuccessCount}/${images.length} images successfully`);
-        } else {
-          console.error(`[Orchestrator sendResponse] ❌ All images failed to send`);
-          // If we already sent a text message, send a follow-up warning
-          if (message) {
-            const warningMsg = `\n\n⚠️ Mohon maaf, ada kendala teknis saat mengirim foto. Silakan coba minta foto lagi ya! 🙏`;
-            await AimeowClientService.sendMessage({
-              clientId: account.clientId,
-              to,
-              message: warningMsg
-            });
-          }
-        }
-
-        if (imagesSent) {
-          console.log(`[Orchestrator sendResponse] ✅ All images sent successfully!`);
-        }
-      }
-    } // This brace closes the 'if (images && images.length > 0)' block
-
-    // Save outbound message
-    const conversation = await prisma.whatsAppConversation.update({
-      where: { id: conversationId },
-      data: {
-        lastMessageAt: new Date(),
-        // Ensure it's active when AI responds (it was already active but this is double safety)
-        status: "active"
-      }
-    });
-
-    if (conversation) {
-      console.log(`[Orchestrator sendResponse] Saving outbound message to database...`);
-      const contentToSave = message || (imagesSent ? `[${images?.length || 0} foto dikirim]` : '');
-      const savedMsg = await prisma.whatsAppMessage.create({
-        data: {
-          conversationId,
-          tenantId: conversation.tenantId,
-          direction: "outbound",
-          sender: account.phoneNumber || "AI",
-          senderType: "ai",
-          content: contentToSave,
-          intent,
-          aiResponse: true,
-          aimeowMessageId: result?.messageId || `msg_${Date.now()}`,
-          aimeowStatus: "sent",
-        },
-      });
-      console.log(`[Orchestrator sendResponse] ✅ Outbound message saved: ${savedMsg.id}`);
-    } else {
-      console.error(`[Orchestrator sendResponse] ❌ Conversation not found: ${conversationId}`);
-    }
-
-    console.log(`[Orchestrator sendResponse] ✅✅✅ SEND COMPLETE SUCCESS ✅✅✅`);
-  } catch (error: any) {
-    console.error("=".repeat(80));
-    console.error(`[Orchestrator sendResponse] ❌❌❌ CRITICAL ERROR ❌❌❌`);
-    console.error(`[Orchestrator sendResponse] Error message: ${error.message}`);
-    console.error(`[Orchestrator sendResponse] Error stack:`, error.stack);
-    console.error("=".repeat(80));
-
-    // Save failed message to database for tracking
-    try {
-      const conversation = await prisma.whatsAppConversation.findUnique({
-        where: { id: conversationId },
-      });
-
-      if (conversation) {
-        await prisma.whatsAppMessage.create({
-          data: {
-            conversationId,
-            tenantId: conversation.tenantId,
-            direction: "outbound",
-            sender: "AI",
-            senderType: "ai",
-            content: message,
-            intent,
-            aiResponse: true,
-            aimeowMessageId: null,
-            aimeowStatus: "failed",
-          },
-        });
-      }
-    } catch (dbError) {
-      console.error(`[Orchestrator sendResponse] Failed to save error to DB:`, dbError);
-    }
-  }
-}
-
-  /**
-   * Get the actual staff phone from User table
-   * This resolves LID format issues by looking up the real phone number
-   */
-  private static async getStaffPhoneFromUser(phone: string, tenantId: string): Promise < string | null > {
-  // If this is an LID format, we can't match it directly - return null
-  if(phone.includes("@lid")) {
-  console.log(`[Orchestrator] getStaffPhoneFromUser: LID format detected, cannot lookup directly`);
-  return null;
-}
-
-const normalizedInput = this.normalizePhone(phone);
-
-// Get all users in tenant with staff roles
-const users = await prisma.user.findMany({
-  where: {
-    OR: [
-      { tenantId },
-      { tenantId: null }
-    ],
-    role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
-  },
-  select: { id: true, phone: true },
-});
-
-for (const user of users) {
-  if (!user.phone) continue;
-  const normalizedUserPhone = this.normalizePhone(user.phone);
-  if (normalizedInput === normalizedUserPhone) {
-    console.log(`[Orchestrator] getStaffPhoneFromUser: Found actual phone: ${user.phone}`);
-    return user.phone;
-  }
-}
-
-console.log(`[Orchestrator] getStaffPhoneFromUser: No staff match found for ${phone}`);
-return null;
-  }
-
-  /**
-   * Get full staff info (name, role, phone) for a phone number
-   * IMPORTANT: Explicitly excludes bot phone numbers (Aimeow accounts)
-   */
-  private static async getStaffInfo(phone: string, tenantId: string): Promise < { name: string; role: string; phone: string } | null > {
-  console.log(`[Orchestrator] getStaffInfo: Looking up phone="${phone}" in tenant=${tenantId}`);
-
-  // CRITICAL: Check if this is the bot phone (Aimeow account) - NEVER treat as staff
-  const aimeowAccount = await prisma.aimeowAccount.findFirst({
-    where: { tenantId },
-    select: { phoneNumber: true },
-  });
-
-  if(aimeowAccount?.phoneNumber) {
-    const botPhoneNormalized = this.normalizePhone(aimeowAccount.phoneNumber);
-    const inputNormalized = this.normalizePhone(phone);
-    if (inputNormalized === botPhoneNormalized) {
-      console.log(`[Orchestrator] getStaffInfo: 🤖 Bot phone detected - NOT staff`);
-      return null;
-    }
-  }
-
-    // Handle LID format - check conversation context for verified phone
-    if(phone.includes("@lid")) {
-  console.log(`[Orchestrator] getStaffInfo: LID format detected, checking conversation context`);
-  const conversation = await prisma.whatsAppConversation.findFirst({
-    where: { tenantId, customerPhone: phone, isStaff: true },
-    select: { contextData: true },
-  });
-  const contextData = conversation?.contextData as Record<string, any> | null;
-  if (contextData?.verifiedStaffPhone) {
-    console.log(`[Orchestrator] getStaffInfo: Found verified phone in context: ${contextData.verifiedStaffPhone}`);
-    return this.getStaffInfo(contextData.verifiedStaffPhone, tenantId);
-  }
-  console.log(`[Orchestrator] getStaffInfo: No verified phone in LID conversation context`);
-  return null;
-}
-
-const normalizedInput = this.normalizePhone(phone);
-console.log(`[Orchestrator] getStaffInfo: Normalized input: "${normalizedInput}"`);
-
-// Get all users in tenant with staff roles
-const users = await prisma.user.findMany({
-  where: {
-    OR: [
-      { tenantId },
-      { tenantId: null }
-    ],
-    role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
-  },
-  select: { id: true, phone: true, firstName: true, lastName: true, role: true },
-});
-
-console.log(`[Orchestrator] getStaffInfo: Found ${users.length} staff users in tenant`);
-
-for (const user of users) {
-  if (!user.phone) {
-    console.log(`[Orchestrator] getStaffInfo: User ${user.firstName} has no phone`);
-    continue;
-  }
-  const normalizedUserPhone = this.normalizePhone(user.phone);
-  console.log(`[Orchestrator] getStaffInfo: Comparing "${normalizedInput}" with user ${user.firstName} phone="${user.phone}" normalized="${normalizedUserPhone}"`);
-
-  if (normalizedInput === normalizedUserPhone) {
-    const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-    console.log(`[Orchestrator] getStaffInfo: ✅ MATCH! Found staff: ${fullName} (${user.role})`);
-    return {
-      name: fullName || "Staff",
-      role: user.role,
-      phone: user.phone,
-    };
-  }
-}
-
-console.log(`[Orchestrator] getStaffInfo: ❌ No staff match found for ${phone} (normalized: ${normalizedInput})`);
-return null;
-  }
-
-  /**
-   * Check if phone number belongs to staff
-   * Uses normalized phone comparison for flexible matching
-   * Includes: ADMIN, MANAGER, SALES, STAFF roles
-   * IMPORTANT: Explicitly excludes bot phone numbers (Aimeow accounts)
-   */
-  private static async isStaffMember(phone: string, tenantId: string): Promise < boolean > {
-  const normalizedInput = this.normalizePhone(phone);
-  console.log(`[Orchestrator] Checking staff - input: ${phone}, normalized: ${normalizedInput}`);
-
-  // CRITICAL: Check if this is the bot phone (Aimeow account) - NEVER treat as staff
-  const aimeowAccount = await prisma.aimeowAccount.findFirst({
-    where: { tenantId },
-    select: { phoneNumber: true },
-  });
-
-  if(aimeowAccount?.phoneNumber) {
-    const botPhoneNormalized = this.normalizePhone(aimeowAccount.phoneNumber);
-    if (normalizedInput === botPhoneNormalized) {
-      console.log(`[Orchestrator] 🤖 Bot phone detected (${aimeowAccount.phoneNumber}) - NOT staff, treating as customer`);
-      return false;
-    }
-  }
-
-    // Get all users in tenant with staff roles and check phone match with normalization
-    const users = await prisma.user.findMany({
-    where: {
-      OR: [
-        { tenantId },
-        { tenantId: null }
-      ],
-      role: { in: ["ADMIN", "MANAGER", "SALES", "STAFF", "OWNER", "SUPER_ADMIN"] },
-    },
-    select: { id: true, phone: true, firstName: true, role: true },
-  });
-
-  for(const user of users) {
-    if (!user.phone) continue;
-    const normalizedUserPhone = this.normalizePhone(user.phone);
-    if (normalizedInput === normalizedUserPhone) {
-      console.log(`[Orchestrator] ✅ Staff match found: ${user.firstName} (${user.role})`);
-      return true;
-    }
-  }
 
     console.log(`[Orchestrator] ❌ No staff match found for phone: ${phone}`);
-  return false;
-}
+    return false;
+  }
 
   /**
    * Normalize phone number for comparison
    * Handles various formats: +62xxx, 62xxx, 0xxx, 08xxx
    */
   private static normalizePhone(phone: string): string {
-  if (!phone) return "";
+    if (!phone) return "";
 
-  // Handle JID format (e.g., "6281234567890@s.whatsapp.net")
-  if (phone.includes("@")) {
-    phone = phone.split("@")[0];
+    // Handle JID format (e.g., "6281234567890@s.whatsapp.net")
+    if (phone.includes("@")) {
+      phone = phone.split("@")[0];
+    }
+
+    // Handle device suffix (e.g., "6281234567890:17")
+    if (phone.includes(":")) {
+      phone = phone.split(":")[0];
+    }
+
+    // Remove all non-digit characters
+    let digits = phone.replace(/\D/g, "");
+
+    // Convert Indonesian formats to standard 62xxx
+    if (digits.startsWith("0")) {
+      digits = "62" + digits.substring(1);
+    }
+
+    // Handle case where someone enters just 8xxx (missing country code)
+    if (digits.startsWith("8") && digits.length >= 9 && digits.length <= 12) {
+      digits = "62" + digits;
+    }
+
+    return digits;
   }
-
-  // Handle device suffix (e.g., "6281234567890:17")
-  if (phone.includes(":")) {
-    phone = phone.split(":")[0];
-  }
-
-  // Remove all non-digit characters
-  let digits = phone.replace(/\D/g, "");
-
-  // Convert Indonesian formats to standard 62xxx
-  if (digits.startsWith("0")) {
-    digits = "62" + digits.substring(1);
-  }
-
-  // Handle case where someone enters just 8xxx (missing country code)
-  if (digits.startsWith("8") && digits.length >= 9 && digits.length <= 12) {
-    digits = "62" + digits;
-  }
-
-  return digits;
-}
 
   /**
    * Check if a phone number is the bot's own phone number
    * Used to skip processing messages from the bot itself (prevents loops and garbage data)
    */
   private static async isBotPhoneNumber(
-  phone: string,
-  tenantId: string
-): Promise < { isBot: boolean; botPhone?: string } > {
-  try {
-    // Get the Aimeow account for this tenant
-    const aimeowAccount = await prisma.aimeowAccount.findFirst({
-      where: { tenantId },
-      select: { phoneNumber: true },
-    });
+    phone: string,
+    tenantId: string
+  ): Promise<{ isBot: boolean; botPhone?: string }> {
+    try {
+      // Get the Aimeow account for this tenant
+      const aimeowAccount = await prisma.aimeowAccount.findFirst({
+        where: { tenantId },
+        select: { phoneNumber: true },
+      });
 
-    if(!aimeowAccount?.phoneNumber) {
-      return { isBot: false };
-    }
+      if (!aimeowAccount?.phoneNumber) {
+        return { isBot: false };
+      }
 
       // Normalize both phones for comparison
       const normalizedInput = this.normalizePhone(phone);
-    const normalizedBotPhone = this.normalizePhone(aimeowAccount.phoneNumber);
+      const normalizedBotPhone = this.normalizePhone(aimeowAccount.phoneNumber);
 
-    if(normalizedInput === normalizedBotPhone) {
-  return { isBot: true, botPhone: aimeowAccount.phoneNumber };
-}
+      if (normalizedInput === normalizedBotPhone) {
+        return { isBot: true, botPhone: aimeowAccount.phoneNumber };
+      }
 
-return { isBot: false, botPhone: aimeowAccount.phoneNumber };
+      return { isBot: false, botPhone: aimeowAccount.phoneNumber };
     } catch (error: any) {
-  console.error(`[Orchestrator] Error checking bot phone:`, error.message);
-  return { isBot: false };
-}
+      console.error(`[Orchestrator] Error checking bot phone:`, error.message);
+      return { isBot: false };
+    }
   }
 
   private static formatPrice(price: number | bigint | string): string {
-  // Convert to number for Intl.NumberFormat
-  const numPrice = typeof price === 'bigint' ? Number(price) :
-    typeof price === 'string' ? parseFloat(price) : Number(price);
+    // Convert to number for Intl.NumberFormat
+    const numPrice = typeof price === 'bigint' ? Number(price) :
+      typeof price === 'string' ? parseFloat(price) : Number(price);
 
-  if (isNaN(numPrice)) return '0';
+    if (isNaN(numPrice)) return '0';
 
-  return new Intl.NumberFormat("id-ID").format(Math.round(numPrice));
-}
+    return new Intl.NumberFormat("id-ID").format(Math.round(numPrice));
+  }
 
   /**
    * Get fallback message when AI is disabled or has errors
    * Used to inform customers that AI is temporarily unavailable
    */
-  private static getAIDisabledFallbackMessage(status: string, reason ?: string): string {
-  if (status === "disabled") {
+  private static getAIDisabledFallbackMessage(status: string, reason?: string): string {
+    if (status === "disabled") {
+      return (
+        `Selamat siang! 👋\n\n` +
+        `Mohon maaf, saat ini asisten virtual kami sedang beristirahat sejenak untuk pemeliharaan sistem agar pelayanan kami tetap maksimal.\n\n` +
+        `Tim admin kami akan segera membantu Anda secara manual dalam beberapa menit ke depan. Terima kasih atas kesabaran Anda! 😊`
+      );
+    }
+
+    // For error/degraded status
     return (
       `Selamat siang! 👋\n\n` +
-      `Mohon maaf, saat ini asisten virtual kami sedang beristirahat sejenak untuk pemeliharaan sistem agar pelayanan kami tetap maksimal.\n\n` +
-      `Tim admin kami akan segera membantu Anda secara manual dalam beberapa menit ke depan. Terima kasih atas kesabaran Anda! 😊`
+      `Mohon maaf atas ketidaknyamanannya, asisten virtual kami sedang dalam proses sinkronisasi database dan tim kami sedang melakukan optimalisasi sistem.\n\n` +
+      `Jangan khawatir, tim sales kami sudah mendapatkan notifikasi dan akan segera melayani Anda secara langsung. Mohon ditunggu sebentar ya! 🙏`
     );
   }
-
-  // For error/degraded status
-  return (
-    `Selamat siang! 👋\n\n` +
-    `Mohon maaf atas ketidaknyamanannya, asisten virtual kami sedang dalam proses sinkronisasi database dan tim kami sedang melakukan optimalisasi sistem.\n\n` +
-    `Jangan khawatir, tim sales kami sudah mendapatkan notifikasi dan akan segera melayani Anda secara langsung. Mohon ditunggu sebentar ya! 🙏`
-  );
-}
 
   /**
    * Add a photo to an existing vehicle from WhatsApp media URL
    * Downloads the photo, processes it, and attaches to vehicle
    */
   private static async addPhotoToVehicle(
-  vehicleId: string,
-  mediaUrl: string,
-  tenantId: string
-): Promise < { success: boolean; error?: string } > {
-  try {
-    console.log(`[Orchestrator] Adding photo to vehicle ${vehicleId} from ${mediaUrl}`);
+    vehicleId: string,
+    mediaUrl: string,
+    tenantId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`[Orchestrator] Adding photo to vehicle ${vehicleId} from ${mediaUrl}`);
 
-    // Import required services
-    const { ImageProcessingService } = await import('@/lib/services/infrastructure/image-processing.service');
-    const { StorageService } = await import('@/lib/services/infrastructure/storage.service');
-    const { PlateDetectionService } = await import('@/lib/services/inventory/plate-detection.service');
+      // Import required services
+      const { ImageProcessingService } = await import('@/lib/services/infrastructure/image-processing.service');
+      const { StorageService } = await import('@/lib/services/infrastructure/storage.service');
+      const { PlateDetectionService } = await import('@/lib/services/inventory/plate-detection.service');
 
-    // Get vehicle details
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId },
-      select: { id: true, make: true, model: true, tenantId: true },
-    });
+      // Get vehicle details
+      const vehicle = await prisma.vehicle.findUnique({
+        where: { id: vehicleId },
+        select: { id: true, make: true, model: true, tenantId: true },
+      });
 
-    if(!vehicle) {
-      return { success: false, error: 'Vehicle not found' };
-    }
+      if (!vehicle) {
+        return { success: false, error: 'Vehicle not found' };
+      }
 
       // Get tenant for plate cover branding
       const tenant = await prisma.tenant.findUnique({
-      where: { id: vehicle.tenantId },
-      select: { name: true, logoUrl: true },
-    });
+        where: { id: vehicle.tenantId },
+        select: { name: true, logoUrl: true },
+      });
 
-    // Download photo from WhatsApp URL
-    console.log(`[Orchestrator] Downloading photo from ${mediaUrl}`);
-    const photoResponse = await fetch(mediaUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-    });
+      // Download photo from WhatsApp URL
+      console.log(`[Orchestrator] Downloading photo from ${mediaUrl}`);
+      const photoResponse = await fetch(mediaUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
 
-    if(!photoResponse.ok) {
-  return { success: false, error: `Failed to download photo: ${photoResponse.status}` };
-}
+      if (!photoResponse.ok) {
+        return { success: false, error: `Failed to download photo: ${photoResponse.status}` };
+      }
 
-const arrayBuffer = await photoResponse.arrayBuffer();
-const photoBuffer = Buffer.from(new Uint8Array(arrayBuffer));
-console.log(`[Orchestrator] Downloaded ${photoBuffer.length} bytes`);
+      const arrayBuffer = await photoResponse.arrayBuffer();
+      const photoBuffer = Buffer.from(new Uint8Array(arrayBuffer));
+      console.log(`[Orchestrator] Downloaded ${photoBuffer.length} bytes`);
 
-// Detect and cover license plates
-let processedBuffer: Buffer = photoBuffer;
-try {
-  const plateResult = await PlateDetectionService.processImage(photoBuffer, {
-    tenantName: tenant?.name || 'Showroom',
-    tenantLogoUrl: tenant?.logoUrl || undefined,
-  });
-  processedBuffer = plateResult.covered;
-  if (plateResult.platesDetected > 0) {
-    console.log(`[Orchestrator] Covered ${plateResult.platesDetected} plate(s)`);
-  }
-} catch (plateError: any) {
-  console.warn(`[Orchestrator] Plate detection failed:`, plateError.message);
-}
+      // Detect and cover license plates
+      let processedBuffer: Buffer = photoBuffer;
+      try {
+        const plateResult = await PlateDetectionService.processImage(photoBuffer, {
+          tenantName: tenant?.name || 'Showroom',
+          tenantLogoUrl: tenant?.logoUrl || undefined,
+        });
+        processedBuffer = plateResult.covered;
+        if (plateResult.platesDetected > 0) {
+          console.log(`[Orchestrator] Covered ${plateResult.platesDetected} plate(s)`);
+        }
+      } catch (plateError: any) {
+        console.warn(`[Orchestrator] Plate detection failed:`, plateError.message);
+      }
 
-// Process photo (generate multiple sizes)
-const processed = await ImageProcessingService.processPhoto(processedBuffer);
+      // Process photo (generate multiple sizes)
+      const processed = await ImageProcessingService.processPhoto(processedBuffer);
 
-// Generate filename
-const timestamp = Date.now();
-const baseFilename = `${vehicle.make.toLowerCase()}-${vehicle.model.toLowerCase()}-${timestamp}`;
+      // Generate filename
+      const timestamp = Date.now();
+      const baseFilename = `${vehicle.make.toLowerCase()}-${vehicle.model.toLowerCase()}-${timestamp}`;
 
-// Ensure upload directory exists
-await StorageService.ensureUploadDir();
+      // Ensure upload directory exists
+      await StorageService.ensureUploadDir();
 
-// Upload all sizes to storage
-const uploadResult = await StorageService.uploadMultipleSize(
-  {
-    original: processed.original,
-    large: processed.large,
-    medium: processed.medium,
-    thumbnail: processed.thumbnail,
-  },
-  vehicle.id,
-  baseFilename
-);
+      // Upload all sizes to storage
+      const uploadResult = await StorageService.uploadMultipleSize(
+        {
+          original: processed.original,
+          large: processed.large,
+          medium: processed.medium,
+          thumbnail: processed.thumbnail,
+        },
+        vehicle.id,
+        baseFilename
+      );
 
-// Get the next display order
-const lastPhoto = await prisma.vehiclePhoto.findFirst({
-  where: { vehicleId },
-  orderBy: { displayOrder: 'desc' },
-  select: { displayOrder: true },
-});
-const nextDisplayOrder = lastPhoto ? lastPhoto.displayOrder + 1 : 1;
+      // Get the next display order
+      const lastPhoto = await prisma.vehiclePhoto.findFirst({
+        where: { vehicleId },
+        orderBy: { displayOrder: 'desc' },
+        select: { displayOrder: true },
+      });
+      const nextDisplayOrder = lastPhoto ? lastPhoto.displayOrder + 1 : 1;
 
-// Create database record
-// isMainPhoto = true if this is the first photo (lastPhoto is null)
-await prisma.vehiclePhoto.create({
-  data: {
-    vehicleId: vehicle.id,
-    tenantId: vehicle.tenantId,
-    storageKey: uploadResult.storageKey,
-    originalUrl: uploadResult.originalUrl,
-    largeUrl: uploadResult.largeUrl,
-    mediumUrl: uploadResult.mediumUrl,
-    thumbnailUrl: uploadResult.thumbnailUrl,
-    filename: `${baseFilename}.jpg`,
-    fileSize: photoBuffer.length,
-    mimeType: 'image/jpeg',
-    width: processed.metadata?.width || 0,
-    height: processed.metadata?.height || 0,
-    displayOrder: nextDisplayOrder,
-    isMainPhoto: !lastPhoto, // First photo becomes main photo
-  },
-});
+      // Create database record
+      // isMainPhoto = true if this is the first photo (lastPhoto is null)
+      await prisma.vehiclePhoto.create({
+        data: {
+          vehicleId: vehicle.id,
+          tenantId: vehicle.tenantId,
+          storageKey: uploadResult.storageKey,
+          originalUrl: uploadResult.originalUrl,
+          largeUrl: uploadResult.largeUrl,
+          mediumUrl: uploadResult.mediumUrl,
+          thumbnailUrl: uploadResult.thumbnailUrl,
+          filename: `${baseFilename}.jpg`,
+          fileSize: photoBuffer.length,
+          mimeType: 'image/jpeg',
+          width: processed.metadata?.width || 0,
+          height: processed.metadata?.height || 0,
+          displayOrder: nextDisplayOrder,
+          isMainPhoto: !lastPhoto, // First photo becomes main photo
+        },
+      });
 
-console.log(`[Orchestrator] ✅ Photo added successfully (order: ${nextDisplayOrder})`);
-return { success: true };
+      console.log(`[Orchestrator] ✅ Photo added successfully (order: ${nextDisplayOrder})`);
+      return { success: true };
 
     } catch (error: any) {
-  console.error(`[Orchestrator] Error adding photo:`, error);
-  return { success: false, error: error.message };
-}
+      console.error(`[Orchestrator] Error adding photo:`, error);
+      return { success: false, error: error.message };
+    }
   }
 
   /**
@@ -3029,62 +3024,62 @@ return { success: true };
    * Used to auto-resolve escalated conversations
    */
   private static isClosingGreeting(message: string): boolean {
-  if (!message) return false;
+    if (!message) return false;
 
-  const normalizedMessage = message.toLowerCase().trim();
+    const normalizedMessage = message.toLowerCase().trim();
 
-  // Closing greeting patterns (Indonesian & English)
-  const closingPatterns = [
-    // Thank you patterns
-    /^(ok[ea]?y?|baik|sip|siap)?\s*(terima\s*kasih|makasih|thanks|thank\s*you|thx|tq)/i,
-    /terima\s*kasih\s*(ya|kak|mas|mba|pak|bu|bang|sis)?$/i,
-    /makasih\s*(ya|kak|mas|mba|pak|bu|bang|sis)?$/i,
-    /thanks?\s*(ya|you)?$/i,
+    // Closing greeting patterns (Indonesian & English)
+    const closingPatterns = [
+      // Thank you patterns
+      /^(ok[ea]?y?|baik|sip|siap)?\s*(terima\s*kasih|makasih|thanks|thank\s*you|thx|tq)/i,
+      /terima\s*kasih\s*(ya|kak|mas|mba|pak|bu|bang|sis)?$/i,
+      /makasih\s*(ya|kak|mas|mba|pak|bu|bang|sis)?$/i,
+      /thanks?\s*(ya|you)?$/i,
 
-    // Goodbye patterns
-    /^(sampai\s*jumpa|bye|goodbye|good\s*bye|dadah|dah)/i,
-    /sampai\s*jumpa\s*(lagi)?$/i,
+      // Goodbye patterns
+      /^(sampai\s*jumpa|bye|goodbye|good\s*bye|dadah|dah)/i,
+      /sampai\s*jumpa\s*(lagi)?$/i,
 
-    // Satisfaction patterns
-    /^(ok[ea]?y?|sip|siap|mantap|oke\s*deh|baik|sudah\s*cukup|cukup)$/i,
-    /sudah\s*(jelas|paham|mengerti|clear)(\s*terima\s*kasih)?/i,
+      // Satisfaction patterns
+      /^(ok[ea]?y?|sip|siap|mantap|oke\s*deh|baik|sudah\s*cukup|cukup)$/i,
+      /sudah\s*(jelas|paham|mengerti|clear)(\s*terima\s*kasih)?/i,
 
-    // Closing with satisfaction + thanks
-    /^(sudah|uda[h]?|udh)\s*(ok[ea]?y?|sip|clear|jelas).*?(makasih|terima\s*kasih|thanks)?/i,
+      // Closing with satisfaction + thanks
+      /^(sudah|uda[h]?|udh)\s*(ok[ea]?y?|sip|clear|jelas).*?(makasih|terima\s*kasih|thanks)?/i,
 
-    // No more questions / No thanks
-    /^(tidak|gak?|nggak?|ga)\s*(ada)?\s*(pertanyaan|tanya|lagi|makasih|terima\s*kasih|thanks)/i,
-    /^(tidak|gak?|nggak?|ga)(\s*,\s*)?(makasih|terima\s*kasih|thanks)/i,
-    /^(cukup|cuup|sudah|uda[h]?)\s*(dulu|sekian)?/i,
-  ];
-
-  // Check if message matches any closing pattern
-  for (const pattern of closingPatterns) {
-    if (pattern.test(normalizedMessage)) {
-      return true;
-    }
-  }
-
-  // Also check for very short closing messages (max 30 chars with closing keywords)
-  if (normalizedMessage.length <= 30) {
-    const shortClosingKeywords = [
-      'terima kasih', 'makasih', 'thanks', 'thank you', 'tq', 'thx',
-      'ok terima kasih', 'oke makasih', 'baik terima kasih',
-      'sip makasih', 'siap terima kasih', 'mantap makasih',
-      'sampai jumpa', 'bye', 'goodbye', 'dadah',
-      'sudah cukup', 'cukup', 'sudah jelas', 'clear',
-      'oke deh', 'ok deh', 'sip deh', 'baik deh'
+      // No more questions / No thanks
+      /^(tidak|gak?|nggak?|ga)\s*(ada)?\s*(pertanyaan|tanya|lagi|makasih|terima\s*kasih|thanks)/i,
+      /^(tidak|gak?|nggak?|ga)(\s*,\s*)?(makasih|terima\s*kasih|thanks)/i,
+      /^(cukup|cuup|sudah|uda[h]?)\s*(dulu|sekian)?/i,
     ];
 
-    for (const keyword of shortClosingKeywords) {
-      if (normalizedMessage.includes(keyword)) {
+    // Check if message matches any closing pattern
+    for (const pattern of closingPatterns) {
+      if (pattern.test(normalizedMessage)) {
         return true;
       }
     }
-  }
 
-  return false;
-}
+    // Also check for very short closing messages (max 30 chars with closing keywords)
+    if (normalizedMessage.length <= 30) {
+      const shortClosingKeywords = [
+        'terima kasih', 'makasih', 'thanks', 'thank you', 'tq', 'thx',
+        'ok terima kasih', 'oke makasih', 'baik terima kasih',
+        'sip makasih', 'siap terima kasih', 'mantap makasih',
+        'sampai jumpa', 'bye', 'goodbye', 'dadah',
+        'sudah cukup', 'cukup', 'sudah jelas', 'clear',
+        'oke deh', 'ok deh', 'sip deh', 'baik deh'
+      ];
+
+      for (const keyword of shortClosingKeywords) {
+        if (normalizedMessage.includes(keyword)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
 }
 
 export default MessageOrchestratorService;
