@@ -1155,100 +1155,102 @@ export class MessageOrchestratorService {
         } else {
           console.log(`[Orchestrator] No response message generated (staff message)`);
         }
-
-        // 5.5. PROACTIVE CATCH-UP (AI 5.2)
-        // If the conversation was marked as needing catch-up (e.g. from previous "closed" state),
-        // AND we just processed a message (or even if we didn't, but we are now "awake"),
-        // check if we should send a follow-up.
-        // NOTE: Ideally this runs on a cron, but here we can trigger it if the user texts again 
-        // OR if we are in a "scan-pending" flow.
-
-        // But per user request: "Harusnya AI bisa lanjut dan langsung mengirim pesan susulan"
-        // This usually implies a trigger. If this process is triggered by "scan-pending", 'isCatchup' will be true.
-        if (isCatchup && !responseMessage) {
-          console.log(`[Orchestrator] 🎣 Executing PROACTIVE CATCH-UP for pending lead...`);
-          const contextData = conversation.contextData as Record<string, any> || {};
-          const vehicleName = contextData.lastVehicleInterested || "unit yang kakak tanyakan";
-
-          const catchupMsg = `Halo Kak! Maaf semalam Ada gangguan teknis sistem whatsapp Prima Mobil. 🙏\n\nSoal ${vehicleName} yang kemarin ditanyakan, masih tersedia AVAILABLE nih kak. Boleh saya bantu prosesnya? Sekalian boleh tahu namanya siapa dan dari mana biar enak ngobrolnya? 😊`;
-
-          await this.sendResponse(
-            incoming.accountId,
-            incoming.from,
-            catchupMsg,
-            conversation.id,
-            "customer_catchup_followup" as any
-          );
-        }
-        const isClosingGreeting = this.isClosingGreeting(incoming.message);
-        const shouldAutoResolve = isClosingGreeting &&
-          (conversation.status === "escalated" || conversation.escalatedTo);
-
-        if (shouldAutoResolve) {
-          console.log(`[Orchestrator] 🏁 Closing greeting detected for escalated conversation - auto-resolving`);
-        }
-
-        // 7. Update conversation status
-        await prisma.whatsAppConversation.update({
-          where: { id: conversation.id },
-          data: {
-            lastMessageAt: new Date(),
-            lastIntent: classification.intent,
-            needsCatchup: needsCatchup || (conversation as any).needsCatchup,
-            lastAfterHoursAt: needsCatchup ? new Date() : (conversation as any).lastAfterHoursAt,
-            lastCustomerTone: customerTone || (conversation as any).lastCustomerTone,
-            // Handle Escalation
-            ...(escalated && {
-              escalatedTo: "human",
-              escalatedAt: new Date(),
-              status: "escalated",
-            }),
-
-            // Handle De-escalation / Auto-Resolve
-            ...(shouldAutoResolve && !escalated && {
-              status: "active",       // Reset status to active
-              escalatedTo: null,      // Clear escalation
-              escalatedAt: null,
-            }),
-
-            // Context Data Updates
-            contextData: {
-              ...((conversation.contextData as Record<string, any>) || {}),
-              ...(shouldAutoResolve && {
-                resolvedAt: new Date().toISOString(),
-                resolvedReason: "closing_greeting",
-                closingMessage: incoming.message.substring(0, 500),
-              }),
-              ...(needsCatchup && {
-                needsCatchup: true,
-                lastAfterHoursMessageAt: new Date().toISOString(),
-              })
-            },
-          },
-        });
-
-        if (shouldAutoResolve) {
-          console.log(`[Orchestrator] ✅ Conversation ${conversation.id} auto-resolved and closed`);
-        }
-
-        return {
-          success: true,
-          conversationId: conversation.id,
-          intent: classification.intent,
-          responseMessage: undefined, // Message already sent
-          escalated,
-        };
-      } catch (error: any) {
-        console.error("[Message Orchestrator] Error processing message:", error);
-        return {
-          success: false,
-          conversationId: "",
-          intent: "unknown",
-          escalated: true,
-          error: error.message,
-        };
       }
+
+      // 5.5. PROACTIVE CATCH-UP (AI 5.2)
+      // If the conversation was marked as needing catch-up (e.g. from previous "closed" state),
+      // AND we just processed a message (or even if we didn't, but we are now "awake"),
+      // check if we should send a follow-up.
+      // NOTE: Ideally this runs on a cron, but here we can trigger it if the user texts again 
+      // OR if we are in a "scan-pending" flow.
+
+      // But per user request: "Harusnya AI bisa lanjut dan langsung mengirim pesan susulan"
+      // This usually implies a trigger. If this process is triggered by "scan-pending", 'isCatchup' will be true.
+      if (isCatchup && !responseMessage) {
+        console.log(`[Orchestrator] 🎣 Executing PROACTIVE CATCH-UP for pending lead...`);
+        const contextData = conversation.contextData as Record<string, any> || {};
+        const vehicleName = contextData.lastVehicleInterested || "unit yang kakak tanyakan";
+
+        const catchupMsg = `Halo Kak! Maaf semalam Ada gangguan teknis sistem whatsapp Prima Mobil. 🙏\n\nSoal ${vehicleName} yang kemarin ditanyakan, masih tersedia AVAILABLE nih kak. Boleh saya bantu prosesnya? Sekalian boleh tahu namanya siapa dan dari mana biar enak ngobrolnya? 😊`;
+
+        await this.sendResponse(
+          incoming.accountId,
+          incoming.from,
+          catchupMsg,
+          conversation.id,
+          "customer_catchup_followup" as any
+        );
+      }
+
+      const isClosingGreeting = this.isClosingGreeting(incoming.message);
+      const shouldAutoResolve = isClosingGreeting &&
+        (conversation.status === "escalated" || conversation.escalatedTo);
+
+      if (shouldAutoResolve) {
+        console.log(`[Orchestrator] 🏁 Closing greeting detected for escalated conversation - auto-resolving`);
+      }
+
+      // 7. Update conversation status
+      await prisma.whatsAppConversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessageAt: new Date(),
+          lastIntent: classification.intent,
+          needsCatchup: needsCatchup || (conversation as any).needsCatchup,
+          lastAfterHoursAt: needsCatchup ? new Date() : (conversation as any).lastAfterHoursAt,
+          lastCustomerTone: customerTone || (conversation as any).lastCustomerTone,
+          // Handle Escalation
+          ...(escalated && {
+            escalatedTo: "human",
+            escalatedAt: new Date(),
+            status: "escalated",
+          }),
+
+          // Handle De-escalation / Auto-Resolve
+          ...(shouldAutoResolve && !escalated && {
+            status: "active",       // Reset status to active
+            escalatedTo: null,      // Clear escalation
+            escalatedAt: null,
+          }),
+
+          // Context Data Updates
+          contextData: {
+            ...((conversation.contextData as Record<string, any>) || {}),
+            ...(shouldAutoResolve && {
+              resolvedAt: new Date().toISOString(),
+              resolvedReason: "closing_greeting",
+              closingMessage: incoming.message.substring(0, 500),
+            }),
+            ...(needsCatchup && {
+              needsCatchup: true,
+              lastAfterHoursMessageAt: new Date().toISOString(),
+            })
+          },
+        },
+      });
+
+      if (shouldAutoResolve) {
+        console.log(`[Orchestrator] ✅ Conversation ${conversation.id} auto-resolved and closed`);
+      }
+
+      return {
+        success: true,
+        conversationId: conversation.id,
+        intent: classification.intent,
+        responseMessage: undefined, // Message already sent
+        escalated,
+      };
+    } catch (error: any) {
+      console.error("[Message Orchestrator] Error processing message:", error);
+      return {
+        success: false,
+        conversationId: "",
+        intent: "unknown",
+        escalated: true,
+        error: error.message,
+      };
     }
+  }
 
   /**
    * Normalize phone number for comparison
