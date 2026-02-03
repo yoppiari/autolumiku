@@ -1286,17 +1286,6 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     // ==================== VEHICLE CONTEXT DETECTION (PRIORITY #0) ====================
     const vehicleName = this.extractActiveVehicle(userMessage, messageHistory);
 
-    // ==================== PRIORITY 0: CONTEXTUAL ANSWER HANDLER ====================
-    const contextualResponse = await this.handleContextualAnswers(msg, userMessage, messageHistory, vehicleName, context);
-    if (contextualResponse) return contextualResponse;
-
-    // ==================== PRIORITY 0.5: TECHNICAL & VEHICLE INQUIRY HANDLER ====================
-    const technicalResponse = await this.handleTechnicalVehicleInquiry(msg, userMessage, messageHistory, vehicleName, tenantId, context, timeGreeting, vehicles);
-    if (technicalResponse) return technicalResponse;
-
-    // ==================== PRIORITY 1: AI IDENTITY & POLICY HANDLER ====================
-    const identityResponse = await this.handleAIIdentityAndPolicyInquiry(msg, timeGreeting, tenantName);
-    if (identityResponse) return identityResponse;
 
     // ==================== SEQUENCE OF modular HANDLERS (AI 5.2) ====================
 
@@ -1675,8 +1664,8 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     // Check if technical question is present
     const isTechnicalQuestion = /(interior|eksterior|ekterior|exterior|esterior|mesin|body|bodi|dalam|luar|dokumen|surat|pajak|bpkb|stnk|foto|gambar|detail)/i.test(msg);
 
-    // CRITICAL FIX: Extract vehicle name from CURRENT message first
-    const currentMsgVehicleName = this.extractActiveVehicle(userMessage, []);
+    // CRITICAL FIX: Extract vehicle name from context (Current Message + History)
+    const currentMsgVehicleName = this.extractActiveVehicle(userMessage, messageHistory);
 
     let contextId: string | null = null;
     let matchingVehicle = null;
@@ -3043,8 +3032,6 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
       if (specificVehicle) {
         if (specificVehicle.photos && specificVehicle.photos.length > 0) {
-          console.log(`[WhatsApp AI Chat] ✅ Found vehicle ${contextId} with ${specificVehicle.photos.length} photos`);
-          console.log(`[WhatsApp AI Chat] First photo preview:`, specificVehicle.photos[0].originalUrl?.substring(0, 80) || 'NO URL');
           console.log(`[WhatsApp AI Chat] ✅ Found vehicle ${contextId} with ${specificVehicle.photos.length} photos`);
           console.log(`[WhatsApp AI Chat] First photo preview:`, specificVehicle.photos[0].originalUrl?.substring(0, 80) || 'NO URL');
           return await this.buildImageArray([specificVehicle]);
