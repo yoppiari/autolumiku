@@ -7,10 +7,15 @@ async function runCatchup() {
     try {
         const pendingConversations = await prisma.whatsAppConversation.findMany({
             where: {
-                contextData: {
-                    path: ['needsCatchup'],
-                    equals: true
-                }
+                OR: [
+                    { needsCatchup: true },
+                    {
+                        contextData: {
+                            path: ['needsCatchup'],
+                            equals: true
+                        }
+                    }
+                ]
             },
             include: {
                 account: true,
@@ -65,7 +70,10 @@ async function clearFlag(convoId: string, currentContext: any) {
     delete context.needsCatchup;
     await prisma.whatsAppConversation.update({
         where: { id: convoId },
-        data: { contextData: context }
+        data: {
+            contextData: context,
+            needsCatchup: false
+        }
     });
 }
 

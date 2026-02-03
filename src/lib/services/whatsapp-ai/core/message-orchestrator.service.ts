@@ -901,6 +901,7 @@ export class MessageOrchestratorService {
         escalated = result.escalated;
         responseImages = result.images;
         needsCatchup = !!result.needsCatchup;
+        customerTone = result.customerTone;
 
         console.log(`[Orchestrator] AI greeting response: ${responseMessage?.substring(0, 50)}...`);
       } else if (classification.intent === "customer_ai_capability") {
