@@ -627,6 +627,11 @@ export class LeadService {
         }
       });
 
+      // TRIGGER: Check if lead is now qualified for handover
+      LeadService.checkAndNotifyQualifiedLead(leadId).catch(err =>
+        console.error('[LeadService] Background qualification check failed:', err)
+      );
+
       return true;
     } catch (error) {
       console.error('Failed to update lead analysis:', error);

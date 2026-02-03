@@ -732,7 +732,8 @@ export class MessageOrchestratorService {
               intent: classification.intent,
               isStaff: classification.isStaff,
               interestedIn,
-              budgetRange
+              budgetRange,
+              location: entities.location
             }).then(async (lead) => {
               if (lead && lead.id) {
                 // Link conversation to lead if not already linked
