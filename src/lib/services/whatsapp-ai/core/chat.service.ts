@@ -1302,17 +1302,17 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       let personalizedGreeting = "";
       if (context?.staffInfo && (context.staffInfo.firstName || context.staffInfo.name)) {
         const staffName = this.formatKakName(context.staffInfo.firstName || context.staffInfo.name);
-        const staffIntros = [
-          `${timeGreeting}, ${staffName}! 👋\n\nSelamat datang kembali di ${tenantName}! Ada yang bisa asisten bantu cek hari ini?`,
-          `Halo ${staffName}! ✨\n\n${timeGreeting}, senang melihat Anda kembali. Mau asisten bantu cari unit favorit lagi?`,
-          `Siap ${staffName}! ⚡\n\nAsisten virtual ${tenantName} siap membantu. Apa ada update stok yang ingin Kakak lihat?`
-        ];
-        personalizedGreeting = this.getRandomVariation(staffIntros) + (vehiclePreview ? `\n${vehiclePreview}` : "");
+
+        // AI 5.2 Strict Greeting for Staff/Owner (Requested by Kak Yudho)
+        personalizedGreeting = `Halo! ${timeGreeting} ${staffName}\n\n` +
+          `Selamat datang di showroom kami\n` +
+          `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
+          `Apakah ada yang bisa saya bantu untuk showroom hari ini kak? Cek stok, update data, atau butuh info untuk customer? 😊`;
       } else {
         const customerIntros = [
           `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami! Saya asisten virtual yang siap bantu cari mobil impian Kakak. 😊\n\nBoleh tahu dengan Kakak siapa saya bicara?`,
           `Selamat datang di ${tenantName}! ✨\n\n${timeGreeting}, saya asisten virtual di sini. Mau asisten bantu cek stok mobil yang ready?\n\nSebelumnya dengan Kakak siapa ya kalau boleh tahu? 😊`,
-          `Halo Kak! 👋\n\n${timeGreeting}, senang bisa menyapa. Saya asisten virtual ${tenantName} yang siap bantu info stok & harga.\n\nBoleh kenalan dulu, dengan Kakak siapa di sana? 😊`
+          `Halo Kak! 👋\n\n${timeGreeting}, senang bisa menyapa. Saya asisten virtual ${tenantName} yang siap bantu info stok & harga.\n\nBoleh kenalan dulu, dengan Kakak siapa dan darimana kak? 😊`
         ];
         personalizedGreeting = this.getRandomVariation(customerIntros) + (vehiclePreview ? `\n${vehiclePreview}` : "");
       }
