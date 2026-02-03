@@ -441,6 +441,7 @@ export class WhatsAppAIChatService {
 
       let aiResponse: any = null;
       let resultImages: Array<{ imageUrl: string; caption?: string }> | null = null;
+      let customerTone: 'CUEK' | 'NORMAL' | 'AKTIF' = 'NORMAL';
 
       // ==================== PRE-AI PHOTO CONFIRMATION HANDLER ====================
       // Handle photo confirmations BEFORE calling AI to avoid AI failures breaking the flow
@@ -463,7 +464,7 @@ export class WhatsAppAIChatService {
         console.log(`[WhatsApp AI Chat] Building system prompt for tenant: ${account.tenant.name}`);
 
         // 🔥 AI 5.2: Analyze Customer Tone
-        const customerTone = this.analyzeCustomerTone(userMessage);
+        customerTone = this.analyzeCustomerTone(userMessage);
         console.log(`[WhatsApp AI Chat] 🎯 Customer Tone Analysis: "${userMessage}" -> ${customerTone}`);
 
         const senderInfo = {
@@ -911,15 +912,15 @@ export class WhatsAppAIChatService {
       }
 
       return {
-        message: responseMessage, // Assuming 'content' from user's snippet refers to 'responseMessage'
-        shouldEscalate: shouldEscalate, // Assuming 'response.shouldEscalate' from user's snippet refers to 'shouldEscalate'
-        confidence: 0.85, // Assuming 'response.confidence' from user's snippet refers to 'confidence' (or a fixed value)
-        processingTime: processingTime, // Assuming 'response.processingTime' from user's snippet refers to 'processingTime'
-        images: resultImages, // Assuming 'response.images' from user's snippet refers to 'resultImages'
-        // needsCatchup: response.needsCatchup, // This variable is not defined in the provided context. Keeping it commented out to avoid syntax error.
-        uploadRequest: uploadRequest, // Assuming 'response.uploadRequest' from user's snippet refers to 'uploadRequest'
-        editRequest: editRequest, // Assuming 'response.editRequest' from user's snippet refers to 'editRequest'
-        customerTone: undefined, // Placeholder for 'tone', as 'tone' is not defined in the provided context.
+        message: responseMessage,
+        shouldEscalate: shouldEscalate,
+        confidence: 0.85,
+        processingTime: processingTime,
+        images: (resultImages && resultImages.length > 0) ? resultImages : undefined,
+        needsCatchup: context.isCatchup || false,
+        uploadRequest: uploadRequest || undefined,
+        editRequest: editRequest || undefined,
+        customerTone: customerTone,
       };
     } catch (error: any) {
       console.error("[WhatsApp AI Chat] ❌ ERROR generating response:");
