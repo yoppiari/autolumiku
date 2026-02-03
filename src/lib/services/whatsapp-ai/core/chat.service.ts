@@ -1128,6 +1128,14 @@ export class WhatsAppAIChatService {
         processingTime: Date.now() - startTime,
         ...(smartFallback.images && { images: smartFallback.images }),
       };
+    } catch (error: any) {
+      console.error(`[WhatsApp AI Chat] ❌ Error in generateResponse: ${error.message}`, error);
+      return {
+        message: "Mohon maaf kak, sepertinya ada gangguan teknis. 🙏\n\nBoleh diulangi pertanyaannya? Atau ketik 'Menu' untuk opsi lainnya.",
+        shouldEscalate: true,
+        confidence: 0,
+        processingTime: Date.now() - startTime
+      };
     }
   }
 
