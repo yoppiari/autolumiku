@@ -310,6 +310,27 @@ export class ZAIClient {
                 required: ["name", "phone"]
               }
             }
+          },
+          {
+            type: "function",
+            function: {
+              name: "send_whatsapp_message",
+              description: "Kirim pesan WhatsApp ke nomor tertentu. Gunakan ini untuk membalas chat customer yang pending atau mengirim info ke customer saat berbicara dengan staff/admin.",
+              parameters: {
+                type: "object",
+                properties: {
+                  to: {
+                    type: "string",
+                    description: "Nomor WhatsApp tujuan (format 62xxx)."
+                  },
+                  message: {
+                    type: "string",
+                    description: "Isi pesan yang ingin dikirim."
+                  }
+                },
+                required: ["to", "message"]
+              }
+            }
           }
         ];
         requestParams.tool_choice = "auto";

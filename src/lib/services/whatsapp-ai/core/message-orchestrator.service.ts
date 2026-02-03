@@ -1429,6 +1429,8 @@ export class MessageOrchestratorService {
       /\b(customer|pelanggan)\s+metrics\b/i.test(message) ||
       /\btotal\s+(sales|penjualan)\b/i.test(message);
 
+
+
     // Check if it's a command
     const isCommand = isUniversalCommand || isPDFCommand;
 
@@ -3083,6 +3085,10 @@ export class MessageOrchestratorService {
 
     return false;
   }
+
+  /**
+   * Perform catch-up for all pending conversations in a tenant
+   */
 }
 
 export default MessageOrchestratorService;

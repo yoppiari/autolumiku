@@ -36,8 +36,8 @@ export type MessageIntent =
   | "staff_check_inventory"
   | "staff_get_stats"
   | "staff_get_report"
-  | "staff_verify_identity"
   | "staff_edit_vehicle"
+  | "staff_catchup"               // New: trigger recovery of pending messages
   | "system_command"              // PDF/vCard commands that already sent their own response
   | "unknown";
 
@@ -138,6 +138,13 @@ const STAFF_COMMAND_PATTERNS = {
     /^ganti\s+/i,                    // ganti PM-PST-001 tahun 2018
     /^ubah\s+/i,                     // ubah PM-PST-001 matic, ubah ubah PM-PST-001 manual
     /^update\s+(km|harga|tahun|warna|transmisi|bensin|diesel|cc)/i, // update PM-PST-001 km 50000
+  ],
+  catchup: [
+    /^\/catchup/i,                   // /catchup
+    /^catchup\b/i,                   // catchup
+    /^proses\s+pending/i,            // proses pending
+    /^balas\s+semua\s+pending/i,     // balas semua pending
+    /^scan\s+pending/i,              // scan pending
   ],
 };
 
@@ -680,6 +687,17 @@ export class IntentClassifierService {
         isStaff: true,
         isCustomer: false,
         reason: "Matched specific report command pattern",
+      };
+    }
+
+    // Check catchup
+    if (STAFF_COMMAND_PATTERNS.catchup.some((p) => p.test(message))) {
+      return {
+        intent: "staff_catchup",
+        confidence: 0.95,
+        isStaff: true,
+        isCustomer: false,
+        reason: "Matched catchup command pattern",
       };
     }
 
