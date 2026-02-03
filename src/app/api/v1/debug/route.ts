@@ -46,14 +46,66 @@ export async function GET(request: NextRequest) {
         // MODE: SQL Sync (Emergency Column Addition)
         if (mode === 'sql-sync') {
             const results = [];
+            // WhatsApp AI Configs
             results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_ai_configs" ADD COLUMN IF NOT EXISTS "alwaysReplyCustomer" BOOLEAN DEFAULT true`));
             results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_ai_configs" ADD COLUMN IF NOT EXISTS "bypassHoursForStaff" BOOLEAN DEFAULT false`));
+
+            // WhatsApp Conversations (Catch-up & Tone)
             results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_conversations" ADD COLUMN IF NOT EXISTS "needsCatchup" BOOLEAN DEFAULT false`));
             results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_conversations" ADD COLUMN IF NOT EXISTS "lastAfterHoursAt" TIMESTAMP`));
             results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "whatsapp_conversations" ADD COLUMN IF NOT EXISTS "lastCustomerTone" TEXT`));
+
+            // Leads (Location Capture)
             results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "location" TEXT`));
 
+            // Users (Staff Online/Offline Status for AI 5.2)
+            results.push(await prisma.$executeRawUnsafe(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "waStatus" TEXT DEFAULT 'online'`));
+
             return NextResponse.json({ success: true, message: "Schema synced via SQL.", results });
+        }
+
+        // MODE: Scan and Reply Pending (Catch-up)
+        if (mode === 'scan-pending') {
+            const conversations = await prisma.whatsAppConversation.findMany({
+                where: {
+                    tenantId: tenant.id,
+                    messages: {
+                        some: { direction: 'inbound' }
+                    }
+                },
+                include: {
+                    messages: {
+                        orderBy: { createdAt: 'desc' },
+                        take: 1
+                    },
+                    account: true
+                }
+            });
+
+            const pending = conversations.filter(c =>
+                c.messages[0]?.direction === 'inbound' &&
+                (Date.now() - new Date(c.messages[0].createdAt).getTime()) < 86400000 // Last 24h
+            );
+
+            const results = [];
+            for (const conv of pending) {
+                try {
+                    const res = await MessageOrchestratorService.processIncomingMessage({
+                        accountId: conv.accountId,
+                        clientId: conv.account.clientId,
+                        tenantId: conv.tenantId,
+                        from: conv.customerPhone,
+                        message: conv.messages[0].content,
+                        messageId: `catchup_${Date.now()}_${conv.id.substring(0, 5)}`,
+                        isCatchup: true
+                    });
+                    results.push({ phone: conv.customerPhone, success: res.success });
+                } catch (e: any) {
+                    results.push({ phone: conv.customerPhone, error: e.message });
+                }
+            }
+
+            return NextResponse.json({ success: true, processed: pending.length, results });
         }
 
         // MODE: User Check
