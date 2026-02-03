@@ -107,13 +107,18 @@ export async function GET(request: NextRequest) {
         if (mode === 'db-push') {
             const { exec } = require('child_process');
             return new Promise((resolve) => {
-                exec('npx prisma db push --accept-data-loss', (error: any, stdout: string, stderr: string) => {
-                    resolve(NextResponse.json({
-                        success: !error,
-                        stdout,
-                        stderr,
-                        error: error ? error.message : null
-                    }));
+                // First, check prisma version to see if it's reachable
+                exec('npx prisma -v', (vErr: any, vStdout: string) => {
+                    exec('npx prisma db push --accept-data-loss', (error: any, stdout: string, stderr: string) => {
+                        resolve(NextResponse.json({
+                            success: !error,
+                            prismaVersion: vStdout.trim(),
+                            stdout,
+                            stderr,
+                            error: error ? error.message : null,
+                            env: process.env.DATABASE_URL ? 'URL_SET' : 'URL_MISSING'
+                        }));
+                    });
                 });
             });
         }
