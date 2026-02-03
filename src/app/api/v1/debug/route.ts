@@ -103,10 +103,26 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, result });
         }
 
+        // MODE: DB Push (Sync Schema)
+        if (mode === 'db-push') {
+            const { exec } = require('child_process');
+            return new Promise((resolve) => {
+                exec('npx prisma db push --accept-data-loss', (error: any, stdout: string, stderr: string) => {
+                    resolve(NextResponse.json({
+                        success: !error,
+                        stdout,
+                        stderr,
+                        error: error ? error.message : null
+                    }));
+                });
+            });
+        }
+
         // Default: List Tools
         const debugTools = [
             { name: 'WhatsApp Setup Details', path: '/api/v1/debug?mode=whatsapp-setup' },
             { name: 'Force Fix Connection', path: '/api/v1/debug?mode=fix-whatsapp' },
+            { name: 'Sync Database Schema', path: '/api/v1/debug?mode=db-push' },
             { name: 'Trigger AI Reply', path: '/api/v1/debug?mode=trigger-reply&phone=6281216206368' },
             { name: 'User Check', path: '/api/v1/debug/user-check' },
             { name: 'Vehicle Check', path: '/api/v1/debug/vehicle-check' },
