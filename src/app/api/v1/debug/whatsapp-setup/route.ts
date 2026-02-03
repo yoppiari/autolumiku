@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
           enableTestDriveBooking: true,
           businessHours: true,
           timezone: true,
+          alwaysReplyCustomer: true,
+          bypassHoursForStaff: true,
         },
       });
     }
@@ -217,29 +219,29 @@ export async function GET(request: NextRequest) {
       },
       aimeowAccount: aimeowAccount
         ? {
-            ...aimeowAccount,
-            status: aimeowAccount.connectionStatus === "connected" ? "OK" : "WARNING",
-            statusMessage:
-              aimeowAccount.connectionStatus === "connected"
-                ? "WhatsApp connected"
-                : `Status: ${aimeowAccount.connectionStatus}. May need to scan QR code.`,
-          }
+          ...aimeowAccount,
+          status: aimeowAccount.connectionStatus === "connected" ? "OK" : "WARNING",
+          statusMessage:
+            aimeowAccount.connectionStatus === "connected"
+              ? "WhatsApp connected"
+              : `Status: ${aimeowAccount.connectionStatus}. May need to scan QR code.`,
+        }
         : {
-            status: "ERROR",
-            statusMessage: "AimeowAccount not found. Need to setup WhatsApp integration.",
-          },
+          status: "ERROR",
+          statusMessage: "AimeowAccount not found. Need to setup WhatsApp integration.",
+        },
       aiConfig: aiConfig
         ? {
-            ...aiConfig,
-            status: aiConfig.customerChatEnabled ? "OK" : "WARNING",
-            statusMessage: aiConfig.customerChatEnabled
-              ? "AI chat enabled"
-              : "Customer chat is DISABLED. AI will not reply to customers.",
-          }
+          ...aiConfig,
+          status: aiConfig.customerChatEnabled ? "OK" : "WARNING",
+          statusMessage: aiConfig.customerChatEnabled
+            ? "AI chat enabled"
+            : "Customer chat is DISABLED. AI will not reply to customers.",
+        }
         : {
-            status: "WARNING",
-            statusMessage: "AI Config not found. Will be auto-created on first message.",
-          },
+          status: "WARNING",
+          statusMessage: "AI Config not found. Will be auto-created on first message.",
+        },
       staffUsers: {
         count: staffUsers.length,
         users: staffUsers.map((u) => ({
