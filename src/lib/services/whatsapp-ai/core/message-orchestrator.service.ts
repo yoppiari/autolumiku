@@ -677,7 +677,10 @@ export class MessageOrchestratorService {
 
             // Only force upload_vehicle if it's explicitly an upload intent 
             // OR if it's a photo being sent WITHOUT an escape/search pattern
-            if (isUploadTrigger || (hasMedia && !isEscapeMessage)) {
+            // AND it is NOT a complaint or inquiry about pending chats
+            const isComplaintOrInquiry = /\b(belum|respon|jawab|balas|kenapa|kok|tanya|pending|customer)\b/i.test(msg);
+
+            if ((isUploadTrigger || (hasMedia && !isEscapeMessage)) && !isComplaintOrInquiry) {
               classification.intent = "staff_upload_vehicle";
               classification.reason = "Defined as staff upload (explicit keywords or media)";
               console.log(`[Orchestrator] Reclassified intent to: ${classification.intent}`);
