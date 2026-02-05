@@ -10,6 +10,7 @@ import { Suspense } from 'react';
 import { prisma } from '@/lib/prisma';
 import { BrandingService } from '@/lib/services/catalog/branding.service';
 import { LoginForm } from './login-form';
+import { AdminLoginForm } from './admin-login-form';
 
 // Domain to slug mapping (same as middleware)
 const domainToSlug: Record<string, string> = {
@@ -104,6 +105,11 @@ async function getTenantBranding() {
 export default async function LoginPage() {
   // Fetch branding server-side to prevent flicker
   const branding = await getTenantBranding();
+
+  // If no tenant branding found (e.g. platform domain), show Admin Login
+  if (branding.name === 'AutoLumiKu' && !branding.logoUrl) {
+    return <AdminLoginForm />;
+  }
 
   return (
     <div
