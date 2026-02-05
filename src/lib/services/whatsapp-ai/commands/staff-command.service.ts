@@ -1678,62 +1678,58 @@ export class StaffCommandService {
       };
     }
 
-    // Build simplified, clear staff menu with better formatting
+    // Build simplified, clear staff menu with better formatting (Premium UI 5.2)
     let message =
-      `${greeting}\n\n` +
-      `Stok saat ini: *${availableCount} unit* tersedia\n\n` +
+      `✨ *SYSTEM ACTIVE - AUTOLUMIKU AI 5.2* ✨\n\n` +
+      `${greeting}\n` +
+      `Showroom: *${tenantName}*\n` +
+      `Stok Ready: *${availableCount} unit*\n\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📋 *MENU STAFF*\n` +
+      `🛠️ *STAFF COMMAND CENTER*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `📸 *UPLOAD KENDARAAN*\n` +
-      `Ketik: *upload* (ikuti instruksi)\n` +
-      `_Atau:_ "upload Brio 2020 120jt" (langsung)\n\n` +
+      `📸 *UPLOAD* (Cepat & Berkelas)\n` +
+      `Ketik: *upload* (ikut flow)\n` +
+      `_Atau:_ "upload Brio 2020 120jt"\n\n` +
 
-      `📋 *CEK STOK*\n` +
-      `Ketik: *stok* [spasi] [filter]\n` +
-      `_Contoh:_ "stok brio", "stok ready"\n\n` +
+      `📋 *CEK STOK* (Real-time Inventory)\n` +
+      `Ketik: *stok* [filter]\n` +
+      `_Contoh:_ "stok brio ready", "stok solar"\n\n` +
 
-      `📊 *STATISTIK*\n` +
+      `📊 *STATISTIK* (Performance Insight)\n` +
       `Ketik: *stats* atau *laporan*\n` +
-      `_Opsi:_ stats today / week / month\n\n` +
+      `_Opsi:_ today, week, month\n\n` +
 
-      `🔄 *UPDATE STATUS*\n` +
+      `🔄 *UPDATE STATUS* (Quick Sync)\n` +
       `Ketik: *status [ID] [SOLD/BOOKED/AVAILABLE]*\n` +
       `_Contoh:_ "status PM-PST-001 SOLD"\n\n` +
 
-      `🚙 *EDIT DATA*\n` +
+      `🚙 *EDIT DATA* (Smart Update)\n` +
       `Ketik: *edit [ID] [data]*\n` +
       `_Contoh:_ "edit PM-PST-001 harga 175jt"\n\n` +
 
-      `🔍 *CARI MOBIL*\n` +
-      `_Contoh:_ "cari fortuner diesel", "ada brio?"\n\n` +
+      `🔍 *CARI MOBIL* (Discovery)\n` +
+      `_Contoh:_ "cari fortuner bensin", "ada unit apa?"\n\n` +
 
-      `💰 *SIMULASI KKB*\n` +
+      `💰 *SIMULASI KKB* (High Conversion)\n` +
       `Ketik: *kkb [ID/Harga] [DP] [Tenor]*\n` +
-      `_Contoh:_ "kkb PM-PST-001 dp 20% tenor 3,4"`;
+      `_Contoh:_ "kkb 150jt dp 20% tenor 3,4,5"`;
 
     // Determine user role for customized menu
     let userRole = identifiedRole || "STAFF";
 
-    // Add Admin/Owner specific tools
+    // Add Admin/Owner specific tools with Executive UI
     if (["ADMIN", "OWNER", "SUPER_ADMIN"].includes(userRole)) {
       message += `\n\n` +
-        `👮‍♂️ *MENU ADMIN*\n` +
-        `_Ketik salah satu laporan berikut:_\n` +
-        `• Laporan Penjualan\n` +
-        `• Total Pendapatan\n` +
-        `• Tren Penjualan\n` +
-        `• Metrik Penjualan\n` +
-        `• Ringkasan Penjualan\n` +
-        `• Total Inventori\n` +
-        `• Daftar Kendaraan\n` +
-        `• Peringatan Stok\n` +
-        `• Rata-rata Harga\n` +
-        `• Performa Staff\n` +
-        `• Analisis WhatsApp AI\n` +
-        `• Metrik Pelanggan\n` +
-        `• Metrik Operasional\n` +
-        `• Simulasi KKB`;
+        `👮‍♂️ *EXECUTIVE ANALYTICS*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `_Akses Laporan Strategis (Ketik):_\n` +
+        `• 💵 *Laporan Penjualan* / *Total Pendapatan*\n` +
+        `• 📈 *Tren Penjualan* / *Metrik Penjualan*\n` +
+        `• 📦 *Total Inventori* / *Daftar Kendaraan*\n` +
+        `• 🚦 *Peringatan Stok* / *Rata-rata Harga*\n` +
+        `• 👥 *Performa Staff* / *Komisi*\n` +
+        `• 🤖 *Analisis WhatsApp AI*\n` +
+        `• 🎯 *Metrik Pelanggan* / *Operasional*`;
     }
 
     return {

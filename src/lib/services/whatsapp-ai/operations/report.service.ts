@@ -105,25 +105,26 @@ export class WhatsAppReportService {
      * Get list of available reports
      */
     private static getReportMenu(): string {
-        return `📊 *DAFTAR REPORT AVAILABLE*\n\n` +
-            `*1. Penjualan & Revenue:*\n` +
+        return `📊 *EXECUTIVE REPORT CENTER* 📈\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `💰 *PENJUALAN & REVENUE*\n` +
             `• "Total Sales" (Ringkasan penjualan)\n` +
-            `• "Sales Summary" (Ringkasan cepat hari ini)\n` +
-            `• "Sales Trends" (Tren grafik penjualan)\n` +
-            `• "Metrik Penjualan" (KPI & konversi)\n\n` +
+            `• "Sales Summary" (Update hari ini)\n` +
+            `• "Sales Trends" (Analisis grafik)\n` +
+            `• "Metrik Penjualan" (KPI & Konversi)\n\n` +
 
-            `*2. Stok & Inventory:*\n` +
-            `• "Total Inventory" (Ringkasan stok)\n` +
+            `📦 *STOK & INVENTORY*\n` +
+            `• "Total Inventory" (Aset & Gudang)\n` +
             `• "Vehicle Listing" (Daftar semua mobil)\n` +
-            `• "Low Stock Alert" (Stok menipis)\n` +
-            `• "Average Price" (Analisis harga rata-rata)\n\n` +
+            `• "Low Stock Alert" (Peringatan stok)\n` +
+            `• "Average Price" (Analisis harga)\n\n` +
 
-            `*3. Team & AI Performance:*\n` +
+            `👥 *TEAM & AI PERFORMANCE*\n` +
             `• "Staff Performance" (Leaderboard sales)\n` +
-            `• "WhatsApp AI Analytics" (Performa bot)\n` +
-            `• "Customer Metrics" (Analisis profil pelanggan)\n\n` +
-
-            `_Ketik nama report di atas untuk melihat detailnya._`;
+            `• "WhatsApp AI Analytics" (Data Bot)\n` +
+            `• "Customer Metrics" (Profil Pelanggan)\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `_Ketik nama laporan di atas untuk melihat detailnya._`;
     }
 
     // ==================== SALES & REVENUE REPORTS ====================

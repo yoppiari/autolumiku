@@ -65,23 +65,25 @@ function formatDate(date: Date): string {
  * Get unified Admin Menu text
  */
 function getAdminMenuText(): string {
-  return `📊 *DAFTAR REPORT AVAILABLE*\n\n` +
-    `1. *Penjualan & Revenue:*\n` +
+  return `📊 *EXECUTIVE REPORT CENTER* 📈\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `💰 *PENJUALAN & REVENUE*\n` +
     `   • "Total Sales" (Ringkasan penjualan)\n` +
-    `   • "Sales Summary" (Ringkasan cepat hari ini)\n` +
-    `   • "Sales Trends" (Tren grafik penjualan)\n` +
-    `   • "Metrik Penjualan" (KPI & konversi)\n\n` +
-    `2. *Stok & Inventory:*\n` +
-    `   • "Total Inventory" (Ringkasan stok)\n` +
+    `   • "Sales Summary" (Update hari ini)\n` +
+    `   • "Sales Trends" (Analisis grafik)\n` +
+    `   • "Metrik Penjualan" (KPI & Konversi)\n\n` +
+    `📦 *STOK & INVENTORY*\n` +
+    `   • "Total Inventory" (Aset & Gudang)\n` +
     `   • "Vehicle Listing" (Daftar semua mobil)\n` +
-    `   • "Low Stock Alert" (Stok menipis)\n` +
-    `   • "Average Price" (Analisis harga rata-rata)\n\n` +
-    `3. *Team & AI Performance:*\n` +
+    `   • "Low Stock Alert" (Peringatan stok)\n` +
+    `   • "Average Price" (Analisis harga)\n\n` +
+    `👥 *TEAM & AI PERFORMANCE*\n` +
     `   • "Staff Performance" (Leaderboard sales)\n` +
-    `   • "WhatsApp AI Analytics" (Performa bot)\n` +
-    `   • "Customer Metrics" (Analisis profil pelanggan)\n` +
+    `   • "WhatsApp AI Analytics" (Data Bot)\n` +
+    `   • "Customer Metrics" (Profil Pelanggan)\n` +
     `   • "Simulasi KKB" (Kredit Kendaraan)\n\n` +
-    `_Ketik nama report di atas untuk melihat detailnya._`;
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `_Ketik nama laporan di atas untuk melihat detailnya._`;
 }
 
 
@@ -260,39 +262,46 @@ async function handleUniversalCommand(
   }
 
   // RICH FORMAT (Consistent with StaffCommandService)
-
   let helpMsg =
+    `✨ *SYSTEM ACTIVE - AUTOLUMIKU AI 5.2* ✨\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `📋 *MENU STAFF*\n` +
+    `🛠️ *STAFF COMMAND CENTER*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `📸 *UPLOAD KENDARAAN*\n` +
-    `Ketik: *upload* (ikuti instruksi)\n` +
-    `_Atau:_ "upload Brio 2020 120jt" (langsung)\n\n` +
+    `📸 *UPLOAD* (Cepat & Berkelas)\n` +
+    `Ketik: *upload* (ikut flow)\n` +
+    `_Atau:_ "upload Brio 2020 120jt"\n\n` +
 
-    `📋 *CEK STOK*\n` +
-    `Ketik: *stok* [spasi] [filter]\n` +
-    `_Contoh:_ "stok brio", "stok ready"\n\n` +
+    `📋 *CEK STOK* (Real-time Inventory)\n` +
+    `Ketik: *stok* [filter]\n\n` +
 
-    `📊 *STATISTIK*\n` +
-    `Ketik: *stats* atau *laporan*\n` +
-    `_Opsi:_ stats today / week / month\n\n` +
+    `📊 *STATISTIK* (Performance Insight)\n` +
+    `Ketik: *stats* atau *laporan*\n\n` +
 
-    `🔄 *UPDATE STATUS*\n` +
-    `Ketik: *status [ID] [SOLD/BOOKED/AVAILABLE]*\n` +
-    `_Contoh:_ "status PM-PST-001 SOLD"\n\n` +
+    `🔄 *UPDATE STATUS* (Quick Sync)\n` +
+    `Ketik: *status [ID] [SOLD/BOOKED/AVAILABLE]*\n\n` +
 
-    `🚙 *EDIT DATA*\n` +
-    `Ketik: *edit [ID] [data]*\n` +
-    `_Contoh:_ "edit PM-PST-001 harga 175jt"\n\n` +
+    `🚙 *EDIT DATA* (Smart Update)\n` +
+    `Ketik: *edit [ID] [data]*\n\n` +
 
-    `🔍 *CARI MOBIL*\n` +
-    `_Contoh:_ "cari fortuner diesel", "ada brio?"`;
+    `🔍 *CARI MOBIL* (Discovery)\n` +
+    `_Contoh:_ "cari fortuner bensin"\n\n` +
+
+    `💰 *SIMULASI KKB* (High Conversion)\n` +
+    `Ketik: *kkb [ID/Harga] [DP] [Tenor]*\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━`;
 
   // Show Admin/Owner menu only for privileged users
   if (userRoleLevel >= ROLE_LEVELS.ADMIN) {
     helpMsg += `\n\n` +
-      `👮‍♂️ *ADMIN/OWNER*\n` +
-      `_Ketik:_ "sales report", "staff performance", atau "menu report" untuk akses laporan lengkap.`;
+      `👮‍♂️ *EXECUTIVE ANALYTICS*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `_Akses Laporan Strategis (Ketik):_\n` +
+      `• *Laporan Penjualan* / *Total Pendapatan*\n` +
+      `• *Tren Penjualan* / *Metrik Penjualan*\n` +
+      `• *Total Inventori* / *Daftar Kendaraan*\n` +
+      `• *Peringatan Stok* / *Rata-rata Harga*\n` +
+      `• *Performa Staff* / *WhatsApp AI Analytics*\n\n` +
+      `_Atau ketik: "menu report" untuk daftar lengkap._`;
   }
 
   return {
