@@ -96,58 +96,81 @@ export async function GET(request: NextRequest) {
 
       // Merge status AND Sync Profile Pictures if needed
       // Use a connected bot to fetch profile pics
+      let AimeowClientService: any = null;
       const systemBot = activeBots.length > 0 ? activeBots[0] : null;
-      const { AimeowClientService } = require('@/lib/services/aimeow/aimeow-client.service');
+
+      // Try to load AimeowClientService, but don't fail if it's not available
+      try {
+        const aimeowModule = require('@/lib/services/aimeow/aimeow-client.service');
+        AimeowClientService = aimeowModule.AimeowClientService;
+      } catch (err) {
+        console.warn('[Users API] AimeowClientService not available:', err);
+      }
 
       const usersWithStatus = await Promise.all(users.map(async user => {
-        // Find auth by userId first
-        let auth = staffAuths.find(a => a.userId === user.id);
+        try {
+          // Find auth by userId first
+          let auth = staffAuths.find(a => a.userId === user.id);
 
-        // If not found by userId but user has a phone, find by phoneNumber
-        if (!auth && user.phone) {
-          const cleanedUserPhone = user.phone.replace(/\D/g, '');
-          auth = staffAuths.find(a => a.phoneNumber.replace(/\D/g, '') === cleanedUserPhone);
-        }
-
-        let profilePicUrl = auth?.profilePicUrl;
-
-        // REALTIME SYNC: If we have a connected bot and a phone number, try to fetch/refresh profile pic
-        // Condition: No profile pic OR we want to ensure it's fresh (maybe every time?)
-        // To avoid excessive API calls, we'll do it if profilePicUrl is missing OR randomly (10% chance) to keep updated
-        const phoneNumber = user.phone || auth?.phoneNumber;
-        const needsSync = phoneNumber && systemBot && (!profilePicUrl || Math.random() < 0.1);
-
-        if (needsSync) {
-          try {
-            // Determine which bot to use (prefer tenant's own bot if available)
-            const preferredBot = activeBots.find(b => b.tenantId === user.tenantId) || systemBot;
-
-            // Call Aimeow to get profile pic
-            const picResult = await AimeowClientService.getProfilePicture(preferredBot.clientId, phoneNumber);
-
-            if (picResult.success && picResult.hasPicture && picResult.pictureUrl) {
-              profilePicUrl = picResult.pictureUrl;
-
-              // Update DB if we found a match in StaffWhatsAppAuth
-              if (auth) {
-                await prisma.staffWhatsAppAuth.update({
-                  where: { id: auth.id },
-                  data: { profilePicUrl: picResult.pictureUrl }
-                }).catch(e => console.error('Failed to update profile pic DB:', e));
-              }
-            }
-          } catch (err) {
-            console.error(`Failed to sync profile pic for ${user.email}:`, err);
+          // If not found by userId but user has a phone, find by phoneNumber
+          if (!auth && user.phone) {
+            const cleanedUserPhone = user.phone.replace(/\D/g, '');
+            auth = staffAuths.find(a => a.phoneNumber.replace(/\D/g, '') === cleanedUserPhone);
           }
-        }
 
-        return {
-          ...user,
-          isActive: true,
-          isWhatsAppActive: auth ? auth.isActive : false,
-          phone: phoneNumber || null,
-          profilePicUrl: profilePicUrl || null
-        };
+          let profilePicUrl = auth?.profilePicUrl;
+
+          // REALTIME SYNC: If we have a connected bot and a phone number, try to fetch/refresh profile pic
+          // Condition: No profile pic OR we want to ensure it's fresh (maybe every time?)
+          // To avoid excessive API calls, we'll do it if profilePicUrl is missing OR randomly (10% chance) to keep updated
+          const phoneNumber = user.phone || auth?.phoneNumber;
+          const needsSync = phoneNumber && systemBot && AimeowClientService && (!profilePicUrl || Math.random() < 0.1);
+
+          if (needsSync) {
+            try {
+              // Determine which bot to use (prefer tenant's own bot if available)
+              const preferredBot = activeBots.find(b => b.tenantId === user.tenantId) || systemBot;
+
+              // Call Aimeow to get profile pic with timeout
+              const picResult = await Promise.race([
+                AimeowClientService.getProfilePicture(preferredBot.clientId, phoneNumber),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+              ]);
+
+              if (picResult.success && picResult.hasPicture && picResult.pictureUrl) {
+                profilePicUrl = picResult.pictureUrl;
+
+                // Update DB if we found a match in StaffWhatsAppAuth
+                if (auth) {
+                  await prisma.staffWhatsAppAuth.update({
+                    where: { id: auth.id },
+                    data: { profilePicUrl: picResult.pictureUrl }
+                  }).catch(e => console.error('Failed to update profile pic DB:', e));
+                }
+              }
+            } catch (err) {
+              // Silently fail - don't log to avoid spam
+            }
+          }
+
+          return {
+            ...user,
+            isActive: true,
+            isWhatsAppActive: auth ? auth.isActive : false,
+            phone: phoneNumber || null,
+            profilePicUrl: profilePicUrl || null
+          };
+        } catch (userError) {
+          // If individual user processing fails, return basic data
+          console.error(`Failed to process user ${user.email}:`, userError);
+          return {
+            ...user,
+            isActive: true,
+            isWhatsAppActive: false,
+            phone: user.phone || null,
+            profilePicUrl: null
+          };
+        }
       }));
 
       return NextResponse.json({
