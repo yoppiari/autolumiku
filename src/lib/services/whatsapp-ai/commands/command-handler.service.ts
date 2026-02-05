@@ -1048,7 +1048,7 @@ async function generateTechnicalOpsText(ctx: CommandContext): Promise<CommandRes
 * emergency mode : Mode darurat sistem
 * export data : Export data CSV/Excel`;
 
-  return { success: true, message, followUp: true };
+  return { success: true, message, followUp: false };
 }
 
 async function generateHRText(ctx: CommandContext): Promise<CommandResult> {
@@ -1058,7 +1058,7 @@ async function generateHRText(ctx: CommandContext): Promise<CommandResult> {
 * training matrix : Status pelatihan tim
 * attendance tracker : Kehadiran & jam kerja`;
 
-  return { success: true, message, followUp: true };
+  return { success: true, message, followUp: false };
 }
 
 async function generateSystemMgmtText(ctx: CommandContext): Promise<CommandResult> {
@@ -1068,7 +1068,7 @@ async function generateSystemMgmtText(ctx: CommandContext): Promise<CommandResul
 * security audit : Cek keamanan sistem & access log
 * api keys : Kelola integrasi dengan eksternal system`;
 
-  return { success: true, message, followUp: true };
+  return { success: true, message, followUp: false };
 }
 
 async function generateSystemControlText(ctx: CommandContext): Promise<CommandResult> {
