@@ -14,14 +14,24 @@ Anda terdeteksi sebagai Admin/Owner. Selain menu staff biasa, Anda memiliki akse
    • *inventory report* : Ringkasan stok & aging unit
    • *kkb report* : Simulasi kredit kendaraan
 
-👥 *MANAJEMEN STAFF*:
-   • *list staff* : Lihat daftar staff & status online
-   • *add staff [nama] [hp]* : Tambah staff via WA
-   • *remove staff [hp/nama]* : Hapus akses staff
+🔧 *TECHNICAL OPERATIONS:*
+   • *system health* : Status server & database
+   • *backup schedule* : Jadwal backup data
+   • *security audit* : Laporan keamanan sistem
+   • *api monitoring* : Status integrasi layanan
 
+👥 *HUMAN RESOURCES:*
+   • *staff performance* : KPI & produktivitas tim
+   • *payroll system* : Gaji & komisi staff
+   • *training matrix* : Status pelatihan tim
+   • *attendance tracker* : Kehadiran & jam kerja
 
+🔐 *SYSTEM MANAGEMENT:*
+   • *master control* : Akses ke semua sub-sistem
+   • *database backup* : Backup otomatis data pelanggan & inventory
+   • *api keys* : Kelola integrasi dengan eksternal system
 
-⚙️ *SYSTEM*:
+⚙️ *SYSTEM CONTROL:*
    • *restart bot* : Restart layanan AI jika macet
    • *system status* : Cek beban server & kuota AI
 

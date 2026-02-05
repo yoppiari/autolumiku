@@ -53,7 +53,10 @@ export class ReportDataService {
             'customer-metrics',
             'whatsapp-ai',
             'operational-metrics',
+            'system-status',
         ].includes(reportType) || needsAllData;
+
+        const needsSystemStatusData = reportType === 'system-status' || needsAllData;
 
         // Variables for KPI calculation
         let inventoryTurnover = 0;
@@ -352,17 +355,53 @@ export class ReportDataService {
                     escalationRate,
                     intentBreakdown,
                 };
-            } catch (error) {
-                console.warn('[Reports] WhatsApp data not available');
-                data.whatsapp = {
-                    totalConversations: 0,
-                    activeConversations: 0,
-                    totalMessages: 0,
-                    aiResponseRate: 0,
-                    avgResponseTime: 0,
-                    escalationRate: 0,
-                    intentBreakdown: [],
+            }
+        }
+
+        // Fetch System Status Data (Today's specific metrics)
+        if (needsSystemStatusData) {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+
+            try {
+                const [todayLeads, todayViews, todayUploads, todayChats] = await Promise.all([
+                    prisma.lead.count({
+                        where: {
+                            tenantId,
+                            createdAt: { gte: todayStart }
+                        }
+                    }),
+                    prisma.vehicleView.count({
+                        where: {
+                            tenantId,
+                            viewedAt: { gte: todayStart }
+                        }
+                    }),
+                    prisma.vehicle.count({
+                        where: {
+                            tenantId,
+                            createdAt: { gte: todayStart },
+                            status: { not: 'DELETED' }
+                        }
+                    }),
+                    prisma.whatsAppConversation.count({
+                        where: {
+                            tenantId,
+                            startedAt: { gte: todayStart },
+                            status: { not: 'deleted' }
+                        }
+                    })
+                ]);
+
+                data.systemStatus = {
+                    todayLeads,
+                    todayViews,
+                    todayUploads,
+                    todayChats,
+                    serverTime: new Date().toISOString()
                 };
+            } catch (error) {
+                console.warn('[Reports] System status data fetch failed:', error);
             }
         }
 

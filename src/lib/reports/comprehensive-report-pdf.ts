@@ -120,6 +120,13 @@ export interface ReportData {
         daysInStock: number;
     }[];
     managementInsights?: string[];
+    systemStatus?: {
+        todayLeads: number;
+        todayViews: number;
+        todayUploads: number;
+        todayChats: number;
+        serverTime: string;
+    };
 }
 
 interface Metric {
