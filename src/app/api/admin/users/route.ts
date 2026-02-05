@@ -87,11 +87,26 @@ export async function GET(request: NextRequest) {
 
       } catch (error: any) {
         console.warn('[Users API] Failed to fetch auths or bots:', error.message);
-        // Fallback
-        staffAuths = await prisma.staffWhatsAppAuth.findMany({
-          where: { userId: { in: users.map(u => u.id) } },
-          select: { id: true, userId: true, isActive: true, phoneNumber: true, profilePicUrl: true }
-        });
+        // Fallback - try without profilePicUrl if field doesn't exist
+        try {
+          staffAuths = await prisma.staffWhatsAppAuth.findMany({
+            where: { userId: { in: users.map(u => u.id) } },
+            select: { id: true, userId: true, isActive: true, phoneNumber: true, profilePicUrl: true }
+          });
+        } catch (fallbackError: any) {
+          console.warn('[Users API] Fallback 1 failed, trying without profilePicUrl:', fallbackError.message);
+          // Final fallback without profilePicUrl
+          try {
+            const basicAuths = await prisma.staffWhatsAppAuth.findMany({
+              where: { userId: { in: users.map(u => u.id) } },
+              select: { id: true, userId: true, isActive: true, phoneNumber: true }
+            });
+            staffAuths = basicAuths.map(auth => ({ ...auth, profilePicUrl: null }));
+          } catch (finalError) {
+            console.error('[Users API] All fallbacks failed:', finalError);
+            staffAuths = []; // Empty array as last resort
+          }
+        }
       }
 
       // Merge status AND Sync Profile Pictures if needed
