@@ -654,7 +654,7 @@ export class WhatsAppAIChatService {
             processingTime: Date.now() - startTime
           };
         } else {
-          responseMessage = `Mohon maaf, saya perlu konfirmasi informasi harga ke tim terlebih dahulu untuk memastikan akurasinya. Bisa ditunggu sebentar ya? 🙏`;
+          responseMessage = `Mohon maaf, saya perlu konfirmasi informasi harga ke tim terlebih dahulu untuk memastikan akurasinya. Bisa ditunggu sebentar ya kak? 🙏`;
         }
 
         // Force escalation for price errors
@@ -803,7 +803,7 @@ export class WhatsAppAIChatService {
                   searchResultText += `...dan ${searchResults.length - 5} unit lainnya.\n\n`;
                 }
 
-                searchResultText += `Mau lihat fotonya? 📸 (Ketik "Ya" atau "Foto [ID]" untuk melihat)\n\n`;
+                searchResultText += `Mau lihat fotonya kak? 📸 (Ketik "Ya" atau "Foto [ID]" untuk melihat)\n\n`;
                 searchResultText += `Apakah ada hal lain yang bisa kami bantu? 😊`;
 
                 responseMessage += searchResultText;
@@ -933,7 +933,7 @@ export class WhatsAppAIChatService {
         if (vehicles.length > 0) {
           const vehicleList = this.formatVehicleListDetailed(vehicles.slice(0, 3));
           responseMessage = `Mohon maaf kak, untuk ketersediaan unit saat ini bisa langsung cek daftar ready stock kami berikut ini ya:\n\n${vehicleList}\n\n` +
-            `Mau lihat fotonya? 📸 (Atau ada kriteria unit lain yang dicari?)`;
+            `Mau lihat fotonya kak? 📸 (Atau ada kriteria unit lain yang dicari?)`;
 
           // Re-apply greeting if we replaced the whole message
           const now = new Date();
@@ -983,159 +983,34 @@ export class WhatsAppAIChatService {
         customerTone: customerTone,
       };
     } catch (error: any) {
-      console.error("[WhatsApp AI Chat] ❌ ERROR generating response:");
-      console.error("[WhatsApp AI Chat] Error name:", error.name);
-      console.error("[WhatsApp AI Chat] Error message:", error.message);
-      console.error("[WhatsApp AI Chat] Error stack:", error.stack);
-
-      // Check if this is a photo confirmation request - try to handle it directly
-      const msg = userMessage.trim().toLowerCase();
-      const photoConfirmPatterns = [
-        /^(boleh|ya|iya|ok|oke|okey|okay|mau|yup|yap|sip|siap|bisa|tentu|pasti|yoi|gass?|cuss?)$/i,
-        /^(kirimin|kirimkan|lanjut|lanjutkan|hayuk|yuk|ayo)$/i,
-        // Phrases with "foto" - "iya mana fotonya", "kirim fotonya" etc
-        /\b(iya|ya|ok|oke|mau|boleh)\b.*\b(foto|gambar)/i,
-        /\b(mana|kirim|kasih|tunjuk)\b.*\b(foto|gambar)/i,
-        /\bfoto\s*(nya|dong|ya|aja|mana)?\b/i,
-        /silahkan|silakan/i, /ditunggu/i, /tunggu/i,
-        /kirim\s*(aja|dong|ya|in)?/i, /kirimin\s*(dong|ya|aja)?/i,
-        /boleh\s*(dong|ya|lah|aja|silahkan|silakan|banget)?/i,
-        /lanjut\s*(kirim|aja)?/i, /ok\s*lanjut\s*kirim/i,
-      ];
-      const isPhotoConfirmation = photoConfirmPatterns.some(p => p.test(msg));
-
-      // Check conversation history for vehicle context
-      const lastAiMsg = context.messageHistory.filter(m => m.role === "assistant").pop();
-      const offeredPhotos = lastAiMsg?.content.toLowerCase().includes("foto") ||
-        lastAiMsg?.content.toLowerCase().includes("lihat");
-
-      if (isPhotoConfirmation && offeredPhotos) {
-        console.log("[WhatsApp AI Chat] 🔄 AI failed but detected photo confirmation - trying direct photo fetch");
-
-        // Extract vehicle name from last AI message
-        const vehicleMatch = lastAiMsg?.content.match(/(?:Toyota|Honda|Suzuki|Daihatsu|Mitsubishi|Nissan|Mazda|BMW|Mercedes|Hyundai|Kia)\s+[\w\s]+(?:\d{4})?/i);
-        const vehicleName = vehicleMatch ? vehicleMatch[0].trim() : "";
-
-        if (vehicleName) {
-          try {
-            const images = await this.fetchVehicleImagesByQuery(vehicleName, context.tenantId);
-            if (images && images.length > 0) {
-              console.log(`[WhatsApp AI Chat] ✅ Found ${images.length} images for "${vehicleName}" via fallback`);
-              return {
-                message: `Siap! Ini foto ${vehicleName}-nya ya 📸👇\n\nAda pertanyaan lain? 😊`,
-                shouldEscalate: false,
-                confidence: 0.8,
-                processingTime: Date.now() - startTime,
-                images,
-              };
-            }
-          } catch (imgError) {
-            console.error("[WhatsApp AI Chat] Failed to fetch images in fallback:", imgError);
-          }
-        }
-      }
-
-
-      // ==================== STOCK AVAILABILITY FALLBACK HANDLER ====================
-      // Critical fallback: If AI is down, we must still be able to answer "Is X available?"
-      const stockQuery = msg.match(/(?:ada|ready|tersedia|stok|available|jual|cari|lihat).{0,20}(avanza|xenia|brio|mobilio|hrv|crv|fortuner|pajero|innova|agya|ayla|calya|sigra|jazz|yaris|rush|terios|xpander|ertiga|raize|rocky)/i);
-
-      if (stockQuery && stockQuery[1]) {
-        const keyword = stockQuery[1];
-        console.log(`[SmartFallback] 🚗 Stock availability query detected for: "${keyword}"`);
-
-        try {
-          // Quick DB check
-          const vehicles = await prisma.vehicle.findMany({
-            where: {
-              tenantId: context.tenantId,
-              status: 'AVAILABLE',
-              OR: [
-                { model: { contains: keyword, mode: 'insensitive' } },
-                { make: { contains: keyword, mode: 'insensitive' } }
-              ]
-            },
-            take: 3,
-            orderBy: { year: 'desc' }
-          });
-
-          if (vehicles.length > 0) {
-            const name_st = this.formatKakName(context?.customerName);
-            // One-breath style greeting
-            const now = new Date();
-            const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
-            let timeGreeting = "Selamat malam";
-            if (hour >= 4 && hour < 11) timeGreeting = "Selamat pagi";
-            else if (hour >= 11 && hour < 15) timeGreeting = "Selamat siang";
-            else if (hour >= 15 && hour < 18) timeGreeting = "Selamat sore";
-
-            let stockMsg = `Halo! ${name_st} ⚡\n\n` +
-              `Selamat datang di showroom kami! Saya adalah asisten virtual yang siap membantu menemukan mobil impian Anda.\n\n` +
-              `Baik Kak, sebelumnya dengan siapa saya bicara? Untuk unit *${keyword}* ini MASIH AVAILABLE! 🔥\n\n`;
-
-            vehicles.forEach(v => {
-              stockMsg += `* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}\n`;
-              stockMsg += `* Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))} (Nego)\n`;
-              stockMsg += `* Transmisi: ${v.transmissionType || '-'}\n`;
-              stockMsg += `* Warna: ${v.color || '-'}\n`;
-              stockMsg += `* Bahan Bakar: ${v.fuelType || 'Bensin'}\n\n`;
-            });
-
-            stockMsg += `Unit siap gass, kondisi terawat kak! 👍\n\n`;
-            stockMsg += `Rencana untuk pemakaian di area mana kak? Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`;
-
-            return {
-              message: stockMsg,
-              shouldEscalate: false,
-              confidence: 0.8,
-              processingTime: Date.now() - startTime
-            };
-          } else {
-            // No stock found
-            const now = new Date();
-            const hour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getHours();
-            let timeGreetingFallback = "Selamat malam";
-            if (hour >= 4 && hour < 11) timeGreetingFallback = "Selamat pagi";
-            else if (hour >= 11 && hour < 15) timeGreetingFallback = "Selamat siang";
-            else if (hour >= 15 && hour < 18) timeGreetingFallback = "Selamat sore";
-
-            return {
-              message: `${timeGreetingFallback}! 👋\n\nMohon maaf kak, untuk unit *${keyword}* saat ini stoknya sedang kosong di showroom kami. 🙏\n\nApakah kakak ada alternatif unit lain yang diminati? Saya bisa bantu carikan unit sejenis lho. 😊`,
-              shouldEscalate: false,
-              confidence: 0.8,
-              processingTime: Date.now() - startTime
-            };
-          }
-        } catch (err) {
-          console.error("[SmartFallback] Failed to query stock:", err);
-          // Continue to default fallback
-        }
-      }
-
-      // ==================== SMART CONTEXTUAL FALLBACK ====================
-      // Instead of generic menu, try to give a helpful response based on user's message
-      const smartFallback = await this.generateSmartFallback(
-        userMessage,
-        context.messageHistory,
-        context.tenantId,
-        context
-      );
-
-      return {
-        message: smartFallback.message,
-        shouldEscalate: smartFallback.shouldEscalate,
-        confidence: 0.6,
-        processingTime: Date.now() - startTime,
-        ...(smartFallback.images && { images: smartFallback.images }),
-      };
-    } catch (error: any) {
       console.error(`[WhatsApp AI Chat] ❌ Error in generateResponse: ${error.message}`, error);
-      return {
-        message: "Mohon maaf kak, sepertinya ada gangguan teknis. 🙏\n\nBoleh diulangi pertanyaannya? Atau ketik 'Menu' untuk opsi lainnya.",
-        shouldEscalate: true,
-        confidence: 0,
-        processingTime: Date.now() - startTime
-      };
+
+      try {
+        // ==================== SMART CONTEXTUAL FALLBACK ====================
+        // Instead of generic menu, try to give a helpful response based on user's message
+        const smartFallback = await this.generateSmartFallback(
+          userMessage,
+          context.messageHistory,
+          context.tenantId,
+          context
+        );
+
+        return {
+          message: smartFallback.message,
+          shouldEscalate: smartFallback.shouldEscalate,
+          confidence: 0.6,
+          processingTime: Date.now() - startTime,
+          ...(smartFallback.images && { images: smartFallback.images }),
+        };
+      } catch (fallbackError: any) {
+        console.error(`[WhatsApp AI Chat] ❌ Fallback failed: ${fallbackError.message}`);
+        return {
+          message: "Mohon maaf kak, sepertinya ada gangguan teknis. 🙏\n\nBoleh diulangi pertanyaannya? Atau ketik 'Menu' untuk opsi lainnya.",
+          shouldEscalate: true,
+          confidence: 0,
+          processingTime: Date.now() - startTime
+        };
+      }
     }
   }
 
@@ -1330,7 +1205,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     if (system) return system;
 
     return {
-      message: `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian di ${tenantName}. 😊\n\nAda yang bisa kami bantu? Kamu bisa tanya stok, harga, atau simulasi kredit lho!`,
+      message: `Halo!⚡\n\n${timeGreeting}, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian di ${tenantName}. 😊\n\nAda yang bisa kami bantu? Kamu bisa tanya stok, harga, atau simulasi kredit kak!`,
       shouldEscalate: false
     };
   }
@@ -1790,7 +1665,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
             `Bagian **LUAR (EKSTERIOR)** unit *${name}* (${contextId}) ini bener-bener terawat kak! ✨\n\n• Kondisi Fisik: Mulus, minim lecet pemakaian saja.\n• Kaca-kaca: Bening, tidak ada jamur dan original.\n• Lampu-lampu: Masih jernih, tidak kusam atau retak.`,
             `Kondisi **BODY & EKSTERIOR** *${name}* (${contextId}) ini masih jos kak! ✨\n\n• Cat: Masih kinclong dan orisinil pabrik.\n• Chassis/Rangka: Aman, bebas keropos dan bebas insiden.\n• Aksesoris: Lengkap semua, tidak ada yang copot.`
           ];
-          const charSum = contextId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+          const charSum = (contextId || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const extDesc = extVariations[charSum % extVariations.length];
 
           return {
@@ -1805,7 +1680,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
             `Bagian **DALAM (INTERIOR)** unit *${name}* (${contextId}) ini sangat nyaman kak! ✨\n\n• Kebersihan: Kondisi karpet dan plafon bersih terawat.\n• Fitur kabin: Semua tombol dashboard masih berfungsi normal.\n• Dashboard: Mulus tidak ada retak rambut.`,
             `Kabin unit **INTERIOR** *${name}* (${contextId}) ini masih kerasa baru kak! ✨\n\n• Seat/Kursi: Busa masih tebal dan kain/kulit tidak pecah.\n• Audio & Head Unit: Normal, siap nemenin perjalanan.\n• Bagasi: Bersih dan luas, toolkit lengkap.`
           ];
-          const charSum = contextId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+          const charSum = (contextId || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const intDesc = intVariations[charSum % intVariations.length];
 
           return {
@@ -1820,7 +1695,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
             `Kondisi **DAPUR PACU (MESIN)** unit *${name}* (${contextId}) ini sehat walafiat kak! ⚙️\n\n• Perawatan: Record servis rutin showroom kami.\n• Aki & Kelistrikan: Sekali starter langsung nyala.\n• Kaki-kaki: Senyap, tidak ada bunyi gluduk-gluduk.`,
             `Mesin unit *${name}* (${contextId}) ini bener-bener jos kak! ⚙️\n\n• Kebersihan: Ruang mesin bersih dari kerak oli.\n• Transmisi: Perpindahan gigi masih halus (smooth).\n• Pendinginan: Temperatur stabil, siap perjalanan jauh.`
           ];
-          const charSum = contextId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+          const charSum = (contextId || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const engDesc = engVariations[charSum % engVariations.length];
 
           return {
@@ -2155,7 +2030,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         let responseMsg = `Siap ${name_b}! Untuk budget sekitar **Rp ${Math.round(finalBudget / 1000000)} juta**, asisten sudah pilihkan unit yang paling cocok buat Kakak: \n\n`;
 
         if (idealMatches.length > 0) {
-          responseMsg += `🎯 **UNIT PAS BUDGET:**\n${WhatsAppAIChatService.formatVehicleListDetailed(idealMatches.slice(0, 2))}\n\n`;
+          responseMsg += `🎯 **UNIT PAS BUDGET:**\n${this.formatVehicleListDetailed(idealMatches.slice(0, 2))}\n\n`;
         }
 
         if (economicalOptions.length > 0) {
@@ -2163,7 +2038,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         }
 
         if (premiumOptions.length > 0) {
-          responseMsg += `✨ **OPSI PREMIUM (Sedikit di atas budget):**\n${WhatsAppAIChatService.formatVehicleListDetailed(premiumOptions.slice(0, 1))}\n\n`;
+          responseMsg += `✨ **OPSI PREMIUM (Sedikit di atas budget):**\n${this.formatVehicleListDetailed(premiumOptions.slice(0, 1))}\n\n`;
         }
 
         responseMsg += `Gimana ${name_b}, ada unit yang membuat Kakak tertarik? Atau mau asisten carikan alternatif lain? 😊`;
@@ -3833,7 +3708,11 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
   /**
    * Priority Stock Check - Answer basic availability without AI
    */
-  private static async handlePriorityStockCheck(msg: string, context: ChatContext, startTime: number): Promise<ChatResponse | null> {
+  private static async handlePriorityStockCheck(
+    msg: string,
+    context: ChatContext,
+    startTime: number
+  ): Promise<ChatResponse | null> {
     const stockIntents = /\b(apakah|masih|ada|ready|tersedia|stok|available|jual|cari|minat|tertarik|pengen|ingin|liat|lihat)\b/i;
     const vehicleList = /\b(avanza|xenia|brio|mobilio|hrv|crv|fortuner|pajero|innova|agya|ayla|calya|sigra|jazz|yaris|rush|terios|xpander|ertiga|raize|rocky|alphard|vellfire|camry|city|civic|accord|serena|livina|ayla|agya|sigra|calya)\b/i;
 
@@ -3889,7 +3768,12 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
   /**
    * Priority Technical Check - Direct Smart Fallback for tech questions
    */
-  private static async handlePriorityTechnicalCheck(msg: string, userMessage: string, context: ChatContext, startTime: number): Promise<ChatResponse | null> {
+  private static async handlePriorityTechnicalCheck(
+    msg: string,
+    userMessage: string,
+    context: ChatContext,
+    startTime: number
+  ): Promise<ChatResponse | null> {
     const isTechnicalQuestion = (
       (WhatsAppAIChatService.TECHNICAL_KEYWORDS.INTERIOR.test(msg) ||
         WhatsAppAIChatService.TECHNICAL_KEYWORDS.EXTERIOR.test(msg) ||
