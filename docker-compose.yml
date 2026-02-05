@@ -17,7 +17,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-autolumiku}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-autolumiku} -d ${DB_NAME:-autolumiku_prod}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -70,7 +70,7 @@ services:
       - "traefik.http.services.autolumiku.loadbalancer.server.port=3000"
       - "traefik.docker.network=coolify"
     env_file:
-      - .env.docker
+      - .env
     environment:
       # Database
       DATABASE_URL: ${DATABASE_URL}
@@ -84,7 +84,7 @@ services:
       # Z.ai (GLM Models)
       ZAI_API_KEY: ${ZAI_API_KEY}
       ZAI_BASE_URL: ${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4}
-      ZAI_TEXT_MODEL: ${ZAI_TEXT_MODEL:-glm-4.6}  # Reasoning disabled via API parameter
+      ZAI_TEXT_MODEL: ${ZAI_TEXT_MODEL:-glm-4.6} # Reasoning disabled via API parameter
       ZAI_VISION_MODEL: ${ZAI_VISION_MODEL:-glm-4.5v}
 
       # Application
