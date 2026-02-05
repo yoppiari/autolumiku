@@ -583,24 +583,54 @@ export class WhatsAppReportService {
     // ==================== WHATSAPP AI & CUSTOMER REPORTS ====================
 
     private static async getAIAnalytics(tenantId: string): Promise<string> {
-        const totalConv = await prisma.whatsAppConversation.count({ where: { tenantId } });
+        const totalConv = await prisma.whatsAppConversation.count({
+            where: {
+                tenantId,
+                status: { not: 'deleted' }
+            }
+        });
         const totalMsgs = await prisma.whatsAppMessage.count({
-            where: { conversation: { tenantId } }
+            where: {
+                conversation: {
+                    tenantId,
+                    status: { not: 'deleted' }
+                }
+            }
         });
 
         return `🤖 *WHATSAPP AI ANALYTICS*\n\nPercakapan Masuk: ${totalConv}\nTotal Pesan Diproses: ${totalMsgs}\n\n🔗 *Full Analytics:* https://primamobil.id/dashboard/whatsapp-ai/analytics`;
     }
 
     private static async getCustomerMetrics(tenantId: string): Promise<string> {
-        const totalCust = await prisma.whatsAppConversation.count({ where: { tenantId } });
+        const totalCust = await prisma.whatsAppConversation.count({
+            where: {
+                tenantId,
+                status: { not: 'deleted' }
+            }
+        });
         const leads = await prisma.lead.count({ where: { tenantId } });
 
         return `👥 *METRIK PELANGGAN*\n\nUnique Visitors: ${totalCust}\nConverted to Leads: ${leads}\n\n🔗 *Customer Data:* https://primamobil.id/dashboard/whatsapp-ai/analytics?tab=whatsapp`;
     }
 
     private static async getOperationalMetrics(tenantId: string): Promise<string> {
-        const totalMsgs = await prisma.whatsAppMessage.count({ where: { conversation: { tenantId } } });
-        const aiMsgs = await prisma.whatsAppMessage.count({ where: { conversation: { tenantId }, direction: 'outbound' } });
+        const totalMsgs = await prisma.whatsAppMessage.count({
+            where: {
+                conversation: {
+                    tenantId,
+                    status: { not: 'deleted' }
+                }
+            }
+        });
+        const aiMsgs = await prisma.whatsAppMessage.count({
+            where: {
+                conversation: {
+                    tenantId,
+                    status: { not: 'deleted' }
+                },
+                direction: 'outbound'
+            }
+        });
 
         const efficiency = totalMsgs > 0 ? ((aiMsgs / totalMsgs) * 100).toFixed(1) : '0';
 
