@@ -1680,7 +1680,7 @@ export class StaffCommandService {
 
     // Build simplified, clear staff menu with better formatting (Premium UI 5.2)
     let message =
-      `✨ *SYSTEM ACTIVE - AUTOLUMIKU AI 5.2* ✨\n\n` +
+      `✨ *SYSTEM ACTIVE - PRIMA MOBIL AI 5.2* ✨\n\n` +
       `${greeting}\n` +
       `Showroom: *${tenantName}*\n` +
       `Stok Ready: *${availableCount} unit*\n\n` +
@@ -1717,20 +1717,7 @@ export class StaffCommandService {
     // Determine user role for customized menu
     let userRole = identifiedRole || "STAFF";
 
-    // Add Admin/Owner specific tools with Executive UI
-    if (["ADMIN", "OWNER", "SUPER_ADMIN"].includes(userRole)) {
-      message += `\n\n` +
-        `👮‍♂️ *EXECUTIVE ANALYTICS*\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n` +
-        `_Akses Laporan Strategis (Ketik):_\n` +
-        `• 💵 *Laporan Penjualan* / *Total Pendapatan*\n` +
-        `• 📈 *Tren Penjualan* / *Metrik Penjualan*\n` +
-        `• 📦 *Total Inventori* / *Daftar Kendaraan*\n` +
-        `• 🚦 *Peringatan Stok* / *Rata-rata Harga*\n` +
-        `• 👥 *Performa Staff* / *Komisi*\n` +
-        `• 🤖 *Analisis WhatsApp AI*\n` +
-        `• 🎯 *Metrik Pelanggan* / *Operasional*`;
-    }
+    // Admin/Owner specific tools are now hidden in "admin help"
 
     return {
       success: true,

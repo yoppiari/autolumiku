@@ -265,7 +265,7 @@ async function handleUniversalCommand(
 
   // RICH FORMAT (Consistent with StaffCommandService)
   let helpMsg =
-    `✨ *SYSTEM ACTIVE - AUTOLUMIKU AI 5.2* ✨\n\n` +
+    `✨ *SYSTEM ACTIVE - PRIMA MOBIL AI 5.2* ✨\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `🛠️ *STAFF COMMAND CENTER*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
