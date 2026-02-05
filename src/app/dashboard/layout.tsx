@@ -91,9 +91,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       // Check if user has tenantId (showroom user)
       if (!userData.tenantId) {
-        // Not a showroom user, redirect to admin login
-        console.log('[Dashboard] User has no tenantId, redirecting to admin login');
-        window.location.href = '/admin/login';
+        // Not a showroom user, redirect to login (platform will show admin form)
+        console.log('[Dashboard] User has no tenantId, redirecting to login');
+        window.location.href = '/login';
         return;
       }
 

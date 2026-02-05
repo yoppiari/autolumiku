@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   // Read user from localStorage and check if super_admin
   React.useEffect(() => {
     // Skip auth check for login page
-    if (pathname === '/admin/login') {
+    if (pathname === '/login') {
       return;
     }
 
@@ -43,17 +43,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         setUser(userData);
       } catch (e) {
         console.error('Error parsing user data:', e);
-        // Redirect to admin login if user data is invalid
-        window.location.href = '/admin/login';
+        // Redirect to login if user data is invalid
+        window.location.href = '/login';
       }
     } else {
-      // No user data, redirect to admin login
-      window.location.href = '/admin/login';
+      // No user data, redirect to login
+      window.location.href = '/login';
     }
   }, [pathname]);
 
   // Skip layout for login page
-  if (pathname === '/admin/login') {
+  if (pathname === '/login') {
     return <>{children}</>;
   }
 
@@ -74,12 +74,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
 
-    // Redirect based on role
-    if (userRole === 'super_admin') {
-      window.location.href = '/admin/login';
-    } else {
-      window.location.href = '/login';
-    }
+    // All users redirect to /login
+    window.location.href = '/login';
   };
 
   const navigation = [

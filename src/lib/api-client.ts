@@ -76,13 +76,12 @@ function handleSessionExpiry() {
 
   // Check if user is showroom user (has tenantId) or admin
   const storedUser = localStorage.getItem('user');
-  let redirectPath = '/login'; // Default for showroom users
+  let redirectPath = '/login'; // Default for all users now
   if (storedUser) {
     try {
       const user = JSON.parse(storedUser);
-      if (!user.tenantId || user.role.toLowerCase() === 'super_admin') {
-        redirectPath = '/admin/login';
-      }
+      // All users go to /login - the page will detect if it's platform domain and show admin form
+      redirectPath = '/login';
     } catch { }
   }
 
