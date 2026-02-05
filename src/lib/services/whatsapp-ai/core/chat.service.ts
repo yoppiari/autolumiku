@@ -1243,7 +1243,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         personalizedGreeting = `Halo! ${timeGreeting} ${staffName}\n\n` +
           `Selamat datang di showroom kami\n` +
           `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
-          `Apakah ada yang bisa saya bantu untuk showroom hari ini kak ${name}? Cek stok, update data, atau butuh info untuk customer? 😊`;
+          `Apakah ada yang bisa saya bantu untuk showroom hari ini? Cek stok, update data, atau butuh info untuk customer? 😊`;
       } else {
         const validName = context?.customerName &&
           !['Unknown', 'Pelanggan', 'Customer', 'Guest', 'Kak', 'User'].includes(context.customerName) &&
