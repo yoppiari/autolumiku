@@ -19,9 +19,7 @@ Anda terdeteksi sebagai Admin/Owner. Selain menu staff biasa, Anda memiliki akse
    • *add staff [nama] [hp]* : Tambah staff via WA
    • *remove staff [hp/nama]* : Hapus akses staff
 
-💰 *KEUANGAN (Owner Only)*:
-   • *revenue* : Cek omzet & profit estimasi
-   • *expense* : Cek pengeluaran operasional
+
 
 ⚙️ *SYSTEM*:
    • *restart bot* : Restart layanan AI jika macet

@@ -1025,6 +1025,8 @@ export class WhatsAppAIChatService {
     budget: string;
     status: string;
     notes: string;
+    source?: string;
+    urgency?: string;
   }): Promise<void> {
     try {
       console.log(`[WhatsApp AI Chat] 🚨 SENDING HOT LEAD ALERT for ${leadData.customerName}`);
@@ -1044,6 +1046,8 @@ export class WhatsAppAIChatService {
 🚗 *${leadData.vehicleName}*
 💰 Budget: ${leadData.budget}
 🔥 Status: ${leadData.status}
+📢 Sumber: ${leadData.source || 'WhatsApp'}
+⚡ Urhensi: ${leadData.urgency || 'Medium'}
 📝 Notes: ${leadData.notes}
 
 👇 *KLIK FOLLOW UP CLOSING:*
@@ -1239,7 +1243,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         personalizedGreeting = `Halo! ${timeGreeting} ${staffName}\n\n` +
           `Selamat datang di showroom kami\n` +
           `Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\n` +
-          `Apakah ada yang bisa saya bantu untuk showroom hari ini kak? Cek stok, update data, atau butuh info untuk customer? 😊`;
+          `Apakah ada yang bisa saya bantu untuk showroom hari ini kak ${name}? Cek stok, update data, atau butuh info untuk customer? 😊`;
       } else {
         const validName = context?.customerName &&
           !['Unknown', 'Pelanggan', 'Customer', 'Guest', 'Kak', 'User'].includes(context.customerName) &&
@@ -1259,8 +1263,8 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       }
 
       const closings = [
-        "\n\nAda yang bisa kami bantu? 😊",
-        "\n\nAda unit spesifik yang sedang dicari Kak? 🙏",
+        "\n\nAda hal lainnya yang bisa kami bantu kak ${name}? 😊",
+        "\n\nAda unit spesifik yang sedang dicari Kak ${name}? 🙏",
         "\n\nMungkin ada yang mau ditanyakan tentang unit kami? ✨"
       ];
 
