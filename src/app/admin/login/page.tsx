@@ -130,7 +130,7 @@ export default function AdminLoginPage() {
 
           <div className="mt-6 text-center">
             <a
-              href="/login"
+              href="https://primamobil.id/login"
               className="text-sm text-cyan-300 hover:text-cyan-200 transition-colors"
             >
               ← Back to Showroom Login
