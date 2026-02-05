@@ -106,8 +106,14 @@ export default async function LoginPage() {
   // Fetch branding server-side to prevent flicker
   const branding = await getTenantBranding();
 
-  // If no tenant branding found (e.g. platform domain), show Admin Login
-  if (branding.name === 'AutoLumiKu' && !branding.logoUrl) {
+  // Check if this is platform domain
+  const headersList = await headers();
+  const host = headersList.get('host') || '';
+  const cleanHost = host.split(':')[0];
+  const isPlatformDomain = cleanHost.includes('auto.lumiku.com') || cleanHost.includes('localhost');
+
+  // If platform domain, show Admin Login
+  if (isPlatformDomain) {
     return <AdminLoginForm />;
   }
 
