@@ -52,38 +52,54 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      // Fetch WhatsApp connection status for these users
-      // NOTE: profilePicUrl might not exist in DB yet, handle gracefully
+      // Fetch WhatsApp connection status & Active Bots for profile syncing
       let staffAuths: any[] = [];
+      let activeBots: any[] = [];
+
       try {
-        staffAuths = await prisma.staffWhatsAppAuth.findMany({
-          where: {
-            userId: { in: users.map(u => u.id) }
-          },
-          select: {
-            userId: true,
-            isActive: true,
-            phoneNumber: true,
-            profilePicUrl: true
-          }
-        });
+        const [auths, bots] = await Promise.all([
+          prisma.staffWhatsAppAuth.findMany({
+            where: {
+              userId: { in: users.map(u => u.id) }
+            },
+            select: {
+              id: true, // Need ID for update
+              userId: true,
+              isActive: true,
+              phoneNumber: true,
+              profilePicUrl: true
+            }
+          }),
+          prisma.aimeowAccount.findMany({
+            where: {
+              isActive: true,
+              connectionStatus: 'connected'
+            },
+            select: {
+              clientId: true,
+              tenantId: true
+            }
+          })
+        ]);
+
+        staffAuths = auths;
+        activeBots = bots;
+
       } catch (error: any) {
-        // Fallback if profilePicUrl field doesn't exist yet in DB
-        console.warn('[Users API] profilePicUrl field not found, falling back to basic query:', error.message);
+        console.warn('[Users API] Failed to fetch auths or bots:', error.message);
+        // Fallback
         staffAuths = await prisma.staffWhatsAppAuth.findMany({
-          where: {
-            userId: { in: users.map(u => u.id) }
-          },
-          select: {
-            userId: true,
-            isActive: true,
-            phoneNumber: true
-          }
+          where: { userId: { in: users.map(u => u.id) } },
+          select: { id: true, userId: true, isActive: true, phoneNumber: true, profilePicUrl: true }
         });
       }
 
-      // Merge status into user objects
-      const usersWithStatus = users.map(user => {
+      // Merge status AND Sync Profile Pictures if needed
+      // Use a connected bot to fetch profile pics
+      const systemBot = activeBots.length > 0 ? activeBots[0] : null;
+      const { AimeowClientService } = require('@/lib/services/aimeow/aimeow-client.service');
+
+      const usersWithStatus = await Promise.all(users.map(async user => {
         // Find auth by userId first
         let auth = staffAuths.find(a => a.userId === user.id);
 
@@ -93,14 +109,46 @@ export async function GET(request: NextRequest) {
           auth = staffAuths.find(a => a.phoneNumber.replace(/\D/g, '') === cleanedUserPhone);
         }
 
+        let profilePicUrl = auth?.profilePicUrl;
+
+        // REALTIME SYNC: If we have a connected bot and a phone number, try to fetch/refresh profile pic
+        // Condition: No profile pic OR we want to ensure it's fresh (maybe every time?)
+        // To avoid excessive API calls, we'll do it if profilePicUrl is missing OR randomly (10% chance) to keep updated
+        const phoneNumber = user.phone || auth?.phoneNumber;
+        const needsSync = phoneNumber && systemBot && (!profilePicUrl || Math.random() < 0.1);
+
+        if (needsSync) {
+          try {
+            // Determine which bot to use (prefer tenant's own bot if available)
+            const preferredBot = activeBots.find(b => b.tenantId === user.tenantId) || systemBot;
+
+            // Call Aimeow to get profile pic
+            const picResult = await AimeowClientService.getProfilePicture(preferredBot.clientId, phoneNumber);
+
+            if (picResult.success && picResult.hasPicture && picResult.pictureUrl) {
+              profilePicUrl = picResult.pictureUrl;
+
+              // Update DB if we found a match in StaffWhatsAppAuth
+              if (auth) {
+                await prisma.staffWhatsAppAuth.update({
+                  where: { id: auth.id },
+                  data: { profilePicUrl: picResult.pictureUrl }
+                }).catch(e => console.error('Failed to update profile pic DB:', e));
+              }
+            }
+          } catch (err) {
+            console.error(`Failed to sync profile pic for ${user.email}:`, err);
+          }
+        }
+
         return {
           ...user,
-          isActive: true, // Defaulting to true since DB field doesn't exist yet but user is active
+          isActive: true,
           isWhatsAppActive: auth ? auth.isActive : false,
-          phone: user.phone || auth?.phoneNumber || null,
-          profilePicUrl: auth?.profilePicUrl || null
+          phone: phoneNumber || null,
+          profilePicUrl: profilePicUrl || null
         };
-      });
+      }));
 
       return NextResponse.json({
         success: true,
