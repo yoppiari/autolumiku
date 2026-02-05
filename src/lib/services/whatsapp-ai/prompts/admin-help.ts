@@ -18,8 +18,7 @@ Anda terdeteksi sebagai Admin/Owner. Selain menu staff biasa, Anda memiliki akse
    • *restart bot* : Restart layanan AI jika macet
    • *system status* : Cek beban server & kuota AI
 
-🔐 *ADVANCED CONTROL*:
-   • Ketik *master control* untuk akses fitur teknis & manajemen tingkat lanjut (Hidden).
+
 
 💡 *TIPS*: 
 Anda juga bisa menggunakan semua perintah staff seperti *checking stok*, *edit unit*, atau *upload* langsung dari akun ini.

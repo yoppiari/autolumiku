@@ -82,8 +82,6 @@ function getAdminMenuText(): string {
     `   • "WhatsApp AI Analytics" (Data Bot)\n` +
     `   • "Customer Metrics" (Profil Pelanggan)\n` +
     `   • "Simulasi KKB" (Kredit Kendaraan)\n\n` +
-    `🔐 *ADVANCED CONTROL*\n` +
-    `   • Ketik "master control" untuk akses fitur teknis & manajemen tingkat lanjut (Hidden).\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `_Ketik nama laporan di atas untuk melihat detailnya._`;
 }
