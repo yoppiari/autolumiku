@@ -82,6 +82,8 @@ function getAdminMenuText(): string {
     `   • "WhatsApp AI Analytics" (Data Bot)\n` +
     `   • "Customer Metrics" (Profil Pelanggan)\n` +
     `   • "Simulasi KKB" (Kredit Kendaraan)\n\n` +
+    `🔐 *ADVANCED CONTROL*\n` +
+    `   • Ketik "master control" untuk akses fitur teknis & manajemen tingkat lanjut (Hidden).\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `_Ketik nama laporan di atas untuk melihat detailnya._`;
 }
@@ -1026,10 +1028,10 @@ async function generateSystemStatusText(ctx: CommandContext): Promise<CommandRes
 async function handleRestartBotCommand(ctx: CommandContext): Promise<CommandResult> {
   console.log(`[Admin] 🔄 Restarting AI Bot requested by user ${ctx.userId}`);
   // In a real scenario, this would trigger a webhook or pm2 restart
-  return { 
-    success: true, 
-    message: "🔄 *RESTARTING BOT...*\n\nLayanan AI sedang di-restart. Mohon tunggu sekitar 30-60 detik agar sistem sinkron kembali. ✅", 
-    followUp: true 
+  return {
+    success: true,
+    message: "🔄 *RESTARTING BOT...*\n\nLayanan AI sedang di-restart. Mohon tunggu sekitar 30-60 detik agar sistem sinkron kembali. ✅",
+    followUp: true
   };
 }
 
@@ -1088,18 +1090,18 @@ _Gunakan perintah spesifik untuk melakukan konfigurasi ulang._`;
 }
 
 async function handleEmergencyModeCommand(ctx: CommandContext): Promise<CommandResult> {
-  return { 
-    success: true, 
-    message: "🚨 *EMERGENCY MODE ACTIVATED*\n\nSemua respon AI telah dihentikan sementara. Semua chat masuk akan langsung masuk ke antrian eskalasi staff. 👮‍♂️", 
-    followUp: true 
+  return {
+    success: true,
+    message: "🚨 *EMERGENCY MODE ACTIVATED*\n\nSemua respon AI telah dihentikan sementara. Semua chat masuk akan langsung masuk ke antrian eskalasi staff. 👮‍♂️",
+    followUp: true
   };
 }
 
 async function handleExportDataCommand(ctx: CommandContext): Promise<CommandResult> {
-  return { 
-    success: true, 
-    message: "📂 *DATA EXPORT REQUESTED*\n\nSistem sedang menyiapkan file Excel untuk seluruh data inventory dan leads. Link download akan dikirimkan ke email terdaftar dalam 5 menit. 📧", 
-    followUp: true 
+  return {
+    success: true,
+    message: "📂 *DATA EXPORT REQUESTED*\n\nSistem sedang menyiapkan file Excel untuk seluruh data inventory dan leads. Link download akan dikirimkan ke email terdaftar dalam 5 menit. 📧",
+    followUp: true
   };
 }
 
@@ -1173,10 +1175,10 @@ Semua staff sudah absen masuk. ✅`;
 }
 
 async function handleDatabaseBackupCommand(ctx: CommandContext): Promise<CommandResult> {
-  return { 
-    success: true, 
-    message: "💾 *SISTEM BACKUP MANUAL*\n\nMemulai proses instan backup database... Anda akan menerima notifikasi jika proses selesai (~3 menit).", 
-    followUp: true 
+  return {
+    success: true,
+    message: "💾 *SISTEM BACKUP MANUAL*\n\nMemulai proses instan backup database... Anda akan menerima notifikasi jika proses selesai (~3 menit).",
+    followUp: true
   };
 }
 
