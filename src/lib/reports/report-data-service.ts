@@ -355,6 +355,17 @@ export class ReportDataService {
                     escalationRate,
                     intentBreakdown,
                 };
+            } catch (error) {
+                console.warn('[Reports] WhatsApp data fetch failed:', error);
+                data.whatsapp = {
+                    totalConversations: 0,
+                    activeConversations: 0,
+                    totalMessages: 0,
+                    aiResponseRate: 0,
+                    avgResponseTime: 0,
+                    escalationRate: 0,
+                    intentBreakdown: [],
+                };
             }
         }
 
