@@ -290,7 +290,7 @@ export class ZAIClient {
                   },
                   budget: {
                     type: "string",
-                    description: "Range budget (e.g. '100-150 juta')"
+                    description: "Range budget (e.g. '100-150 juta'). WAJIB DIISI jika user pernah menyebutkan angka budget di chat history."
                   },
                   vehicle_id: {
                     type: "string",

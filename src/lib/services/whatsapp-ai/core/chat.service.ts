@@ -604,14 +604,8 @@ export class WhatsAppAIChatService {
       // ==================== POST-PROCESSING ====================
       let responseMessage = aiResponse.content || '';
 
-      // 1. Ensure Mandatory Follow-up
-      const closingIndicators = ['sampai jumpa', 'selamat tinggal', 'dah', 'terima kasih', 'makasih', 'siap', 'senang membantu'];
-      const isClosingMessage = closingIndicators.some(ind => responseMessage.toLowerCase().includes(ind));
-      const alreadyHasFollowUp = responseMessage.toLowerCase().includes('ada hal lain') || responseMessage.toLowerCase().includes('bisa saya bantu');
-
-      if (!isClosingMessage && !alreadyHasFollowUp && responseMessage.length > 0) {
-        responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";
-      }
+      // 1. Mandatory Follow-up logic REMOVED to prevent repetitive "Apakah ada hal lain..." footer.
+      // The AI should handle closing naturally based on the conversation flow.
 
       // (Pre-processing of AI response text moved to bottom to ensure it covers tool results)
 
@@ -1262,9 +1256,12 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         }
       }
 
+      const targetName = context?.staffInfo?.name || context?.staffInfo?.firstName || context?.customerName || "";
+      const formattedTargetName = this.formatKakName(targetName);
+
       const closings = [
-        "\n\nAda hal lainnya yang bisa kami bantu kak ${name}? 😊",
-        "\n\nAda unit spesifik yang sedang dicari Kak ${name}? 🙏",
+        `\n\nAda hal lainnya yang bisa kami bantu ${formattedTargetName}? 😊`,
+        `\n\nAda unit spesifik yang sedang dicari ${formattedTargetName}? 🙏`,
         "\n\nMungkin ada yang mau ditanyakan tentang unit kami? ✨"
       ];
 
@@ -2203,7 +2200,9 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       if (missing.length > 0) {
         systemPrompt += `\n\n🎯 PRIORITAS MISI: Data lead belum lengkap (${missing.join(", ")}).`;
         systemPrompt += `\nIkuti "NEW CUSTOMER FLOW" untuk melengkapi data ini satu per satu secara natural (JANGAN SEKALIGUS!).`;
-        systemPrompt += `\n\n🎯 MISI KUALIFIKASI (ACTIVE HANDOVER): Untuk meneruskan chat ini ke Tim Sales (Human), Anda WAJIB melengkapi minimal Nama dan Domisili secara natural. Segera setelah customer menyebutkan info ini, panggil tool 'create_lead'!`;
+        systemPrompt += `\n\n🎯 MISI KUALIFIKASI (ACTIVE HANDOVER): Untuk meneruskan chat ini ke Tim Sales (Human), Anda WAJIB melengkapi minimal Nama dan Domisili secara natural.`;
+        systemPrompt += `\n⚠️ PENTING: Jika user pernah menyebutkan angka budget (atau range seperti "100-150jt"), WAJIB masukkan ke parameter 'budget' saat panggil tool 'create_lead'!`;
+        systemPrompt += `\nSegera setelah customer menyebutkan info ini, panggil tool 'create_lead'!`;
       } else {
         systemPrompt += `\n\n✅ DATA LENGKAP. Gunakan "EXISTING CUSTOMER FLOW" -> Fokus ke closing, update unit, atau tawaran tukar tambah.`;
       }
@@ -2478,6 +2477,35 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       context += `\n\nBalas (kirim foto yang diminta):`;
     } else {
       context += `\nPesan sekarang: ${currentMessage}\n\nBalas (sesuai role, ramah):`;
+    }
+
+    // --- ENHANCED CONTEXT: EXPLICIT BUDGET DETECTION ---
+    // Scan history for budget mentions to ensure AI captures it for create_lead
+    try {
+      let detectedBudgetStr = "";
+      // Check current message first
+      const currentBudget = this.extractBudget(currentMessage);
+      if (currentBudget) {
+        detectedBudgetStr = this.formatPrice(currentBudget);
+      } else {
+        // Check history (newest first)
+        const reversedHistory = [...messageHistory].reverse();
+        for (const m of reversedHistory) {
+          if (m.role === 'user') {
+            const b = this.extractBudget(m.content);
+            if (b) {
+              detectedBudgetStr = this.formatPrice(b);
+              break;
+            }
+          }
+        }
+      }
+
+      if (detectedBudgetStr) {
+        context += `\n\n💰 [SYSTEM HINT] User menyebutkan angka estimasi budget sekitar Rp ${detectedBudgetStr} (atau range terkait). \nJANGAN LUPA masukkan angka ini ke field 'budget' saat memanggil tool 'create_lead'!`;
+      }
+    } catch (e) {
+      // Ignore regex errors
     }
 
     return context;
@@ -3357,6 +3385,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       min_price?: number;
       max_price?: number;
       make?: string;
+      model?: string;
       transmission?: string;
       min_year?: number;
       max_year?: number;
@@ -3393,6 +3422,29 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         { variant: { contains: term, mode: 'insensitive' } },
         { displayId: { contains: term, mode: 'insensitive' } },
       ];
+    }
+
+    // Explicit Model filter
+    if (criteria.model) {
+      const term = criteria.model;
+      if (where.OR) {
+        // If make filter exists, we ADD to it (Refine search)
+        where.AND = [
+          { OR: where.OR },
+          {
+            OR: [
+              { model: { contains: term, mode: 'insensitive' } },
+              { variant: { contains: term, mode: 'insensitive' } }
+            ]
+          }
+        ];
+        delete where.OR; // Move OR to inside AND
+      } else {
+        where.OR = [
+          { model: { contains: term, mode: 'insensitive' } },
+          { variant: { contains: term, mode: 'insensitive' } }
+        ];
+      }
     }
 
     // Transmission filter
@@ -3722,11 +3774,10 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
     const hasStockIntent = stockIntents.test(msg);
     const vehicleMatch = msg.match(vehicleList);
-    const isNewCustomer = !context.customerName ||
-      ['Kak', 'Unknown', 'Pelanggan', 'Customer Baru', 'Pemesanan', 'Admin', 'User'].includes(context.customerName) ||
-      context.messageHistory.length <= 2;
+    // REMOVED isNewCustomer check - allow all users to get priority check
+    // const isNewCustomer = !context.customerName || ...
 
-    if (hasStockIntent && vehicleMatch && isNewCustomer) {
+    if (hasStockIntent && vehicleMatch) {
       const vehicleKeyword = vehicleMatch[1];
       console.log(`[WhatsApp AI Chat] 🚀 PRIORITY STOCK CHECK matched! Vehicle: "${vehicleKeyword}"`);
 
@@ -3747,20 +3798,17 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         if (vehicles.length > 0) {
           const v = vehicles[0];
           const timeGreeting = this.getTimeGreeting();
+          const customerName = this.formatKakName(context.customerName);
+
           return {
-            message: `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\nBaik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${v.make} ${v.model} ${v.year}* ini MASIH AVAILABLE! 🔥\n\n* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}\n* Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))} (Nego)\n* Transmisi: ${v.transmissionType || '-'}\n* Warna: ${v.color || '-'}\n* Bahan Bakar: ${v.fuelType || 'Bensin'}\n\nUnit siap gass, kondisi terawat kak! 👍\n\nRencana untuk pemakaian di area mana kak? Mau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`,
+            message: `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian.\n\nUntuk unit *${v.make} ${v.model} ${v.year}* ini MASIH AVAILABLE! 🔥\n\n* ID Unit: ${v.displayId || v.id.slice(0, 8).toUpperCase()}\n* Harga: Rp ${new Intl.NumberFormat('id-ID').format(Number(v.price))} (Nego)\n* Transmisi: ${v.transmissionType || '-'}\n* Warna: ${v.color || '-'}\n* Bahan Bakar: ${v.fuelType || 'Bensin'}\n\nUnit siap gass, kondisi terawat kak! 👍\n\nMau saya kirimkan foto detail unit ini untuk kelengkapan referensi? 📸😊`,
             shouldEscalate: false,
             confidence: 1.0,
             processingTime: Date.now() - startTime
           };
         } else {
-          const timeGreeting = this.getTimeGreeting();
-          return {
-            message: `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\nBaik kak, sebelumnya dengan kakak siapa saya berbicara? 😊\n\nMohon maaf untuk unit *${vehicleKeyword}* saat ini stoknya sedang kosong di showroom kami. 🙏\n\nApakah kakak ada alternatif unit lain yang diminati? Saya bisa bantu carikan unit sejenis lho!`,
-            shouldEscalate: false,
-            confidence: 1.0,
-            processingTime: Date.now() - startTime
-          };
+          // Fallthrough to AI to see if it can find alternatives or understand better
+          return null;
         }
       } catch (err) {
         console.error("[WhatsApp AI Chat] ❌ Priority Stock Check error:", err);
