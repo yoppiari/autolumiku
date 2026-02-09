@@ -2584,7 +2584,17 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     console.log(`[WhatsApp AI Chat] Photo request detected (explicit: ${userExplicitlyAsksPhoto}), extracting vehicle...`);
 
     // Extract vehicle name using prioritized helper
-    const vehicleName = this.extractActiveVehicle(userMessage, messageHistory);
+    let vehicleName = this.extractActiveVehicle(userMessage, messageHistory);
+
+    // FIXED: If user just says "Boleh kirim" without vehicle name, 
+    // try to extract vehicle name from the LAST AI MESSAGE that offered the photo.
+    if (!vehicleName && lastAiMsg) {
+      const vehicleInLastMsg = this.extractActiveVehicle(lastAiMsg.content, []);
+      if (vehicleInLastMsg) {
+        console.log(`[PhotoConfirm DEBUG] 🔄 Inferred vehicle from AI offer: "${vehicleInLastMsg}"`);
+        vehicleName = vehicleInLastMsg;
+      }
+    }
 
     if (vehicleName) {
       console.log(`[PhotoConfirm DEBUG] 🎯 Active Vehicle extracted: "${vehicleName}"`);
