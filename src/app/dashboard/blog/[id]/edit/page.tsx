@@ -16,6 +16,7 @@ type BlogCategory =
 
 interface BlogPost {
     id: string;
+    tenantId: string;
     title: string;
     slug: string;
     metaDescription: string;
@@ -68,7 +69,8 @@ export default function BlogEditPage() {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('tenantId', user?.tenantId || 'default');
+            // Use post tenantId if available, fallback to user tenantId
+            formData.append('tenantId', post.tenantId || user?.tenantId || 'default');
 
             const response = await fetch('/api/v1/blog/upload', {
                 method: 'POST',
@@ -122,10 +124,13 @@ export default function BlogEditPage() {
     const handleSave = async (status?: BlogStatus) => {
         if (!post) return;
 
-        // Validate tenantId
-        if (!user?.tenantId) {
-            console.error('[Blog Edit] Missing tenantId', { user });
-            setError('Error: User tenant ID tidak ditemukan. Silakan login ulang.');
+        // Validate tenantId - use post's tenantId first, then user's tenantId
+        // This allows Super Admins (null tenantId) to edit posts
+        const tenantId = post.tenantId || user?.tenantId;
+
+        if (!tenantId) {
+            console.error('[Blog Edit] Missing tenantId', { user, post });
+            setError('Error: Tenant ID tidak ditemukan. Silakan refresh halaman.');
             return;
         }
 
@@ -134,7 +139,7 @@ export default function BlogEditPage() {
 
         console.log('[Blog Edit] Saving post:', {
             postId: params.id,
-            tenantId: user.tenantId,
+            tenantId: tenantId,
             status: status || post.status,
             slug: post.slug,
         });
@@ -146,7 +151,7 @@ export default function BlogEditPage() {
                 body: JSON.stringify({
                     ...post,
                     status: status || post.status,
-                    tenantId: user.tenantId,
+                    tenantId: tenantId,
                 }),
             });
 
