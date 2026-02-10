@@ -68,6 +68,7 @@ export default function VehiclesPage() {
   const [aiResult, setAIResult] = useState<VehicleAIResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasTriggeredGenerate, setHasTriggeredGenerate] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState<{ vehicleId: string; mainImageUrl: string; name: string } | null>(null);
 
   // Form state for editing AI results
   const [editedData, setEditedData] = useState<Partial<VehicleAIResult>>({});
@@ -379,6 +380,7 @@ export default function VehiclesPage() {
 
       const vehicleResult = await response.json();
       const vehicleId = vehicleResult.data.id;
+      let mainImageUrl = '';
 
       // Upload photos if any
       if (photos.length > 0) {
@@ -402,6 +404,10 @@ export default function VehiclesPage() {
             alert(`Kendaraan tersimpan, tetapi foto gagal diupload: ${photoResult.message || photoResult.error}`);
           } else {
             console.log('Photos uploaded successfully:', photoResult);
+            // Capture the first photo as main image for blog
+            if (photoResult.photos && photoResult.photos.length > 0) {
+              mainImageUrl = photoResult.photos[0].url;
+            }
           }
         } catch (photoError) {
           console.error('Photo upload error:', photoError);
@@ -409,12 +415,12 @@ export default function VehiclesPage() {
         }
       }
 
-      // Redirect to vehicles list
-      const message = status === 'DRAFT'
-        ? 'Kendaraan berhasil disimpan sebagai draft!'
-        : 'Kendaraan berhasil dipublish dan tersedia untuk dijual!';
-      alert(message);
-      router.push('/dashboard/vehicles');
+      // Show success state instead of alert and redirect
+      setUploadSuccess({
+        vehicleId,
+        mainImageUrl,
+        name: `${editedData.make} ${editedData.model} ${editedData.year}`
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal menyimpan';
       console.error('Save error:', err);
@@ -451,6 +457,55 @@ export default function VehiclesPage() {
     if (diff < -10) return 'red'; // User price too low
     return 'orange'; // User price too high
   };
+
+  if (uploadSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-[#2a2a2a] rounded-2xl shadow-2xl p-8 max-w-md w-full text-center border border-[#3a3a3a]">
+          <div className="w-20 h-20 bg-green-900/30 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+            ✅
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Berhasil Diupload!</h1>
+          <p className="text-gray-400 mb-6">
+            Unit <strong>{uploadSuccess.name}</strong> telah berhasil disimpan ke database.
+          </p>
+
+          {uploadSuccess.mainImageUrl && (
+            <div className="mb-6 rounded-lg overflow-hidden border border-[#444] aspect-video relative">
+              <img
+                src={uploadSuccess.mainImageUrl}
+                alt={uploadSuccess.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                const query = new URLSearchParams({
+                  topic: `Review ${uploadSuccess.name} Indonesia Lengkap`,
+                  imageUrl: uploadSuccess.mainImageUrl,
+                  vehicleId: uploadSuccess.vehicleId,
+                  category: 'FEATURE_REVIEW'
+                }).toString();
+                router.push(`/dashboard/blog/generate?${query}`);
+              }}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+            >
+              ✍️ Buat Blog Review Sekarang
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/vehicles')}
+              className="w-full py-3 bg-[#333] hover:bg-[#3a3a3a] text-gray-300 rounded-xl font-medium transition-colors"
+            >
+              Kembali ke Stok
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (step === 'generating') {
     return (

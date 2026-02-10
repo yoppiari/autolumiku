@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 type BlogCategory =
@@ -78,6 +78,7 @@ const CATEGORIES = [
 
 export default function BlogGeneratorPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const [step, setStep] = useState<'form' | 'preview'>('form');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -95,6 +96,17 @@ export default function BlogGeneratorPage() {
   // Generated blog state
   const [generatedBlog, setGeneratedBlog] = useState<GeneratedBlog | null>(null);
   const [editedBlog, setEditedBlog] = useState<GeneratedBlog | null>(null);
+
+  // Pre-fill from query params
+  useEffect(() => {
+    const topicParam = searchParams.get('topic');
+    const imageUrlParam = searchParams.get('imageUrl');
+    const categoryParam = searchParams.get('category');
+
+    if (topicParam) setTopic(topicParam);
+    if (imageUrlParam) setFeaturedImage(imageUrlParam);
+    if (categoryParam) setCategory(categoryParam as BlogCategory);
+  }, [searchParams]);
 
   // Handle image upload
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

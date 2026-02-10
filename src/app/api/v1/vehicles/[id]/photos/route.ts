@@ -189,6 +189,8 @@ export async function POST(
         },
         photos: photoRecords.map((p) => ({
           storageKey: p.storageKey,
+          url: p.largeUrl || p.originalUrl,
+          thumbnail: p.thumbnailUrl,
           qualityScore: p.qualityScore,
           validationStatus: p.validationStatus,
           validationMessage: p.validationMessage,

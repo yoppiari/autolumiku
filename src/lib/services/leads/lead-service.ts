@@ -108,11 +108,21 @@ export class LeadService {
 
       const hasInterest = !!data.vehicleId || !!data.interestedIn;
 
-      // STRICT: Both name and interest are required for auto-leads
+      // PRIMA MOBIL CHECK: Relaxed rules for automated leads
+      // We'll try to find the tenant slug to confirm
+      const tenant = await prisma.tenant.findUnique({ where: { id: data.tenantId }, select: { slug: true } });
+      const isPrimaMobil = tenant?.slug === 'prima-mobil';
+
+      // STRICT: Both name and interest are required for auto-leads (unless Prima Mobil)
       if (data.source === 'whatsapp' || data.source === 'whatsapp_auto') {
-        if (!isNameValid || !hasInterest) {
+        if (!isPrimaMobil && (!isNameValid || !hasInterest)) {
           console.log(`[LeadService] ⏭️ Skipping low-quality lead: ${data.phone} (Name: "${data.name}", Interest: "${data.interestedIn || data.vehicleId}")`);
           return null;
+        }
+
+        // For Prima Mobil, if name is invalid, we provide a default
+        if (isPrimaMobil && !isNameValid) {
+          data.name = `Customer - ${data.phone}`;
         }
       }
 
@@ -547,11 +557,19 @@ export class LeadService {
 
         const hasInterest = !!vehicleId || !!interestedIn || (intent && (intent.includes('price') || intent.includes('stock') || intent.includes('credit') || intent.includes('vehicle')));
 
-        // STRICT: BOTH name AND interest required (changed from OR to AND)
-        if (!isNameValid || !hasInterest) {
+        // STRICT: BOTH name AND interest required (unless Prima Mobil)
+        // Find tenant slug
+        const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } });
+        const isPrimaMobil = tenant?.slug === 'prima-mobil';
+
+        if (!isPrimaMobil && (!isNameValid || !hasInterest)) {
           console.log(`[Smart Leads] ⏭️ Skipping low-quality lead: ${cleanPhone}`);
           return null;
         }
+
+        // For Prima Mobil, ensure we have a name
+        const finalName = (isPrimaMobil && !isNameValid) ? `Customer - ${cleanPhone}` : (customerName || cleanPhone);
+        const finalPriority = (isPrimaMobil && !intent) ? 'MEDIUM' : (intent?.includes('urgent') ? 'URGENT' : 'MEDIUM');
 
         // Auto-determine source based on context
         const source = 'whatsapp_auto';
@@ -561,15 +579,15 @@ export class LeadService {
             tenantId,
             phone: cleanPhone,
             whatsappNumber: customerPhone,
-            name: customerName || cleanPhone, // Fallback to phone if name unknown
+            name: finalName,
             message: message, // First message
             source,
             status: 'NEW',
-            priority: 'MEDIUM',
+            priority: finalPriority as any,
             vehicleId,
             interestedIn: vehicleId || interestedIn,
-            budgetRange,
-            location,
+            budgetRange: budgetRange || 'Belum ada data',
+            location: location || 'Belum ada data',
           }
         });
 
@@ -670,6 +688,7 @@ export class LeadService {
       const lead = await prisma.lead.findUnique({
         where: { id: leadId },
         include: {
+          tenant: { select: { slug: true } },
           whatsappConversations: {
             take: 1,
             orderBy: { lastMessageAt: 'desc' }
@@ -699,7 +718,14 @@ export class LeadService {
       // 4. Budget (Optional but preferred - based on user request "budget jika ada")
       // We'll treat it as completed if Name, Interest, and Location are there.
 
-      const isQualified = !!(isNameValid && hasInterest && hasLocation);
+      const isPrimaMobil = (lead.tenant as any)?.slug === 'prima-mobil';
+
+      // QUALIFICATION LOGIC:
+      // - Standard: Name, Interest, Location required.
+      // - Prima Mobil: Name and Interest are enough. Location and Budget are optional.
+      const isQualified = isPrimaMobil
+        ? !!(isNameValid && hasInterest)
+        : !!(isNameValid && hasInterest && hasLocation);
 
       if (isQualified) {
         console.log(`[LeadService] 🎯 Lead ${leadId} is QUALIFIED for handover.`);
@@ -771,17 +797,21 @@ export class LeadService {
       const alertMsg =
         `🚨 *ACTIVE HANDOVER: LEADS QUALIFIED* 🚨
 
-👤 *Nama:* ${lead.name}
-📍 *Lokasi:* ${lead.location || '-'}
-🚗 *Unit:* ${lead.interestedIn || 'General Inquiry'}
-💰 *Budget:* ${lead.budgetRange || '-'}
+👤 *Nama:* ${lead.name || 'Belum diisi'}
+📱 *No WA:* ${lead.whatsappNumber || lead.phone || 'Belum diisi'}
+📍 *Lokasi:* ${lead.location || 'Belum diisi'}
+🚗 *Unit:* ${lead.interestedIn || 'Minat Umum'}
+💰 *Budget:* ${lead.budgetRange || 'Belum konfirmasi'}
+🔥 *Urgensi:* ${lead.priority || 'MEDIUM'}
 ⭐ *Status:* ${lead.status}
 📝 *Pesan Terakhir:* ${lead.message?.substring(0, 100) || '-'}
 
 👇 *KLIK UNTUK FOLLOW UP:*
-wa.me/${lead.phone.replace(/^0/, '62')}
+wa.me/${(lead.whatsappNumber || lead.phone || '').replace(/\D/g, '').replace(/^0/, '62')}
 
-_Mohon segera di-handle untuk menjaga momentum closing. Semangat!_ 🚀`;
+_Mohon segera di-handle untuk menjaga momentum closing. Semangat!_ 🚀
+
+✅ WhatsApp sudah terkirim ke staff.`;
 
       // LOG it
       console.log("=========================================");

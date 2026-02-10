@@ -108,7 +108,7 @@ function LeadsDashboard() {
               whatsappNumber: lead.whatsappNumber || lead.phone || '',
               email: lead.email,
               vehicleInterest: lead.interestedIn || 'N/A',
-              budget: lead.budget || '',
+              budget: lead.budgetRange || '',
               urgency: (lead.priority?.toLowerCase() as 'high' | 'medium' | 'low') || 'medium',
               status: lead.status?.toLowerCase() || 'new', // new, contacted, qualified, won, lost, negotiating
               source: lead.source?.toLowerCase() || 'whatsapp',
@@ -484,14 +484,21 @@ function LeadsDashboard() {
                     {formatDate(lead.createdAt)}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => window.open(`https://wa.me/${lead.whatsappNumber.replace(/[^\d]/g, '')}`, '_blank')}
-                        className="text-green-500 hover:text-green-400 text-sm"
-                        title="Kirim WhatsApp"
-                      >
-                        📱
-                      </button>
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => window.open(`https://wa.me/${lead.whatsappNumber.replace(/[^\d]/g, '')}`, '_blank')}
+                          className="text-green-500 hover:text-green-400 text-sm"
+                          title="Kirim WhatsApp"
+                        >
+                          📱
+                        </button>
+                      </div>
+                      {(lead.status === 'qualified' || lead.status === 'won') && (
+                        <div className="text-[10px] text-green-400 font-medium whitespace-normal leading-tight max-w-[100px]">
+                          WhatsApp sudah terkirim ke staff
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>
