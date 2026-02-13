@@ -1737,6 +1737,14 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     const yearMatch = msg.match(/\b(20\d{2}|19\d{2})\b/);
     const mentionedYear = yearMatch ? parseInt(yearMatch[1]) : null;
 
+    // CRITICAL FIX: Prevent hijacking inventory/list queries
+    // If user asks for "lainnya", "list", "daftar", "apa aja", don't return single vehicle
+    const exclusionPatterns = /\b(lainnya|selain|beda|list|daftar|apa\s*aja|opsi|pilihan)\b/i;
+    if (exclusionPatterns.test(msg)) {
+      console.log(`[SmartFallback] ⏭️ Skipping Brand/Model search (Single Unit) due to list/alternative intent: "${msg}"`);
+      return null;
+    }
+
     if (mentionedBrand || mentionedModel) {
       console.log(`[SmartFallback] 🔍 Search by Brand/Model: ${mentionedBrand} ${mentionedModel}`);
       try {
@@ -2260,7 +2268,8 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     }
 
     // 8. DYNAMIC INVENTORY CONTEXT
-    const inventory = await this.getAvailableVehiclesDetailed(tenant.id);
+    // CRITICAL: Filter inventory by BRAND if user specified one (prevents Xenia appearing in Toyota list)
+    const inventory = await this.getAvailableVehiclesDetailed(tenant.id, { brand: intentEntities?.brand });
     if (inventory.length > 0) {
       systemPrompt += '\n📋 INVENTORY TERSEDIA (PARTIAL LIST - ' + inventory.length + ' unit):\n';
       systemPrompt += '⚠️ LIST INI TIDAK LENGKAP! Hanya menampilkan 10 unit terbaru. Jika user cari mobil budget/tipe yang TIDAK ada di list ini, WAJIB GUNAKAN tool search_vehicles!\n';
@@ -2326,12 +2335,16 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
   /**
    * Get available vehicles with more details
+   * Supports optional brand filtering for context relevance
    */
-  private static async getAvailableVehiclesDetailed(tenantId: string) {
+  private static async getAvailableVehiclesDetailed(tenantId: string, filter?: { brand?: string }) {
     return await prisma.vehicle.findMany({
       where: {
         tenantId,
         status: "AVAILABLE",
+        ...(filter?.brand ? {
+          make: { contains: filter.brand, mode: 'insensitive' }
+        } : {})
       },
       select: {
         id: true,
@@ -3784,7 +3797,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     // CRITICAL FIX: Only trigger for NEW conversations
     // If customer already has message history, let AI handle naturally
     const isNewConversation = context.messageHistory.length <= 2;
-    
+
     if (!isNewConversation) {
       console.log(`[WhatsApp AI Chat] ⏭️ Skipping Priority Stock Check - ongoing conversation (${context.messageHistory.length} messages)`);
       return null;
