@@ -3773,19 +3773,28 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
   /**
    * Priority Stock Check - Answer basic availability without AI
+   * CRITICAL: Only triggers for NEW conversations (first 1-2 messages)
+   * This prevents hijacking follow-up questions about the same brand
    */
   private static async handlePriorityStockCheck(
     msg: string,
     context: ChatContext,
     startTime: number
   ): Promise<ChatResponse | null> {
+    // CRITICAL FIX: Only trigger for NEW conversations
+    // If customer already has message history, let AI handle naturally
+    const isNewConversation = context.messageHistory.length <= 2;
+    
+    if (!isNewConversation) {
+      console.log(`[WhatsApp AI Chat] ⏭️ Skipping Priority Stock Check - ongoing conversation (${context.messageHistory.length} messages)`);
+      return null;
+    }
+
     const stockIntents = /\b(apakah|masih|ada|ready|tersedia|stok|available|jual|cari|minat|tertarik|pengen|ingin|liat|lihat)\b/i;
     const vehicleList = /\b(avanza|xenia|brio|mobilio|hrv|crv|fortuner|pajero|innova|agya|ayla|calya|sigra|jazz|yaris|rush|terios|xpander|ertiga|raize|rocky|alphard|vellfire|camry|city|civic|accord|serena|livina|ayla|agya|sigra|calya)\b/i;
 
     const hasStockIntent = stockIntents.test(msg);
     const vehicleMatch = msg.match(vehicleList);
-    // REMOVED isNewCustomer check - allow all users to get priority check
-    // const isNewCustomer = !context.customerName || ...
 
     if (hasStockIntent && vehicleMatch) {
       const vehicleKeyword = vehicleMatch[1];
