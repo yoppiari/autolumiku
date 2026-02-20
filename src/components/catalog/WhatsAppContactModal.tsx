@@ -191,7 +191,7 @@ export default function WhatsAppContactModal({
                     </div>
                     <div className="ml-4 text-left flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-gray-900">AI Assistant</h3>
+                        <h3 className="font-bold text-gray-900">Asisten Virtual</h3>
                         <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">
                           Recommended
                         </span>
@@ -279,7 +279,7 @@ export default function WhatsAppContactModal({
         {/* Footer Note */}
         <div className="px-6 pb-6">
           <p className="text-xs text-gray-500 text-center">
-            💡 Tip: AI Assistant bisa menjawab pertanyaan umum dengan cepat. Untuk nego harga atau test drive, pilih Sales Staff.
+            💡 Tip: Asisten Virtual bisa menjawab pertanyaan umum dengan cepat. Untuk nego harga atau test drive, pilih Sales Staff.
           </p>
         </div>
       </div>

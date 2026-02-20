@@ -340,7 +340,7 @@ export class WhatsAppAIChatService {
           data: {
             accountId: account.id,
             tenantId: context.tenantId,
-            aiName: "AI Assistant",
+            aiName: "Asisten Virtual",
             aiPersonality: "friendly",
             welcomeMessage: `{greeting}, Halo! Selamat pagi, selamat datang di showroom kami. Saya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan. Sebelumnya dengan kakak siapa saya bicara dan darimana? Ada yang bisa saya bantu`,
             customerChatEnabled: true,
@@ -964,6 +964,12 @@ export class WhatsAppAIChatService {
       ) && (!resultImages || resultImages.length === 0)) {
         responseMessage = responseMessage || 'Maaf kak, saat ini galeri foto unit sedang kami perbarui untuk kualitas terbaik. 👋 Adakah hal lain yang bisa kami bantu? 😊';
       }
+
+      // Sanitize Response (CRITICAL V 5.2): Remove English remnants
+      responseMessage = responseMessage
+        .replace(/AI Assistant/gi, 'Asisten Virtual')
+        .replace(/welkam/gi, 'selamat datang')
+        .replace(/\bWelcome\b/gi, 'Selamat datang');
 
       return {
         message: responseMessage,
@@ -1822,7 +1828,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
       const name_id = this.formatKakName(context?.customerName);
       const identityResponse =
         `${timeGreeting}! 👋\n\n` +
-        `Saya adalah AI Assistant **${tenantName}** yang ditenagai oleh teknologi **Prima Mobil (AI 5.2)**. 🤖⚡\n\n` +
+        `Saya adalah Asisten Virtual **${tenantName}** yang ditenagai oleh teknologi **Prima Mobil (AI 5.2)**. 🤖⚡\n\n` +
         `Saya menggunakan teknologi *Natural Language Processing* tingkat lanjut untuk memberikan informasi stok kendaraan secara real-time, simulasi kredit, hingga pengolahan data visual unit kami.\n\n` +
         `Ada yang bisa saya bantu terkait unit mobil di showroom kami hari ini ${name_id}? 😊`;
 

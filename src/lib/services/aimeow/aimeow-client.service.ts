@@ -159,7 +159,7 @@ export class AimeowClientService {
           tenantId,
           accountId: account.id,
           welcomeMessage: "Halo! 👋 Saya asisten virtual showroom. Ada yang bisa saya bantu?",
-          aiName: "AI Assistant",
+          aiName: "Asisten Virtual",
           aiPersonality: "friendly",
           autoReply: true,
           customerChatEnabled: true,

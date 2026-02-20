@@ -146,7 +146,7 @@ function ConversationsPage() {
         const data = await response.json();
 
         if (data.success && data.data) {
-          setAiConfig({ aiName: data.data.aiName || 'AI Assistant' });
+          setAiConfig({ aiName: data.data.aiName || 'Asisten Virtual' });
         }
       } catch (error) {
         console.error('Error loading AI config:', error);
@@ -1732,7 +1732,7 @@ END:VCARD`;
                                     </span>
                                     <span className="text-[11px] md:text-[10px] font-bold text-gray-300">
                                       {msg.senderType === 'ai' || msg.aiResponse
-                                        ? `${aiConfig?.aiName || 'AI Assistant'} (Prima Virtual Assistant)`
+                                        ? `${aiConfig?.aiName || 'Asisten Virtual'} (Prima Virtual Assistant)`
                                         : (() => {
                                           // Outbound staff response logic (Manual Reply from Dashboard)
                                           const role = msg.senderType === 'staff' ? 'Staff' : 'Admin';
