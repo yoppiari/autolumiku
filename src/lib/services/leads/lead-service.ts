@@ -5,6 +5,7 @@
 
 import { LeadStatus, LeadPriority } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { AimeowClientService } from '../aimeow/aimeow-client.service';
 
 export interface LeadCreateInput {
   tenantId: string;
@@ -813,13 +814,27 @@ _Mohon segera di-handle untuk menjaga momentum closing. Semangat!_ 🚀
 
 ✅ WhatsApp sudah terkirim ke staff.`;
 
-      // LOG it
-      console.log("=========================================");
-      console.log("WHATSAPP NOTIFICATION TO STAFF:");
-      console.log(alertMsg);
-      console.log("=========================================");
+      // REAL IMPLEMENTATION (AI 5.2): Send via Aimeow
+      const account = await prisma.aimeowAccount.findUnique({
+        where: { tenantId: lead.tenantId }
+      });
 
-      // Note: In real app, this would call WhatsAppMessagingService.sendMessage
+      if (account) {
+        for (const staff of staffMembers) {
+          try {
+            await AimeowClientService.sendMessage({
+              clientId: account.id,
+              to: staff.phone,
+              message: alertMsg
+            });
+            console.log(`[LeadService] ✅ WhatsApp notification sent to ${staff.firstName} (${staff.phone})`);
+          } catch (err) {
+            console.error(`[LeadService] ❌ Failed to send WhatsApp to ${staff.phone}:`, err);
+          }
+        }
+      } else {
+        console.warn(`[LeadService] ⚠️ No Aimeow account found for tenant ${lead.tenantId}. Notification skipped.`);
+      }
     } catch (error) {
       console.error('[LeadService] Failed to notify staff:', error);
     }

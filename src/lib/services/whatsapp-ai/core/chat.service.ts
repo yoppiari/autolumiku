@@ -751,6 +751,21 @@ export class WhatsAppAIChatService {
                   content: JSON.stringify({ success: true, lead_id: resLead.id, message: "Lead saved successfully." })
                 } as any);
 
+                // 🔥 CRITICAL (AI 5.2): Notify Sales Staff via WhatsApp immediately!
+                // Only notify if we have a name (not default)
+                if (resLead.name && resLead.name !== 'Customer Baru' && resLead.name !== 'Customer') {
+                  this.notifySalesStaff(context.tenantId, {
+                    customerName: resLead.name,
+                    customerPhone: resLead.phone,
+                    vehicleName: resLead.interestedIn || 'Belum Spesifik',
+                    budget: resLead.budgetRange || '-',
+                    status: resLead.location || '-', // Using location as status/context in WhatsApp alert
+                    notes: `Lead ${resLead.status} dari WhatsApp AI`,
+                    source: resLead.source,
+                    urgency: resLead.priority
+                  });
+                }
+
               } catch (error) {
                 console.error('[WhatsAppAI] ❌ Failed to create/update lead:', error);
                 // Fallback error message if needed, or just log
@@ -1029,50 +1044,54 @@ export class WhatsAppAIChatService {
     urgency?: string;
   }): Promise<void> {
     try {
-      console.log(`[WhatsApp AI Chat] 🚨 SENDING HOT LEAD ALERT for ${leadData.customerName}`);
+      console.log(`[WhatsApp AI Chat] 🚨 PREPARING HOT LEAD ALERT for ${leadData.customerName}`);
 
-      // 1. Get Sales Staff (using existing helper)
+      // 1. Get Aimeow Account for this tenant to get clientId
+      const account = await prisma.aimeowAccount.findUnique({
+        where: { tenantId }
+      });
+
+      if (!account) {
+        console.error(`[WhatsApp AI Chat] ❌ Failed to notify staff: Aimeow account not found for tenant ${tenantId}`);
+        return;
+      }
+
+      // 2. Get Sales Staff
       const staffMembers = await WhatsAppAIChatService.getRegisteredStaffContacts(tenantId);
       if (staffMembers.length === 0) {
         console.log("[WhatsApp AI Chat] ⚠️ No registered staff found to notify.");
         return;
       }
 
-      // 2. Format the Alert Message
+      // 3. Format the Alert Message (AI 5.2 - AGENTIC SALES HANDOVER)
       const alertMessage =
-        `🚨 *HOT LEAD ALERT!* 🚨
+        `🚨 *PEMBERITAHUAN LEADS BARU* 🚨\n\n` +
+        `👤 *PENGIRIM:* ${leadData.customerName}\n` +
+        `📞 *NOMOR:* ${leadData.customerPhone}\n` +
+        `🚗 *UNIT:* ${leadData.vehicleName || 'Belum Spesifik'}\n` +
+        `💰 *BUDGET:* ${leadData.budget || 'N/A'}\n` +
+        `📍 *LOKASI:* ${leadData.status || 'N/A'}\n` +
+        `⚡ *URGENSI:* ${leadData.urgency || 'MEDIUM'}\n` +
+        `📝 *CATATAN:* ${leadData.notes || '-'}\n\n` +
+        `👇 *KLIK UNTUK FOLLOW UP:* \n` +
+        `https://wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}\n\n` +
+        `_Pesan ini dikirim otomatis oleh Asisten Virtual Prima Mobil._`;
 
-👤 *${leadData.customerName}*
-🚗 *${leadData.vehicleName}*
-💰 Budget: ${leadData.budget}
-🔥 Status: ${leadData.status}
-📢 Sumber: ${leadData.source || 'WhatsApp'}
-⚡ Urhensi: ${leadData.urgency || 'Medium'}
-📝 Notes: ${leadData.notes}
+      // 4. Send to ALL registered staff
+      console.log(`[WhatsApp AI Chat] 📡 Sending notification to ${staffMembers.length} staff members...`);
 
-👇 *KLIK FOLLOW UP CLOSING:*
-wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
-`;
-
-      // 3. Send to ALL registered staff (Simulation - using SendMessage)
-      // In real implementation, we would loop through staff list and send via specialized 'sendNotification' method
-      // For now, we reuse the existing orchestrator flow or direct API call if available.
-
-      // Since this is a static method in ChatService, we can't easily call Orchestrator directly without circular dep.
-      // BUT, we can use a clever trick: Return a special "System Action" via tool calls or simply log it for now
-      // assuming the Orchestrator handles "escalation" properly.
-
-      // BETTER: We just log it clearly here. In a full implementation, 
-      // we would inject the NotificationService or MessageOrchestrator here.
-
-      // For this specific codebase context, let's assume we can trigger a system notification:
-      console.log("---------------------------------------------------");
-      console.log("📢 NOTIFICATION SENT TO STAFF:");
-      console.log(alertMessage);
-      console.log("---------------------------------------------------");
-
-      // TODO: Connect to explicit notification service
-      // await NotificationService.sendWhatsApp(staff.phone, alertMessage);
+      for (const staff of staffMembers) {
+        try {
+          await AimeowClientService.sendMessage({
+            clientId: account.id,
+            to: staff.phone,
+            message: alertMessage
+          });
+          console.log(`[WhatsApp AI Chat] ✅ Lead notification sent to ${staff.name} (${staff.phone})`);
+        } catch (sendErr) {
+          console.error(`[WhatsApp AI Chat] ❌ Failed to send lead to ${staff.name}:`, sendErr);
+        }
+      }
 
     } catch (e) {
       console.error("[WhatsApp AI Chat] ❌ Failed to notify sales staff:", e);
@@ -1164,6 +1183,28 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
 
     // ==================== VEHICLE CONTEXT DETECTION (PRIORITY #0) ====================
     const vehicleName = this.extractActiveVehicle(userMessage, messageHistory);
+
+    // 🔥 BRAND FILTERING (AI 5.2): Detect brand in message to prevent mixing units (e.g., Daihatsu in Toyota list)
+    const brandMatch = msg.match(/\b(toyota|honda|suzuki|daihatsu|mitsubishi|nissan|mazda|bmw|mercedes|hyundai|kia|wuling|ford|chery|lexus)\b/i);
+    const filterBrand = brandMatch ? brandMatch[1].toLowerCase() : null;
+
+    if (filterBrand) {
+      console.log(`[SmartFallback] 🔍 Detected brand focus: "${filterBrand}". Filtering inventory.`);
+      try {
+        const filteredVehicles = await prisma.vehicle.findMany({
+          where: {
+            tenantId,
+            status: "AVAILABLE",
+            make: { contains: filterBrand, mode: 'insensitive' }
+          },
+          select: { id: true, displayId: true, make: true, model: true, year: true, price: true, mileage: true, transmissionType: true, color: true, variant: true, fuelType: true },
+          take: 10,
+        });
+        if (filteredVehicles.length > 0) {
+          vehicles = filteredVehicles;
+        }
+      } catch (e) { /* fallback to all vehicles */ }
+    }
 
 
     // ==================== SEQUENCE OF modular HANDLERS (AI 5.2) ====================
@@ -1546,6 +1587,13 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
     // Check if technical question is present
     const isTechnicalQuestion = /(interior|eksterior|ekterior|exterior|esterior|mesin|body|bodi|dalam|luar|dokumen|surat|pajak|bpkb|stnk|foto|gambar|detail)/i.test(msg);
 
+    // 🔥 COMPETITION/COMPLAINT DETECTION: Prevent hijacking if user is comparing or complaining
+    const isComplaintOrComparison = /\b(tapi|namun|berbeda|beda|kenapa|salah|kok|bukan|selain|lainnya|apa\s*aja)\b/i.test(msg);
+    if (isComplaintOrComparison) {
+      console.log(`[SmartFallback] ⏭️ Technical inquiry skipped - potential complaint/comparison detected: "${msg}"`);
+      return null;
+    }
+
     // CRITICAL FIX: Extract vehicle name from context (Current Message + History)
     const currentMsgVehicleName = this.extractActiveVehicle(userMessage, messageHistory);
 
@@ -1622,7 +1670,7 @@ wa.me/${leadData.customerPhone.replace(/\D/g, '').replace(/^0/, '62')}
         const isFirstResponse = messageHistory.length <= 1;
 
         let intro = "";
-        if (isFirstResponse) {
+        if (isFirstResponse && !msg.includes("selain") && !msg.includes("lainnya")) {
           intro = `Halo! ⚡\n\n${timeGreeting}, selamat datang di showroom kami\nSaya adalah Asisten virtual yang siap membantu Anda menemukan mobil impian, dan mendapatkan informasi yang Anda butuhkan.\n\nBaik kak, sebelumnya dengan kakak siapa saya berbicara? Untuk unit *${name}* yang kakak tanyakan, saya bantu jelaskan ya. 😊 `;
         } else {
           intro = this.getRandomVariation([

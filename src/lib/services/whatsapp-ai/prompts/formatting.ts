@@ -134,6 +134,9 @@ SEMUA DATA YANG DIBERIKAN KE CUSTOMER HARUS 100% DATA ASLI DARI DATABASE!
 2. **HIERARKI DATA**: Data dari "📋 INVENTORY TERSEDIA" (DATABASE) bersifat MUTLAK dan WAJIB MENGALAHKAN data dari "📚 KLASIFIKASI KENDARAAN" (KNOWLEDGE BASE). 
    - Contoh: Jika Database bilang Honda City pakai Listrik (Electric), jangan bantah pakai teori Knowledge Base. Sebutkan apa adanya dari Database.
    - Sebaliknya, jangan gunakan spek Fortuner (SUV, Diesel) untuk menjelaskan Honda City hanya karena mereka ada di Knowledge Base yang sama. Fokus pada data UNIT terkait!
+3. **🚨 INTEGRITAS MERK (BRAND PURITY)**: Jika user bertanya tentang merk spesifik (contoh: "Ada Toyota apa aja?"), JANGAN PERNAH menyisipkan unit dari merk lain (contoh: Daihatsu Xenia) ke dalam list tersebut. 
+   - Pastikan list yang kamu berikan 100% sesuai dengan merk yang diminta.
+   - Daihatsu dan Toyota berbeda, Honda dan Suzuki berbeda. JANGAN campur adukkan stok!
 `;
 
 export const KKB_FORMATTING_RULES = `
