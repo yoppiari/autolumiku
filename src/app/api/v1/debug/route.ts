@@ -118,6 +118,43 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ email, user, database: process.env.DATABASE_URL?.split('@')[1] });
         }
 
+        // MODE: Tenant Users (list all users for this tenant + platform super admins)
+        if (mode === 'tenant-users') {
+            const tenantUsers = await prisma.user.findMany({
+                where: { tenantId: tenant.id },
+                select: {
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    role: true,
+                    emailVerified: true,
+                    lockedUntil: true,
+                    failedLoginAttempts: true,
+                    lastLoginAt: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: 'asc' },
+            });
+            const platformAdmins = await prisma.user.findMany({
+                where: { tenantId: null },
+                select: {
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    role: true,
+                    lastLoginAt: true,
+                },
+                orderBy: { createdAt: 'asc' },
+            });
+            return NextResponse.json({
+                tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name },
+                tenantUsers,
+                platformAdmins,
+            });
+        }
+
         // MODE: Vehicle Check
         if (mode === 'vehicle-check') {
             const vehicles = await prisma.vehicle.findMany({
@@ -190,6 +227,7 @@ export async function GET(request: NextRequest) {
             { name: 'Force Fix Connection', path: '/api/v1/debug?mode=fix-whatsapp' },
             { name: 'Trigger AI Reply', path: '/api/v1/debug?mode=trigger-reply&phone=6281216206368' },
             { name: 'User Check', path: '/api/v1/debug?mode=user-check&email=admin@primamobil.id' },
+            { name: 'Tenant Users', path: '/api/v1/debug?mode=tenant-users&tenant=primamobil-id' },
             { name: 'Vehicle Check', path: '/api/v1/debug?mode=vehicle-check' },
         ];
 
