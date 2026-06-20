@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user
-    const user = await prisma.user.findUnique({
+    // Find user (email is NOT unique across tenants, so use findFirst)
+    const user = await prisma.user.findFirst({
       where: { email: email.toLowerCase() },
       select: {
         id: true,

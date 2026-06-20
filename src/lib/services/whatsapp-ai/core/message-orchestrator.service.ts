@@ -1167,7 +1167,7 @@ export class MessageOrchestratorService {
 
       // But per user request: "Harusnya AI bisa lanjut dan langsung mengirim pesan susulan"
       // This usually implies a trigger. If this process is triggered by "scan-pending", 'isCatchup' will be true.
-      if (isCatchup && !responseMessage) {
+      if (incoming.isCatchup && !responseMessage) {
         console.log(`[Orchestrator] 🎣 Executing PROACTIVE CATCH-UP for pending lead...`);
         const contextData = conversation.contextData as Record<string, any> || {};
         const vehicleName = contextData.lastVehicleInterested || "unit yang kakak tanyakan";
@@ -1301,12 +1301,27 @@ export class MessageOrchestratorService {
 
     // 0.5. STAFF STATUS COMMANDS (/online, /offline)
     const statusMatch = message.match(/^(?:\/)?(online|offline|ready|away|aktif|nonaktif)\b/i);
-    if (statusMatch && isStaff) {
+    // Resolve the staff user for this sender (also serves as the isStaff check).
+    // Match by normalized phone so stored formatting differences don't matter.
+    let statusStaffUser: { id: string } | null = null;
+    if (statusMatch) {
+      const normFrom = this.normalizePhoneForLookup(incoming.from);
+      const statusCandidates = await prisma.user.findMany({
+        where: {
+          tenantId: incoming.tenantId,
+          role: { in: ['OWNER', 'ADMIN', 'MANAGER', 'FINANCE', 'SALES', 'STAFF'] },
+          phone: { not: null },
+        },
+        select: { id: true, phone: true },
+      });
+      statusStaffUser = statusCandidates.find((u) => u.phone && this.normalizePhoneForLookup(u.phone) === normFrom) || null;
+    }
+    if (statusMatch && statusStaffUser) {
       const newStatus = statusMatch[1].toLowerCase();
       const dbStatus = (newStatus === 'online' || newStatus === 'ready' || newStatus === 'aktif') ? 'online' : 'offline';
 
       try {
-        await prisma.$executeRawUnsafe(`UPDATE "users" SET "waStatus" = $1 WHERE "id" = $2`, dbStatus, user?.id);
+        await prisma.$executeRawUnsafe(`UPDATE "users" SET "waStatus" = $1 WHERE "id" = $2`, dbStatus, statusStaffUser.id);
         return {
           isCommand: true,
           result: {

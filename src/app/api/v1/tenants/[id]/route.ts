@@ -9,6 +9,8 @@ export async function GET(
   const authGate = await requireAuth(request);
   if (authGate instanceof NextResponse) return authGate;
 
+  const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+
   try {
     const { id } = await params;
 
@@ -31,6 +33,14 @@ export async function GET(
       return NextResponse.json(
         { error: 'Tenant not found' },
         { status: 404 }
+      );
+    }
+
+    // Cross-tenant IDOR protection: users may only read their own tenant
+    if (!isSuperAdmin && tenant.id !== authGate.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
       );
     }
 

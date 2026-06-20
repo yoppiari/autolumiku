@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
       normalizedPhone = "62" + normalizedPhone.substring(1);
     }
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
+    // Find user by email (email is NOT unique across tenants, so use findFirst)
+    const user = await prisma.user.findFirst({
       where: { email },
       select: { id: true, email: true, phone: true, firstName: true, tenantId: true },
     });

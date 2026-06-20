@@ -286,12 +286,14 @@ export async function requireSuperAdmin(request: NextRequest): Promise<NextRespo
  *   if (auth instanceof NextResponse) return auth;
  *   // auth.user is available here
  */
-export async function requireAuth(request: NextRequest): Promise<AuthResult | NextResponse> {
+export type AuthedResult = AuthResult & { user: NonNullable<AuthResult['user']> };
+
+export async function requireAuth(request: NextRequest): Promise<AuthedResult | NextResponse> {
   const auth = await authenticateRequest(request);
-  if (!auth.success) {
+  if (!auth.success || !auth.user) {
     return NextResponse.json({ error: auth.error || 'Unauthorized' }, { status: 401 });
   }
-  return auth;
+  return auth as AuthedResult;
 }
 
 /**

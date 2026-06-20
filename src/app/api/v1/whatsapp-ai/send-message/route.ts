@@ -15,7 +15,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { tenantId, conversationId, to, message, imageUrl, documentUrl, filename, caption } = body;
+    const { tenantId: clientTenantId, conversationId, to, message, imageUrl, documentUrl, filename, caption } = body;
+
+    // SECURITY: Do not trust client-supplied tenantId. A user may only send from
+    // their own tenant's WhatsApp number; super_admin may target another tenant.
+    const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+    const tenantId = isSuperAdmin ? (clientTenantId || authGate.user.tenantId) : authGate.user.tenantId;
 
     // Validate required fields
     if (!tenantId || !to) {

@@ -14,6 +14,13 @@ export async function GET(
   const authGate = await requireAuth(request);
   if (authGate instanceof NextResponse) return authGate;
 
+  if (authGate.user.role?.toLowerCase() !== 'super_admin') {
+    return NextResponse.json(
+      { error: 'Forbidden - Super admin only' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { id } = await params;
 
@@ -57,6 +64,13 @@ export async function PUT(
 ) {
   const authGate = await requireAuth(request);
   if (authGate instanceof NextResponse) return authGate;
+
+  if (authGate.user.role?.toLowerCase() !== 'super_admin') {
+    return NextResponse.json(
+      { error: 'Forbidden - Super admin only' },
+      { status: 403 }
+    );
+  }
 
   try {
     const { id: tenantId } = await params;

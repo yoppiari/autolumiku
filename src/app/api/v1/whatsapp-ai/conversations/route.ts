@@ -48,7 +48,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get("tenantId");
+    const clientTenantId = searchParams.get("tenantId");
+
+    // SECURITY: Do not trust client-supplied tenantId. Non-super users are
+    // always scoped to their own tenant; super_admin may target another tenant.
+    const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+    const tenantId = isSuperAdmin ? (clientTenantId || authGate.user.tenantId) : authGate.user.tenantId;
 
     if (!tenantId) {
       return NextResponse.json(

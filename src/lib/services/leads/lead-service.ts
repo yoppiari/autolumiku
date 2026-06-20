@@ -303,12 +303,23 @@ export class LeadService {
 
   static async updateLead(id: string, tenantId: string, data: LeadUpdateInput) {
     try {
-      const lead = await prisma.lead.update({
-        where: { id },
+      // Tenant-scoped update to prevent cross-tenant IDOR.
+      // updateMany enforces the tenantId filter; if no row matches, count is 0.
+      const result = await prisma.lead.updateMany({
+        where: { id, tenantId },
         data: {
           ...data,
           phone: data.phone ? data.phone.replace(/\D/g, '') : undefined,
         },
+      });
+
+      if (result.count === 0) {
+        return null;
+      }
+
+      // Re-fetch to preserve the existing return shape (the updated lead object)
+      const lead = await prisma.lead.findFirst({
+        where: { id, tenantId },
       });
 
       // TRIGGER: Check if lead is now qualified for handover

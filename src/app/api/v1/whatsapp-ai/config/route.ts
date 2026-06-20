@@ -17,7 +17,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get("tenantId");
+    const clientTenantId = searchParams.get("tenantId");
+
+    // SECURITY: Do not trust client-supplied tenantId.
+    const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+    const tenantId = isSuperAdmin ? (clientTenantId || authGate.user.tenantId) : authGate.user.tenantId;
 
     if (!tenantId) {
       return NextResponse.json(
@@ -74,7 +78,11 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { tenantId, ...configUpdates } = body;
+    const { tenantId: clientTenantId, ...configUpdates } = body;
+
+    // SECURITY: Do not trust client-supplied tenantId.
+    const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+    const tenantId = isSuperAdmin ? (clientTenantId || authGate.user.tenantId) : authGate.user.tenantId;
 
     if (!tenantId) {
       return NextResponse.json(
@@ -202,7 +210,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { tenantId, accountId, ...configData } = body;
+    const { tenantId: clientTenantId, accountId, ...configData } = body;
+
+    // SECURITY: Do not trust client-supplied tenantId.
+    const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+    const tenantId = isSuperAdmin ? (clientTenantId || authGate.user.tenantId) : authGate.user.tenantId;
 
     if (!tenantId || !accountId) {
       return NextResponse.json(

@@ -36,6 +36,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // SECURITY: Verify the caller owns this conversation before any deletion.
+    const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+    if (!isSuperAdmin && targetConversation.tenantId !== authGate.user.tenantId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Helper to normalize phone (same as in GET route)
     const normalizePhone = (phone: string): string => {
       if (!phone) return '';

@@ -31,11 +31,18 @@ export async function GET(
     const allIdsParam = searchParams.get("allIds");
     const conversationIds = allIdsParam ? allIdsParam.split(",") : [conversationId];
 
+    // SECURITY: Scope messages to conversations owned by the caller's tenant.
+    const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+    if (!isSuperAdmin && !authGate.user.tenantId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
     // Get messages from all requested conversations
     const messages = await prisma.whatsAppMessage.findMany({
       where: {
         conversationId: { in: conversationIds },
-        conversation: { status: { not: "deleted" } } // Exclude messages from deleted conversations
+        conversation: {
+          status: { not: "deleted" }, // Exclude messages from deleted conversations
+          ...(isSuperAdmin ? {} : { tenantId: authGate.user.tenantId as string }),
+        },
       },
       orderBy: { createdAt: "asc" },
     });
@@ -106,6 +113,19 @@ export async function DELETE(
       );
     }
 
+    // SECURITY: Verify the caller owns every target conversation before deleting.
+    const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+    if (!isSuperAdmin) {
+      const targetConversations = await prisma.whatsAppConversation.findMany({
+        where: { id: { in: conversationIds } },
+        select: { tenantId: true },
+      });
+      const foreign = targetConversations.some((c) => c.tenantId !== authGate.user.tenantId);
+      if (foreign) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+
     if (deleteAll) {
       // Delete all messages for this conversation
       // Note: We skip attempting to delete from WhatsApp remote for bulk delete to avoid API limits/timeouts
@@ -142,6 +162,9 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // NOTE: ownership of this conversation was already verified above (the bulk
+    // ownership check covers conversationIds, which includes this conversationId).
 
     // Try to delete from WhatsApp if we have aimeowMessageId
     let whatsappDeleted = false;

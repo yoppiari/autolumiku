@@ -14,8 +14,19 @@ export async function PUT(
   const authGate = await requireAuth(request);
   if (authGate instanceof NextResponse) return authGate;
 
+  const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+
   try {
     const { id } = await params;
+
+    // Cross-tenant IDOR protection: users may only modify their own tenant
+    if (!isSuperAdmin && id !== authGate.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     const {
@@ -77,8 +88,18 @@ export async function GET(
   const authGate = await requireAuth(request);
   if (authGate instanceof NextResponse) return authGate;
 
+  const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+
   try {
     const { id } = await params;
+
+    // Cross-tenant IDOR protection: users may only read their own tenant
+    if (!isSuperAdmin && id !== authGate.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
 
     const tenant = await prisma.tenant.findUnique({
       where: { id },

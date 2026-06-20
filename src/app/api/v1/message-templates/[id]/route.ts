@@ -14,17 +14,18 @@ export async function GET(
   const authGate = await requireAuth(request);
   if (authGate instanceof NextResponse) return authGate;
 
+  const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId');
+    const clientTenantId = searchParams.get('tenantId');
 
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: 'tenantId is required' },
-        { status: 400 }
-      );
-    }
+    // Cross-tenant IDOR protection: non-super users are forced to their own tenant
+    const tenantId = isSuperAdmin
+      ? (clientTenantId || authGate.user.tenantId)
+      : authGate.user.tenantId;
+    if (!tenantId) return NextResponse.json({ error: 'Forbidden - no tenant' }, { status: 403 });
 
     const template = await prisma.messageTemplate.findFirst({
       where: { id, tenantId },
@@ -60,11 +61,13 @@ export async function PUT(
   const authGate = await requireAuth(request);
   if (authGate instanceof NextResponse) return authGate;
 
+  const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+
   try {
     const { id } = await params;
     const body = await request.json();
     const {
-      tenantId,
+      tenantId: clientTenantId,
       name,
       category,
       subject,
@@ -73,12 +76,11 @@ export async function PUT(
       isActive,
     } = body;
 
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: 'tenantId is required' },
-        { status: 400 }
-      );
-    }
+    // Cross-tenant IDOR protection: non-super users are forced to their own tenant
+    const tenantId = isSuperAdmin
+      ? (clientTenantId || authGate.user.tenantId)
+      : authGate.user.tenantId;
+    if (!tenantId) return NextResponse.json({ error: 'Forbidden - no tenant' }, { status: 403 });
 
     const template = await prisma.messageTemplate.updateMany({
       where: { id, tenantId },
@@ -127,17 +129,18 @@ export async function DELETE(
   const authGate = await requireAuth(request);
   if (authGate instanceof NextResponse) return authGate;
 
+  const isSuperAdmin = authGate.user.role?.toLowerCase() === 'super_admin';
+
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId');
+    const clientTenantId = searchParams.get('tenantId');
 
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: 'tenantId is required' },
-        { status: 400 }
-      );
-    }
+    // Cross-tenant IDOR protection: non-super users are forced to their own tenant
+    const tenantId = isSuperAdmin
+      ? (clientTenantId || authGate.user.tenantId)
+      : authGate.user.tenantId;
+    if (!tenantId) return NextResponse.json({ error: 'Forbidden - no tenant' }, { status: 403 });
 
     await prisma.messageTemplate.deleteMany({
       where: { id, tenantId },
