@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
 import { PlateDetectionService } from '@/lib/services/inventory/plate-detection.service';
 import { ImageProcessingService } from '@/lib/services/infrastructure/image-processing.service';
@@ -13,6 +14,8 @@ import { StorageService } from '@/lib/services/infrastructure/storage.service';
 export const maxDuration = 300; // 5 minutes timeout
 
 export async function POST(request: NextRequest) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
   try {
     const body = await request.json().catch(() => ({}));
     const { tenantSlug, vehicleId, limit = 10 } = body;
@@ -194,6 +197,8 @@ export async function POST(request: NextRequest) {
 
 // GET endpoint to check status/count
 export async function GET(request: NextRequest) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
   try {
     const { searchParams } = new URL(request.url);
     const tenantSlug = searchParams.get('tenant');

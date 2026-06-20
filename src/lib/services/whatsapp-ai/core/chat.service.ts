@@ -5,6 +5,8 @@
  */
 
 import { createZAIClient } from "@/lib/ai/zai-client";
+import { simulateCredit, formatSimulationText } from "@/lib/services/finance/credit-simulation.service";
+import { getToolSchemasForScope, resolveToolScope, canScopeCallTool, taxonomyFor } from "@/lib/services/whatsapp-ai/tools/registry";
 import { ROLE_LEVELS } from "@/lib/rbac";
 import {
   getIdentityPrompt,
@@ -542,12 +544,19 @@ export class WhatsAppAIChatService {
           throw new Error('ZAI client not configured.');
         }
 
+        // RBAC: only expose tools the sender's scope is allowed to use.
+        // Customers never receive staff-only tools (upload_vehicle/edit_vehicle/send_whatsapp_message).
+        const toolScope = resolveToolScope(senderInfo.isStaff, senderInfo.staffInfo?.roleLevel);
+        const allowedTools = getToolSchemasForScope(toolScope);
+        console.log(`[WhatsApp AI Chat] 🔐 Tool scope: ${toolScope} (${allowedTools.length} tools)`);
+
         try {
           // Add a race condition with manual timeout
           const apiCallPromise = zaiClient.generateText({
             systemPrompt,
             userPrompt: `${conversationContext}\n\nUser Message: ${userMessage}`,
             temperature: config.temperature || 0.7,
+            tools: allowedTools,
           });
 
           const timeoutPromise = new Promise<never>((_, reject) => {
@@ -672,11 +681,27 @@ export class WhatsAppAIChatService {
       if (aiResponse.toolCalls) {
         console.log(`[WhatsAppAI] 🛠️ Tool calls detected: ${aiResponse.toolCalls.length}`);
 
+        // RBAC scope for dispatch-time enforcement (recomputed here from context
+        // so it is valid regardless of the enclosing block).
+        const dispatchScope = resolveToolScope(context.isStaff, context.staffInfo?.roleLevel);
+
         for (const toolCall of aiResponse.toolCalls) {
           const toolName = toolCall.function.name;
           const toolArgs = JSON.parse(toolCall.function.arguments);
 
-          console.log(`[WhatsAppAI] 🔧 Tool: ${toolName}`, toolArgs);
+          console.log(`[WhatsAppAI] 🔧 Tool: ${toolName} (${taxonomyFor(toolName) || 'untagged'})`, toolArgs);
+
+          // RBAC defense-in-depth: reject a tool the sender's scope may not call,
+          // even if the model somehow requested it.
+          if (!canScopeCallTool(toolName, dispatchScope)) {
+            console.warn(`[WhatsAppAI] ⛔ Tool "${toolName}" denied for scope "${dispatchScope}".`);
+            messages.push({
+              role: "function",
+              name: toolName,
+              content: JSON.stringify({ success: false, message: `Tool "${toolName}" not permitted for this user.` }),
+            });
+            continue;
+          }
 
           if (toolName === 'create_lead') {
             // BLOCK STAFF/ADMIN FROM CREATING LEADS
@@ -881,17 +906,28 @@ export class WhatsAppAIChatService {
             const args = JSON.parse(toolCall.function.arguments);
             console.log('[WhatsApp AI Chat] 🧮 AI calculating KKB simulation:', args);
 
-            const simulationResult = WhatsAppAIChatService.calculateKKBSimulation(
-              args.vehicle_price,
-              args.dp_amount,
-              args.dp_percentage,
-              args.tenor_years,
-              { vehicleYear: args.vehicle_year }
-            );
+            // Grounded credit simulation: prefers the NCU/Dipostar provider when
+            // configured, otherwise a clearly-labeled local estimate.
+            const parseList = (v: any): number[] | undefined => {
+              if (v === undefined || v === null) return undefined;
+              if (Array.isArray(v)) return v.map(Number).filter(n => !isNaN(n));
+              if (typeof v === 'string') return v.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+              return [Number(v)];
+            };
 
-            // Append simulation result to response with DISCLAIMER
+            const sim = await simulateCredit({
+              vehiclePrice: Number(args.vehicle_price),
+              vehicleYear: args.vehicle_year ? Number(args.vehicle_year) : undefined,
+              dpAmount: args.dp_amount ? Number(args.dp_amount) : undefined,
+              dpPercentages: parseList(args.dp_percentage),
+              tenorsYears: parseList(args.tenor_years),
+            });
+            const simulationResult = formatSimulationText(sim);
+
             responseMessage += "\n\n" + simulationResult;
-            responseMessage += "\n\n_Catatan: Suku bunga bersifat estimasi & dapat berubah sesuai kebijakan leasing terkini._";
+            if (!sim.grounded) {
+              responseMessage += "\n\n_Catatan: Suku bunga bersifat estimasi & dapat berubah sesuai kebijakan leasing terkini._";
+            }
 
             if (!responseMessage.toLowerCase().includes('bantu')) {
               responseMessage += "\n\nApakah ada hal lain yang bisa kami bantu? 😊";

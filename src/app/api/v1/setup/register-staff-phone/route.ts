@@ -5,9 +5,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const { email, phone } = body;
@@ -64,6 +67,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId");

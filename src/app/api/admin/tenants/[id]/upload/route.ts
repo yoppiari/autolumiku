@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import sharp from 'sharp';
 import { prisma } from '@/lib/prisma';
 import { StorageService } from '@/lib/services/infrastructure/storage.service';
@@ -12,6 +13,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: any }
 ) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
+
   try {
     const { id: tenantId } = await params;
 

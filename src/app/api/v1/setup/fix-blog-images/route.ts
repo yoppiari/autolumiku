@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
 
 // Prevent static generation - this route needs database access at runtime
@@ -12,6 +13,8 @@ export const dynamic = 'force-dynamic';
 
 
 export async function GET(request: NextRequest) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
   try {
     // Get all blog posts with featuredImage
     const blogPosts = await prisma.blogPost.findMany({

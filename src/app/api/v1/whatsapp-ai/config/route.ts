@@ -5,12 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 
 /**
  * GET - Retrieve WhatsApp AI configuration
  */
 export async function GET(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId");
@@ -65,6 +69,9 @@ export async function GET(request: NextRequest) {
  * PUT - Update WhatsApp AI configuration
  */
 export async function PUT(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const body = await request.json();
     const { tenantId, ...configUpdates } = body;
@@ -190,6 +197,9 @@ export async function PUT(request: NextRequest) {
  * POST - Create initial AI configuration (called during setup)
  */
 export async function POST(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const body = await request.json();
     const { tenantId, accountId, ...configData } = body;

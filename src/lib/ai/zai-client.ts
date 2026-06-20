@@ -6,6 +6,25 @@
  */
 
 import OpenAI from 'openai';
+import { recordLlmCall, providerFromBaseUrl, type LlmFeature } from '@/lib/services/llm/llm-monitor.service';
+
+/**
+ * Disable model "thinking"/reasoning in a provider-specific way.
+ * Controlled by env LLM_THINKING_PARAM:
+ *   'chat_template' -> chat_template_kwargs:{thinking:false,enable_thinking:false} (NVIDIA/Llama)
+ *   'zai'           -> thinking:{type:'disabled'} (Z.AI/GLM)
+ *   'none'          -> no-op
+ * Defaults to 'chat_template' to match the active NVIDIA provider.
+ */
+function applyThinkingParam(requestParams: any): void {
+  const mode = (process.env.LLM_THINKING_PARAM || 'chat_template').toLowerCase();
+  if (mode === 'chat_template') {
+    requestParams.chat_template_kwargs = { thinking: false, enable_thinking: false };
+  } else if (mode === 'zai') {
+    requestParams.thinking = { type: 'disabled' };
+  }
+  // 'none' -> send nothing
+}
 
 export interface ZAIClientConfig {
   apiKey: string;
@@ -19,8 +38,10 @@ export class ZAIClient {
   public client: OpenAI;
   private textModel: string;
   private visionModel: string;
+  private provider: string;
 
   constructor(config: ZAIClientConfig) {
+    this.provider = providerFromBaseUrl(config.baseURL);
     console.log('[ZAI Client Constructor] Creating OpenAI client with baseURL:', config.baseURL);
     console.log('[ZAI Client Constructor] OpenAI SDK will call:', config.baseURL + 'chat/completions');
 
@@ -58,6 +79,7 @@ export class ZAIClient {
     temperature?: number;
     maxTokens?: number;
     includeTools?: boolean; // Set to false for JSON generation tasks
+    tools?: any[]; // Explicit (e.g. role-filtered) tool list; overrides the default
   }) {
     console.log('[ZAI Client] 🚀 Starting generateText call...');
     console.log('[ZAI Client] Model:', this.textModel);
@@ -81,15 +103,16 @@ export class ZAIClient {
           { role: 'system', content: params.systemPrompt },
           { role: 'user', content: params.userPrompt },
         ],
-        // Disable thinking/reasoning mode for faster chat responses
-        thinking: {
-          type: "disabled"
-        },
       };
 
-      // Only add tools for chat interactions (WhatsApp AI), not for JSON generation tasks
+      // Disable thinking/reasoning mode for faster chat responses (provider-specific)
+      applyThinkingParam(requestParams);
+
+      // Only add tools for chat interactions (WhatsApp AI), not for JSON generation tasks.
+      // If the caller passes an explicit (role-filtered) tool list, use it; otherwise
+      // fall back to the full built-in set for backward compatibility.
       if (params.includeTools !== false) {
-        requestParams.tools = [
+        requestParams.tools = params.tools ?? [
           {
             type: "function",
             function: {
@@ -344,7 +367,32 @@ export class ZAIClient {
         requestParams.max_tokens = params.maxTokens;
       }
 
-      const response = await this.client.chat.completions.create(requestParams);
+      const __start = Date.now();
+      let response;
+      try {
+        response = await this.client.chat.completions.create(requestParams);
+      } catch (callErr: any) {
+        recordLlmCall({
+          provider: this.provider,
+          model: this.textModel,
+          feature: (params.includeTools === false ? 'json' : 'chat') as LlmFeature,
+          success: false,
+          errorMessage: callErr?.message || String(callErr),
+          latencyMs: Date.now() - __start,
+        });
+        throw callErr;
+      }
+      recordLlmCall({
+        provider: this.provider,
+        model: this.textModel,
+        feature: (params.includeTools === false ? 'json' : 'chat') as LlmFeature,
+        success: true,
+        finishReason: response.choices[0]?.finish_reason,
+        latencyMs: Date.now() - __start,
+        promptTokens: response.usage?.prompt_tokens,
+        completionTokens: response.usage?.completion_tokens,
+        totalTokens: response.usage?.total_tokens,
+      });
 
       console.log('[ZAI Client] ✅ API call successful!');
       console.log('[ZAI Client] Response ID:', response.id);
@@ -396,7 +444,7 @@ export class ZAIClient {
       image_url: { url: img },
     }));
 
-    const response = await this.client.chat.completions.create({
+    const visionParams: any = {
       model: this.visionModel,
       messages: [
         { role: 'system', content: params.systemPrompt },
@@ -410,6 +458,34 @@ export class ZAIClient {
       ],
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens ?? 100000,
+    };
+    applyThinkingParam(visionParams);
+
+    const __start = Date.now();
+    let response;
+    try {
+      response = await this.client.chat.completions.create(visionParams);
+    } catch (callErr: any) {
+      recordLlmCall({
+        provider: this.provider,
+        model: this.visionModel,
+        feature: 'vision',
+        success: false,
+        errorMessage: callErr?.message || String(callErr),
+        latencyMs: Date.now() - __start,
+      });
+      throw callErr;
+    }
+    recordLlmCall({
+      provider: this.provider,
+      model: this.visionModel,
+      feature: 'vision',
+      success: true,
+      finishReason: response.choices[0]?.finish_reason,
+      latencyMs: Date.now() - __start,
+      promptTokens: response.usage?.prompt_tokens,
+      completionTokens: response.usage?.completion_tokens,
+      totalTokens: response.usage?.total_tokens,
     });
 
     return {

@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
 
 interface RouteParams {
@@ -66,6 +67,9 @@ export async function GET(request: NextRequest, { params }: { params: any }) {
  * PUT /api/v1/blog/[id]
  */
 export async function PUT(request: NextRequest, { params }: { params: any }) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -150,6 +154,9 @@ export async function PUT(request: NextRequest, { params }: { params: any }) {
  * DELETE /api/v1/blog/[id]
  */
 export async function DELETE(request: NextRequest, { params }: { params: any }) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const { id } = await params;
     const searchParams = request.nextUrl.searchParams;

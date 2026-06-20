@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 import { MessageOrchestratorService } from "@/lib/services/whatsapp-ai/core/message-orchestrator.service";
 
@@ -12,6 +13,8 @@ export const dynamic = 'force-dynamic';
 const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
 
 export async function GET(request: NextRequest) {
+    const denied = await requireSuperAdmin(request);
+    if (denied) return denied;
     const { searchParams } = new URL(request.url);
     const tenantSlug = searchParams.get("tenant") || "primamobil-id";
     const mode = searchParams.get("mode");

@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
 
@@ -13,6 +14,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: any }
 ) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const { conversationId } = await params;
 
@@ -76,6 +80,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: any }
 ) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const { conversationId } = await params;
     const { searchParams } = new URL(request.url);

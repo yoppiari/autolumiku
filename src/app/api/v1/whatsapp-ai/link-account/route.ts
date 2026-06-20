@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -7,6 +8,9 @@ import { prisma } from "@/lib/prisma";
  * Body: { tenantId, clientId, phoneNumber }
  */
 export async function POST(request: NextRequest) {
+    const authGate = await requireAuth(request);
+    if (authGate instanceof NextResponse) return authGate;
+
     try {
         const body = await request.json();
         const { tenantId, clientId, phoneNumber } = body;

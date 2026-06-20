@@ -3,12 +3,16 @@
  * GET /api/v1/whatsapp-ai/list-tenants
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
+
   try {
     // Get all tenants with WhatsApp conversation count
     const tenants = await prisma.tenant.findMany({

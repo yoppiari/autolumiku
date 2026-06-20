@@ -78,11 +78,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     window.location.href = '/login';
   };
 
-  const navigation = [
+  const navigation: Array<{ name: string; href: string; icon: string; submenu?: Array<{ name: string; href: string }> }> = [
     { name: 'Management Dashboard', href: '/admin', icon: '🏠' },
     { name: 'Tenants', href: '/admin/tenants', icon: '🏢' },
     { name: 'Users', href: '/admin/users', icon: '👥' },
     { name: 'Data Management', href: '/admin/data-management', icon: '🗄️' },
+    { name: 'LLM Monitoring', href: '/admin/llm/monitoring', icon: '📊' },
+    { name: 'LLM Eval', href: '/admin/llm/eval', icon: '🧪' },
     { name: 'Audit Logs', href: '/admin/audit', icon: '📋' },
     { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
   ];

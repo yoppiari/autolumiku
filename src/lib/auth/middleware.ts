@@ -259,6 +259,42 @@ export async function withPlatformAuth(
 }
 
 /**
+ * Top-of-handler guard. Returns a NextResponse to short-circuit when the
+ * caller is not a super admin, or null when access is allowed.
+ *
+ * Usage:
+ *   const denied = await requireSuperAdmin(request);
+ *   if (denied) return denied;
+ */
+export async function requireSuperAdmin(request: NextRequest): Promise<NextResponse | null> {
+  const auth = await authenticateRequest(request);
+  if (!auth.success) {
+    return NextResponse.json({ error: auth.error || 'Unauthorized' }, { status: 401 });
+  }
+  if (!auth.user || auth.user.role.toLowerCase() !== 'super_admin') {
+    return NextResponse.json({ error: 'Forbidden - Super admin access required' }, { status: 403 });
+  }
+  return null;
+}
+
+/**
+ * Top-of-handler guard for any authenticated user. Returns a NextResponse to
+ * short-circuit on failure, or the authenticated AuthResult on success.
+ *
+ * Usage:
+ *   const auth = await requireAuth(request);
+ *   if (auth instanceof NextResponse) return auth;
+ *   // auth.user is available here
+ */
+export async function requireAuth(request: NextRequest): Promise<AuthResult | NextResponse> {
+  const auth = await authenticateRequest(request);
+  if (!auth.success) {
+    return NextResponse.json({ error: auth.error || 'Unauthorized' }, { status: 401 });
+  }
+  return auth;
+}
+
+/**
  * Get user permissions based on role
  */
 export function getUserPermissions(role: string): string[] {

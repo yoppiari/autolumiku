@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/middleware';
 import { StorageService } from '@/lib/services/infrastructure/storage.service';
 
 // Allowed document types
@@ -26,6 +27,8 @@ function getFileExtension(filename: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
   try {
     // Get form data
     let formData;

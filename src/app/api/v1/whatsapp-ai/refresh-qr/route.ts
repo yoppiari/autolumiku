@@ -5,9 +5,13 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth/middleware';
 import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
 
 export async function POST(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const body = await request.json();
     const { tenantId } = body;

@@ -5,12 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth/middleware';
 import { AIHealthMonitorService } from "@/lib/services/whatsapp-ai/utils/ai-health-monitor.service";
 
 /**
  * GET - Get AI health status for a tenant
  */
 export async function GET(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId");
@@ -56,6 +60,9 @@ export async function GET(request: NextRequest) {
  * POST - Toggle AI on/off for a tenant
  */
 export async function POST(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const body = await request.json();
     const { tenantId, enabled, reason } = body;

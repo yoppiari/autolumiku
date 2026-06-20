@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
 import { BlogStatus } from '@prisma/client';
 
@@ -93,6 +94,9 @@ export async function GET(request: NextRequest) {
  * Create new blog post
  */
 export async function POST(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const body = await request.json();
     const { tenantId, authorId, authorName, ...postData } = body;

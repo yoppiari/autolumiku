@@ -12,11 +12,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+    const denied = await requireSuperAdmin(request);
+    if (denied) return denied;
     try {
         const { searchParams } = new URL(request.url);
         const tenantId = searchParams.get("tenantId");
@@ -124,6 +127,8 @@ export async function POST(request: NextRequest) {
 
 // Also support GET for checking current data counts (safe, no deletion)
 export async function GET(request: NextRequest) {
+    const denied = await requireSuperAdmin(request);
+    if (denied) return denied;
     try {
         const { searchParams } = new URL(request.url);
         const tenantId = searchParams.get("tenantId");

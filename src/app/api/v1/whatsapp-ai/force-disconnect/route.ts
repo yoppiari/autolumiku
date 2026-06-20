@@ -9,11 +9,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 
 const AIMEOW_BASE_URL = process.env.AIMEOW_BASE_URL || "https://meow.lumiku.com";
 
 export async function POST(request: NextRequest) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId");

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,9 @@ export const dynamic = 'force-dynamic';
  * 
  * Usage: GET /api/v1/maintenance/fix-photo-urls
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const denied = await requireSuperAdmin(request);
+    if (denied) return denied;
     try {
         console.log('[Fix Photo URLs] Starting...');
 

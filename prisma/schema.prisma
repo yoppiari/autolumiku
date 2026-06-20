@@ -2600,3 +2600,122 @@ model SalesInvoiceAuditLog {
   @@map("sales_invoice_audit_logs")
 }
 
+// ============================================================
+// LLM OBSERVABILITY & EVALUATION (Super Admin)
+// ============================================================
+
+/// One row per LLM API call — powers the monitoring dashboard.
+model LlmCallLog {
+  id String @id @default(uuid())
+
+  provider String // e.g. "nvidia", "openrouter", "deepseek", "zai"
+  model    String
+  feature  String // "chat" | "vision" | "blog" | "json" | "eval" | other
+  tenantId String?
+
+  success       Boolean
+  errorMessage  String? @db.Text
+  finishReason  String?
+  latencyMs     Int
+
+  promptTokens     Int?
+  completionTokens Int?
+  totalTokens      Int?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([provider, model])
+  @@index([feature])
+  @@index([tenantId])
+  @@index([success])
+  @@map("llm_call_logs")
+}
+
+/// A reusable LLM provider endpoint definition (managed by super admin).
+model LlmEndpoint {
+  id String @id @default(uuid())
+
+  name     String  @unique
+  provider String // "nvidia" | "openrouter" | "deepseek" | "kimi" | "stepfun" | "zai" | custom
+  baseUrl  String
+  apiKey   String  @db.Text // NOTE: stored as-is; restrict to super admin. Encrypt later.
+  model    String
+  kind     String  @default("text") // "text" | "vision"
+  enabled  Boolean @default(true)
+  isDefault Boolean @default(false)
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs LlmEvalRun[]
+
+  @@index([enabled])
+  @@map("llm_endpoints")
+}
+
+/// A test scenario: a prompt + assertions describing expected behavior.
+model LlmEvalScenario {
+  id String @id @default(uuid())
+
+  name         String
+  description  String? @db.Text
+  category     String?
+  systemPrompt String? @db.Text
+  userPrompt   String  @db.Text
+
+  /// Array of assertions, e.g.
+  /// [{ "type": "contains", "value": "...", "description": "..." },
+  ///  { "type": "tool_call", "tool": "search_vehicles", "mustCall": true }]
+  assertions Json
+
+  enabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs LlmEvalRun[]
+
+  @@index([enabled])
+  @@index([category])
+  @@map("llm_eval_scenarios")
+}
+
+/// The result of running a scenario against an endpoint/model.
+model LlmEvalRun {
+  id String @id @default(uuid())
+
+  scenarioId String?
+  endpointId String?
+
+  provider String
+  model    String
+
+  status       String // "passed" | "failed" | "error"
+  passed       Boolean @default(false)
+  score        Float? // passedAssertions / totalAssertions
+  totalAssertions  Int @default(0)
+  passedAssertions Int @default(0)
+
+  responseText String? @db.Text
+  latencyMs    Int     @default(0)
+  errorMessage String? @db.Text
+
+  /// Per-assertion results + raw tool calls
+  details Json?
+
+  createdAt DateTime @default(now())
+
+  scenario LlmEvalScenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  endpoint LlmEndpoint?     @relation(fields: [endpointId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([scenarioId])
+  @@index([status])
+  @@map("llm_eval_runs")
+}
+

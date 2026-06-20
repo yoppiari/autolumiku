@@ -487,6 +487,22 @@ export class IntentClassifierService {
   }
 
   /**
+   * Invalidate the cached staff-phone set for a tenant (or all tenants).
+   * MUST be called whenever a staff member is removed, demoted, or their phone
+   * changes, so a removed member is NOT treated as staff during the cache TTL
+   * window. Event-driven invalidation — do not rely on TTL expiry for security.
+   */
+  static clearStaffCache(tenantId?: string): void {
+    if (tenantId) {
+      staffCache.delete(tenantId);
+      console.log(`[Intent Classifier] 🧹 Staff cache cleared for tenant ${tenantId}`);
+    } else {
+      staffCache.clear();
+      console.log('[Intent Classifier] 🧹 Staff cache cleared (all tenants)');
+    }
+  }
+
+  /**
    * Check if a normalized phone number belongs to staff
    * Uses cache for performance but always verifies against DB
    * IMPORTANT: Explicitly excludes bot phone numbers (Aimeow accounts)

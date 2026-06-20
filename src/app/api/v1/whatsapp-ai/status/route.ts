@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth/middleware';
 import { AimeowClientService } from "@/lib/services/aimeow/aimeow-client.service";
 import { prisma } from "@/lib/prisma";
 
@@ -110,6 +111,8 @@ async function autoSyncAimeow(tenantId: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
   try {
     const { searchParams } = new URL(request.url);
     let tenantId = searchParams.get("tenantId");

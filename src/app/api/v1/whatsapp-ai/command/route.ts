@@ -15,11 +15,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/middleware';
 import { processCommand } from '@/lib/services/whatsapp-ai/commands/command-handler.service';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const body = await request.json();
     const { command, phoneNumber, tenantId, userId, userRole, userRoleLevel } = body;

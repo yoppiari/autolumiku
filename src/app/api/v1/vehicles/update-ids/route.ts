@@ -12,9 +12,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
   // Info about a specific displayId
   const infoId = request.nextUrl.searchParams.get('info');
   if (infoId) {

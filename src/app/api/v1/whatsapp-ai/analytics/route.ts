@@ -12,6 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
@@ -76,6 +77,9 @@ async function calculateAvgResponseTime(tenantId: string, startDate: Date): Prom
 }
 
 export async function GET(request: NextRequest) {
+  const authGate = await requireAuth(request);
+  if (authGate instanceof NextResponse) return authGate;
+
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId");

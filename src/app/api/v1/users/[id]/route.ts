@@ -13,6 +13,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authenticateRequest } from '@/lib/auth/middleware';
+import { revokeStaffAccess, STAFF_ROLES } from '@/lib/services/whatsapp-ai/staff/staff-access.service';
+import { IntentClassifierService } from '@/lib/services/whatsapp-ai/core/intent-classifier.service';
 
 /**
  * Get roleLevel based on role name
@@ -323,6 +325,18 @@ export async function PUT(
       }
     }
 
+    // SECURITY: keep staff identity in sync immediately after a role/phone change.
+    // Invalidate the staff cache so changes take effect without the 5-min TTL lag,
+    // and if the member was demoted to a non-staff role, fully revoke their staff
+    // access (reset their WhatsApp conversation to customer, drop registration).
+    if (currentUser.tenantId) {
+      IntentClassifierService.clearStaffCache(currentUser.tenantId);
+      const stillStaff = (STAFF_ROLES as readonly string[]).includes(normalizedRole);
+      if (!stillStaff) {
+        await revokeStaffAccess(currentUser.tenantId, { userId: id, phone: normalizedPhone || currentUser.phone });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: result,
@@ -365,7 +379,7 @@ export async function DELETE(
     // Get user to check tenant
     const userToDelete = await prisma.user.findUnique({
       where: { id },
-      select: { tenantId: true },
+      select: { tenantId: true, phone: true },
     });
 
     if (!userToDelete) {
@@ -383,10 +397,13 @@ export async function DELETE(
       );
     }
 
-    // Delete related WhatsApp staff auth first (if exists)
-    await prisma.staffWhatsAppAuth.deleteMany({
-      where: { userId: id },
-    });
+    // SECURITY: fully revoke staff access BEFORE deletion so the removed member
+    // stops being treated as staff and stops receiving any project updates.
+    // (Deletes StaffWhatsAppAuth, resets their WhatsApp conversation to customer,
+    //  and invalidates the staff cache — no 5-minute stale window.)
+    if (userToDelete.tenantId) {
+      await revokeStaffAccess(userToDelete.tenantId, { userId: id, phone: userToDelete.phone });
+    }
 
     // Delete user
     await prisma.user.delete({

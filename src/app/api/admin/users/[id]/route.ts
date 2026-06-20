@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { withPlatformAuth } from '@/lib/auth/middleware';
 import { getRoleLevelFromRole } from '@/lib/rbac';
+import { revokeStaffAccess } from '@/lib/services/whatsapp-ai/staff/staff-access.service';
 
 /**
  * GET /api/admin/users/[id] - Get single user
@@ -210,8 +211,18 @@ export async function DELETE(
         try {
             const { id } = await params;
 
-            // Prevent self-deletion if we had session info here, 
+            // Prevent self-deletion if we had session info here,
             // but for now just delete.
+
+            // SECURITY: revoke staff access before deletion so the removed member
+            // stops being treated as staff and stops receiving any project updates.
+            const target = await prisma.user.findUnique({
+                where: { id },
+                select: { tenantId: true, phone: true },
+            });
+            if (target?.tenantId) {
+                await revokeStaffAccess(target.tenantId, { userId: id, phone: target.phone });
+            }
 
             await prisma.user.delete({
                 where: { id },

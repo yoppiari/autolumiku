@@ -6,11 +6,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireSuperAdmin } from '@/lib/auth/middleware';
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const denied = await requireSuperAdmin(request);
+  if (denied) return denied;
+
   try {
     // Get all tenants with Aimeow accounts
     const aimeowAccounts = await prisma.aimeowAccount.findMany({
