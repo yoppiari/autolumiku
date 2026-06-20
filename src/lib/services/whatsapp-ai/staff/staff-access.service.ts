@@ -44,6 +44,45 @@ export async function getActiveStaffWithPhone(tenantId: string): Promise<ActiveS
 }
 
 /**
+ * Canonical recipients for proactive WhatsApp notifications (upload/monitor/lead/etc).
+ *
+ * A user receives WhatsApp notifications ONLY if they are an actively-REGISTERED
+ * staff member: they have an active `StaffWhatsAppAuth` row AND the underlying
+ * User still exists in this tenant. This guarantees that:
+ *   - DELETED users get nothing (their User row is gone, and revokeStaffAccess
+ *     also deletes their StaffWhatsAppAuth), and
+ *   - UNREGISTERED users (no/inactive StaffWhatsAppAuth) get nothing, even if
+ *     they happen to have a phone number on their User record.
+ *
+ * The phone used is the REGISTERED phoneNumber from StaffWhatsAppAuth.
+ */
+export async function getNotifiableStaff(
+  tenantId: string
+): Promise<Array<{ id: string; firstName: string | null; lastName: string | null; phone: string; role: string }>> {
+  const regs = await prisma.staffWhatsAppAuth.findMany({
+    where: { tenantId, isActive: true },
+    select: { phoneNumber: true, userId: true, role: true },
+  });
+  if (regs.length === 0) return [];
+
+  const userIds = Array.from(new Set(regs.map((r) => r.userId).filter(Boolean)));
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds }, tenantId },
+    select: { id: true, firstName: true, lastName: true, role: true },
+  });
+  const userById = new Map(users.map((u) => [u.id, u]));
+
+  const out: Array<{ id: string; firstName: string | null; lastName: string | null; phone: string; role: string }> = [];
+  for (const r of regs) {
+    const u = userById.get(r.userId);
+    if (!u) continue; // user deleted/not in tenant -> orphan registration, skip
+    if (!r.phoneNumber) continue;
+    out.push({ id: u.id, firstName: u.firstName, lastName: u.lastName, phone: r.phoneNumber, role: u.role });
+  }
+  return out;
+}
+
+/**
  * Revoke a (former) staff member's WhatsApp access and updates for a tenant.
  * Safe to call before OR after the underlying User row is deleted — pass the
  * phone explicitly when the user may already be gone.

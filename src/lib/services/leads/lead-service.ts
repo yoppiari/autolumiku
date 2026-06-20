@@ -6,6 +6,7 @@
 import { LeadStatus, LeadPriority } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { AimeowClientService } from '../aimeow/aimeow-client.service';
+import { getNotifiableStaff } from '@/lib/services/whatsapp-ai/staff/staff-access.service';
 
 export interface LeadCreateInput {
   tenantId: string;
@@ -790,15 +791,10 @@ export class LeadService {
     try {
       console.log(`[LeadService] 📢 Notifying staff for lead ${lead.name}...`);
 
-      // 1. Get staff contacts
-      const staffMembers = await prisma.user.findMany({
-        where: {
-          tenantId: lead.tenantId,
-          role: { in: ['ADMIN', 'MANAGER', 'SALES'] },
-          phone: { not: null }
-        },
-        select: { phone: true, firstName: true }
-      });
+      // 1. Get staff contacts (only registered, active staff)
+      const staffMembers = (await getNotifiableStaff(lead.tenantId)).filter(s =>
+        ['ADMIN', 'MANAGER', 'SALES'].includes(s.role.toUpperCase())
+      );
 
       if (staffMembers.length === 0) {
         console.warn(`[LeadService] ⚠️ No registered staff found for tenant ${lead.tenantId}`);

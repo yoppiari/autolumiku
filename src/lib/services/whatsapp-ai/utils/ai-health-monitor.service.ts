@@ -9,6 +9,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { AimeowClientService } from "../../aimeow/aimeow-client.service";
+import { getNotifiableStaff } from "@/lib/services/whatsapp-ai/staff/staff-access.service";
 
 // Type alias for config with new fields (until Prisma client is regenerated)
 interface AIConfigWithHealth {
@@ -355,15 +356,11 @@ export class AIHealthMonitorService {
         return;
       }
 
-      // Get all staff members
-      const staffMembers = await prisma.user.findMany({
-        where: {
-          tenantId,
-          phone: { not: null },
-          role: { in: ["ADMIN", "MANAGER"] }, // Only notify admins and managers for AI issues
-        },
-        select: { phone: true, firstName: true },
-      });
+      // Get all staff members (only registered, active staff)
+      // Only notify admins and managers for AI issues
+      const staffMembers = (await getNotifiableStaff(tenantId)).filter(s =>
+        ["ADMIN", "MANAGER"].includes(s.role.toUpperCase())
+      );
 
       if (staffMembers.length === 0) {
         console.log(`[AIHealthMonitor] ${tenantId}: No admin/manager with phone found`);
@@ -435,15 +432,10 @@ export class AIHealthMonitorService {
 
       if (!account || !account.isActive) return;
 
-      // Get admin/manager staff members
-      const staffMembers = await prisma.user.findMany({
-        where: {
-          tenantId,
-          phone: { not: null },
-          role: { in: ["ADMIN", "MANAGER"] },
-        },
-        select: { phone: true, firstName: true },
-      });
+      // Get admin/manager staff members (only registered, active staff)
+      const staffMembers = (await getNotifiableStaff(tenantId)).filter(s =>
+        ["ADMIN", "MANAGER"].includes(s.role.toUpperCase())
+      );
 
       if (staffMembers.length === 0) return;
 
@@ -504,14 +496,10 @@ export class AIHealthMonitorService {
 
       if (!account || !account.isActive) return;
 
-      const staffMembers = await prisma.user.findMany({
-        where: {
-          tenantId,
-          phone: { not: null },
-          role: { in: ["ADMIN", "MANAGER"] },
-        },
-        select: { phone: true, firstName: true },
-      });
+      // Only registered, active admin/manager staff
+      const staffMembers = (await getNotifiableStaff(tenantId)).filter(s =>
+        ["ADMIN", "MANAGER"].includes(s.role.toUpperCase())
+      );
 
       if (staffMembers.length === 0) return;
 

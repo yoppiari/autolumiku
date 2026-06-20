@@ -7,7 +7,7 @@
 import { prisma } from "@/lib/prisma";
 import { AimeowClientService } from "../../aimeow/aimeow-client.service";
 import { generateVehicleUrl, generateVehicleDashboardUrl } from "@/lib/utils/vehicle-slug";
-import { getActiveStaffWithPhone } from "@/lib/services/whatsapp-ai/staff/staff-access.service";
+import { getNotifiableStaff } from "@/lib/services/whatsapp-ai/staff/staff-access.service";
 
 // ==================== TYPES ====================
 
@@ -52,9 +52,9 @@ export class UploadNotificationService {
         return;
       }
 
-      // 2. Get ONLY active staff members of this tenant (excludes removed/demoted
-      //    members so they no longer receive upload updates).
-      const staffMembers = await getActiveStaffWithPhone(notification.tenantId);
+      // 2. Get ONLY registered, active staff (excludes removed AND unregistered
+      //    members so they never receive upload updates on their WhatsApp).
+      const staffMembers = await getNotifiableStaff(notification.tenantId);
 
       if (staffMembers.length === 0) {
         console.log(`[Upload Notification] No staff members with phone found`);
@@ -261,18 +261,11 @@ export class UploadNotificationService {
         return;
       }
 
-      // 2. Get all staff members
-      const staffMembers = await prisma.user.findMany({
-        where: {
-          tenantId,
-          role: { in: ["ADMIN", "SUPER_ADMIN", "MANAGER", "SALES", "STAFF"] },
-          phone: { not: null },
-        },
-        select: { phone: true, firstName: true },
-      });
+      // 2. Get ONLY registered, active staff (excludes removed AND unregistered).
+      const staffMembers = await getNotifiableStaff(tenantId);
 
       if (staffMembers.length === 0) {
-        console.log(`[Edit Notification] No staff members found`);
+        console.log(`[Edit Notification] No registered staff members found`);
         return;
       }
 
